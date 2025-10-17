@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php -l:*)",
+      "Bash(cat:*)",
+      "Bash(php run_migration_v5.php:*)",
+      "Bash(php run_demo_data.php:*)",
+      "Bash(where:*)",
+      "Bash(dir C:xamppphpphp.exe)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

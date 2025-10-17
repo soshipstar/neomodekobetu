@@ -1,0 +1,28 @@
+# 環境変数ファイル（機密情報を含む）
+.env
+
+# デバッグ用ファイル
+debug_login.php
+setup_accounts.php
+
+# エディタ・IDE関連
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS関連
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 一時ファイル
+*.tmp
+*.log
+*.cache
+
+# バックアップファイル
+*.bak
+*.backup
+*~
