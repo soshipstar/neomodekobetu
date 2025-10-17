@@ -17,22 +17,28 @@ $pdo = getDbConnection();
 $stmt = $pdo->query("SELECT id, student_name FROM students WHERE is_active = 1 ORDER BY student_name");
 $students = $stmt->fetchAll();
 
-// 現在有効な期間を取得
-$stmt = $pdo->query("
-    SELECT * FROM kakehashi_periods
-    WHERE is_active = 1
-    ORDER BY submission_deadline DESC
-");
-$activePeriods = $stmt->fetchAll();
-
-// 選択された生徒と期間
+// 選択された生徒（URLパラメータから取得、デフォルト値なし）
 $selectedStudentId = $_GET['student_id'] ?? null;
-$selectedPeriodId = $_GET['period_id'] ?? ($activePeriods[0]['id'] ?? null);
+
+// 選択された生徒の有効な期間を取得
+$activePeriods = [];
+if ($selectedStudentId) {
+    $stmt = $pdo->prepare("
+        SELECT * FROM kakehashi_periods
+        WHERE student_id = ? AND is_active = 1
+        ORDER BY submission_deadline DESC
+    ");
+    $stmt->execute([$selectedStudentId]);
+    $activePeriods = $stmt->fetchAll();
+}
+
+// 選択された期間（URLパラメータから取得のみ、デフォルト値なし）
+$selectedPeriodId = $_GET['period_id'] ?? null;
 
 // 保護者入力かけはしデータを取得
 $kakehashiList = [];
-if ($selectedPeriodId) {
-    $sql = "
+if ($selectedStudentId && $selectedPeriodId) {
+    $stmt = $pdo->prepare("
         SELECT
             kg.*,
             s.student_name,
@@ -41,18 +47,9 @@ if ($selectedPeriodId) {
         FROM kakehashi_guardian kg
         INNER JOIN students s ON kg.student_id = s.id
         LEFT JOIN users u ON s.guardian_id = u.id
-        WHERE kg.period_id = ?
-    ";
-
-    if ($selectedStudentId) {
-        $sql .= " AND kg.student_id = ?";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([$selectedPeriodId, $selectedStudentId]);
-    } else {
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([$selectedPeriodId]);
-    }
-
+        WHERE kg.student_id = ? AND kg.period_id = ?
+    ");
+    $stmt->execute([$selectedStudentId, $selectedPeriodId]);
     $kakehashiList = $stmt->fetchAll();
 }
 
@@ -64,23 +61,23 @@ if ($selectedPeriodId) {
     $selectedPeriod = $stmt->fetch();
 }
 
-// 提出状況の統計
+// 提出状況の統計（選択された生徒の期間のみ）
 $stats = [
     'total' => 0,
     'submitted' => 0,
     'draft' => 0
 ];
 
-if ($selectedPeriodId) {
+if ($selectedStudentId && $selectedPeriodId) {
     $stmt = $pdo->prepare("
         SELECT
             COUNT(*) as total,
             SUM(CASE WHEN is_submitted = 1 THEN 1 ELSE 0 END) as submitted,
             SUM(CASE WHEN is_submitted = 0 THEN 1 ELSE 0 END) as draft
         FROM kakehashi_guardian
-        WHERE period_id = ?
+        WHERE student_id = ? AND period_id = ?
     ");
-    $stmt->execute([$selectedPeriodId]);
+    $stmt->execute([$selectedStudentId, $selectedPeriodId]);
     $statsData = $stmt->fetch();
     $stats = [
         'total' => $statsData['total'] ?? 0,
@@ -355,22 +352,12 @@ if ($selectedPeriodId) {
         </div>
 
         <div class="content">
-            <!-- フィルターエリア -->
+            <!-- 生徒選択エリア（常に表示） -->
             <div class="filter-area">
                 <div class="form-group">
-                    <label>提出期間を選択</label>
-                    <select id="periodSelect" onchange="changeFilter()">
-                        <?php foreach ($activePeriods as $period): ?>
-                            <option value="<?= $period['id'] ?>" <?= $period['id'] == $selectedPeriodId ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($period['period_name']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>生徒を絞り込み（任意）</label>
-                    <select id="studentSelect" onchange="changeFilter()">
-                        <option value="">全ての生徒</option>
+                    <label>生徒を選択 *</label>
+                    <select id="studentSelect" onchange="changeStudent()">
+                        <option value="">-- 生徒を選択してください --</option>
                         <?php foreach ($students as $student): ?>
                             <option value="<?= $student['id'] ?>" <?= $student['id'] == $selectedStudentId ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($student['student_name']) ?>
@@ -380,8 +367,30 @@ if ($selectedPeriodId) {
                 </div>
             </div>
 
+            <?php if ($selectedStudentId && empty($activePeriods)): ?>
+                <div style="background: #d1ecf1; color: #0c5460; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #bee5eb;">
+                    この生徒のかけはし期間がまだ設定されていません。生徒登録ページで初回かけはし提出期限を設定してください。
+                </div>
+            <?php elseif ($selectedStudentId && !empty($activePeriods)): ?>
+                <!-- 期間選択エリア（生徒選択後に表示） -->
+                <div class="filter-area">
+                    <div class="form-group">
+                        <label>かけはし提出期限を選択 *</label>
+                        <select id="periodSelect" onchange="changePeriod()">
+                            <option value="">-- 提出期限を選択してください --</option>
+                            <?php foreach ($activePeriods as $period): ?>
+                                <option value="<?= $period['id'] ?>" <?= $period['id'] == $selectedPeriodId ? 'selected' : '' ?>>
+                                    提出期限: <?= date('Y年n月j日', strtotime($period['submission_deadline'])) ?>
+                                    (対象期間: <?= date('Y/m/d', strtotime($period['start_date'])) ?> ～ <?= date('Y/m/d', strtotime($period['end_date'])) ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+            <?php endif; ?>
+
             <!-- 統計エリア -->
-            <?php if ($selectedPeriod): ?>
+            <?php if ($selectedStudentId && $selectedPeriod): ?>
                 <div class="stats-area">
                     <div class="stat-card total">
                         <div class="stat-number"><?= $stats['total'] ?></div>
@@ -399,12 +408,12 @@ if ($selectedPeriodId) {
             <?php endif; ?>
 
             <!-- かけはしリスト -->
-            <?php if (empty($kakehashiList)): ?>
+            <?php if ($selectedStudentId && $selectedPeriodId && empty($kakehashiList)): ?>
                 <div class="empty-state">
                     <div class="empty-state-icon">📭</div>
-                    <p>保護者入力のかけはしがありません</p>
+                    <p>この生徒・期間の保護者入力かけはしがありません</p>
                 </div>
-            <?php else: ?>
+            <?php elseif (!empty($kakehashiList)): ?>
                 <?php foreach ($kakehashiList as $kakehashi): ?>
                     <div class="kakehashi-card">
                         <div class="card-header">
@@ -475,14 +484,19 @@ if ($selectedPeriodId) {
     </div>
 
     <script>
-        function changeFilter() {
-            const periodId = document.getElementById('periodSelect').value;
+        function changeStudent() {
             const studentId = document.getElementById('studentSelect').value;
-            let url = 'kakehashi_guardian_view.php?period_id=' + periodId;
             if (studentId) {
-                url += '&student_id=' + studentId;
+                window.location.href = `kakehashi_guardian_view.php?student_id=${studentId}`;
             }
-            window.location.href = url;
+        }
+
+        function changePeriod() {
+            const studentId = document.getElementById('studentSelect').value;
+            const periodId = document.getElementById('periodSelect').value;
+            if (studentId && periodId) {
+                window.location.href = `kakehashi_guardian_view.php?student_id=${studentId}&period_id=${periodId}`;
+            }
         }
     </script>
 </body>

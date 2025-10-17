@@ -73,7 +73,9 @@ foreach ($events as $event) {
 // この保護者に紐づく生徒を取得
 try {
     $stmt = $pdo->prepare("
-        SELECT id, student_name, grade_level
+        SELECT id, student_name, grade_level,
+               scheduled_sunday, scheduled_monday, scheduled_tuesday, scheduled_wednesday,
+               scheduled_thursday, scheduled_friday, scheduled_saturday
         FROM students
         WHERE guardian_id = ? AND is_active = 1
         ORDER BY student_name
@@ -94,6 +96,53 @@ try {
     error_log("Error checking tables: " . $e->getMessage());
 }
 
+// 未提出かけはしを取得
+$pendingKakehashi = [];
+$urgentKakehashi = [];
+$today = date('Y-m-d');
+$oneWeekLater = date('Y-m-d', strtotime('+7 days'));
+
+foreach ($students as $student) {
+    try {
+        // 提出期限内で未提出のかけはしを取得
+        $stmt = $pdo->prepare("
+            SELECT
+                kp.id as period_id,
+                kp.period_name,
+                kp.submission_deadline,
+                kp.start_date,
+                kp.end_date,
+                DATEDIFF(kp.submission_deadline, ?) as days_left,
+                kg.id as kakehashi_id,
+                kg.is_submitted
+            FROM kakehashi_periods kp
+            LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = ?
+            WHERE kp.student_id = ?
+            AND kp.submission_deadline >= ?
+            AND kp.is_active = 1
+            AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
+            ORDER BY kp.submission_deadline ASC
+        ");
+        $stmt->execute([$today, $student['id'], $student['id'], $today]);
+        $periods = $stmt->fetchAll();
+
+        foreach ($periods as $period) {
+            $daysLeft = $period['days_left'];
+            $period['student_name'] = $student['student_name'];
+            $period['student_id'] = $student['id'];
+
+            // 7日以内は緊急
+            if ($daysLeft <= 7) {
+                $urgentKakehashi[] = $period;
+            } else {
+                $pendingKakehashi[] = $period;
+            }
+        }
+    } catch (Exception $e) {
+        error_log("Error fetching kakehashi for student " . $student['id'] . ": " . $e->getMessage());
+    }
+}
+
 // 各生徒の最新の連絡帳を取得
 $notesData = [];
 if ($hasIntegratedNotesTable) {
@@ -104,6 +153,8 @@ if ($hasIntegratedNotesTable) {
                     inote.id,
                     inote.integrated_content,
                     inote.sent_at,
+                    inote.guardian_confirmed,
+                    inote.guardian_confirmed_at,
                     dr.activity_name,
                     dr.record_date
                 FROM integrated_notes inote
@@ -123,6 +174,95 @@ if ($hasIntegratedNotesTable) {
     // テーブルが存在しない場合は空配列
     foreach ($students as $student) {
         $notesData[$student['id']] = [];
+    }
+}
+
+// 各生徒の活動予定日を取得（カレンダー表示用）
+$studentSchedules = [];
+foreach ($students as $student) {
+    $studentSchedules[$student['id']] = [
+        'name' => $student['student_name'],
+        'scheduled_days' => []
+    ];
+
+    // 曜日ごとの予定を取得
+    $dayColumns = [
+        0 => 'scheduled_sunday',
+        1 => 'scheduled_monday',
+        2 => 'scheduled_tuesday',
+        3 => 'scheduled_wednesday',
+        4 => 'scheduled_thursday',
+        5 => 'scheduled_friday',
+        6 => 'scheduled_saturday'
+    ];
+
+    foreach ($dayColumns as $dayNum => $columnName) {
+        if (!empty($student[$columnName])) {
+            $studentSchedules[$student['id']]['scheduled_days'][] = $dayNum;
+        }
+    }
+}
+
+// カレンダー表示月の全日付について、各生徒の予定を格納
+$calendarSchedules = [];
+for ($day = 1; $day <= date('t', $firstDay); $day++) {
+    $currentDate = sprintf("%04d-%02d-%02d", $year, $month, $day);
+    $dayOfWeek = date('w', strtotime($currentDate));
+
+    // 休日チェック
+    $isDateHoliday = isset($holidayDates[$currentDate]);
+
+    // この日に予定がある生徒をリストアップ
+    $calendarSchedules[$currentDate] = [];
+    foreach ($studentSchedules as $studentId => $schedule) {
+        if (!$isDateHoliday && in_array($dayOfWeek, $schedule['scheduled_days'])) {
+            $calendarSchedules[$currentDate][] = [
+                'student_id' => $studentId,
+                'student_name' => $schedule['name']
+            ];
+        }
+    }
+}
+
+// カレンダー表示月の連絡帳情報を取得
+$calendarNotes = [];
+if ($hasIntegratedNotesTable && !empty($students)) {
+    try {
+        $studentIds = array_column($students, 'id');
+        $placeholders = implode(',', array_fill(0, count($studentIds), '?'));
+
+        $firstDayStr = date('Y-m-d', $firstDay);
+        $lastDayStr = date('Y-m-d', $lastDay);
+
+        $stmt = $pdo->prepare("
+            SELECT
+                inote.student_id,
+                inote.guardian_confirmed,
+                dr.record_date,
+                s.student_name
+            FROM integrated_notes inote
+            INNER JOIN daily_records dr ON inote.daily_record_id = dr.id
+            INNER JOIN students s ON inote.student_id = s.id
+            WHERE inote.student_id IN ($placeholders)
+            AND inote.is_sent = 1
+            AND dr.record_date BETWEEN ? AND ?
+        ");
+        $stmt->execute(array_merge($studentIds, [$firstDayStr, $lastDayStr]));
+        $notes = $stmt->fetchAll();
+
+        foreach ($notes as $note) {
+            $date = $note['record_date'];
+            if (!isset($calendarNotes[$date])) {
+                $calendarNotes[$date] = [];
+            }
+            $calendarNotes[$date][] = [
+                'student_id' => $note['student_id'],
+                'student_name' => $note['student_name'],
+                'guardian_confirmed' => $note['guardian_confirmed']
+            ];
+        }
+    } catch (Exception $e) {
+        error_log("Error fetching calendar notes: " . $e->getMessage());
     }
 }
 
@@ -245,6 +385,39 @@ function getGradeLabel($gradeLevel) {
             white-space: pre-wrap;
             font-size: 15px;
         }
+        .confirmation-box {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .confirmation-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        .confirmation-checkbox input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .confirmation-checkbox label {
+            cursor: pointer;
+            font-weight: 500;
+            color: #333;
+            user-select: none;
+        }
+        .confirmation-checkbox.confirmed label {
+            color: #28a745;
+        }
+        .confirmation-date {
+            font-size: 13px;
+            color: #28a745;
+            font-weight: 500;
+        }
         .no-notes {
             text-align: center;
             padding: 40px;
@@ -358,6 +531,98 @@ function getGradeLabel($gradeLevel) {
             display: flex;
             align-items: center;
         }
+        .schedule-label {
+            color: #667eea;
+            font-size: 9px;
+            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+        }
+        .schedule-marker {
+            margin-right: 2px;
+            font-size: 8px;
+        }
+        .note-label {
+            color: #28a745;
+            font-size: 9px;
+            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .note-label:hover {
+            opacity: 0.7;
+        }
+        .note-label.unconfirmed {
+            color: #dc3545;
+        }
+        .note-marker {
+            margin-right: 2px;
+            font-size: 8px;
+        }
+
+        /* モーダルスタイル */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            overflow-y: auto;
+        }
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .modal-close {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #999;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            line-height: 1;
+        }
+        .modal-close:hover {
+            color: #333;
+        }
+        .modal-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+        }
+        .modal-header h2 {
+            color: #333;
+            font-size: 22px;
+            margin: 0;
+        }
+        .modal-date {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
         .sunday {
             color: #dc3545;
         }
@@ -383,27 +648,235 @@ function getGradeLabel($gradeLevel) {
             height: 20px;
             border-radius: 3px;
         }
+        .notification-banner {
+            background: white;
+            padding: 20px 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .notification-banner.urgent {
+            border-left: 5px solid #dc3545;
+            background: #fff5f5;
+        }
+        .notification-banner.pending {
+            border-left: 5px solid #17a2b8;
+            background: #f0f9fc;
+        }
+        .notification-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .notification-header.urgent {
+            color: #dc3545;
+        }
+        .notification-header.pending {
+            color: #17a2b8;
+        }
+        .notification-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #e0e0e0;
+        }
+        .notification-item:last-child {
+            margin-bottom: 0;
+        }
+        .notification-info {
+            flex: 1;
+        }
+        .notification-student {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .notification-period {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 3px;
+        }
+        .notification-deadline {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .notification-deadline.urgent {
+            color: #dc3545;
+        }
+        .notification-deadline.pending {
+            color: #17a2b8;
+        }
+        .notification-action {
+            margin-left: 15px;
+        }
+        .notification-btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+        .notification-btn:hover {
+            background: #5568d3;
+        }
+        .progress-bar-container {
+            margin-top: 15px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 8px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+        }
+        .progress-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        /* ボタングループスタイル */
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .nav-btn {
+            padding: 8px 16px;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nav-btn.kakehashi {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .nav-btn.kakehashi:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .nav-btn.logs {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+
+        .nav-btn.logs:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(17, 153, 142, 0.4);
+        }
+
+        .user-info-box {
+            padding: 8px 16px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 5px;
+            color: #667eea;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <div>
-                <h1>📖 連絡帳</h1>
+                <h1>📖 連絡帳ダッシュボード</h1>
             </div>
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <a href="kakehashi.php" style="padding: 8px 16px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; font-size: 14px;">
-                    🌉 かけはし
-                </a>
-                <a href="communication_logs.php" style="padding: 8px 16px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; font-size: 14px;">
-                    📚 連絡帳一覧・検索
-                </a>
-                <span class="user-info">
-                    <?php echo htmlspecialchars($_SESSION['full_name']); ?>さん（保護者）
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div class="nav-buttons">
+                    <a href="kakehashi.php" class="nav-btn kakehashi">
+                        🌉 かけはし入力
+                    </a>
+                    <a href="communication_logs.php" class="nav-btn logs">
+                        📚 連絡帳一覧
+                    </a>
+                </div>
+                <span class="user-info-box">
+                    <?php echo htmlspecialchars($_SESSION['full_name']); ?>さん
                 </span>
                 <a href="/logout.php" class="logout-btn">ログアウト</a>
             </div>
         </div>
+
+        <!-- 緊急かけはし通知 -->
+        <?php if (!empty($urgentKakehashi)): ?>
+            <div class="notification-banner urgent">
+                <div class="notification-header urgent">
+                    ⚠️ 提出期限が近いかけはしがあります
+                </div>
+                <?php foreach ($urgentKakehashi as $kakehashi): ?>
+                    <div class="notification-item">
+                        <div class="notification-info">
+                            <div class="notification-student">
+                                <?php echo htmlspecialchars($kakehashi['student_name']); ?>さん
+                            </div>
+                            <div class="notification-period">
+                                対象期間: <?php echo date('Y年n月j日', strtotime($kakehashi['start_date'])); ?> ～ <?php echo date('Y年n月j日', strtotime($kakehashi['end_date'])); ?>
+                            </div>
+                            <div class="notification-deadline urgent">
+                                提出期限: <?php echo date('Y年n月j日', strtotime($kakehashi['submission_deadline'])); ?>
+                                （残り<?php echo $kakehashi['days_left']; ?>日）
+                            </div>
+                        </div>
+                        <div class="notification-action">
+                            <a href="kakehashi.php?student_id=<?php echo $kakehashi['student_id']; ?>&period_id=<?php echo $kakehashi['period_id']; ?>" class="notification-btn">
+                                かけはしを入力
+                            </a>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+
+        <!-- 未提出かけはし通知 -->
+        <?php if (!empty($pendingKakehashi)): ?>
+            <div class="notification-banner pending">
+                <div class="notification-header pending">
+                    📝 未提出のかけはしがあります
+                </div>
+                <?php foreach ($pendingKakehashi as $kakehashi): ?>
+                    <div class="notification-item">
+                        <div class="notification-info">
+                            <div class="notification-student">
+                                <?php echo htmlspecialchars($kakehashi['student_name']); ?>さん
+                            </div>
+                            <div class="notification-period">
+                                対象期間: <?php echo date('Y年n月j日', strtotime($kakehashi['start_date'])); ?> ～ <?php echo date('Y年n月j日', strtotime($kakehashi['end_date'])); ?>
+                            </div>
+                            <div class="notification-deadline pending">
+                                提出期限: <?php echo date('Y年n月j日', strtotime($kakehashi['submission_deadline'])); ?>
+                                （残り<?php echo $kakehashi['days_left']; ?>日）
+                            </div>
+                        </div>
+                        <div class="notification-action">
+                            <a href="kakehashi.php?student_id=<?php echo $kakehashi['student_id']; ?>&period_id=<?php echo $kakehashi['period_id']; ?>" class="notification-btn">
+                                かけはしを入力
+                            </a>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
 
         <!-- カレンダーセクション -->
         <div class="calendar-section">
@@ -471,6 +944,29 @@ function getGradeLabel($gradeLevel) {
                         }
                     }
 
+                    // 生徒の活動予定を表示
+                    if (isset($calendarSchedules[$currentDate]) && !empty($calendarSchedules[$currentDate])) {
+                        foreach ($calendarSchedules[$currentDate] as $schedule) {
+                            echo "<div class='schedule-label'>";
+                            echo "<span class='schedule-marker'>👤</span>";
+                            echo htmlspecialchars($schedule['student_name']) . "さん活動予定日";
+                            echo "</div>";
+                        }
+                    }
+
+                    // 連絡帳情報を表示
+                    if (isset($calendarNotes[$currentDate]) && !empty($calendarNotes[$currentDate])) {
+                        foreach ($calendarNotes[$currentDate] as $noteInfo) {
+                            $isConfirmed = $noteInfo['guardian_confirmed'];
+                            $class = $isConfirmed ? 'note-label' : 'note-label unconfirmed';
+                            $text = $isConfirmed ? '連絡帳あり' : '連絡帳あり（確認してください）';
+                            echo "<div class='$class' onclick='showNoteModal(\"$currentDate\")'>";
+                            echo "<span class='note-marker'>📝</span>";
+                            echo htmlspecialchars($text);
+                            echo "</div>";
+                        }
+                    }
+
                     echo "</div>";
                     echo "</div>";
                 }
@@ -489,6 +985,18 @@ function getGradeLabel($gradeLevel) {
                 <div class="legend-item">
                     <span class="event-marker" style="background: #28a745;"></span>
                     <span>イベント</span>
+                </div>
+                <div class="legend-item">
+                    <span style="color: #667eea; font-weight: 600;">👤</span>
+                    <span>活動予定日</span>
+                </div>
+                <div class="legend-item">
+                    <span style="color: #28a745; font-weight: 600;">📝</span>
+                    <span>連絡帳あり</span>
+                </div>
+                <div class="legend-item">
+                    <span style="color: #dc3545; font-weight: 600;">📝</span>
+                    <span>連絡帳あり（未確認）</span>
                 </div>
             </div>
         </div>
@@ -523,6 +1031,24 @@ function getGradeLabel($gradeLevel) {
                                     </span>
                                 </div>
                                 <div class="note-content"><?php echo htmlspecialchars($note['integrated_content']); ?></div>
+
+                                <!-- 保護者確認チェックボックス -->
+                                <div class="confirmation-box">
+                                    <div class="confirmation-checkbox <?php echo $note['guardian_confirmed'] ? 'confirmed' : ''; ?>">
+                                        <input
+                                            type="checkbox"
+                                            id="confirm_<?php echo $note['id']; ?>"
+                                            <?php echo $note['guardian_confirmed'] ? 'checked disabled' : ''; ?>
+                                            onchange="confirmNote(<?php echo $note['id']; ?>)"
+                                        >
+                                        <label for="confirm_<?php echo $note['id']; ?>">確認しました</label>
+                                    </div>
+                                    <?php if ($note['guardian_confirmed'] && $note['guardian_confirmed_at']): ?>
+                                        <span class="confirmation-date">
+                                            確認日時: <?php echo date('Y年n月j日 H:i', strtotime($note['guardian_confirmed_at'])); ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -530,5 +1056,131 @@ function getGradeLabel($gradeLevel) {
             <?php endforeach; ?>
         <?php endif; ?>
     </div>
+
+    <!-- 連絡帳詳細モーダル -->
+    <div id="noteModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeNoteModal()">&times;</button>
+            <div class="modal-header">
+                <h2>📝 連絡帳</h2>
+                <div class="modal-date" id="modalDate"></div>
+            </div>
+            <div id="modalNoteContent">
+                <!-- 連絡帳の内容がここに表示されます -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function confirmNote(noteId) {
+        if (!confirm('この連絡帳を「確認しました」にしてよろしいですか?')) {
+            // キャンセルされた場合、チェックボックスを元に戻す
+            document.getElementById('confirm_' + noteId).checked = false;
+            return;
+        }
+
+        // サーバーに確認リクエストを送信
+        fetch('confirm_note.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'note_id=' + noteId
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 成功したらページをリロード
+                location.reload();
+            } else {
+                alert('エラーが発生しました: ' + (data.error || '不明なエラー'));
+                // エラーの場合、チェックボックスを元に戻す
+                document.getElementById('confirm_' + noteId).checked = false;
+            }
+        })
+        .catch(error => {
+            alert('通信エラーが発生しました');
+            console.error('Error:', error);
+            // エラーの場合、チェックボックスを元に戻す
+            document.getElementById('confirm_' + noteId).checked = false;
+        });
+    }
+
+    // モーダルを表示
+    function showNoteModal(date) {
+        // サーバーから指定日の連絡帳を取得
+        fetch('get_notes_by_date.php?date=' + date)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.notes && data.notes.length > 0) {
+                    // 日付を表示
+                    const dateObj = new Date(date + 'T00:00:00');
+                    const dateStr = dateObj.getFullYear() + '年' +
+                                   (dateObj.getMonth() + 1) + '月' +
+                                   dateObj.getDate() + '日';
+                    document.getElementById('modalDate').textContent = dateStr;
+
+                    // 連絡帳の内容を表示
+                    let html = '';
+                    data.notes.forEach((note, index) => {
+                        html += '<div class="note-item" style="margin-bottom: ' + (index < data.notes.length - 1 ? '20px' : '0') + ';">';
+                        html += '<div class="note-header">';
+                        html += '<span class="activity-name">' + escapeHtml(note.activity_name) + '</span>';
+                        html += '<span class="note-date">送信: ' + note.sent_time + '</span>';
+                        html += '</div>';
+                        html += '<div class="note-content">' + escapeHtml(note.integrated_content) + '</div>';
+
+                        // 確認チェックボックス
+                        html += '<div class="confirmation-box">';
+                        html += '<div class="confirmation-checkbox' + (note.guardian_confirmed ? ' confirmed' : '') + '">';
+                        html += '<input type="checkbox" id="modal_confirm_' + note.id + '" ';
+                        html += note.guardian_confirmed ? 'checked disabled' : '';
+                        html += ' onchange="confirmNote(' + note.id + ')">';
+                        html += '<label for="modal_confirm_' + note.id + '">確認しました</label>';
+                        html += '</div>';
+                        if (note.guardian_confirmed && note.guardian_confirmed_at) {
+                            html += '<span class="confirmation-date">確認日時: ' + note.confirmed_time + '</span>';
+                        }
+                        html += '</div>';
+                        html += '</div>';
+                    });
+                    document.getElementById('modalNoteContent').innerHTML = html;
+
+                    // モーダルを表示
+                    document.getElementById('noteModal').classList.add('show');
+                } else {
+                    alert('連絡帳が見つかりませんでした');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('連絡帳の取得に失敗しました');
+            });
+    }
+
+    // モーダルを閉じる
+    function closeNoteModal() {
+        document.getElementById('noteModal').classList.remove('show');
+    }
+
+    // モーダル外をクリックしたら閉じる
+    document.getElementById('noteModal').addEventListener('click', function(event) {
+        if (event.target === this) {
+            closeNoteModal();
+        }
+    });
+
+    // HTMLエスケープ
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, m => map[m]);
+    }
+    </script>
 </body>
 </html>

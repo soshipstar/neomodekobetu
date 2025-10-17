@@ -15,12 +15,12 @@ $pdo = getDbConnection();
 $guardianId = $_SESSION['user_id'];
 
 // 保護者の子どもを取得
-$stmt = $pdo->prepare("SELECT id, student_name FROM students WHERE guardian_id = ? AND is_active = 1");
+$stmt = $pdo->prepare("SELECT id, student_name FROM students WHERE guardian_id = ? AND is_active = 1 ORDER BY student_name");
 $stmt->execute([$guardianId]);
 $students = $stmt->fetchAll();
 
-// 選択された生徒
-$selectedStudentId = $_GET['student_id'] ?? ($students[0]['id'] ?? null);
+// 選択された生徒（URLパラメータから取得、デフォルト値なし）
+$selectedStudentId = $_GET['student_id'] ?? null;
 
 // 選択された生徒の有効な期間を取得
 $activePeriods = [];
@@ -28,13 +28,14 @@ if ($selectedStudentId) {
     $stmt = $pdo->prepare("
         SELECT * FROM kakehashi_periods
         WHERE student_id = ? AND is_active = 1
-        ORDER BY start_date DESC
+        ORDER BY submission_deadline DESC
     ");
     $stmt->execute([$selectedStudentId]);
     $activePeriods = $stmt->fetchAll();
 }
 
-$selectedPeriodId = $_GET['period_id'] ?? ($activePeriods[0]['id'] ?? null);
+// 選択された期間（URLパラメータから取得のみ、デフォルト値なし）
+$selectedPeriodId = $_GET['period_id'] ?? null;
 
 // 既存のかけはしデータを取得
 $kakehashiData = null;
@@ -170,6 +171,61 @@ if ($selectedPeriodId) {
             margin: 5px 0;
         }
 
+        .deadline-countdown {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .deadline-countdown.urgent {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+
+        .deadline-countdown.warning {
+            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+        }
+
+        .countdown-title {
+            font-size: 16px;
+            margin-bottom: 15px;
+            opacity: 0.9;
+        }
+
+        .countdown-display {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 10px;
+        }
+
+        .countdown-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .countdown-number {
+            font-size: 48px;
+            font-weight: bold;
+            line-height: 1;
+            margin-bottom: 5px;
+        }
+
+        .countdown-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .deadline-date {
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
         .deadline-warning {
             background: #fff3cd;
             color: #856404;
@@ -291,17 +347,13 @@ if ($selectedPeriodId) {
                 <div class="alert alert-info">
                     お子様の情報が登録されていません。管理者にお問い合わせください。
                 </div>
-            <?php elseif (empty($activePeriods)): ?>
-                <div class="alert alert-info">
-                    現在、入力可能なかけはし期間がありません。<br>
-                    <small>※ スタッフが期間を作成すると、開始日から1か月以内に入力・提出できるようになります</small>
-                </div>
             <?php else: ?>
-                <!-- 生徒・期間選択エリア -->
+                <!-- 生徒選択エリア（常に表示） -->
                 <div class="selection-area">
                     <div class="form-group">
-                        <label>お子様を選択</label>
-                        <select id="studentSelect" onchange="changePeriod()">
+                        <label>お子様を選択 *</label>
+                        <select id="studentSelect" onchange="changeStudent()">
+                            <option value="">-- お子様を選択してください --</option>
                             <?php foreach ($students as $student): ?>
                                 <option value="<?= $student['id'] ?>" <?= $student['id'] == $selectedStudentId ? 'selected' : '' ?>>
                                     <?= htmlspecialchars($student['student_name']) ?>
@@ -309,26 +361,90 @@ if ($selectedPeriodId) {
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label>提出期間を選択</label>
-                        <select id="periodSelect" onchange="changePeriod()">
-                            <?php foreach ($activePeriods as $period): ?>
-                                <option value="<?= $period['id'] ?>" <?= $period['id'] == $selectedPeriodId ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($period['period_name']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
                 </div>
 
+                <?php if ($selectedStudentId && empty($activePeriods)): ?>
+                    <div class="alert alert-info">
+                        現在、入力可能なかけはし期間がありません。<br>
+                        <small>※ スタッフが期間を設定すると入力・提出できるようになります</small>
+                    </div>
+                <?php elseif ($selectedStudentId && !empty($activePeriods)): ?>
+                    <!-- 期間選択エリア（生徒選択後に表示） -->
+                    <div class="selection-area">
+                        <div class="form-group">
+                            <label>かけはし提出期限を選択 *</label>
+                            <select id="periodSelect" onchange="changePeriod()">
+                                <option value="">-- 提出期限を選択してください --</option>
+                                <?php foreach ($activePeriods as $period): ?>
+                                    <option value="<?= $period['id'] ?>" <?= $period['id'] == $selectedPeriodId ? 'selected' : '' ?>>
+                                        提出期限: <?= date('Y年n月j日', strtotime($period['submission_deadline'])) ?>
+                                        (対象期間: <?= date('Y/m/d', strtotime($period['start_date'])) ?> ～ <?= date('Y/m/d', strtotime($period['end_date'])) ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
                 <?php if ($selectedPeriod): ?>
+                    <?php
+                    // 提出期限までの残り時間を計算
+                    $deadlineTimestamp = strtotime($selectedPeriod['submission_deadline'] . ' 23:59:59');
+                    $now = time();
+                    $timeLeft = $deadlineTimestamp - $now;
+                    $daysLeft = floor($timeLeft / 86400);
+                    $hoursLeft = floor(($timeLeft % 86400) / 3600);
+                    $minutesLeft = floor(($timeLeft % 3600) / 60);
+
+                    // 緊急度を判定
+                    $countdownClass = '';
+                    if ($daysLeft <= 3) {
+                        $countdownClass = 'urgent';
+                    } elseif ($daysLeft <= 7) {
+                        $countdownClass = 'warning';
+                    }
+
+                    $isSubmitted = $kakehashiData && $kakehashiData['is_submitted'];
+                    ?>
+
+                    <!-- 提出期限カウントダウン -->
+                    <?php if (!$isSubmitted && $timeLeft > 0): ?>
+                        <div class="deadline-countdown <?= $countdownClass ?>">
+                            <div class="countdown-title">⏰ 提出期限まで</div>
+                            <div class="countdown-display">
+                                <div class="countdown-item">
+                                    <div class="countdown-number"><?= $daysLeft ?></div>
+                                    <div class="countdown-label">日</div>
+                                </div>
+                                <div class="countdown-item">
+                                    <div class="countdown-number"><?= $hoursLeft ?></div>
+                                    <div class="countdown-label">時間</div>
+                                </div>
+                                <div class="countdown-item">
+                                    <div class="countdown-number"><?= $minutesLeft ?></div>
+                                    <div class="countdown-label">分</div>
+                                </div>
+                            </div>
+                            <div class="deadline-date">
+                                提出期限: <?= date('Y年n月j日', strtotime($selectedPeriod['submission_deadline'])) ?>
+                            </div>
+                        </div>
+                    <?php elseif (!$isSubmitted && $timeLeft <= 0): ?>
+                        <div class="deadline-countdown urgent">
+                            <div class="countdown-title">⚠️ 提出期限を過ぎています</div>
+                            <div class="deadline-date">
+                                提出期限: <?= date('Y年n月j日', strtotime($selectedPeriod['submission_deadline'])) ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
                     <!-- 期間情報 -->
                     <div class="period-info">
                         <p><strong>対象期間:</strong> <?= date('Y年m月d日', strtotime($selectedPeriod['start_date'])) ?> ～ <?= date('Y年m月d日', strtotime($selectedPeriod['end_date'])) ?></p>
                         <p><strong>提出期限:</strong> <?= date('Y年m月d日', strtotime($selectedPeriod['submission_deadline'])) ?></p>
                         <p>
                             <strong>状態:</strong>
-                            <?php if ($kakehashiData && $kakehashiData['is_submitted']): ?>
+                            <?php if ($isSubmitted): ?>
                                 <span class="status-badge status-submitted">提出済み</span>
                                 <small>（提出日時: <?= date('Y年m月d日 H:i', strtotime($kakehashiData['submitted_at'])) ?>）</small>
                             <?php else: ?>
@@ -336,15 +452,6 @@ if ($selectedPeriodId) {
                             <?php endif; ?>
                         </p>
                     </div>
-
-                    <?php
-                    $daysUntilDeadline = floor((strtotime($selectedPeriod['submission_deadline']) - time()) / 86400);
-                    if ($daysUntilDeadline <= 7 && $daysUntilDeadline >= 0):
-                    ?>
-                        <div class="deadline-warning">
-                            ⚠️ 提出期限まで残り<strong><?= $daysUntilDeadline ?></strong>日です
-                        </div>
-                    <?php endif; ?>
 
                     <!-- かけはし入力フォーム -->
                     <form method="POST" action="kakehashi_save.php" id="kakehashiForm">
@@ -420,10 +527,19 @@ if ($selectedPeriodId) {
     </div>
 
     <script>
+        function changeStudent() {
+            const studentId = document.getElementById('studentSelect').value;
+            if (studentId) {
+                window.location.href = `kakehashi.php?student_id=${studentId}`;
+            }
+        }
+
         function changePeriod() {
             const studentId = document.getElementById('studentSelect').value;
             const periodId = document.getElementById('periodSelect').value;
-            window.location.href = `kakehashi.php?student_id=${studentId}&period_id=${periodId}`;
+            if (studentId && periodId) {
+                window.location.href = `kakehashi.php?student_id=${studentId}&period_id=${periodId}`;
+            }
         }
 
         function setAction(action) {

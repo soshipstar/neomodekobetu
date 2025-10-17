@@ -120,6 +120,83 @@ if (!$isHoliday) {
     $stmt->execute();
     $scheduledStudents = $stmt->fetchAll();
 }
+
+// かけはし通知データを取得
+$today = date('Y-m-d');
+
+// 1. 未提出の保護者かけはし（提出期限内）
+$urgentGuardianKakehashi = [];
+$pendingGuardianKakehashi = [];
+
+$stmt = $pdo->prepare("
+    SELECT
+        s.id as student_id,
+        s.student_name,
+        kp.id as period_id,
+        kp.period_name,
+        kp.submission_deadline,
+        kp.start_date,
+        kp.end_date,
+        DATEDIFF(kp.submission_deadline, ?) as days_left,
+        kg.id as kakehashi_id,
+        kg.is_submitted
+    FROM students s
+    INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+    LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = s.id
+    WHERE s.is_active = 1
+    AND kp.is_active = 1
+    AND kp.submission_deadline >= ?
+    AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
+    ORDER BY kp.submission_deadline ASC
+");
+$stmt->execute([$today, $today]);
+$guardianKakehashiList = $stmt->fetchAll();
+
+foreach ($guardianKakehashiList as $kakehashi) {
+    $daysLeft = $kakehashi['days_left'];
+    if ($daysLeft <= 7) {
+        $urgentGuardianKakehashi[] = $kakehashi;
+    } else {
+        $pendingGuardianKakehashi[] = $kakehashi;
+    }
+}
+
+// 2. 未作成のスタッフかけはし（提出期限内）
+$urgentStaffKakehashi = [];
+$pendingStaffKakehashi = [];
+
+$stmt = $pdo->prepare("
+    SELECT
+        s.id as student_id,
+        s.student_name,
+        kp.id as period_id,
+        kp.period_name,
+        kp.submission_deadline,
+        kp.start_date,
+        kp.end_date,
+        DATEDIFF(kp.submission_deadline, ?) as days_left,
+        ks.id as kakehashi_id,
+        ks.is_submitted
+    FROM students s
+    INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+    LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
+    WHERE s.is_active = 1
+    AND kp.is_active = 1
+    AND kp.submission_deadline >= ?
+    AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
+    ORDER BY kp.submission_deadline ASC
+");
+$stmt->execute([$today, $today]);
+$staffKakehashiList = $stmt->fetchAll();
+
+foreach ($staffKakehashiList as $kakehashi) {
+    $daysLeft = $kakehashi['days_left'];
+    if ($daysLeft <= 7) {
+        $urgentStaffKakehashi[] = $kakehashi;
+    } else {
+        $pendingStaffKakehashi[] = $kakehashi;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -545,23 +622,295 @@ if (!$isHoliday) {
             padding: 30px 20px;
             color: #999;
         }
+
+        .notification-banner {
+            background: white;
+            padding: 20px 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .notification-banner.urgent {
+            border-left: 5px solid #dc3545;
+            background: #fff5f5;
+        }
+
+        .notification-banner.warning {
+            border-left: 5px solid #ffc107;
+            background: #fffbf0;
+        }
+
+        .notification-banner.info {
+            border-left: 5px solid #17a2b8;
+            background: #f0f9fc;
+        }
+
+        .notification-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .notification-header.urgent {
+            color: #dc3545;
+        }
+
+        .notification-header.warning {
+            color: #ff9800;
+        }
+
+        .notification-header.info {
+            color: #17a2b8;
+        }
+
+        .notification-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #e0e0e0;
+        }
+
+        .notification-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .notification-info {
+            flex: 1;
+        }
+
+        .notification-student {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .notification-period {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 3px;
+        }
+
+        .notification-deadline {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .notification-deadline.urgent {
+            color: #dc3545;
+        }
+
+        .notification-deadline.warning {
+            color: #ff9800;
+        }
+
+        .notification-deadline.info {
+            color: #17a2b8;
+        }
+
+        .notification-action {
+            margin-left: 15px;
+        }
+
+        .notification-btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+
+        .notification-btn:hover {
+            background: #5568d3;
+        }
+
+        .notification-btn.staff {
+            background: #764ba2;
+        }
+
+        .notification-btn.staff:hover {
+            background: #5d3a7f;
+        }
+
+        .notifications-container {
+            margin-bottom: 20px;
+        }
+
+        /* ドロップダウンメニュー */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-toggle {
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            border: none;
+            font-family: inherit;
+        }
+
+        .dropdown-toggle:hover {
+            background: #5568d3;
+        }
+
+        .dropdown-toggle.master {
+            background: #28a745;
+        }
+
+        .dropdown-toggle.master:hover {
+            background: #218838;
+        }
+
+        .dropdown-arrow {
+            font-size: 10px;
+            transition: transform 0.3s;
+        }
+
+        .dropdown.open .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 200px;
+            margin-top: 5px;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .dropdown.open .dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-menu a {
+            display: block;
+            padding: 12px 20px;
+            color: #333;
+            text-decoration: none;
+            transition: background 0.2s;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .dropdown-menu a:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-menu a:hover {
+            background: #f8f9fa;
+        }
+
+        .dropdown-menu a .menu-icon {
+            margin-right: 8px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>活動管理</h1>
+            <h1>📋 活動管理</h1>
             <div class="user-info">
                 <span><?php echo htmlspecialchars($currentUser['full_name'], ENT_QUOTES, 'UTF-8'); ?>さん</span>
-                <a href="kakehashi_staff.php" style="padding: 8px 16px; background: #764ba2; color: white; text-decoration: none; border-radius: 5px; font-size: 14px;">🌉 スタッフかけはし</a>
-                <a href="kakehashi_guardian_view.php" style="padding: 8px 16px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; font-size: 14px;">📋 保護者かけはし確認</a>
-                <a href="students.php" class="btn" style="background: #667eea; color: white; padding: 8px 16px; text-decoration: none; border-radius: 5px; font-size: 14px;">生徒管理</a>
-                <a href="guardians.php" class="btn" style="background: #28a745; color: white; padding: 8px 16px; text-decoration: none; border-radius: 5px; font-size: 14px;">保護者管理</a>
-                <a href="holidays.php" class="btn" style="background: #dc3545; color: white; padding: 8px 16px; text-decoration: none; border-radius: 5px; font-size: 14px;">休日管理</a>
-                <a href="events.php" class="btn" style="background: #ff9800; color: white; padding: 8px 16px; text-decoration: none; border-radius: 5px; font-size: 14px;">イベント管理</a>
+
+                <!-- かけはし管理ドロップダウン -->
+                <div class="dropdown">
+                    <button class="dropdown-toggle" onclick="toggleDropdown(event, this)">
+                        🌉 かけはし管理
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="kakehashi_staff.php">
+                            <span class="menu-icon">✏️</span>スタッフかけはし入力
+                        </a>
+                        <a href="kakehashi_guardian_view.php">
+                            <span class="menu-icon">📋</span>保護者かけはし確認
+                        </a>
+                    </div>
+                </div>
+
+                <!-- マスタ管理ドロップダウン -->
+                <div class="dropdown">
+                    <button class="dropdown-toggle master" onclick="toggleDropdown(event, this)">
+                        ⚙️ マスタ管理
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="students.php">
+                            <span class="menu-icon">👥</span>生徒管理
+                        </a>
+                        <a href="guardians.php">
+                            <span class="menu-icon">👨‍👩‍👧</span>保護者管理
+                        </a>
+                        <a href="holidays.php">
+                            <span class="menu-icon">🗓️</span>休日管理
+                        </a>
+                        <a href="events.php">
+                            <span class="menu-icon">🎉</span>イベント管理
+                        </a>
+                    </div>
+                </div>
+
                 <a href="/logout.php" class="logout-btn">ログアウト</a>
             </div>
         </div>
+
+        <script>
+        function toggleDropdown(event, button) {
+            event.stopPropagation();
+            const dropdown = button.closest('.dropdown');
+            const isOpen = dropdown.classList.contains('open');
+
+            // 他のドロップダウンを閉じる
+            document.querySelectorAll('.dropdown.open').forEach(d => {
+                d.classList.remove('open');
+            });
+
+            // このドロップダウンをトグル
+            if (!isOpen) {
+                dropdown.classList.add('open');
+            }
+        }
+
+        // ドロップダウン外をクリックしたら閉じる
+        document.addEventListener('click', function() {
+            document.querySelectorAll('.dropdown.open').forEach(d => {
+                d.classList.remove('open');
+            });
+        });
+
+        // ドロップダウン内のクリックで伝播を止める
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                menu.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            });
+        });
+        </script>
 
         <?php if (isset($_SESSION['success'])): ?>
             <div class="success-message">
@@ -580,6 +929,139 @@ if (!$isHoliday) {
                 ?>
             </div>
         <?php endif; ?>
+
+        <!-- かけはし通知セクション -->
+        <div class="notifications-container">
+            <!-- 緊急: 未提出保護者かけはし (7日以内) -->
+            <?php if (!empty($urgentGuardianKakehashi)): ?>
+                <div class="notification-banner urgent">
+                    <div class="notification-header urgent">
+                        ⚠️ 【緊急】保護者かけはし未提出（提出期限7日以内）
+                    </div>
+                    <?php foreach ($urgentGuardianKakehashi as $kakehashi): ?>
+                        <div class="notification-item">
+                            <div class="notification-info">
+                                <div class="notification-student">
+                                    <?php echo htmlspecialchars($kakehashi['student_name']); ?>さん
+                                </div>
+                                <div class="notification-period">
+                                    対象期間: <?php echo date('Y年n月j日', strtotime($kakehashi['start_date'])); ?> ～ <?php echo date('Y年n月j日', strtotime($kakehashi['end_date'])); ?>
+                                </div>
+                                <div class="notification-deadline urgent">
+                                    提出期限: <?php echo date('Y年n月j日', strtotime($kakehashi['submission_deadline'])); ?>
+                                    （残り<?php echo $kakehashi['days_left']; ?>日）
+                                </div>
+                            </div>
+                            <div class="notification-action">
+                                <a href="kakehashi_guardian_view.php?student_id=<?php echo $kakehashi['student_id']; ?>&period_id=<?php echo $kakehashi['period_id']; ?>" class="notification-btn">
+                                    確認・催促
+                                </a>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <!-- 緊急: 未作成スタッフかけはし (7日以内) -->
+            <?php if (!empty($urgentStaffKakehashi)): ?>
+                <div class="notification-banner urgent">
+                    <div class="notification-header urgent">
+                        ⚠️ 【緊急】スタッフかけはし未作成（提出期限7日以内）
+                    </div>
+                    <?php foreach ($urgentStaffKakehashi as $kakehashi): ?>
+                        <div class="notification-item">
+                            <div class="notification-info">
+                                <div class="notification-student">
+                                    <?php echo htmlspecialchars($kakehashi['student_name']); ?>さん
+                                </div>
+                                <div class="notification-period">
+                                    対象期間: <?php echo date('Y年n月j日', strtotime($kakehashi['start_date'])); ?> ～ <?php echo date('Y年n月j日', strtotime($kakehashi['end_date'])); ?>
+                                </div>
+                                <div class="notification-deadline urgent">
+                                    提出期限: <?php echo date('Y年n月j日', strtotime($kakehashi['submission_deadline'])); ?>
+                                    （残り<?php echo $kakehashi['days_left']; ?>日）
+                                </div>
+                            </div>
+                            <div class="notification-action">
+                                <a href="kakehashi_staff.php?student_id=<?php echo $kakehashi['student_id']; ?>&period_id=<?php echo $kakehashi['period_id']; ?>" class="notification-btn staff">
+                                    作成する
+                                </a>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <!-- 警告: 未提出保護者かけはし (8日以上) -->
+            <?php if (!empty($pendingGuardianKakehashi)): ?>
+                <div class="notification-banner warning">
+                    <div class="notification-header warning">
+                        ⏰ 保護者かけはし未提出（提出期限内）
+                    </div>
+                    <?php foreach (array_slice($pendingGuardianKakehashi, 0, 5) as $kakehashi): ?>
+                        <div class="notification-item">
+                            <div class="notification-info">
+                                <div class="notification-student">
+                                    <?php echo htmlspecialchars($kakehashi['student_name']); ?>さん
+                                </div>
+                                <div class="notification-period">
+                                    対象期間: <?php echo date('Y年n月j日', strtotime($kakehashi['start_date'])); ?> ～ <?php echo date('Y年n月j日', strtotime($kakehashi['end_date'])); ?>
+                                </div>
+                                <div class="notification-deadline warning">
+                                    提出期限: <?php echo date('Y年n月j日', strtotime($kakehashi['submission_deadline'])); ?>
+                                    （残り<?php echo $kakehashi['days_left']; ?>日）
+                                </div>
+                            </div>
+                            <div class="notification-action">
+                                <a href="kakehashi_guardian_view.php?student_id=<?php echo $kakehashi['student_id']; ?>&period_id=<?php echo $kakehashi['period_id']; ?>" class="notification-btn">
+                                    確認
+                                </a>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                    <?php if (count($pendingGuardianKakehashi) > 5): ?>
+                        <div style="text-align: center; margin-top: 10px; color: #666; font-size: 14px;">
+                            他 <?php echo count($pendingGuardianKakehashi) - 5; ?>件の未提出があります
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+
+            <!-- 警告: 未作成スタッフかけはし (8日以上) -->
+            <?php if (!empty($pendingStaffKakehashi)): ?>
+                <div class="notification-banner warning">
+                    <div class="notification-header warning">
+                        ⏰ スタッフかけはし未作成（提出期限内）
+                    </div>
+                    <?php foreach (array_slice($pendingStaffKakehashi, 0, 5) as $kakehashi): ?>
+                        <div class="notification-item">
+                            <div class="notification-info">
+                                <div class="notification-student">
+                                    <?php echo htmlspecialchars($kakehashi['student_name']); ?>さん
+                                </div>
+                                <div class="notification-period">
+                                    対象期間: <?php echo date('Y年n月j日', strtotime($kakehashi['start_date'])); ?> ～ <?php echo date('Y年n月j日', strtotime($kakehashi['end_date'])); ?>
+                                </div>
+                                <div class="notification-deadline warning">
+                                    提出期限: <?php echo date('Y年n月j日', strtotime($kakehashi['submission_deadline'])); ?>
+                                    （残り<?php echo $kakehashi['days_left']; ?>日）
+                                </div>
+                            </div>
+                            <div class="notification-action">
+                                <a href="kakehashi_staff.php?student_id=<?php echo $kakehashi['student_id']; ?>&period_id=<?php echo $kakehashi['period_id']; ?>" class="notification-btn staff">
+                                    作成する
+                                </a>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                    <?php if (count($pendingStaffKakehashi) > 5): ?>
+                        <div style="text-align: center; margin-top: 10px; color: #666; font-size: 14px;">
+                            他 <?php echo count($pendingStaffKakehashi) - 5; ?>件の未作成があります
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+        </div>
 
         <!-- 2カラムレイアウト -->
         <div class="two-column-layout">
