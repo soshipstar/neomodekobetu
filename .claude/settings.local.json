@@ -1,13 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(php -l:*)",
-      "Bash(cat:*)",
-      "Bash(php run_migration_v5.php:*)",
-      "Bash(php run_demo_data.php:*)",
-      "Bash(where:*)",
-      "Bash(dir C:xamppphpphp.exe)",
-      "Bash(git add:*)"
+      "Bash(php -S localhost:8000)",
+      "Bash(php run_migration_v17.php)",
+      "Bash(php -l \"C:\\Users\\TANI\\app\\kobetu\\staff\\chat.php\")",
+      "Bash(git add .)"
     ],
     "deny": [],
     "ask": []

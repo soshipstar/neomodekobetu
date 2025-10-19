@@ -433,7 +433,7 @@ if ($selectedStudentId && $selectedPeriodId) {
 
                         <div class="card-body">
                             <div class="field-group full-width">
-                                <div class="field-label">🏠 家庭での課題</div>
+                                <div class="field-label">🏠 家庭での願い</div>
                                 <div class="field-content"><?= nl2br(htmlspecialchars($kakehashi['home_challenges'] ?: '（未入力）')) ?></div>
                             </div>
 

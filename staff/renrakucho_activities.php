@@ -3,6 +3,11 @@
  * 活動管理ページ（カレンダー表示対応）
  */
 
+// エラー表示を有効化（デバッグ用）
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../config/database.php';
 
@@ -11,6 +16,16 @@ requireUserType(['staff', 'admin']);
 
 $pdo = getDbConnection();
 $currentUser = getCurrentUser();
+
+// 教室情報を取得
+$classroom = null;
+$stmt = $pdo->prepare("
+    SELECT c.* FROM classrooms c
+    INNER JOIN users u ON c.id = u.classroom_id
+    WHERE u.id = ?
+");
+$stmt->execute([$currentUser['id']]);
+$classroom = $stmt->fetch();
 
 // 選択された年月を取得（デフォルトは今月）
 $year = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
@@ -109,93 +124,167 @@ $stmt->execute([$selectedDate]);
 $isHoliday = $stmt->fetchColumn() > 0;
 
 $scheduledStudents = [];
+$eventParticipants = [];
+
 if (!$isHoliday) {
+    // 通常の参加予定者を取得
     $stmt = $pdo->prepare("
-        SELECT s.id, s.student_name, s.grade_level, u.full_name as guardian_name
+        SELECT
+            s.id,
+            s.student_name,
+            s.grade_level,
+            u.full_name as guardian_name,
+            an.id as absence_id,
+            an.reason as absence_reason,
+            'regular' as participant_type
         FROM students s
         LEFT JOIN users u ON s.guardian_id = u.id
+        LEFT JOIN absence_notifications an ON s.id = an.student_id AND an.absence_date = ?
         WHERE s.is_active = 1 AND s.$todayColumn = 1
         ORDER BY s.student_name
     ");
-    $stmt->execute();
+    $stmt->execute([$selectedDate]);
     $scheduledStudents = $stmt->fetchAll();
+
+    // イベント参加者を取得
+    $stmt = $pdo->prepare("
+        SELECT
+            s.id,
+            s.student_name,
+            s.grade_level,
+            u.full_name as guardian_name,
+            e.event_name,
+            er.notes,
+            'event' as participant_type
+        FROM event_registrations er
+        INNER JOIN events e ON er.event_id = e.id
+        INNER JOIN students s ON er.student_id = s.id
+        LEFT JOIN users u ON s.guardian_id = u.id
+        WHERE e.event_date = ? AND s.is_active = 1
+        ORDER BY s.student_name
+    ");
+    $stmt->execute([$selectedDate]);
+    $eventParticipants = $stmt->fetchAll();
 }
+
+// 個別支援計画書が未作成または古い生徒の数を取得
+$planNeedingCount = 0;
+
+// 個別支援計画書が1つも作成されていない生徒
+$stmt = $pdo->query("
+    SELECT COUNT(*) as count
+    FROM students s
+    WHERE s.is_active = 1
+    AND NOT EXISTS (
+        SELECT 1 FROM individual_support_plans isp
+        WHERE isp.student_id = s.id
+    )
+");
+$planNeedingCount += (int)$stmt->fetchColumn();
+
+// 最新の個別支援計画書から6ヶ月以上経過している生徒
+$stmt = $pdo->query("
+    SELECT COUNT(DISTINCT s.id) as count
+    FROM students s
+    INNER JOIN individual_support_plans isp ON s.id = isp.student_id
+    WHERE s.is_active = 1
+    GROUP BY s.id
+    HAVING DATEDIFF(CURDATE(), MAX(isp.created_date)) >= 180
+");
+$result = $stmt->fetchAll();
+$planNeedingCount += count($result);
+
+// モニタリングが未作成または古い生徒の数を取得
+$monitoringNeedingCount = 0;
+
+// モニタリングが1つも作成されていない生徒（個別支援計画書がある生徒のみ）
+$stmt = $pdo->query("
+    SELECT COUNT(DISTINCT s.id) as count
+    FROM students s
+    INNER JOIN individual_support_plans isp ON s.id = isp.student_id
+    WHERE s.is_active = 1
+    AND NOT EXISTS (
+        SELECT 1 FROM monitoring_records mr
+        WHERE mr.student_id = s.id
+    )
+");
+$monitoringNeedingCount += (int)$stmt->fetchColumn();
+
+// 最新のモニタリングから3ヶ月以上経過している生徒
+$stmt = $pdo->query("
+    SELECT COUNT(DISTINCT s.id) as count
+    FROM students s
+    INNER JOIN monitoring_records mr ON s.id = mr.student_id
+    WHERE s.is_active = 1
+    GROUP BY s.id
+    HAVING DATEDIFF(CURDATE(), MAX(mr.monitoring_date)) >= 90
+");
+$result = $stmt->fetchAll();
+$monitoringNeedingCount += count($result);
 
 // かけはし通知データを取得
 $today = date('Y-m-d');
 
-// 1. 未提出の保護者かけはし（提出期限内）
-$urgentGuardianKakehashi = [];
-$pendingGuardianKakehashi = [];
-
-$stmt = $pdo->prepare("
-    SELECT
-        s.id as student_id,
-        s.student_name,
-        kp.id as period_id,
-        kp.period_name,
-        kp.submission_deadline,
-        kp.start_date,
-        kp.end_date,
-        DATEDIFF(kp.submission_deadline, ?) as days_left,
-        kg.id as kakehashi_id,
-        kg.is_submitted
-    FROM students s
-    INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-    LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = s.id
-    WHERE s.is_active = 1
-    AND kp.is_active = 1
-    AND kp.submission_deadline >= ?
-    AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
-    ORDER BY kp.submission_deadline ASC
-");
-$stmt->execute([$today, $today]);
-$guardianKakehashiList = $stmt->fetchAll();
-
-foreach ($guardianKakehashiList as $kakehashi) {
-    $daysLeft = $kakehashi['days_left'];
-    if ($daysLeft <= 7) {
-        $urgentGuardianKakehashi[] = $kakehashi;
-    } else {
-        $pendingGuardianKakehashi[] = $kakehashi;
-    }
+// 1. 未提出の保護者かけはし（期限切れも含む、非表示を除外）の件数を取得
+$guardianKakehashiCount = 0;
+try {
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*) as count
+        FROM students s
+        INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+        LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = s.id
+        WHERE s.is_active = 1
+        AND kp.is_active = 1
+        AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
+        AND COALESCE(kg.is_hidden, 0) = 0
+    ");
+    $stmt->execute();
+    $guardianKakehashiCount = (int)$stmt->fetchColumn();
+} catch (Exception $e) {
+    // is_hiddenカラムが存在しない場合は、非表示チェックなしでカウント
+    error_log("Guardian kakehashi count error: " . $e->getMessage());
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*) as count
+        FROM students s
+        INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+        LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = s.id
+        WHERE s.is_active = 1
+        AND kp.is_active = 1
+        AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
+    ");
+    $stmt->execute();
+    $guardianKakehashiCount = (int)$stmt->fetchColumn();
 }
 
-// 2. 未作成のスタッフかけはし（提出期限内）
-$urgentStaffKakehashi = [];
-$pendingStaffKakehashi = [];
-
-$stmt = $pdo->prepare("
-    SELECT
-        s.id as student_id,
-        s.student_name,
-        kp.id as period_id,
-        kp.period_name,
-        kp.submission_deadline,
-        kp.start_date,
-        kp.end_date,
-        DATEDIFF(kp.submission_deadline, ?) as days_left,
-        ks.id as kakehashi_id,
-        ks.is_submitted
-    FROM students s
-    INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-    LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
-    WHERE s.is_active = 1
-    AND kp.is_active = 1
-    AND kp.submission_deadline >= ?
-    AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
-    ORDER BY kp.submission_deadline ASC
-");
-$stmt->execute([$today, $today]);
-$staffKakehashiList = $stmt->fetchAll();
-
-foreach ($staffKakehashiList as $kakehashi) {
-    $daysLeft = $kakehashi['days_left'];
-    if ($daysLeft <= 7) {
-        $urgentStaffKakehashi[] = $kakehashi;
-    } else {
-        $pendingStaffKakehashi[] = $kakehashi;
-    }
+// 2. 未作成のスタッフかけはし（期限切れも含む、非表示を除外）の件数を取得
+$staffKakehashiCount = 0;
+try {
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*) as count
+        FROM students s
+        INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+        LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
+        WHERE s.is_active = 1
+        AND kp.is_active = 1
+        AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
+        AND COALESCE(ks.is_hidden, 0) = 0
+    ");
+    $stmt->execute();
+    $staffKakehashiCount = (int)$stmt->fetchColumn();
+} catch (Exception $e) {
+    // is_hiddenカラムが存在しない場合は、非表示チェックなしでカウント
+    error_log("Staff kakehashi count error: " . $e->getMessage());
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*) as count
+        FROM students s
+        INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+        LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
+        WHERE s.is_active = 1
+        AND kp.is_active = 1
+        AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
+    ");
+    $stmt->execute();
+    $staffKakehashiCount = (int)$stmt->fetchColumn();
 }
 ?>
 <!DOCTYPE html>
@@ -646,6 +735,11 @@ foreach ($staffKakehashiList as $kakehashi) {
             background: #f0f9fc;
         }
 
+        .notification-banner.overdue {
+            border-left: 5px solid #6c757d;
+            background: #f8f9fa;
+        }
+
         .notification-header {
             display: flex;
             align-items: center;
@@ -661,6 +755,10 @@ foreach ($staffKakehashiList as $kakehashi) {
 
         .notification-header.warning {
             color: #ff9800;
+        }
+
+        .notification-header.overdue {
+            color: #6c757d;
         }
 
         .notification-header.info {
@@ -711,8 +809,92 @@ foreach ($staffKakehashiList as $kakehashi) {
             color: #ff9800;
         }
 
+        .notification-deadline.overdue {
+            color: #6c757d;
+        }
+
         .notification-deadline.info {
             color: #17a2b8;
+        }
+
+        .task-summary-box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .task-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .task-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .task-card.has-tasks {
+            border-left-color: #dc3545;
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
+        }
+
+        .task-card.has-warnings {
+            border-left-color: #ffc107;
+            background: linear-gradient(135deg, #fffbf0 0%, #fff4d4 100%);
+        }
+
+        .task-card-title {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .task-card-count {
+            font-size: 32px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .task-card-count.urgent {
+            color: #dc3545;
+        }
+
+        .task-card-count.warning {
+            color: #ff9800;
+        }
+
+        .task-card-count.success {
+            color: #28a745;
+        }
+
+        .task-card-link {
+            margin-top: auto;
+        }
+
+        .btn-task-detail {
+            display: inline-block;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .btn-task-detail:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
 
         .notification-action {
@@ -832,7 +1014,21 @@ foreach ($staffKakehashiList as $kakehashi) {
 <body>
     <div class="container">
         <div class="header">
-            <h1>📋 活動管理</h1>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <?php if ($classroom && !empty($classroom['logo_path']) && file_exists(__DIR__ . '/../' . $classroom['logo_path'])): ?>
+                    <img src="../<?= htmlspecialchars($classroom['logo_path']) ?>" alt="教室ロゴ" style="height: 50px; width: auto;">
+                <?php else: ?>
+                    <div style="font-size: 40px;">📋</div>
+                <?php endif; ?>
+                <div>
+                    <h1>活動管理</h1>
+                    <?php if ($classroom): ?>
+                        <div style="font-size: 14px; color: #666; margin-top: 5px;">
+                            <?= htmlspecialchars($classroom['classroom_name']) ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
             <div class="user-info">
                 <span><?php echo htmlspecialchars($currentUser['full_name'], ENT_QUOTES, 'UTF-8'); ?>さん</span>
 
@@ -849,8 +1045,19 @@ foreach ($staffKakehashiList as $kakehashi) {
                         <a href="kakehashi_guardian_view.php">
                             <span class="menu-icon">📋</span>保護者かけはし確認
                         </a>
+                        <a href="kobetsu_plan.php">
+                            <span class="menu-icon">📄</span>個別支援計画書作成
+                        </a>
+                        <a href="kobetsu_monitoring.php">
+                            <span class="menu-icon">📊</span>モニタリング表作成
+                        </a>
                     </div>
                 </div>
+
+                <!-- チャットボタン -->
+                <a href="chat.php" class="chat-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.3s;">
+                    💬 チャット
+                </a>
 
                 <!-- マスタ管理ドロップダウン -->
                 <div class="dropdown">
@@ -930,8 +1137,157 @@ foreach ($staffKakehashiList as $kakehashi) {
             </div>
         <?php endif; ?>
 
-        <!-- かけはし通知セクション -->
+        <!-- 未作成タスクサマリー -->
+        <?php if ($planNeedingCount > 0 || $monitoringNeedingCount > 0 || $guardianKakehashiCount > 0 || $staffKakehashiCount > 0): ?>
+            <div class="task-summary-box">
+                <h2 style="margin-bottom: 15px; color: #333; font-size: 20px;">📋 未作成・未提出タスク</h2>
+                <div class="task-summary-grid">
+                    <!-- 個別支援計画書 -->
+                    <div class="task-card <?php echo $planNeedingCount > 0 ? 'has-tasks' : ''; ?>">
+                        <div class="task-card-title">個別支援計画書</div>
+                        <div class="task-card-count <?php echo $planNeedingCount > 0 ? 'urgent' : 'success'; ?>">
+                            <?php echo $planNeedingCount; ?>件
+                        </div>
+                        <?php if ($planNeedingCount > 0): ?>
+                            <div class="task-card-link">
+                                <a href="pending_tasks.php" class="btn-task-detail">詳細を確認</a>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- モニタリング -->
+                    <div class="task-card <?php echo $monitoringNeedingCount > 0 ? 'has-warnings' : ''; ?>">
+                        <div class="task-card-title">モニタリング</div>
+                        <div class="task-card-count <?php echo $monitoringNeedingCount > 0 ? 'warning' : 'success'; ?>">
+                            <?php echo $monitoringNeedingCount; ?>件
+                        </div>
+                        <?php if ($monitoringNeedingCount > 0): ?>
+                            <div class="task-card-link">
+                                <a href="pending_tasks.php" class="btn-task-detail">詳細を確認</a>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- 保護者かけはし -->
+                    <div class="task-card <?php echo $guardianKakehashiCount > 0 ? 'has-warnings' : ''; ?>">
+                        <div class="task-card-title">保護者かけはし</div>
+                        <div class="task-card-count <?php echo $guardianKakehashiCount > 0 ? 'warning' : 'success'; ?>">
+                            <?php echo $guardianKakehashiCount; ?>件
+                        </div>
+                        <?php if ($guardianKakehashiCount > 0): ?>
+                            <div class="task-card-link">
+                                <a href="pending_tasks.php" class="btn-task-detail">詳細を確認</a>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- スタッフかけはし -->
+                    <div class="task-card <?php echo $staffKakehashiCount > 0 ? 'has-warnings' : ''; ?>">
+                        <div class="task-card-title">スタッフかけはし</div>
+                        <div class="task-card-count <?php echo $staffKakehashiCount > 0 ? 'warning' : 'success'; ?>">
+                            <?php echo $staffKakehashiCount; ?>件
+                        </div>
+                        <?php if ($staffKakehashiCount > 0): ?>
+                            <div class="task-card-link">
+                                <a href="pending_tasks.php" class="btn-task-detail">詳細を確認</a>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <!-- 旧バージョンのコメントアウト -->
+        <?php if (false && !empty($studentsWithoutPlan)): ?>
+            <div class="notification-banner urgent">
+                <div class="notification-header urgent">
+                    ⚠️ 【重要】個別支援計画書が未作成の生徒がいます
+                </div>
+                <?php foreach ($studentsWithoutPlan as $student): ?>
+                    <div class="notification-item">
+                        <div class="notification-info">
+                            <div class="notification-student">
+                                <?php echo htmlspecialchars($student['student_name']); ?>さん
+                            </div>
+                            <?php if ($student['support_start_date']): ?>
+                                <div class="notification-period">
+                                    支援開始日: <?php echo date('Y年n月j日', strtotime($student['support_start_date'])); ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                        <div class="notification-action">
+                            <a href="kobetsu_plan.php?student_id=<?php echo $student['id']; ?>" class="notification-btn">
+                                計画書を作成
+                            </a>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+
+        <!-- かけはし通知セクション（コメントアウト） -->
+        <?php if (false): ?>
         <div class="notifications-container">
+            <!-- 期限切れ: 保護者かけはし -->
+            <?php if (!empty($overdueGuardianKakehashi)): ?>
+                <div class="notification-banner overdue">
+                    <div class="notification-header overdue">
+                        ⏰ 【期限切れ】保護者かけはし未提出
+                    </div>
+                    <?php foreach ($overdueGuardianKakehashi as $kakehashi): ?>
+                        <div class="notification-item">
+                            <div class="notification-info">
+                                <div class="notification-student">
+                                    <?php echo htmlspecialchars($kakehashi['student_name']); ?>さん
+                                </div>
+                                <div class="notification-period">
+                                    対象期間: <?php echo date('Y年n月j日', strtotime($kakehashi['start_date'])); ?> ～ <?php echo date('Y年n月j日', strtotime($kakehashi['end_date'])); ?>
+                                </div>
+                                <div class="notification-deadline overdue">
+                                    提出期限: <?php echo date('Y年n月j日', strtotime($kakehashi['submission_deadline'])); ?>
+                                    （<?php echo abs($kakehashi['days_left']); ?>日経過）
+                                </div>
+                            </div>
+                            <div class="notification-action">
+                                <a href="kakehashi_guardian_view.php?student_id=<?php echo $kakehashi['student_id']; ?>&period_id=<?php echo $kakehashi['period_id']; ?>" class="notification-btn">
+                                    確認・催促
+                                </a>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <!-- 期限切れ: スタッフかけはし -->
+            <?php if (!empty($overdueStaffKakehashi)): ?>
+                <div class="notification-banner overdue">
+                    <div class="notification-header overdue">
+                        ⏰ 【期限切れ】スタッフかけはし未作成
+                    </div>
+                    <?php foreach ($overdueStaffKakehashi as $kakehashi): ?>
+                        <div class="notification-item">
+                            <div class="notification-info">
+                                <div class="notification-student">
+                                    <?php echo htmlspecialchars($kakehashi['student_name']); ?>さん
+                                </div>
+                                <div class="notification-period">
+                                    対象期間: <?php echo date('Y年n月j日', strtotime($kakehashi['start_date'])); ?> ～ <?php echo date('Y年n月j日', strtotime($kakehashi['end_date'])); ?>
+                                </div>
+                                <div class="notification-deadline overdue">
+                                    提出期限: <?php echo date('Y年n月j日', strtotime($kakehashi['submission_deadline'])); ?>
+                                    （<?php echo abs($kakehashi['days_left']); ?>日経過）
+                                </div>
+                            </div>
+                            <div class="notification-action">
+                                <a href="kakehashi_staff.php?student_id=<?php echo $kakehashi['student_id']; ?>&period_id=<?php echo $kakehashi['period_id']; ?>" class="notification-btn">
+                                    作成する
+                                </a>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
             <!-- 緊急: 未提出保護者かけはし (7日以内) -->
             <?php if (!empty($urgentGuardianKakehashi)): ?>
                 <div class="notification-banner urgent">
@@ -1062,6 +1418,7 @@ foreach ($staffKakehashiList as $kakehashi) {
                 </div>
             <?php endif; ?>
         </div>
+        <?php endif; ?>
 
         <!-- 2カラムレイアウト -->
         <div class="two-column-layout">
@@ -1176,16 +1533,65 @@ foreach ($staffKakehashiList as $kakehashi) {
                                         echo $gradeLabels[$student['grade_level']] ?? '';
                                         ?>
                                     </span>
+                                    <?php if ($student['absence_id']): ?>
+                                        <span style="color: #dc3545; font-weight: bold; margin-left: 8px;">🚫 欠席連絡あり</span>
+                                    <?php endif; ?>
                                 </div>
                                 <?php if ($student['guardian_name']): ?>
                                     <div class="student-item-meta">
                                         保護者: <?php echo htmlspecialchars($student['guardian_name']); ?>
                                     </div>
                                 <?php endif; ?>
+                                <?php if ($student['absence_id'] && $student['absence_reason']): ?>
+                                    <div class="student-item-meta" style="color: #dc3545;">
+                                        理由: <?php echo htmlspecialchars($student['absence_reason']); ?>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         <?php endforeach; ?>
+
+                        <!-- イベント参加者を表示 -->
+                        <?php if (!empty($eventParticipants)): ?>
+                            <div style="margin-top: 20px; padding-top: 15px; border-top: 2px dashed #2563eb;">
+                                <div style="font-weight: 600; color: #2563eb; margin-bottom: 10px;">🎉 イベント参加者</div>
+                                <?php foreach ($eventParticipants as $participant): ?>
+                                    <div class="student-item" style="border-left: 4px solid #2563eb;">
+                                        <div class="student-item-name">
+                                            <?php echo htmlspecialchars($participant['student_name']); ?>
+                                            <span class="grade-badge" style="font-size: 10px; padding: 2px 8px; margin-left: 5px;">
+                                                <?php
+                                                $gradeLabels = [
+                                                    'elementary' => '小',
+                                                    'junior_high' => '中',
+                                                    'high_school' => '高'
+                                                ];
+                                                echo $gradeLabels[$participant['grade_level']] ?? '';
+                                                ?>
+                                            </span>
+                                            <span style="color: #2563eb; font-weight: bold; margin-left: 8px;">
+                                                <?= htmlspecialchars($participant['event_name']) ?>
+                                            </span>
+                                        </div>
+                                        <?php if ($participant['guardian_name']): ?>
+                                            <div class="student-item-meta">
+                                                保護者: <?php echo htmlspecialchars($participant['guardian_name']); ?>
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php if ($participant['notes']): ?>
+                                            <div class="student-item-meta" style="color: #2563eb;">
+                                                備考: <?php echo htmlspecialchars($participant['notes']); ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+
                         <div style="text-align: center; margin-top: 12px; font-size: 13px; color: #666;">
-                            合計 <?php echo count($scheduledStudents); ?>名
+                            通常予定: <?php echo count($scheduledStudents); ?>名
+                            <?php if (!empty($eventParticipants)): ?>
+                                / イベント: <?php echo count($eventParticipants); ?>名
+                            <?php endif; ?>
                         </div>
                     <?php endif; ?>
                 </div>

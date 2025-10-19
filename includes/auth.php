@@ -21,7 +21,7 @@ function login($username, $password) {
 
     try {
         $stmt = $pdo->prepare("
-            SELECT id, username, password, full_name, user_type, email, is_active
+            SELECT id, username, password, full_name, user_type, email, is_active, is_master
             FROM users
             WHERE username = ? AND is_active = 1
         ");
@@ -43,6 +43,7 @@ function login($username, $password) {
         $_SESSION['full_name'] = $user['full_name'];
         $_SESSION['user_type'] = $user['user_type'];
         $_SESSION['email'] = $user['email'];
+        $_SESSION['is_master'] = $user['is_master'] ?? 0;
         $_SESSION['login_time'] = time();
 
         // パスワードを除外して返す
@@ -148,7 +149,8 @@ function getCurrentUser() {
         'username' => $_SESSION['username'],
         'full_name' => $_SESSION['full_name'],
         'user_type' => $_SESSION['user_type'],
-        'email' => $_SESSION['email']
+        'email' => $_SESSION['email'],
+        'is_master' => $_SESSION['is_master'] ?? 0
     ];
 }
 
@@ -165,4 +167,44 @@ function getUserTypeName($userType) {
     ];
 
     return $types[$userType] ?? '不明';
+}
+
+/**
+ * マスター管理者かどうかをチェック
+ * @return bool
+ */
+function isMasterAdmin() {
+    return isLoggedIn() &&
+           $_SESSION['user_type'] === 'admin' &&
+           isset($_SESSION['is_master']) &&
+           $_SESSION['is_master'] == 1;
+}
+
+/**
+ * マスター管理者必須チェック（マスター管理者以外はリダイレクト）
+ */
+function requireMasterAdmin() {
+    requireLogin();
+
+    if (!isMasterAdmin()) {
+        // マスター管理者でない場合は適切なページへリダイレクト
+        if ($_SESSION['user_type'] === 'admin') {
+            // 通常管理者は管理者トップへ
+            header('Location: /admin/index.php');
+        } else {
+            // その他のユーザータイプは各トップページへ
+            switch ($_SESSION['user_type']) {
+                case 'staff':
+                    header('Location: /staff/renrakucho_activities.php');
+                    exit;
+                case 'guardian':
+                    header('Location: /guardian/dashboard.php');
+                    exit;
+                default:
+                    header('Location: /login.php');
+                    exit;
+            }
+        }
+        exit;
+    }
 }

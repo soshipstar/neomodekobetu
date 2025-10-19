@@ -14,6 +14,35 @@ checkUserType('guardian');
 $pdo = getDbConnection();
 $guardianId = $_SESSION['user_id'];
 
+// 教室情報を取得
+$stmt = $pdo->prepare("
+    SELECT c.*, u.classroom_id as user_classroom_id FROM classrooms c
+    INNER JOIN users u ON c.id = u.classroom_id
+    WHERE u.id = ?
+");
+$stmt->execute([$guardianId]);
+$classroom = $stmt->fetch();
+
+// デバッグ用（後で削除）
+error_log("Guardian ID: " . $guardianId);
+error_log("Classroom data: " . print_r($classroom, true));
+
+// デバッグ: 教室情報が取得できない場合、ユーザーの教室IDを確認
+if (!$classroom) {
+    $stmt = $pdo->prepare("SELECT classroom_id FROM users WHERE id = ?");
+    $stmt->execute([$guardianId]);
+    $userInfo = $stmt->fetch();
+    error_log("User classroom_id: " . print_r($userInfo, true));
+
+    // classroom_idがある場合は直接教室を取得
+    if ($userInfo && $userInfo['classroom_id']) {
+        $stmt = $pdo->prepare("SELECT * FROM classrooms WHERE id = ?");
+        $stmt->execute([$userInfo['classroom_id']]);
+        $classroom = $stmt->fetch();
+        error_log("Direct classroom fetch: " . print_r($classroom, true));
+    }
+}
+
 // この保護者に紐づく生徒を取得
 $stmt = $pdo->prepare("
     SELECT id, student_name, grade_level
@@ -182,8 +211,20 @@ function getGradeLabel($gradeLevel) {
 <body>
     <div class="container">
         <div class="header">
-            <div>
-                <h1>📖 連絡帳</h1>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <?php if ($classroom && !empty($classroom['logo_path']) && file_exists(__DIR__ . '/../' . $classroom['logo_path'])): ?>
+                    <img src="../<?= htmlspecialchars($classroom['logo_path']) ?>" alt="教室ロゴ" style="height: 50px; width: auto;">
+                <?php else: ?>
+                    <div style="font-size: 40px;">📖</div>
+                <?php endif; ?>
+                <div>
+                    <h1>連絡帳</h1>
+                    <?php if ($classroom): ?>
+                        <div style="font-size: 14px; color: #666; margin-top: 5px;">
+                            <?= htmlspecialchars($classroom['classroom_name']) ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
             </div>
             <div style="display: flex; align-items: center;">
                 <span class="user-info">

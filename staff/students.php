@@ -20,7 +20,7 @@ $stmt = $pdo->query("
         s.id,
         s.student_name,
         s.birth_date,
-        s.kakehashi_initial_date,
+        s.support_start_date,
         s.grade_level,
         s.guardian_id,
         s.is_active,
@@ -353,9 +353,9 @@ function getGradeBadgeColor($gradeLevel) {
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>🌉 初回かけはし提出期限（任意）</label>
-                    <input type="date" name="kakehashi_initial_date">
-                    <div style="font-size: 12px; color: #666; margin-top: 5px;">※提出期限を設定すると、その翌日から6か月間のかけはし期間が自動で半年ごとに生成されます</div>
+                    <label>支援開始日 *</label>
+                    <input type="date" name="support_start_date" required>
+                    <div style="font-size: 12px; color: #666; margin-top: 5px;">※かけはしの提出期限が自動で設定されます</div>
                 </div>
                 <div class="form-group">
                     <label>保護者（任意）</label>
@@ -477,9 +477,9 @@ function getGradeBadgeColor($gradeLevel) {
                     <div style="font-size: 12px; color: #666; margin-top: 5px;">※学年は生年月日から自動で計算されます</div>
                 </div>
                 <div class="form-group">
-                    <label>🌉 初回かけはし提出期限（任意）</label>
-                    <input type="date" name="kakehashi_initial_date" id="edit_kakehashi_initial_date">
-                    <div style="font-size: 12px; color: #666; margin-top: 5px;">※変更すると期間が再生成されます（既存の入力データは保持されます）</div>
+                    <label>支援開始日 *</label>
+                    <input type="date" name="support_start_date" id="edit_support_start_date" required>
+                    <div style="font-size: 12px; color: #666; margin-top: 5px;">※変更するとかけはし期限に影響する可能性があります</div>
                 </div>
                 <div class="form-group">
                     <label>保護者（任意）</label>
@@ -531,7 +531,7 @@ function getGradeBadgeColor($gradeLevel) {
             document.getElementById('edit_student_id').value = student.id;
             document.getElementById('edit_student_name').value = student.student_name;
             document.getElementById('edit_birth_date').value = student.birth_date || '';
-            document.getElementById('edit_kakehashi_initial_date').value = student.kakehashi_initial_date || '';
+            document.getElementById('edit_support_start_date').value = student.support_start_date || '';
             document.getElementById('edit_guardian_id').value = student.guardian_id || '';
 
             // 曜日チェックボックスの設定

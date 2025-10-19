@@ -369,6 +369,7 @@ $guardians = $stmt->fetchAll();
                                 <td>
                                     <div class="action-buttons">
                                         <button onclick="editGuardian(<?php echo htmlspecialchars(json_encode($guardian)); ?>)" class="btn btn-primary btn-sm">編集</button>
+                                        <a href="guardian_manual.php?guardian_id=<?php echo $guardian['id']; ?>" target="_blank" class="btn btn-secondary btn-sm">📄 マニュアル印刷</a>
                                     </div>
                                 </td>
                             </tr>

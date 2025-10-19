@@ -24,6 +24,7 @@ $periodId = $_POST['period_id'] ?? null;
 $action = $_POST['action'] ?? 'save'; // save or submit
 
 // 入力データ
+$studentWish = $_POST['student_wish'] ?? '';
 $shortTermGoal = $_POST['short_term_goal'] ?? '';
 $longTermGoal = $_POST['long_term_goal'] ?? '';
 $domainHealthLife = $_POST['domain_health_life'] ?? '';
@@ -63,6 +64,7 @@ try {
         // 更新
         $stmt = $pdo->prepare("
             UPDATE kakehashi_staff SET
+                student_wish = ?,
                 short_term_goal = ?,
                 long_term_goal = ?,
                 domain_health_life = ?,
@@ -77,6 +79,7 @@ try {
             WHERE id = ?
         ");
         $stmt->execute([
+            $studentWish,
             $shortTermGoal,
             $longTermGoal,
             $domainHealthLife,
@@ -96,6 +99,7 @@ try {
                 period_id,
                 student_id,
                 staff_id,
+                student_wish,
                 short_term_goal,
                 long_term_goal,
                 domain_health_life,
@@ -106,12 +110,13 @@ try {
                 other_challenges,
                 is_submitted,
                 submitted_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         $stmt->execute([
             $periodId,
             $studentId,
             $staffId,
+            $studentWish,
             $shortTermGoal,
             $longTermGoal,
             $domainHealthLife,

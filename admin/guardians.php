@@ -9,31 +9,57 @@ require_once __DIR__ . '/../includes/auth.php';
 
 // ログインチェック
 requireLogin();
-
-// スタッフまたは管理者のみ
-if ($_SESSION['user_type'] !== 'staff' && $_SESSION['user_type'] !== 'admin') {
-    header('Location: /index.php');
-    exit;
-}
+checkUserType(['admin', 'staff']);
 
 $pdo = getDbConnection();
 
-// 保護者一覧を取得
-$stmt = $pdo->query("
-    SELECT
-        u.id,
-        u.username,
-        u.full_name,
-        u.email,
-        u.is_active,
-        u.created_at,
-        COUNT(s.id) as student_count
-    FROM users u
-    LEFT JOIN students s ON u.id = s.guardian_id
-    WHERE u.user_type = 'guardian'
-    GROUP BY u.id
-    ORDER BY u.is_active DESC, u.full_name
-");
+// 管理者の場合、教室IDを取得
+$classroomId = null;
+if ($_SESSION['user_type'] === 'admin' && !isMasterAdmin()) {
+    // 通常管理者は自分の教室のみ
+    $stmt = $pdo->prepare("SELECT classroom_id FROM users WHERE id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $user = $stmt->fetch();
+    $classroomId = $user['classroom_id'];
+}
+
+// 保護者一覧を取得（教室フィルタリング）
+if ($classroomId) {
+    // 通常管理者：自分の教室の保護者のみ
+    $stmt = $pdo->prepare("
+        SELECT
+            u.id,
+            u.username,
+            u.full_name,
+            u.email,
+            u.is_active,
+            u.created_at,
+            COUNT(s.id) as student_count
+        FROM users u
+        LEFT JOIN students s ON u.id = s.guardian_id
+        WHERE u.user_type = 'guardian' AND u.classroom_id = ?
+        GROUP BY u.id
+        ORDER BY u.is_active DESC, u.full_name
+    ");
+    $stmt->execute([$classroomId]);
+} else {
+    // マスター管理者またはスタッフ：全保護者
+    $stmt = $pdo->query("
+        SELECT
+            u.id,
+            u.username,
+            u.full_name,
+            u.email,
+            u.is_active,
+            u.created_at,
+            COUNT(s.id) as student_count
+        FROM users u
+        LEFT JOIN students s ON u.id = s.guardian_id
+        WHERE u.user_type = 'guardian'
+        GROUP BY u.id
+        ORDER BY u.is_active DESC, u.full_name
+    ");
+}
 $guardians = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
@@ -369,6 +395,7 @@ $guardians = $stmt->fetchAll();
                                 <td>
                                     <div class="action-buttons">
                                         <button onclick="editGuardian(<?php echo htmlspecialchars(json_encode($guardian)); ?>)" class="btn btn-primary btn-sm">編集</button>
+                                        <a href="../staff/guardian_manual.php?guardian_id=<?php echo $guardian['id']; ?>" target="_blank" class="btn btn-secondary btn-sm">📄 マニュアル印刷</a>
                                     </div>
                                 </td>
                             </tr>

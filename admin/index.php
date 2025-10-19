@@ -12,6 +12,9 @@ checkUserType('admin');
 
 $pdo = getDbConnection();
 
+// マスター管理者かどうかを確認
+$isMaster = isMasterAdmin();
+
 // 統計情報を取得
 $stats = [
     'total_users' => 0,
@@ -156,7 +159,7 @@ $stats['total_records'] = $stmt->fetchColumn();
             </div>
             <div style="display: flex; align-items: center;">
                 <span class="user-info">
-                    <?php echo htmlspecialchars($_SESSION['full_name']); ?>さん（管理者）
+                    <?php echo htmlspecialchars($_SESSION['full_name']); ?>さん（<?php echo $isMaster ? 'マスター管理者' : '管理者'; ?>）
                 </span>
                 <a href="../logout.php" class="logout-btn">ログアウト</a>
             </div>
@@ -196,6 +199,12 @@ $stats['total_records'] = $stmt->fetchColumn();
                 <p>保護者アカウントの登録・編集を行います。生徒との紐付け管理も可能です。</p>
             </a>
 
+            <a href="classroom_settings.php" class="menu-card">
+                <div class="menu-card-icon">🏫</div>
+                <h3>教室情報設定</h3>
+                <p>教室名・住所・電話番号・ロゴ画像などの基本情報を設定します。</p>
+            </a>
+
             <a href="users.php" class="menu-card">
                 <div class="menu-card-icon">⚙️</div>
                 <h3>スタッフ管理</h3>
@@ -213,6 +222,20 @@ $stats['total_records'] = $stmt->fetchColumn();
                 <h3>システム設定</h3>
                 <p>システム全体の設定を管理します。（準備中）</p>
             </a>
+
+            <?php if ($isMaster): ?>
+            <a href="classrooms.php" class="menu-card" style="border: 2px solid #ff6b6b;">
+                <div class="menu-card-icon">🏢</div>
+                <h3>教室管理 <span style="font-size: 12px; color: #ff6b6b;">★マスター専用</span></h3>
+                <p>全教室の登録・編集・削除を行います。複数教室の一括管理が可能です。</p>
+            </a>
+
+            <a href="admin_accounts.php" class="menu-card" style="border: 2px solid #ff6b6b;">
+                <div class="menu-card-icon">👑</div>
+                <h3>管理者アカウント管理 <span style="font-size: 12px; color: #ff6b6b;">★マスター専用</span></h3>
+                <p>管理者アカウントの作成・編集・削除、教室への割り当てを管理します。</p>
+            </a>
+            <?php endif; ?>
         </div>
     </div>
 </body>

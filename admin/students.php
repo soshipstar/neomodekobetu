@@ -10,34 +10,107 @@ require_once __DIR__ . '/../includes/student_helper.php';
 
 // ログインチェック
 requireLogin();
-checkUserType('staff');
+checkUserType(['admin', 'staff']);
 
 $pdo = getDbConnection();
 
-// 全生徒を取得
-$stmt = $pdo->query("
-    SELECT
-        s.id,
-        s.student_name,
-        s.birth_date,
-        s.grade_level,
-        s.guardian_id,
-        s.is_active,
-        s.created_at,
-        u.full_name as guardian_name
-    FROM students s
-    LEFT JOIN users u ON s.guardian_id = u.id
-    ORDER BY s.is_active DESC, s.student_name
-");
+// 管理者の場合、教室IDを取得
+$classroomId = null;
+if ($_SESSION['user_type'] === 'admin' && !isMasterAdmin()) {
+    // 通常管理者は自分の教室のみ
+    $stmt = $pdo->prepare("SELECT classroom_id FROM users WHERE id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $user = $stmt->fetch();
+    $classroomId = $user['classroom_id'];
+}
+
+// 生徒を取得（教室フィルタリング）
+if ($classroomId) {
+    // 通常管理者：自分の教室の生徒のみ
+    $stmt = $pdo->prepare("
+        SELECT
+            s.id,
+            s.student_name,
+            s.birth_date,
+            s.support_start_date,
+            s.grade_level,
+            s.guardian_id,
+            s.is_active,
+            s.status,
+            s.created_at,
+            s.scheduled_monday,
+            s.scheduled_tuesday,
+            s.scheduled_wednesday,
+            s.scheduled_thursday,
+            s.scheduled_friday,
+            s.scheduled_saturday,
+            s.scheduled_sunday,
+            u.full_name as guardian_name
+        FROM students s
+        LEFT JOIN users u ON s.guardian_id = u.id
+        WHERE s.classroom_id = ?
+        ORDER BY
+            CASE s.status
+                WHEN 'active' THEN 1
+                WHEN 'trial' THEN 2
+                WHEN 'withdrawn' THEN 3
+            END,
+            s.student_name
+    ");
+    $stmt->execute([$classroomId]);
+} else {
+    // マスター管理者またはスタッフ：全生徒
+    $stmt = $pdo->query("
+        SELECT
+            s.id,
+            s.student_name,
+            s.birth_date,
+            s.support_start_date,
+            s.grade_level,
+            s.guardian_id,
+            s.is_active,
+            s.status,
+            s.created_at,
+            s.scheduled_monday,
+            s.scheduled_tuesday,
+            s.scheduled_wednesday,
+            s.scheduled_thursday,
+            s.scheduled_friday,
+            s.scheduled_saturday,
+            s.scheduled_sunday,
+            u.full_name as guardian_name
+        FROM students s
+        LEFT JOIN users u ON s.guardian_id = u.id
+        ORDER BY
+            CASE s.status
+                WHEN 'active' THEN 1
+                WHEN 'trial' THEN 2
+                WHEN 'withdrawn' THEN 3
+            END,
+            s.student_name
+    ");
+}
 $students = $stmt->fetchAll();
 
-// 保護者一覧を取得（生徒登録用）
-$stmt = $pdo->query("
-    SELECT id, full_name, username
-    FROM users
-    WHERE user_type = 'guardian' AND is_active = 1
-    ORDER BY full_name
-");
+// 保護者一覧を取得（生徒登録用、教室フィルタリング）
+if ($classroomId) {
+    // 通常管理者：自分の教室の保護者のみ
+    $stmt = $pdo->prepare("
+        SELECT id, full_name, username
+        FROM users
+        WHERE user_type = 'guardian' AND is_active = 1 AND classroom_id = ?
+        ORDER BY full_name
+    ");
+    $stmt->execute([$classroomId]);
+} else {
+    // マスター管理者またはスタッフ：全保護者
+    $stmt = $pdo->query("
+        SELECT id, full_name, username
+        FROM users
+        WHERE user_type = 'guardian' AND is_active = 1
+        ORDER BY full_name
+    ");
+}
 $guardians = $stmt->fetchAll();
 
 // 学年表示用のラベル
@@ -308,6 +381,9 @@ function getGradeBadgeColor($gradeLevel) {
                     case 'updated':
                         echo '生徒情報を更新しました。';
                         break;
+                    case 'deleted':
+                        echo '生徒データを削除しました。';
+                        break;
                     default:
                         echo '処理が完了しました。';
                 }
@@ -338,6 +414,11 @@ function getGradeBadgeColor($gradeLevel) {
                     </div>
                 </div>
                 <div class="form-group">
+                    <label>支援開始日 *</label>
+                    <input type="date" name="support_start_date" required>
+                    <div style="font-size: 12px; color: #666; margin-top: 5px;">※かけはしの提出期限が自動で設定されます</div>
+                </div>
+                <div class="form-group">
                     <label>保護者（任意）</label>
                     <select name="guardian_id">
                         <option value="">保護者を選択（後で設定可能）</option>
@@ -346,6 +427,14 @@ function getGradeBadgeColor($gradeLevel) {
                                 <?php echo htmlspecialchars($guardian['full_name']) . ' (' . htmlspecialchars($guardian['username']) . ')'; ?>
                             </option>
                         <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>在籍状況 *</label>
+                    <select name="status" required>
+                        <option value="active">在籍</option>
+                        <option value="trial">体験</option>
+                        <option value="withdrawn">退所</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -422,8 +511,24 @@ function getGradeBadgeColor($gradeLevel) {
                                 </td>
                                 <td><?php echo $student['guardian_name'] ? htmlspecialchars($student['guardian_name']) : '-'; ?></td>
                                 <td>
-                                    <span class="status-badge <?php echo $student['is_active'] ? 'status-active' : 'status-inactive'; ?>">
-                                        <?php echo $student['is_active'] ? '有効' : '無効'; ?>
+                                    <?php
+                                    $statusLabels = ['active' => '在籍', 'trial' => '体験', 'withdrawn' => '退所'];
+                                    $statusClass = '';
+                                    switch ($student['status']) {
+                                        case 'active':
+                                            $statusClass = 'status-active';
+                                            break;
+                                        case 'trial':
+                                            $statusClass = 'status-badge';
+                                            $statusClass .= '" style="background: #fff3cd; color: #856404';
+                                            break;
+                                        case 'withdrawn':
+                                            $statusClass = 'status-inactive';
+                                            break;
+                                    }
+                                    ?>
+                                    <span class="status-badge <?php echo $statusClass; ?>">
+                                        <?php echo $statusLabels[$student['status']] ?? '不明'; ?>
                                     </span>
                                 </td>
                                 <td><?php echo date('Y/m/d', strtotime($student['created_at'])); ?></td>
@@ -457,6 +562,11 @@ function getGradeBadgeColor($gradeLevel) {
                     <div style="font-size: 12px; color: #666; margin-top: 5px;">※学年は生年月日から自動で計算されます</div>
                 </div>
                 <div class="form-group">
+                    <label>支援開始日 *</label>
+                    <input type="date" name="support_start_date" id="edit_support_start_date" required>
+                    <div style="font-size: 12px; color: #666; margin-top: 5px;">※変更するとかけはし期限に影響する可能性があります</div>
+                </div>
+                <div class="form-group">
                     <label>保護者（任意）</label>
                     <select name="guardian_id" id="edit_guardian_id">
                         <option value="">保護者なし</option>
@@ -465,6 +575,14 @@ function getGradeBadgeColor($gradeLevel) {
                                 <?php echo htmlspecialchars($guardian['full_name']) . ' (' . htmlspecialchars($guardian['username']) . ')'; ?>
                             </option>
                         <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>在籍状況 *</label>
+                    <select name="status" id="edit_status" required>
+                        <option value="active">在籍</option>
+                        <option value="trial">体験</option>
+                        <option value="withdrawn">退所</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -494,6 +612,7 @@ function getGradeBadgeColor($gradeLevel) {
                     </div>
                 </div>
                 <div class="modal-footer">
+                    <button type="button" onclick="deleteStudent()" class="btn btn-danger" style="margin-right: auto;">削除</button>
                     <button type="button" onclick="closeModal()" class="btn btn-secondary">キャンセル</button>
                     <button type="submit" class="btn btn-primary">更新する</button>
                 </div>
@@ -506,7 +625,9 @@ function getGradeBadgeColor($gradeLevel) {
             document.getElementById('edit_student_id').value = student.id;
             document.getElementById('edit_student_name').value = student.student_name;
             document.getElementById('edit_birth_date').value = student.birth_date || '';
+            document.getElementById('edit_support_start_date').value = student.support_start_date || '';
             document.getElementById('edit_guardian_id').value = student.guardian_id || '';
+            document.getElementById('edit_status').value = student.status || 'active';
 
             // 曜日チェックボックスの設定
             document.getElementById('edit_scheduled_monday').checked = student.scheduled_monday == 1;
@@ -518,6 +639,32 @@ function getGradeBadgeColor($gradeLevel) {
             document.getElementById('edit_scheduled_sunday').checked = student.scheduled_sunday == 1;
 
             document.getElementById('editModal').classList.add('active');
+        }
+
+        function deleteStudent() {
+            const studentId = document.getElementById('edit_student_id').value;
+            const studentName = document.getElementById('edit_student_name').value;
+
+            if (confirm(`本当に「${studentName}」のデータを削除しますか？\n\nこの操作は取り消せません。関連する連絡帳、かけはし、個別支援計画書などのすべてのデータが削除されます。`)) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = 'students_save.php';
+
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'delete';
+
+                const idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'student_id';
+                idInput.value = studentId;
+
+                form.appendChild(actionInput);
+                form.appendChild(idInput);
+                document.body.appendChild(form);
+                form.submit();
+            }
         }
 
         function closeModal() {

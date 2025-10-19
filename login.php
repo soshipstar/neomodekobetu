@@ -8,7 +8,9 @@ require_once __DIR__ . '/includes/auth.php';
 // すでにログイン済みの場合はダッシュボードへリダイレクト
 if (isLoggedIn()) {
     $userType = $_SESSION['user_type'];
-    if ($userType === 'staff' || $userType === 'admin') {
+    if ($userType === 'admin') {
+        header('Location: /admin/index.php');
+    } elseif ($userType === 'staff') {
         header('Location: /staff/renrakucho_activities.php');
     } else {
         header('Location: /guardian/dashboard.php');
@@ -31,7 +33,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($result['success']) {
             // ログイン成功 - ユーザータイプに応じてリダイレクト
             $userType = $result['user']['user_type'];
-            if ($userType === 'staff' || $userType === 'admin') {
+            if ($userType === 'admin') {
+                header('Location: /admin/index.php');
+            } elseif ($userType === 'staff') {
                 header('Location: /staff/renrakucho_activities.php');
             } else {
                 header('Location: /guardian/dashboard.php');

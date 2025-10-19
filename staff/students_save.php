@@ -11,7 +11,7 @@ ini_set('log_errors', 1);
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/student_helper.php';
-require_once __DIR__ . '/../includes/kakehashi_helper.php';
+require_once __DIR__ . '/../includes/kakehashi_auto_generator.php';
 
 // ログインチェック
 requireLogin();
@@ -26,7 +26,7 @@ try {
             // 新規生徒登録
             $studentName = trim($_POST['student_name']);
             $birthDate = $_POST['birth_date'] ?? null;
-            $kakehashiInitialDate = $_POST['kakehashi_initial_date'] ?? null;
+            $supportStartDate = $_POST['support_start_date'] ?? null;
             $guardianId = !empty($_POST['guardian_id']) ? (int)$_POST['guardian_id'] : null;
 
             // 参加予定曜日
@@ -38,8 +38,8 @@ try {
             $scheduledSaturday = isset($_POST['scheduled_saturday']) ? 1 : 0;
             $scheduledSunday = isset($_POST['scheduled_sunday']) ? 1 : 0;
 
-            if (empty($studentName) || empty($birthDate)) {
-                throw new Exception('生徒名と生年月日は必須です。');
+            if (empty($studentName) || empty($birthDate) || empty($supportStartDate)) {
+                throw new Exception('生徒名、生年月日、支援開始日は必須です。');
             }
 
             // 生年月日から学年を自動計算
@@ -47,14 +47,14 @@ try {
 
             $stmt = $pdo->prepare("
                 INSERT INTO students (
-                    student_name, birth_date, kakehashi_initial_date, grade_level, guardian_id, is_active, created_at,
+                    student_name, birth_date, support_start_date, grade_level, guardian_id, is_active, created_at,
                     scheduled_monday, scheduled_tuesday, scheduled_wednesday, scheduled_thursday,
                     scheduled_friday, scheduled_saturday, scheduled_sunday
                 )
                 VALUES (?, ?, ?, ?, ?, 1, NOW(), ?, ?, ?, ?, ?, ?, ?)
             ");
             $stmt->execute([
-                $studentName, $birthDate, $kakehashiInitialDate, $gradeLevel, $guardianId,
+                $studentName, $birthDate, $supportStartDate, $gradeLevel, $guardianId,
                 $scheduledMonday, $scheduledTuesday, $scheduledWednesday, $scheduledThursday,
                 $scheduledFriday, $scheduledSaturday, $scheduledSunday
             ]);
@@ -62,9 +62,10 @@ try {
             $studentId = $pdo->lastInsertId();
 
             // かけはし期間の自動生成
-            if (!empty($kakehashiInitialDate)) {
+            if (!empty($supportStartDate)) {
                 try {
-                    generateKakehashiPeriods($pdo, $studentId, $kakehashiInitialDate);
+                    $generatedPeriods = generateKakehashiPeriodsForStudent($pdo, $studentId, $supportStartDate);
+                    error_log("Generated " . count($generatedPeriods) . " kakehashi periods for student {$studentId}");
                 } catch (Exception $e) {
                     // かけはし生成エラーはログに記録するが、生徒登録自体は成功させる
                     error_log("かけはし期間生成エラー: " . $e->getMessage());
@@ -80,7 +81,7 @@ try {
             $studentId = (int)$_POST['student_id'];
             $studentName = trim($_POST['student_name']);
             $birthDate = $_POST['birth_date'] ?? null;
-            $kakehashiInitialDate = $_POST['kakehashi_initial_date'] ?? null;
+            $supportStartDate = $_POST['support_start_date'] ?? null;
             $guardianId = !empty($_POST['guardian_id']) ? (int)$_POST['guardian_id'] : null;
 
             // 参加予定曜日
@@ -92,15 +93,9 @@ try {
             $scheduledSaturday = isset($_POST['scheduled_saturday']) ? 1 : 0;
             $scheduledSunday = isset($_POST['scheduled_sunday']) ? 1 : 0;
 
-            if (empty($studentId) || empty($studentName) || empty($birthDate)) {
+            if (empty($studentId) || empty($studentName) || empty($birthDate) || empty($supportStartDate)) {
                 throw new Exception('必須項目が入力されていません。');
             }
-
-            // 現在のかけはし初回日を取得
-            $stmt = $pdo->prepare("SELECT kakehashi_initial_date FROM students WHERE id = ?");
-            $stmt->execute([$studentId]);
-            $currentData = $stmt->fetch();
-            $oldKakehashiDate = $currentData['kakehashi_initial_date'] ?? null;
 
             // 生年月日から学年を自動計算
             $gradeLevel = calculateGradeLevel($birthDate);
@@ -109,7 +104,7 @@ try {
                 UPDATE students
                 SET student_name = ?,
                     birth_date = ?,
-                    kakehashi_initial_date = ?,
+                    support_start_date = ?,
                     grade_level = ?,
                     guardian_id = ?,
                     scheduled_monday = ?,
@@ -122,22 +117,11 @@ try {
                 WHERE id = ?
             ");
             $stmt->execute([
-                $studentName, $birthDate, $kakehashiInitialDate, $gradeLevel, $guardianId,
+                $studentName, $birthDate, $supportStartDate, $gradeLevel, $guardianId,
                 $scheduledMonday, $scheduledTuesday, $scheduledWednesday, $scheduledThursday,
                 $scheduledFriday, $scheduledSaturday, $scheduledSunday,
                 $studentId
             ]);
-
-            // かけはし初回日が変更された場合は再生成
-            if ($kakehashiInitialDate !== $oldKakehashiDate && !empty($kakehashiInitialDate)) {
-                try {
-                    regenerateKakehashiPeriods($pdo, $studentId, $kakehashiInitialDate);
-                } catch (Exception $e) {
-                    // かけはし生成エラーはログに記録するが、更新自体は成功させる
-                    error_log("かけはし期間再生成エラー: " . $e->getMessage());
-                    $_SESSION['warning'] = 'かけはし期間の再生成でエラーが発生しました: ' . $e->getMessage();
-                }
-            }
 
             header('Location: students.php?success=updated');
             exit;

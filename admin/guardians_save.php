@@ -8,15 +8,20 @@ require_once __DIR__ . '/../includes/auth.php';
 
 // ログインチェック
 requireLogin();
-
-// スタッフまたは管理者のみ
-if ($_SESSION['user_type'] !== 'staff' && $_SESSION['user_type'] !== 'admin') {
-    header('Location: /index.php');
-    exit;
-}
+checkUserType(['admin', 'staff']);
 
 $pdo = getDbConnection();
 $action = $_POST['action'] ?? '';
+
+// 管理者の場合、教室IDを取得
+$userClassroomId = null;
+if ($_SESSION['user_type'] === 'admin' && !isMasterAdmin()) {
+    // 通常管理者は自分の教室のみ
+    $stmt = $pdo->prepare("SELECT classroom_id FROM users WHERE id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $user = $stmt->fetch();
+    $userClassroomId = $user['classroom_id'];
+}
 
 try {
     switch ($action) {
@@ -51,12 +56,15 @@ try {
             // パスワードをハッシュ化
             $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
+            // 通常管理者の場合、教室IDを自動設定
+            $classroomIdToInsert = $userClassroomId ?? 1; // デフォルトは教室ID=1
+
             // 保護者を登録
             $stmt = $pdo->prepare("
-                INSERT INTO users (username, password, full_name, email, user_type, is_active, created_at)
-                VALUES (?, ?, ?, ?, 'guardian', 1, NOW())
+                INSERT INTO users (username, password, full_name, email, user_type, is_active, classroom_id, created_at)
+                VALUES (?, ?, ?, ?, 'guardian', 1, ?, NOW())
             ");
-            $stmt->execute([$username, $hashedPassword, $fullName, $email]);
+            $stmt->execute([$username, $hashedPassword, $fullName, $email, $classroomIdToInsert]);
 
             header('Location: guardians.php?success=created');
             exit;

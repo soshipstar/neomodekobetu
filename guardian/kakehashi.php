@@ -4,6 +4,7 @@
  */
 session_start();
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/kakehashi_auto_generator.php';
 
 // 認証チェック
 if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'guardian') {
@@ -15,7 +16,7 @@ $pdo = getDbConnection();
 $guardianId = $_SESSION['user_id'];
 
 // 保護者の子どもを取得
-$stmt = $pdo->prepare("SELECT id, student_name FROM students WHERE guardian_id = ? AND is_active = 1 ORDER BY student_name");
+$stmt = $pdo->prepare("SELECT id, student_name, support_start_date FROM students WHERE guardian_id = ? AND is_active = 1 ORDER BY student_name");
 $stmt->execute([$guardianId]);
 $students = $stmt->fetchAll();
 
@@ -32,6 +33,31 @@ if ($selectedStudentId) {
     ");
     $stmt->execute([$selectedStudentId]);
     $activePeriods = $stmt->fetchAll();
+
+    // かけはし期間が存在しない場合は自動生成
+    if (empty($activePeriods)) {
+        $stmt = $pdo->prepare("SELECT student_name, support_start_date FROM students WHERE id = ?");
+        $stmt->execute([$selectedStudentId]);
+        $student = $stmt->fetch();
+
+        if ($student && $student['support_start_date']) {
+            try {
+                $generatedPeriods = generateKakehashiPeriodsForStudent($pdo, $selectedStudentId, $student['support_start_date']);
+                error_log("Auto-generated " . count($generatedPeriods) . " kakehashi periods for student {$selectedStudentId} (guardian view)");
+
+                // 再度期間を取得
+                $stmt = $pdo->prepare("
+                    SELECT * FROM kakehashi_periods
+                    WHERE student_id = ? AND is_active = 1
+                    ORDER BY submission_deadline DESC
+                ");
+                $stmt->execute([$selectedStudentId]);
+                $activePeriods = $stmt->fetchAll();
+            } catch (Exception $e) {
+                error_log("Error auto-generating kakehashi periods: " . $e->getMessage());
+            }
+        }
+    }
 }
 
 // 選択された期間（URLパラメータから取得のみ、デフォルト値なし）
@@ -365,8 +391,8 @@ if ($selectedPeriodId) {
 
                 <?php if ($selectedStudentId && empty($activePeriods)): ?>
                     <div class="alert alert-info">
-                        現在、入力可能なかけはし期間がありません。<br>
-                        <small>※ スタッフが期間を設定すると入力・提出できるようになります</small>
+                        お子様の支援開始日が設定されていないため、かけはし期間を自動生成できませんでした。<br>
+                        <small>※ スタッフに支援開始日の設定をご依頼ください</small>
                     </div>
                 <?php elseif ($selectedStudentId && !empty($activePeriods)): ?>
                     <!-- 期間選択エリア（生徒選択後に表示） -->
@@ -459,8 +485,15 @@ if ($selectedPeriodId) {
                         <input type="hidden" name="period_id" value="<?= $selectedPeriodId ?>">
                         <input type="hidden" name="action" id="formAction" value="save">
 
-                        <!-- 家庭での課題 -->
-                        <div class="section-title">📝 家庭での課題</div>
+                        <!-- 本人の願い -->
+                        <div class="section-title">💫 本人の願い</div>
+                        <div class="form-group">
+                            <label>お子様が望んでいること、なりたい姿</label>
+                            <textarea name="student_wish" <?= $kakehashiData && $kakehashiData['is_submitted'] ? 'readonly' : '' ?>><?= $kakehashiData['student_wish'] ?? '' ?></textarea>
+                        </div>
+
+                        <!-- 家庭での願い -->
+                        <div class="section-title">🏠 家庭での願い</div>
                         <div class="form-group">
                             <label>家庭で気になっていること、取り組みたいこと</label>
                             <textarea name="home_challenges" <?= $kakehashiData && $kakehashiData['is_submitted'] ? 'readonly' : '' ?>><?= $kakehashiData['home_challenges'] ?? '' ?></textarea>

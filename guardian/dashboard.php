@@ -20,6 +20,16 @@ if ($_SESSION['user_type'] !== 'guardian') {
 $pdo = getDbConnection();
 $guardianId = $_SESSION['user_id'];
 
+// 教室情報を取得
+$classroom = null;
+$stmt = $pdo->prepare("
+    SELECT c.* FROM classrooms c
+    INNER JOIN users u ON c.id = u.classroom_id
+    WHERE u.id = ?
+");
+$stmt->execute([$guardianId]);
+$classroom = $stmt->fetch();
+
 // カレンダー用の年月を取得（デフォルトは今月）
 $year = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
 $month = isset($_GET['month']) ? (int)$_GET['month'] : (int)date('n');
@@ -99,12 +109,13 @@ try {
 // 未提出かけはしを取得
 $pendingKakehashi = [];
 $urgentKakehashi = [];
+$overdueKakehashi = [];
 $today = date('Y-m-d');
 $oneWeekLater = date('Y-m-d', strtotime('+7 days'));
 
 foreach ($students as $student) {
     try {
-        // 提出期限内で未提出のかけはしを取得
+        // 未提出のかけはしを取得（期限切れも含む）
         $stmt = $pdo->prepare("
             SELECT
                 kp.id as period_id,
@@ -118,12 +129,11 @@ foreach ($students as $student) {
             FROM kakehashi_periods kp
             LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = ?
             WHERE kp.student_id = ?
-            AND kp.submission_deadline >= ?
             AND kp.is_active = 1
             AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
             ORDER BY kp.submission_deadline ASC
         ");
-        $stmt->execute([$today, $student['id'], $student['id'], $today]);
+        $stmt->execute([$today, $student['id'], $student['id']]);
         $periods = $stmt->fetchAll();
 
         foreach ($periods as $period) {
@@ -131,10 +141,16 @@ foreach ($students as $student) {
             $period['student_name'] = $student['student_name'];
             $period['student_id'] = $student['id'];
 
+            // 期限切れ
+            if ($daysLeft < 0) {
+                $overdueKakehashi[] = $period;
+            }
             // 7日以内は緊急
-            if ($daysLeft <= 7) {
+            elseif ($daysLeft <= 7) {
                 $urgentKakehashi[] = $period;
-            } else {
+            }
+            // それ以外は通常
+            else {
                 $pendingKakehashi[] = $period;
             }
         }
@@ -329,6 +345,66 @@ function getGradeLabel($gradeLevel) {
         }
         .logout-btn:hover {
             background: #c82333;
+        }
+
+        .menu-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .menu-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .menu-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .menu-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            min-width: 220px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            z-index: 1000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 8px;
+            right: 0;
+        }
+
+        .menu-content.show {
+            display: block;
+        }
+
+        .menu-content a {
+            color: #333;
+            padding: 14px 20px;
+            text-decoration: none;
+            display: block;
+            transition: all 0.2s;
+            font-size: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .menu-content a:last-child {
+            border-bottom: none;
+        }
+
+        .menu-content a:hover {
+            background: linear-gradient(135deg, #f0f4ff 0%, #faf0ff 100%);
+            color: #667eea;
+            padding-left: 25px;
         }
         .student-section {
             background: white;
@@ -539,12 +615,19 @@ function getGradeLabel($gradeLevel) {
             align-items: center;
             font-weight: 600;
         }
+        .schedule-label.no-note {
+            color: #999;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .schedule-label.no-note:hover {
+            opacity: 0.7;
+        }
         .schedule-marker {
             margin-right: 2px;
             font-size: 8px;
         }
         .note-label {
-            color: #28a745;
             font-size: 9px;
             margin-bottom: 2px;
             display: flex;
@@ -556,8 +639,19 @@ function getGradeLabel($gradeLevel) {
         .note-label:hover {
             opacity: 0.7;
         }
+        /* 今日以降の連絡帳 */
+        .note-label.confirmed {
+            color: #28a745;
+        }
         .note-label.unconfirmed {
             color: #dc3545;
+        }
+        /* 過去日の連絡帳 */
+        .note-label.confirmed-past {
+            color: #20c997;
+        }
+        .note-label.unconfirmed-past {
+            color: #fd7e14;
         }
         .note-marker {
             margin-right: 2px;
@@ -663,6 +757,10 @@ function getGradeLabel($gradeLevel) {
             border-left: 5px solid #17a2b8;
             background: #f0f9fc;
         }
+        .notification-banner.overdue {
+            border-left: 5px solid #6c757d;
+            background: #f8f9fa;
+        }
         .notification-header {
             display: flex;
             align-items: center;
@@ -676,6 +774,9 @@ function getGradeLabel($gradeLevel) {
         }
         .notification-header.pending {
             color: #17a2b8;
+        }
+        .notification-header.overdue {
+            color: #6c757d;
         }
         .notification-item {
             background: white;
@@ -712,6 +813,9 @@ function getGradeLabel($gradeLevel) {
         }
         .notification-deadline.pending {
             color: #17a2b8;
+        }
+        .notification-deadline.overdue {
+            color: #6c757d;
         }
         .notification-action {
             margin-left: 15px;
@@ -799,17 +903,33 @@ function getGradeLabel($gradeLevel) {
 <body>
     <div class="container">
         <div class="header">
-            <div>
-                <h1>📖 連絡帳ダッシュボード</h1>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <?php if ($classroom && !empty($classroom['logo_path']) && file_exists(__DIR__ . '/../' . $classroom['logo_path'])): ?>
+                    <img src="../<?= htmlspecialchars($classroom['logo_path']) ?>" alt="教室ロゴ" style="height: 50px; width: auto;">
+                <?php else: ?>
+                    <div style="font-size: 40px;">📖</div>
+                <?php endif; ?>
+                <div>
+                    <h1>連絡帳ダッシュボード</h1>
+                    <?php if ($classroom): ?>
+                        <div style="font-size: 14px; color: #666; margin-top: 5px;">
+                            <?= htmlspecialchars($classroom['classroom_name']) ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
             </div>
             <div style="display: flex; align-items: center; gap: 15px;">
-                <div class="nav-buttons">
-                    <a href="kakehashi.php" class="nav-btn kakehashi">
-                        🌉 かけはし入力
-                    </a>
-                    <a href="communication_logs.php" class="nav-btn logs">
-                        📚 連絡帳一覧
-                    </a>
+                <div class="menu-dropdown">
+                    <button class="menu-btn" onclick="toggleMenu()">
+                        📑 メニュー ▼
+                    </button>
+                    <div class="menu-content" id="menuDropdown">
+                        <a href="communication_logs.php">📚 連絡帳一覧</a>
+                        <a href="chat.php">💬 チャット</a>
+                        <a href="kakehashi.php">🌉 かけはし入力</a>
+                        <a href="support_plans.php">📋 個別支援計画書</a>
+                        <a href="monitoring.php">📊 モニタリング表</a>
+                    </div>
                 </div>
                 <span class="user-info-box">
                     <?php echo htmlspecialchars($_SESSION['full_name']); ?>さん
@@ -817,6 +937,36 @@ function getGradeLabel($gradeLevel) {
                 <a href="/logout.php" class="logout-btn">ログアウト</a>
             </div>
         </div>
+
+        <!-- 期限切れかけはし通知 -->
+        <?php if (!empty($overdueKakehashi)): ?>
+            <div class="notification-banner overdue">
+                <div class="notification-header overdue">
+                    ⏰ 提出期限が過ぎたかけはしがあります
+                </div>
+                <?php foreach ($overdueKakehashi as $kakehashi): ?>
+                    <div class="notification-item">
+                        <div class="notification-info">
+                            <div class="notification-student">
+                                <?php echo htmlspecialchars($kakehashi['student_name']); ?>さん
+                            </div>
+                            <div class="notification-period">
+                                対象期間: <?php echo date('Y年n月j日', strtotime($kakehashi['start_date'])); ?> ～ <?php echo date('Y年n月j日', strtotime($kakehashi['end_date'])); ?>
+                            </div>
+                            <div class="notification-deadline overdue">
+                                提出期限: <?php echo date('Y年n月j日', strtotime($kakehashi['submission_deadline'])); ?>
+                                （<?php echo abs($kakehashi['days_left']); ?>日経過）
+                            </div>
+                        </div>
+                        <div class="notification-action">
+                            <a href="kakehashi.php?student_id=<?php echo $kakehashi['student_id']; ?>&period_id=<?php echo $kakehashi['period_id']; ?>" class="notification-btn">
+                                かけはしを入力
+                            </a>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
 
         <!-- 緊急かけはし通知 -->
         <?php if (!empty($urgentKakehashi)): ?>
@@ -947,22 +1097,49 @@ function getGradeLabel($gradeLevel) {
                     // 生徒の活動予定を表示
                     if (isset($calendarSchedules[$currentDate]) && !empty($calendarSchedules[$currentDate])) {
                         foreach ($calendarSchedules[$currentDate] as $schedule) {
-                            echo "<div class='schedule-label'>";
-                            echo "<span class='schedule-marker'>👤</span>";
-                            echo htmlspecialchars($schedule['student_name']) . "さん活動予定日";
-                            echo "</div>";
+                            $isPast = strtotime($currentDate) < strtotime(date('Y-m-d'));
+                            $hasNote = isset($calendarNotes[$currentDate]) && !empty($calendarNotes[$currentDate]);
+
+                            // 過去日で連絡帳がない場合
+                            if ($isPast && !$hasNote) {
+                                echo "<div class='schedule-label no-note' onclick='showNoteModal(\"$currentDate\")'>";
+                                echo "<span class='schedule-marker'>👤</span>";
+                                echo htmlspecialchars($schedule['student_name']) . "さん活動日（連絡帳なし）";
+                                echo "</div>";
+                            }
+                            // 過去日で連絡帳がある場合（連絡帳側で表示）
+                            elseif ($isPast) {
+                                // 何も表示しない（連絡帳情報で表示される）
+                            }
+                            // 未来または今日の場合
+                            else {
+                                echo "<div class='schedule-label'>";
+                                echo "<span class='schedule-marker'>👤</span>";
+                                echo htmlspecialchars($schedule['student_name']) . "さん活動予定日";
+                                echo "</div>";
+                            }
                         }
                     }
 
                     // 連絡帳情報を表示
                     if (isset($calendarNotes[$currentDate]) && !empty($calendarNotes[$currentDate])) {
                         foreach ($calendarNotes[$currentDate] as $noteInfo) {
+                            $isPast = strtotime($currentDate) < strtotime(date('Y-m-d'));
                             $isConfirmed = $noteInfo['guardian_confirmed'];
-                            $class = $isConfirmed ? 'note-label' : 'note-label unconfirmed';
-                            $text = $isConfirmed ? '連絡帳あり' : '連絡帳あり（確認してください）';
+
+                            if ($isPast) {
+                                // 過去日の場合
+                                $class = $isConfirmed ? 'note-label confirmed-past' : 'note-label unconfirmed-past';
+                                $text = $isConfirmed ? '活動日（確認済み）' : '活動日（要確認）';
+                            } else {
+                                // 今日または未来の場合
+                                $class = $isConfirmed ? 'note-label confirmed' : 'note-label unconfirmed';
+                                $text = $isConfirmed ? '連絡帳あり' : '連絡帳あり（確認してください）';
+                            }
+
                             echo "<div class='$class' onclick='showNoteModal(\"$currentDate\")'>";
                             echo "<span class='note-marker'>📝</span>";
-                            echo htmlspecialchars($text);
+                            echo htmlspecialchars($noteInfo['student_name']) . "さん" . htmlspecialchars($text);
                             echo "</div>";
                         }
                     }
@@ -988,15 +1165,27 @@ function getGradeLabel($gradeLevel) {
                 </div>
                 <div class="legend-item">
                     <span style="color: #667eea; font-weight: 600;">👤</span>
-                    <span>活動予定日</span>
+                    <span>活動予定日（未来）</span>
                 </div>
                 <div class="legend-item">
                     <span style="color: #28a745; font-weight: 600;">📝</span>
-                    <span>連絡帳あり</span>
+                    <span>連絡帳あり（確認済み）</span>
                 </div>
                 <div class="legend-item">
                     <span style="color: #dc3545; font-weight: 600;">📝</span>
                     <span>連絡帳あり（未確認）</span>
+                </div>
+                <div class="legend-item">
+                    <span style="color: #20c997; font-weight: 600;">📝</span>
+                    <span>過去活動日（確認済み）</span>
+                </div>
+                <div class="legend-item">
+                    <span style="color: #fd7e14; font-weight: 600;">📝</span>
+                    <span>過去活動日（要確認）</span>
+                </div>
+                <div class="legend-item">
+                    <span style="color: #999; font-weight: 600;">👤</span>
+                    <span>過去活動日（連絡帳なし）</span>
                 </div>
             </div>
         </div>
@@ -1180,6 +1369,24 @@ function getGradeLabel($gradeLevel) {
             "'": '&#039;'
         };
         return text.replace(/[&<>"']/g, m => map[m]);
+    }
+
+    // メニュードロップダウンの開閉
+    function toggleMenu() {
+        document.getElementById('menuDropdown').classList.toggle('show');
+    }
+
+    // メニュー外をクリックしたら閉じる
+    window.onclick = function(event) {
+        if (!event.target.matches('.menu-btn')) {
+            const dropdowns = document.getElementsByClassName('menu-content');
+            for (let i = 0; i < dropdowns.length; i++) {
+                const openDropdown = dropdowns[i];
+                if (openDropdown.classList.contains('show')) {
+                    openDropdown.classList.remove('show');
+                }
+            }
+        }
     }
     </script>
 </body>
