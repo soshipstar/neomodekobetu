@@ -17,6 +17,9 @@ requireUserType(['staff', 'admin']);
 $pdo = getDbConnection();
 $currentUser = getCurrentUser();
 
+// スタッフの教室IDを取得
+$classroomId = $_SESSION['classroom_id'] ?? null;
+
 // 教室情報を取得
 $classroom = null;
 $stmt = $pdo->prepare("
@@ -127,164 +130,352 @@ $scheduledStudents = [];
 $eventParticipants = [];
 
 if (!$isHoliday) {
-    // 通常の参加予定者を取得
-    $stmt = $pdo->prepare("
-        SELECT
-            s.id,
-            s.student_name,
-            s.grade_level,
-            u.full_name as guardian_name,
-            an.id as absence_id,
-            an.reason as absence_reason,
-            'regular' as participant_type
-        FROM students s
-        LEFT JOIN users u ON s.guardian_id = u.id
-        LEFT JOIN absence_notifications an ON s.id = an.student_id AND an.absence_date = ?
-        WHERE s.is_active = 1 AND s.$todayColumn = 1
-        ORDER BY s.student_name
-    ");
-    $stmt->execute([$selectedDate]);
+    // 通常の参加予定者を取得（自分の教室のみ）
+    if ($classroomId) {
+        $stmt = $pdo->prepare("
+            SELECT
+                s.id,
+                s.student_name,
+                s.grade_level,
+                u.full_name as guardian_name,
+                an.id as absence_id,
+                an.reason as absence_reason,
+                'regular' as participant_type
+            FROM students s
+            INNER JOIN users u ON s.guardian_id = u.id
+            LEFT JOIN absence_notifications an ON s.id = an.student_id AND an.absence_date = ?
+            WHERE s.is_active = 1 AND s.$todayColumn = 1 AND u.classroom_id = ?
+            ORDER BY s.student_name
+        ");
+        $stmt->execute([$selectedDate, $classroomId]);
+    } else {
+        $stmt = $pdo->prepare("
+            SELECT
+                s.id,
+                s.student_name,
+                s.grade_level,
+                u.full_name as guardian_name,
+                an.id as absence_id,
+                an.reason as absence_reason,
+                'regular' as participant_type
+            FROM students s
+            LEFT JOIN users u ON s.guardian_id = u.id
+            LEFT JOIN absence_notifications an ON s.id = an.student_id AND an.absence_date = ?
+            WHERE s.is_active = 1 AND s.$todayColumn = 1
+            ORDER BY s.student_name
+        ");
+        $stmt->execute([$selectedDate]);
+    }
     $scheduledStudents = $stmt->fetchAll();
 
-    // イベント参加者を取得
-    $stmt = $pdo->prepare("
-        SELECT
-            s.id,
-            s.student_name,
-            s.grade_level,
-            u.full_name as guardian_name,
-            e.event_name,
-            er.notes,
-            'event' as participant_type
-        FROM event_registrations er
-        INNER JOIN events e ON er.event_id = e.id
-        INNER JOIN students s ON er.student_id = s.id
-        LEFT JOIN users u ON s.guardian_id = u.id
-        WHERE e.event_date = ? AND s.is_active = 1
-        ORDER BY s.student_name
-    ");
-    $stmt->execute([$selectedDate]);
+    // イベント参加者を取得（自分の教室のみ）
+    if ($classroomId) {
+        $stmt = $pdo->prepare("
+            SELECT
+                s.id,
+                s.student_name,
+                s.grade_level,
+                u.full_name as guardian_name,
+                e.event_name,
+                er.notes,
+                'event' as participant_type
+            FROM event_registrations er
+            INNER JOIN events e ON er.event_id = e.id
+            INNER JOIN students s ON er.student_id = s.id
+            INNER JOIN users u ON s.guardian_id = u.id
+            WHERE e.event_date = ? AND s.is_active = 1 AND u.classroom_id = ?
+            ORDER BY s.student_name
+        ");
+        $stmt->execute([$selectedDate, $classroomId]);
+    } else {
+        $stmt = $pdo->prepare("
+            SELECT
+                s.id,
+                s.student_name,
+                s.grade_level,
+                u.full_name as guardian_name,
+                e.event_name,
+                er.notes,
+                'event' as participant_type
+            FROM event_registrations er
+            INNER JOIN events e ON er.event_id = e.id
+            INNER JOIN students s ON er.student_id = s.id
+            LEFT JOIN users u ON s.guardian_id = u.id
+            WHERE e.event_date = ? AND s.is_active = 1
+            ORDER BY s.student_name
+        ");
+        $stmt->execute([$selectedDate]);
+    }
     $eventParticipants = $stmt->fetchAll();
 }
 
-// 個別支援計画書が未作成または古い生徒の数を取得
+// 個別支援計画書が未作成または古い生徒の数を取得（自分の教室のみ）
 $planNeedingCount = 0;
 
-// 個別支援計画書が1つも作成されていない生徒
-$stmt = $pdo->query("
-    SELECT COUNT(*) as count
-    FROM students s
-    WHERE s.is_active = 1
-    AND NOT EXISTS (
-        SELECT 1 FROM individual_support_plans isp
-        WHERE isp.student_id = s.id
-    )
-");
-$planNeedingCount += (int)$stmt->fetchColumn();
+if ($classroomId) {
+    // 個別支援計画書が1つも作成されていない生徒
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*) as count
+        FROM students s
+        INNER JOIN users u ON s.guardian_id = u.id
+        WHERE s.is_active = 1 AND u.classroom_id = ?
+        AND NOT EXISTS (
+            SELECT 1 FROM individual_support_plans isp
+            WHERE isp.student_id = s.id
+        )
+    ");
+    $stmt->execute([$classroomId]);
+    $planNeedingCount += (int)$stmt->fetchColumn();
 
-// 最新の個別支援計画書から6ヶ月以上経過している生徒
-$stmt = $pdo->query("
-    SELECT COUNT(DISTINCT s.id) as count
-    FROM students s
-    INNER JOIN individual_support_plans isp ON s.id = isp.student_id
-    WHERE s.is_active = 1
-    GROUP BY s.id
-    HAVING DATEDIFF(CURDATE(), MAX(isp.created_date)) >= 180
-");
-$result = $stmt->fetchAll();
-$planNeedingCount += count($result);
+    // 最新の個別支援計画書から6ヶ月以上経過している生徒
+    $stmt = $pdo->prepare("
+        SELECT COUNT(DISTINCT s.id) as count
+        FROM students s
+        INNER JOIN users u ON s.guardian_id = u.id
+        INNER JOIN individual_support_plans isp ON s.id = isp.student_id
+        WHERE s.is_active = 1 AND u.classroom_id = ?
+        GROUP BY s.id
+        HAVING DATEDIFF(CURDATE(), MAX(isp.created_date)) >= 180
+    ");
+    $stmt->execute([$classroomId]);
+    $result = $stmt->fetchAll();
+    $planNeedingCount += count($result);
+} else {
+    // 個別支援計画書が1つも作成されていない生徒
+    $stmt = $pdo->query("
+        SELECT COUNT(*) as count
+        FROM students s
+        WHERE s.is_active = 1
+        AND NOT EXISTS (
+            SELECT 1 FROM individual_support_plans isp
+            WHERE isp.student_id = s.id
+        )
+    ");
+    $planNeedingCount += (int)$stmt->fetchColumn();
 
-// モニタリングが未作成または古い生徒の数を取得
+    // 最新の個別支援計画書から6ヶ月以上経過している生徒
+    $stmt = $pdo->query("
+        SELECT COUNT(DISTINCT s.id) as count
+        FROM students s
+        INNER JOIN individual_support_plans isp ON s.id = isp.student_id
+        WHERE s.is_active = 1
+        GROUP BY s.id
+        HAVING DATEDIFF(CURDATE(), MAX(isp.created_date)) >= 180
+    ");
+    $result = $stmt->fetchAll();
+    $planNeedingCount += count($result);
+}
+
+// モニタリングが未作成または古い生徒の数を取得（自分の教室のみ）
 $monitoringNeedingCount = 0;
 
-// モニタリングが1つも作成されていない生徒（個別支援計画書がある生徒のみ）
-$stmt = $pdo->query("
-    SELECT COUNT(DISTINCT s.id) as count
-    FROM students s
-    INNER JOIN individual_support_plans isp ON s.id = isp.student_id
-    WHERE s.is_active = 1
-    AND NOT EXISTS (
-        SELECT 1 FROM monitoring_records mr
-        WHERE mr.student_id = s.id
-    )
-");
-$monitoringNeedingCount += (int)$stmt->fetchColumn();
+if ($classroomId) {
+    // モニタリングが1つも作成されていない生徒（個別支援計画書がある生徒のみ）
+    $stmt = $pdo->prepare("
+        SELECT COUNT(DISTINCT s.id) as count
+        FROM students s
+        INNER JOIN users u ON s.guardian_id = u.id
+        INNER JOIN individual_support_plans isp ON s.id = isp.student_id
+        WHERE s.is_active = 1 AND u.classroom_id = ?
+        AND NOT EXISTS (
+            SELECT 1 FROM monitoring_records mr
+            WHERE mr.student_id = s.id
+        )
+    ");
+    $stmt->execute([$classroomId]);
+    $monitoringNeedingCount += (int)$stmt->fetchColumn();
 
-// 最新のモニタリングから3ヶ月以上経過している生徒
-$stmt = $pdo->query("
-    SELECT COUNT(DISTINCT s.id) as count
-    FROM students s
-    INNER JOIN monitoring_records mr ON s.id = mr.student_id
-    WHERE s.is_active = 1
-    GROUP BY s.id
-    HAVING DATEDIFF(CURDATE(), MAX(mr.monitoring_date)) >= 90
-");
-$result = $stmt->fetchAll();
-$monitoringNeedingCount += count($result);
+    // 最新のモニタリングから3ヶ月以上経過している生徒
+    $stmt = $pdo->prepare("
+        SELECT COUNT(DISTINCT s.id) as count
+        FROM students s
+        INNER JOIN users u ON s.guardian_id = u.id
+        INNER JOIN monitoring_records mr ON s.id = mr.student_id
+        WHERE s.is_active = 1 AND u.classroom_id = ?
+        GROUP BY s.id
+        HAVING DATEDIFF(CURDATE(), MAX(mr.monitoring_date)) >= 90
+    ");
+    $stmt->execute([$classroomId]);
+    $result = $stmt->fetchAll();
+    $monitoringNeedingCount += count($result);
+} else {
+    // モニタリングが1つも作成されていない生徒（個別支援計画書がある生徒のみ）
+    $stmt = $pdo->query("
+        SELECT COUNT(DISTINCT s.id) as count
+        FROM students s
+        INNER JOIN individual_support_plans isp ON s.id = isp.student_id
+        WHERE s.is_active = 1
+        AND NOT EXISTS (
+            SELECT 1 FROM monitoring_records mr
+            WHERE mr.student_id = s.id
+        )
+    ");
+    $monitoringNeedingCount += (int)$stmt->fetchColumn();
+
+    // 最新のモニタリングから3ヶ月以上経過している生徒
+    $stmt = $pdo->query("
+        SELECT COUNT(DISTINCT s.id) as count
+        FROM students s
+        INNER JOIN monitoring_records mr ON s.id = mr.student_id
+        WHERE s.is_active = 1
+        GROUP BY s.id
+        HAVING DATEDIFF(CURDATE(), MAX(mr.monitoring_date)) >= 90
+    ");
+    $result = $stmt->fetchAll();
+    $monitoringNeedingCount += count($result);
+}
 
 // かけはし通知データを取得
 $today = date('Y-m-d');
 
-// 1. 未提出の保護者かけはし（期限切れも含む、非表示を除外）の件数を取得
+// 1. 未提出の保護者かけはし（期限切れも含む、非表示を除外）の件数を取得（自分の教室のみ）
 $guardianKakehashiCount = 0;
-try {
-    $stmt = $pdo->prepare("
-        SELECT COUNT(*) as count
-        FROM students s
-        INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-        LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = s.id
-        WHERE s.is_active = 1
-        AND kp.is_active = 1
-        AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
-        AND COALESCE(kg.is_hidden, 0) = 0
-    ");
-    $stmt->execute();
-    $guardianKakehashiCount = (int)$stmt->fetchColumn();
-} catch (Exception $e) {
-    // is_hiddenカラムが存在しない場合は、非表示チェックなしでカウント
-    error_log("Guardian kakehashi count error: " . $e->getMessage());
-    $stmt = $pdo->prepare("
-        SELECT COUNT(*) as count
-        FROM students s
-        INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-        LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = s.id
-        WHERE s.is_active = 1
-        AND kp.is_active = 1
-        AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
-    ");
-    $stmt->execute();
-    $guardianKakehashiCount = (int)$stmt->fetchColumn();
+if ($classroomId) {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) as count
+            FROM students s
+            INNER JOIN users u ON s.guardian_id = u.id
+            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+            LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = s.id
+            WHERE s.is_active = 1 AND u.classroom_id = ?
+            AND kp.is_active = 1
+            AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
+            AND COALESCE(kg.is_hidden, 0) = 0
+        ");
+        $stmt->execute([$classroomId]);
+        $guardianKakehashiCount = (int)$stmt->fetchColumn();
+    } catch (Exception $e) {
+        // is_hiddenカラムが存在しない場合は、非表示チェックなしでカウント
+        error_log("Guardian kakehashi count error: " . $e->getMessage());
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) as count
+            FROM students s
+            INNER JOIN users u ON s.guardian_id = u.id
+            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+            LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = s.id
+            WHERE s.is_active = 1 AND u.classroom_id = ?
+            AND kp.is_active = 1
+            AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
+        ");
+        $stmt->execute([$classroomId]);
+        $guardianKakehashiCount = (int)$stmt->fetchColumn();
+    }
+} else {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) as count
+            FROM students s
+            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+            LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = s.id
+            WHERE s.is_active = 1
+            AND kp.is_active = 1
+            AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
+            AND COALESCE(kg.is_hidden, 0) = 0
+        ");
+        $stmt->execute();
+        $guardianKakehashiCount = (int)$stmt->fetchColumn();
+    } catch (Exception $e) {
+        // is_hiddenカラムが存在しない場合は、非表示チェックなしでカウント
+        error_log("Guardian kakehashi count error: " . $e->getMessage());
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) as count
+            FROM students s
+            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+            LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = s.id
+            WHERE s.is_active = 1
+            AND kp.is_active = 1
+            AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
+        ");
+        $stmt->execute();
+        $guardianKakehashiCount = (int)$stmt->fetchColumn();
+    }
 }
 
-// 2. 未作成のスタッフかけはし（期限切れも含む、非表示を除外）の件数を取得
+// 2. 未作成のスタッフかけはし（期限切れも含む、非表示を除外）の件数を取得（自分の教室のみ）
 $staffKakehashiCount = 0;
-try {
+if ($classroomId) {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) as count
+            FROM students s
+            INNER JOIN users u ON s.guardian_id = u.id
+            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+            LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
+            WHERE s.is_active = 1 AND u.classroom_id = ?
+            AND kp.is_active = 1
+            AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
+            AND COALESCE(ks.is_hidden, 0) = 0
+        ");
+        $stmt->execute([$classroomId]);
+        $staffKakehashiCount = (int)$stmt->fetchColumn();
+    } catch (Exception $e) {
+        // is_hiddenカラムが存在しない場合は、非表示チェックなしでカウント
+        error_log("Staff kakehashi count error: " . $e->getMessage());
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) as count
+            FROM students s
+            INNER JOIN users u ON s.guardian_id = u.id
+            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+            LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
+            WHERE s.is_active = 1 AND u.classroom_id = ?
+            AND kp.is_active = 1
+            AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
+        ");
+        $stmt->execute([$classroomId]);
+        $staffKakehashiCount = (int)$stmt->fetchColumn();
+    }
+} else {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) as count
+            FROM students s
+            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+            LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
+            WHERE s.is_active = 1
+            AND kp.is_active = 1
+            AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
+            AND COALESCE(ks.is_hidden, 0) = 0
+        ");
+        $stmt->execute();
+        $staffKakehashiCount = (int)$stmt->fetchColumn();
+    } catch (Exception $e) {
+        // is_hiddenカラムが存在しない場合は、非表示チェックなしでカウント
+        error_log("Staff kakehashi count error: " . $e->getMessage());
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) as count
+            FROM students s
+            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+            LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
+            WHERE s.is_active = 1
+            AND kp.is_active = 1
+            AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
+        ");
+        $stmt->execute();
+        $staffKakehashiCount = (int)$stmt->fetchColumn();
+    }
+}
+
+// 3. 未提出の提出期限の件数を取得（自分の教室のみ）
+$submissionRequestCount = 0;
+if ($classroomId) {
     $stmt = $pdo->prepare("
         SELECT COUNT(*) as count
-        FROM students s
-        INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-        LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
-        WHERE s.is_active = 1
-        AND kp.is_active = 1
-        AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
-        AND COALESCE(ks.is_hidden, 0) = 0
+        FROM submission_requests sr
+        INNER JOIN students s ON sr.student_id = s.id
+        INNER JOIN users u ON s.guardian_id = u.id
+        WHERE u.classroom_id = ?
+        AND sr.is_completed = 0
     ");
-    $stmt->execute();
-    $staffKakehashiCount = (int)$stmt->fetchColumn();
-} catch (Exception $e) {
-    // is_hiddenカラムが存在しない場合は、非表示チェックなしでカウント
-    error_log("Staff kakehashi count error: " . $e->getMessage());
-    $stmt = $pdo->prepare("
+    $stmt->execute([$classroomId]);
+    $submissionRequestCount = (int)$stmt->fetchColumn();
+} else {
+    $stmt = $pdo->query("
         SELECT COUNT(*) as count
-        FROM students s
-        INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-        LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
-        WHERE s.is_active = 1
-        AND kp.is_active = 1
-        AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
+        FROM submission_requests sr
+        WHERE sr.is_completed = 0
     ");
-    $stmt->execute();
-    $staffKakehashiCount = (int)$stmt->fetchColumn();
+    $submissionRequestCount = (int)$stmt->fetchColumn();
 }
 ?>
 <!DOCTYPE html>
@@ -336,9 +527,8 @@ try {
             border-radius: 10px;
             margin-bottom: 20px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: block;
+            width: 100%;
         }
 
         .header h1 {
@@ -1009,27 +1199,238 @@ try {
         .dropdown-menu a .menu-icon {
             margin-right: 8px;
         }
+
+        /* ハンバーガーメニュー */
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+            cursor: pointer;
+            padding: 8px;
+            background: #667eea;
+            border-radius: 8px;
+            border: none;
+        }
+
+        .hamburger span {
+            width: 24px;
+            height: 3px;
+            background: white;
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(6px, 6px);
+        }
+
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(6px, -6px);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* デスクトップ用レイアウト（デフォルト） */
+        @media (min-width: 769px) {
+            .hamburger {
+                display: none !important;
+            }
+
+            .header {
+                width: 100% !important;
+            }
+
+            .header-content {
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+            }
+
+            .user-info {
+                display: flex !important;
+                position: static !important;
+                flex-direction: row !important;
+            }
+
+            .two-column-layout {
+                grid-template-columns: 600px 1fr !important;
+            }
+        }
+
+        /* レスポンシブデザイン */
+        @media (max-width: 768px) {
+            .two-column-layout {
+                grid-template-columns: 1fr;
+            }
+            body {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 18px;
+            }
+
+            .hamburger {
+                display: flex;
+            }
+
+            .user-info {
+                display: none;
+                position: fixed;
+                top: 60px;
+                right: 10px;
+                flex-direction: column;
+                background: white;
+                padding: 15px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 1000;
+                gap: 10px;
+            }
+
+            .user-info.show {
+                display: flex;
+            }
+
+            .dropdown-toggle {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .logout-btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            .calendar-container {
+                max-width: 100%;
+                padding: 8px;
+            }
+
+            .calendar-day {
+                min-height: 40px;
+                font-size: 11px;
+            }
+
+            .calendar-day-number {
+                font-size: 10px;
+            }
+
+            .activity-dot {
+                width: 5px;
+                height: 5px;
+            }
+
+            .event-indicator, .holiday-indicator {
+                font-size: 8px;
+                padding: 1px 3px;
+            }
+
+            .content-box {
+                padding: 15px;
+            }
+
+            .scheduled-list {
+                font-size: 13px;
+            }
+
+            .activity-card {
+                padding: 12px;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .notification-card {
+                padding: 12px;
+            }
+
+            .notification-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .notification-action {
+                margin-left: 0;
+                margin-top: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 16px;
+            }
+
+            .calendar {
+                gap: 1px;
+            }
+
+            .calendar-day {
+                min-height: 35px;
+                padding: 2px;
+            }
+
+            .calendar-day-header {
+                font-size: 9px;
+            }
+
+            .activity-card h3 {
+                font-size: 16px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <?php if ($classroom && !empty($classroom['logo_path']) && file_exists(__DIR__ . '/../' . $classroom['logo_path'])): ?>
-                    <img src="../<?= htmlspecialchars($classroom['logo_path']) ?>" alt="教室ロゴ" style="height: 50px; width: auto;">
-                <?php else: ?>
-                    <div style="font-size: 40px;">📋</div>
-                <?php endif; ?>
-                <div>
-                    <h1>活動管理</h1>
-                    <?php if ($classroom): ?>
-                        <div style="font-size: 14px; color: #666; margin-top: 5px;">
-                            <?= htmlspecialchars($classroom['classroom_name']) ?>
+            <div class="header-content">
+                <div class="header-left">
+                    <button class="hamburger" id="hamburger">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <?php if ($classroom && !empty($classroom['logo_path']) && file_exists(__DIR__ . '/../' . $classroom['logo_path'])): ?>
+                            <img src="../<?= htmlspecialchars($classroom['logo_path']) ?>" alt="教室ロゴ" style="height: 50px; width: auto;">
+                        <?php else: ?>
+                            <div style="font-size: 40px;">📋</div>
+                        <?php endif; ?>
+                        <div>
+                            <h1>活動管理</h1>
+                            <?php if ($classroom): ?>
+                                <div style="font-size: 14px; color: #666; margin-top: 5px;">
+                                    <?= htmlspecialchars($classroom['classroom_name']) ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
-                    <?php endif; ?>
+                    </div>
                 </div>
-            </div>
-            <div class="user-info">
+                <div class="user-info" id="userInfo">
                 <span><?php echo htmlspecialchars($currentUser['full_name'], ENT_QUOTES, 'UTF-8'); ?>さん</span>
 
                 <!-- かけはし管理ドロップダウン -->
@@ -1050,6 +1451,9 @@ try {
                         </a>
                         <a href="kobetsu_monitoring.php">
                             <span class="menu-icon">📊</span>モニタリング表作成
+                        </a>
+                        <a href="submission_management.php">
+                            <span class="menu-icon">📮</span>提出期限管理
                         </a>
                     </div>
                 </div>
@@ -1117,6 +1521,28 @@ try {
                 });
             });
         });
+
+        // ハンバーガーメニューの開閉
+        const hamburger = document.getElementById('hamburger');
+        const userInfo = document.getElementById('userInfo');
+
+        function toggleMenu() {
+            hamburger.classList.toggle('active');
+            userInfo.classList.toggle('show');
+        }
+
+        hamburger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleMenu();
+        });
+
+        // メニュー外をクリックしたら閉じる
+        document.addEventListener('click', function(e) {
+            if (!userInfo.contains(e.target) && !hamburger.contains(e.target)) {
+                hamburger.classList.remove('active');
+                userInfo.classList.remove('show');
+            }
+        });
         </script>
 
         <?php if (isset($_SESSION['success'])): ?>
@@ -1134,66 +1560,6 @@ try {
                 echo htmlspecialchars($_SESSION['error'], ENT_QUOTES, 'UTF-8');
                 unset($_SESSION['error']);
                 ?>
-            </div>
-        <?php endif; ?>
-
-        <!-- 未作成タスクサマリー -->
-        <?php if ($planNeedingCount > 0 || $monitoringNeedingCount > 0 || $guardianKakehashiCount > 0 || $staffKakehashiCount > 0): ?>
-            <div class="task-summary-box">
-                <h2 style="margin-bottom: 15px; color: #333; font-size: 20px;">📋 未作成・未提出タスク</h2>
-                <div class="task-summary-grid">
-                    <!-- 個別支援計画書 -->
-                    <div class="task-card <?php echo $planNeedingCount > 0 ? 'has-tasks' : ''; ?>">
-                        <div class="task-card-title">個別支援計画書</div>
-                        <div class="task-card-count <?php echo $planNeedingCount > 0 ? 'urgent' : 'success'; ?>">
-                            <?php echo $planNeedingCount; ?>件
-                        </div>
-                        <?php if ($planNeedingCount > 0): ?>
-                            <div class="task-card-link">
-                                <a href="pending_tasks.php" class="btn-task-detail">詳細を確認</a>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-
-                    <!-- モニタリング -->
-                    <div class="task-card <?php echo $monitoringNeedingCount > 0 ? 'has-warnings' : ''; ?>">
-                        <div class="task-card-title">モニタリング</div>
-                        <div class="task-card-count <?php echo $monitoringNeedingCount > 0 ? 'warning' : 'success'; ?>">
-                            <?php echo $monitoringNeedingCount; ?>件
-                        </div>
-                        <?php if ($monitoringNeedingCount > 0): ?>
-                            <div class="task-card-link">
-                                <a href="pending_tasks.php" class="btn-task-detail">詳細を確認</a>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-
-                    <!-- 保護者かけはし -->
-                    <div class="task-card <?php echo $guardianKakehashiCount > 0 ? 'has-warnings' : ''; ?>">
-                        <div class="task-card-title">保護者かけはし</div>
-                        <div class="task-card-count <?php echo $guardianKakehashiCount > 0 ? 'warning' : 'success'; ?>">
-                            <?php echo $guardianKakehashiCount; ?>件
-                        </div>
-                        <?php if ($guardianKakehashiCount > 0): ?>
-                            <div class="task-card-link">
-                                <a href="pending_tasks.php" class="btn-task-detail">詳細を確認</a>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-
-                    <!-- スタッフかけはし -->
-                    <div class="task-card <?php echo $staffKakehashiCount > 0 ? 'has-warnings' : ''; ?>">
-                        <div class="task-card-title">スタッフかけはし</div>
-                        <div class="task-card-count <?php echo $staffKakehashiCount > 0 ? 'warning' : 'success'; ?>">
-                            <?php echo $staffKakehashiCount; ?>件
-                        </div>
-                        <?php if ($staffKakehashiCount > 0): ?>
-                            <div class="task-card-link">
-                                <a href="pending_tasks.php" class="btn-task-detail">詳細を確認</a>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
             </div>
         <?php endif; ?>
 
@@ -1596,6 +1962,79 @@ try {
                     <?php endif; ?>
                 </div>
             </div>
+
+            <!-- 未作成タスクサマリー -->
+            <?php if ($planNeedingCount > 0 || $monitoringNeedingCount > 0 || $guardianKakehashiCount > 0 || $staffKakehashiCount > 0 || $submissionRequestCount > 0): ?>
+                <div class="task-summary-box main-content">
+                    <h2 style="margin-bottom: 15px; color: #333; font-size: 20px;">📋 未作成・未提出タスク</h2>
+                    <div class="task-summary-grid">
+                        <!-- 個別支援計画書 -->
+                        <div class="task-card <?php echo $planNeedingCount > 0 ? 'has-tasks' : ''; ?>">
+                            <div class="task-card-title">個別支援計画書</div>
+                            <div class="task-card-count <?php echo $planNeedingCount > 0 ? 'urgent' : 'success'; ?>">
+                                <?php echo $planNeedingCount; ?>件
+                            </div>
+                            <?php if ($planNeedingCount > 0): ?>
+                                <div class="task-card-link">
+                                    <a href="pending_tasks.php" class="btn-task-detail">詳細を確認</a>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- モニタリング -->
+                        <div class="task-card <?php echo $monitoringNeedingCount > 0 ? 'has-warnings' : ''; ?>">
+                            <div class="task-card-title">モニタリング</div>
+                            <div class="task-card-count <?php echo $monitoringNeedingCount > 0 ? 'warning' : 'success'; ?>">
+                                <?php echo $monitoringNeedingCount; ?>件
+                            </div>
+                            <?php if ($monitoringNeedingCount > 0): ?>
+                                <div class="task-card-link">
+                                    <a href="pending_tasks.php" class="btn-task-detail">詳細を確認</a>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- 保護者かけはし -->
+                        <div class="task-card <?php echo $guardianKakehashiCount > 0 ? 'has-warnings' : ''; ?>">
+                            <div class="task-card-title">保護者かけはし</div>
+                            <div class="task-card-count <?php echo $guardianKakehashiCount > 0 ? 'warning' : 'success'; ?>">
+                                <?php echo $guardianKakehashiCount; ?>件
+                            </div>
+                            <?php if ($guardianKakehashiCount > 0): ?>
+                                <div class="task-card-link">
+                                    <a href="pending_tasks.php" class="btn-task-detail">詳細を確認</a>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- スタッフかけはし -->
+                        <div class="task-card <?php echo $staffKakehashiCount > 0 ? 'has-warnings' : ''; ?>">
+                            <div class="task-card-title">スタッフかけはし</div>
+                            <div class="task-card-count <?php echo $staffKakehashiCount > 0 ? 'warning' : 'success'; ?>">
+                                <?php echo $staffKakehashiCount; ?>件
+                            </div>
+                            <?php if ($staffKakehashiCount > 0): ?>
+                                <div class="task-card-link">
+                                    <a href="pending_tasks.php" class="btn-task-detail">詳細を確認</a>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- 提出期限 -->
+                        <div class="task-card <?php echo $submissionRequestCount > 0 ? 'has-warnings' : ''; ?>">
+                            <div class="task-card-title">提出期限</div>
+                            <div class="task-card-count <?php echo $submissionRequestCount > 0 ? 'warning' : 'success'; ?>">
+                                <?php echo $submissionRequestCount; ?>件
+                            </div>
+                            <?php if ($submissionRequestCount > 0): ?>
+                                <div class="task-card-link">
+                                    <a href="submission_management.php" class="btn-task-detail">詳細を確認</a>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
 
             <!-- 選択された日付の情報 -->
             <div class="date-info main-content">

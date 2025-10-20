@@ -14,10 +14,13 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'staff') {
 $pdo = getDbConnection();
 $staffId = $_SESSION['user_id'];
 
+// スタッフの教室IDを取得
+$classroomId = $_SESSION['classroom_id'] ?? null;
+
 // 部門フィルター
 $departmentFilter = $_GET['department'] ?? '';
 
-// 全生徒を取得（チャットルームがなくても表示）
+// 自分の教室の生徒を取得（チャットルームがなくても表示）
 $sql = "
     SELECT
         s.id as student_id,
@@ -31,12 +34,19 @@ $sql = "
         (SELECT COUNT(*) FROM chat_messages WHERE room_id = cr.id AND sender_type = 'guardian' AND is_read = 0) as unread_count
     FROM students s
     LEFT JOIN users u ON s.guardian_id = u.id
-    LEFT JOIN classrooms cl ON s.classroom_id = cl.id
+    LEFT JOIN classrooms cl ON u.classroom_id = cl.id
     LEFT JOIN chat_rooms cr ON s.id = cr.student_id AND s.guardian_id = cr.guardian_id
     WHERE s.is_active = 1
 ";
 
 $params = [];
+
+// 教室フィルタリング
+if ($classroomId) {
+    $sql .= " AND u.classroom_id = ?";
+    $params[] = $classroomId;
+}
+
 if ($departmentFilter) {
     // grade_levelの値に変換
     $gradeMapping = [
@@ -137,6 +147,47 @@ if ($selectedRoomId) {
             align-items: center;
         }
 
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+            cursor: pointer;
+            padding: 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .hamburger:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .hamburger span {
+            width: 24px;
+            height: 3px;
+            background: white;
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(6px, 6px);
+        }
+
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(6px, -6px);
+        }
+
         .header h1 {
             font-size: 24px;
             font-weight: 600;
@@ -171,6 +222,22 @@ if ($selectedRoomId) {
             border-right: 1px solid #e0e0e0;
             background: #f8f9fa;
             overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 998;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
         }
 
         .room-item {
@@ -438,6 +505,148 @@ if ($selectedRoomId) {
             font-size: 12px;
         }
 
+        /* デスクトップ用レイアウト（デフォルト） */
+        @media (min-width: 769px) {
+            .hamburger {
+                display: none !important;
+            }
+
+            .nav-links {
+                display: flex !important;
+            }
+
+            .rooms-sidebar {
+                position: static !important;
+                transform: none !important;
+            }
+
+            .sidebar-overlay {
+                display: none !important;
+            }
+        }
+
+        /* レスポンシブデザイン */
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+            }
+
+            .container {
+                border-radius: 0;
+                height: 100vh;
+            }
+
+            .header {
+                padding: 15px 20px;
+            }
+
+            .header h1 {
+                font-size: 18px;
+            }
+
+            .hamburger {
+                display: flex;
+            }
+
+            .nav-links {
+                display: none;
+                position: fixed;
+                top: 60px;
+                right: 20px;
+                flex-direction: column;
+                background: white;
+                padding: 10px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 1000;
+            }
+
+            .nav-links.show {
+                display: flex;
+            }
+
+            .nav-links a {
+                color: #667eea;
+                background: #f8f9fa;
+            }
+
+            .rooms-sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 280px;
+                height: 100%;
+                z-index: 999;
+                transform: translateX(-100%);
+                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            }
+
+            .rooms-sidebar.active {
+                transform: translateX(0);
+            }
+
+            .chat-container {
+                width: 100%;
+            }
+
+            .chat-header {
+                padding: 12px 15px;
+            }
+
+            .chat-title {
+                font-size: 16px;
+            }
+
+            .messages-area {
+                padding: 15px;
+            }
+
+            .message-bubble {
+                max-width: 75%;
+                font-size: 14px;
+            }
+
+            .input-area {
+                padding: 15px;
+            }
+
+            .input-form textarea {
+                font-size: 14px;
+            }
+
+            .send-btn {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+
+            .file-input-label {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 16px;
+            }
+
+            .rooms-sidebar {
+                width: 240px;
+            }
+
+            .input-form {
+                flex-direction: column;
+            }
+
+            .send-btn {
+                width: 100%;
+            }
+
+            .message-bubble {
+                max-width: 85%;
+            }
+        }
+
         .attachment-link {
             display: inline-flex;
             align-items: center;
@@ -459,12 +668,143 @@ if ($selectedRoomId) {
         .attachment-link:hover {
             opacity: 0.8;
         }
+
+        /* 提出期限設定モーダル */
+        .submission-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .submission-modal.active {
+            display: flex;
+        }
+
+        .submission-modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .submission-modal-header {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .submission-form-group {
+            margin-bottom: 20px;
+        }
+
+        .submission-form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .submission-form-group input,
+        .submission-form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .submission-form-group input:focus,
+        .submission-form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .submission-form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .submission-modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .btn-submission {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-submission-cancel {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-submission-cancel:hover {
+            background: #5a6268;
+        }
+
+        .btn-submission-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-submission-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .submission-btn {
+            padding: 12px 20px;
+            background: #ff9800;
+            color: white;
+            border: 2px solid #ff9800;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .submission-btn:hover {
+            background: #f57c00;
+            border-color: #f57c00;
+        }
     </style>
 </head>
 <body>
+    <!-- サイドバーオーバーレイ -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <div class="container">
         <div class="header">
-            <h1>💬 チャット</h1>
+            <div class="header-left">
+                <div class="hamburger" id="hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <h1>💬 チャット</h1>
+            </div>
             <div class="nav-links">
                 <a href="renrakucho_activities.php">← 戻る</a>
             </div>
@@ -472,7 +812,7 @@ if ($selectedRoomId) {
 
         <div class="main-content">
             <!-- 生徒一覧サイドバー -->
-            <div class="rooms-sidebar">
+            <div class="rooms-sidebar" id="roomsSidebar">
                 <!-- 検索フィルター -->
                 <div class="filter-section">
                     <select onchange="location.href='chat.php?department=' + this.value" class="department-filter">
@@ -551,6 +891,9 @@ if ($selectedRoomId) {
                                     accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
                                 >
                             </div>
+                            <button type="button" class="submission-btn" onclick="openSubmissionModal()">
+                                📋 提出期限を設定
+                            </button>
                             <textarea
                                 id="messageInput"
                                 placeholder="メッセージを入力..."
@@ -568,6 +911,42 @@ if ($selectedRoomId) {
                     </div>
                 </div>
             <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- 提出期限設定モーダル -->
+    <div id="submissionModal" class="submission-modal">
+        <div class="submission-modal-content">
+            <h3 class="submission-modal-header">📋 提出期限の設定</h3>
+            <form id="submissionForm" onsubmit="submitSubmissionRequest(event)">
+                <div class="submission-form-group">
+                    <label>提出物タイトル *</label>
+                    <input type="text" id="submissionTitle" required placeholder="例: 学校の健康診断結果">
+                </div>
+                <div class="submission-form-group">
+                    <label>詳細説明</label>
+                    <textarea id="submissionDescription" placeholder="提出物の詳細を入力してください"></textarea>
+                </div>
+                <div class="submission-form-group">
+                    <label>提出期限 *</label>
+                    <input type="date" id="submissionDueDate" required>
+                </div>
+                <div class="submission-form-group">
+                    <label>参考資料の添付（任意）</label>
+                    <input type="file" id="submissionAttachment" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt">
+                    <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                        最大3MBまで（画像・PDF・Word・Excel・テキスト）
+                    </div>
+                    <div id="submissionFilePreview" style="display: none; margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 13px;">
+                        📎 <span id="submissionFileName"></span> (<span id="submissionFileSize"></span>)
+                        <button type="button" onclick="removeSubmissionFile()" style="margin-left: 10px; padding: 2px 8px; background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;">削除</button>
+                    </div>
+                </div>
+                <div class="submission-modal-footer">
+                    <button type="button" class="btn-submission btn-submission-cancel" onclick="closeSubmissionModal()">キャンセル</button>
+                    <button type="submit" class="btn-submission btn-submission-submit">設定して送信</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -780,6 +1159,132 @@ if ($selectedRoomId) {
             // 3秒ごとに新しいメッセージをチェック
             setInterval(loadMessages, 3000);
         }
+
+        // ハンバーガーメニューの開閉
+        const hamburger = document.getElementById('hamburger');
+        const sidebar = document.getElementById('roomsSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+            hamburger.classList.toggle('active');
+        }
+
+        hamburger.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', toggleSidebar);
+
+        // 生徒を選択したらサイドバーを閉じる（モバイルのみ）
+        const roomItems = document.querySelectorAll('.room-item');
+        roomItems.forEach(item => {
+            item.addEventListener('click', function() {
+                if (window.innerWidth <= 768) {
+                    setTimeout(() => {
+                        sidebar.classList.remove('active');
+                        overlay.classList.remove('active');
+                        hamburger.classList.remove('active');
+                    }, 100);
+                }
+            });
+        });
+        // 提出期限モーダルを開く
+        function openSubmissionModal() {
+            if (!roomId) {
+                alert('チャットルームを選択してください');
+                return;
+            }
+
+            // デフォルトの期限を明日に設定
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const dateString = tomorrow.toISOString().split('T')[0];
+            document.getElementById('submissionDueDate').value = dateString;
+
+            document.getElementById('submissionModal').classList.add('active');
+        }
+
+        // 提出期限モーダルを閉じる
+        function closeSubmissionModal() {
+            document.getElementById('submissionModal').classList.remove('active');
+            document.getElementById('submissionForm').reset();
+        }
+
+        // 提出期限用ファイル選択時のプレビュー
+        document.getElementById('submissionAttachment').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const maxSize = 3 * 1024 * 1024; // 3MB
+                if (file.size > maxSize) {
+                    alert('ファイルサイズは3MB以下にしてください');
+                    e.target.value = '';
+                    return;
+                }
+
+                document.getElementById('submissionFileName').textContent = file.name;
+                document.getElementById('submissionFileSize').textContent = formatFileSize(file.size);
+                document.getElementById('submissionFilePreview').style.display = 'block';
+            }
+        });
+
+        // 提出期限用ファイル削除
+        function removeSubmissionFile() {
+            document.getElementById('submissionAttachment').value = '';
+            document.getElementById('submissionFilePreview').style.display = 'none';
+        }
+
+        // 提出期限リクエストを送信
+        async function submitSubmissionRequest(event) {
+            event.preventDefault();
+
+            const title = document.getElementById('submissionTitle').value;
+            const description = document.getElementById('submissionDescription').value;
+            const dueDate = document.getElementById('submissionDueDate').value;
+            const fileInput = document.getElementById('submissionAttachment');
+            const file = fileInput.files[0];
+
+            if (!title || !dueDate) {
+                alert('タイトルと提出期限を入力してください');
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('action', 'create_submission');
+                formData.append('room_id', roomId);
+                formData.append('title', title);
+                formData.append('description', description);
+                formData.append('due_date', dueDate);
+
+                if (file) {
+                    formData.append('attachment', file);
+                }
+
+                const response = await fetch('chat_api.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('提出期限を設定しました');
+                    closeSubmissionModal();
+                    loadMessages(); // メッセージを再読み込み
+                } else {
+                    alert('エラー: ' + (result.error || '提出期限の設定に失敗しました'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('エラーが発生しました');
+            }
+        }
+
+        // モーダル外クリックで閉じる
+        document.getElementById('submissionModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeSubmissionModal();
+            }
+        });
     </script>
 </body>
 </html>

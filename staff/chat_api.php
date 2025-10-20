@@ -137,7 +137,124 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'データベースエラー: ' . $e->getMessage()]);
         }
-    } else {
+    }
+
+    // 提出期限設定
+    elseif ($action === 'create_submission') {
+        $roomId = $_POST['room_id'] ?? null;
+        $title = trim($_POST['title'] ?? '');
+        $description = trim($_POST['description'] ?? '');
+        $dueDate = $_POST['due_date'] ?? null;
+        $hasFile = isset($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK;
+
+        if (!$roomId || !$title || !$dueDate) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => '必須項目が入力されていません']);
+            exit;
+        }
+
+        try {
+            // ルーム情報を取得して生徒IDと保護者IDを取得
+            $stmt = $pdo->prepare("
+                SELECT student_id, guardian_id
+                FROM chat_rooms
+                WHERE id = ?
+            ");
+            $stmt->execute([$roomId]);
+            $room = $stmt->fetch();
+
+            if (!$room) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'error' => 'チャットルームが見つかりません']);
+                exit;
+            }
+
+            // ファイルアップロード処理
+            $attachmentPath = null;
+            $attachmentOriginalName = null;
+            $attachmentSize = null;
+
+            if ($hasFile) {
+                $file = $_FILES['attachment'];
+                $maxFileSize = 3 * 1024 * 1024; // 3MB
+
+                if ($file['size'] > $maxFileSize) {
+                    http_response_code(400);
+                    echo json_encode(['success' => false, 'error' => 'ファイルサイズは3MB以下にしてください']);
+                    exit;
+                }
+
+                $uploadDir = __DIR__ . '/../uploads/submission_attachments/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+
+                $fileExtension = pathinfo($file['name'], PATHINFO_EXTENSION);
+                $fileName = uniqid() . '_' . time() . '.' . $fileExtension;
+                $filePath = $uploadDir . $fileName;
+
+                if (move_uploaded_file($file['tmp_name'], $filePath)) {
+                    $attachmentPath = 'uploads/submission_attachments/' . $fileName;
+                    $attachmentOriginalName = $file['name'];
+                    $attachmentSize = $file['size'];
+                } else {
+                    http_response_code(500);
+                    echo json_encode(['success' => false, 'error' => 'ファイルのアップロードに失敗しました']);
+                    exit;
+                }
+            }
+
+            // 提出期限リクエストを作成
+            $stmt = $pdo->prepare("
+                INSERT INTO submission_requests
+                (room_id, student_id, guardian_id, created_by, title, description, due_date,
+                 attachment_path, attachment_original_name, attachment_size)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            $stmt->execute([
+                $roomId,
+                $room['student_id'],
+                $room['guardian_id'],
+                $userId,
+                $title,
+                $description,
+                $dueDate,
+                $attachmentPath,
+                $attachmentOriginalName,
+                $attachmentSize
+            ]);
+
+            $submissionId = $pdo->lastInsertId();
+
+            // チャットメッセージとして通知も送信
+            $notificationMessage = "📋 【提出期限のお知らせ】\n\n件名: {$title}\n";
+            if ($description) {
+                $notificationMessage .= "詳細: {$description}\n";
+            }
+            $notificationMessage .= "提出期限: " . date('Y年n月j日', strtotime($dueDate));
+
+            $stmt = $pdo->prepare("
+                INSERT INTO chat_messages (room_id, sender_id, sender_type, message, message_type)
+                VALUES (?, ?, ?, ?, 'normal')
+            ");
+            $stmt->execute([$roomId, $userId, $userType, $notificationMessage]);
+
+            // ルームの最終メッセージ時刻を更新
+            $stmt = $pdo->prepare("UPDATE chat_rooms SET last_message_at = NOW() WHERE id = ?");
+            $stmt->execute([$roomId]);
+
+            echo json_encode([
+                'success' => true,
+                'submission_id' => $submissionId,
+                'message' => '提出期限を設定しました'
+            ]);
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'データベースエラー: ' . $e->getMessage()]);
+        }
+    }
+
+    else {
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => '無効なアクション']);
     }

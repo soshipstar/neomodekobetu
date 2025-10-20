@@ -159,6 +159,51 @@ foreach ($students as $student) {
     }
 }
 
+// 未提出の提出期限を取得
+$pendingSubmissions = [];
+$overdueSubmissions = [];
+$urgentSubmissions = [];
+try {
+    $stmt = $pdo->prepare("
+        SELECT
+            sr.id,
+            sr.title,
+            sr.description,
+            sr.due_date,
+            sr.created_at,
+            sr.attachment_path,
+            sr.attachment_original_name,
+            sr.attachment_size,
+            s.student_name,
+            DATEDIFF(sr.due_date, ?) as days_left
+        FROM submission_requests sr
+        INNER JOIN students s ON sr.student_id = s.id
+        WHERE sr.guardian_id = ? AND sr.is_completed = 0
+        ORDER BY sr.due_date ASC
+    ");
+    $stmt->execute([$today, $guardianId]);
+    $submissions = $stmt->fetchAll();
+
+    foreach ($submissions as $submission) {
+        $daysLeft = $submission['days_left'];
+
+        // 期限切れ
+        if ($daysLeft < 0) {
+            $overdueSubmissions[] = $submission;
+        }
+        // 3日以内は緊急
+        elseif ($daysLeft <= 3) {
+            $urgentSubmissions[] = $submission;
+        }
+        // それ以外は通常
+        else {
+            $pendingSubmissions[] = $submission;
+        }
+    }
+} catch (Exception $e) {
+    error_log("Error fetching submission requests: " . $e->getMessage());
+}
+
 // 各生徒の最新の連絡帳を取得
 $notesData = [];
 if ($hasIntegratedNotesTable) {
@@ -1022,6 +1067,126 @@ function getGradeLabel($gradeLevel) {
                             <a href="kakehashi.php?student_id=<?php echo $kakehashi['student_id']; ?>&period_id=<?php echo $kakehashi['period_id']; ?>" class="notification-btn">
                                 かけはしを入力
                             </a>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+
+        <!-- 期限切れ提出物通知 -->
+        <?php if (!empty($overdueSubmissions)): ?>
+            <div class="notification-banner overdue">
+                <div class="notification-header overdue">
+                    ⚠️ 提出期限が過ぎた提出物があります
+                </div>
+                <?php foreach ($overdueSubmissions as $submission): ?>
+                    <div class="notification-item">
+                        <div class="notification-info">
+                            <div class="notification-student">
+                                <?php echo htmlspecialchars($submission['student_name']); ?>さん
+                            </div>
+                            <div class="notification-period">
+                                件名: <?php echo htmlspecialchars($submission['title']); ?>
+                            </div>
+                            <?php if ($submission['description']): ?>
+                                <div class="notification-period" style="font-size: 13px; color: #999;">
+                                    <?php echo nl2br(htmlspecialchars($submission['description'])); ?>
+                                </div>
+                            <?php endif; ?>
+                            <div class="notification-deadline overdue">
+                                提出期限: <?php echo date('Y年n月j日', strtotime($submission['due_date'])); ?>
+                                （<?php echo abs($submission['days_left']); ?>日経過）
+                            </div>
+                            <?php if ($submission['attachment_path']): ?>
+                                <div style="margin-top: 10px;">
+                                    <a href="../<?= htmlspecialchars($submission['attachment_path']) ?>"
+                                       style="color: #667eea; text-decoration: underline; font-size: 13px;"
+                                       download="<?= htmlspecialchars($submission['attachment_original_name']) ?>">
+                                        📎 <?= htmlspecialchars($submission['attachment_original_name']) ?>
+                                        (<?= number_format($submission['attachment_size'] / 1024, 1) ?> KB)
+                                    </a>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+
+        <!-- 緊急提出物通知 -->
+        <?php if (!empty($urgentSubmissions)): ?>
+            <div class="notification-banner urgent">
+                <div class="notification-header urgent">
+                    🔔 提出期限が近い提出物があります
+                </div>
+                <?php foreach ($urgentSubmissions as $submission): ?>
+                    <div class="notification-item">
+                        <div class="notification-info">
+                            <div class="notification-student">
+                                <?php echo htmlspecialchars($submission['student_name']); ?>さん
+                            </div>
+                            <div class="notification-period">
+                                件名: <?php echo htmlspecialchars($submission['title']); ?>
+                            </div>
+                            <?php if ($submission['description']): ?>
+                                <div class="notification-period" style="font-size: 13px; color: #999;">
+                                    <?php echo nl2br(htmlspecialchars($submission['description'])); ?>
+                                </div>
+                            <?php endif; ?>
+                            <div class="notification-deadline urgent">
+                                提出期限: <?php echo date('Y年n月j日', strtotime($submission['due_date'])); ?>
+                                （残り<?php echo $submission['days_left']; ?>日）
+                            </div>
+                            <?php if ($submission['attachment_path']): ?>
+                                <div style="margin-top: 10px;">
+                                    <a href="../<?= htmlspecialchars($submission['attachment_path']) ?>"
+                                       style="color: #667eea; text-decoration: underline; font-size: 13px;"
+                                       download="<?= htmlspecialchars($submission['attachment_original_name']) ?>">
+                                        📎 <?= htmlspecialchars($submission['attachment_original_name']) ?>
+                                        (<?= number_format($submission['attachment_size'] / 1024, 1) ?> KB)
+                                    </a>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+
+        <!-- 未提出提出物通知 -->
+        <?php if (!empty($pendingSubmissions)): ?>
+            <div class="notification-banner pending">
+                <div class="notification-header pending">
+                    📋 提出が必要な提出物があります
+                </div>
+                <?php foreach ($pendingSubmissions as $submission): ?>
+                    <div class="notification-item">
+                        <div class="notification-info">
+                            <div class="notification-student">
+                                <?php echo htmlspecialchars($submission['student_name']); ?>さん
+                            </div>
+                            <div class="notification-period">
+                                件名: <?php echo htmlspecialchars($submission['title']); ?>
+                            </div>
+                            <?php if ($submission['description']): ?>
+                                <div class="notification-period" style="font-size: 13px; color: #999;">
+                                    <?php echo nl2br(htmlspecialchars($submission['description'])); ?>
+                                </div>
+                            <?php endif; ?>
+                            <div class="notification-deadline pending">
+                                提出期限: <?php echo date('Y年n月j日', strtotime($submission['due_date'])); ?>
+                                （残り<?php echo $submission['days_left']; ?>日）
+                            </div>
+                            <?php if ($submission['attachment_path']): ?>
+                                <div style="margin-top: 10px;">
+                                    <a href="../<?= htmlspecialchars($submission['attachment_path']) ?>"
+                                       style="color: #667eea; text-decoration: underline; font-size: 13px;"
+                                       download="<?= htmlspecialchars($submission['attachment_original_name']) ?>">
+                                        📎 <?= htmlspecialchars($submission['attachment_original_name']) ?>
+                                        (<?= number_format($submission['attachment_size'] / 1024, 1) ?> KB)
+                                    </a>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>
