@@ -17,10 +17,30 @@ define('CHATGPT_API_URL', 'https://api.openai.com/v1/chat/completions');
  * @param string $commonActivity 共通活動内容
  * @param string $dailyNote 本日の様子
  * @param array $domains 気になったこと（領域と内容）
+ * @param array|null $supportPlan 支援案情報（purpose, content, domains, other）
  * @return string|false 統合された文章 or false
  */
-function generateIntegratedNote($activityName, $commonActivity, $dailyNote, $domains) {
+function generateIntegratedNote($activityName, $commonActivity, $dailyNote, $domains, $supportPlan = null) {
     $prompt = "あなたは個別支援教育の専門家です。以下の情報を元に、保護者に送る連絡帳として自然で読みやすい1つの文章にまとめてください。\n\n";
+
+    // 支援案情報がある場合は最初に記載
+    if (!empty($supportPlan)) {
+        $prompt .= "【支援案（事前計画）】\n";
+        if (!empty($supportPlan['purpose'])) {
+            $prompt .= "・活動の目的: {$supportPlan['purpose']}\n";
+        }
+        if (!empty($supportPlan['content'])) {
+            $prompt .= "・活動の計画内容: {$supportPlan['content']}\n";
+        }
+        if (!empty($supportPlan['domains'])) {
+            $prompt .= "・五領域への配慮: {$supportPlan['domains']}\n";
+        }
+        if (!empty($supportPlan['other'])) {
+            $prompt .= "・その他: {$supportPlan['other']}\n";
+        }
+        $prompt .= "\n";
+    }
+
     $prompt .= "【活動名】\n{$activityName}\n\n";
     $prompt .= "【本日の活動内容】\n{$commonActivity}\n\n";
 
@@ -38,6 +58,9 @@ function generateIntegratedNote($activityName, $commonActivity, $dailyNote, $dom
     }
 
     $prompt .= "上記の情報を、保護者が読みやすいように、敬体（です・ます調）で1つの自然な文章にまとめてください。";
+    if (!empty($supportPlan)) {
+        $prompt .= "支援案の目的や配慮事項を踏まえつつ、実際の活動の様子を中心に記述してください。";
+    }
     $prompt .= "箇条書きではなく、文章として流れるように記述してください。";
 
     $data = [

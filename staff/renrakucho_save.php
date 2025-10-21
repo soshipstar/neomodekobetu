@@ -19,6 +19,7 @@ $commonActivity = trim($_POST['common_activity'] ?? '');
 $recordDate = $_POST['record_date'] ?? date('Y-m-d');
 $students = $_POST['students'] ?? [];
 $activityId = $_POST['activity_id'] ?? null;
+$supportPlanId = $_POST['support_plan_id'] ?? null;
 
 // バリデーション
 if (empty($activityName)) {
@@ -60,10 +61,10 @@ try {
 
         $stmt = $pdo->prepare("
             UPDATE daily_records
-            SET activity_name = ?, common_activity = ?, updated_at = NOW()
+            SET activity_name = ?, common_activity = ?, support_plan_id = ?, updated_at = NOW()
             WHERE id = ?
         ");
-        $stmt->execute([$activityName, $commonActivity, $activityId]);
+        $stmt->execute([$activityName, $commonActivity, $supportPlanId, $activityId]);
 
         // 既存の生徒記録を削除（後で再挿入）
         $stmt = $pdo->prepare("
@@ -76,10 +77,10 @@ try {
     } else {
         // 新規活動を作成
         $stmt = $pdo->prepare("
-            INSERT INTO daily_records (record_date, staff_id, activity_name, common_activity)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO daily_records (record_date, staff_id, activity_name, common_activity, support_plan_id)
+            VALUES (?, ?, ?, ?, ?)
         ");
-        $stmt->execute([$recordDate, $currentUser['id'], $activityName, $commonActivity]);
+        $stmt->execute([$recordDate, $currentUser['id'], $activityName, $commonActivity, $supportPlanId]);
         $recordId = $pdo->lastInsertId();
     }
 

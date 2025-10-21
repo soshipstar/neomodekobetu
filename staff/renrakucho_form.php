@@ -20,6 +20,17 @@ $studentIds = $_POST['student_ids'] ?? [];
 $activityName = $_POST['activity_name'] ?? '';
 $recordDate = $_POST['record_date'] ?? date('Y-m-d');
 $activityId = $_GET['activity_id'] ?? null;
+$supportPlanId = $_POST['support_plan_id'] ?? null;
+
+// 支援案情報を取得（新規作成時に支援案が選択されている場合）
+$supportPlan = null;
+if ($supportPlanId && !$activityId) {
+    $stmt = $pdo->prepare("
+        SELECT * FROM support_plans WHERE id = ?
+    ");
+    $stmt->execute([$supportPlanId]);
+    $supportPlan = $stmt->fetch();
+}
 
 // 既存の活動を編集する場合（同じ教室のスタッフが作成した活動も編集可能）
 if ($activityId) {
@@ -517,22 +528,68 @@ $domains = [
             <?php endif; ?>
         </div>
 
+        <?php if ($supportPlan): ?>
+            <!-- 支援案情報の表示 -->
+            <div style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); border-left: 4px solid #667eea;">
+                <h2 style="color: #667eea; font-size: 18px; margin-bottom: 15px;">📝 選択された支援案</h2>
+                <div style="font-size: 14px; line-height: 1.8;">
+                    <div style="margin-bottom: 12px;">
+                        <strong style="color: #667eea;">活動名:</strong>
+                        <?php echo htmlspecialchars($supportPlan['activity_name'], ENT_QUOTES, 'UTF-8'); ?>
+                    </div>
+                    <?php if (!empty($supportPlan['activity_purpose'])): ?>
+                        <div style="margin-bottom: 12px;">
+                            <strong style="color: #667eea;">活動の目的:</strong><br>
+                            <?php echo nl2br(htmlspecialchars($supportPlan['activity_purpose'], ENT_QUOTES, 'UTF-8')); ?>
+                        </div>
+                    <?php endif; ?>
+                    <?php if (!empty($supportPlan['five_domains_consideration'])): ?>
+                        <div style="margin-bottom: 12px;">
+                            <strong style="color: #667eea;">五領域への配慮:</strong><br>
+                            <?php echo nl2br(htmlspecialchars($supportPlan['five_domains_consideration'], ENT_QUOTES, 'UTF-8')); ?>
+                        </div>
+                    <?php endif; ?>
+                    <?php if (!empty($supportPlan['other_notes'])): ?>
+                        <div style="margin-bottom: 12px;">
+                            <strong style="color: #667eea;">その他:</strong><br>
+                            <?php echo nl2br(htmlspecialchars($supportPlan['other_notes'], ENT_QUOTES, 'UTF-8')); ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+
         <form method="POST" action="renrakucho_save.php" id="renrakuchoForm">
             <input type="hidden" name="activity_name" value="<?php echo htmlspecialchars($activityName, ENT_QUOTES, 'UTF-8'); ?>">
             <input type="hidden" name="record_date" value="<?php echo htmlspecialchars($recordDate, ENT_QUOTES, 'UTF-8'); ?>">
             <?php if ($activityId): ?>
                 <input type="hidden" name="activity_id" value="<?php echo $activityId; ?>">
             <?php endif; ?>
+            <?php if ($supportPlanId): ?>
+                <input type="hidden" name="support_plan_id" value="<?php echo $supportPlanId; ?>">
+            <?php endif; ?>
 
             <!-- 共通活動入力欄 -->
             <div class="common-activity-section">
                 <h2>本日の活動（共通）</h2>
                 <p class="info-text">全ての参加者に反映される共通の活動内容を記入してください</p>
+                <?php if ($supportPlan): ?>
+                    <p class="info-text" style="background: #e7f3ff; padding: 10px; border-radius: 5px; border-left: 4px solid #667eea; margin-bottom: 10px;">
+                        💡 支援案「<?php echo htmlspecialchars($supportPlan['activity_name'], ENT_QUOTES, 'UTF-8'); ?>」の活動内容が反映されています。必要に応じて編集してください。
+                    </p>
+                <?php endif; ?>
                 <textarea
                     name="common_activity"
                     id="commonActivity"
                     placeholder="例: 公園で散歩、音楽活動、制作活動など"
-                ><?php echo htmlspecialchars($existingRecord['common_activity'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
+                ><?php
+                    // 既存の活動を編集する場合はその内容、新規作成で支援案がある場合は支援案の内容、それ以外は空
+                    if (isset($existingRecord['common_activity'])) {
+                        echo htmlspecialchars($existingRecord['common_activity'], ENT_QUOTES, 'UTF-8');
+                    } elseif ($supportPlan && !empty($supportPlan['activity_content'])) {
+                        echo htmlspecialchars($supportPlan['activity_content'], ENT_QUOTES, 'UTF-8');
+                    }
+                ?></textarea>
             </div>
 
             <!-- 個別の生徒記録 -->

@@ -50,7 +50,7 @@ if (!$activity) {
     exit;
 }
 
-// 統合された内容を取得
+// 送信済みの統合内容のみを取得
 $stmt = $pdo->prepare("
     SELECT
         inote.id,
@@ -62,7 +62,7 @@ $stmt = $pdo->prepare("
         s.grade_level
     FROM integrated_notes inote
     INNER JOIN students s ON inote.student_id = s.id
-    WHERE inote.daily_record_id = ?
+    WHERE inote.daily_record_id = ? AND inote.is_sent = 1
     ORDER BY s.student_name
 ");
 $stmt->execute([$activityId]);
@@ -82,7 +82,7 @@ function getGradeLabel($gradeLevel) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>統合内容閲覧 - <?php echo htmlspecialchars($activity['activity_name']); ?></title>
+    <title>送信済み内容の閲覧 - <?php echo htmlspecialchars($activity['activity_name']); ?></title>
     <style>
         * {
             margin: 0;
@@ -223,7 +223,7 @@ function getGradeLabel($gradeLevel) {
 <body>
     <div class="container">
         <div class="header">
-            <h1>📋 統合内容閲覧</h1>
+            <h1>📤 送信済み内容の閲覧</h1>
             <div class="activity-info">
                 <strong>活動名:</strong> <?php echo htmlspecialchars($activity['activity_name']); ?><br>
                 <strong>記録日:</strong> <?php echo date('Y年n月j日', strtotime($activity['record_date'])); ?><br>
@@ -237,8 +237,8 @@ function getGradeLabel($gradeLevel) {
 
         <?php if (empty($integratedNotes)): ?>
             <div class="empty-message">
-                <h2>統合された内容がありません</h2>
-                <p>「活動内容の統合」ボタンから統合を実行してください。</p>
+                <h2>送信済みの内容がありません</h2>
+                <p>「統合内容を編集」から統合内容を編集し、保護者に送信してください。</p>
             </div>
         <?php else: ?>
             <?php foreach ($integratedNotes as $note): ?>
@@ -249,11 +249,7 @@ function getGradeLabel($gradeLevel) {
                             <span class="grade-badge"><?php echo getGradeLabel($note['grade_level']); ?></span>
                         </div>
                         <div>
-                            <?php if ($note['is_sent']): ?>
-                                <span class="status-badge status-sent">送信済み</span>
-                            <?php else: ?>
-                                <span class="status-badge status-not-sent">未送信</span>
-                            <?php endif; ?>
+                            <span class="status-badge status-sent">送信済み</span>
                         </div>
                     </div>
 

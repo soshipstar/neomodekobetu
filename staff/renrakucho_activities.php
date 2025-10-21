@@ -110,12 +110,15 @@ if ($classroomId) {
     $stmt = $pdo->prepare("
         SELECT dr.id, dr.activity_name, dr.common_activity, dr.staff_id,
                u.full_name as staff_name,
+               sp.activity_name as support_plan_name,
                COUNT(DISTINCT sr.id) as participant_count,
-               COUNT(DISTINCT inote.id) as integrated_count
+               COUNT(DISTINCT CASE WHEN inote.is_sent = 0 THEN inote.id END) as unsent_count,
+               COUNT(DISTINCT CASE WHEN inote.is_sent = 1 THEN inote.id END) as sent_count
         FROM daily_records dr
         INNER JOIN users u ON dr.staff_id = u.id
+        LEFT JOIN support_plans sp ON dr.support_plan_id = sp.id
         LEFT JOIN student_records sr ON dr.id = sr.daily_record_id
-        LEFT JOIN integrated_notes inote ON dr.id = inote.daily_record_id AND inote.is_sent = 0
+        LEFT JOIN integrated_notes inote ON dr.id = inote.daily_record_id
         WHERE dr.record_date = ? AND u.classroom_id = ?
         GROUP BY dr.id
         ORDER BY dr.created_at
@@ -125,12 +128,15 @@ if ($classroomId) {
     $stmt = $pdo->prepare("
         SELECT dr.id, dr.activity_name, dr.common_activity, dr.staff_id,
                u.full_name as staff_name,
+               sp.activity_name as support_plan_name,
                COUNT(DISTINCT sr.id) as participant_count,
-               COUNT(DISTINCT inote.id) as integrated_count
+               COUNT(DISTINCT CASE WHEN inote.is_sent = 0 THEN inote.id END) as unsent_count,
+               COUNT(DISTINCT CASE WHEN inote.is_sent = 1 THEN inote.id END) as sent_count
         FROM daily_records dr
         INNER JOIN users u ON dr.staff_id = u.id
+        LEFT JOIN support_plans sp ON dr.support_plan_id = sp.id
         LEFT JOIN student_records sr ON dr.id = sr.daily_record_id
-        LEFT JOIN integrated_notes inote ON dr.id = inote.daily_record_id AND inote.is_sent = 0
+        LEFT JOIN integrated_notes inote ON dr.id = inote.daily_record_id
         WHERE dr.record_date = ?
         GROUP BY dr.id
         ORDER BY dr.created_at
@@ -1489,11 +1495,6 @@ if ($classroomId) {
                     </div>
                 </div>
 
-                <!-- チャットボタン -->
-                <a href="chat.php" class="chat-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.3s;">
-                    💬 チャット
-                </a>
-
                 <!-- マスタ管理ドロップダウン -->
                 <div class="dropdown">
                     <button class="dropdown-toggle master" onclick="toggleDropdown(event, this)">
@@ -1515,6 +1516,16 @@ if ($classroomId) {
                         </a>
                     </div>
                 </div>
+
+                <!-- チャットボタン -->
+                <a href="chat.php" class="chat-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.3s;">
+                    💬 チャット
+                </a>
+
+                <!-- マニュアルボタン -->
+                <a href="manual.php" class="manual-btn" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.3s;">
+                    📖 マニュアル
+                </a>
 
                 <a href="/logout.php" class="logout-btn">ログアウト</a>
             </div>
@@ -2096,6 +2107,10 @@ if ($classroomId) {
                             <?php if ($activity['staff_id'] == $currentUser['id']): ?>
                                 <span style="color: #667eea; font-weight: bold;">(自分)</span>
                             <?php endif; ?>
+                            <?php if (!empty($activity['support_plan_name'])): ?>
+                                <br>
+                                <span style="color: #667eea;">📝 支援案: <?php echo htmlspecialchars($activity['support_plan_name'], ENT_QUOTES, 'UTF-8'); ?></span>
+                            <?php endif; ?>
                         </div>
 
                         <?php if ($activity['common_activity']): ?>
@@ -2106,9 +2121,10 @@ if ($classroomId) {
 
                         <div class="activity-actions">
                             <a href="renrakucho_form.php?activity_id=<?php echo $activity['id']; ?>" class="btn btn-edit">編集</a>
-                            <a href="integrate_activity.php?activity_id=<?php echo $activity['id']; ?>" class="btn btn-integrate">活動内容の統合</a>
-                            <?php if ($activity['integrated_count'] > 0): ?>
-                                <a href="view_integrated.php?activity_id=<?php echo $activity['id']; ?>" class="btn btn-view">統合内容を閲覧</a>
+                            <a href="regenerate_integration.php?activity_id=<?php echo $activity['id']; ?>" class="btn btn-integrate" onclick="return confirm('既存の統合内容（未送信）を削除して、1から統合し直しますか？');">🔄 統合する</a>
+                            <a href="integrate_activity.php?activity_id=<?php echo $activity['id']; ?>" class="btn" style="background: #667eea; color: white;">✏️ 統合内容を編集</a>
+                            <?php if ($activity['sent_count'] > 0): ?>
+                                <a href="view_integrated.php?activity_id=<?php echo $activity['id']; ?>" class="btn btn-view">📤 送信済み内容を閲覧</a>
                             <?php endif; ?>
                             <form method="POST" action="delete_activity.php" style="display: inline;" onsubmit="return confirm('この活動を削除しますか？');">
                                 <input type="hidden" name="activity_id" value="<?php echo $activity['id']; ?>">
@@ -2121,9 +2137,14 @@ if ($classroomId) {
             </div>
 
             <div class="main-content">
-                <button type="button" class="add-activity-btn" onclick="location.href='renrakucho.php?date=<?php echo urlencode($selectedDate); ?>'">
-                    新しい活動を追加
-                </button>
+                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                    <button type="button" class="add-activity-btn" onclick="location.href='renrakucho.php?date=<?php echo urlencode($selectedDate); ?>'">
+                        新しい活動を追加
+                    </button>
+                    <button type="button" class="add-activity-btn" style="background: #667eea;" onclick="location.href='support_plans.php'">
+                        📝 支援案を管理
+                    </button>
+                </div>
             </div>
         </div>
     </div>

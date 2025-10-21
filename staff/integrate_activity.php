@@ -1,6 +1,6 @@
 <?php
 /**
- * 活動内容統合ページ（ChatGPT統合）
+ * 活動内容統合ページ（AI統合）
  */
 
 require_once __DIR__ . '/../includes/auth.php';
@@ -27,19 +27,23 @@ if (!$activityId) {
 // 活動情報を取得（同じ教室のスタッフが作成した活動も統合可能）
 if ($classroomId) {
     $stmt = $pdo->prepare("
-        SELECT dr.id, dr.activity_name, dr.common_activity, dr.record_date, dr.staff_id,
-               u.full_name as staff_name
+        SELECT dr.id, dr.activity_name, dr.common_activity, dr.record_date, dr.staff_id, dr.support_plan_id,
+               u.full_name as staff_name,
+               sp.activity_purpose, sp.activity_content, sp.five_domains_consideration, sp.other_notes
         FROM daily_records dr
         INNER JOIN users u ON dr.staff_id = u.id
+        LEFT JOIN support_plans sp ON dr.support_plan_id = sp.id
         WHERE dr.id = ? AND u.classroom_id = ?
     ");
     $stmt->execute([$activityId, $classroomId]);
 } else {
     $stmt = $pdo->prepare("
-        SELECT dr.id, dr.activity_name, dr.common_activity, dr.record_date, dr.staff_id,
-               u.full_name as staff_name
+        SELECT dr.id, dr.activity_name, dr.common_activity, dr.record_date, dr.staff_id, dr.support_plan_id,
+               u.full_name as staff_name,
+               sp.activity_purpose, sp.activity_content, sp.five_domains_consideration, sp.other_notes
         FROM daily_records dr
         INNER JOIN users u ON dr.staff_id = u.id
+        LEFT JOIN support_plans sp ON dr.support_plan_id = sp.id
         WHERE dr.id = ?
     ");
     $stmt->execute([$activityId]);
@@ -76,7 +80,7 @@ foreach ($stmt->fetchAll() as $row) {
     $existingIntegrations[$row['student_id']] = $row;
 }
 
-// ChatGPTで統合文章を生成
+// AIで統合文章を生成
 $integratedNotes = [];
 foreach ($studentRecords as $record) {
     $studentId = $record['student_id'];
@@ -91,7 +95,7 @@ foreach ($studentRecords as $record) {
         continue;
     }
 
-    // ChatGPTで統合
+    // AIで統合
     $domains = [];
     if (!empty($record['domain1']) && !empty($record['domain1_content'])) {
         $domains[] = [
@@ -106,11 +110,23 @@ foreach ($studentRecords as $record) {
         ];
     }
 
+    // 支援案情報を準備
+    $supportPlan = null;
+    if (!empty($activity['support_plan_id'])) {
+        $supportPlan = [
+            'purpose' => $activity['activity_purpose'] ?? '',
+            'content' => $activity['activity_content'] ?? '',
+            'domains' => $activity['five_domains_consideration'] ?? '',
+            'other' => $activity['other_notes'] ?? ''
+        ];
+    }
+
     $integratedContent = generateIntegratedNote(
         $activity['activity_name'],
         $activity['common_activity'],
         $record['daily_note'] ?? '',
-        $domains
+        $domains,
+        $supportPlan
     );
 
     if ($integratedContent === false) {
@@ -134,7 +150,7 @@ foreach ($studentRecords as $record) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>活動内容の統合 - 個別支援連絡帳システム</title>
+    <title>統合内容の編集 - 個別支援連絡帳システム</title>
     <style>
         * {
             margin: 0;
@@ -252,12 +268,67 @@ foreach ($studentRecords as $record) {
             font-size: 14px;
             margin-bottom: 15px;
         }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .draft-save-btn {
+            flex: 1;
+            padding: 15px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .draft-save-btn:hover {
+            background: #5568d3;
+        }
+
+        .draft-save-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .message {
+            padding: 12px 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        .last-saved {
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>活動内容の統合</h1>
+            <h1>✏️ 統合内容の編集</h1>
             <a href="renrakucho_activities.php" class="back-btn">← 活動一覧へ</a>
         </div>
 
@@ -273,10 +344,16 @@ foreach ($studentRecords as $record) {
         </div>
 
         <p class="info-text" style="background: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107;">
-            ChatGPTが生成した文章を確認・編集できます。編集後、「活動内容を送信」ボタンで保護者に配信されます。
+            💡 AIが生成した統合内容を確認・編集できます。<br>
+            📝 途中保存した内容は、次回アクセス時に続きから編集できます。<br>
+            💾 「途中保存」ボタンで下書き保存（自動保存: 5分ごと / ショートカット: Ctrl+S）<br>
+            📤 「活動内容を送信」ボタンで保護者に配信されます。
         </p>
 
-        <form method="POST" action="send_to_guardians.php">
+        <div id="messageArea"></div>
+        <div id="lastSaved" class="last-saved"></div>
+
+        <form id="integrationForm" method="POST" action="send_to_guardians.php">
             <input type="hidden" name="activity_id" value="<?php echo $activityId; ?>">
 
             <?php foreach ($integratedNotes as $studentId => $note): ?>
@@ -294,8 +371,98 @@ foreach ($studentRecords as $record) {
                 </div>
             <?php endforeach; ?>
 
-            <button type="submit" class="submit-btn">活動内容を送信</button>
+            <div class="button-group">
+                <button type="button" id="draftSaveBtn" class="draft-save-btn">💾 途中保存</button>
+                <button type="submit" class="submit-btn">📤 活動内容を送信</button>
+            </div>
         </form>
     </div>
+
+    <script>
+    // 途中保存機能
+    const draftSaveBtn = document.getElementById('draftSaveBtn');
+    const form = document.getElementById('integrationForm');
+    const messageArea = document.getElementById('messageArea');
+    const lastSavedDiv = document.getElementById('lastSaved');
+
+    // メッセージ表示関数
+    function showMessage(message, type = 'success') {
+        messageArea.innerHTML = `<div class="message ${type}">${message}</div>`;
+        setTimeout(() => {
+            messageArea.innerHTML = '';
+        }, 5000);
+    }
+
+    // 最終保存時刻を更新
+    function updateLastSaved() {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        lastSavedDiv.textContent = `最終保存: ${timeStr}`;
+    }
+
+    // 途中保存処理
+    draftSaveBtn.addEventListener('click', async function() {
+        draftSaveBtn.disabled = true;
+        draftSaveBtn.textContent = '💾 保存中...';
+
+        const formData = new FormData(form);
+
+        try {
+            const response = await fetch('save_draft_integration.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showMessage(result.message, 'success');
+                updateLastSaved();
+            } else {
+                showMessage(result.error || '保存に失敗しました', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showMessage('通信エラーが発生しました', 'error');
+        } finally {
+            draftSaveBtn.disabled = false;
+            draftSaveBtn.textContent = '💾 途中保存';
+        }
+    });
+
+    // 自動保存（5分ごと）
+    let autoSaveInterval = setInterval(async function() {
+        const formData = new FormData(form);
+
+        try {
+            const response = await fetch('save_draft_integration.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                updateLastSaved();
+                console.log('Auto-saved:', result.message);
+            }
+        } catch (error) {
+            console.error('Auto-save error:', error);
+        }
+    }, 5 * 60 * 1000); // 5分
+
+    // ページ離脱時に自動保存を停止
+    window.addEventListener('beforeunload', function() {
+        clearInterval(autoSaveInterval);
+    });
+
+    // Ctrl+S / Cmd+S で途中保存
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            draftSaveBtn.click();
+        }
+    });
+    </script>
 </body>
 </html>

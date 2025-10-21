@@ -140,6 +140,28 @@ if ($existingRecord) {
     $stmt->execute([$existingRecord['id']]);
     $existingParticipants = $stmt->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_ASSOC);
 }
+
+// その日の支援案のみを取得（同じ教室のスタッフが作成した支援案）
+if ($classroomId) {
+    $stmt = $pdo->prepare("
+        SELECT sp.*, u.full_name as staff_name
+        FROM support_plans sp
+        INNER JOIN users u ON sp.staff_id = u.id
+        WHERE sp.classroom_id = ? AND sp.activity_date = ?
+        ORDER BY sp.created_at DESC
+    ");
+    $stmt->execute([$classroomId, $today]);
+} else {
+    $stmt = $pdo->prepare("
+        SELECT sp.*, u.full_name as staff_name
+        FROM support_plans sp
+        INNER JOIN users u ON sp.staff_id = u.id
+        WHERE sp.activity_date = ?
+        ORDER BY sp.created_at DESC
+    ");
+    $stmt->execute([$today]);
+}
+$supportPlans = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -418,8 +440,49 @@ if ($existingRecord) {
 
         <div class="selection-area">
             <h2>新しい活動の追加</h2>
+
+            <!-- 支援案選択 -->
             <div style="margin-bottom: 20px;">
-                <label for="activityName" style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">活動名</label>
+                <label for="supportPlan" style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">
+                    支援案を選択
+                    <span style="font-size: 12px; color: #666; font-weight: normal;">(任意)</span>
+                    <a href="support_plan_form.php" style="font-size: 12px; margin-left: 10px;">📝 この日の支援案を作成</a>
+                </label>
+                <?php if (empty($supportPlans)): ?>
+                    <div style="background: #fff3cd; padding: 12px; border-radius: 5px; border-left: 4px solid #ffc107; font-size: 14px;">
+                        💡 この日（<?php echo date('Y年m月d日', strtotime($today)); ?>）の支援案がまだ作成されていません。
+                        <a href="support_plan_form.php" style="color: #667eea; text-decoration: underline;">支援案を作成</a>してから活動を追加すると、より効率的に記録できます。
+                    </div>
+                <?php endif; ?>
+                <select id="supportPlan" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; <?php echo empty($supportPlans) ? 'margin-top: 10px;' : ''; ?>">
+                    <option value="">支援案を選択しない（手動入力）</option>
+                    <?php foreach ($supportPlans as $plan): ?>
+                        <option value="<?php echo $plan['id']; ?>"
+                                data-activity-name="<?php echo htmlspecialchars($plan['activity_name'], ENT_QUOTES, 'UTF-8'); ?>"
+                                data-purpose="<?php echo htmlspecialchars($plan['activity_purpose'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                data-content="<?php echo htmlspecialchars($plan['activity_content'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                data-domains="<?php echo htmlspecialchars($plan['five_domains_consideration'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                data-other="<?php echo htmlspecialchars($plan['other_notes'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                            <?php echo htmlspecialchars($plan['activity_name']); ?>
+                            <span style="color: #666;">(作成者: <?php echo htmlspecialchars($plan['staff_name']); ?>)</span>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <!-- 支援案の内容表示 -->
+            <div id="supportPlanDetails" style="display: none; background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #667eea;">
+                <h3 style="color: #667eea; font-size: 16px; margin-bottom: 10px;">選択した支援案の内容</h3>
+                <div id="planPurpose" style="margin-bottom: 10px;"></div>
+                <div id="planContent" style="margin-bottom: 10px;"></div>
+                <div id="planDomains" style="margin-bottom: 10px;"></div>
+                <div id="planOther"></div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label for="activityName" style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">
+                    活動名<span style="color: #dc3545;">*</span>
+                </label>
                 <input
                     type="text"
                     id="activityName"
@@ -465,11 +528,68 @@ if ($existingRecord) {
     <script>
         const addParticipantsBtn = document.getElementById('addParticipantsBtn');
         const formArea = document.getElementById('formArea');
+        const supportPlanSelect = document.getElementById('supportPlan');
+        const supportPlanDetails = document.getElementById('supportPlanDetails');
+        const activityNameInput = document.getElementById('activityName');
         const existingRecord = <?php echo json_encode($existingRecord); ?>;
         const existingParticipants = <?php echo json_encode($existingParticipants); ?>;
 
+        // 支援案選択時の処理
+        supportPlanSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+
+            if (this.value === '') {
+                supportPlanDetails.style.display = 'none';
+                activityNameInput.value = '';
+                activityNameInput.readOnly = false;
+                activityNameInput.style.backgroundColor = '';
+                return;
+            }
+
+            // 支援案の内容を表示
+            const activityName = selectedOption.dataset.activityName || '';
+            const purpose = selectedOption.dataset.purpose || '';
+            const content = selectedOption.dataset.content || '';
+            const domains = selectedOption.dataset.domains || '';
+            const other = selectedOption.dataset.other || '';
+
+            // 活動名を自動入力
+            activityNameInput.value = activityName;
+            activityNameInput.readOnly = true;
+            activityNameInput.style.backgroundColor = '#f8f9fa';
+
+            // 支援案の内容を表示
+            let html = '';
+            if (purpose) {
+                html += '<div style="margin-bottom: 8px;"><strong style="color: #667eea;">活動の目的:</strong><br>' + escapeHtml(purpose) + '</div>';
+            }
+            if (content) {
+                html += '<div style="margin-bottom: 8px;"><strong style="color: #667eea;">活動の内容:</strong><br>' + escapeHtml(content) + '</div>';
+            }
+            if (domains) {
+                html += '<div style="margin-bottom: 8px;"><strong style="color: #667eea;">五領域への配慮:</strong><br>' + escapeHtml(domains) + '</div>';
+            }
+            if (other) {
+                html += '<div><strong style="color: #667eea;">その他:</strong><br>' + escapeHtml(other) + '</div>';
+            }
+
+            document.getElementById('planPurpose').innerHTML = purpose ? '<div style="margin-bottom: 8px;"><strong style="color: #667eea;">活動の目的:</strong><br>' + escapeHtml(purpose) + '</div>' : '';
+            document.getElementById('planContent').innerHTML = content ? '<div style="margin-bottom: 8px;"><strong style="color: #667eea;">活動の内容:</strong><br>' + escapeHtml(content) + '</div>' : '';
+            document.getElementById('planDomains').innerHTML = domains ? '<div style="margin-bottom: 8px;"><strong style="color: #667eea;">五領域への配慮:</strong><br>' + escapeHtml(domains) + '</div>' : '';
+            document.getElementById('planOther').innerHTML = other ? '<div><strong style="color: #667eea;">その他:</strong><br>' + escapeHtml(other) + '</div>' : '';
+
+            supportPlanDetails.style.display = 'block';
+        });
+
+        // HTMLエスケープ関数
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML.replace(/\n/g, '<br>');
+        }
+
         addParticipantsBtn.addEventListener('click', function() {
-            const activityName = document.getElementById('activityName').value.trim();
+            const activityName = activityNameInput.value.trim();
             const checkedBoxes = document.querySelectorAll('input[name="students[]"]:checked');
 
             if (activityName === '') {
@@ -489,6 +609,16 @@ if ($existingRecord) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = 'renrakucho_form.php';
+
+            // 支援案IDを追加（選択されている場合）
+            const supportPlanId = supportPlanSelect.value;
+            if (supportPlanId) {
+                const planInput = document.createElement('input');
+                planInput.type = 'hidden';
+                planInput.name = 'support_plan_id';
+                planInput.value = supportPlanId;
+                form.appendChild(planInput);
+            }
 
             // 活動名を追加
             const activityInput = document.createElement('input');
