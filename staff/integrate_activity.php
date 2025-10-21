@@ -13,6 +13,9 @@ requireUserType(['staff', 'admin']);
 $pdo = getDbConnection();
 $currentUser = getCurrentUser();
 
+// スタッフの教室IDを取得
+$classroomId = $_SESSION['classroom_id'] ?? null;
+
 $activityId = $_GET['activity_id'] ?? null;
 
 if (!$activityId) {
@@ -21,17 +24,30 @@ if (!$activityId) {
     exit;
 }
 
-// 活動情報を取得
-$stmt = $pdo->prepare("
-    SELECT dr.id, dr.activity_name, dr.common_activity, dr.record_date
-    FROM daily_records dr
-    WHERE dr.id = ? AND dr.staff_id = ?
-");
-$stmt->execute([$activityId, $currentUser['id']]);
+// 活動情報を取得（同じ教室のスタッフが作成した活動も統合可能）
+if ($classroomId) {
+    $stmt = $pdo->prepare("
+        SELECT dr.id, dr.activity_name, dr.common_activity, dr.record_date, dr.staff_id,
+               u.full_name as staff_name
+        FROM daily_records dr
+        INNER JOIN users u ON dr.staff_id = u.id
+        WHERE dr.id = ? AND u.classroom_id = ?
+    ");
+    $stmt->execute([$activityId, $classroomId]);
+} else {
+    $stmt = $pdo->prepare("
+        SELECT dr.id, dr.activity_name, dr.common_activity, dr.record_date, dr.staff_id,
+               u.full_name as staff_name
+        FROM daily_records dr
+        INNER JOIN users u ON dr.staff_id = u.id
+        WHERE dr.id = ?
+    ");
+    $stmt->execute([$activityId]);
+}
 $activity = $stmt->fetch();
 
 if (!$activity) {
-    $_SESSION['error'] = '活動が見つかりません';
+    $_SESSION['error'] = 'この活動にアクセスする権限がありません';
     header('Location: renrakucho_activities.php');
     exit;
 }
@@ -247,6 +263,12 @@ foreach ($studentRecords as $record) {
 
         <div class="activity-info">
             <h2><?php echo htmlspecialchars($activity['activity_name'], ENT_QUOTES, 'UTF-8'); ?></h2>
+            <p style="color: #666; font-size: 14px; margin-bottom: 10px;">
+                作成者: <?php echo htmlspecialchars($activity['staff_name'], ENT_QUOTES, 'UTF-8'); ?>
+                <?php if ($activity['staff_id'] == $currentUser['id']): ?>
+                    <span style="color: #667eea; font-weight: bold;">(自分)</span>
+                <?php endif; ?>
+            </p>
             <p><?php echo nl2br(htmlspecialchars($activity['common_activity'], ENT_QUOTES, 'UTF-8')); ?></p>
         </div>
 

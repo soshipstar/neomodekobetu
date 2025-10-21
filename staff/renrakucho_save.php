@@ -43,13 +43,27 @@ try {
     $pdo->beginTransaction();
 
     if ($activityId) {
-        // 既存の活動を更新
+        // 既存の活動を更新（同じ教室のスタッフが作成した活動も更新可能）
+        // まず、この活動が自分の教室のものか確認
+        $classroomId = $_SESSION['classroom_id'] ?? null;
+        if ($classroomId) {
+            $checkStmt = $pdo->prepare("
+                SELECT dr.id FROM daily_records dr
+                INNER JOIN users u ON dr.staff_id = u.id
+                WHERE dr.id = ? AND u.classroom_id = ?
+            ");
+            $checkStmt->execute([$activityId, $classroomId]);
+            if (!$checkStmt->fetch()) {
+                throw new Exception('この活動を更新する権限がありません');
+            }
+        }
+
         $stmt = $pdo->prepare("
             UPDATE daily_records
             SET activity_name = ?, common_activity = ?, updated_at = NOW()
-            WHERE id = ? AND staff_id = ?
+            WHERE id = ?
         ");
-        $stmt->execute([$activityName, $commonActivity, $activityId, $currentUser['id']]);
+        $stmt->execute([$activityName, $commonActivity, $activityId]);
 
         // 既存の生徒記録を削除（後で再挿入）
         $stmt = $pdo->prepare("

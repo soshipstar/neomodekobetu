@@ -45,16 +45,28 @@ $prevYear = $month == 1 ? $year - 1 : $year;
 $nextMonth = $month == 12 ? 1 : $month + 1;
 $nextYear = $month == 12 ? $year + 1 : $year;
 
-// この月の活動がある日付を取得
-$stmt = $pdo->prepare("
-    SELECT DISTINCT DATE(record_date) as date
-    FROM daily_records
-    WHERE staff_id = ?
-    AND YEAR(record_date) = ?
-    AND MONTH(record_date) = ?
-    ORDER BY record_date
-");
-$stmt->execute([$currentUser['id'], $year, $month]);
+// この月の活動がある日付を取得（同じ教室のスタッフの活動を全て表示）
+if ($classroomId) {
+    $stmt = $pdo->prepare("
+        SELECT DISTINCT DATE(dr.record_date) as date
+        FROM daily_records dr
+        INNER JOIN users u ON dr.staff_id = u.id
+        WHERE u.classroom_id = ?
+        AND YEAR(dr.record_date) = ?
+        AND MONTH(dr.record_date) = ?
+        ORDER BY dr.record_date
+    ");
+    $stmt->execute([$classroomId, $year, $month]);
+} else {
+    $stmt = $pdo->prepare("
+        SELECT DISTINCT DATE(record_date) as date
+        FROM daily_records
+        WHERE YEAR(record_date) = ?
+        AND MONTH(record_date) = ?
+        ORDER BY record_date
+    ");
+    $stmt->execute([$year, $month]);
+}
 $activeDates = array_column($stmt->fetchAll(), 'date');
 
 // この月の休日を取得
@@ -93,19 +105,38 @@ foreach ($events as $event) {
     ];
 }
 
-// 選択された日付の活動一覧を取得
-$stmt = $pdo->prepare("
-    SELECT dr.id, dr.activity_name, dr.common_activity,
-           COUNT(DISTINCT sr.id) as participant_count,
-           COUNT(DISTINCT inote.id) as integrated_count
-    FROM daily_records dr
-    LEFT JOIN student_records sr ON dr.id = sr.daily_record_id
-    LEFT JOIN integrated_notes inote ON dr.id = inote.daily_record_id AND inote.is_sent = 0
-    WHERE dr.record_date = ? AND dr.staff_id = ?
-    GROUP BY dr.id
-    ORDER BY dr.created_at
-");
-$stmt->execute([$selectedDate, $currentUser['id']]);
+// 選択された日付の活動一覧を取得（同じ教室のスタッフの活動を全て表示）
+if ($classroomId) {
+    $stmt = $pdo->prepare("
+        SELECT dr.id, dr.activity_name, dr.common_activity, dr.staff_id,
+               u.full_name as staff_name,
+               COUNT(DISTINCT sr.id) as participant_count,
+               COUNT(DISTINCT inote.id) as integrated_count
+        FROM daily_records dr
+        INNER JOIN users u ON dr.staff_id = u.id
+        LEFT JOIN student_records sr ON dr.id = sr.daily_record_id
+        LEFT JOIN integrated_notes inote ON dr.id = inote.daily_record_id AND inote.is_sent = 0
+        WHERE dr.record_date = ? AND u.classroom_id = ?
+        GROUP BY dr.id
+        ORDER BY dr.created_at
+    ");
+    $stmt->execute([$selectedDate, $classroomId]);
+} else {
+    $stmt = $pdo->prepare("
+        SELECT dr.id, dr.activity_name, dr.common_activity, dr.staff_id,
+               u.full_name as staff_name,
+               COUNT(DISTINCT sr.id) as participant_count,
+               COUNT(DISTINCT inote.id) as integrated_count
+        FROM daily_records dr
+        INNER JOIN users u ON dr.staff_id = u.id
+        LEFT JOIN student_records sr ON dr.id = sr.daily_record_id
+        LEFT JOIN integrated_notes inote ON dr.id = inote.daily_record_id AND inote.is_sent = 0
+        WHERE dr.record_date = ?
+        GROUP BY dr.id
+        ORDER BY dr.created_at
+    ");
+    $stmt->execute([$selectedDate]);
+}
 $activities = $stmt->fetchAll();
 
 // 本日の参加予定者を取得（休日を除外）
@@ -2058,6 +2089,13 @@ if ($classroomId) {
                         <div class="activity-header">
                             <div class="activity-name"><?php echo htmlspecialchars($activity['activity_name'], ENT_QUOTES, 'UTF-8'); ?></div>
                             <div class="participant-count">参加者 <?php echo $activity['participant_count']; ?>名</div>
+                        </div>
+
+                        <div style="font-size: 14px; color: #666; margin-bottom: 10px;">
+                            作成者: <?php echo htmlspecialchars($activity['staff_name'], ENT_QUOTES, 'UTF-8'); ?>
+                            <?php if ($activity['staff_id'] == $currentUser['id']): ?>
+                                <span style="color: #667eea; font-weight: bold;">(自分)</span>
+                            <?php endif; ?>
                         </div>
 
                         <?php if ($activity['common_activity']): ?>

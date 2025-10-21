@@ -12,6 +12,9 @@ requireUserType(['staff', 'admin']);
 $pdo = getDbConnection();
 $currentUser = getCurrentUser();
 
+// スタッフの教室IDを取得
+$classroomId = $_SESSION['classroom_id'] ?? null;
+
 $activityId = isset($_GET['activity_id']) ? (int)$_GET['activity_id'] : 0;
 
 if (!$activityId) {
@@ -19,17 +22,31 @@ if (!$activityId) {
     exit;
 }
 
-// 活動情報を取得
-$stmt = $pdo->prepare("
-    SELECT dr.id, dr.activity_name, dr.common_activity, dr.record_date
-    FROM daily_records dr
-    WHERE dr.id = ? AND dr.staff_id = ?
-");
-$stmt->execute([$activityId, $currentUser['id']]);
+// 活動情報を取得（同じ教室のスタッフが作成した活動も閲覧可能）
+if ($classroomId) {
+    $stmt = $pdo->prepare("
+        SELECT dr.id, dr.activity_name, dr.common_activity, dr.record_date, dr.staff_id,
+               u.full_name as staff_name
+        FROM daily_records dr
+        INNER JOIN users u ON dr.staff_id = u.id
+        WHERE dr.id = ? AND u.classroom_id = ?
+    ");
+    $stmt->execute([$activityId, $classroomId]);
+} else {
+    $stmt = $pdo->prepare("
+        SELECT dr.id, dr.activity_name, dr.common_activity, dr.record_date, dr.staff_id,
+               u.full_name as staff_name
+        FROM daily_records dr
+        INNER JOIN users u ON dr.staff_id = u.id
+        WHERE dr.id = ?
+    ");
+    $stmt->execute([$activityId]);
+}
 $activity = $stmt->fetch();
 
 if (!$activity) {
-    header('Location: renrakucho_activities.php?error=活動が見つかりません');
+    $_SESSION['error'] = 'この活動にアクセスする権限がありません';
+    header('Location: renrakucho_activities.php');
     exit;
 }
 
@@ -209,7 +226,11 @@ function getGradeLabel($gradeLevel) {
             <h1>📋 統合内容閲覧</h1>
             <div class="activity-info">
                 <strong>活動名:</strong> <?php echo htmlspecialchars($activity['activity_name']); ?><br>
-                <strong>記録日:</strong> <?php echo date('Y年n月j日', strtotime($activity['record_date'])); ?>
+                <strong>記録日:</strong> <?php echo date('Y年n月j日', strtotime($activity['record_date'])); ?><br>
+                <strong>作成者:</strong> <?php echo htmlspecialchars($activity['staff_name']); ?>
+                <?php if ($activity['staff_id'] == $currentUser['id']): ?>
+                    <span style="color: #667eea; font-weight: bold;">(自分)</span>
+                <?php endif; ?>
             </div>
             <a href="renrakucho_activities.php?date=<?php echo $activity['record_date']; ?>" class="back-btn">← 活動一覧に戻る</a>
         </div>

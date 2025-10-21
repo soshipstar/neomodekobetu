@@ -21,17 +21,31 @@ $activityName = $_POST['activity_name'] ?? '';
 $recordDate = $_POST['record_date'] ?? date('Y-m-d');
 $activityId = $_GET['activity_id'] ?? null;
 
-// 既存の活動を編集する場合
+// 既存の活動を編集する場合（同じ教室のスタッフが作成した活動も編集可能）
 if ($activityId) {
-    $stmt = $pdo->prepare("
-        SELECT dr.id, dr.activity_name, dr.common_activity, dr.record_date
-        FROM daily_records dr
-        WHERE dr.id = ? AND dr.staff_id = ?
-    ");
-    $stmt->execute([$activityId, $currentUser['id']]);
+    if ($classroomId) {
+        $stmt = $pdo->prepare("
+            SELECT dr.id, dr.activity_name, dr.common_activity, dr.record_date, dr.staff_id,
+                   u.full_name as staff_name
+            FROM daily_records dr
+            INNER JOIN users u ON dr.staff_id = u.id
+            WHERE dr.id = ? AND u.classroom_id = ?
+        ");
+        $stmt->execute([$activityId, $classroomId]);
+    } else {
+        $stmt = $pdo->prepare("
+            SELECT dr.id, dr.activity_name, dr.common_activity, dr.record_date, dr.staff_id,
+                   u.full_name as staff_name
+            FROM daily_records dr
+            INNER JOIN users u ON dr.staff_id = u.id
+            WHERE dr.id = ?
+        ");
+        $stmt->execute([$activityId]);
+    }
     $existingRecord = $stmt->fetch();
 
     if (!$existingRecord) {
+        $_SESSION['error'] = 'この活動にアクセスする権限がありません';
         header('Location: renrakucho_activities.php');
         exit;
     }
@@ -487,8 +501,20 @@ $domains = [
         </div>
 
         <div style="background: white; padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);">
-            <strong style="color: #667eea; font-size: 18px;">活動名:</strong>
-            <span style="font-size: 18px; margin-left: 10px;"><?php echo htmlspecialchars($activityName, ENT_QUOTES, 'UTF-8'); ?></span>
+            <div style="margin-bottom: 10px;">
+                <strong style="color: #667eea; font-size: 18px;">活動名:</strong>
+                <span style="font-size: 18px; margin-left: 10px;"><?php echo htmlspecialchars($activityName, ENT_QUOTES, 'UTF-8'); ?></span>
+            </div>
+            <?php if (isset($existingRecord) && $existingRecord): ?>
+                <div style="font-size: 14px; color: #666;">
+                    作成者: <?php echo htmlspecialchars($existingRecord['staff_name'], ENT_QUOTES, 'UTF-8'); ?>
+                    <?php if ($existingRecord['staff_id'] == $currentUser['id']): ?>
+                        <span style="color: #667eea; font-weight: bold;">(自分)</span>
+                    <?php else: ?>
+                        <span style="color: #ff9800; font-weight: bold;">(他のスタッフ)</span>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
         </div>
 
         <form method="POST" action="renrakucho_save.php" id="renrakuchoForm">
