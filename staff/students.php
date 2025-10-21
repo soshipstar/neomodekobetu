@@ -14,38 +14,79 @@ checkUserType('staff');
 
 $pdo = getDbConnection();
 
-// 全生徒を取得
-$stmt = $pdo->query("
-    SELECT
-        s.id,
-        s.student_name,
-        s.birth_date,
-        s.support_start_date,
-        s.grade_level,
-        s.guardian_id,
-        s.is_active,
-        s.created_at,
-        s.scheduled_monday,
-        s.scheduled_tuesday,
-        s.scheduled_wednesday,
-        s.scheduled_thursday,
-        s.scheduled_friday,
-        s.scheduled_saturday,
-        s.scheduled_sunday,
-        u.full_name as guardian_name
-    FROM students s
-    LEFT JOIN users u ON s.guardian_id = u.id
-    ORDER BY s.is_active DESC, s.student_name
-");
+// スタッフの教室IDを取得
+$classroomId = $_SESSION['classroom_id'] ?? null;
+
+// 自分の教室の生徒を取得（保護者の教室IDでフィルタリング）
+if ($classroomId) {
+    $stmt = $pdo->prepare("
+        SELECT
+            s.id,
+            s.student_name,
+            s.birth_date,
+            s.support_start_date,
+            s.grade_level,
+            s.guardian_id,
+            s.is_active,
+            s.created_at,
+            s.scheduled_monday,
+            s.scheduled_tuesday,
+            s.scheduled_wednesday,
+            s.scheduled_thursday,
+            s.scheduled_friday,
+            s.scheduled_saturday,
+            s.scheduled_sunday,
+            u.full_name as guardian_name
+        FROM students s
+        INNER JOIN users u ON s.guardian_id = u.id
+        WHERE u.classroom_id = ?
+        ORDER BY s.is_active DESC, s.student_name
+    ");
+    $stmt->execute([$classroomId]);
+} else {
+    // classroom_idがない場合は全生徒を表示（後方互換性のため）
+    $stmt = $pdo->query("
+        SELECT
+            s.id,
+            s.student_name,
+            s.birth_date,
+            s.support_start_date,
+            s.grade_level,
+            s.guardian_id,
+            s.is_active,
+            s.created_at,
+            s.scheduled_monday,
+            s.scheduled_tuesday,
+            s.scheduled_wednesday,
+            s.scheduled_thursday,
+            s.scheduled_friday,
+            s.scheduled_saturday,
+            s.scheduled_sunday,
+            u.full_name as guardian_name
+        FROM students s
+        LEFT JOIN users u ON s.guardian_id = u.id
+        ORDER BY s.is_active DESC, s.student_name
+    ");
+}
 $students = $stmt->fetchAll();
 
-// 保護者一覧を取得（生徒登録用）
-$stmt = $pdo->query("
-    SELECT id, full_name, username
-    FROM users
-    WHERE user_type = 'guardian' AND is_active = 1
-    ORDER BY full_name
-");
+// 自分の教室の保護者一覧を取得（生徒登録用）
+if ($classroomId) {
+    $stmt = $pdo->prepare("
+        SELECT id, full_name, username
+        FROM users
+        WHERE user_type = 'guardian' AND is_active = 1 AND classroom_id = ?
+        ORDER BY full_name
+    ");
+    $stmt->execute([$classroomId]);
+} else {
+    $stmt = $pdo->query("
+        SELECT id, full_name, username
+        FROM users
+        WHERE user_type = 'guardian' AND is_active = 1
+        ORDER BY full_name
+    ");
+}
 $guardians = $stmt->fetchAll();
 
 // 学年表示用のラベル
@@ -293,6 +334,82 @@ function getGradeBadgeColor($gradeLevel) {
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
+
+        /* デスクトップ用レイアウト（デフォルト） */
+        @media (min-width: 769px) {
+            .header-actions {
+                display: flex !important;
+                flex-direction: row !important;
+            }
+        }
+
+        /* レスポンシブデザイン */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .header-actions {
+                width: 100%;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .header-actions .btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            .content-box {
+                padding: 20px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            table {
+                font-size: 13px;
+            }
+
+            table th,
+            table td {
+                padding: 8px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .action-buttons .btn {
+                width: 100%;
+            }
+
+            .modal-content {
+                padding: 20px;
+                width: 95%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 18px;
+            }
+
+            table {
+                font-size: 12px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -315,6 +432,9 @@ function getGradeBadgeColor($gradeLevel) {
                         break;
                     case 'updated':
                         echo '生徒情報を更新しました。';
+                        break;
+                    case 'deleted':
+                        echo '生徒を削除しました。';
                         break;
                     default:
                         echo '処理が完了しました。';
@@ -520,6 +640,8 @@ function getGradeBadgeColor($gradeLevel) {
                 </div>
                 <div class="modal-footer">
                     <button type="button" onclick="closeModal()" class="btn btn-secondary">キャンセル</button>
+                    <div style="flex: 1;"></div>
+                    <button type="button" onclick="deleteStudent()" class="btn btn-danger" style="margin-right: 10px;">削除</button>
                     <button type="submit" class="btn btn-primary">更新する</button>
                 </div>
             </form>
@@ -548,6 +670,32 @@ function getGradeBadgeColor($gradeLevel) {
 
         function closeModal() {
             document.getElementById('editModal').classList.remove('active');
+        }
+
+        function deleteStudent() {
+            const studentId = document.getElementById('edit_student_id').value;
+            const studentName = document.getElementById('edit_student_name').value;
+
+            if (confirm(`本当に「${studentName}」を削除しますか？\n\nこの操作は取り消せません。関連する全ての記録も削除されます。`)) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = 'students_save.php';
+
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'delete';
+                form.appendChild(actionInput);
+
+                const idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'student_id';
+                idInput.value = studentId;
+                form.appendChild(idInput);
+
+                document.body.appendChild(form);
+                form.submit();
+            }
         }
 
         // モーダル外クリックで閉じる

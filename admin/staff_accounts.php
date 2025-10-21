@@ -1,6 +1,6 @@
 <?php
 /**
- * 管理者アカウント管理（マスター管理者専用）
+ * スタッフアカウント管理（マスター管理者専用）
  */
 
 require_once __DIR__ . '/../config/database.php';
@@ -11,17 +11,17 @@ requireMasterAdmin();
 
 $pdo = getDbConnection();
 
-// 全管理者アカウントを取得
+// 全スタッフアカウントを取得
 $stmt = $pdo->query("
     SELECT
         u.*,
         c.classroom_name
     FROM users u
     LEFT JOIN classrooms c ON u.classroom_id = c.id
-    WHERE u.user_type = 'admin'
-    ORDER BY u.is_master DESC, u.created_at DESC
+    WHERE u.user_type = 'staff'
+    ORDER BY u.created_at DESC
 ");
-$admins = $stmt->fetchAll();
+$staff = $stmt->fetchAll();
 
 // 教室一覧を取得
 $stmt = $pdo->query("SELECT id, classroom_name FROM classrooms ORDER BY classroom_name");
@@ -34,7 +34,7 @@ $successMessage = $_GET['success'] ?? '';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理者アカウント管理 - マスター管理者</title>
+    <title>スタッフアカウント管理 - マスター管理者</title>
     <style>
         * {
             margin: 0;
@@ -120,39 +120,35 @@ $successMessage = $_GET['success'] ?? '';
             background: #28a745;
             color: white;
         }
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
         .btn-danger {
             background: #dc3545;
             color: white;
         }
-        .admins-table {
+        .staff-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
         }
-        .admins-table th,
-        .admins-table td {
+        .staff-table th,
+        .staff-table td {
             padding: 15px;
             text-align: left;
             border-bottom: 1px solid #ddd;
         }
-        .admins-table th {
+        .staff-table th {
             background: #f8f9fa;
             font-weight: 600;
             color: #333;
         }
-        .admins-table tr:hover {
+        .staff-table tr:hover {
             background: #f8f9fa;
         }
-        .badge-master {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: bold;
-        }
-        .badge-admin {
-            background: #6c757d;
+        .badge-staff {
+            background: #17a2b8;
             color: white;
             padding: 4px 10px;
             border-radius: 12px;
@@ -246,7 +242,7 @@ $successMessage = $_GET['success'] ?? '';
     <div class="container">
         <div class="header">
             <div>
-                <h1>👑 管理者アカウント管理<span class="master-badge">★マスター専用</span></h1>
+                <h1>👨‍💼 スタッフアカウント管理<span class="master-badge">★マスター専用</span></h1>
             </div>
             <div>
                 <a href="index.php" class="back-btn">← 管理者トップに戻る</a>
@@ -259,18 +255,17 @@ $successMessage = $_GET['success'] ?? '';
             <?php endif; ?>
 
             <div class="toolbar">
-                <h2>管理者アカウント一覧</h2>
-                <button class="btn btn-primary" onclick="openAddModal()">➕ 新規管理者登録</button>
+                <h2>スタッフアカウント一覧</h2>
+                <button class="btn btn-primary" onclick="openAddModal()">➕ 新規スタッフ登録</button>
             </div>
 
-            <table class="admins-table">
+            <table class="staff-table">
                 <thead>
                     <tr>
                         <th>ID</th>
                         <th>ユーザー名</th>
                         <th>氏名</th>
                         <th>メールアドレス</th>
-                        <th>権限</th>
                         <th>所属教室</th>
                         <th>ステータス</th>
                         <th>登録日</th>
@@ -278,35 +273,26 @@ $successMessage = $_GET['success'] ?? '';
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($admins as $admin): ?>
+                    <?php foreach ($staff as $s): ?>
                         <tr>
-                            <td><?php echo $admin['id']; ?></td>
-                            <td><?php echo htmlspecialchars($admin['username']); ?></td>
-                            <td><?php echo htmlspecialchars($admin['full_name']); ?></td>
-                            <td><?php echo htmlspecialchars($admin['email'] ?? '-'); ?></td>
+                            <td><?php echo $s['id']; ?></td>
+                            <td><?php echo htmlspecialchars($s['username']); ?></td>
+                            <td><?php echo htmlspecialchars($s['full_name']); ?></td>
+                            <td><?php echo htmlspecialchars($s['email'] ?? '-'); ?></td>
+                            <td><?php echo htmlspecialchars($s['classroom_name'] ?? '-'); ?></td>
                             <td>
-                                <?php if ($admin['is_master']): ?>
-                                    <span class="badge-master">★マスター管理者</span>
-                                <?php else: ?>
-                                    <span class="badge-admin">通常管理者</span>
-                                <?php endif; ?>
-                            </td>
-                            <td><?php echo htmlspecialchars($admin['classroom_name'] ?? '-'); ?></td>
-                            <td>
-                                <?php if ($admin['is_active']): ?>
+                                <?php if ($s['is_active']): ?>
                                     <span class="badge-active">有効</span>
                                 <?php else: ?>
                                     <span class="badge-inactive">無効</span>
                                 <?php endif; ?>
                             </td>
-                            <td><?php echo date('Y/m/d', strtotime($admin['created_at'])); ?></td>
+                            <td><?php echo date('Y/m/d', strtotime($s['created_at'])); ?></td>
                             <td>
                                 <div class="action-buttons">
-                                    <button class="btn btn-primary" onclick='openEditModal(<?php echo json_encode($admin, JSON_HEX_APOS | JSON_HEX_QUOT); ?>)'>編集</button>
-                                    <?php if ($admin['id'] != $_SESSION['user_id']): ?>
-                                        <button class="btn btn-success" onclick="convertToStaff(<?php echo $admin['id']; ?>, '<?php echo htmlspecialchars($admin['username'], ENT_QUOTES); ?>')">スタッフに切替</button>
-                                        <button class="btn btn-danger" onclick="deleteAdmin(<?php echo $admin['id']; ?>, '<?php echo htmlspecialchars($admin['username'], ENT_QUOTES); ?>')">削除</button>
-                                    <?php endif; ?>
+                                    <button class="btn btn-primary" onclick='openEditModal(<?php echo json_encode($s, JSON_HEX_APOS | JSON_HEX_QUOT); ?>)'>編集</button>
+                                    <button class="btn btn-warning" onclick="convertToAdmin(<?php echo $s['id']; ?>, '<?php echo htmlspecialchars($s['username'], ENT_QUOTES); ?>')">管理者に変換</button>
+                                    <button class="btn btn-danger" onclick="deleteStaff(<?php echo $s['id']; ?>, '<?php echo htmlspecialchars($s['username'], ENT_QUOTES); ?>')">削除</button>
                                 </div>
                             </td>
                         </tr>
@@ -320,8 +306,8 @@ $successMessage = $_GET['success'] ?? '';
     <div id="addModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeAddModal()">&times;</span>
-            <h2>新規管理者登録</h2>
-            <form action="admin_accounts_save.php" method="POST">
+            <h2>新規スタッフ登録</h2>
+            <form action="staff_accounts_save.php" method="POST">
                 <input type="hidden" name="action" value="add">
                 <div class="form-group">
                     <label>ユーザー名 *</label>
@@ -340,13 +326,6 @@ $successMessage = $_GET['success'] ?? '';
                 <div class="form-group">
                     <label>メールアドレス</label>
                     <input type="email" name="email">
-                </div>
-                <div class="form-group">
-                    <label>権限 *</label>
-                    <select name="is_master" required>
-                        <option value="0">通常管理者</option>
-                        <option value="1">マスター管理者</option>
-                    </select>
                 </div>
                 <div class="form-group">
                     <label>所属教室 *</label>
@@ -368,8 +347,8 @@ $successMessage = $_GET['success'] ?? '';
     <div id="editModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeEditModal()">&times;</span>
-            <h2>管理者情報編集</h2>
-            <form action="admin_accounts_save.php" method="POST">
+            <h2>スタッフ情報編集</h2>
+            <form action="staff_accounts_save.php" method="POST">
                 <input type="hidden" name="action" value="edit">
                 <input type="hidden" name="user_id" id="edit_user_id">
                 <div class="form-group">
@@ -389,13 +368,6 @@ $successMessage = $_GET['success'] ?? '';
                 <div class="form-group">
                     <label>メールアドレス</label>
                     <input type="email" name="email" id="edit_email">
-                </div>
-                <div class="form-group">
-                    <label>権限 *</label>
-                    <select name="is_master" id="edit_is_master" required>
-                        <option value="0">通常管理者</option>
-                        <option value="1">マスター管理者</option>
-                    </select>
                 </div>
                 <div class="form-group">
                     <label>所属教室 *</label>
@@ -428,14 +400,13 @@ $successMessage = $_GET['success'] ?? '';
             document.getElementById('addModal').style.display = 'none';
         }
 
-        function openEditModal(admin) {
-            document.getElementById('edit_user_id').value = admin.id;
-            document.getElementById('edit_username').value = admin.username;
-            document.getElementById('edit_full_name').value = admin.full_name;
-            document.getElementById('edit_email').value = admin.email || '';
-            document.getElementById('edit_is_master').value = admin.is_master;
-            document.getElementById('edit_classroom_id').value = admin.classroom_id || '';
-            document.getElementById('edit_is_active').value = admin.is_active;
+        function openEditModal(staff) {
+            document.getElementById('edit_user_id').value = staff.id;
+            document.getElementById('edit_username').value = staff.username;
+            document.getElementById('edit_full_name').value = staff.full_name;
+            document.getElementById('edit_email').value = staff.email || '';
+            document.getElementById('edit_classroom_id').value = staff.classroom_id || '';
+            document.getElementById('edit_is_active').value = staff.is_active;
             document.getElementById('editModal').style.display = 'block';
         }
 
@@ -443,16 +414,16 @@ $successMessage = $_GET['success'] ?? '';
             document.getElementById('editModal').style.display = 'none';
         }
 
-        function convertToStaff(userId, username) {
-            if (confirm(`「${username}」を管理者からスタッフアカウントに切り替えますか？\n\n管理者権限がなくなり、スタッフとしてのみログイン可能になります。`)) {
+        function convertToAdmin(userId, username) {
+            if (confirm(`「${username}」をスタッフから管理者アカウントに変換しますか？\n\n管理者権限が付与され、管理者としてログイン可能になります。`)) {
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = 'admin_accounts_save.php';
+                form.action = 'staff_accounts_save.php';
 
                 const actionInput = document.createElement('input');
                 actionInput.type = 'hidden';
                 actionInput.name = 'action';
-                actionInput.value = 'convert_to_staff';
+                actionInput.value = 'convert_to_admin';
                 form.appendChild(actionInput);
 
                 const idInput = document.createElement('input');
@@ -466,11 +437,11 @@ $successMessage = $_GET['success'] ?? '';
             }
         }
 
-        function deleteAdmin(userId, username) {
+        function deleteStaff(userId, username) {
             if (confirm(`本当に「${username}」を削除しますか？\n\nこの操作は取り消せません。`)) {
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = 'admin_accounts_save.php';
+                form.action = 'staff_accounts_save.php';
 
                 const actionInput = document.createElement('input');
                 actionInput.type = 'hidden';

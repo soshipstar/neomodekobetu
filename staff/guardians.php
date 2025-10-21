@@ -18,22 +18,51 @@ if ($_SESSION['user_type'] !== 'staff' && $_SESSION['user_type'] !== 'admin') {
 
 $pdo = getDbConnection();
 
-// 保護者一覧を取得
-$stmt = $pdo->query("
-    SELECT
-        u.id,
-        u.username,
-        u.full_name,
-        u.email,
-        u.is_active,
-        u.created_at,
-        COUNT(s.id) as student_count
-    FROM users u
-    LEFT JOIN students s ON u.id = s.guardian_id
-    WHERE u.user_type = 'guardian'
-    GROUP BY u.id
-    ORDER BY u.is_active DESC, u.full_name
-");
+// スタッフの教室IDを取得
+$classroomId = $_SESSION['classroom_id'] ?? null;
+
+// 保護者一覧を取得（自分の教室のみ）
+if ($classroomId) {
+    $stmt = $pdo->prepare("
+        SELECT
+            u.id,
+            u.username,
+            u.full_name,
+            u.email,
+            u.is_active,
+            u.created_at,
+            u.classroom_id,
+            c.classroom_name,
+            COUNT(s.id) as student_count
+        FROM users u
+        LEFT JOIN students s ON u.id = s.guardian_id
+        LEFT JOIN classrooms c ON u.classroom_id = c.id
+        WHERE u.user_type = 'guardian' AND u.classroom_id = ?
+        GROUP BY u.id
+        ORDER BY u.is_active DESC, u.full_name
+    ");
+    $stmt->execute([$classroomId]);
+} else {
+    // classroom_idがない場合は全保護者を表示（後方互換性のため）
+    $stmt = $pdo->query("
+        SELECT
+            u.id,
+            u.username,
+            u.full_name,
+            u.email,
+            u.is_active,
+            u.created_at,
+            u.classroom_id,
+            c.classroom_name,
+            COUNT(s.id) as student_count
+        FROM users u
+        LEFT JOIN students s ON u.id = s.guardian_id
+        LEFT JOIN classrooms c ON u.classroom_id = c.id
+        WHERE u.user_type = 'guardian'
+        GROUP BY u.id
+        ORDER BY u.is_active DESC, u.full_name
+    ");
+}
 $guardians = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
@@ -256,6 +285,82 @@ $guardians = $stmt->fetchAll();
             color: #666;
             margin-top: 5px;
         }
+
+        /* デスクトップ用レイアウト（デフォルト） */
+        @media (min-width: 769px) {
+            .header-actions {
+                display: flex !important;
+                flex-direction: row !important;
+            }
+        }
+
+        /* レスポンシブデザイン */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .header-actions {
+                width: 100%;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .header-actions .btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            .content-box {
+                padding: 20px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            table {
+                font-size: 13px;
+            }
+
+            table th,
+            table td {
+                padding: 8px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .action-buttons .btn {
+                width: 100%;
+            }
+
+            .modal-content {
+                padding: 20px;
+                width: 95%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 18px;
+            }
+
+            table {
+                font-size: 12px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -278,6 +383,9 @@ $guardians = $stmt->fetchAll();
                         break;
                     case 'updated':
                         echo '保護者情報を更新しました。';
+                        break;
+                    case 'deleted':
+                        echo '保護者を削除しました。';
                         break;
                     default:
                         echo '処理が完了しました。';
@@ -339,6 +447,7 @@ $guardians = $stmt->fetchAll();
                         <th>氏名</th>
                         <th>ユーザー名</th>
                         <th>メールアドレス</th>
+                        <th>所属教室</th>
                         <th>紐づく生徒</th>
                         <th>状態</th>
                         <th>登録日</th>
@@ -348,7 +457,7 @@ $guardians = $stmt->fetchAll();
                 <tbody>
                     <?php if (empty($guardians)): ?>
                         <tr>
-                            <td colspan="8" style="text-align: center; padding: 40px; color: #666;">
+                            <td colspan="9" style="text-align: center; padding: 40px; color: #666;">
                                 登録されている保護者がいません
                             </td>
                         </tr>
@@ -359,6 +468,7 @@ $guardians = $stmt->fetchAll();
                                 <td><?php echo htmlspecialchars($guardian['full_name']); ?></td>
                                 <td><?php echo htmlspecialchars($guardian['username']); ?></td>
                                 <td><?php echo $guardian['email'] ? htmlspecialchars($guardian['email']) : '-'; ?></td>
+                                <td><?php echo $guardian['classroom_name'] ? htmlspecialchars($guardian['classroom_name']) : '-'; ?></td>
                                 <td><?php echo $guardian['student_count']; ?>名</td>
                                 <td>
                                     <span class="status-badge <?php echo $guardian['is_active'] ? 'status-active' : 'status-inactive'; ?>">
@@ -406,6 +516,8 @@ $guardians = $stmt->fetchAll();
                 </div>
                 <div class="modal-footer">
                     <button type="button" onclick="closeModal()" class="btn btn-secondary">キャンセル</button>
+                    <div style="flex: 1;"></div>
+                    <button type="button" onclick="deleteGuardian()" class="btn btn-danger" style="margin-right: 10px;">削除</button>
                     <button type="submit" class="btn btn-primary">更新する</button>
                 </div>
             </form>
@@ -423,6 +535,32 @@ $guardians = $stmt->fetchAll();
 
         function closeModal() {
             document.getElementById('editModal').classList.remove('active');
+        }
+
+        function deleteGuardian() {
+            const guardianId = document.getElementById('edit_guardian_id').value;
+            const guardianName = document.getElementById('edit_full_name').value;
+
+            if (confirm(`本当に「${guardianName}」を削除しますか？\n\nこの操作は取り消せません。関連する生徒との紐付けも解除されます。`)) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = 'guardians_save.php';
+
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'delete';
+                form.appendChild(actionInput);
+
+                const idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'guardian_id';
+                idInput.value = guardianId;
+                form.appendChild(idInput);
+
+                document.body.appendChild(form);
+                form.submit();
+            }
         }
 
         // モーダル外クリックで閉じる

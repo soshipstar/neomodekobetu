@@ -15,8 +15,22 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'staff') {
 $pdo = getDbConnection();
 $staffId = $_SESSION['user_id'];
 
-// 全生徒を取得
-$stmt = $pdo->query("SELECT id, student_name, support_start_date FROM students WHERE is_active = 1 ORDER BY student_name");
+// スタッフの教室IDを取得
+$classroomId = $_SESSION['classroom_id'] ?? null;
+
+// 自分の教室の生徒を取得
+if ($classroomId) {
+    $stmt = $pdo->prepare("
+        SELECT s.id, s.student_name, s.support_start_date
+        FROM students s
+        INNER JOIN users u ON s.guardian_id = u.id
+        WHERE s.is_active = 1 AND u.classroom_id = ?
+        ORDER BY s.student_name
+    ");
+    $stmt->execute([$classroomId]);
+} else {
+    $stmt = $pdo->query("SELECT id, student_name, support_start_date FROM students WHERE is_active = 1 ORDER BY student_name");
+}
 $students = $stmt->fetchAll();
 
 // 選択された生徒

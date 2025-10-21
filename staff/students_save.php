@@ -126,6 +126,22 @@ try {
             header('Location: students.php?success=updated');
             exit;
 
+        case 'delete':
+            // 生徒削除
+            $studentId = (int)$_POST['student_id'];
+
+            if (empty($studentId)) {
+                throw new Exception('生徒IDが指定されていません。');
+            }
+
+            // 外部キー制約により、関連する記録も自動的に削除される
+            // (ON DELETE CASCADEが設定されているため)
+            $stmt = $pdo->prepare("DELETE FROM students WHERE id = ?");
+            $stmt->execute([$studentId]);
+
+            header('Location: students.php?success=deleted');
+            exit;
+
         default:
             throw new Exception('無効な操作です。');
     }

@@ -21,7 +21,7 @@ function login($username, $password) {
 
     try {
         $stmt = $pdo->prepare("
-            SELECT id, username, password, full_name, user_type, email, is_active, is_master
+            SELECT id, username, password, full_name, user_type, email, is_active, is_master, classroom_id
             FROM users
             WHERE username = ? AND is_active = 1
         ");
@@ -44,6 +44,7 @@ function login($username, $password) {
         $_SESSION['user_type'] = $user['user_type'];
         $_SESSION['email'] = $user['email'];
         $_SESSION['is_master'] = $user['is_master'] ?? 0;
+        $_SESSION['classroom_id'] = $user['classroom_id'];
         $_SESSION['login_time'] = time();
 
         // パスワードを除外して返す
@@ -150,7 +151,8 @@ function getCurrentUser() {
         'full_name' => $_SESSION['full_name'],
         'user_type' => $_SESSION['user_type'],
         'email' => $_SESSION['email'],
-        'is_master' => $_SESSION['is_master'] ?? 0
+        'is_master' => $_SESSION['is_master'] ?? 0,
+        'classroom_id' => $_SESSION['classroom_id'] ?? null
     ];
 }
 

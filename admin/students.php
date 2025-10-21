@@ -26,7 +26,7 @@ if ($_SESSION['user_type'] === 'admin' && !isMasterAdmin()) {
 
 // 生徒を取得（教室フィルタリング）
 if ($classroomId) {
-    // 通常管理者：自分の教室の生徒のみ
+    // 通常管理者：自分の教室の生徒のみ（保護者の教室IDでフィルタリング）
     $stmt = $pdo->prepare("
         SELECT
             s.id,
@@ -47,8 +47,8 @@ if ($classroomId) {
             s.scheduled_sunday,
             u.full_name as guardian_name
         FROM students s
-        LEFT JOIN users u ON s.guardian_id = u.id
-        WHERE s.classroom_id = ?
+        INNER JOIN users u ON s.guardian_id = u.id
+        WHERE u.classroom_id = ?
         ORDER BY
             CASE s.status
                 WHEN 'active' THEN 1

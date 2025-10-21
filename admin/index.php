@@ -235,6 +235,12 @@ $stats['total_records'] = $stmt->fetchColumn();
                 <h3>管理者アカウント管理 <span style="font-size: 12px; color: #ff6b6b;">★マスター専用</span></h3>
                 <p>管理者アカウントの作成・編集・削除、教室への割り当てを管理します。</p>
             </a>
+
+            <a href="staff_accounts.php" class="menu-card" style="border: 2px solid #ff6b6b;">
+                <div class="menu-card-icon">👨‍💼</div>
+                <h3>スタッフアカウント管理 <span style="font-size: 12px; color: #ff6b6b;">★マスター専用</span></h3>
+                <p>スタッフアカウントの作成・編集・削除を管理します。管理者との相互変換も可能です。</p>
+            </a>
             <?php endif; ?>
         </div>
     </div>

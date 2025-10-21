@@ -34,9 +34,12 @@ if ($classroomId) {
             u.email,
             u.is_active,
             u.created_at,
+            u.classroom_id,
+            c.classroom_name,
             COUNT(s.id) as student_count
         FROM users u
         LEFT JOIN students s ON u.id = s.guardian_id
+        LEFT JOIN classrooms c ON u.classroom_id = c.id
         WHERE u.user_type = 'guardian' AND u.classroom_id = ?
         GROUP BY u.id
         ORDER BY u.is_active DESC, u.full_name
@@ -52,9 +55,12 @@ if ($classroomId) {
             u.email,
             u.is_active,
             u.created_at,
+            u.classroom_id,
+            c.classroom_name,
             COUNT(s.id) as student_count
         FROM users u
         LEFT JOIN students s ON u.id = s.guardian_id
+        LEFT JOIN classrooms c ON u.classroom_id = c.id
         WHERE u.user_type = 'guardian'
         GROUP BY u.id
         ORDER BY u.is_active DESC, u.full_name
@@ -365,6 +371,7 @@ $guardians = $stmt->fetchAll();
                         <th>氏名</th>
                         <th>ユーザー名</th>
                         <th>メールアドレス</th>
+                        <th>所属教室</th>
                         <th>紐づく生徒</th>
                         <th>状態</th>
                         <th>登録日</th>
@@ -374,7 +381,7 @@ $guardians = $stmt->fetchAll();
                 <tbody>
                     <?php if (empty($guardians)): ?>
                         <tr>
-                            <td colspan="8" style="text-align: center; padding: 40px; color: #666;">
+                            <td colspan="9" style="text-align: center; padding: 40px; color: #666;">
                                 登録されている保護者がいません
                             </td>
                         </tr>
@@ -385,6 +392,7 @@ $guardians = $stmt->fetchAll();
                                 <td><?php echo htmlspecialchars($guardian['full_name']); ?></td>
                                 <td><?php echo htmlspecialchars($guardian['username']); ?></td>
                                 <td><?php echo $guardian['email'] ? htmlspecialchars($guardian['email']) : '-'; ?></td>
+                                <td><?php echo $guardian['classroom_name'] ? htmlspecialchars($guardian['classroom_name']) : '-'; ?></td>
                                 <td><?php echo $guardian['student_count']; ?>名</td>
                                 <td>
                                     <span class="status-badge <?php echo $guardian['is_active'] ? 'status-active' : 'status-inactive'; ?>">

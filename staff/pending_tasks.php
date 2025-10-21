@@ -19,179 +19,365 @@ $pdo = getDbConnection();
 $currentUser = getCurrentUser();
 $today = date('Y-m-d');
 
-// 1. 個別支援計画書が未作成または古い生徒を取得
+// スタッフの教室IDを取得
+$classroomId = $_SESSION['classroom_id'] ?? null;
+
+// 1. 個別支援計画書が未作成または古い生徒を取得（自分の教室のみ）
 $studentsNeedingPlan = [];
 
-// 1-1. 個別支援計画書が1つも作成されていない生徒
-$stmt = $pdo->query("
-    SELECT s.id, s.student_name, s.support_start_date,
-           NULL as latest_plan_date,
-           'なし' as status
-    FROM students s
-    WHERE s.is_active = 1
-    AND NOT EXISTS (
-        SELECT 1 FROM individual_support_plans isp
-        WHERE isp.student_id = s.id
-    )
-    ORDER BY s.student_name
-");
-$studentsNeedingPlan = array_merge($studentsNeedingPlan, $stmt->fetchAll());
+if ($classroomId) {
+    // 1-1. 個別支援計画書が1つも作成されていない生徒
+    $stmt = $pdo->prepare("
+        SELECT s.id, s.student_name, s.support_start_date,
+               NULL as latest_plan_date,
+               'なし' as status
+        FROM students s
+        INNER JOIN users u ON s.guardian_id = u.id
+        WHERE s.is_active = 1 AND u.classroom_id = ?
+        AND NOT EXISTS (
+            SELECT 1 FROM individual_support_plans isp
+            WHERE isp.student_id = s.id
+        )
+        ORDER BY s.student_name
+    ");
+    $stmt->execute([$classroomId]);
+    $studentsNeedingPlan = array_merge($studentsNeedingPlan, $stmt->fetchAll());
 
-// 1-2. 最新の個別支援計画書から6ヶ月以上経過している生徒
-$stmt = $pdo->query("
-    SELECT s.id, s.student_name, s.support_start_date,
-           MAX(isp.created_date) as latest_plan_date,
-           '最新から6ヶ月以上経過' as status
-    FROM students s
-    INNER JOIN individual_support_plans isp ON s.id = isp.student_id
-    WHERE s.is_active = 1
-    GROUP BY s.id
-    HAVING DATEDIFF(CURDATE(), MAX(isp.created_date)) >= 180
-    ORDER BY s.student_name
-");
-$studentsNeedingPlan = array_merge($studentsNeedingPlan, $stmt->fetchAll());
+    // 1-2. 最新の個別支援計画書から6ヶ月以上経過している生徒
+    $stmt = $pdo->prepare("
+        SELECT s.id, s.student_name, s.support_start_date,
+               MAX(isp.created_date) as latest_plan_date,
+               '最新から6ヶ月以上経過' as status
+        FROM students s
+        INNER JOIN users u ON s.guardian_id = u.id
+        INNER JOIN individual_support_plans isp ON s.id = isp.student_id
+        WHERE s.is_active = 1 AND u.classroom_id = ?
+        GROUP BY s.id
+        HAVING DATEDIFF(CURDATE(), MAX(isp.created_date)) >= 180
+        ORDER BY s.student_name
+    ");
+    $stmt->execute([$classroomId]);
+    $studentsNeedingPlan = array_merge($studentsNeedingPlan, $stmt->fetchAll());
+} else {
+    // 1-1. 個別支援計画書が1つも作成されていない生徒
+    $stmt = $pdo->query("
+        SELECT s.id, s.student_name, s.support_start_date,
+               NULL as latest_plan_date,
+               'なし' as status
+        FROM students s
+        WHERE s.is_active = 1
+        AND NOT EXISTS (
+            SELECT 1 FROM individual_support_plans isp
+            WHERE isp.student_id = s.id
+        )
+        ORDER BY s.student_name
+    ");
+    $studentsNeedingPlan = array_merge($studentsNeedingPlan, $stmt->fetchAll());
 
-// 2. モニタリングが未作成または古い生徒を取得
+    // 1-2. 最新の個別支援計画書から6ヶ月以上経過している生徒
+    $stmt = $pdo->query("
+        SELECT s.id, s.student_name, s.support_start_date,
+               MAX(isp.created_date) as latest_plan_date,
+               '最新から6ヶ月以上経過' as status
+        FROM students s
+        INNER JOIN individual_support_plans isp ON s.id = isp.student_id
+        WHERE s.is_active = 1
+        GROUP BY s.id
+        HAVING DATEDIFF(CURDATE(), MAX(isp.created_date)) >= 180
+        ORDER BY s.student_name
+    ");
+    $studentsNeedingPlan = array_merge($studentsNeedingPlan, $stmt->fetchAll());
+}
+
+// 2. モニタリングが未作成または古い生徒を取得（自分の教室のみ）
 $studentsNeedingMonitoring = [];
 
-// 2-1. モニタリングが1つも作成されていない生徒（個別支援計画書がある生徒のみ）
-$stmt = $pdo->query("
-    SELECT DISTINCT s.id, s.student_name, s.support_start_date,
-           NULL as latest_monitoring_date,
-           'なし' as status
-    FROM students s
-    INNER JOIN individual_support_plans isp ON s.id = isp.student_id
-    WHERE s.is_active = 1
-    AND NOT EXISTS (
-        SELECT 1 FROM monitoring_records mr
-        WHERE mr.student_id = s.id
-    )
-    ORDER BY s.student_name
-");
-$studentsNeedingMonitoring = array_merge($studentsNeedingMonitoring, $stmt->fetchAll());
+if ($classroomId) {
+    // 2-1. モニタリングが1つも作成されていない生徒（個別支援計画書がある生徒のみ）
+    $stmt = $pdo->prepare("
+        SELECT DISTINCT s.id, s.student_name, s.support_start_date,
+               NULL as latest_monitoring_date,
+               'なし' as status
+        FROM students s
+        INNER JOIN users u ON s.guardian_id = u.id
+        INNER JOIN individual_support_plans isp ON s.id = isp.student_id
+        WHERE s.is_active = 1 AND u.classroom_id = ?
+        AND NOT EXISTS (
+            SELECT 1 FROM monitoring_records mr
+            WHERE mr.student_id = s.id
+        )
+        ORDER BY s.student_name
+    ");
+    $stmt->execute([$classroomId]);
+    $studentsNeedingMonitoring = array_merge($studentsNeedingMonitoring, $stmt->fetchAll());
 
-// 2-2. 最新のモニタリングから3ヶ月以上経過している生徒
-$stmt = $pdo->query("
-    SELECT s.id, s.student_name, s.support_start_date,
-           MAX(mr.monitoring_date) as latest_monitoring_date,
-           '最新から3ヶ月以上経過' as status
-    FROM students s
-    INNER JOIN monitoring_records mr ON s.id = mr.student_id
-    WHERE s.is_active = 1
-    GROUP BY s.id
-    HAVING DATEDIFF(CURDATE(), MAX(mr.monitoring_date)) >= 90
-    ORDER BY s.student_name
-");
-$studentsNeedingMonitoring = array_merge($studentsNeedingMonitoring, $stmt->fetchAll());
+    // 2-2. 最新のモニタリングから3ヶ月以上経過している生徒
+    $stmt = $pdo->prepare("
+        SELECT s.id, s.student_name, s.support_start_date,
+               MAX(mr.monitoring_date) as latest_monitoring_date,
+               '最新から3ヶ月以上経過' as status
+        FROM students s
+        INNER JOIN users u ON s.guardian_id = u.id
+        INNER JOIN monitoring_records mr ON s.id = mr.student_id
+        WHERE s.is_active = 1 AND u.classroom_id = ?
+        GROUP BY s.id
+        HAVING DATEDIFF(CURDATE(), MAX(mr.monitoring_date)) >= 90
+        ORDER BY s.student_name
+    ");
+    $stmt->execute([$classroomId]);
+    $studentsNeedingMonitoring = array_merge($studentsNeedingMonitoring, $stmt->fetchAll());
+} else {
+    // 2-1. モニタリングが1つも作成されていない生徒（個別支援計画書がある生徒のみ）
+    $stmt = $pdo->query("
+        SELECT DISTINCT s.id, s.student_name, s.support_start_date,
+               NULL as latest_monitoring_date,
+               'なし' as status
+        FROM students s
+        INNER JOIN individual_support_plans isp ON s.id = isp.student_id
+        WHERE s.is_active = 1
+        AND NOT EXISTS (
+            SELECT 1 FROM monitoring_records mr
+            WHERE mr.student_id = s.id
+        )
+        ORDER BY s.student_name
+    ");
+    $studentsNeedingMonitoring = array_merge($studentsNeedingMonitoring, $stmt->fetchAll());
+
+    // 2-2. 最新のモニタリングから3ヶ月以上経過している生徒
+    $stmt = $pdo->query("
+        SELECT s.id, s.student_name, s.support_start_date,
+               MAX(mr.monitoring_date) as latest_monitoring_date,
+               '最新から3ヶ月以上経過' as status
+        FROM students s
+        INNER JOIN monitoring_records mr ON s.id = mr.student_id
+        WHERE s.is_active = 1
+        GROUP BY s.id
+        HAVING DATEDIFF(CURDATE(), MAX(mr.monitoring_date)) >= 90
+        ORDER BY s.student_name
+    ");
+    $studentsNeedingMonitoring = array_merge($studentsNeedingMonitoring, $stmt->fetchAll());
+}
 
 // 3. かけはし未提出の生徒を取得
 
-// 3-1. 保護者かけはし未提出（期限切れも含む、非表示を除外）
+// 3-1. 保護者かけはし未提出（期限切れも含む、非表示を除外、自分の教室のみ）
 $pendingGuardianKakehashi = [];
-try {
-    $stmt = $pdo->prepare("
-        SELECT
-            s.id as student_id,
-            s.student_name,
-            kp.id as period_id,
-            kp.period_name,
-            kp.submission_deadline,
-            kp.start_date,
-            kp.end_date,
-            DATEDIFF(kp.submission_deadline, ?) as days_left,
-            kg.id as kakehashi_id,
-            kg.is_submitted,
-            COALESCE(kg.is_hidden, 0) as is_hidden
-        FROM students s
-        INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-        LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = s.id
-        WHERE s.is_active = 1
-        AND kp.is_active = 1
-        AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
-        AND COALESCE(kg.is_hidden, 0) = 0
-        ORDER BY kp.submission_deadline ASC, s.student_name
-    ");
-    $stmt->execute([$today]);
-    $pendingGuardianKakehashi = $stmt->fetchAll();
-} catch (Exception $e) {
-    // is_hiddenカラムが存在しない場合は、非表示チェックなしで取得
-    error_log("Guardian kakehashi fetch error: " . $e->getMessage());
-    $stmt = $pdo->prepare("
-        SELECT
-            s.id as student_id,
-            s.student_name,
-            kp.id as period_id,
-            kp.period_name,
-            kp.submission_deadline,
-            kp.start_date,
-            kp.end_date,
-            DATEDIFF(kp.submission_deadline, ?) as days_left,
-            kg.id as kakehashi_id,
-            kg.is_submitted
-        FROM students s
-        INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-        LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = s.id
-        WHERE s.is_active = 1
-        AND kp.is_active = 1
-        AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
-        ORDER BY kp.submission_deadline ASC, s.student_name
-    ");
-    $stmt->execute([$today]);
-    $pendingGuardianKakehashi = $stmt->fetchAll();
+if ($classroomId) {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT
+                s.id as student_id,
+                s.student_name,
+                kp.id as period_id,
+                kp.period_name,
+                kp.submission_deadline,
+                kp.start_date,
+                kp.end_date,
+                DATEDIFF(kp.submission_deadline, ?) as days_left,
+                kg.id as kakehashi_id,
+                kg.is_submitted,
+                COALESCE(kg.is_hidden, 0) as is_hidden
+            FROM students s
+            INNER JOIN users u ON s.guardian_id = u.id
+            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+            LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = s.id
+            WHERE s.is_active = 1 AND u.classroom_id = ?
+            AND kp.is_active = 1
+            AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
+            AND COALESCE(kg.is_hidden, 0) = 0
+            ORDER BY kp.submission_deadline ASC, s.student_name
+        ");
+        $stmt->execute([$today, $classroomId]);
+        $pendingGuardianKakehashi = $stmt->fetchAll();
+    } catch (Exception $e) {
+        // is_hiddenカラムが存在しない場合は、非表示チェックなしで取得
+        error_log("Guardian kakehashi fetch error: " . $e->getMessage());
+        $stmt = $pdo->prepare("
+            SELECT
+                s.id as student_id,
+                s.student_name,
+                kp.id as period_id,
+                kp.period_name,
+                kp.submission_deadline,
+                kp.start_date,
+                kp.end_date,
+                DATEDIFF(kp.submission_deadline, ?) as days_left,
+                kg.id as kakehashi_id,
+                kg.is_submitted
+            FROM students s
+            INNER JOIN users u ON s.guardian_id = u.id
+            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+            LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = s.id
+            WHERE s.is_active = 1 AND u.classroom_id = ?
+            AND kp.is_active = 1
+            AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
+            ORDER BY kp.submission_deadline ASC, s.student_name
+        ");
+        $stmt->execute([$today, $classroomId]);
+        $pendingGuardianKakehashi = $stmt->fetchAll();
+    }
+} else {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT
+                s.id as student_id,
+                s.student_name,
+                kp.id as period_id,
+                kp.period_name,
+                kp.submission_deadline,
+                kp.start_date,
+                kp.end_date,
+                DATEDIFF(kp.submission_deadline, ?) as days_left,
+                kg.id as kakehashi_id,
+                kg.is_submitted,
+                COALESCE(kg.is_hidden, 0) as is_hidden
+            FROM students s
+            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+            LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = s.id
+            WHERE s.is_active = 1
+            AND kp.is_active = 1
+            AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
+            AND COALESCE(kg.is_hidden, 0) = 0
+            ORDER BY kp.submission_deadline ASC, s.student_name
+        ");
+        $stmt->execute([$today]);
+        $pendingGuardianKakehashi = $stmt->fetchAll();
+    } catch (Exception $e) {
+        // is_hiddenカラムが存在しない場合は、非表示チェックなしで取得
+        error_log("Guardian kakehashi fetch error: " . $e->getMessage());
+        $stmt = $pdo->prepare("
+            SELECT
+                s.id as student_id,
+                s.student_name,
+                kp.id as period_id,
+                kp.period_name,
+                kp.submission_deadline,
+                kp.start_date,
+                kp.end_date,
+                DATEDIFF(kp.submission_deadline, ?) as days_left,
+                kg.id as kakehashi_id,
+                kg.is_submitted
+            FROM students s
+            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+            LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = s.id
+            WHERE s.is_active = 1
+            AND kp.is_active = 1
+            AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
+            ORDER BY kp.submission_deadline ASC, s.student_name
+        ");
+        $stmt->execute([$today]);
+        $pendingGuardianKakehashi = $stmt->fetchAll();
+    }
 }
 
-// 3-2. スタッフかけはし未作成（期限切れも含む、非表示を除外）
+// 3-2. スタッフかけはし未作成（期限切れも含む、非表示を除外、自分の教室のみ）
 $pendingStaffKakehashi = [];
-try {
-    $stmt = $pdo->prepare("
-        SELECT
-            s.id as student_id,
-            s.student_name,
-            kp.id as period_id,
-            kp.period_name,
-            kp.submission_deadline,
-            kp.start_date,
-            kp.end_date,
-            DATEDIFF(kp.submission_deadline, ?) as days_left,
-            ks.id as kakehashi_id,
-            ks.is_submitted,
-            COALESCE(ks.is_hidden, 0) as is_hidden
-        FROM students s
-        INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-        LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
-        WHERE s.is_active = 1
-        AND kp.is_active = 1
-        AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
-        AND COALESCE(ks.is_hidden, 0) = 0
-        ORDER BY kp.submission_deadline ASC, s.student_name
-    ");
-    $stmt->execute([$today]);
-    $pendingStaffKakehashi = $stmt->fetchAll();
-} catch (Exception $e) {
-    // is_hiddenカラムが存在しない場合は、非表示チェックなしで取得
-    error_log("Staff kakehashi fetch error: " . $e->getMessage());
-    $stmt = $pdo->prepare("
-        SELECT
-            s.id as student_id,
-            s.student_name,
-            kp.id as period_id,
-            kp.period_name,
-            kp.submission_deadline,
-            kp.start_date,
-            kp.end_date,
-            DATEDIFF(kp.submission_deadline, ?) as days_left,
-            ks.id as kakehashi_id,
-            ks.is_submitted
-        FROM students s
-        INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-        LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
-        WHERE s.is_active = 1
-        AND kp.is_active = 1
-        AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
-        ORDER BY kp.submission_deadline ASC, s.student_name
-    ");
-    $stmt->execute([$today]);
-    $pendingStaffKakehashi = $stmt->fetchAll();
+if ($classroomId) {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT
+                s.id as student_id,
+                s.student_name,
+                kp.id as period_id,
+                kp.period_name,
+                kp.submission_deadline,
+                kp.start_date,
+                kp.end_date,
+                DATEDIFF(kp.submission_deadline, ?) as days_left,
+                ks.id as kakehashi_id,
+                ks.is_submitted,
+                COALESCE(ks.is_hidden, 0) as is_hidden
+            FROM students s
+            INNER JOIN users u ON s.guardian_id = u.id
+            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+            LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
+            WHERE s.is_active = 1 AND u.classroom_id = ?
+            AND kp.is_active = 1
+            AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
+            AND COALESCE(ks.is_hidden, 0) = 0
+            ORDER BY kp.submission_deadline ASC, s.student_name
+        ");
+        $stmt->execute([$today, $classroomId]);
+        $pendingStaffKakehashi = $stmt->fetchAll();
+    } catch (Exception $e) {
+        // is_hiddenカラムが存在しない場合は、非表示チェックなしで取得
+        error_log("Staff kakehashi fetch error: " . $e->getMessage());
+        $stmt = $pdo->prepare("
+            SELECT
+                s.id as student_id,
+                s.student_name,
+                kp.id as period_id,
+                kp.period_name,
+                kp.submission_deadline,
+                kp.start_date,
+                kp.end_date,
+                DATEDIFF(kp.submission_deadline, ?) as days_left,
+                ks.id as kakehashi_id,
+                ks.is_submitted
+            FROM students s
+            INNER JOIN users u ON s.guardian_id = u.id
+            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+            LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
+            WHERE s.is_active = 1 AND u.classroom_id = ?
+            AND kp.is_active = 1
+            AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
+            ORDER BY kp.submission_deadline ASC, s.student_name
+        ");
+        $stmt->execute([$today, $classroomId]);
+        $pendingStaffKakehashi = $stmt->fetchAll();
+    }
+} else {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT
+                s.id as student_id,
+                s.student_name,
+                kp.id as period_id,
+                kp.period_name,
+                kp.submission_deadline,
+                kp.start_date,
+                kp.end_date,
+                DATEDIFF(kp.submission_deadline, ?) as days_left,
+                ks.id as kakehashi_id,
+                ks.is_submitted,
+                COALESCE(ks.is_hidden, 0) as is_hidden
+            FROM students s
+            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+            LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
+            WHERE s.is_active = 1
+            AND kp.is_active = 1
+            AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
+            AND COALESCE(ks.is_hidden, 0) = 0
+            ORDER BY kp.submission_deadline ASC, s.student_name
+        ");
+        $stmt->execute([$today]);
+        $pendingStaffKakehashi = $stmt->fetchAll();
+    } catch (Exception $e) {
+        // is_hiddenカラムが存在しない場合は、非表示チェックなしで取得
+        error_log("Staff kakehashi fetch error: " . $e->getMessage());
+        $stmt = $pdo->prepare("
+            SELECT
+                s.id as student_id,
+                s.student_name,
+                kp.id as period_id,
+                kp.period_name,
+                kp.submission_deadline,
+                kp.start_date,
+                kp.end_date,
+                DATEDIFF(kp.submission_deadline, ?) as days_left,
+                ks.id as kakehashi_id,
+                ks.is_submitted
+            FROM students s
+            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+            LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
+            WHERE s.is_active = 1
+            AND kp.is_active = 1
+            AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
+            ORDER BY kp.submission_deadline ASC, s.student_name
+        ");
+        $stmt->execute([$today]);
+        $pendingStaffKakehashi = $stmt->fetchAll();
+    }
 }
 
 ?>

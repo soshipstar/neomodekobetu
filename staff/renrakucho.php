@@ -12,6 +12,9 @@ requireUserType(['staff', 'admin']);
 $pdo = getDbConnection();
 $currentUser = getCurrentUser();
 
+// スタッフの教室IDを取得
+$classroomId = $_SESSION['classroom_id'] ?? null;
+
 // 学年フィルター取得
 $gradeFilter = $_GET['grade'] ?? 'all';
 
@@ -36,24 +39,43 @@ $stmt = $pdo->prepare("SELECT COUNT(*) FROM holidays WHERE holiday_date = ?");
 $stmt->execute([$today]);
 $isTodayHoliday = $stmt->fetchColumn() > 0;
 
-// 本日の予定参加者IDを取得
+// 本日の予定参加者IDを取得（自分の教室の生徒のみ）
 $scheduledStudentIds = [];
 if (!$isTodayHoliday) {
-    $stmt = $pdo->prepare("
-        SELECT id
-        FROM students
-        WHERE is_active = 1 AND $todayColumn = 1
-    ");
-    $stmt->execute();
+    if ($classroomId) {
+        $stmt = $pdo->prepare("
+            SELECT s.id
+            FROM students s
+            INNER JOIN users u ON s.guardian_id = u.id
+            WHERE s.is_active = 1 AND s.$todayColumn = 1 AND u.classroom_id = ?
+        ");
+        $stmt->execute([$classroomId]);
+    } else {
+        $stmt = $pdo->prepare("
+            SELECT id
+            FROM students
+            WHERE is_active = 1 AND $todayColumn = 1
+        ");
+        $stmt->execute();
+    }
     $scheduledStudentIds = array_column($stmt->fetchAll(), 'id');
 }
 
-// 生徒を取得（学年フィルターと本日の予定参加者フィルター対応）
-$sql = "
-    SELECT id, student_name, grade_level
-    FROM students
-    WHERE is_active = 1
-";
+// 生徒を取得（学年フィルターと本日の予定参加者フィルター対応、教室フィルタリング）
+if ($classroomId) {
+    $sql = "
+        SELECT s.id, s.student_name, s.grade_level
+        FROM students s
+        INNER JOIN users u ON s.guardian_id = u.id
+        WHERE s.is_active = 1 AND u.classroom_id = ?
+    ";
+} else {
+    $sql = "
+        SELECT id, student_name, grade_level
+        FROM students
+        WHERE is_active = 1
+    ";
+}
 
 if ($gradeFilter === 'scheduled') {
     // 本日の予定参加者フィルター
@@ -61,25 +83,37 @@ if ($gradeFilter === 'scheduled') {
         $allStudents = [];
     } else {
         $placeholders = str_repeat('?,', count($scheduledStudentIds) - 1) . '?';
-        $sql .= " AND id IN ($placeholders)";
-        $sql .= " ORDER BY grade_level, student_name";
+        $sql .= " AND " . ($classroomId ? "s.id" : "id") . " IN ($placeholders)";
+        $sql .= " ORDER BY " . ($classroomId ? "s.grade_level, s.student_name" : "grade_level, student_name");
         $stmt = $pdo->prepare($sql);
-        $stmt->execute($scheduledStudentIds);
+        if ($classroomId) {
+            $stmt->execute(array_merge([$classroomId], $scheduledStudentIds));
+        } else {
+            $stmt->execute($scheduledStudentIds);
+        }
         $allStudents = $stmt->fetchAll();
     }
 } else {
     if ($gradeFilter !== 'all') {
-        $sql .= " AND grade_level = :grade_level";
+        $sql .= " AND " . ($classroomId ? "s.grade_level" : "grade_level") . " = :grade_level";
     }
 
-    $sql .= " ORDER BY grade_level, student_name";
+    $sql .= " ORDER BY " . ($classroomId ? "s.grade_level, s.student_name" : "grade_level, student_name");
 
     $stmt = $pdo->prepare($sql);
 
     if ($gradeFilter !== 'all') {
-        $stmt->execute(['grade_level' => $gradeFilter]);
+        if ($classroomId) {
+            $stmt->execute(['grade_level' => $gradeFilter, $classroomId]);
+        } else {
+            $stmt->execute(['grade_level' => $gradeFilter]);
+        }
     } else {
-        $stmt->execute();
+        if ($classroomId) {
+            $stmt->execute([$classroomId]);
+        } else {
+            $stmt->execute();
+        }
     }
 
     $allStudents = $stmt->fetchAll();

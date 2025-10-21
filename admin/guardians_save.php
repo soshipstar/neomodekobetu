@@ -56,8 +56,8 @@ try {
             // パスワードをハッシュ化
             $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
-            // 通常管理者の場合、教室IDを自動設定
-            $classroomIdToInsert = $userClassroomId ?? 1; // デフォルトは教室ID=1
+            // ログインユーザーの教室IDを取得（管理者/スタッフと同じ教室に所属）
+            $classroomIdToInsert = $_SESSION['classroom_id'] ?? $userClassroomId;
 
             // 保護者を登録
             $stmt = $pdo->prepare("

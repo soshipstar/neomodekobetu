@@ -91,6 +91,26 @@ try {
             header('Location: admin_accounts.php?success=' . urlencode('管理者アカウントを削除しました'));
             exit;
 
+        case 'convert_to_staff':
+            // 管理者をスタッフに切り替え
+            $userId = (int)$_POST['user_id'];
+
+            // 自分自身は切り替えできない
+            if ($userId == $_SESSION['user_id']) {
+                throw new Exception('自分自身のアカウントは切り替えできません');
+            }
+
+            // user_typeを'staff'に変更し、is_masterを0に設定
+            $stmt = $pdo->prepare("
+                UPDATE users
+                SET user_type = 'staff', is_master = 0
+                WHERE id = ? AND user_type = 'admin'
+            ");
+            $stmt->execute([$userId]);
+
+            header('Location: admin_accounts.php?success=' . urlencode('管理者アカウントをスタッフアカウントに変換しました'));
+            exit;
+
         default:
             throw new Exception('無効な操作です');
     }

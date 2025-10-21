@@ -51,12 +51,15 @@ try {
             // パスワードをハッシュ化
             $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
-            // 保護者を登録
+            // ログインユーザーの教室IDを取得
+            $classroomId = $_SESSION['classroom_id'] ?? null;
+
+            // 保護者を登録（スタッフと同じ教室に所属）
             $stmt = $pdo->prepare("
-                INSERT INTO users (username, password, full_name, email, user_type, is_active, created_at)
-                VALUES (?, ?, ?, ?, 'guardian', 1, NOW())
+                INSERT INTO users (username, password, full_name, email, user_type, classroom_id, is_active, created_at)
+                VALUES (?, ?, ?, ?, 'guardian', ?, 1, NOW())
             ");
-            $stmt->execute([$username, $hashedPassword, $fullName, $email]);
+            $stmt->execute([$username, $hashedPassword, $fullName, $email, $classroomId]);
 
             header('Location: guardians.php?success=created');
             exit;
@@ -109,6 +112,25 @@ try {
             }
 
             header('Location: guardians.php?success=updated');
+            exit;
+
+        case 'delete':
+            // 保護者削除
+            $guardianId = (int)$_POST['guardian_id'];
+
+            if (empty($guardianId)) {
+                throw new Exception('保護者IDが指定されていません。');
+            }
+
+            // 生徒との紐付けを解除
+            $stmt = $pdo->prepare("UPDATE students SET guardian_id = NULL WHERE guardian_id = ?");
+            $stmt->execute([$guardianId]);
+
+            // 保護者を削除
+            $stmt = $pdo->prepare("DELETE FROM users WHERE id = ? AND user_type = 'guardian'");
+            $stmt->execute([$guardianId]);
+
+            header('Location: guardians.php?success=deleted');
             exit;
 
         default:
