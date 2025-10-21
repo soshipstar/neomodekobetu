@@ -80,14 +80,14 @@ foreach ($events as $event) {
     ];
 }
 
-// この保護者に紐づく生徒を取得
+// この保護者に紐づく生徒を取得（在籍中のみ）
 try {
     $stmt = $pdo->prepare("
-        SELECT id, student_name, grade_level,
+        SELECT id, student_name, grade_level, status,
                scheduled_sunday, scheduled_monday, scheduled_tuesday, scheduled_wednesday,
                scheduled_thursday, scheduled_friday, scheduled_saturday
         FROM students
-        WHERE guardian_id = ? AND is_active = 1
+        WHERE guardian_id = ? AND is_active = 1 AND status = 'active'
         ORDER BY student_name
     ");
     $stmt->execute([$guardianId]);
@@ -115,7 +115,7 @@ $oneWeekLater = date('Y-m-d', strtotime('+7 days'));
 
 foreach ($students as $student) {
     try {
-        // 未提出のかけはしを取得（期限切れも含む）
+        // 未提出のかけはしを取得（期限切れも含む、スタッフが非表示にしたものは除外）
         $stmt = $pdo->prepare("
             SELECT
                 kp.id as period_id,
@@ -125,12 +125,14 @@ foreach ($students as $student) {
                 kp.end_date,
                 DATEDIFF(kp.submission_deadline, ?) as days_left,
                 kg.id as kakehashi_id,
-                kg.is_submitted
+                kg.is_submitted,
+                kg.is_hidden
             FROM kakehashi_periods kp
             LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = ?
             WHERE kp.student_id = ?
             AND kp.is_active = 1
             AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
+            AND (kg.is_hidden = 0 OR kg.is_hidden IS NULL)
             ORDER BY kp.submission_deadline ASC
         ");
         $stmt->execute([$today, $student['id'], $student['id']]);

@@ -45,6 +45,20 @@ if (!$plan) {
     exit;
 }
 
+// 退所日チェック：退所済みの生徒の場合、退所日以降のモニタリングは作成できない
+$stmt = $pdo->prepare("SELECT withdrawal_date FROM students WHERE id = ?");
+$stmt->execute([$studentId]);
+$student = $stmt->fetch();
+if ($student && $student['withdrawal_date']) {
+    $withdrawalDate = new DateTime($student['withdrawal_date']);
+    $recordDate = new DateTime($monitoringDate);
+    if ($recordDate >= $withdrawalDate) {
+        $_SESSION['error'] = "退所日（{$student['withdrawal_date']}）以降のモニタリング表は作成できません。";
+        header("Location: kobetsu_monitoring.php?student_id=$studentId&plan_id=$planId" . ($monitoringId ? "&monitoring_id=$monitoringId" : ''));
+        exit;
+    }
+}
+
 try {
     $pdo->beginTransaction();
 

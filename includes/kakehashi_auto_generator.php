@@ -20,7 +20,7 @@ function generateKakehashiPeriodsForStudent($pdo, $studentId, $supportStartDate)
     $generatedPeriods = [];
 
     // 生徒情報を取得
-    $stmt = $pdo->prepare("SELECT student_name FROM students WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT student_name, withdrawal_date FROM students WHERE id = ?");
     $stmt->execute([$studentId]);
     $student = $stmt->fetch();
 
@@ -29,6 +29,7 @@ function generateKakehashiPeriodsForStudent($pdo, $studentId, $supportStartDate)
     }
 
     $studentName = $student['student_name'];
+    $withdrawalDate = $student['withdrawal_date'] ? new DateTime($student['withdrawal_date']) : null;
 
     // 既存のかけはし期間を確認
     $stmt = $pdo->prepare("
@@ -59,6 +60,12 @@ function generateKakehashiPeriodsForStudent($pdo, $studentId, $supportStartDate)
     // 提出期限が生成上限より未来の場合はスキップ
     if ($firstDeadline > $generationLimit) {
         error_log("First kakehashi deadline {$firstDeadline->format('Y-m-d')} is beyond generation limit. Skipping.");
+        return $generatedPeriods;
+    }
+
+    // 退所日が設定されている場合、提出期限が退所日以降ならスキップ
+    if ($withdrawalDate && $firstDeadline >= $withdrawalDate) {
+        error_log("First kakehashi deadline {$firstDeadline->format('Y-m-d')} is after withdrawal date {$withdrawalDate->format('Y-m-d')}. Skipping.");
         return $generatedPeriods;
     }
 
@@ -109,6 +116,12 @@ function generateKakehashiPeriodsForStudent($pdo, $studentId, $supportStartDate)
         return $generatedPeriods;
     }
 
+    // 退所日が設定されている場合、提出期限が退所日以降ならスキップ
+    if ($withdrawalDate && $secondDeadline >= $withdrawalDate) {
+        error_log("Second kakehashi deadline {$secondDeadline->format('Y-m-d')} is after withdrawal date {$withdrawalDate->format('Y-m-d')}. Stopping at first period.");
+        return $generatedPeriods;
+    }
+
     // 期間開始日は提出期限の翌日
     $secondStartDate = clone $secondDeadline;
     $secondStartDate->modify('+1 day');
@@ -151,6 +164,12 @@ function generateKakehashiPeriodsForStudent($pdo, $studentId, $supportStartDate)
     // 提出期限が生成上限より未来の場合はスキップ
     if ($thirdDeadline > $generationLimit) {
         error_log("Third kakehashi deadline {$thirdDeadline->format('Y-m-d')} is beyond generation limit. Stopping at second period.");
+        return $generatedPeriods;
+    }
+
+    // 退所日が設定されている場合、提出期限が退所日以降ならスキップ
+    if ($withdrawalDate && $thirdDeadline >= $withdrawalDate) {
+        error_log("Third kakehashi deadline {$thirdDeadline->format('Y-m-d')} is after withdrawal date {$withdrawalDate->format('Y-m-d')}. Stopping at second period.");
         return $generatedPeriods;
     }
 
@@ -200,6 +219,12 @@ function generateKakehashiPeriodsForStudent($pdo, $studentId, $supportStartDate)
 
         // 次の期限が「本日+1ヶ月」より未来の場合は終了
         if ($nextDeadline > $generationLimit) {
+            break;
+        }
+
+        // 退所日が設定されている場合、提出期限が退所日以降なら終了
+        if ($withdrawalDate && $nextDeadline >= $withdrawalDate) {
+            error_log("Next kakehashi deadline {$nextDeadline->format('Y-m-d')} is after withdrawal date {$withdrawalDate->format('Y-m-d')}. Stopping generation.");
             break;
         }
 
@@ -312,12 +337,13 @@ function shouldGenerateNextKakehashi($pdo, $studentId) {
 function autoGenerateNextKakehashiPeriods($pdo) {
     $generatedPeriods = [];
 
-    // 3回目以降のかけはしを持つ全生徒を取得
+    // 3回目以降のかけはしを持つ全生徒を取得（退所していない、または退所日が未来の生徒のみ）
     $stmt = $pdo->query("
-        SELECT DISTINCT s.id, s.student_name, s.support_start_date
+        SELECT DISTINCT s.id, s.student_name, s.support_start_date, s.withdrawal_date
         FROM students s
         INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
         WHERE s.is_active = 1
+        AND (s.withdrawal_date IS NULL OR s.withdrawal_date > CURDATE())
         GROUP BY s.id
         HAVING COUNT(kp.id) >= 3
     ");
@@ -327,7 +353,9 @@ function autoGenerateNextKakehashiPeriods($pdo) {
         if (shouldGenerateNextKakehashi($pdo, $student['id'])) {
             // 次のかけはし期間を生成
             $newPeriod = generateNextKakehashiPeriod($pdo, $student['id'], $student['student_name']);
-            $generatedPeriods[] = $newPeriod;
+            if ($newPeriod !== null) {
+                $generatedPeriods[] = $newPeriod;
+            }
         }
     }
 
@@ -343,6 +371,12 @@ function autoGenerateNextKakehashiPeriods($pdo) {
  * @return array 生成されたかけはし期間の情報
  */
 function generateNextKakehashiPeriod($pdo, $studentId, $studentName) {
+    // 生徒の退所日を確認
+    $stmt = $pdo->prepare("SELECT withdrawal_date FROM students WHERE id = ?");
+    $stmt->execute([$studentId]);
+    $student = $stmt->fetch();
+    $withdrawalDate = $student['withdrawal_date'] ? new DateTime($student['withdrawal_date']) : null;
+
     // 最新のかけはし期間を取得
     $stmt = $pdo->prepare("
         SELECT submission_deadline
@@ -366,6 +400,12 @@ function generateNextKakehashiPeriod($pdo, $studentId, $studentName) {
     // 生成日の1ヶ月後が提出期限
     $nextDeadline = clone $nextStartDate;
     $nextDeadline->modify('+1 month');
+
+    // 退所日が設定されている場合、提出期限が退所日以降ならスキップ
+    if ($withdrawalDate && $nextDeadline >= $withdrawalDate) {
+        error_log("Next kakehashi deadline {$nextDeadline->format('Y-m-d')} is after withdrawal date {$withdrawalDate->format('Y-m-d')} for student {$studentId}. Skipping generation.");
+        return null;
+    }
 
     // 期間終了日は提出期限と同じ
     $nextEndDate = clone $nextDeadline;

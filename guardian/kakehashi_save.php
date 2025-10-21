@@ -52,13 +52,32 @@ if (!$stmt->fetch()) {
 }
 
 try {
+    // 期間が有効であることを確認
+    $stmt = $pdo->prepare("
+        SELECT id FROM kakehashi_periods
+        WHERE id = ? AND student_id = ? AND is_active = 1
+    ");
+    $stmt->execute([$periodId, $studentId]);
+    if (!$stmt->fetch()) {
+        $_SESSION['error'] = 'この期間は入力できません。';
+        header('Location: kakehashi.php');
+        exit;
+    }
+
     // 既存データの確認
     $stmt = $pdo->prepare("
-        SELECT id, is_submitted FROM kakehashi_guardian
+        SELECT id, is_submitted, is_hidden FROM kakehashi_guardian
         WHERE student_id = ? AND period_id = ?
     ");
     $stmt->execute([$studentId, $periodId]);
     $existing = $stmt->fetch();
+
+    // 非表示の場合は更新不可
+    if ($existing && $existing['is_hidden']) {
+        $_SESSION['error'] = 'この期間は入力できません。';
+        header('Location: kakehashi.php');
+        exit;
+    }
 
     // 提出済みの場合は更新不可
     if ($existing && $existing['is_submitted']) {

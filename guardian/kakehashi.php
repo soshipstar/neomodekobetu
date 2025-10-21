@@ -15,21 +15,27 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'guardian') {
 $pdo = getDbConnection();
 $guardianId = $_SESSION['user_id'];
 
-// 保護者の子どもを取得
-$stmt = $pdo->prepare("SELECT id, student_name, support_start_date FROM students WHERE guardian_id = ? AND is_active = 1 ORDER BY student_name");
+// 保護者の子どもを取得（在籍中のみ）
+$stmt = $pdo->prepare("SELECT id, student_name, support_start_date FROM students WHERE guardian_id = ? AND is_active = 1 AND status = 'active' ORDER BY student_name");
 $stmt->execute([$guardianId]);
 $students = $stmt->fetchAll();
 
 // 選択された生徒（URLパラメータから取得、デフォルト値なし）
 $selectedStudentId = $_GET['student_id'] ?? null;
 
-// 選択された生徒の有効な期間を取得
+// 選択された生徒の有効な期間を取得（スタッフが非表示にしたものは除外）
 $activePeriods = [];
 if ($selectedStudentId) {
     $stmt = $pdo->prepare("
-        SELECT * FROM kakehashi_periods
-        WHERE student_id = ? AND is_active = 1
-        ORDER BY submission_deadline DESC
+        SELECT
+            kp.*,
+            kg.is_hidden
+        FROM kakehashi_periods kp
+        LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = kp.student_id
+        WHERE kp.student_id = ?
+        AND kp.is_active = 1
+        AND (kg.is_hidden = 0 OR kg.is_hidden IS NULL)
+        ORDER BY kp.submission_deadline DESC
     ");
     $stmt->execute([$selectedStudentId]);
     $activePeriods = $stmt->fetchAll();
@@ -47,9 +53,15 @@ if ($selectedStudentId) {
 
                 // 再度期間を取得
                 $stmt = $pdo->prepare("
-                    SELECT * FROM kakehashi_periods
-                    WHERE student_id = ? AND is_active = 1
-                    ORDER BY submission_deadline DESC
+                    SELECT
+                        kp.*,
+                        kg.is_hidden
+                    FROM kakehashi_periods kp
+                    LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = kp.student_id
+                    WHERE kp.student_id = ?
+                    AND kp.is_active = 1
+                    AND (kg.is_hidden = 0 OR kg.is_hidden IS NULL)
+                    ORDER BY kp.submission_deadline DESC
                 ");
                 $stmt->execute([$selectedStudentId]);
                 $activePeriods = $stmt->fetchAll();
@@ -72,6 +84,12 @@ if ($selectedStudentId && $selectedPeriodId) {
     ");
     $stmt->execute([$selectedStudentId, $selectedPeriodId]);
     $kakehashiData = $stmt->fetch();
+
+    // 非表示の場合はアクセス拒否
+    if ($kakehashiData && $kakehashiData['is_hidden']) {
+        header('Location: kakehashi.php');
+        exit;
+    }
 }
 
 // 選択された期間の情報

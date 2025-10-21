@@ -15,81 +15,102 @@ checkUserType(['admin', 'staff']);
 $pdo = getDbConnection();
 
 // 管理者の場合、教室IDを取得
-$classroomId = null;
-if ($_SESSION['user_type'] === 'admin' && !isMasterAdmin()) {
-    // 通常管理者は自分の教室のみ
-    $stmt = $pdo->prepare("SELECT classroom_id FROM users WHERE id = ?");
-    $stmt->execute([$_SESSION['user_id']]);
-    $user = $stmt->fetch();
-    $classroomId = $user['classroom_id'];
+$classroomId = $_SESSION['classroom_id'] ?? null;
+
+// 検索・並び替えパラメータ
+$searchName = $_GET['search_name'] ?? '';
+$searchGrade = $_GET['search_grade'] ?? '';
+$searchGuardian = $_GET['search_guardian'] ?? '';
+$searchStatus = $_GET['search_status'] ?? '';
+$sortBy = $_GET['sort_by'] ?? 'status_name';
+
+// WHERE句の構築
+$where = [];
+$params = [];
+
+if ($classroomId && !isMasterAdmin()) {
+    $where[] = "s.classroom_id = ?";
+    $params[] = $classroomId;
 }
 
-// 生徒を取得（教室フィルタリング）
-if ($classroomId) {
-    // 通常管理者：自分の教室の生徒のみ（保護者の教室IDでフィルタリング）
-    $stmt = $pdo->prepare("
-        SELECT
-            s.id,
-            s.student_name,
-            s.birth_date,
-            s.support_start_date,
-            s.grade_level,
-            s.guardian_id,
-            s.is_active,
-            s.status,
-            s.created_at,
-            s.scheduled_monday,
-            s.scheduled_tuesday,
-            s.scheduled_wednesday,
-            s.scheduled_thursday,
-            s.scheduled_friday,
-            s.scheduled_saturday,
-            s.scheduled_sunday,
-            u.full_name as guardian_name
-        FROM students s
-        INNER JOIN users u ON s.guardian_id = u.id
-        WHERE u.classroom_id = ?
-        ORDER BY
-            CASE s.status
-                WHEN 'active' THEN 1
-                WHEN 'trial' THEN 2
-                WHEN 'withdrawn' THEN 3
-            END,
-            s.student_name
-    ");
-    $stmt->execute([$classroomId]);
-} else {
-    // マスター管理者またはスタッフ：全生徒
-    $stmt = $pdo->query("
-        SELECT
-            s.id,
-            s.student_name,
-            s.birth_date,
-            s.support_start_date,
-            s.grade_level,
-            s.guardian_id,
-            s.is_active,
-            s.status,
-            s.created_at,
-            s.scheduled_monday,
-            s.scheduled_tuesday,
-            s.scheduled_wednesday,
-            s.scheduled_thursday,
-            s.scheduled_friday,
-            s.scheduled_saturday,
-            s.scheduled_sunday,
-            u.full_name as guardian_name
-        FROM students s
-        LEFT JOIN users u ON s.guardian_id = u.id
-        ORDER BY
-            CASE s.status
-                WHEN 'active' THEN 1
-                WHEN 'trial' THEN 2
-                WHEN 'withdrawn' THEN 3
-            END,
-            s.student_name
-    ");
+if (!empty($searchName)) {
+    $where[] = "s.student_name LIKE ?";
+    $params[] = "%{$searchName}%";
 }
+
+if (!empty($searchGrade)) {
+    $where[] = "s.grade_level = ?";
+    $params[] = $searchGrade;
+}
+
+if (!empty($searchGuardian)) {
+    $where[] = "(u.full_name LIKE ? OR u.username LIKE ?)";
+    $params[] = "%{$searchGuardian}%";
+    $params[] = "%{$searchGuardian}%";
+}
+
+if ($searchStatus !== '') {
+    $where[] = "s.is_active = ?";
+    $params[] = (int)$searchStatus;
+}
+
+$whereClause = !empty($where) ? "WHERE " . implode(" AND ", $where) : "";
+
+// ORDER BY句の構築
+$orderBy = "ORDER BY s.is_active DESC, s.student_name";
+switch ($sortBy) {
+    case 'name':
+        $orderBy = "ORDER BY s.student_name";
+        break;
+    case 'age':
+        $orderBy = "ORDER BY s.birth_date DESC";
+        break;
+    case 'grade':
+        $orderBy = "ORDER BY s.grade_level, s.student_name";
+        break;
+    case 'guardian':
+        $orderBy = "ORDER BY u.full_name, s.student_name";
+        break;
+    case 'status':
+        $orderBy = "ORDER BY s.is_active DESC, s.student_name";
+        break;
+    case 'created':
+        $orderBy = "ORDER BY s.created_at DESC";
+        break;
+    case 'status_name':
+    default:
+        $orderBy = "ORDER BY s.is_active DESC, s.student_name";
+        break;
+}
+
+// 生徒を取得
+$sql = "
+    SELECT
+        s.id,
+        s.student_name,
+        s.birth_date,
+        s.support_start_date,
+        s.grade_level,
+        s.guardian_id,
+        s.is_active,
+        s.status,
+        s.created_at,
+        s.scheduled_monday,
+        s.scheduled_tuesday,
+        s.scheduled_wednesday,
+        s.scheduled_thursday,
+        s.scheduled_friday,
+        s.scheduled_saturday,
+        s.scheduled_sunday,
+        u.full_name as guardian_name
+    FROM students s
+    LEFT JOIN users u ON s.guardian_id = u.id
+    {$whereClause}
+    {$orderBy}
+";
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
 $students = $stmt->fetchAll();
 
 // 保護者一覧を取得（生徒登録用、教室フィルタリング）
@@ -431,11 +452,18 @@ function getGradeBadgeColor($gradeLevel) {
                 </div>
                 <div class="form-group">
                     <label>在籍状況 *</label>
-                    <select name="status" required>
+                    <select name="status" id="status" required onchange="toggleWithdrawalDate()">
                         <option value="active">在籍</option>
                         <option value="trial">体験</option>
+                        <option value="short_term">短期利用</option>
                         <option value="withdrawn">退所</option>
                     </select>
+                    <div style="font-size: 12px; color: #666; margin-top: 5px;">※在籍以外の生徒には保護者への連絡は表示されません</div>
+                </div>
+                <div class="form-group" id="withdrawal_date_group" style="display: none;">
+                    <label>退所日</label>
+                    <input type="date" name="withdrawal_date" id="withdrawal_date">
+                    <div style="font-size: 12px; color: #666; margin-top: 5px;">※退所日以降のかけはし・計画書・モニタリング表は作成されません</div>
                 </div>
                 <div class="form-group">
                     <label>参加予定曜日</label>
@@ -469,9 +497,58 @@ function getGradeBadgeColor($gradeLevel) {
             </form>
         </div>
 
+        <!-- 検索・絞り込みフォーム -->
+        <div class="content-box">
+            <h2 class="section-title">🔍 検索・絞り込み</h2>
+            <form method="GET" action="">
+                <div class="form-row" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                    <div class="form-group">
+                        <label>生徒名</label>
+                        <input type="text" name="search_name" value="<?php echo htmlspecialchars($searchName); ?>" placeholder="部分一致で検索">
+                    </div>
+                    <div class="form-group">
+                        <label>学年</label>
+                        <select name="search_grade">
+                            <option value="">すべて</option>
+                            <option value="elementary" <?php echo $searchGrade === 'elementary' ? 'selected' : ''; ?>>小学部</option>
+                            <option value="junior_high" <?php echo $searchGrade === 'junior_high' ? 'selected' : ''; ?>>中学部</option>
+                            <option value="high_school" <?php echo $searchGrade === 'high_school' ? 'selected' : ''; ?>>高等部</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>保護者</label>
+                        <input type="text" name="search_guardian" value="<?php echo htmlspecialchars($searchGuardian); ?>" placeholder="名前またはIDで部分一致検索">
+                    </div>
+                    <div class="form-group">
+                        <label>状態</label>
+                        <select name="search_status">
+                            <option value="">すべて</option>
+                            <option value="1" <?php echo $searchStatus === '1' ? 'selected' : ''; ?>>有効</option>
+                            <option value="0" <?php echo $searchStatus === '0' ? 'selected' : ''; ?>>無効</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>並び替え</label>
+                        <select name="sort_by">
+                            <option value="status_name" <?php echo $sortBy === 'status_name' ? 'selected' : ''; ?>>状態→名前</option>
+                            <option value="name" <?php echo $sortBy === 'name' ? 'selected' : ''; ?>>名前</option>
+                            <option value="age" <?php echo $sortBy === 'age' ? 'selected' : ''; ?>>年齢</option>
+                            <option value="grade" <?php echo $sortBy === 'grade' ? 'selected' : ''; ?>>学年</option>
+                            <option value="guardian" <?php echo $sortBy === 'guardian' ? 'selected' : ''; ?>>保護者</option>
+                            <option value="created" <?php echo $sortBy === 'created' ? 'selected' : ''; ?>>登録日</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button type="submit" class="btn btn-primary">検索</button>
+                    <a href="students.php" class="btn btn-secondary">クリア</a>
+                </div>
+            </form>
+        </div>
+
         <!-- 生徒一覧 -->
         <div class="content-box">
-            <h2 class="section-title">生徒一覧</h2>
+            <h2 class="section-title">生徒一覧（<?php echo count($students); ?>名）</h2>
             <table>
                 <thead>
                     <tr>
@@ -512,7 +589,12 @@ function getGradeBadgeColor($gradeLevel) {
                                 <td><?php echo $student['guardian_name'] ? htmlspecialchars($student['guardian_name']) : '-'; ?></td>
                                 <td>
                                     <?php
-                                    $statusLabels = ['active' => '在籍', 'trial' => '体験', 'withdrawn' => '退所'];
+                                    $statusLabels = [
+                                        'active' => '在籍',
+                                        'trial' => '体験',
+                                        'short_term' => '短期利用',
+                                        'withdrawn' => '退所'
+                                    ];
                                     $statusClass = '';
                                     switch ($student['status']) {
                                         case 'active':
@@ -521,6 +603,10 @@ function getGradeBadgeColor($gradeLevel) {
                                         case 'trial':
                                             $statusClass = 'status-badge';
                                             $statusClass .= '" style="background: #fff3cd; color: #856404';
+                                            break;
+                                        case 'short_term':
+                                            $statusClass = 'status-badge';
+                                            $statusClass .= '" style="background: #cfe2ff; color: #084298';
                                             break;
                                         case 'withdrawn':
                                             $statusClass = 'status-inactive';
@@ -579,11 +665,18 @@ function getGradeBadgeColor($gradeLevel) {
                 </div>
                 <div class="form-group">
                     <label>在籍状況 *</label>
-                    <select name="status" id="edit_status" required>
+                    <select name="status" id="edit_status" required onchange="toggleEditWithdrawalDate()">
                         <option value="active">在籍</option>
                         <option value="trial">体験</option>
+                        <option value="short_term">短期利用</option>
                         <option value="withdrawn">退所</option>
                     </select>
+                    <div style="font-size: 12px; color: #666; margin-top: 5px;">※在籍以外の生徒には保護者への連絡は表示されません</div>
+                </div>
+                <div class="form-group" id="edit_withdrawal_date_group">
+                    <label>退所日</label>
+                    <input type="date" name="withdrawal_date" id="edit_withdrawal_date">
+                    <div style="font-size: 12px; color: #666; margin-top: 5px;">※退所日以降のかけはし・計画書・モニタリング表は作成されません</div>
                 </div>
                 <div class="form-group">
                     <label>参加予定曜日</label>
@@ -621,6 +714,30 @@ function getGradeBadgeColor($gradeLevel) {
     </div>
 
     <script>
+        // 退所日入力欄の表示/非表示（新規登録）
+        function toggleWithdrawalDate() {
+            const status = document.getElementById('status').value;
+            const withdrawalDateGroup = document.getElementById('withdrawal_date_group');
+            if (status === 'withdrawn') {
+                withdrawalDateGroup.style.display = 'block';
+            } else {
+                withdrawalDateGroup.style.display = 'none';
+                document.getElementById('withdrawal_date').value = '';
+            }
+        }
+
+        // 退所日入力欄の表示/非表示（編集）
+        function toggleEditWithdrawalDate() {
+            const status = document.getElementById('edit_status').value;
+            const withdrawalDateGroup = document.getElementById('edit_withdrawal_date_group');
+            if (status === 'withdrawn') {
+                withdrawalDateGroup.style.display = 'block';
+            } else {
+                withdrawalDateGroup.style.display = 'none';
+                document.getElementById('edit_withdrawal_date').value = '';
+            }
+        }
+
         function editStudent(student) {
             document.getElementById('edit_student_id').value = student.id;
             document.getElementById('edit_student_name').value = student.student_name;
@@ -628,6 +745,7 @@ function getGradeBadgeColor($gradeLevel) {
             document.getElementById('edit_support_start_date').value = student.support_start_date || '';
             document.getElementById('edit_guardian_id').value = student.guardian_id || '';
             document.getElementById('edit_status').value = student.status || 'active';
+            document.getElementById('edit_withdrawal_date').value = student.withdrawal_date || '';
 
             // 曜日チェックボックスの設定
             document.getElementById('edit_scheduled_monday').checked = student.scheduled_monday == 1;
@@ -637,6 +755,9 @@ function getGradeBadgeColor($gradeLevel) {
             document.getElementById('edit_scheduled_friday').checked = student.scheduled_friday == 1;
             document.getElementById('edit_scheduled_saturday').checked = student.scheduled_saturday == 1;
             document.getElementById('edit_scheduled_sunday').checked = student.scheduled_sunday == 1;
+
+            // 退所日欄の表示/非表示
+            toggleEditWithdrawalDate();
 
             document.getElementById('editModal').classList.add('active');
         }

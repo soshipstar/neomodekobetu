@@ -28,6 +28,8 @@ try {
             $birthDate = $_POST['birth_date'] ?? null;
             $supportStartDate = $_POST['support_start_date'] ?? null;
             $guardianId = !empty($_POST['guardian_id']) ? (int)$_POST['guardian_id'] : null;
+            $status = $_POST['status'] ?? 'active';
+            $withdrawalDate = !empty($_POST['withdrawal_date']) ? $_POST['withdrawal_date'] : null;
 
             // 参加予定曜日
             $scheduledMonday = isset($_POST['scheduled_monday']) ? 1 : 0;
@@ -45,16 +47,19 @@ try {
             // 生年月日から学年を自動計算
             $gradeLevel = calculateGradeLevel($birthDate);
 
+            // スタッフの教室IDを取得
+            $classroomId = $_SESSION['classroom_id'] ?? null;
+
             $stmt = $pdo->prepare("
                 INSERT INTO students (
-                    student_name, birth_date, support_start_date, grade_level, guardian_id, is_active, created_at,
+                    student_name, birth_date, support_start_date, grade_level, guardian_id, status, withdrawal_date, classroom_id, is_active, created_at,
                     scheduled_monday, scheduled_tuesday, scheduled_wednesday, scheduled_thursday,
                     scheduled_friday, scheduled_saturday, scheduled_sunday
                 )
-                VALUES (?, ?, ?, ?, ?, 1, NOW(), ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), ?, ?, ?, ?, ?, ?, ?)
             ");
             $stmt->execute([
-                $studentName, $birthDate, $supportStartDate, $gradeLevel, $guardianId,
+                $studentName, $birthDate, $supportStartDate, $gradeLevel, $guardianId, $status, $withdrawalDate, $classroomId,
                 $scheduledMonday, $scheduledTuesday, $scheduledWednesday, $scheduledThursday,
                 $scheduledFriday, $scheduledSaturday, $scheduledSunday
             ]);
@@ -83,6 +88,10 @@ try {
             $birthDate = $_POST['birth_date'] ?? null;
             $supportStartDate = $_POST['support_start_date'] ?? null;
             $guardianId = !empty($_POST['guardian_id']) ? (int)$_POST['guardian_id'] : null;
+            $status = $_POST['status'] ?? 'active';
+
+            // 退所日は退所ステータスの時のみ設定、それ以外はNULLにする
+            $withdrawalDate = ($status === 'withdrawn' && !empty($_POST['withdrawal_date'])) ? $_POST['withdrawal_date'] : null;
 
             // 参加予定曜日
             $scheduledMonday = isset($_POST['scheduled_monday']) ? 1 : 0;
@@ -107,6 +116,8 @@ try {
                     support_start_date = ?,
                     grade_level = ?,
                     guardian_id = ?,
+                    status = ?,
+                    withdrawal_date = ?,
                     scheduled_monday = ?,
                     scheduled_tuesday = ?,
                     scheduled_wednesday = ?,
@@ -117,7 +128,7 @@ try {
                 WHERE id = ?
             ");
             $stmt->execute([
-                $studentName, $birthDate, $supportStartDate, $gradeLevel, $guardianId,
+                $studentName, $birthDate, $supportStartDate, $gradeLevel, $guardianId, $status, $withdrawalDate,
                 $scheduledMonday, $scheduledTuesday, $scheduledWednesday, $scheduledThursday,
                 $scheduledFriday, $scheduledSaturday, $scheduledSunday,
                 $studentId

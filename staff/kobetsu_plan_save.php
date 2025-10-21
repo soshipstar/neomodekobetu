@@ -47,6 +47,20 @@ if (!$studentId || !$studentName || !$createdDate) {
     exit;
 }
 
+// 退所日チェック：退所済みの生徒の場合、退所日以降の計画書は作成できない
+$stmt = $pdo->prepare("SELECT withdrawal_date FROM students WHERE id = ?");
+$stmt->execute([$studentId]);
+$student = $stmt->fetch();
+if ($student && $student['withdrawal_date']) {
+    $withdrawalDate = new DateTime($student['withdrawal_date']);
+    $planCreatedDate = new DateTime($createdDate);
+    if ($planCreatedDate >= $withdrawalDate) {
+        $_SESSION['error'] = "退所日（{$student['withdrawal_date']}）以降の個別支援計画書は作成できません。";
+        header("Location: kobetsu_plan.php?student_id=$studentId" . ($planId ? "&plan_id=$planId" : ''));
+        exit;
+    }
+}
+
 try {
     $pdo->beginTransaction();
 

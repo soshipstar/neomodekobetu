@@ -21,48 +21,93 @@ $pdo = getDbConnection();
 // スタッフの教室IDを取得
 $classroomId = $_SESSION['classroom_id'] ?? null;
 
-// 保護者一覧を取得（自分の教室のみ）
+// 検索・並び替えパラメータ
+$searchName = $_GET['search_name'] ?? '';
+$searchUsername = $_GET['search_username'] ?? '';
+$searchEmail = $_GET['search_email'] ?? '';
+$searchStatus = $_GET['search_status'] ?? '';
+$sortBy = $_GET['sort_by'] ?? 'status_name';
+
+// WHERE句の構築
+$where = ["u.user_type = 'guardian'"];
+$params = [];
+
 if ($classroomId) {
-    $stmt = $pdo->prepare("
-        SELECT
-            u.id,
-            u.username,
-            u.full_name,
-            u.email,
-            u.is_active,
-            u.created_at,
-            u.classroom_id,
-            c.classroom_name,
-            COUNT(s.id) as student_count
-        FROM users u
-        LEFT JOIN students s ON u.id = s.guardian_id
-        LEFT JOIN classrooms c ON u.classroom_id = c.id
-        WHERE u.user_type = 'guardian' AND u.classroom_id = ?
-        GROUP BY u.id
-        ORDER BY u.is_active DESC, u.full_name
-    ");
-    $stmt->execute([$classroomId]);
-} else {
-    // classroom_idがない場合は全保護者を表示（後方互換性のため）
-    $stmt = $pdo->query("
-        SELECT
-            u.id,
-            u.username,
-            u.full_name,
-            u.email,
-            u.is_active,
-            u.created_at,
-            u.classroom_id,
-            c.classroom_name,
-            COUNT(s.id) as student_count
-        FROM users u
-        LEFT JOIN students s ON u.id = s.guardian_id
-        LEFT JOIN classrooms c ON u.classroom_id = c.id
-        WHERE u.user_type = 'guardian'
-        GROUP BY u.id
-        ORDER BY u.is_active DESC, u.full_name
-    ");
+    $where[] = "u.classroom_id = ?";
+    $params[] = $classroomId;
 }
+
+if (!empty($searchName)) {
+    $where[] = "u.full_name LIKE ?";
+    $params[] = "%{$searchName}%";
+}
+
+if (!empty($searchUsername)) {
+    $where[] = "u.username LIKE ?";
+    $params[] = "%{$searchUsername}%";
+}
+
+if (!empty($searchEmail)) {
+    $where[] = "u.email LIKE ?";
+    $params[] = "%{$searchEmail}%";
+}
+
+if ($searchStatus !== '') {
+    $where[] = "u.is_active = ?";
+    $params[] = (int)$searchStatus;
+}
+
+$whereClause = "WHERE " . implode(" AND ", $where);
+
+// ORDER BY句の構築
+$orderBy = "ORDER BY u.is_active DESC, u.full_name";
+switch ($sortBy) {
+    case 'name':
+        $orderBy = "ORDER BY u.full_name";
+        break;
+    case 'username':
+        $orderBy = "ORDER BY u.username";
+        break;
+    case 'email':
+        $orderBy = "ORDER BY u.email";
+        break;
+    case 'student_count':
+        $orderBy = "ORDER BY student_count DESC, u.full_name";
+        break;
+    case 'status':
+        $orderBy = "ORDER BY u.is_active DESC, u.full_name";
+        break;
+    case 'created':
+        $orderBy = "ORDER BY u.created_at DESC";
+        break;
+    case 'status_name':
+    default:
+        $orderBy = "ORDER BY u.is_active DESC, u.full_name";
+        break;
+}
+
+// 保護者を取得
+$sql = "
+    SELECT
+        u.id,
+        u.username,
+        u.full_name,
+        u.email,
+        u.is_active,
+        u.created_at,
+        u.classroom_id,
+        c.classroom_name,
+        COUNT(s.id) as student_count
+    FROM users u
+    LEFT JOIN students s ON u.id = s.guardian_id
+    LEFT JOIN classrooms c ON u.classroom_id = c.id
+    {$whereClause}
+    GROUP BY u.id
+    {$orderBy}
+";
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
 $guardians = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
@@ -437,9 +482,53 @@ $guardians = $stmt->fetchAll();
             </form>
         </div>
 
+        <!-- 検索・絞り込みフォーム -->
+        <div class="content-box">
+            <h2 class="section-title">🔍 検索・絞り込み</h2>
+            <form method="GET" action="">
+                <div class="form-row" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                    <div class="form-group">
+                        <label>氏名</label>
+                        <input type="text" name="search_name" value="<?php echo htmlspecialchars($searchName); ?>" placeholder="部分一致で検索">
+                    </div>
+                    <div class="form-group">
+                        <label>ユーザー名</label>
+                        <input type="text" name="search_username" value="<?php echo htmlspecialchars($searchUsername); ?>" placeholder="部分一致で検索">
+                    </div>
+                    <div class="form-group">
+                        <label>メールアドレス</label>
+                        <input type="text" name="search_email" value="<?php echo htmlspecialchars($searchEmail); ?>" placeholder="部分一致で検索">
+                    </div>
+                    <div class="form-group">
+                        <label>状態</label>
+                        <select name="search_status">
+                            <option value="">すべて</option>
+                            <option value="1" <?php echo $searchStatus === '1' ? 'selected' : ''; ?>>有効</option>
+                            <option value="0" <?php echo $searchStatus === '0' ? 'selected' : ''; ?>>無効</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>並び替え</label>
+                        <select name="sort_by">
+                            <option value="status_name" <?php echo $sortBy === 'status_name' ? 'selected' : ''; ?>>状態→氏名</option>
+                            <option value="name" <?php echo $sortBy === 'name' ? 'selected' : ''; ?>>氏名</option>
+                            <option value="username" <?php echo $sortBy === 'username' ? 'selected' : ''; ?>>ユーザー名</option>
+                            <option value="email" <?php echo $sortBy === 'email' ? 'selected' : ''; ?>>メールアドレス</option>
+                            <option value="student_count" <?php echo $sortBy === 'student_count' ? 'selected' : ''; ?>>生徒数</option>
+                            <option value="created" <?php echo $sortBy === 'created' ? 'selected' : ''; ?>>登録日</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button type="submit" class="btn btn-primary">検索</button>
+                    <a href="guardians.php" class="btn btn-secondary">クリア</a>
+                </div>
+            </form>
+        </div>
+
         <!-- 保護者一覧 -->
         <div class="content-box">
-            <h2 class="section-title">保護者一覧</h2>
+            <h2 class="section-title">保護者一覧（<?php echo count($guardians); ?>名）</h2>
             <table>
                 <thead>
                     <tr>
