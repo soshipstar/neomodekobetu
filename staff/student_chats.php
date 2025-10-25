@@ -23,6 +23,7 @@ if ($classroomId) {
         SELECT
             s.id as student_id,
             s.student_name,
+            s.grade_level,
             scr.id as room_id,
             COALESCE(
                 (SELECT COUNT(*)
@@ -48,7 +49,7 @@ if ($classroomId) {
         INNER JOIN users g ON s.guardian_id = g.id
         LEFT JOIN student_chat_rooms scr ON s.id = scr.student_id
         WHERE g.classroom_id = ?
-        ORDER BY last_message_at IS NULL, last_message_at DESC, s.student_name ASC
+        ORDER BY s.grade_level, s.student_name ASC
     ");
     $stmt->execute([$classroomId]);
 } else {
@@ -56,6 +57,7 @@ if ($classroomId) {
         SELECT
             s.id as student_id,
             s.student_name,
+            s.grade_level,
             scr.id as room_id,
             COALESCE(
                 (SELECT COUNT(*)
@@ -79,11 +81,27 @@ if ($classroomId) {
             ) as unread_count
         FROM students s
         LEFT JOIN student_chat_rooms scr ON s.id = scr.student_id
-        ORDER BY last_message_at IS NULL, last_message_at DESC, s.student_name ASC
+        ORDER BY s.grade_level, s.student_name ASC
     ");
 }
 
-$rooms = $stmt->fetchAll();
+$allStudents = $stmt->fetchAll();
+
+// 学部別に分類
+$elementary = []; // 小学部 (1-6年)
+$junior = [];     // 中等部 (7-9年)
+$senior = [];     // 高等部 (10-12年)
+
+foreach ($allStudents as $student) {
+    $grade = $student['grade_level'];
+    if ($grade >= 1 && $grade <= 6) {
+        $elementary[] = $student;
+    } elseif ($grade >= 7 && $grade <= 9) {
+        $junior[] = $student;
+    } elseif ($grade >= 10 && $grade <= 12) {
+        $senior[] = $student;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -136,6 +154,84 @@ $rooms = $stmt->fetchAll();
 
         .back-btn:hover {
             background: #5a6268;
+        }
+
+        .search-box {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .accordion {
+            margin-bottom: 15px;
+        }
+
+        .accordion-header {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: background 0.2s;
+        }
+
+        .accordion-header:hover {
+            background: #f8f9fa;
+        }
+
+        .accordion-header.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .accordion-title {
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .accordion-count {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .accordion-icon {
+            transition: transform 0.3s;
+        }
+
+        .accordion-header.active .accordion-icon {
+            transform: rotate(180deg);
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            margin-top: 10px;
+        }
+
+        .accordion-content.active {
+            max-height: 2000px;
         }
 
         .room-list {
@@ -265,18 +361,18 @@ $rooms = $stmt->fetchAll();
         </div>
 
         <?php
-        $totalRooms = count($rooms);
-        $totalUnread = array_sum(array_column($rooms, 'unread_count'));
-        $activeRooms = count(array_filter($rooms, function($r) { return $r['message_count'] > 0; }));
+        $totalStudents = count($allStudents);
+        $totalUnread = array_sum(array_column($allStudents, 'unread_count'));
+        $activeChats = count(array_filter($allStudents, function($s) { return $s['message_count'] > 0; }));
         ?>
 
         <div class="stats">
             <div class="stat-card">
-                <div class="stat-number"><?php echo $totalRooms; ?></div>
+                <div class="stat-number"><?php echo $totalStudents; ?></div>
                 <div class="stat-label">生徒数</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number"><?php echo $activeRooms; ?></div>
+                <div class="stat-number"><?php echo $activeChats; ?></div>
                 <div class="stat-label">チャット有り</div>
             </div>
             <div class="stat-card">
@@ -285,36 +381,172 @@ $rooms = $stmt->fetchAll();
             </div>
         </div>
 
-        <div class="room-list">
-            <?php if (empty($rooms)): ?>
-                <div class="empty-state">
-                    <div class="empty-state-icon">📭</div>
-                    <p>生徒チャットルームがありません</p>
-                </div>
-            <?php else: ?>
-                <?php foreach ($rooms as $room): ?>
-                    <a href="student_chat_detail.php?student_id=<?php echo $room['student_id']; ?>" class="room-item">
-                        <div class="room-avatar">🎓</div>
-                        <div class="room-info">
-                            <div class="room-name">
-                                <?php echo htmlspecialchars($room['student_name'], ENT_QUOTES, 'UTF-8'); ?>
-                                <?php if ($room['unread_count'] > 0): ?>
-                                    <span class="room-badge"><?php echo $room['unread_count']; ?></span>
-                                <?php endif; ?>
-                            </div>
-                            <div class="room-meta">
-                                <?php if ($room['last_message_at']): ?>
-                                    最終メッセージ: <?php echo date('Y/m/d H:i', strtotime($room['last_message_at'])); ?>
-                                <?php else: ?>
-                                    メッセージなし
-                                <?php endif; ?>
-                                （<?php echo $room['message_count']; ?>件）
-                            </div>
-                        </div>
-                    </a>
-                <?php endforeach; ?>
-            <?php endif; ?>
+        <!-- 検索ボックス -->
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 生徒名で検索..." onkeyup="filterStudents()">
         </div>
+
+        <?php if (empty($allStudents)): ?>
+            <div class="empty-state">
+                <div class="empty-state-icon">📭</div>
+                <p>生徒がいません</p>
+            </div>
+        <?php else: ?>
+            <!-- 小学部 -->
+            <?php if (!empty($elementary)): ?>
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <div class="accordion-title">
+                        <span>🎒 小学部</span>
+                        <span class="accordion-count">(<?php echo count($elementary); ?>名)</span>
+                    </div>
+                    <span class="accordion-icon">▼</span>
+                </div>
+                <div class="accordion-content">
+                    <div class="room-list">
+                        <?php foreach ($elementary as $student): ?>
+                            <a href="student_chat_detail.php?student_id=<?php echo $student['student_id']; ?>" class="room-item" data-student-name="<?php echo htmlspecialchars($student['student_name'], ENT_QUOTES, 'UTF-8'); ?>">
+                                <div class="room-avatar">🎓</div>
+                                <div class="room-info">
+                                    <div class="room-name">
+                                        <?php echo htmlspecialchars($student['student_name'], ENT_QUOTES, 'UTF-8'); ?>
+                                        <?php if ($student['unread_count'] > 0): ?>
+                                            <span class="room-badge"><?php echo $student['unread_count']; ?></span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="room-meta">
+                                        <?php if ($student['last_message_at']): ?>
+                                            最終メッセージ: <?php echo date('Y/m/d H:i', strtotime($student['last_message_at'])); ?>
+                                        <?php else: ?>
+                                            メッセージなし
+                                        <?php endif; ?>
+                                        （<?php echo $student['message_count']; ?>件）
+                                    </div>
+                                </div>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- 中等部 -->
+            <?php if (!empty($junior)): ?>
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <div class="accordion-title">
+                        <span>📚 中等部</span>
+                        <span class="accordion-count">(<?php echo count($junior); ?>名)</span>
+                    </div>
+                    <span class="accordion-icon">▼</span>
+                </div>
+                <div class="accordion-content">
+                    <div class="room-list">
+                        <?php foreach ($junior as $student): ?>
+                            <a href="student_chat_detail.php?student_id=<?php echo $student['student_id']; ?>" class="room-item" data-student-name="<?php echo htmlspecialchars($student['student_name'], ENT_QUOTES, 'UTF-8'); ?>">
+                                <div class="room-avatar">🎓</div>
+                                <div class="room-info">
+                                    <div class="room-name">
+                                        <?php echo htmlspecialchars($student['student_name'], ENT_QUOTES, 'UTF-8'); ?>
+                                        <?php if ($student['unread_count'] > 0): ?>
+                                            <span class="room-badge"><?php echo $student['unread_count']; ?></span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="room-meta">
+                                        <?php if ($student['last_message_at']): ?>
+                                            最終メッセージ: <?php echo date('Y/m/d H:i', strtotime($student['last_message_at'])); ?>
+                                        <?php else: ?>
+                                            メッセージなし
+                                        <?php endif; ?>
+                                        （<?php echo $student['message_count']; ?>件）
+                                    </div>
+                                </div>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- 高等部 -->
+            <?php if (!empty($senior)): ?>
+            <div class="accordion">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <div class="accordion-title">
+                        <span>🎓 高等部</span>
+                        <span class="accordion-count">(<?php echo count($senior); ?>名)</span>
+                    </div>
+                    <span class="accordion-icon">▼</span>
+                </div>
+                <div class="accordion-content">
+                    <div class="room-list">
+                        <?php foreach ($senior as $student): ?>
+                            <a href="student_chat_detail.php?student_id=<?php echo $student['student_id']; ?>" class="room-item" data-student-name="<?php echo htmlspecialchars($student['student_name'], ENT_QUOTES, 'UTF-8'); ?>">
+                                <div class="room-avatar">🎓</div>
+                                <div class="room-info">
+                                    <div class="room-name">
+                                        <?php echo htmlspecialchars($student['student_name'], ENT_QUOTES, 'UTF-8'); ?>
+                                        <?php if ($student['unread_count'] > 0): ?>
+                                            <span class="room-badge"><?php echo $student['unread_count']; ?></span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="room-meta">
+                                        <?php if ($student['last_message_at']): ?>
+                                            最終メッセージ: <?php echo date('Y/m/d H:i', strtotime($student['last_message_at'])); ?>
+                                        <?php else: ?>
+                                            メッセージなし
+                                        <?php endif; ?>
+                                        （<?php echo $student['message_count']; ?>件）
+                                    </div>
+                                </div>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+        <?php endif; ?>
     </div>
+
+    <script>
+        // アコーディオンの開閉
+        function toggleAccordion(header) {
+            const content = header.nextElementSibling;
+            const isActive = header.classList.contains('active');
+
+            // すべてのアコーディオンを閉じる（オプション：1つだけ開く場合）
+            // document.querySelectorAll('.accordion-header').forEach(h => h.classList.remove('active'));
+            // document.querySelectorAll('.accordion-content').forEach(c => c.classList.remove('active'));
+
+            if (isActive) {
+                header.classList.remove('active');
+                content.classList.remove('active');
+            } else {
+                header.classList.add('active');
+                content.classList.add('active');
+            }
+        }
+
+        // 検索フィルター
+        function filterStudents() {
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            const allItems = document.querySelectorAll('.room-item');
+
+            allItems.forEach(item => {
+                const studentName = item.getAttribute('data-student-name').toLowerCase();
+                if (studentName.includes(searchText)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // 検索中は全アコーディオンを開く
+            if (searchText.length > 0) {
+                document.querySelectorAll('.accordion-header').forEach(h => h.classList.add('active'));
+                document.querySelectorAll('.accordion-content').forEach(c => c.classList.add('active'));
+            }
+        }
+    </script>
 </body>
 </html>
