@@ -34,7 +34,7 @@ while ($row = $stmt->fetch()) {
     $events[$day][] = $row['event_name'];
 }
 
-// 提出物の未提出数を取得
+// 提出物の未提出数を取得（保護者チャット経由）
 $stmt = $pdo->prepare("
     SELECT COUNT(*) as count
     FROM submission_requests sr
@@ -43,6 +43,37 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([$studentId]);
 $pendingSubmissions = $stmt->fetchColumn();
+
+// 週間計画表の提出物を取得
+$stmt = $pdo->prepare("
+    SELECT
+        wps.id,
+        wps.submission_item,
+        wps.due_date,
+        wps.is_completed,
+        DATEDIFF(wps.due_date, CURDATE()) as days_until_due
+    FROM weekly_plan_submissions wps
+    INNER JOIN weekly_plans wp ON wps.weekly_plan_id = wp.id
+    WHERE wp.student_id = ? AND wps.is_completed = 0
+    ORDER BY wps.due_date ASC
+");
+$stmt->execute([$studentId]);
+$weeklyPlanSubmissions = $stmt->fetchAll();
+
+// 提出物をカテゴリ分け
+$overdueSubmissions = [];
+$urgentSubmissions = [];
+$normalSubmissions = [];
+
+foreach ($weeklyPlanSubmissions as $sub) {
+    if ($sub['days_until_due'] < 0) {
+        $overdueSubmissions[] = $sub;
+    } elseif ($sub['days_until_due'] <= 3) {
+        $urgentSubmissions[] = $sub;
+    } else {
+        $normalSubmissions[] = $sub;
+    }
+}
 
 // 新着メッセージ数を取得（生徒用チャット）
 $stmt = $pdo->prepare("
@@ -265,6 +296,70 @@ if ($nextMonth > 12) {
             color: #3498db;
         }
 
+        .alerts-section {
+            margin-bottom: 30px;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .alert-overdue {
+            background: linear-gradient(135deg, #721c24 0%, #c82333 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        .alert-urgent {
+            background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%);
+            color: white;
+        }
+
+        .alert-normal {
+            background: linear-gradient(135deg, #3498db 0%, #667eea 100%);
+            color: white;
+        }
+
+        .alert-content {
+            flex: 1;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .alert-date {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .alert-action {
+            margin-left: 20px;
+        }
+
+        .alert-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 14px;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+
+        .alert-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
         .calendar .today {
             background: #fff3cd;
         }
@@ -327,6 +422,63 @@ if ($nextMonth > 12) {
                 <p>ログインパスワードを変更する</p>
             </a>
         </div>
+
+        <!-- 提出物アラート -->
+        <?php if (!empty($overdueSubmissions) || !empty($urgentSubmissions) || !empty($normalSubmissions)): ?>
+            <div class="alerts-section">
+                <!-- 期限超過 -->
+                <?php foreach ($overdueSubmissions as $sub): ?>
+                    <div class="alert alert-overdue">
+                        <div class="alert-content">
+                            <div class="alert-title">⚠️ 【期限超過】<?php echo htmlspecialchars($sub['submission_item'], ENT_QUOTES, 'UTF-8'); ?></div>
+                            <div class="alert-date">
+                                期限: <?php echo date('Y年m月d日', strtotime($sub['due_date'])); ?>
+                                （<?php echo abs($sub['days_until_due']); ?>日超過）
+                            </div>
+                        </div>
+                        <div class="alert-action">
+                            <a href="weekly_plan.php" class="alert-btn">確認する</a>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+
+                <!-- 緊急（3日以内） -->
+                <?php foreach ($urgentSubmissions as $sub): ?>
+                    <div class="alert alert-urgent">
+                        <div class="alert-content">
+                            <div class="alert-title">🔥 【緊急】<?php echo htmlspecialchars($sub['submission_item'], ENT_QUOTES, 'UTF-8'); ?></div>
+                            <div class="alert-date">
+                                期限: <?php echo date('Y年m月d日', strtotime($sub['due_date'])); ?>
+                                <?php if ($sub['days_until_due'] == 0): ?>
+                                    （今日が期限）
+                                <?php else: ?>
+                                    （あと<?php echo $sub['days_until_due']; ?>日）
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <div class="alert-action">
+                            <a href="weekly_plan.php" class="alert-btn">確認する</a>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+
+                <!-- 通常 -->
+                <?php foreach ($normalSubmissions as $sub): ?>
+                    <div class="alert alert-normal">
+                        <div class="alert-content">
+                            <div class="alert-title">📋 <?php echo htmlspecialchars($sub['submission_item'], ENT_QUOTES, 'UTF-8'); ?></div>
+                            <div class="alert-date">
+                                期限: <?php echo date('Y年m月d日', strtotime($sub['due_date'])); ?>
+                                （あと<?php echo $sub['days_until_due']; ?>日）
+                            </div>
+                        </div>
+                        <div class="alert-action">
+                            <a href="weekly_plan.php" class="alert-btn">確認する</a>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
 
         <div class="calendar-section">
             <div class="calendar-header">

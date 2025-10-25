@@ -1,47 +1,19 @@
 <?php
 /**
- * スタッフ用 - 生徒週間計画表詳細
+ * 生徒用週間計画表
  */
 
-require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/student_auth.php';
 require_once __DIR__ . '/../config/database.php';
 
-requireUserType(['staff', 'admin']);
+requireStudentLogin();
 
 $pdo = getDbConnection();
-$currentUser = getCurrentUser();
-$classroomId = $_SESSION['classroom_id'] ?? null;
+$student = getCurrentStudent();
+$studentId = $student['id'];
 
-$studentId = $_GET['student_id'] ?? null;
-$targetDate = $_GET['date'] ?? date('Y-m-d');
-
-if (!$studentId) {
-    header('Location: student_weekly_plans.php');
-    exit;
-}
-
-// 生徒情報を取得（アクセス権限チェック含む）
-if ($classroomId) {
-    $stmt = $pdo->prepare("
-        SELECT s.id, s.student_name
-        FROM students s
-        INNER JOIN users g ON s.guardian_id = g.id
-        WHERE s.id = ? AND g.classroom_id = ?
-    ");
-    $stmt->execute([$studentId, $classroomId]);
-} else {
-    $stmt = $pdo->prepare("SELECT id, student_name FROM students WHERE id = ?");
-    $stmt->execute([$studentId]);
-}
-
-$student = $stmt->fetch();
-
-if (!$student) {
-    header('Location: student_weekly_plans.php');
-    exit;
-}
-
-// 週の開始日を計算
+// 表示する週を決定（デフォルトは今週）
+$targetDate = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d');
 $timestamp = strtotime($targetDate);
 $dayOfWeek = date('w', $timestamp);
 $daysFromMonday = ($dayOfWeek == 0) ? 6 : $dayOfWeek - 1;
@@ -76,9 +48,7 @@ if ($weeklyPlan) {
             submission_item,
             due_date,
             is_completed,
-            completed_at,
-            completed_by_type,
-            completed_by_id
+            completed_at
         FROM weekly_plan_submissions
         WHERE weekly_plan_id = ?
         ORDER BY due_date ASC, id ASC
@@ -99,12 +69,11 @@ if ($weeklyPlan) {
             CASE
                 WHEN wpc.commenter_type = 'staff' THEN u.full_name
                 WHEN wpc.commenter_type = 'guardian' THEN u2.full_name
-                WHEN wpc.commenter_type = 'student' THEN s.student_name
+                ELSE '本人'
             END as commenter_name
         FROM weekly_plan_comments wpc
         LEFT JOIN users u ON wpc.commenter_type = 'staff' AND wpc.commenter_id = u.id
         LEFT JOIN users u2 ON wpc.commenter_type = 'guardian' AND wpc.commenter_id = u2.id
-        LEFT JOIN students s ON wpc.commenter_type = 'student' AND wpc.commenter_id = s.id
         WHERE wpc.weekly_plan_id = ?
         ORDER BY wpc.created_at ASC
     ");
@@ -115,13 +84,16 @@ if ($weeklyPlan) {
 // 前週・次週の日付
 $prevWeek = date('Y-m-d', strtotime('-7 days', strtotime($weekStartDate)));
 $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
+
+// 編集モード
+$isEditMode = isset($_GET['edit']) && $_GET['edit'] === '1';
 ?>
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($student['student_name'], ENT_QUOTES, 'UTF-8'); ?>の週間計画表 - 個別支援連絡帳システム</title>
+    <title>週間計画表 - 個別支援連絡帳システム</title>
     <style>
         * {
             margin: 0;
@@ -141,32 +113,31 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
         }
 
         .header {
-            background: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             padding: 20px 30px;
             border-radius: 10px;
             margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
         .header h1 {
             font-size: 24px;
-            color: #333;
         }
 
         .back-btn {
-            padding: 8px 16px;
-            background: #6c757d;
+            background: rgba(255, 255, 255, 0.2);
             color: white;
-            text-decoration: none;
+            padding: 8px 16px;
             border-radius: 5px;
+            text-decoration: none;
             font-size: 14px;
         }
 
         .back-btn:hover {
-            background: #5a6268;
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .week-nav {
@@ -181,8 +152,8 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
         }
 
         .week-nav h2 {
-            font-size: 18px;
             color: #333;
+            font-size: 18px;
         }
 
         .week-nav-buttons {
@@ -196,7 +167,7 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
             color: white;
             text-decoration: none;
             border-radius: 5px;
-            font-size: 13px;
+            font-size: 14px;
         }
 
         .week-nav-buttons a:hover {
@@ -290,64 +261,6 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
             margin-bottom: 15px;
         }
 
-        .submission-item {
-            display: grid;
-            grid-template-columns: 1fr 150px 100px 40px;
-            gap: 10px;
-            margin-bottom: 10px;
-            align-items: center;
-        }
-
-        .submission-item input[type="text"],
-        .submission-item input[type="date"] {
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-        .submission-item .completed-check {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .submission-item .completed-check input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-        }
-
-        .submission-item .remove-btn {
-            background: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 8px;
-            cursor: pointer;
-            font-size: 18px;
-            line-height: 1;
-        }
-
-        .submission-item .remove-btn:hover {
-            background: #c82333;
-        }
-
-        .add-submission-btn {
-            padding: 10px 20px;
-            background: #28a745;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            margin-top: 10px;
-        }
-
-        .add-submission-btn:hover {
-            background: #218838;
-        }
-
         .submission-view-item {
             display: flex;
             justify-content: space-between;
@@ -390,10 +303,22 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
             font-weight: 700;
         }
 
-        .action-buttons {
+        .submission-checkbox {
             display: flex;
-            gap: 10px;
-            margin-top: 20px;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .submission-checkbox input[type="checkbox"] {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+        }
+
+        .submission-checkbox label {
+            font-size: 14px;
+            cursor: pointer;
+            user-select: none;
         }
 
         .btn {
@@ -459,10 +384,6 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
             border-left-color: #28a745;
         }
 
-        .comment.student {
-            border-left-color: #667eea;
-        }
-
         .comment.guardian {
             border-left-color: #ffc107;
         }
@@ -506,7 +427,7 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
         .comment-form button {
             margin-top: 10px;
             padding: 10px 20px;
-            background: #28a745;
+            background: #667eea;
             color: white;
             border: none;
             border-radius: 5px;
@@ -516,7 +437,7 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
         }
 
         .comment-form button:hover {
-            background: #218838;
+            background: #5568d3;
         }
 
         .message {
@@ -554,30 +475,24 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
                 grid-template-columns: 1fr;
                 gap: 5px;
             }
-
-            .submission-item {
-                grid-template-columns: 1fr;
-            }
-
-            .submission-item .remove-btn {
-                width: 100%;
-            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>📝 <?php echo htmlspecialchars($student['student_name'], ENT_QUOTES, 'UTF-8'); ?>さんの週間計画表</h1>
-            <a href="student_weekly_plans.php" class="back-btn">← 一覧に戻る</a>
+            <h1>📝 週間計画表</h1>
+            <a href="../student/index.php" class="back-btn">← トップに戻る</a>
         </div>
 
         <?php if (isset($_GET['success'])): ?>
             <div class="message success">
                 <?php if ($_GET['success'] == '1'): ?>
                     週間計画表を保存しました
-                <?php else: ?>
+                <?php elseif ($_GET['success'] == '2'): ?>
                     コメントを投稿しました
+                <?php elseif ($_GET['success'] == '3'): ?>
+                    提出物を更新しました
                 <?php endif; ?>
             </div>
         <?php endif; ?>
@@ -589,70 +504,74 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
         <div class="week-nav">
             <h2><?php echo date('Y年m月d日', strtotime($weekStartDate)); ?>の週</h2>
             <div class="week-nav-buttons">
-                <a href="?student_id=<?php echo $studentId; ?>&date=<?php echo $prevWeek; ?>">← 前週</a>
-                <a href="?student_id=<?php echo $studentId; ?>&date=<?php echo date('Y-m-d'); ?>">今週</a>
-                <a href="?student_id=<?php echo $studentId; ?>&date=<?php echo $nextWeek; ?>">次週 →</a>
+                <a href="?date=<?php echo $prevWeek; ?>">← 前週</a>
+                <a href="?date=<?php echo date('Y-m-d'); ?>">今週</a>
+                <a href="?date=<?php echo $nextWeek; ?>">次週 →</a>
             </div>
         </div>
-
-        <?php
-        // 編集モードかどうか
-        $isEditMode = isset($_GET['edit']) && $_GET['edit'] === '1';
-        ?>
 
         <?php if (!$weeklyPlan && !$isEditMode): ?>
             <div class="plan-container">
                 <div class="no-plan">
                     <p>この週の計画はまだ作成されていません</p>
-                    <a href="?student_id=<?php echo $studentId; ?>&date=<?php echo $targetDate; ?>&edit=1" class="btn btn-edit">計画を作成する</a>
+                    <p style="font-size: 14px;">先生が計画を作成するまでお待ちください</p>
                 </div>
             </div>
         <?php elseif ($isEditMode): ?>
-            <!-- 編集モード -->
-            <form method="POST" action="save_staff_weekly_plan.php">
-                <input type="hidden" name="student_id" value="<?php echo $studentId; ?>">
+            <!-- 編集モード（生徒は各曜日の計画のみ編集可能） -->
+            <form method="POST" action="save_weekly_plan.php">
                 <input type="hidden" name="week_start_date" value="<?php echo $weekStartDate; ?>">
 
                 <div class="plan-container">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
                         <h2 style="color: #333; font-size: 20px;">📝 週間計画を編集</h2>
                         <div style="display: flex; gap: 10px;">
-                            <a href="?student_id=<?php echo $studentId; ?>&date=<?php echo $targetDate; ?>" class="btn btn-secondary">キャンセル</a>
+                            <a href="?date=<?php echo $targetDate; ?>" class="btn btn-secondary">キャンセル</a>
                             <button type="submit" class="btn btn-primary">保存する</button>
                         </div>
                     </div>
 
-                    <!-- 今週の目標 -->
+                    <!-- 今週の目標（表示のみ） -->
                     <div class="plan-section">
                         <h3>🎯 今週の目標</h3>
-                        <textarea name="weekly_goal" placeholder="今週達成したい目標を記入してください"><?php echo htmlspecialchars($weeklyPlan['weekly_goal'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
+                        <div class="view-content <?php echo empty($weeklyPlan['weekly_goal']) ? 'empty' : ''; ?>">
+                            <?php echo !empty($weeklyPlan['weekly_goal']) ? nl2br(htmlspecialchars($weeklyPlan['weekly_goal'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?>
+                        </div>
                     </div>
 
-                    <!-- いっしょに決めた目標 -->
+                    <!-- いっしょに決めた目標（表示のみ） -->
                     <div class="plan-section">
                         <h3>🤝 いっしょに決めた目標</h3>
-                        <textarea name="shared_goal" placeholder="生徒と一緒に決めた目標を記入してください"><?php echo htmlspecialchars($weeklyPlan['shared_goal'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
+                        <div class="view-content <?php echo empty($weeklyPlan['shared_goal']) ? 'empty' : ''; ?>">
+                            <?php echo !empty($weeklyPlan['shared_goal']) ? nl2br(htmlspecialchars($weeklyPlan['shared_goal'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?>
+                        </div>
                     </div>
 
-                    <!-- やるべきこと -->
+                    <!-- やるべきこと（表示のみ） -->
                     <div class="plan-section">
                         <h3>✅ やるべきこと</h3>
-                        <textarea name="must_do" placeholder="必ずやるべきことを記入してください"><?php echo htmlspecialchars($weeklyPlan['must_do'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
+                        <div class="view-content <?php echo empty($weeklyPlan['must_do']) ? 'empty' : ''; ?>">
+                            <?php echo !empty($weeklyPlan['must_do']) ? nl2br(htmlspecialchars($weeklyPlan['must_do'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?>
+                        </div>
                     </div>
 
-                    <!-- やったほうがいいこと -->
+                    <!-- やったほうがいいこと（表示のみ） -->
                     <div class="plan-section">
                         <h3>👍 やったほうがいいこと</h3>
-                        <textarea name="should_do" placeholder="できればやったほうがいいことを記入してください"><?php echo htmlspecialchars($weeklyPlan['should_do'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
+                        <div class="view-content <?php echo empty($weeklyPlan['should_do']) ? 'empty' : ''; ?>">
+                            <?php echo !empty($weeklyPlan['should_do']) ? nl2br(htmlspecialchars($weeklyPlan['should_do'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?>
+                        </div>
                     </div>
 
-                    <!-- やりたいこと -->
+                    <!-- やりたいこと（表示のみ） -->
                     <div class="plan-section">
                         <h3>💡 やりたいこと</h3>
-                        <textarea name="want_to_do" placeholder="本人がやりたいと思っていることを記入してください"><?php echo htmlspecialchars($weeklyPlan['want_to_do'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
+                        <div class="view-content <?php echo empty($weeklyPlan['want_to_do']) ? 'empty' : ''; ?>">
+                            <?php echo !empty($weeklyPlan['want_to_do']) ? nl2br(htmlspecialchars($weeklyPlan['want_to_do'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?>
+                        </div>
                     </div>
 
-                    <!-- 各曜日の計画 -->
+                    <!-- 各曜日の計画（編集可能） -->
                     <div class="daily-plans">
                         <h3>📅 各曜日の計画・目標</h3>
                         <?php
@@ -671,30 +590,6 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
                             </div>
                         <?php endforeach; ?>
                     </div>
-
-                    <!-- 提出物管理 -->
-                    <div class="submissions-section">
-                        <h3>📋 提出物管理</h3>
-                        <div id="submissionsContainer">
-                            <?php if (!empty($submissions)): ?>
-                                <?php foreach ($submissions as $index => $sub): ?>
-                                    <div class="submission-item">
-                                        <input type="text" name="submissions[<?php echo $index; ?>][item]" value="<?php echo htmlspecialchars($sub['submission_item'], ENT_QUOTES, 'UTF-8'); ?>" placeholder="提出物名" required>
-                                        <input type="date" name="submissions[<?php echo $index; ?>][due_date]" value="<?php echo $sub['due_date']; ?>" required>
-                                        <div class="completed-check">
-                                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                                                <input type="checkbox" name="submissions[<?php echo $index; ?>][completed]" value="1" <?php echo $sub['is_completed'] ? 'checked' : ''; ?>>
-                                                <span style="font-size: 13px;">完了</span>
-                                            </label>
-                                        </div>
-                                        <button type="button" class="remove-btn" onclick="removeSubmission(this)">×</button>
-                                        <input type="hidden" name="submissions[<?php echo $index; ?>][id]" value="<?php echo $sub['id']; ?>">
-                                    </div>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        </div>
-                        <button type="button" class="add-submission-btn" onclick="addSubmission()">+ 提出物を追加</button>
-                    </div>
                 </div>
             </form>
         <?php else: ?>
@@ -702,7 +597,7 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
             <div class="plan-container">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
                     <h2 style="color: #333; font-size: 20px;">📝 週間計画</h2>
-                    <a href="?student_id=<?php echo $studentId; ?>&date=<?php echo $targetDate; ?>&edit=1" class="btn btn-edit">編集する</a>
+                    <a href="?date=<?php echo $targetDate; ?>&edit=1" class="btn btn-edit">編集する</a>
                 </div>
 
                 <!-- 今週の目標 -->
@@ -803,6 +698,15 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
                                         <?php endif; ?>
                                     </div>
                                 </div>
+                                <div class="submission-checkbox">
+                                    <input
+                                        type="checkbox"
+                                        id="submission_<?php echo $sub['id']; ?>"
+                                        <?php echo $sub['is_completed'] ? 'checked' : ''; ?>
+                                        onchange="toggleSubmission(<?php echo $sub['id']; ?>, this.checked)"
+                                    >
+                                    <label for="submission_<?php echo $sub['id']; ?>">完了</label>
+                                </div>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -833,9 +737,8 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
 
                 <!-- コメント投稿フォーム -->
                 <div class="comment-form">
-                    <form method="POST" action="add_staff_plan_comment.php">
+                    <form method="POST" action="add_plan_comment.php">
                         <input type="hidden" name="weekly_plan_id" value="<?php echo $weeklyPlan['id']; ?>">
-                        <input type="hidden" name="student_id" value="<?php echo $studentId; ?>">
                         <input type="hidden" name="date" value="<?php echo $targetDate; ?>">
                         <textarea name="comment" placeholder="コメントを入力..." required></textarea>
                         <button type="submit">コメントを投稿</button>
@@ -846,29 +749,29 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
     </div>
 
     <script>
-        let submissionCounter = <?php echo !empty($submissions) ? count($submissions) : 0; ?>;
+        function toggleSubmission(submissionId, isCompleted) {
+            const formData = new FormData();
+            formData.append('submission_id', submissionId);
+            formData.append('is_completed', isCompleted ? '1' : '0');
 
-        function addSubmission() {
-            const container = document.getElementById('submissionsContainer');
-            const newItem = document.createElement('div');
-            newItem.className = 'submission-item';
-            newItem.innerHTML = `
-                <input type="text" name="submissions[${submissionCounter}][item]" placeholder="提出物名" required>
-                <input type="date" name="submissions[${submissionCounter}][due_date]" required>
-                <div class="completed-check">
-                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                        <input type="checkbox" name="submissions[${submissionCounter}][completed]" value="1">
-                        <span style="font-size: 13px;">完了</span>
-                    </label>
-                </div>
-                <button type="button" class="remove-btn" onclick="removeSubmission(this)">×</button>
-            `;
-            container.appendChild(newItem);
-            submissionCounter++;
-        }
-
-        function removeSubmission(button) {
-            button.closest('.submission-item').remove();
+            fetch('toggle_submission.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('エラーが発生しました: ' + (data.error || '不明なエラー'));
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('通信エラーが発生しました');
+                location.reload();
+            });
         }
     </script>
 </body>
