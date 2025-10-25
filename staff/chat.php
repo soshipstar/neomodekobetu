@@ -60,11 +60,27 @@ if ($departmentFilter) {
     }
 }
 
-$sql .= " ORDER BY CASE WHEN cr.last_message_at IS NULL THEN 1 ELSE 0 END, cr.last_message_at DESC, s.student_name ASC";
+$sql .= " ORDER BY s.grade_level, s.student_name ASC";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
-$students = $stmt->fetchAll();
+$allStudents = $stmt->fetchAll();
+
+// 学部別に分類
+$elementary = []; // 小学部 (1-6年)
+$junior = [];     // 中等部 (7-9年)
+$senior = [];     // 高等部 (10-12年)
+
+foreach ($allStudents as $student) {
+    $grade = $student['grade_level'];
+    if ($grade >= 1 && $grade <= 6) {
+        $elementary[] = $student;
+    } elseif ($grade >= 7 && $grade <= 9) {
+        $junior[] = $student;
+    } elseif ($grade >= 10 && $grade <= 12) {
+        $senior[] = $student;
+    }
+}
 
 // 選択された生徒IDまたはルームID
 $selectedStudentId = $_GET['student_id'] ?? null;
@@ -433,6 +449,76 @@ if ($selectedRoomId) {
             font-size: 14px;
             background: white;
             cursor: pointer;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .accordion {
+            margin-bottom: 10px;
+        }
+
+        .accordion-header {
+            padding: 12px 15px;
+            background: #f8f9fa;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .accordion-header:hover {
+            background: #e9ecef;
+        }
+
+        .accordion-header.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .accordion-title {
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .accordion-count {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .accordion-icon {
+            transition: transform 0.3s;
+            font-size: 12px;
+        }
+
+        .accordion-header.active .accordion-icon {
+            transform: rotate(180deg);
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .accordion-content.active {
+            max-height: 2000px;
         }
 
         .department-badge {
@@ -813,49 +899,115 @@ if ($selectedRoomId) {
         <div class="main-content">
             <!-- 生徒一覧サイドバー -->
             <div class="rooms-sidebar" id="roomsSidebar">
-                <!-- 検索フィルター -->
+                <!-- 検索ボックス -->
                 <div class="filter-section">
-                    <select onchange="location.href='chat.php?department=' + this.value" class="department-filter">
-                        <option value="">全て</option>
-                        <option value="小学部" <?= $departmentFilter === '小学部' ? 'selected' : '' ?>>小学部</option>
-                        <option value="中等部" <?= $departmentFilter === '中等部' ? 'selected' : '' ?>>中等部</option>
-                        <option value="高等部" <?= $departmentFilter === '高等部' ? 'selected' : '' ?>>高等部</option>
-                    </select>
+                    <input type="text" id="searchInput" class="search-input" placeholder="🔍 生徒名・保護者名で検索..." onkeyup="filterStudents()">
                 </div>
 
-                <!-- 生徒一覧 -->
-                <?php if (!empty($students)): ?>
-                    <?php
-                    // grade_levelを日本語に変換
-                    $gradeLabels = [
-                        'elementary' => '小学部',
-                        'junior_high' => '中等部',
-                        'high_school' => '高等部'
-                    ];
-                    ?>
-                    <?php foreach ($students as $student): ?>
-                        <div class="room-item <?= $selectedStudentId == $student['student_id'] ? 'active' : '' ?>"
-                             onclick="location.href='chat.php?student_id=<?= $student['student_id'] ?><?= $departmentFilter ? '&department=' . urlencode($departmentFilter) : '' ?>'">
-                            <div class="room-item-header">
-                                <div class="student-name">
-                                    <?= htmlspecialchars($student['student_name']) ?>さん
-                                    <?php if (isset($student['grade_level'])): ?>
-                                        <span class="department-badge"><?= htmlspecialchars($gradeLabels[$student['grade_level']] ?? '') ?></span>
-                                    <?php endif; ?>
-                                </div>
-                                <?php if (isset($student['unread_count']) && $student['unread_count'] > 0): ?>
-                                    <div class="unread-badge"><?= $student['unread_count'] ?></div>
-                                <?php endif; ?>
-                            </div>
-                            <div class="guardian-name">
-                                保護者: <?= $student['guardian_name'] ? htmlspecialchars($student['guardian_name']) : '未登録' ?>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                <?php else: ?>
+                <!-- 生徒一覧（学部別アコーディオン） -->
+                <?php if (empty($allStudents)): ?>
                     <div class="empty-state">
                         <p>生徒がいません</p>
                     </div>
+                <?php else: ?>
+                    <!-- 小学部 -->
+                    <?php if (!empty($elementary)): ?>
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <div class="accordion-title">
+                                <span>🎒 小学部</span>
+                                <span class="accordion-count">(<?= count($elementary) ?>名)</span>
+                            </div>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <?php foreach ($elementary as $student): ?>
+                                <div class="room-item <?= $selectedStudentId == $student['student_id'] ? 'active' : '' ?>"
+                                     data-student-name="<?= htmlspecialchars($student['student_name']) ?>"
+                                     data-guardian-name="<?= htmlspecialchars($student['guardian_name'] ?? '') ?>"
+                                     onclick="location.href='chat.php?student_id=<?= $student['student_id'] ?>'">
+                                    <div class="room-item-header">
+                                        <div class="student-name">
+                                            <?= htmlspecialchars($student['student_name']) ?>さん
+                                        </div>
+                                        <?php if (isset($student['unread_count']) && $student['unread_count'] > 0): ?>
+                                            <div class="unread-badge"><?= $student['unread_count'] ?></div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="guardian-name">
+                                        保護者: <?= $student['guardian_name'] ? htmlspecialchars($student['guardian_name']) : '未登録' ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- 中等部 -->
+                    <?php if (!empty($junior)): ?>
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <div class="accordion-title">
+                                <span>📚 中等部</span>
+                                <span class="accordion-count">(<?= count($junior) ?>名)</span>
+                            </div>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <?php foreach ($junior as $student): ?>
+                                <div class="room-item <?= $selectedStudentId == $student['student_id'] ? 'active' : '' ?>"
+                                     data-student-name="<?= htmlspecialchars($student['student_name']) ?>"
+                                     data-guardian-name="<?= htmlspecialchars($student['guardian_name'] ?? '') ?>"
+                                     onclick="location.href='chat.php?student_id=<?= $student['student_id'] ?>'">
+                                    <div class="room-item-header">
+                                        <div class="student-name">
+                                            <?= htmlspecialchars($student['student_name']) ?>さん
+                                        </div>
+                                        <?php if (isset($student['unread_count']) && $student['unread_count'] > 0): ?>
+                                            <div class="unread-badge"><?= $student['unread_count'] ?></div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="guardian-name">
+                                        保護者: <?= $student['guardian_name'] ? htmlspecialchars($student['guardian_name']) : '未登録' ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- 高等部 -->
+                    <?php if (!empty($senior)): ?>
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <div class="accordion-title">
+                                <span>🎓 高等部</span>
+                                <span class="accordion-count">(<?= count($senior) ?>名)</span>
+                            </div>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <?php foreach ($senior as $student): ?>
+                                <div class="room-item <?= $selectedStudentId == $student['student_id'] ? 'active' : '' ?>"
+                                     data-student-name="<?= htmlspecialchars($student['student_name']) ?>"
+                                     data-guardian-name="<?= htmlspecialchars($student['guardian_name'] ?? '') ?>"
+                                     onclick="location.href='chat.php?student_id=<?= $student['student_id'] ?>'">
+                                    <div class="room-item-header">
+                                        <div class="student-name">
+                                            <?= htmlspecialchars($student['student_name']) ?>さん
+                                        </div>
+                                        <?php if (isset($student['unread_count']) && $student['unread_count'] > 0): ?>
+                                            <div class="unread-badge"><?= $student['unread_count'] ?></div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="guardian-name">
+                                        保護者: <?= $student['guardian_name'] ? htmlspecialchars($student['guardian_name']) : '未登録' ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                 <?php endif; ?>
             </div>
 
@@ -1285,6 +1437,43 @@ if ($selectedRoomId) {
                 closeSubmissionModal();
             }
         });
+
+        // アコーディオンの開閉
+        function toggleAccordion(header) {
+            const content = header.nextElementSibling;
+            const isActive = header.classList.contains('active');
+
+            if (isActive) {
+                header.classList.remove('active');
+                content.classList.remove('active');
+            } else {
+                header.classList.add('active');
+                content.classList.add('active');
+            }
+        }
+
+        // 検索フィルター
+        function filterStudents() {
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            const allItems = document.querySelectorAll('.room-item');
+
+            allItems.forEach(item => {
+                const studentName = item.getAttribute('data-student-name').toLowerCase();
+                const guardianName = item.getAttribute('data-guardian-name').toLowerCase();
+
+                if (studentName.includes(searchText) || guardianName.includes(searchText)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // 検索中は全アコーディオンを開く
+            if (searchText.length > 0) {
+                document.querySelectorAll('.accordion-header').forEach(h => h.classList.add('active'));
+                document.querySelectorAll('.accordion-content').forEach(c => c.classList.add('active'));
+            }
+        }
     </script>
 </body>
 </html>
