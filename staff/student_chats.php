@@ -293,7 +293,7 @@ $rooms = $stmt->fetchAll();
                 </div>
             <?php else: ?>
                 <?php foreach ($rooms as $room): ?>
-                    <a href="student_chat_detail.php?room_id=<?php echo $room['room_id']; ?>" class="room-item">
+                    <a href="student_chat_detail.php?student_id=<?php echo $room['student_id']; ?>" class="room-item">
                         <div class="room-avatar">🎓</div>
                         <div class="room-info">
                             <div class="room-name">
