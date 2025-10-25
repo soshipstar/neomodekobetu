@@ -14,8 +14,7 @@ require_once __DIR__ . '/../includes/student_helper.php';
 require_once __DIR__ . '/../includes/kakehashi_auto_generator.php';
 
 // ログインチェック
-requireLogin();
-checkUserType('staff');
+requireUserType(['staff', 'admin']);
 
 $pdo = getDbConnection();
 $action = $_POST['action'] ?? '';
@@ -28,6 +27,7 @@ try {
             $birthDate = $_POST['birth_date'] ?? null;
             $supportStartDate = $_POST['support_start_date'] ?? null;
             $guardianId = !empty($_POST['guardian_id']) ? (int)$_POST['guardian_id'] : null;
+            $gradeAdjustment = isset($_POST['grade_adjustment']) ? (int)$_POST['grade_adjustment'] : 0;
             $status = $_POST['status'] ?? 'active';
             $withdrawalDate = !empty($_POST['withdrawal_date']) ? $_POST['withdrawal_date'] : null;
 
@@ -44,22 +44,22 @@ try {
                 throw new Exception('生徒名、生年月日、支援開始日は必須です。');
             }
 
-            // 生年月日から学年を自動計算
-            $gradeLevel = calculateGradeLevel($birthDate);
+            // 生年月日から学年を自動計算（学年調整を考慮）
+            $gradeLevel = calculateGradeLevel($birthDate, null, $gradeAdjustment);
 
             // スタッフの教室IDを取得
             $classroomId = $_SESSION['classroom_id'] ?? null;
 
             $stmt = $pdo->prepare("
                 INSERT INTO students (
-                    student_name, birth_date, support_start_date, grade_level, guardian_id, status, withdrawal_date, classroom_id, is_active, created_at,
+                    student_name, birth_date, support_start_date, grade_level, grade_adjustment, guardian_id, status, withdrawal_date, classroom_id, is_active, created_at,
                     scheduled_monday, scheduled_tuesday, scheduled_wednesday, scheduled_thursday,
                     scheduled_friday, scheduled_saturday, scheduled_sunday
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), ?, ?, ?, ?, ?, ?, ?)
             ");
             $stmt->execute([
-                $studentName, $birthDate, $supportStartDate, $gradeLevel, $guardianId, $status, $withdrawalDate, $classroomId,
+                $studentName, $birthDate, $supportStartDate, $gradeLevel, $gradeAdjustment, $guardianId, $status, $withdrawalDate, $classroomId,
                 $scheduledMonday, $scheduledTuesday, $scheduledWednesday, $scheduledThursday,
                 $scheduledFriday, $scheduledSaturday, $scheduledSunday
             ]);
@@ -88,6 +88,7 @@ try {
             $birthDate = $_POST['birth_date'] ?? null;
             $supportStartDate = $_POST['support_start_date'] ?? null;
             $guardianId = !empty($_POST['guardian_id']) ? (int)$_POST['guardian_id'] : null;
+            $gradeAdjustment = isset($_POST['grade_adjustment']) ? (int)$_POST['grade_adjustment'] : 0;
             $status = $_POST['status'] ?? 'active';
 
             // 退所日は退所ステータスの時のみ設定、それ以外はNULLにする
@@ -106,8 +107,8 @@ try {
                 throw new Exception('必須項目が入力されていません。');
             }
 
-            // 生年月日から学年を自動計算
-            $gradeLevel = calculateGradeLevel($birthDate);
+            // 生年月日から学年を自動計算（学年調整を考慮）
+            $gradeLevel = calculateGradeLevel($birthDate, null, $gradeAdjustment);
 
             // 生徒用ログイン情報
             $studentUsername = trim($_POST['student_username'] ?? '');
@@ -127,6 +128,7 @@ try {
                         birth_date = ?,
                         support_start_date = ?,
                         grade_level = ?,
+                        grade_adjustment = ?,
                         guardian_id = ?,
                         status = ?,
                         withdrawal_date = ?,
@@ -143,7 +145,7 @@ try {
                     WHERE id = ?
                 ");
                 $stmt->execute([
-                    $studentName, $birthDate, $supportStartDate, $gradeLevel, $guardianId, $status, $withdrawalDate,
+                    $studentName, $birthDate, $supportStartDate, $gradeLevel, $gradeAdjustment, $guardianId, $status, $withdrawalDate,
                     $scheduledMonday, $scheduledTuesday, $scheduledWednesday, $scheduledThursday,
                     $scheduledFriday, $scheduledSaturday, $scheduledSunday,
                     $studentId
@@ -156,6 +158,7 @@ try {
                         birth_date = ?,
                         support_start_date = ?,
                         grade_level = ?,
+                        grade_adjustment = ?,
                         guardian_id = ?,
                         status = ?,
                         withdrawal_date = ?,
@@ -172,7 +175,7 @@ try {
                     WHERE id = ?
                 ");
                 $stmt->execute([
-                    $studentName, $birthDate, $supportStartDate, $gradeLevel, $guardianId, $status, $withdrawalDate,
+                    $studentName, $birthDate, $supportStartDate, $gradeLevel, $gradeAdjustment, $guardianId, $status, $withdrawalDate,
                     $scheduledMonday, $scheduledTuesday, $scheduledWednesday, $scheduledThursday,
                     $scheduledFriday, $scheduledSaturday, $scheduledSunday,
                     $studentUsername, $passwordHash, $studentPassword,
@@ -186,6 +189,7 @@ try {
                         birth_date = ?,
                         support_start_date = ?,
                         grade_level = ?,
+                        grade_adjustment = ?,
                         guardian_id = ?,
                         status = ?,
                         withdrawal_date = ?,
@@ -200,7 +204,7 @@ try {
                     WHERE id = ?
                 ");
                 $stmt->execute([
-                    $studentName, $birthDate, $supportStartDate, $gradeLevel, $guardianId, $status, $withdrawalDate,
+                    $studentName, $birthDate, $supportStartDate, $gradeLevel, $gradeAdjustment, $guardianId, $status, $withdrawalDate,
                     $scheduledMonday, $scheduledTuesday, $scheduledWednesday, $scheduledThursday,
                     $scheduledFriday, $scheduledSaturday, $scheduledSunday,
                     $studentUsername,

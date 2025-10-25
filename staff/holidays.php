@@ -85,7 +85,8 @@ $holidays = $stmt->fetchAll();
             margin: 0 auto;
         }
         .header {
-            background: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             padding: 20px 30px;
             border-radius: 10px;
             margin-bottom: 20px;
@@ -95,7 +96,7 @@ $holidays = $stmt->fetchAll();
             align-items: center;
         }
         .header h1 {
-            color: #333;
+            color: white;
             font-size: 24px;
         }
         .header-actions {
@@ -244,16 +245,187 @@ $holidays = $stmt->fetchAll();
             color: #666;
             margin-top: 5px;
         }
+
+        /* ドロップダウンメニュー */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-toggle {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            border: none;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+
+        .dropdown-toggle:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .dropdown-arrow {
+            font-size: 10px;
+            transition: transform 0.3s;
+        }
+
+        .dropdown.open .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 200px;
+            margin-top: 5px;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .dropdown.open .dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-menu a {
+            display: block;
+            padding: 12px 20px;
+            color: #333;
+            text-decoration: none;
+            transition: background 0.2s;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .dropdown-menu a:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-menu a:hover {
+            background: #f8f9fa;
+        }
+
+        .dropdown-menu a .menu-icon {
+            margin-right: 8px;
+        }
+
+        .user-info {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .logout-btn {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.2);
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>🗓️ 休日管理</h1>
-            <div class="header-actions">
-                <span class="user-info"><?php echo htmlspecialchars($_SESSION['full_name']); ?>（<?php echo $_SESSION['user_type'] === 'admin' ? '管理者' : 'スタッフ'; ?>）</span>
-                <a href="renrakucho_activities.php" class="btn btn-secondary btn-sm">活動管理に戻る</a>
-                <a href="/logout.php" class="btn btn-danger btn-sm">ログアウト</a>
+            <div class="user-info" id="userInfo">
+                <!-- 保護者ドロップダウン -->
+                <div class="dropdown">
+                    <button class="dropdown-toggle" onclick="toggleDropdown(event, this)">
+                        👨‍👩‍👧 保護者
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="chat.php">
+                            <span class="menu-icon">💬</span>保護者チャット
+                        </a>
+                        <a href="submission_management.php">
+                            <span class="menu-icon">📮</span>提出期限管理
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 生徒ドロップダウン -->
+                <div class="dropdown">
+                    <button class="dropdown-toggle" onclick="toggleDropdown(event, this)">
+                        🎓 生徒
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="student_chats.php">
+                            <span class="menu-icon">💬</span>生徒チャット
+                        </a>
+                        <a href="student_weekly_plans.php">
+                            <span class="menu-icon">📝</span>週間計画表
+                        </a>
+                    </div>
+                </div>
+
+                <!-- かけはし管理ドロップダウン -->
+                <div class="dropdown">
+                    <button class="dropdown-toggle" onclick="toggleDropdown(event, this)">
+                        🌉 かけはし管理
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="kakehashi_staff.php">
+                            <span class="menu-icon">✏️</span>スタッフかけはし入力
+                        </a>
+                        <a href="kakehashi_guardian_view.php">
+                            <span class="menu-icon">📋</span>保護者かけはし確認
+                        </a>
+                        <a href="kobetsu_plan.php">
+                            <span class="menu-icon">📄</span>個別支援計画書作成
+                        </a>
+                        <a href="kobetsu_monitoring.php">
+                            <span class="menu-icon">📊</span>モニタリング表作成
+                        </a>
+                        <a href="newsletter_create.php">
+                            <span class="menu-icon">📰</span>施設通信を作成
+                        </a>
+                    </div>
+                </div>
+
+                <!-- マスタ管理ドロップダウン -->
+                <div class="dropdown">
+                    <button class="dropdown-toggle" onclick="toggleDropdown(event, this)">
+                        ⚙️ マスタ管理
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="students.php">
+                            <span class="menu-icon">👥</span>生徒管理
+                        </a>
+                        <a href="guardians.php">
+                            <span class="menu-icon">👨‍👩‍👧</span>保護者管理
+                        </a>
+                        <a href="holidays.php">
+                            <span class="menu-icon">🗓️</span>休日管理
+                        </a>
+                        <a href="events.php">
+                            <span class="menu-icon">🎉</span>イベント管理
+                        </a>
+                    </div>
+                </div>
+
+                <a href="renrakucho_activities.php" class="logout-btn">← 活動管理</a>
+                <a href="/logout.php" class="logout-btn">ログアウト</a>
             </div>
         </div>
 
@@ -394,5 +566,38 @@ $holidays = $stmt->fetchAll();
             </table>
         </div>
     </div>
+
+    <script>
+        // ドロップダウンメニューのトグル
+        function toggleDropdown(event, button) {
+            event.stopPropagation();
+            const dropdown = button.closest('.dropdown');
+            const isOpen = dropdown.classList.contains('open');
+
+            // 他のドロップダウンを閉じる
+            document.querySelectorAll('.dropdown.open').forEach(d => {
+                d.classList.remove('open');
+            });
+
+            // このドロップダウンをトグル
+            if (!isOpen) {
+                dropdown.classList.add('open');
+            }
+        }
+
+        // ドロップダウン外をクリックしたら閉じる
+        document.addEventListener('click', function() {
+            document.querySelectorAll('.dropdown.open').forEach(d => {
+                d.classList.remove('open');
+            });
+        });
+
+        // ドロップダウン内のクリックで伝播を止める
+        document.querySelectorAll('.dropdown').forEach(dropdown => {
+            dropdown.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        });
+    </script>
 </body>
 </html>

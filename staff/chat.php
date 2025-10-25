@@ -67,17 +67,17 @@ $stmt->execute($params);
 $allStudents = $stmt->fetchAll();
 
 // 学部別に分類
-$elementary = []; // 小学部 (1-6年)
-$junior = [];     // 中等部 (7-9年)
-$senior = [];     // 高等部 (10-12年)
+$elementary = []; // 小学部
+$junior = [];     // 中等部
+$senior = [];     // 高等部
 
 foreach ($allStudents as $student) {
     $grade = $student['grade_level'];
-    if ($grade >= 1 && $grade <= 6) {
+    if ($grade === 'elementary') {
         $elementary[] = $student;
-    } elseif ($grade >= 7 && $grade <= 9) {
+    } elseif ($grade === 'junior_high') {
         $junior[] = $student;
-    } elseif ($grade >= 10 && $grade <= 12) {
+    } elseif ($grade === 'high_school') {
         $senior[] = $student;
     }
 }
@@ -91,16 +91,16 @@ $selectedStudent = null;
 $selectedRoom = null;
 
 if ($selectedStudentId) {
-    foreach ($students as $student) {
+    foreach ($allStudents as $student) {
         if ($student['student_id'] == $selectedStudentId) {
             $selectedStudent = $student;
             $selectedRoomId = $student['room_id'];
             break;
         }
     }
-} elseif (!$selectedStudentId && !empty($students)) {
+} elseif (!$selectedStudentId && !empty($allStudents)) {
     // 何も選択されていない場合は最初の生徒を選択
-    $selectedStudent = $students[0];
+    $selectedStudent = $allStudents[0];
     $selectedStudentId = $selectedStudent['student_id'];
     $selectedRoomId = $selectedStudent['room_id'];
 }
@@ -875,6 +875,99 @@ if ($selectedRoomId) {
             background: #f57c00;
             border-color: #f57c00;
         }
+
+        /* ドロップダウンメニュー */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-toggle {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            border: none;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+
+        .dropdown-toggle:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .dropdown-arrow {
+            font-size: 10px;
+            transition: transform 0.3s;
+        }
+
+        .dropdown.open .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 200px;
+            margin-top: 5px;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .dropdown.open .dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-menu a {
+            display: block;
+            padding: 12px 20px;
+            color: #333;
+            text-decoration: none;
+            transition: background 0.2s;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .dropdown-menu a:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-menu a:hover {
+            background: #f8f9fa;
+        }
+
+        .dropdown-menu a .menu-icon {
+            margin-right: 8px;
+        }
+
+        .user-info {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .logout-btn {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.2);
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
     </style>
 </head>
 <body>
@@ -889,10 +982,90 @@ if ($selectedRoomId) {
                     <span></span>
                     <span></span>
                 </div>
-                <h1>💬 チャット</h1>
+                <h1>💬 保護者チャット</h1>
             </div>
-            <div class="nav-links">
-                <a href="renrakucho_activities.php">← 戻る</a>
+            <div class="user-info" id="userInfo">
+                <!-- 保護者ドロップダウン -->
+                <div class="dropdown">
+                    <button class="dropdown-toggle" onclick="toggleDropdown(event, this)">
+                        👨‍👩‍👧 保護者
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="chat.php">
+                            <span class="menu-icon">💬</span>保護者チャット
+                        </a>
+                        <a href="submission_management.php">
+                            <span class="menu-icon">📮</span>提出期限管理
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 生徒ドロップダウン -->
+                <div class="dropdown">
+                    <button class="dropdown-toggle" onclick="toggleDropdown(event, this)">
+                        🎓 生徒
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="student_chats.php">
+                            <span class="menu-icon">💬</span>生徒チャット
+                        </a>
+                        <a href="student_weekly_plans.php">
+                            <span class="menu-icon">📝</span>週間計画表
+                        </a>
+                    </div>
+                </div>
+
+                <!-- かけはし管理ドロップダウン -->
+                <div class="dropdown">
+                    <button class="dropdown-toggle" onclick="toggleDropdown(event, this)">
+                        🌉 かけはし管理
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="kakehashi_staff.php">
+                            <span class="menu-icon">✏️</span>スタッフかけはし入力
+                        </a>
+                        <a href="kakehashi_guardian_view.php">
+                            <span class="menu-icon">📋</span>保護者かけはし確認
+                        </a>
+                        <a href="kobetsu_plan.php">
+                            <span class="menu-icon">📄</span>個別支援計画書作成
+                        </a>
+                        <a href="kobetsu_monitoring.php">
+                            <span class="menu-icon">📊</span>モニタリング表作成
+                        </a>
+                        <a href="newsletter_create.php">
+                            <span class="menu-icon">📰</span>施設通信を作成
+                        </a>
+                    </div>
+                </div>
+
+                <!-- マスタ管理ドロップダウン -->
+                <div class="dropdown">
+                    <button class="dropdown-toggle" onclick="toggleDropdown(event, this)">
+                        ⚙️ マスタ管理
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="students.php">
+                            <span class="menu-icon">👥</span>生徒管理
+                        </a>
+                        <a href="guardians.php">
+                            <span class="menu-icon">👨‍👩‍👧</span>保護者管理
+                        </a>
+                        <a href="holidays.php">
+                            <span class="menu-icon">🗓️</span>休日管理
+                        </a>
+                        <a href="events.php">
+                            <span class="menu-icon">🎉</span>イベント管理
+                        </a>
+                    </div>
+                </div>
+
+                <a href="renrakucho_activities.php" class="logout-btn">← 活動管理</a>
+                <a href="/logout.php" class="logout-btn">ログアウト</a>
             </div>
         </div>
 
@@ -1312,6 +1485,14 @@ if ($selectedRoomId) {
             setInterval(loadMessages, 3000);
         }
 
+        // アコーディオンの初期化（すべて開く）
+        document.querySelectorAll('.accordion-header').forEach(header => {
+            header.classList.add('active');
+        });
+        document.querySelectorAll('.accordion-content').forEach(content => {
+            content.classList.add('active');
+        });
+
         // ハンバーガーメニューの開閉
         const hamburger = document.getElementById('hamburger');
         const sidebar = document.getElementById('roomsSidebar');
@@ -1474,6 +1655,37 @@ if ($selectedRoomId) {
                 document.querySelectorAll('.accordion-content').forEach(c => c.classList.add('active'));
             }
         }
+
+        // ドロップダウンメニューのトグル
+        function toggleDropdown(event, button) {
+            event.stopPropagation();
+            const dropdown = button.closest('.dropdown');
+            const isOpen = dropdown.classList.contains('open');
+
+            // 他のドロップダウンを閉じる
+            document.querySelectorAll('.dropdown.open').forEach(d => {
+                d.classList.remove('open');
+            });
+
+            // このドロップダウンをトグル
+            if (!isOpen) {
+                dropdown.classList.add('open');
+            }
+        }
+
+        // ドロップダウン外をクリックしたら閉じる
+        document.addEventListener('click', function() {
+            document.querySelectorAll('.dropdown.open').forEach(d => {
+                d.classList.remove('open');
+            });
+        });
+
+        // ドロップダウン内のクリックで伝播を止める
+        document.querySelectorAll('.dropdown').forEach(dropdown => {
+            dropdown.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        });
     </script>
 </body>
 </html>

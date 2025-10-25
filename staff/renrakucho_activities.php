@@ -112,15 +112,14 @@ if ($classroomId) {
                u.full_name as staff_name,
                sp.activity_name as support_plan_name,
                COUNT(DISTINCT sr.id) as participant_count,
-               COUNT(DISTINCT CASE WHEN inote.is_sent = 0 THEN inote.id END) as unsent_count,
-               COUNT(DISTINCT CASE WHEN inote.is_sent = 1 THEN inote.id END) as sent_count
+               (SELECT COUNT(*) FROM integrated_notes WHERE daily_record_id = dr.id AND is_sent = 0) as unsent_count,
+               (SELECT COUNT(*) FROM integrated_notes WHERE daily_record_id = dr.id AND is_sent = 1) as sent_count
         FROM daily_records dr
         INNER JOIN users u ON dr.staff_id = u.id
         LEFT JOIN support_plans sp ON dr.support_plan_id = sp.id
         LEFT JOIN student_records sr ON dr.id = sr.daily_record_id
-        LEFT JOIN integrated_notes inote ON dr.id = inote.daily_record_id
         WHERE dr.record_date = ? AND u.classroom_id = ?
-        GROUP BY dr.id
+        GROUP BY dr.id, dr.activity_name, dr.common_activity, dr.staff_id, u.full_name, sp.activity_name
         ORDER BY dr.created_at
     ");
     $stmt->execute([$selectedDate, $classroomId]);
@@ -130,15 +129,14 @@ if ($classroomId) {
                u.full_name as staff_name,
                sp.activity_name as support_plan_name,
                COUNT(DISTINCT sr.id) as participant_count,
-               COUNT(DISTINCT CASE WHEN inote.is_sent = 0 THEN inote.id END) as unsent_count,
-               COUNT(DISTINCT CASE WHEN inote.is_sent = 1 THEN inote.id END) as sent_count
+               (SELECT COUNT(*) FROM integrated_notes WHERE daily_record_id = dr.id AND is_sent = 0) as unsent_count,
+               (SELECT COUNT(*) FROM integrated_notes WHERE daily_record_id = dr.id AND is_sent = 1) as sent_count
         FROM daily_records dr
         INNER JOIN users u ON dr.staff_id = u.id
         LEFT JOIN support_plans sp ON dr.support_plan_id = sp.id
         LEFT JOIN student_records sr ON dr.id = sr.daily_record_id
-        LEFT JOIN integrated_notes inote ON dr.id = inote.daily_record_id
         WHERE dr.record_date = ?
-        GROUP BY dr.id
+        GROUP BY dr.id, dr.activity_name, dr.common_activity, dr.staff_id, u.full_name, sp.activity_name
         ORDER BY dr.created_at
     ");
     $stmt->execute([$selectedDate]);
@@ -205,6 +203,20 @@ if (!$isHoliday) {
     }
     $scheduledStudents = $stmt->fetchAll();
 
+    // 学部別に分類
+    $studentsByGrade = [
+        'elementary' => [],
+        'junior_high' => [],
+        'high_school' => []
+    ];
+
+    foreach ($scheduledStudents as $student) {
+        $gradeLevel = $student['grade_level'] ?? 'elementary';
+        if (isset($studentsByGrade[$gradeLevel])) {
+            $studentsByGrade[$gradeLevel][] = $student;
+        }
+    }
+
     // イベント参加者を取得（自分の教室のみ）
     if ($classroomId) {
         $stmt = $pdo->prepare("
@@ -244,6 +256,20 @@ if (!$isHoliday) {
         $stmt->execute([$selectedDate]);
     }
     $eventParticipants = $stmt->fetchAll();
+
+    // イベント参加者も学部別に分類
+    $eventsByGrade = [
+        'elementary' => [],
+        'junior_high' => [],
+        'high_school' => []
+    ];
+
+    foreach ($eventParticipants as $participant) {
+        $gradeLevel = $participant['grade_level'] ?? 'elementary';
+        if (isset($eventsByGrade[$gradeLevel])) {
+            $eventsByGrade[$gradeLevel][] = $participant;
+        }
+    }
 }
 
 // 個別支援計画書が未作成または古い生徒の数を取得（自分の教室のみ）
@@ -939,6 +965,82 @@ if ($classroomId) {
             color: #999;
         }
 
+        /* アコーディオンスタイル */
+        .accordion-section {
+            margin-bottom: 8px;
+        }
+
+        .accordion-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 15px;
+            cursor: pointer;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+            user-select: none;
+        }
+
+        .accordion-header:hover {
+            opacity: 0.9;
+        }
+
+        .accordion-header.elementary {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        }
+
+        .accordion-header.junior_high {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+        }
+
+        .accordion-header.high_school {
+            background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+        }
+
+        .accordion-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .accordion-count {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .accordion-arrow {
+            transition: transform 0.3s;
+            font-size: 12px;
+        }
+
+        .accordion-header.active .accordion-arrow {
+            transform: rotate(180deg);
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background: #f8f9fa;
+            border-radius: 0 0 6px 6px;
+        }
+
+        .accordion-content.active {
+            max-height: 1000px;
+            transition: max-height 0.5s ease-in;
+        }
+
+        .accordion-body {
+            padding: 10px;
+        }
+
         .notification-banner {
             background: white;
             padding: 20px 25px;
@@ -1470,6 +1572,38 @@ if ($classroomId) {
                 <div class="user-info" id="userInfo">
                 <span><?php echo htmlspecialchars($currentUser['full_name'], ENT_QUOTES, 'UTF-8'); ?>さん</span>
 
+                <!-- 保護者ドロップダウン -->
+                <div class="dropdown">
+                    <button class="dropdown-toggle" onclick="toggleDropdown(event, this)">
+                        👨‍👩‍👧 保護者
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="chat.php">
+                            <span class="menu-icon">💬</span>保護者チャット
+                        </a>
+                        <a href="submission_management.php">
+                            <span class="menu-icon">📮</span>提出期限管理
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 生徒ドロップダウン -->
+                <div class="dropdown">
+                    <button class="dropdown-toggle" onclick="toggleDropdown(event, this)">
+                        🎓 生徒
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="student_chats.php">
+                            <span class="menu-icon">💬</span>生徒チャット
+                        </a>
+                        <a href="student_weekly_plans.php">
+                            <span class="menu-icon">📝</span>週間計画表
+                        </a>
+                    </div>
+                </div>
+
                 <!-- かけはし管理ドロップダウン -->
                 <div class="dropdown">
                     <button class="dropdown-toggle" onclick="toggleDropdown(event, this)">
@@ -1489,8 +1623,8 @@ if ($classroomId) {
                         <a href="kobetsu_monitoring.php">
                             <span class="menu-icon">📊</span>モニタリング表作成
                         </a>
-                        <a href="submission_management.php">
-                            <span class="menu-icon">📮</span>提出期限管理
+                        <a href="newsletter_create.php">
+                            <span class="menu-icon">📰</span>施設通信を作成
                         </a>
                     </div>
                 </div>
@@ -1516,11 +1650,6 @@ if ($classroomId) {
                         </a>
                     </div>
                 </div>
-
-                <!-- チャットボタン -->
-                <a href="chat.php" class="chat-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.3s;">
-                    💬 チャット
-                </a>
 
                 <!-- マニュアルボタン -->
                 <a href="manual.php" class="manual-btn" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.3s;">
@@ -1585,6 +1714,20 @@ if ($classroomId) {
                 userInfo.classList.remove('show');
             }
         });
+
+        // アコーディオンのトグル機能
+        function toggleAccordion(header) {
+            const isActive = header.classList.contains('active');
+            const content = header.nextElementSibling;
+
+            if (isActive) {
+                header.classList.remove('active');
+                content.classList.remove('active');
+            } else {
+                header.classList.add('active');
+                content.classList.add('active');
+            }
+        }
         </script>
 
         <?php if (isset($_SESSION['success'])): ?>
@@ -1927,80 +2070,78 @@ if ($classroomId) {
                             本日の参加予定者はいません
                         </div>
                     <?php else: ?>
-                        <?php foreach ($scheduledStudents as $student): ?>
-                            <div class="student-item">
-                                <div class="student-item-name">
-                                    <?php echo htmlspecialchars($student['student_name']); ?>
-                                    <span class="grade-badge" style="font-size: 10px; padding: 2px 8px; margin-left: 5px;">
-                                        <?php
-                                        $gradeLabels = [
-                                            'elementary' => '小',
-                                            'junior_high' => '中',
-                                            'high_school' => '高'
-                                        ];
-                                        echo $gradeLabels[$student['grade_level']] ?? '';
-                                        ?>
-                                    </span>
-                                    <?php if ($student['absence_id']): ?>
-                                        <span style="color: #dc3545; font-weight: bold; margin-left: 8px;">🚫 欠席連絡あり</span>
-                                    <?php endif; ?>
+                        <?php
+                        $gradeInfo = [
+                            'elementary' => ['label' => '小学部', 'icon' => '🎒'],
+                            'junior_high' => ['label' => '中学部', 'icon' => '📚'],
+                            'high_school' => ['label' => '高等部', 'icon' => '🎓']
+                        ];
+
+                        foreach ($gradeInfo as $gradeKey => $info):
+                            $students = $studentsByGrade[$gradeKey];
+                            $events = $eventsByGrade[$gradeKey];
+                            $totalCount = count($students) + count($events);
+
+                            if ($totalCount === 0) continue;
+                        ?>
+                            <div class="accordion-section">
+                                <div class="accordion-header <?= $gradeKey ?>" onclick="toggleAccordion(this)">
+                                    <div class="accordion-title">
+                                        <span><?= $info['icon'] ?> <?= $info['label'] ?></span>
+                                        <span class="accordion-count"><?= $totalCount ?>名</span>
+                                    </div>
+                                    <span class="accordion-arrow">▼</span>
                                 </div>
-                                <?php if ($student['guardian_name']): ?>
-                                    <div class="student-item-meta">
-                                        保護者: <?php echo htmlspecialchars($student['guardian_name']); ?>
+                                <div class="accordion-content">
+                                    <div class="accordion-body">
+                                        <?php foreach ($students as $student): ?>
+                                            <div class="student-item">
+                                                <div class="student-item-name">
+                                                    <?php echo htmlspecialchars($student['student_name']); ?>
+                                                    <?php if ($student['absence_id']): ?>
+                                                        <span style="color: #dc3545; font-weight: bold; margin-left: 8px;">🚫 欠席</span>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <?php if ($student['guardian_name']): ?>
+                                                    <div class="student-item-meta">
+                                                        保護者: <?php echo htmlspecialchars($student['guardian_name']); ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                                <?php if ($student['absence_id'] && $student['absence_reason']): ?>
+                                                    <div class="student-item-meta" style="color: #dc3545;">
+                                                        理由: <?php echo htmlspecialchars($student['absence_reason']); ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+                                        <?php endforeach; ?>
+
+                                        <!-- イベント参加者を表示 -->
+                                        <?php if (!empty($events)): ?>
+                                            <?php foreach ($events as $participant): ?>
+                                                <div class="student-item" style="border-left: 4px solid #2563eb;">
+                                                    <div class="student-item-name">
+                                                        <?php echo htmlspecialchars($participant['student_name']); ?>
+                                                        <span style="color: #2563eb; font-weight: bold; margin-left: 8px;">
+                                                            🎉 <?= htmlspecialchars($participant['event_name']) ?>
+                                                        </span>
+                                                    </div>
+                                                    <?php if ($participant['guardian_name']): ?>
+                                                        <div class="student-item-meta">
+                                                            保護者: <?php echo htmlspecialchars($participant['guardian_name']); ?>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                    <?php if ($participant['notes']): ?>
+                                                        <div class="student-item-meta" style="color: #2563eb;">
+                                                            備考: <?php echo htmlspecialchars($participant['notes']); ?>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
                                     </div>
-                                <?php endif; ?>
-                                <?php if ($student['absence_id'] && $student['absence_reason']): ?>
-                                    <div class="student-item-meta" style="color: #dc3545;">
-                                        理由: <?php echo htmlspecialchars($student['absence_reason']); ?>
-                                    </div>
-                                <?php endif; ?>
+                                </div>
                             </div>
                         <?php endforeach; ?>
-
-                        <!-- イベント参加者を表示 -->
-                        <?php if (!empty($eventParticipants)): ?>
-                            <div style="margin-top: 20px; padding-top: 15px; border-top: 2px dashed #2563eb;">
-                                <div style="font-weight: 600; color: #2563eb; margin-bottom: 10px;">🎉 イベント参加者</div>
-                                <?php foreach ($eventParticipants as $participant): ?>
-                                    <div class="student-item" style="border-left: 4px solid #2563eb;">
-                                        <div class="student-item-name">
-                                            <?php echo htmlspecialchars($participant['student_name']); ?>
-                                            <span class="grade-badge" style="font-size: 10px; padding: 2px 8px; margin-left: 5px;">
-                                                <?php
-                                                $gradeLabels = [
-                                                    'elementary' => '小',
-                                                    'junior_high' => '中',
-                                                    'high_school' => '高'
-                                                ];
-                                                echo $gradeLabels[$participant['grade_level']] ?? '';
-                                                ?>
-                                            </span>
-                                            <span style="color: #2563eb; font-weight: bold; margin-left: 8px;">
-                                                <?= htmlspecialchars($participant['event_name']) ?>
-                                            </span>
-                                        </div>
-                                        <?php if ($participant['guardian_name']): ?>
-                                            <div class="student-item-meta">
-                                                保護者: <?php echo htmlspecialchars($participant['guardian_name']); ?>
-                                            </div>
-                                        <?php endif; ?>
-                                        <?php if ($participant['notes']): ?>
-                                            <div class="student-item-meta" style="color: #2563eb;">
-                                                備考: <?php echo htmlspecialchars($participant['notes']); ?>
-                                            </div>
-                                        <?php endif; ?>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
-
-                        <div style="text-align: center; margin-top: 12px; font-size: 13px; color: #666;">
-                            通常予定: <?php echo count($scheduledStudents); ?>名
-                            <?php if (!empty($eventParticipants)): ?>
-                                / イベント: <?php echo count($eventParticipants); ?>名
-                            <?php endif; ?>
-                        </div>
                     <?php endif; ?>
                 </div>
             </div>
@@ -2123,7 +2264,7 @@ if ($classroomId) {
                             <a href="renrakucho_form.php?activity_id=<?php echo $activity['id']; ?>" class="btn btn-edit">編集</a>
                             <a href="regenerate_integration.php?activity_id=<?php echo $activity['id']; ?>" class="btn btn-integrate" onclick="return confirm('既存の統合内容（未送信）を削除して、1から統合し直しますか？');">🔄 統合する</a>
                             <a href="integrate_activity.php?activity_id=<?php echo $activity['id']; ?>" class="btn" style="background: #667eea; color: white;">✏️ 統合内容を編集</a>
-                            <?php if ($activity['sent_count'] > 0): ?>
+                            <?php if ((int)$activity['sent_count'] > 0): ?>
                                 <a href="view_integrated.php?activity_id=<?php echo $activity['id']; ?>" class="btn btn-view">📤 送信済み内容を閲覧</a>
                             <?php endif; ?>
                             <form method="POST" action="delete_activity.php" style="display: inline;" onsubmit="return confirm('この活動を削除しますか？');">
