@@ -61,10 +61,10 @@ try {
 
             // 保護者を登録
             $stmt = $pdo->prepare("
-                INSERT INTO users (username, password, full_name, email, user_type, is_active, classroom_id, created_at)
-                VALUES (?, ?, ?, ?, 'guardian', 1, ?, NOW())
+                INSERT INTO users (username, password, password_plain, full_name, email, user_type, is_active, classroom_id, created_at)
+                VALUES (?, ?, ?, ?, ?, 'guardian', 1, ?, NOW())
             ");
-            $stmt->execute([$username, $hashedPassword, $fullName, $email, $classroomIdToInsert]);
+            $stmt->execute([$username, $hashedPassword, $password, $fullName, $email, $classroomIdToInsert]);
 
             header('Location: guardians.php?success=created');
             exit;
@@ -100,10 +100,11 @@ try {
                     SET full_name = ?,
                         username = ?,
                         email = ?,
-                        password = ?
+                        password = ?,
+                        password_plain = ?
                     WHERE id = ? AND user_type = 'guardian'
                 ");
-                $stmt->execute([$fullName, $username, $email, $hashedPassword, $guardianId]);
+                $stmt->execute([$fullName, $username, $email, $hashedPassword, $password, $guardianId]);
             } else {
                 // パスワード変更なし
                 $stmt = $pdo->prepare("

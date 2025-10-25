@@ -109,30 +109,104 @@ try {
             // 生年月日から学年を自動計算
             $gradeLevel = calculateGradeLevel($birthDate);
 
-            $stmt = $pdo->prepare("
-                UPDATE students
-                SET student_name = ?,
-                    birth_date = ?,
-                    support_start_date = ?,
-                    grade_level = ?,
-                    guardian_id = ?,
-                    status = ?,
-                    withdrawal_date = ?,
-                    scheduled_monday = ?,
-                    scheduled_tuesday = ?,
-                    scheduled_wednesday = ?,
-                    scheduled_thursday = ?,
-                    scheduled_friday = ?,
-                    scheduled_saturday = ?,
-                    scheduled_sunday = ?
-                WHERE id = ?
-            ");
-            $stmt->execute([
-                $studentName, $birthDate, $supportStartDate, $gradeLevel, $guardianId, $status, $withdrawalDate,
-                $scheduledMonday, $scheduledTuesday, $scheduledWednesday, $scheduledThursday,
-                $scheduledFriday, $scheduledSaturday, $scheduledSunday,
-                $studentId
-            ]);
+            // 生徒用ログイン情報
+            $studentUsername = trim($_POST['student_username'] ?? '');
+            $studentPassword = $_POST['student_password'] ?? '';
+
+            // パスワードハッシュの準備
+            $passwordHash = null;
+            if (!empty($studentPassword)) {
+                $passwordHash = password_hash($studentPassword, PASSWORD_DEFAULT);
+            }
+
+            // ユーザー名が空の場合はログイン情報をクリア
+            if (empty($studentUsername)) {
+                $stmt = $pdo->prepare("
+                    UPDATE students
+                    SET student_name = ?,
+                        birth_date = ?,
+                        support_start_date = ?,
+                        grade_level = ?,
+                        guardian_id = ?,
+                        status = ?,
+                        withdrawal_date = ?,
+                        scheduled_monday = ?,
+                        scheduled_tuesday = ?,
+                        scheduled_wednesday = ?,
+                        scheduled_thursday = ?,
+                        scheduled_friday = ?,
+                        scheduled_saturday = ?,
+                        scheduled_sunday = ?,
+                        username = NULL,
+                        password_hash = NULL,
+                        password_plain = NULL
+                    WHERE id = ?
+                ");
+                $stmt->execute([
+                    $studentName, $birthDate, $supportStartDate, $gradeLevel, $guardianId, $status, $withdrawalDate,
+                    $scheduledMonday, $scheduledTuesday, $scheduledWednesday, $scheduledThursday,
+                    $scheduledFriday, $scheduledSaturday, $scheduledSunday,
+                    $studentId
+                ]);
+            } elseif ($passwordHash) {
+                // ユーザー名とパスワードの両方を更新（平文パスワードも保存）
+                $stmt = $pdo->prepare("
+                    UPDATE students
+                    SET student_name = ?,
+                        birth_date = ?,
+                        support_start_date = ?,
+                        grade_level = ?,
+                        guardian_id = ?,
+                        status = ?,
+                        withdrawal_date = ?,
+                        scheduled_monday = ?,
+                        scheduled_tuesday = ?,
+                        scheduled_wednesday = ?,
+                        scheduled_thursday = ?,
+                        scheduled_friday = ?,
+                        scheduled_saturday = ?,
+                        scheduled_sunday = ?,
+                        username = ?,
+                        password_hash = ?,
+                        password_plain = ?
+                    WHERE id = ?
+                ");
+                $stmt->execute([
+                    $studentName, $birthDate, $supportStartDate, $gradeLevel, $guardianId, $status, $withdrawalDate,
+                    $scheduledMonday, $scheduledTuesday, $scheduledWednesday, $scheduledThursday,
+                    $scheduledFriday, $scheduledSaturday, $scheduledSunday,
+                    $studentUsername, $passwordHash, $studentPassword,
+                    $studentId
+                ]);
+            } else {
+                // ユーザー名のみ更新（パスワードは変更しない）
+                $stmt = $pdo->prepare("
+                    UPDATE students
+                    SET student_name = ?,
+                        birth_date = ?,
+                        support_start_date = ?,
+                        grade_level = ?,
+                        guardian_id = ?,
+                        status = ?,
+                        withdrawal_date = ?,
+                        scheduled_monday = ?,
+                        scheduled_tuesday = ?,
+                        scheduled_wednesday = ?,
+                        scheduled_thursday = ?,
+                        scheduled_friday = ?,
+                        scheduled_saturday = ?,
+                        scheduled_sunday = ?,
+                        username = ?
+                    WHERE id = ?
+                ");
+                $stmt->execute([
+                    $studentName, $birthDate, $supportStartDate, $gradeLevel, $guardianId, $status, $withdrawalDate,
+                    $scheduledMonday, $scheduledTuesday, $scheduledWednesday, $scheduledThursday,
+                    $scheduledFriday, $scheduledSaturday, $scheduledSunday,
+                    $studentUsername,
+                    $studentId
+                ]);
+            }
 
             header('Location: students.php?success=updated');
             exit;

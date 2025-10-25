@@ -91,6 +91,7 @@ $sql = "
         u.is_active,
         u.created_at,
         u.classroom_id,
+        u.password_plain,
         c.classroom_name,
         COUNT(s.id) as student_count
     FROM users u
@@ -514,6 +515,14 @@ $guardians = $stmt->fetchAll();
                     <label>メールアドレス</label>
                     <input type="email" name="email" id="edit_email">
                 </div>
+                <?php if ($_SESSION['user_type'] === 'admin'): ?>
+                <div class="form-group">
+                    <label>現在のパスワード（管理者のみ閲覧可能）</label>
+                    <div style="padding: 10px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; font-family: monospace;">
+                        <span id="edit_password_display">-</span>
+                    </div>
+                </div>
+                <?php endif; ?>
                 <div class="form-group">
                     <label>新しいパスワード（変更する場合のみ）</label>
                     <input type="password" name="password" placeholder="変更しない場合は空欄">
@@ -533,6 +542,12 @@ $guardians = $stmt->fetchAll();
             document.getElementById('edit_full_name').value = guardian.full_name;
             document.getElementById('edit_username').value = guardian.username;
             document.getElementById('edit_email').value = guardian.email || '';
+
+            // パスワード表示（管理者のみ）
+            <?php if ($_SESSION['user_type'] === 'admin'): ?>
+            document.getElementById('edit_password_display').textContent = guardian.password_plain || '未設定';
+            <?php endif; ?>
+
             document.getElementById('editModal').classList.add('active');
         }
 

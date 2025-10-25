@@ -94,6 +94,8 @@ $sql = "
         s.guardian_id,
         s.is_active,
         s.status,
+        s.username,
+        s.password_plain,
         s.created_at,
         s.scheduled_monday,
         s.scheduled_tuesday,
@@ -704,6 +706,30 @@ function getGradeBadgeColor($gradeLevel) {
                         </label>
                     </div>
                 </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        <span>生徒用ログイン設定</span>
+                        <span style="font-size: 12px; color: #666; font-weight: normal;">（生徒がシステムにログインできるようになります）</span>
+                    </label>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #ddd;">
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label style="font-size: 14px;">ユーザー名（半角英数字）</label>
+                            <input type="text" name="student_username" id="edit_student_username" placeholder="例: tanaka_taro" pattern="[a-zA-Z0-9_]+" style="margin-top: 5px;">
+                            <div style="font-size: 12px; color: #666; margin-top: 5px;">※空欄の場合、ログイン不可</div>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 10px;">
+                            <label style="font-size: 14px;">現在のパスワード</label>
+                            <div style="padding: 10px; background: white; border: 1px solid #ddd; border-radius: 5px; font-family: monospace; margin-top: 5px;">
+                                <span id="edit_student_password_display" style="color: #333;">-</span>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="font-size: 14px;">新しいパスワード</label>
+                            <input type="password" name="student_password" id="edit_student_password" placeholder="変更する場合のみ入力" style="margin-top: 5px;">
+                            <div style="font-size: 12px; color: #666; margin-top: 5px;">※変更しない場合は空欄</div>
+                        </div>
+                    </div>
+                </div>
                 <div class="modal-footer">
                     <button type="button" onclick="deleteStudent()" class="btn btn-danger" style="margin-right: auto;">削除</button>
                     <button type="button" onclick="closeModal()" class="btn btn-secondary">キャンセル</button>
@@ -755,6 +781,11 @@ function getGradeBadgeColor($gradeLevel) {
             document.getElementById('edit_scheduled_friday').checked = student.scheduled_friday == 1;
             document.getElementById('edit_scheduled_saturday').checked = student.scheduled_saturday == 1;
             document.getElementById('edit_scheduled_sunday').checked = student.scheduled_sunday == 1;
+
+            // 生徒用ログイン情報の設定
+            document.getElementById('edit_student_username').value = student.username || '';
+            document.getElementById('edit_student_password_display').textContent = student.password_plain || '未設定';
+            document.getElementById('edit_student_password').value = ''; // パスワードは常に空欄
 
             // 退所日欄の表示/非表示
             toggleEditWithdrawalDate();

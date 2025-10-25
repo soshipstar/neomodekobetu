@@ -973,9 +973,12 @@ function getGradeLabel($gradeLevel) {
                     <div class="menu-content" id="menuDropdown">
                         <a href="communication_logs.php">📚 連絡帳一覧</a>
                         <a href="chat.php">💬 チャット</a>
+                        <a href="weekly_plan.php">📝 週間計画表</a>
                         <a href="kakehashi.php">🌉 かけはし入力</a>
+                        <a href="newsletters.php">📰 施設通信</a>
                         <a href="support_plans.php">📋 個別支援計画書</a>
                         <a href="monitoring.php">📊 モニタリング表</a>
+                        <a href="change_password.php">🔐 パスワード変更</a>
                     </div>
                 </div>
                 <span class="user-info-box">
