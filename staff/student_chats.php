@@ -3,6 +3,11 @@
  * スタッフ用 - 生徒チャット一覧
  */
 
+// エラー表示を有効化（デバッグ用）
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('log_errors', 1);
+
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../config/database.php';
 
