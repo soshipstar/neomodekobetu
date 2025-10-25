@@ -43,28 +43,45 @@ try {
         echo "<div class='info'>✓ 既に適用済みです。</div>";
     } else {
         // マイグレーション実行
-        $sql = file_get_contents(__DIR__ . '/migration_v33_add_password_plain.sql');
-        $statements = array_filter(array_map('trim', explode(';', $sql)));
-
         $pdo->beginTransaction();
 
-        foreach ($statements as $statement) {
-            if (empty($statement) || strpos($statement, '--') === 0) {
-                continue;
+        try {
+            // studentsテーブルにカラムを追加（存在しない場合のみ）
+            if ($studentColumnExists == 0) {
+                $pdo->exec("
+                    ALTER TABLE students
+                    ADD COLUMN password_plain VARCHAR(255) NULL COMMENT '生徒用パスワード（平文・管理者のみ閲覧可能）'
+                ");
+                echo "<div class='success'>✓ students.password_plain カラムを追加しました</div>";
+            } else {
+                echo "<div class='info'>✓ students.password_plain は既に存在します</div>";
             }
-            $pdo->exec($statement);
+
+            // usersテーブルにカラムを追加（存在しない場合のみ）
+            if ($userColumnExists == 0) {
+                $pdo->exec("
+                    ALTER TABLE users
+                    ADD COLUMN password_plain VARCHAR(255) NULL COMMENT 'パスワード（平文・管理者のみ閲覧可能）'
+                ");
+                echo "<div class='success'>✓ users.password_plain カラムを追加しました</div>";
+            } else {
+                echo "<div class='info'>✓ users.password_plain は既に存在します</div>";
+            }
+
+            $pdo->commit();
+
+            echo "<div class='success'>✓ マイグレーション完了</div>";
+            echo "<div class='info'>
+                <p><strong>注意：</strong></p>
+                <ul>
+                    <li>平文パスワードは管理者のみが閲覧できます</li>
+                    <li>既存のアカウントのパスワードは、次回変更時に平文でも保存されます</li>
+                </ul>
+            </div>";
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            throw $e;
         }
-
-        $pdo->commit();
-
-        echo "<div class='success'>✓ マイグレーション完了</div>";
-        echo "<div class='info'>
-            <p><strong>注意：</strong></p>
-            <ul>
-                <li>平文パスワードは管理者のみが閲覧できます</li>
-                <li>既存のアカウントのパスワードは、次回変更時に平文でも保存されます</li>
-            </ul>
-        </div>";
     }
 
     echo "<p><a href='admin/index.php'>← 管理画面に戻る</a></p>";
