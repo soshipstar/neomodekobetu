@@ -17,32 +17,36 @@ $pdo = getDbConnection();
 $currentUser = getCurrentUser();
 $classroomId = $_SESSION['classroom_id'] ?? null;
 
-// 生徒チャットルーム一覧を取得（教室でフィルタリング）
+// 生徒一覧を取得（チャットルームの有無に関わらず、教室でフィルタリング）
 if ($classroomId) {
     $stmt = $pdo->prepare("
         SELECT
-            scr.id as room_id,
-            scr.student_id,
+            s.id as student_id,
             s.student_name,
-            (SELECT COUNT(*)
-             FROM student_chat_messages scm
-             WHERE scm.room_id = scr.id) as message_count,
+            scr.id as room_id,
+            COALESCE(
+                (SELECT COUNT(*)
+                 FROM student_chat_messages scm
+                 WHERE scm.room_id = scr.id), 0
+            ) as message_count,
             (SELECT MAX(created_at)
              FROM student_chat_messages scm
              WHERE scm.room_id = scr.id) as last_message_at,
-            (SELECT COUNT(*)
-             FROM student_chat_messages scm
-             WHERE scm.room_id = scr.id
-               AND scm.sender_type = 'student'
-               AND scm.created_at > COALESCE(
-                   (SELECT MAX(created_at)
-                    FROM student_chat_messages
-                    WHERE room_id = scr.id AND sender_type = 'staff'),
-                   '1970-01-01'
-               )) as unread_count
-        FROM student_chat_rooms scr
-        INNER JOIN students s ON scr.student_id = s.id
+            COALESCE(
+                (SELECT COUNT(*)
+                 FROM student_chat_messages scm
+                 WHERE scm.room_id = scr.id
+                   AND scm.sender_type = 'student'
+                   AND scm.created_at > COALESCE(
+                       (SELECT MAX(created_at)
+                        FROM student_chat_messages
+                        WHERE room_id = scr.id AND sender_type = 'staff'),
+                       '1970-01-01'
+                   )), 0
+            ) as unread_count
+        FROM students s
         INNER JOIN users g ON s.guardian_id = g.id
+        LEFT JOIN student_chat_rooms scr ON s.id = scr.student_id
         WHERE g.classroom_id = ?
         ORDER BY last_message_at IS NULL, last_message_at DESC, s.student_name ASC
     ");
@@ -50,27 +54,31 @@ if ($classroomId) {
 } else {
     $stmt = $pdo->query("
         SELECT
-            scr.id as room_id,
-            scr.student_id,
+            s.id as student_id,
             s.student_name,
-            (SELECT COUNT(*)
-             FROM student_chat_messages scm
-             WHERE scm.room_id = scr.id) as message_count,
+            scr.id as room_id,
+            COALESCE(
+                (SELECT COUNT(*)
+                 FROM student_chat_messages scm
+                 WHERE scm.room_id = scr.id), 0
+            ) as message_count,
             (SELECT MAX(created_at)
              FROM student_chat_messages scm
              WHERE scm.room_id = scr.id) as last_message_at,
-            (SELECT COUNT(*)
-             FROM student_chat_messages scm
-             WHERE scm.room_id = scr.id
-               AND scm.sender_type = 'student'
-               AND scm.created_at > COALESCE(
-                   (SELECT MAX(created_at)
-                    FROM student_chat_messages
-                    WHERE room_id = scr.id AND sender_type = 'staff'),
-                   '1970-01-01'
-               )) as unread_count
-        FROM student_chat_rooms scr
-        INNER JOIN students s ON scr.student_id = s.id
+            COALESCE(
+                (SELECT COUNT(*)
+                 FROM student_chat_messages scm
+                 WHERE scm.room_id = scr.id
+                   AND scm.sender_type = 'student'
+                   AND scm.created_at > COALESCE(
+                       (SELECT MAX(created_at)
+                        FROM student_chat_messages
+                        WHERE room_id = scr.id AND sender_type = 'staff'),
+                       '1970-01-01'
+                   )), 0
+            ) as unread_count
+        FROM students s
+        LEFT JOIN student_chat_rooms scr ON s.id = scr.student_id
         ORDER BY last_message_at IS NULL, last_message_at DESC, s.student_name ASC
     ");
 }
