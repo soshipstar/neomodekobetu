@@ -1,0 +1,26 @@
+-- 施設通信テーブルの作成
+CREATE TABLE IF NOT EXISTS newsletters (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    year INT NOT NULL,
+    month INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    greeting TEXT,
+    event_calendar TEXT,
+    event_details TEXT,
+    weekly_reports TEXT,
+    event_results TEXT,
+    requests TEXT,
+    others TEXT,
+    report_start_date DATE NOT NULL,
+    report_end_date DATE NOT NULL,
+    schedule_start_date DATE NOT NULL,
+    schedule_end_date DATE NOT NULL,
+    status ENUM('draft', 'published') DEFAULT 'draft',
+    created_by INT NOT NULL,
+    published_at DATETIME,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_year_month (year, month),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

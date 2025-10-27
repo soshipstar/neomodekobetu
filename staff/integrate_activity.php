@@ -10,6 +10,16 @@ require_once __DIR__ . '/../includes/chatgpt.php';
 // スタッフまたは管理者のみアクセス可能
 requireUserType(['staff', 'admin']);
 
+// 強力なtrim処理関数
+if (!function_exists('powerTrim')) {
+    function powerTrim($text) {
+        if ($text === null || $text === '') {
+            return '';
+        }
+        return preg_replace('/^[\s\x{00A0}-\x{200B}\x{3000}\x{FEFF}]+|[\s\x{00A0}-\x{200B}\x{3000}\x{FEFF}]+$/u', '', $text);
+    }
+}
+
 $pdo = getDbConnection();
 $currentUser = getCurrentUser();
 
@@ -82,6 +92,7 @@ foreach ($stmt->fetchAll() as $row) {
 
 // AIで統合文章を生成
 $integratedNotes = [];
+$newlyGenerated = []; // 新規生成された統合内容を追跡
 foreach ($studentRecords as $record) {
     $studentId = $record['student_id'];
 
@@ -143,6 +154,43 @@ foreach ($studentRecords as $record) {
         'content' => $integratedContent,
         'is_sent' => 0
     ];
+
+    // 新規生成されたものとして記録
+    $newlyGenerated[$studentId] = $integratedContent;
+}
+
+// 新規生成された統合内容を自動的に下書きとして保存
+if (!empty($newlyGenerated)) {
+    try {
+        foreach ($newlyGenerated as $studentId => $content) {
+            // 強力なtrim処理（全角スペース、特殊文字も削除）
+            $content = powerTrim($content);
+
+            // 空の内容はスキップ
+            if (empty($content)) {
+                continue;
+            }
+
+            // 既存レコードの確認
+            $stmt = $pdo->prepare("
+                SELECT id FROM integrated_notes
+                WHERE daily_record_id = ? AND student_id = ?
+            ");
+            $stmt->execute([$activityId, $studentId]);
+            $existing = $stmt->fetch();
+
+            if (!$existing) {
+                // 新規挿入
+                $stmt = $pdo->prepare("
+                    INSERT INTO integrated_notes (daily_record_id, student_id, integrated_content, is_sent, created_at)
+                    VALUES (?, ?, ?, 0, NOW())
+                ");
+                $stmt->execute([$activityId, $studentId, $content]);
+            }
+        }
+    } catch (Exception $e) {
+        error_log("Auto-save draft integration error: " . $e->getMessage());
+    }
 }
 ?>
 <!DOCTYPE html>

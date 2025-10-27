@@ -16,6 +16,23 @@ $pdo = getDbConnection();
 // スタッフの教室IDを取得
 $classroomId = $_SESSION['classroom_id'] ?? null;
 
+// 削除処理
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_guardian_kakehashi'])) {
+    $deleteStudentId = $_POST['student_id'];
+    $deletePeriodId = $_POST['period_id'];
+
+    try {
+        $stmt = $pdo->prepare("DELETE FROM kakehashi_guardian WHERE student_id = ? AND period_id = ?");
+        $stmt->execute([$deleteStudentId, $deletePeriodId]);
+
+        $_SESSION['success'] = '保護者用かけはしを削除しました。';
+        header("Location: kakehashi_guardian_view.php?student_id=$deleteStudentId");
+        exit;
+    } catch (Exception $e) {
+        $_SESSION['error'] = '削除に失敗しました: ' . $e->getMessage();
+    }
+}
+
 // 自分の教室の生徒を取得
 if ($classroomId) {
     $stmt = $pdo->prepare("
@@ -49,8 +66,8 @@ if ($selectedStudentId) {
 // 選択された期間（URLパラメータから取得のみ、デフォルト値なし）
 $selectedPeriodId = $_GET['period_id'] ?? null;
 
-// 保護者入力かけはしデータを取得
-$kakehashiList = [];
+// 保護者入力かけはしデータを取得（単一レコード）
+$kakehashiData = null;
 if ($selectedStudentId && $selectedPeriodId) {
     $stmt = $pdo->prepare("
         SELECT
@@ -64,7 +81,7 @@ if ($selectedStudentId && $selectedPeriodId) {
         WHERE kg.student_id = ? AND kg.period_id = ?
     ");
     $stmt->execute([$selectedStudentId, $selectedPeriodId]);
-    $kakehashiList = $stmt->fetchAll();
+    $kakehashiData = $stmt->fetch();
 }
 
 // 選択された期間の情報
@@ -75,30 +92,6 @@ if ($selectedPeriodId) {
     $selectedPeriod = $stmt->fetch();
 }
 
-// 提出状況の統計（選択された生徒の期間のみ）
-$stats = [
-    'total' => 0,
-    'submitted' => 0,
-    'draft' => 0
-];
-
-if ($selectedStudentId && $selectedPeriodId) {
-    $stmt = $pdo->prepare("
-        SELECT
-            COUNT(*) as total,
-            SUM(CASE WHEN is_submitted = 1 THEN 1 ELSE 0 END) as submitted,
-            SUM(CASE WHEN is_submitted = 0 THEN 1 ELSE 0 END) as draft
-        FROM kakehashi_guardian
-        WHERE student_id = ? AND period_id = ?
-    ");
-    $stmt->execute([$selectedStudentId, $selectedPeriodId]);
-    $statsData = $stmt->fetch();
-    $stats = [
-        'total' => $statsData['total'] ?? 0,
-        'submitted' => $statsData['submitted'] ?? 0,
-        'draft' => $statsData['draft'] ?? 0
-    ];
-}
 ?>
 
 <!DOCTYPE html>
@@ -187,82 +180,58 @@ if ($selectedStudentId && $selectedPeriodId) {
             color: #333;
         }
 
-        .form-group select {
+        .form-group select,
+        .form-group input,
+        .form-group textarea {
             width: 100%;
             padding: 12px;
             border: 2px solid #e1e8ed;
             border-radius: 8px;
             font-size: 16px;
+            transition: border-color 0.3s;
         }
 
-        .stats-area {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
+        .form-group select:focus,
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
         }
 
-        .stat-card {
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
         }
 
-        .stat-card.total {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .stat-card.submitted {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            color: white;
-        }
-
-        .stat-card.draft {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-        }
-
-        .stat-number {
-            font-size: 36px;
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-
-        .kakehashi-card {
-            border: 2px solid #e1e8ed;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-            transition: all 0.3s;
-        }
-
-        .kakehashi-card:hover {
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            transform: translateY(-2px);
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-
-        .student-name {
+        .section-title {
             font-size: 20px;
             font-weight: 600;
-            color: #333;
+            color: #667eea;
+            margin: 30px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .domains-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .period-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .period-info p {
+            margin: 5px 0;
         }
 
         .status-badge {
+            display: inline-block;
             padding: 6px 12px;
             border-radius: 20px;
             font-size: 14px;
@@ -279,64 +248,54 @@ if ($selectedStudentId && $selectedPeriodId) {
             color: #856404;
         }
 
-        .card-body {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-        }
-
-        .field-group {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-        }
-
-        .field-group.full-width {
-            grid-column: 1 / -1;
-        }
-
-        .field-label {
-            font-weight: 600;
-            color: #667eea;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-
-        .field-content {
-            color: #333;
-            line-height: 1.6;
-            white-space: pre-wrap;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #999;
-        }
-
-        .empty-state-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-        }
-
         .btn {
-            padding: 10px 20px;
+            padding: 12px 30px;
             border: none;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 16px;
             cursor: pointer;
             transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
+            font-weight: 600;
         }
 
-        .btn-view {
-            background: #007bff;
+        .btn-save {
+            background: #28a745;
             color: white;
         }
 
-        .btn-view:hover {
-            background: #0056b3;
+        .btn-save:hover {
+            background: #218838;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            justify-content: flex-end;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .student-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
         }
 
         @media print {
@@ -366,6 +325,21 @@ if ($selectedStudentId && $selectedPeriodId) {
         </div>
 
         <div class="content">
+            <!-- メッセージ表示 -->
+            <?php if (isset($_SESSION['success'])): ?>
+                <div class="alert alert-success">
+                    <?= htmlspecialchars($_SESSION['success']) ?>
+                </div>
+                <?php unset($_SESSION['success']); ?>
+            <?php endif; ?>
+
+            <?php if (isset($_SESSION['error'])): ?>
+                <div class="alert alert-info">
+                    <?= htmlspecialchars($_SESSION['error']) ?>
+                </div>
+                <?php unset($_SESSION['error']); ?>
+            <?php endif; ?>
+
             <!-- 生徒選択エリア（常に表示） -->
             <div class="filter-area">
                 <div class="form-group">
@@ -403,96 +377,106 @@ if ($selectedStudentId && $selectedPeriodId) {
                 </div>
             <?php endif; ?>
 
-            <!-- 統計エリア -->
-            <?php if ($selectedStudentId && $selectedPeriod): ?>
-                <div class="stats-area">
-                    <div class="stat-card total">
-                        <div class="stat-number"><?= $stats['total'] ?></div>
-                        <div class="stat-label">総入力数</div>
+            <!-- かけはし編集フォーム -->
+            <?php if ($selectedStudentId && $selectedPeriodId): ?>
+                <?php if (!$kakehashiData): ?>
+                    <div class="alert alert-info">
+                        この生徒・期間の保護者入力かけはしがまだ作成されていません。保護者が最初に入力する必要があります。
                     </div>
-                    <div class="stat-card submitted">
-                        <div class="stat-number"><?= $stats['submitted'] ?></div>
-                        <div class="stat-label">提出済み</div>
+                <?php else: ?>
+                    <!-- 期間情報 -->
+                    <div class="period-info">
+                        <p><strong>生徒:</strong> <?= htmlspecialchars($kakehashiData['student_name']) ?></p>
+                        <p><strong>保護者:</strong> <?= htmlspecialchars($kakehashiData['guardian_name'] ?? '未設定') ?></p>
+                        <p><strong>対象期間:</strong> <?= date('Y年m月d日', strtotime($selectedPeriod['start_date'])) ?> ～ <?= date('Y年m月d日', strtotime($selectedPeriod['end_date'])) ?></p>
+                        <p><strong>提出期限:</strong> <?= date('Y年m月d日', strtotime($selectedPeriod['submission_deadline'])) ?></p>
+                        <p>
+                            <strong>状態:</strong>
+                            <?php if ($kakehashiData['is_submitted']): ?>
+                                <span class="status-badge status-submitted">提出済み</span>
+                                <small>（提出日時: <?= date('Y年m月d日 H:i', strtotime($kakehashiData['submitted_at'])) ?>）</small>
+                            <?php else: ?>
+                                <span class="status-badge status-draft">下書き</span>
+                            <?php endif; ?>
+                        </p>
                     </div>
-                    <div class="stat-card draft">
-                        <div class="stat-number"><?= $stats['draft'] ?></div>
-                        <div class="stat-label">下書き</div>
-                    </div>
-                </div>
-            <?php endif; ?>
 
-            <!-- かけはしリスト -->
-            <?php if ($selectedStudentId && $selectedPeriodId && empty($kakehashiList)): ?>
-                <div class="empty-state">
-                    <div class="empty-state-icon">📭</div>
-                    <p>この生徒・期間の保護者入力かけはしがありません</p>
-                </div>
-            <?php elseif (!empty($kakehashiList)): ?>
-                <?php foreach ($kakehashiList as $kakehashi): ?>
-                    <div class="kakehashi-card">
-                        <div class="card-header">
-                            <div>
-                                <div class="student-name"><?= htmlspecialchars($kakehashi['student_name']) ?></div>
-                                <small style="color: #666;">保護者: <?= htmlspecialchars($kakehashi['guardian_name'] ?? '未設定') ?></small>
+                    <!-- 編集フォーム -->
+                    <form method="POST" action="kakehashi_guardian_save.php" id="kakehashiForm">
+                        <input type="hidden" name="student_id" value="<?= $selectedStudentId ?>">
+                        <input type="hidden" name="period_id" value="<?= $selectedPeriodId ?>">
+
+                        <!-- 本人の願い -->
+                        <div class="section-title">💫 本人の願い</div>
+                        <div class="form-group">
+                            <label>お子様が望んでいること、なりたい姿</label>
+                            <textarea name="student_wish"><?= htmlspecialchars($kakehashiData['student_wish'] ?? '') ?></textarea>
+                        </div>
+
+                        <!-- 家庭での願い -->
+                        <div class="section-title">🏠 家庭での願い</div>
+                        <div class="form-group">
+                            <label>家庭で気になっていること、取り組みたいこと</label>
+                            <textarea name="home_challenges"><?= htmlspecialchars($kakehashiData['home_challenges'] ?? '') ?></textarea>
+                        </div>
+
+                        <!-- 目標設定 -->
+                        <div class="section-title">🎯 目標設定</div>
+                        <div class="form-group">
+                            <label>短期目標（6か月）</label>
+                            <textarea name="short_term_goal"><?= htmlspecialchars($kakehashiData['short_term_goal'] ?? '') ?></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>長期目標（1年以上）</label>
+                            <textarea name="long_term_goal"><?= htmlspecialchars($kakehashiData['long_term_goal'] ?? '') ?></textarea>
+                        </div>
+
+                        <!-- 五領域の課題 -->
+                        <div class="section-title">🌟 五領域の課題</div>
+                        <div class="domains-grid">
+                            <div class="form-group">
+                                <label>健康・生活</label>
+                                <textarea name="domain_health_life"><?= htmlspecialchars($kakehashiData['domain_health_life'] ?? '') ?></textarea>
                             </div>
-                            <div>
-                                <?php if ($kakehashi['is_submitted']): ?>
-                                    <span class="status-badge status-submitted">提出済み</span>
-                                    <br><small style="color: #666;"><?= date('Y/m/d H:i', strtotime($kakehashi['submitted_at'])) ?></small>
-                                <?php else: ?>
-                                    <span class="status-badge status-draft">下書き</span>
-                                <?php endif; ?>
+                            <div class="form-group">
+                                <label>運動・感覚</label>
+                                <textarea name="domain_motor_sensory"><?= htmlspecialchars($kakehashiData['domain_motor_sensory'] ?? '') ?></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>認知・行動</label>
+                                <textarea name="domain_cognitive_behavior"><?= htmlspecialchars($kakehashiData['domain_cognitive_behavior'] ?? '') ?></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>言語・コミュニケーション</label>
+                                <textarea name="domain_language_communication"><?= htmlspecialchars($kakehashiData['domain_language_communication'] ?? '') ?></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>人間関係・社会性</label>
+                                <textarea name="domain_social_relations"><?= htmlspecialchars($kakehashiData['domain_social_relations'] ?? '') ?></textarea>
                             </div>
                         </div>
 
-                        <div class="card-body">
-                            <div class="field-group full-width">
-                                <div class="field-label">🏠 家庭での願い</div>
-                                <div class="field-content"><?= nl2br(htmlspecialchars($kakehashi['home_challenges'] ?: '（未入力）')) ?></div>
-                            </div>
-
-                            <div class="field-group">
-                                <div class="field-label">🎯 短期目標（6か月）</div>
-                                <div class="field-content"><?= nl2br(htmlspecialchars($kakehashi['short_term_goal'] ?: '（未入力）')) ?></div>
-                            </div>
-
-                            <div class="field-group">
-                                <div class="field-label">🎯 長期目標（1年以上）</div>
-                                <div class="field-content"><?= nl2br(htmlspecialchars($kakehashi['long_term_goal'] ?: '（未入力）')) ?></div>
-                            </div>
-
-                            <div class="field-group">
-                                <div class="field-label">🌟 健康・生活</div>
-                                <div class="field-content"><?= nl2br(htmlspecialchars($kakehashi['domain_health_life'] ?: '（未入力）')) ?></div>
-                            </div>
-
-                            <div class="field-group">
-                                <div class="field-label">🌟 運動・感覚</div>
-                                <div class="field-content"><?= nl2br(htmlspecialchars($kakehashi['domain_motor_sensory'] ?: '（未入力）')) ?></div>
-                            </div>
-
-                            <div class="field-group">
-                                <div class="field-label">🌟 認知・行動</div>
-                                <div class="field-content"><?= nl2br(htmlspecialchars($kakehashi['domain_cognitive_behavior'] ?: '（未入力）')) ?></div>
-                            </div>
-
-                            <div class="field-group">
-                                <div class="field-label">🌟 言語・コミュニケーション</div>
-                                <div class="field-content"><?= nl2br(htmlspecialchars($kakehashi['domain_language_communication'] ?: '（未入力）')) ?></div>
-                            </div>
-
-                            <div class="field-group">
-                                <div class="field-label">🌟 人間関係・社会性</div>
-                                <div class="field-content"><?= nl2br(htmlspecialchars($kakehashi['domain_social_relations'] ?: '（未入力）')) ?></div>
-                            </div>
-
-                            <div class="field-group full-width">
-                                <div class="field-label">📌 その他の課題</div>
-                                <div class="field-content"><?= nl2br(htmlspecialchars($kakehashi['other_challenges'] ?: '（未入力）')) ?></div>
-                            </div>
+                        <!-- その他の課題 -->
+                        <div class="section-title">📌 その他の課題</div>
+                        <div class="form-group">
+                            <label>その他、お伝えしたいこと</label>
+                            <textarea name="other_challenges"><?= htmlspecialchars($kakehashiData['other_challenges'] ?? '') ?></textarea>
                         </div>
-                    </div>
-                <?php endforeach; ?>
+
+                        <!-- ボタン -->
+                        <div class="button-group">
+                            <button type="submit" class="btn btn-save">💾 保存する</button>
+                        </div>
+                    </form>
+
+                    <!-- 削除フォーム -->
+                    <form method="POST" style="margin-top: 20px;" onsubmit="return confirm('この保護者用かけはしを削除してもよろしいですか？\nこの操作は取り消せません。');">
+                        <input type="hidden" name="delete_guardian_kakehashi" value="1">
+                        <input type="hidden" name="student_id" value="<?= $selectedStudentId ?>">
+                        <input type="hidden" name="period_id" value="<?= $selectedPeriodId ?>">
+                        <button type="submit" style="background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600;">🗑️ この保護者用かけはしを削除</button>
+                    </form>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
     </div>

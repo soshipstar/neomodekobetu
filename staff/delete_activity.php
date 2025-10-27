@@ -24,12 +24,26 @@ if (!$activityId) {
 try {
     $pdo->beginTransaction();
 
-    // 活動が自分のものか確認
-    $stmt = $pdo->prepare("
-        SELECT id FROM daily_records
-        WHERE id = ? AND staff_id = ?
-    ");
-    $stmt->execute([$activityId, $currentUser['id']]);
+    // スタッフの教室IDを取得
+    $classroomId = $_SESSION['classroom_id'] ?? null;
+
+    // 活動が存在し、同じ教室のスタッフが作成したものか確認
+    if ($classroomId) {
+        $stmt = $pdo->prepare("
+            SELECT dr.id FROM daily_records dr
+            INNER JOIN users u ON dr.staff_id = u.id
+            WHERE dr.id = ? AND u.classroom_id = ?
+        ");
+        $stmt->execute([$activityId, $classroomId]);
+    } else {
+        // 教室IDがない場合は、自分の活動のみ削除可能
+        $stmt = $pdo->prepare("
+            SELECT id FROM daily_records
+            WHERE id = ? AND staff_id = ?
+        ");
+        $stmt->execute([$activityId, $currentUser['id']]);
+    }
+
     $activity = $stmt->fetch();
 
     if (!$activity) {

@@ -15,6 +15,17 @@ $pdo = getDbConnection();
 // マスター管理者かどうかを確認
 $isMaster = isMasterAdmin();
 
+// 現在の管理者の教室名を取得（通常管理者の場合）
+$classroomName = null;
+if (!$isMaster && isset($_SESSION['classroom_id']) && $_SESSION['classroom_id']) {
+    $stmt = $pdo->prepare("SELECT classroom_name FROM classrooms WHERE id = ?");
+    $stmt->execute([$_SESSION['classroom_id']]);
+    $classroom = $stmt->fetch();
+    if ($classroom) {
+        $classroomName = $classroom['classroom_name'];
+    }
+}
+
 // 統計情報を取得
 $stats = [
     'total_users' => 0,
@@ -156,6 +167,9 @@ $stats['total_records'] = $stmt->fetchColumn();
         <div class="header">
             <div>
                 <h1>⚙️ 管理者ページ</h1>
+                <?php if ($classroomName): ?>
+                    <p style="color: #666; font-size: 14px; margin-top: 5px;">📍 <?php echo htmlspecialchars($classroomName); ?></p>
+                <?php endif; ?>
             </div>
             <div style="display: flex; align-items: center;">
                 <span class="user-info">
@@ -199,16 +213,10 @@ $stats['total_records'] = $stmt->fetchColumn();
                 <p>保護者アカウントの登録・編集を行います。生徒との紐付け管理も可能です。</p>
             </a>
 
-            <a href="classroom_settings.php" class="menu-card">
-                <div class="menu-card-icon">🏫</div>
-                <h3>教室情報設定</h3>
-                <p>教室名・住所・電話番号・ロゴ画像などの基本情報を設定します。</p>
-            </a>
-
-            <a href="users.php" class="menu-card">
-                <div class="menu-card-icon">⚙️</div>
+            <a href="staff_management.php" class="menu-card">
+                <div class="menu-card-icon">👨‍💼</div>
                 <h3>スタッフ管理</h3>
-                <p>職員アカウントを管理します。（準備中）</p>
+                <p>スタッフアカウントの登録・編集・削除を行います。</p>
             </a>
 
             <a href="reports.php" class="menu-card">

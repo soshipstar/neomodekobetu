@@ -24,6 +24,13 @@ if (!$weekStartDate) {
     exit;
 }
 
+// 基本項目を取得
+$weeklyGoal = trim($_POST['weekly_goal'] ?? '');
+$sharedGoal = trim($_POST['shared_goal'] ?? '');
+$mustDo = trim($_POST['must_do'] ?? '');
+$shouldDo = trim($_POST['should_do'] ?? '');
+$wantToDo = trim($_POST['want_to_do'] ?? '');
+
 // 曜日ごとの計画データを収集
 $planData = [];
 $days = ['day_0', 'day_1', 'day_2', 'day_3', 'day_4', 'day_5', 'day_6'];
@@ -44,20 +51,47 @@ try {
     $existing = $stmt->fetch();
 
     if ($existing) {
-        // 更新（生徒は各曜日の計画のみ更新）
+        // 更新
         $stmt = $pdo->prepare("
             UPDATE weekly_plans
-            SET plan_data = ?, updated_at = NOW()
+            SET weekly_goal = ?,
+                shared_goal = ?,
+                must_do = ?,
+                should_do = ?,
+                want_to_do = ?,
+                plan_data = ?,
+                updated_at = NOW()
             WHERE id = ?
         ");
-        $stmt->execute([$planDataJson, $existing['id']]);
+        $stmt->execute([$weeklyGoal, $sharedGoal, $mustDo, $shouldDo, $wantToDo, $planDataJson, $existing['id']]);
     } else {
-        // 新規作成（通常は発生しない - スタッフが先に作成）
+        // 新規作成
         $stmt = $pdo->prepare("
-            INSERT INTO weekly_plans (student_id, week_start_date, plan_data, created_by_type, created_by_id)
-            VALUES (?, ?, ?, 'student', ?)
+            INSERT INTO weekly_plans (
+                student_id,
+                week_start_date,
+                weekly_goal,
+                shared_goal,
+                must_do,
+                should_do,
+                want_to_do,
+                plan_data,
+                created_by_type,
+                created_by_id
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'student', ?)
         ");
-        $stmt->execute([$studentId, $weekStartDate, $planDataJson, $studentId]);
+        $stmt->execute([
+            $studentId,
+            $weekStartDate,
+            $weeklyGoal,
+            $sharedGoal,
+            $mustDo,
+            $shouldDo,
+            $wantToDo,
+            $planDataJson,
+            $studentId
+        ]);
     }
 
     header('Location: weekly_plan.php?date=' . urlencode($weekStartDate) . '&success=1');

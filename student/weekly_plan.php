@@ -482,7 +482,7 @@ $isEditMode = isset($_GET['edit']) && $_GET['edit'] === '1';
     <div class="container">
         <div class="header">
             <h1>📝 週間計画表</h1>
-            <a href="../student/index.php" class="back-btn">← トップに戻る</a>
+            <a href="dashboard.php" class="back-btn">← トップに戻る</a>
         </div>
 
         <?php if (isset($_GET['success'])): ?>
@@ -514,7 +514,7 @@ $isEditMode = isset($_GET['edit']) && $_GET['edit'] === '1';
             <div class="plan-container">
                 <div class="no-plan">
                     <p>この週の計画はまだ作成されていません</p>
-                    <p style="font-size: 14px;">先生が計画を作成するまでお待ちください</p>
+                    <a href="?date=<?php echo $targetDate; ?>&edit=1" class="btn btn-primary" style="margin-top: 20px;">新しい計画を作成する</a>
                 </div>
             </div>
         <?php elseif ($isEditMode): ?>
@@ -531,44 +531,34 @@ $isEditMode = isset($_GET['edit']) && $_GET['edit'] === '1';
                         </div>
                     </div>
 
-                    <!-- 今週の目標（表示のみ） -->
+                    <!-- 今週の目標 -->
                     <div class="plan-section">
                         <h3>🎯 今週の目標</h3>
-                        <div class="view-content <?php echo empty($weeklyPlan['weekly_goal']) ? 'empty' : ''; ?>">
-                            <?php echo !empty($weeklyPlan['weekly_goal']) ? nl2br(htmlspecialchars($weeklyPlan['weekly_goal'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?>
-                        </div>
+                        <textarea name="weekly_goal" rows="3" placeholder="今週達成したい目標を書きましょう"><?php echo $weeklyPlan ? htmlspecialchars($weeklyPlan['weekly_goal'], ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
                     </div>
 
-                    <!-- いっしょに決めた目標（表示のみ） -->
+                    <!-- いっしょに決めた目標 -->
                     <div class="plan-section">
                         <h3>🤝 いっしょに決めた目標</h3>
-                        <div class="view-content <?php echo empty($weeklyPlan['shared_goal']) ? 'empty' : ''; ?>">
-                            <?php echo !empty($weeklyPlan['shared_goal']) ? nl2br(htmlspecialchars($weeklyPlan['shared_goal'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?>
-                        </div>
+                        <textarea name="shared_goal" rows="3" placeholder="先生や保護者と一緒に決めた目標を書きましょう"><?php echo $weeklyPlan ? htmlspecialchars($weeklyPlan['shared_goal'], ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
                     </div>
 
-                    <!-- やるべきこと（表示のみ） -->
+                    <!-- やるべきこと -->
                     <div class="plan-section">
                         <h3>✅ やるべきこと</h3>
-                        <div class="view-content <?php echo empty($weeklyPlan['must_do']) ? 'empty' : ''; ?>">
-                            <?php echo !empty($weeklyPlan['must_do']) ? nl2br(htmlspecialchars($weeklyPlan['must_do'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?>
-                        </div>
+                        <textarea name="must_do" rows="3" placeholder="必ずやらなければならないことを書きましょう"><?php echo $weeklyPlan ? htmlspecialchars($weeklyPlan['must_do'], ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
                     </div>
 
-                    <!-- やったほうがいいこと（表示のみ） -->
+                    <!-- やったほうがいいこと -->
                     <div class="plan-section">
                         <h3>👍 やったほうがいいこと</h3>
-                        <div class="view-content <?php echo empty($weeklyPlan['should_do']) ? 'empty' : ''; ?>">
-                            <?php echo !empty($weeklyPlan['should_do']) ? nl2br(htmlspecialchars($weeklyPlan['should_do'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?>
-                        </div>
+                        <textarea name="should_do" rows="3" placeholder="できればやった方がいいことを書きましょう"><?php echo $weeklyPlan ? htmlspecialchars($weeklyPlan['should_do'], ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
                     </div>
 
-                    <!-- やりたいこと（表示のみ） -->
+                    <!-- やりたいこと -->
                     <div class="plan-section">
                         <h3>💡 やりたいこと</h3>
-                        <div class="view-content <?php echo empty($weeklyPlan['want_to_do']) ? 'empty' : ''; ?>">
-                            <?php echo !empty($weeklyPlan['want_to_do']) ? nl2br(htmlspecialchars($weeklyPlan['want_to_do'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?>
-                        </div>
+                        <textarea name="want_to_do" rows="3" placeholder="やってみたいことを書きましょう"><?php echo $weeklyPlan ? htmlspecialchars($weeklyPlan['want_to_do'], ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
                     </div>
 
                     <!-- 各曜日の計画（編集可能） -->

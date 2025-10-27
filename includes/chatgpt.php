@@ -10,6 +10,16 @@ require_once __DIR__ . '/env.php';
 define('CHATGPT_API_KEY', env('CHATGPT_API_KEY', ''));
 define('CHATGPT_API_URL', 'https://api.openai.com/v1/chat/completions');
 
+// 強力なtrim処理関数
+if (!function_exists('powerTrim')) {
+    function powerTrim($text) {
+        if ($text === null || $text === '') {
+            return '';
+        }
+        return preg_replace('/^[\s\x{00A0}-\x{200B}\x{3000}\x{FEFF}]+|[\s\x{00A0}-\x{200B}\x{3000}\x{FEFF}]+$/u', '', $text);
+    }
+}
+
 /**
  * 活動記録を統合した文章を生成
  *
@@ -61,14 +71,20 @@ function generateIntegratedNote($activityName, $commonActivity, $dailyNote, $dom
     if (!empty($supportPlan)) {
         $prompt .= "支援案の目的や配慮事項を踏まえつつ、実際の活動の様子を中心に記述してください。";
     }
-    $prompt .= "箇条書きではなく、文章として流れるように記述してください。";
+    $prompt .= "箇条書きではなく、文章として流れるように記述してください。\n\n";
+    $prompt .= "【重要な指示】\n";
+    $prompt .= "・ポジティブで前向きな表現を使用してください。\n";
+    $prompt .= "・「しかし」「ですが」「気になった点」などのネガティブな接続詞や表現は避けてください。\n";
+    $prompt .= "・課題や改善点は「次のステップとして」「さらに成長するために」「これから挑戦できること」など、成長の機会として前向きに表現してください。\n";
+    $prompt .= "・子どもの頑張りや成長、良かった点を中心に記述してください。\n";
+    $prompt .= "・保護者が読んで嬉しくなるような、温かく励みになる文章にしてください。";
 
     $data = [
         'model' => 'gpt-4o-mini',
         'messages' => [
             [
                 'role' => 'system',
-                'content' => 'あなたは個別支援教育の経験豊富な教員です。保護者に向けて温かく丁寧な連絡帳を書きます。'
+                'content' => 'あなたは個別支援教育の経験豊富な教員です。保護者に向けて温かく丁寧で、前向きでポジティブな連絡帳を書きます。子どもの良い面や成長を見つけ、課題も成長の機会として前向きに伝えます。「しかし」「ですが」などのネガティブな接続詞は使わず、常にポジティブな表現を心がけます。'
             ],
             [
                 'role' => 'user',
@@ -106,7 +122,7 @@ function generateIntegratedNote($activityName, $commonActivity, $dailyNote, $dom
     $result = json_decode($response, true);
 
     if (isset($result['choices'][0]['message']['content'])) {
-        return trim($result['choices'][0]['message']['content']);
+        return powerTrim($result['choices'][0]['message']['content']);
     }
 
     error_log("ChatGPT API Invalid Response: " . $response);

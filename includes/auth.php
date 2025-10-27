@@ -44,7 +44,14 @@ function login($username, $password) {
         $_SESSION['user_type'] = $user['user_type'];
         $_SESSION['email'] = $user['email'];
         $_SESSION['is_master'] = $user['is_master'] ?? 0;
-        $_SESSION['classroom_id'] = $user['classroom_id'];
+
+        // マスター管理者の場合はclassroom_idをNULLに（全教室のデータを見られるように）
+        if ($user['is_master'] == 1) {
+            $_SESSION['classroom_id'] = null;
+        } else {
+            $_SESSION['classroom_id'] = $user['classroom_id'];
+        }
+
         $_SESSION['login_time'] = time();
 
         // パスワードを除外して返す

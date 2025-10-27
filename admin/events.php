@@ -95,7 +95,7 @@ $events = $stmt->fetchAll();
             margin: 0 auto;
         }
         .header {
-            background: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 20px 30px;
             border-radius: 10px;
             margin-bottom: 20px;
@@ -105,7 +105,7 @@ $events = $stmt->fetchAll();
             align-items: center;
         }
         .header h1 {
-            color: #333;
+            color: white;
             font-size: 24px;
         }
         .header-actions {

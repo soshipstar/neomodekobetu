@@ -17,6 +17,36 @@ $staffId = $_SESSION['user_id'];
 // スタッフの教室IDを取得
 $classroomId = $_SESSION['classroom_id'] ?? null;
 
+// 削除処理
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_monitoring_id'])) {
+    $deleteId = $_POST['delete_monitoring_id'];
+
+    try {
+        // モニタリング明細も削除
+        $stmt = $pdo->prepare("DELETE FROM monitoring_details WHERE monitoring_id = ?");
+        $stmt->execute([$deleteId]);
+
+        // モニタリング本体を削除
+        $stmt = $pdo->prepare("DELETE FROM monitoring_records WHERE id = ?");
+        $stmt->execute([$deleteId]);
+
+        $_SESSION['success'] = 'モニタリング表を削除しました。';
+
+        // リダイレクト先を決定
+        $studentId = $_POST['student_id'] ?? null;
+        $planId = $_POST['plan_id'] ?? null;
+
+        if ($studentId && $planId) {
+            header("Location: kobetsu_monitoring.php?student_id=$studentId&plan_id=$planId");
+        } else {
+            header("Location: kobetsu_monitoring.php");
+        }
+        exit;
+    } catch (Exception $e) {
+        $_SESSION['error'] = '削除に失敗しました: ' . $e->getMessage();
+    }
+}
+
 // 自分の教室の生徒を取得
 if ($classroomId) {
     $stmt = $pdo->prepare("
@@ -431,6 +461,13 @@ if ($selectedPlanId) {
                 <?php unset($_SESSION['success']); ?>
             <?php endif; ?>
 
+            <?php if (isset($_SESSION['error'])): ?>
+                <div class="alert alert-danger">
+                    <?= htmlspecialchars($_SESSION['error']) ?>
+                </div>
+                <?php unset($_SESSION['error']); ?>
+            <?php endif; ?>
+
             <!-- 生徒・計画選択エリア -->
             <div class="selection-area">
                 <div class="form-group">
@@ -466,10 +503,18 @@ if ($selectedPlanId) {
                     <div class="monitoring-list">
                         <strong>既存のモニタリング:</strong>
                         <?php foreach ($existingMonitorings as $monitoring): ?>
-                            <a href="kobetsu_monitoring.php?student_id=<?= $selectedStudentId ?>&plan_id=<?= $selectedPlanId ?>&monitoring_id=<?= $monitoring['id'] ?>"
-                               class="monitoring-item <?= $monitoring['id'] == $selectedMonitoringId ? 'active' : '' ?>">
-                                <?= date('Y/m/d', strtotime($monitoring['monitoring_date'])) ?>
-                            </a>
+                            <div style="display: inline-flex; align-items: center; gap: 5px;">
+                                <a href="kobetsu_monitoring.php?student_id=<?= $selectedStudentId ?>&plan_id=<?= $selectedPlanId ?>&monitoring_id=<?= $monitoring['id'] ?>"
+                                   class="monitoring-item <?= $monitoring['id'] == $selectedMonitoringId ? 'active' : '' ?>">
+                                    <?= date('Y/m/d', strtotime($monitoring['monitoring_date'])) ?>
+                                </a>
+                                <form method="POST" style="display: inline;" onsubmit="return confirm('このモニタリング表を削除してもよろしいですか？');">
+                                    <input type="hidden" name="delete_monitoring_id" value="<?= $monitoring['id'] ?>">
+                                    <input type="hidden" name="student_id" value="<?= $selectedStudentId ?>">
+                                    <input type="hidden" name="plan_id" value="<?= $selectedPlanId ?>">
+                                    <button type="submit" style="background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">🗑️</button>
+                                </form>
+                            </div>
                         <?php endforeach; ?>
                         <a href="kobetsu_monitoring.php?student_id=<?= $selectedStudentId ?>&plan_id=<?= $selectedPlanId ?>" class="monitoring-item">+ 新規作成</a>
                     </div>

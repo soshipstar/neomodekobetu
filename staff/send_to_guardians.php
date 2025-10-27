@@ -9,6 +9,16 @@ require_once __DIR__ . '/../config/database.php';
 // スタッフまたは管理者のみアクセス可能
 requireUserType(['staff', 'admin']);
 
+// 強力なtrim処理関数
+if (!function_exists('powerTrim')) {
+    function powerTrim($text) {
+        if ($text === null || $text === '') {
+            return '';
+        }
+        return preg_replace('/^[\s\x{00A0}-\x{200B}\x{3000}\x{FEFF}]+|[\s\x{00A0}-\x{200B}\x{3000}\x{FEFF}]+$/u', '', $text);
+    }
+}
+
 $pdo = getDbConnection();
 $currentUser = getCurrentUser();
 
@@ -21,20 +31,39 @@ if (!$activityId || empty($notes)) {
     exit;
 }
 
-// 活動情報を取得
-$stmt = $pdo->prepare("
-    SELECT id, activity_name
-    FROM daily_records
-    WHERE id = ? AND staff_id = ?
-");
-$stmt->execute([$activityId, $currentUser['id']]);
+// 活動の日付を保存（リダイレクト用）
+$recordDate = null;
+
+// 活動情報を取得（同じ教室のスタッフが作成した活動も送信可能）
+$classroomId = $_SESSION['classroom_id'] ?? null;
+
+if ($classroomId) {
+    $stmt = $pdo->prepare("
+        SELECT dr.id, dr.activity_name, dr.record_date, u.classroom_id as staff_classroom_id
+        FROM daily_records dr
+        INNER JOIN users u ON dr.staff_id = u.id
+        WHERE dr.id = ? AND u.classroom_id = ?
+    ");
+    $stmt->execute([$activityId, $classroomId]);
+} else {
+    $stmt = $pdo->prepare("
+        SELECT id, activity_name, record_date
+        FROM daily_records
+        WHERE id = ? AND staff_id = ?
+    ");
+    $stmt->execute([$activityId, $currentUser['id']]);
+}
+
 $activity = $stmt->fetch();
 
 if (!$activity) {
-    $_SESSION['error'] = '活動が見つかりません';
+    $_SESSION['error'] = 'この活動にアクセスする権限がありません';
     header('Location: renrakucho_activities.php');
     exit;
 }
+
+// 活動の日付を保存
+$recordDate = $activity['record_date'];
 
 try {
     $pdo->beginTransaction();
@@ -42,7 +71,8 @@ try {
     $sentCount = 0;
 
     foreach ($notes as $studentId => $integratedContent) {
-        $integratedContent = trim($integratedContent);
+        // 強力なtrim処理（全角スペース、特殊文字も削除）
+        $integratedContent = powerTrim($integratedContent);
 
         if (empty($integratedContent)) {
             continue;
@@ -110,7 +140,9 @@ try {
     $pdo->commit();
 
     $_SESSION['success'] = "{$sentCount}件の連絡帳を保護者に送信しました";
-    header('Location: renrakucho_activities.php');
+
+    // 活動の日付の活動管理ページにリダイレクト
+    header('Location: renrakucho_activities.php?date=' . urlencode($recordDate));
     exit;
 
 } catch (Exception $e) {
@@ -118,6 +150,12 @@ try {
     error_log("Error sending to guardians: " . $e->getMessage());
 
     $_SESSION['error'] = '送信中にエラーが発生しました: ' . $e->getMessage();
-    header('Location: renrakucho_activities.php');
+
+    // 日付が取得できている場合は、その日付のページにリダイレクト
+    if ($recordDate) {
+        header('Location: renrakucho_activities.php?date=' . urlencode($recordDate));
+    } else {
+        header('Location: renrakucho_activities.php');
+    }
     exit;
 }

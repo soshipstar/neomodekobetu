@@ -14,6 +14,87 @@ $currentUser = getCurrentUser();
 
 // POSTデータを取得
 $action = $_POST['action'] ?? '';
+
+// 個別生徒の保存処理
+if ($action === 'save_student') {
+    header('Content-Type: application/json');
+
+    $activityId = $_POST['activity_id'] ?? null;
+    $studentId = $_POST['student_id'] ?? null;
+    $dailyNote = trim($_POST['daily_note'] ?? '');
+    $domain1 = $_POST['domain1'] ?? null;
+    $domain1Content = trim($_POST['domain1_content'] ?? '');
+    $domain2 = $_POST['domain2'] ?? null;
+    $domain2Content = trim($_POST['domain2_content'] ?? '');
+
+    if (!$activityId || !$studentId) {
+        echo json_encode(['success' => false, 'error' => '必須パラメータが不足しています']);
+        exit;
+    }
+
+    // バリデーション
+    if (empty($domain1) || empty($domain1Content)) {
+        echo json_encode(['success' => false, 'error' => '気になったこと1つ目を入力してください']);
+        exit;
+    }
+
+    if (empty($domain2) || empty($domain2Content)) {
+        echo json_encode(['success' => false, 'error' => '気になったこと2つ目を入力してください']);
+        exit;
+    }
+
+    if ($domain1 === $domain2) {
+        echo json_encode(['success' => false, 'error' => '同じ領域を2回選択することはできません']);
+        exit;
+    }
+
+    try {
+        // 権限チェック（自分の教室の活動か確認）
+        $classroomId = $_SESSION['classroom_id'] ?? null;
+        if ($classroomId) {
+            $checkStmt = $pdo->prepare("
+                SELECT dr.id FROM daily_records dr
+                INNER JOIN users u ON dr.staff_id = u.id
+                WHERE dr.id = ? AND u.classroom_id = ?
+            ");
+            $checkStmt->execute([$activityId, $classroomId]);
+            if (!$checkStmt->fetch()) {
+                echo json_encode(['success' => false, 'error' => 'この活動を更新する権限がありません']);
+                exit;
+            }
+        }
+
+        // 既存の生徒記録を更新
+        $stmt = $pdo->prepare("
+            UPDATE student_records
+            SET daily_note = ?, domain1 = ?, domain1_content = ?, domain2 = ?, domain2_content = ?
+            WHERE daily_record_id = ? AND student_id = ?
+        ");
+        $result = $stmt->execute([
+            $dailyNote,
+            $domain1,
+            $domain1Content,
+            $domain2,
+            $domain2Content,
+            $activityId,
+            $studentId
+        ]);
+
+        if ($result) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'error' => '保存に失敗しました']);
+        }
+        exit;
+
+    } catch (Exception $e) {
+        error_log("Error saving student record: " . $e->getMessage());
+        echo json_encode(['success' => false, 'error' => 'エラーが発生しました: ' . $e->getMessage()]);
+        exit;
+    }
+}
+
+// 通常の全体保存処理
 $activityName = trim($_POST['activity_name'] ?? '');
 $commonActivity = trim($_POST['common_activity'] ?? '');
 $recordDate = $_POST['record_date'] ?? date('Y-m-d');

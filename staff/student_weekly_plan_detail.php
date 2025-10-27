@@ -57,6 +57,21 @@ $stmt = $pdo->prepare("
         should_do,
         want_to_do,
         plan_data,
+        weekly_goal_achievement,
+        weekly_goal_comment,
+        shared_goal_achievement,
+        shared_goal_comment,
+        must_do_achievement,
+        must_do_comment,
+        should_do_achievement,
+        should_do_comment,
+        want_to_do_achievement,
+        want_to_do_comment,
+        daily_achievement,
+        overall_comment,
+        evaluated_at,
+        evaluated_by_type,
+        evaluated_by_id,
         created_at,
         updated_at
     FROM weekly_plans
@@ -66,6 +81,41 @@ $stmt->execute([$studentId, $weekStartDate]);
 $weeklyPlan = $stmt->fetch();
 
 $planData = $weeklyPlan ? json_decode($weeklyPlan['plan_data'], true) : [];
+$dailyAchievement = ($weeklyPlan && $weeklyPlan['daily_achievement']) ? json_decode($weeklyPlan['daily_achievement'], true) : [];
+
+// 前週の計画を取得（達成度入力用）
+$prevWeekDate = date('Y-m-d', strtotime('-7 days', strtotime($weekStartDate)));
+$stmt = $pdo->prepare("
+    SELECT
+        id,
+        week_start_date,
+        weekly_goal,
+        shared_goal,
+        must_do,
+        should_do,
+        want_to_do,
+        plan_data,
+        weekly_goal_achievement,
+        weekly_goal_comment,
+        shared_goal_achievement,
+        shared_goal_comment,
+        must_do_achievement,
+        must_do_comment,
+        should_do_achievement,
+        should_do_comment,
+        want_to_do_achievement,
+        want_to_do_comment,
+        daily_achievement,
+        overall_comment,
+        evaluated_at
+    FROM weekly_plans
+    WHERE student_id = ? AND week_start_date = ?
+");
+$stmt->execute([$studentId, $prevWeekDate]);
+$prevWeekPlan = $stmt->fetch();
+
+$prevPlanData = $prevWeekPlan ? json_decode($prevWeekPlan['plan_data'], true) : [];
+$prevDailyAchievement = ($prevWeekPlan && $prevWeekPlan['daily_achievement']) ? json_decode($prevWeekPlan['daily_achievement'], true) : [];
 
 // 提出物を取得
 $submissions = [];
@@ -549,6 +599,136 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
             margin-bottom: 20px;
         }
 
+        /* 達成度評価モーダル */
+        .achievement-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+        }
+
+        .achievement-modal.active {
+            display: block;
+        }
+
+        .achievement-modal-content {
+            background-color: white;
+            margin: 50px auto;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 900px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .achievement-modal-header {
+            font-size: 22px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .achievement-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .achievement-section h4 {
+            color: #667eea;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .goal-content {
+            padding: 10px;
+            background: white;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            min-height: 40px;
+            line-height: 1.5;
+        }
+
+        .goal-content.empty {
+            color: #999;
+            font-style: italic;
+        }
+
+        .achievement-radios {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .achievement-radios label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .achievement-radios input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .achievement-comment {
+            width: 100%;
+            min-height: 60px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+        }
+
+        .achievement-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .achievement-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .achievement-btn-cancel {
+            background: #6c757d;
+            color: white;
+        }
+
+        .achievement-btn-cancel:hover {
+            background: #5a6268;
+        }
+
+        .achievement-btn-submit {
+            background: #28a745;
+            color: white;
+        }
+
+        .achievement-btn-submit:hover {
+            background: #218838;
+        }
+
         @media (max-width: 768px) {
             .day-plan {
                 grid-template-columns: 1fr;
@@ -588,10 +768,17 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
 
         <div class="week-nav">
             <h2><?php echo date('Y年m月d日', strtotime($weekStartDate)); ?>の週</h2>
-            <div class="week-nav-buttons">
-                <a href="?student_id=<?php echo $studentId; ?>&date=<?php echo $prevWeek; ?>">← 前週</a>
-                <a href="?student_id=<?php echo $studentId; ?>&date=<?php echo date('Y-m-d'); ?>">今週</a>
-                <a href="?student_id=<?php echo $studentId; ?>&date=<?php echo $nextWeek; ?>">次週 →</a>
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <?php if ($prevWeekPlan && !$prevWeekPlan['evaluated_at']): ?>
+                    <button type="button" onclick="openAchievementModal()" style="padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 13px; font-weight: 600;">
+                        ⭐ 前週の達成度を入力
+                    </button>
+                <?php endif; ?>
+                <div class="week-nav-buttons">
+                    <a href="?student_id=<?php echo $studentId; ?>&date=<?php echo $prevWeek; ?>">← 前週</a>
+                    <a href="?student_id=<?php echo $studentId; ?>&date=<?php echo date('Y-m-d'); ?>">今週</a>
+                    <a href="?student_id=<?php echo $studentId; ?>&date=<?php echo $nextWeek; ?>">次週 →</a>
+                </div>
             </div>
         </div>
 
@@ -807,6 +994,193 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
                         <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
+
+                <!-- 達成度評価表示 -->
+                <?php if ($weeklyPlan && $weeklyPlan['evaluated_at']): ?>
+                    <div class="achievement-display-section" style="margin-top: 30px; padding: 20px; background: #f0f8ff; border: 2px solid #4a90e2; border-radius: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3 style="color: #4a90e2; margin: 0; font-size: 18px;">⭐ 達成度評価</h3>
+                            <div style="font-size: 12px; color: #666;">
+                                評価日: <?php echo date('Y年m月d日', strtotime($weeklyPlan['evaluated_at'])); ?>
+                            </div>
+                        </div>
+
+                        <?php
+                        $achievementLabels = [
+                            0 => '未評価',
+                            1 => '未達成',
+                            2 => '一部達成',
+                            3 => '達成'
+                        ];
+                        $achievementColors = [
+                            0 => '#999',
+                            1 => '#e74c3c',
+                            2 => '#f39c12',
+                            3 => '#27ae60'
+                        ];
+                        ?>
+
+                        <!-- 今週の目標の達成度 -->
+                        <?php if (!empty($weeklyPlan['weekly_goal'])): ?>
+                            <div class="achievement-item" style="margin-bottom: 15px; padding: 12px; background: white; border-radius: 8px;">
+                                <div style="font-weight: 600; margin-bottom: 5px; color: #333;">🎯 今週の目標</div>
+                                <div style="font-size: 14px; margin-bottom: 8px; padding: 8px; background: #f8f9fa; border-radius: 4px;">
+                                    <?php echo nl2br(htmlspecialchars($weeklyPlan['weekly_goal'], ENT_QUOTES, 'UTF-8')); ?>
+                                </div>
+                                <?php
+                                $achievement = $weeklyPlan['weekly_goal_achievement'] ?? 0;
+                                $color = $achievementColors[$achievement];
+                                $label = $achievementLabels[$achievement];
+                                ?>
+                                <div style="display: inline-block; padding: 4px 12px; background: <?php echo $color; ?>; color: white; border-radius: 4px; font-size: 13px; font-weight: 600; margin-bottom: 8px;">
+                                    <?php echo $label; ?>
+                                </div>
+                                <?php if (!empty($weeklyPlan['weekly_goal_comment'])): ?>
+                                    <div style="font-size: 13px; color: #555; margin-top: 8px; padding: 8px; background: #fffbf0; border-left: 3px solid #f39c12; border-radius: 4px;">
+                                        💬 <?php echo nl2br(htmlspecialchars($weeklyPlan['weekly_goal_comment'], ENT_QUOTES, 'UTF-8')); ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- いっしょに決めた目標の達成度 -->
+                        <?php if (!empty($weeklyPlan['shared_goal'])): ?>
+                            <div class="achievement-item" style="margin-bottom: 15px; padding: 12px; background: white; border-radius: 8px;">
+                                <div style="font-weight: 600; margin-bottom: 5px; color: #333;">🤝 いっしょに決めた目標</div>
+                                <div style="font-size: 14px; margin-bottom: 8px; padding: 8px; background: #f8f9fa; border-radius: 4px;">
+                                    <?php echo nl2br(htmlspecialchars($weeklyPlan['shared_goal'], ENT_QUOTES, 'UTF-8')); ?>
+                                </div>
+                                <?php
+                                $achievement = $weeklyPlan['shared_goal_achievement'] ?? 0;
+                                $color = $achievementColors[$achievement];
+                                $label = $achievementLabels[$achievement];
+                                ?>
+                                <div style="display: inline-block; padding: 4px 12px; background: <?php echo $color; ?>; color: white; border-radius: 4px; font-size: 13px; font-weight: 600; margin-bottom: 8px;">
+                                    <?php echo $label; ?>
+                                </div>
+                                <?php if (!empty($weeklyPlan['shared_goal_comment'])): ?>
+                                    <div style="font-size: 13px; color: #555; margin-top: 8px; padding: 8px; background: #fffbf0; border-left: 3px solid #f39c12; border-radius: 4px;">
+                                        💬 <?php echo nl2br(htmlspecialchars($weeklyPlan['shared_goal_comment'], ENT_QUOTES, 'UTF-8')); ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- やるべきことの達成度 -->
+                        <?php if (!empty($weeklyPlan['must_do'])): ?>
+                            <div class="achievement-item" style="margin-bottom: 15px; padding: 12px; background: white; border-radius: 8px;">
+                                <div style="font-weight: 600; margin-bottom: 5px; color: #333;">✅ やるべきこと</div>
+                                <div style="font-size: 14px; margin-bottom: 8px; padding: 8px; background: #f8f9fa; border-radius: 4px;">
+                                    <?php echo nl2br(htmlspecialchars($weeklyPlan['must_do'], ENT_QUOTES, 'UTF-8')); ?>
+                                </div>
+                                <?php
+                                $achievement = $weeklyPlan['must_do_achievement'] ?? 0;
+                                $color = $achievementColors[$achievement];
+                                $label = $achievementLabels[$achievement];
+                                ?>
+                                <div style="display: inline-block; padding: 4px 12px; background: <?php echo $color; ?>; color: white; border-radius: 4px; font-size: 13px; font-weight: 600; margin-bottom: 8px;">
+                                    <?php echo $label; ?>
+                                </div>
+                                <?php if (!empty($weeklyPlan['must_do_comment'])): ?>
+                                    <div style="font-size: 13px; color: #555; margin-top: 8px; padding: 8px; background: #fffbf0; border-left: 3px solid #f39c12; border-radius: 4px;">
+                                        💬 <?php echo nl2br(htmlspecialchars($weeklyPlan['must_do_comment'], ENT_QUOTES, 'UTF-8')); ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- やったほうがいいことの達成度 -->
+                        <?php if (!empty($weeklyPlan['should_do'])): ?>
+                            <div class="achievement-item" style="margin-bottom: 15px; padding: 12px; background: white; border-radius: 8px;">
+                                <div style="font-weight: 600; margin-bottom: 5px; color: #333;">👍 やったほうがいいこと</div>
+                                <div style="font-size: 14px; margin-bottom: 8px; padding: 8px; background: #f8f9fa; border-radius: 4px;">
+                                    <?php echo nl2br(htmlspecialchars($weeklyPlan['should_do'], ENT_QUOTES, 'UTF-8')); ?>
+                                </div>
+                                <?php
+                                $achievement = $weeklyPlan['should_do_achievement'] ?? 0;
+                                $color = $achievementColors[$achievement];
+                                $label = $achievementLabels[$achievement];
+                                ?>
+                                <div style="display: inline-block; padding: 4px 12px; background: <?php echo $color; ?>; color: white; border-radius: 4px; font-size: 13px; font-weight: 600; margin-bottom: 8px;">
+                                    <?php echo $label; ?>
+                                </div>
+                                <?php if (!empty($weeklyPlan['should_do_comment'])): ?>
+                                    <div style="font-size: 13px; color: #555; margin-top: 8px; padding: 8px; background: #fffbf0; border-left: 3px solid #f39c12; border-radius: 4px;">
+                                        💬 <?php echo nl2br(htmlspecialchars($weeklyPlan['should_do_comment'], ENT_QUOTES, 'UTF-8')); ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- やりたいことの達成度 -->
+                        <?php if (!empty($weeklyPlan['want_to_do'])): ?>
+                            <div class="achievement-item" style="margin-bottom: 15px; padding: 12px; background: white; border-radius: 8px;">
+                                <div style="font-weight: 600; margin-bottom: 5px; color: #333;">💡 やりたいこと</div>
+                                <div style="font-size: 14px; margin-bottom: 8px; padding: 8px; background: #f8f9fa; border-radius: 4px;">
+                                    <?php echo nl2br(htmlspecialchars($weeklyPlan['want_to_do'], ENT_QUOTES, 'UTF-8')); ?>
+                                </div>
+                                <?php
+                                $achievement = $weeklyPlan['want_to_do_achievement'] ?? 0;
+                                $color = $achievementColors[$achievement];
+                                $label = $achievementLabels[$achievement];
+                                ?>
+                                <div style="display: inline-block; padding: 4px 12px; background: <?php echo $color; ?>; color: white; border-radius: 4px; font-size: 13px; font-weight: 600; margin-bottom: 8px;">
+                                    <?php echo $label; ?>
+                                </div>
+                                <?php if (!empty($weeklyPlan['want_to_do_comment'])): ?>
+                                    <div style="font-size: 13px; color: #555; margin-top: 8px; padding: 8px; background: #fffbf0; border-left: 3px solid #f39c12; border-radius: 4px;">
+                                        💬 <?php echo nl2br(htmlspecialchars($weeklyPlan['want_to_do_comment'], ENT_QUOTES, 'UTF-8')); ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- 各曜日の達成度 -->
+                        <?php if (!empty($dailyAchievement)): ?>
+                            <div class="daily-achievement-display" style="margin-top: 20px;">
+                                <h4 style="color: #333; font-size: 16px; margin-bottom: 12px;">📅 各曜日の達成度</h4>
+                                <?php
+                                $days = ['月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日', '日曜日'];
+                                $dayKeys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+                                foreach ($dayKeys as $index => $dayKey):
+                                    if (isset($dailyAchievement[$dayKey]) && $dailyAchievement[$dayKey]['achievement'] > 0):
+                                        $dayData = $dailyAchievement[$dayKey];
+                                        $achievement = $dayData['achievement'];
+                                        $comment = $dayData['comment'] ?? '';
+                                        $color = $achievementColors[$achievement];
+                                        $label = $achievementLabels[$achievement];
+                                ?>
+                                    <div style="margin-bottom: 10px; padding: 10px; background: white; border-radius: 6px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                            <span style="font-weight: 600; color: #333;"><?php echo $days[$index]; ?></span>
+                                            <span style="padding: 3px 10px; background: <?php echo $color; ?>; color: white; border-radius: 3px; font-size: 12px; font-weight: 600;">
+                                                <?php echo $label; ?>
+                                            </span>
+                                        </div>
+                                        <?php if (!empty($comment)): ?>
+                                            <div style="font-size: 12px; color: #555; margin-top: 6px; padding-left: 10px; border-left: 2px solid <?php echo $color; ?>;">
+                                                <?php echo nl2br(htmlspecialchars($comment, ENT_QUOTES, 'UTF-8')); ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php
+                                    endif;
+                                endforeach;
+                                ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- 総合コメント -->
+                        <?php if (!empty($weeklyPlan['overall_comment'])): ?>
+                            <div style="margin-top: 20px; padding: 15px; background: white; border-radius: 8px; border-left: 4px solid #4a90e2;">
+                                <div style="font-weight: 600; color: #4a90e2; margin-bottom: 8px;">📝 週全体の総合コメント</div>
+                                <div style="font-size: 14px; color: #333; line-height: 1.6;">
+                                    <?php echo nl2br(htmlspecialchars($weeklyPlan['overall_comment'], ENT_QUOTES, 'UTF-8')); ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
             </div>
         <?php endif; ?>
 
@@ -845,6 +1219,149 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
         <?php endif; ?>
     </div>
 
+    <!-- 達成度評価モーダル -->
+    <?php if ($prevWeekPlan && !$prevWeekPlan['evaluated_at']): ?>
+        <div id="achievementModal" class="achievement-modal">
+            <div class="achievement-modal-content">
+                <h3 class="achievement-modal-header">
+                    ⭐ 前週（<?php echo date('Y年m月d日', strtotime($prevWeekDate)); ?>の週）の達成度評価
+                </h3>
+
+                <form id="achievementForm" method="POST" action="save_achievement.php">
+                    <input type="hidden" name="weekly_plan_id" value="<?php echo $prevWeekPlan['id']; ?>">
+                    <input type="hidden" name="student_id" value="<?php echo $studentId; ?>">
+                    <input type="hidden" name="return_date" value="<?php echo $targetDate; ?>">
+
+                    <!-- 今週の目標 -->
+                    <?php if (!empty($prevWeekPlan['weekly_goal'])): ?>
+                        <div class="achievement-section">
+                            <h4>🎯 今週の目標</h4>
+                            <div class="goal-content">
+                                <?php echo nl2br(htmlspecialchars($prevWeekPlan['weekly_goal'], ENT_QUOTES, 'UTF-8')); ?>
+                            </div>
+                            <div class="achievement-radios">
+                                <label><input type="radio" name="weekly_goal_achievement" value="1"> 未達成</label>
+                                <label><input type="radio" name="weekly_goal_achievement" value="2"> 一部達成</label>
+                                <label><input type="radio" name="weekly_goal_achievement" value="3" checked> 達成</label>
+                            </div>
+                            <textarea name="weekly_goal_comment" class="achievement-comment" placeholder="コメント（任意）"></textarea>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- いっしょに決めた目標 -->
+                    <?php if (!empty($prevWeekPlan['shared_goal'])): ?>
+                        <div class="achievement-section">
+                            <h4>🤝 いっしょに決めた目標</h4>
+                            <div class="goal-content">
+                                <?php echo nl2br(htmlspecialchars($prevWeekPlan['shared_goal'], ENT_QUOTES, 'UTF-8')); ?>
+                            </div>
+                            <div class="achievement-radios">
+                                <label><input type="radio" name="shared_goal_achievement" value="1"> 未達成</label>
+                                <label><input type="radio" name="shared_goal_achievement" value="2"> 一部達成</label>
+                                <label><input type="radio" name="shared_goal_achievement" value="3" checked> 達成</label>
+                            </div>
+                            <textarea name="shared_goal_comment" class="achievement-comment" placeholder="コメント（任意）"></textarea>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- やるべきこと -->
+                    <?php if (!empty($prevWeekPlan['must_do'])): ?>
+                        <div class="achievement-section">
+                            <h4>✅ やるべきこと</h4>
+                            <div class="goal-content">
+                                <?php echo nl2br(htmlspecialchars($prevWeekPlan['must_do'], ENT_QUOTES, 'UTF-8')); ?>
+                            </div>
+                            <div class="achievement-radios">
+                                <label><input type="radio" name="must_do_achievement" value="1"> 未達成</label>
+                                <label><input type="radio" name="must_do_achievement" value="2"> 一部達成</label>
+                                <label><input type="radio" name="must_do_achievement" value="3" checked> 達成</label>
+                            </div>
+                            <textarea name="must_do_comment" class="achievement-comment" placeholder="コメント（任意）"></textarea>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- やったほうがいいこと -->
+                    <?php if (!empty($prevWeekPlan['should_do'])): ?>
+                        <div class="achievement-section">
+                            <h4>👍 やったほうがいいこと</h4>
+                            <div class="goal-content">
+                                <?php echo nl2br(htmlspecialchars($prevWeekPlan['should_do'], ENT_QUOTES, 'UTF-8')); ?>
+                            </div>
+                            <div class="achievement-radios">
+                                <label><input type="radio" name="should_do_achievement" value="1"> 未達成</label>
+                                <label><input type="radio" name="should_do_achievement" value="2"> 一部達成</label>
+                                <label><input type="radio" name="should_do_achievement" value="3" checked> 達成</label>
+                            </div>
+                            <textarea name="should_do_comment" class="achievement-comment" placeholder="コメント（任意）"></textarea>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- やりたいこと -->
+                    <?php if (!empty($prevWeekPlan['want_to_do'])): ?>
+                        <div class="achievement-section">
+                            <h4>💡 やりたいこと</h4>
+                            <div class="goal-content">
+                                <?php echo nl2br(htmlspecialchars($prevWeekPlan['want_to_do'], ENT_QUOTES, 'UTF-8')); ?>
+                            </div>
+                            <div class="achievement-radios">
+                                <label><input type="radio" name="want_to_do_achievement" value="1"> 未達成</label>
+                                <label><input type="radio" name="want_to_do_achievement" value="2"> 一部達成</label>
+                                <label><input type="radio" name="want_to_do_achievement" value="3" checked> 達成</label>
+                            </div>
+                            <textarea name="want_to_do_comment" class="achievement-comment" placeholder="コメント（任意）"></textarea>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- 各曜日の計画 -->
+                    <?php
+                    $days = ['月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日', '日曜日'];
+                    $hasAnyDailyPlan = false;
+                    foreach ($days as $index => $day) {
+                        $dayKey = "day_$index";
+                        if (!empty($prevPlanData[$dayKey])) {
+                            $hasAnyDailyPlan = true;
+                            break;
+                        }
+                    }
+                    ?>
+
+                    <?php if ($hasAnyDailyPlan): ?>
+                        <div class="achievement-section">
+                            <h4>📅 各曜日の計画達成度</h4>
+                            <?php foreach ($days as $index => $day):
+                                $dayKey = "day_$index";
+                                if (!empty($prevPlanData[$dayKey])):
+                            ?>
+                                <div style="margin-bottom: 20px; padding: 15px; background: white; border-radius: 5px;">
+                                    <div style="font-weight: 600; color: #667eea; margin-bottom: 8px;"><?php echo $day; ?></div>
+                                    <div class="goal-content" style="margin-bottom: 10px;">
+                                        <?php echo nl2br(htmlspecialchars($prevPlanData[$dayKey], ENT_QUOTES, 'UTF-8')); ?>
+                                    </div>
+                                    <div class="achievement-radios">
+                                        <label><input type="radio" name="daily_achievement[<?php echo $dayKey; ?>]" value="1"> 未達成</label>
+                                        <label><input type="radio" name="daily_achievement[<?php echo $dayKey; ?>]" value="2"> 一部達成</label>
+                                        <label><input type="radio" name="daily_achievement[<?php echo $dayKey; ?>]" value="3" checked> 達成</label>
+                                    </div>
+                                </div>
+                            <?php endif; endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- 総合コメント -->
+                    <div class="achievement-section">
+                        <h4>📝 週全体の総合コメント</h4>
+                        <textarea name="overall_comment" class="achievement-comment" style="min-height: 100px;" placeholder="週全体を振り返っての総合コメントを入力してください"></textarea>
+                    </div>
+
+                    <div class="achievement-modal-footer">
+                        <button type="button" class="achievement-btn achievement-btn-cancel" onclick="closeAchievementModal()">キャンセル</button>
+                        <button type="submit" class="achievement-btn achievement-btn-submit">保存する</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <script>
         let submissionCounter = <?php echo !empty($submissions) ? count($submissions) : 0; ?>;
 
@@ -870,6 +1387,27 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
         function removeSubmission(button) {
             button.closest('.submission-item').remove();
         }
+
+        // 達成度評価モーダル
+        function openAchievementModal() {
+            document.getElementById('achievementModal').classList.add('active');
+        }
+
+        function closeAchievementModal() {
+            document.getElementById('achievementModal').classList.remove('active');
+        }
+
+        // モーダル外クリックで閉じる
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('achievementModal');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        closeAchievementModal();
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>

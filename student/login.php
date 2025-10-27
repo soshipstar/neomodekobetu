@@ -1,20 +1,15 @@
 <?php
 /**
- * ログインページ
+ * 生徒用ログインページ
  */
 
-require_once __DIR__ . '/includes/auth.php';
+session_start();
+
+require_once __DIR__ . '/../config/database.php';
 
 // すでにログイン済みの場合はダッシュボードへリダイレクト
-if (isLoggedIn()) {
-    $userType = $_SESSION['user_type'];
-    if ($userType === 'admin') {
-        header('Location: /admin/index.php');
-    } elseif ($userType === 'staff') {
-        header('Location: /staff/renrakucho_activities.php');
-    } else {
-        header('Location: /guardian/dashboard.php');
-    }
+if (isset($_SESSION['student_id'])) {
+    header('Location: dashboard.php');
     exit;
 }
 
@@ -28,21 +23,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($username) || empty($password)) {
         $error = 'ユーザー名とパスワードを入力してください';
     } else {
-        $result = login($username, $password);
+        $pdo = getDbConnection();
 
-        if ($result['success']) {
-            // ログイン成功 - ユーザータイプに応じてリダイレクト
-            $userType = $result['user']['user_type'];
-            if ($userType === 'admin') {
-                header('Location: /admin/index.php');
-            } elseif ($userType === 'staff') {
-                header('Location: /staff/renrakucho_activities.php');
-            } else {
-                header('Location: /guardian/dashboard.php');
-            }
+        // 生徒アカウントを検索
+        $stmt = $pdo->prepare("
+            SELECT id, student_name, username, password_hash, guardian_id
+            FROM students
+            WHERE username = ? AND password_hash IS NOT NULL
+        ");
+        $stmt->execute([$username]);
+        $student = $stmt->fetch();
+
+        if ($student && password_verify($password, $student['password_hash'])) {
+            // ログイン成功
+            $_SESSION['student_id'] = $student['id'];
+            $_SESSION['student_name'] = $student['student_name'];
+            $_SESSION['student_username'] = $student['username'];
+            $_SESSION['guardian_id'] = $student['guardian_id'];
+            $_SESSION['user_type'] = 'student';
+
+            // 最終ログイン日時を更新
+            $stmt = $pdo->prepare("UPDATE students SET last_login = NOW() WHERE id = ?");
+            $stmt->execute([$student['id']]);
+
+            header('Location: dashboard.php');
             exit;
         } else {
-            $error = $result['error'];
+            $error = 'ユーザー名またはパスワードが正しくありません';
         }
     }
 }
@@ -52,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ログイン - 個別支援連絡帳システム</title>
+    <title>生徒ログイン - 個別支援連絡帳システム</title>
     <style>
         * {
             margin: 0;
@@ -91,8 +98,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .login-header p {
-            color: #666;
-            font-size: 14px;
+            color: #667eea;
+            font-size: 16px;
+            font-weight: 600;
         }
 
         .form-group {
@@ -152,34 +160,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             transform: translateY(0);
         }
 
-        .test-accounts {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
+        .back-link {
+            margin-top: 20px;
+            text-align: center;
         }
 
-        .test-accounts h3 {
+        .back-link a {
+            color: #667eea;
+            text-decoration: none;
             font-size: 14px;
-            color: #666;
-            margin-bottom: 10px;
         }
 
-        .test-accounts ul {
-            list-style: none;
-            font-size: 12px;
-            color: #999;
+        .back-link a:hover {
+            text-decoration: underline;
         }
 
-        .test-accounts ul li {
-            margin-bottom: 5px;
+        .student-icon {
+            font-size: 48px;
+            text-align: center;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
     <div class="login-container">
+        <div class="student-icon">🎓</div>
+
         <div class="login-header">
-            <h1>個別支援連絡帳システム</h1>
-            <p>ログインしてください</p>
+            <h1>生徒用ログイン</h1>
+            <p>個別支援連絡帳システム</p>
         </div>
 
         <?php if ($error): ?>
@@ -212,20 +221,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="submit" class="login-button">ログイン</button>
         </form>
 
-        <div class="test-accounts">
-            <h3>テストアカウント</h3>
-            <ul>
-                <li>管理者: admin / admin123</li>
-                <li>スタッフ: staff01 / staff123</li>
-                <li>保護者: guardian01 / guardian123</li>
-            </ul>
-        </div>
-
-        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-            <a href="/student/login.php" style="color: #667eea; text-decoration: none; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 5px;">
-                <span>🎓</span>
-                <span>生徒の方はこちら</span>
-            </a>
+        <div class="back-link">
+            <a href="../login.php">← スタッフ・保護者ログイン</a>
         </div>
     </div>
 </body>

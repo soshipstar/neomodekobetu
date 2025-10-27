@@ -1,27 +1,39 @@
 <?php
 /**
- * 教室管理（マスター管理者専用）
+ * スタッフ管理（管理者用）
  */
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/auth.php';
 
-// マスター管理者チェック
-requireMasterAdmin();
+// 管理者チェック
+requireUserType('admin');
 
 $pdo = getDbConnection();
+$currentUser = getCurrentUser();
+$classroomId = $currentUser['classroom_id'];
 
-// 全教室を取得（サブクエリで正確にカウント）
-$stmt = $pdo->query("
-    SELECT
-        c.*,
-        (SELECT COUNT(*) FROM users WHERE classroom_id = c.id AND user_type = 'admin') as admin_count,
-        (SELECT COUNT(*) FROM users WHERE classroom_id = c.id AND user_type = 'staff') as staff_count,
-        (SELECT COUNT(*) FROM users u INNER JOIN students s ON u.id = s.guardian_id WHERE u.classroom_id = c.id) as student_count
-    FROM classrooms c
-    ORDER BY c.created_at DESC
+// マスター管理者の場合は専用ページにリダイレクト
+if (isMasterAdmin()) {
+    header('Location: staff_accounts.php');
+    exit;
+}
+
+// 教室名を取得
+$stmt = $pdo->prepare("SELECT classroom_name FROM classrooms WHERE id = ?");
+$stmt->execute([$classroomId]);
+$classroom = $stmt->fetch();
+$classroomName = $classroom ? $classroom['classroom_name'] : '';
+
+// 自分の教室のスタッフアカウントのみを取得
+$stmt = $pdo->prepare("
+    SELECT *
+    FROM users
+    WHERE user_type = 'staff' AND classroom_id = ?
+    ORDER BY created_at DESC
 ");
-$classrooms = $stmt->fetchAll();
+$stmt->execute([$classroomId]);
+$staff = $stmt->fetchAll();
 
 $successMessage = $_GET['success'] ?? '';
 ?>
@@ -30,7 +42,7 @@ $successMessage = $_GET['success'] ?? '';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>教室管理 - マスター管理者</title>
+    <title>スタッフ管理</title>
     <style>
         * {
             margin: 0;
@@ -61,13 +73,10 @@ $successMessage = $_GET['success'] ?? '';
             color: #333;
             font-size: 24px;
         }
-        .master-badge {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 15px;
-            font-size: 12px;
-            margin-left: 10px;
+        .classroom-badge {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
         }
         .back-btn {
             background: #6c757d;
@@ -116,41 +125,55 @@ $successMessage = $_GET['success'] ?? '';
             background: #28a745;
             color: white;
         }
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
         .btn-danger {
             background: #dc3545;
             color: white;
         }
-        .classrooms-table {
+        .staff-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
         }
-        .classrooms-table th,
-        .classrooms-table td {
+        .staff-table th,
+        .staff-table td {
             padding: 15px;
             text-align: left;
             border-bottom: 1px solid #ddd;
         }
-        .classrooms-table th {
+        .staff-table th {
             background: #f8f9fa;
             font-weight: 600;
             color: #333;
         }
-        .classrooms-table tr:hover {
+        .staff-table tr:hover {
             background: #f8f9fa;
         }
-        .logo-preview {
-            height: 40px;
-            width: auto;
-            max-width: 100px;
+        .badge-active {
+            background: #28a745;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+        }
+        .badge-inactive {
+            background: #dc3545;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
         }
         .action-buttons {
             display: flex;
-            gap: 10px;
+            gap: 8px;
+            flex-wrap: wrap;
         }
         .action-buttons button {
-            padding: 6px 12px;
-            font-size: 12px;
+            padding: 6px 10px;
+            font-size: 11px;
         }
         .success-message {
             background: #d4edda;
@@ -173,7 +196,7 @@ $successMessage = $_GET['success'] ?? '';
         }
         .modal-content {
             background-color: #fefefe;
-            margin: 5% auto;
+            margin: 3% auto;
             padding: 30px;
             border: 1px solid #888;
             border-radius: 10px;
@@ -200,16 +223,21 @@ $successMessage = $_GET['success'] ?? '';
             font-weight: 500;
         }
         .form-group input,
-        .form-group textarea {
+        .form-group select {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 14px;
         }
-        .form-group textarea {
-            resize: vertical;
-            min-height: 80px;
+        .form-group small {
+            color: #666;
+            font-size: 12px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
         }
     </style>
 </head>
@@ -217,7 +245,8 @@ $successMessage = $_GET['success'] ?? '';
     <div class="container">
         <div class="header">
             <div>
-                <h1>🏢 教室管理<span class="master-badge">★マスター専用</span></h1>
+                <h1>👨‍💼 スタッフ管理</h1>
+                <div class="classroom-badge">📍 <?php echo htmlspecialchars($classroomName); ?></div>
             </div>
             <div>
                 <a href="index.php" class="back-btn">← 管理者トップに戻る</a>
@@ -230,57 +259,52 @@ $successMessage = $_GET['success'] ?? '';
             <?php endif; ?>
 
             <div class="toolbar">
-                <h2>登録教室一覧</h2>
-                <button class="btn btn-primary" onclick="openAddModal()">➕ 新規教室登録</button>
+                <h2>スタッフアカウント一覧</h2>
+                <button class="btn btn-primary" onclick="openAddModal()">➕ 新規スタッフ登録</button>
             </div>
 
-            <table class="classrooms-table">
+            <table class="staff-table">
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>ロゴ</th>
-                        <th>教室名</th>
-                        <th>住所</th>
-                        <th>電話番号</th>
-                        <th>管理者数</th>
-                        <th>スタッフ数</th>
-                        <th>生徒数</th>
+                        <th>ユーザー名</th>
+                        <th>氏名</th>
+                        <th>メールアドレス</th>
+                        <th>ステータス</th>
                         <th>登録日</th>
                         <th>操作</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($classrooms as $classroom): ?>
+                    <?php if (empty($staff)): ?>
                         <tr>
-                            <td><?php echo $classroom['id']; ?></td>
-                            <td>
-                                <?php if ($classroom['logo_path'] && file_exists(__DIR__ . '/../' . $classroom['logo_path'])): ?>
-                                    <img src="../<?php echo htmlspecialchars($classroom['logo_path']); ?>" alt="ロゴ" class="logo-preview">
-                                <?php else: ?>
-                                    -
-                                <?php endif; ?>
-                            </td>
-                            <td><?php echo htmlspecialchars($classroom['classroom_name']); ?></td>
-                            <td><?php echo htmlspecialchars($classroom['address'] ?? '-'); ?></td>
-                            <td><?php echo htmlspecialchars($classroom['phone'] ?? '-'); ?></td>
-                            <td><?php echo $classroom['admin_count']; ?>人</td>
-                            <td><?php echo $classroom['staff_count']; ?>人</td>
-                            <td><?php echo $classroom['student_count']; ?>人</td>
-                            <td><?php echo date('Y/m/d', strtotime($classroom['created_at'])); ?></td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn btn-primary" onclick="openEditModal(<?php echo htmlspecialchars(json_encode($classroom), ENT_QUOTES); ?>)">編集</button>
-                                    <button class="btn btn-danger" onclick="deleteClassroom(<?php echo $classroom['id']; ?>, '<?php echo htmlspecialchars($classroom['classroom_name'], ENT_QUOTES); ?>')">削除</button>
-                                </div>
+                            <td colspan="7" class="empty-state">
+                                スタッフアカウントが登録されていません
                             </td>
                         </tr>
-                    <?php endforeach; ?>
-                    <?php if (empty($classrooms)): ?>
-                        <tr>
-                            <td colspan="10" style="text-align: center; padding: 40px; color: #666;">
-                                登録されている教室がありません
-                            </td>
-                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($staff as $s): ?>
+                            <tr>
+                                <td><?php echo $s['id']; ?></td>
+                                <td><?php echo htmlspecialchars($s['username']); ?></td>
+                                <td><?php echo htmlspecialchars($s['full_name']); ?></td>
+                                <td><?php echo htmlspecialchars($s['email'] ?? '-'); ?></td>
+                                <td>
+                                    <?php if ($s['is_active']): ?>
+                                        <span class="badge-active">有効</span>
+                                    <?php else: ?>
+                                        <span class="badge-inactive">無効</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?php echo date('Y/m/d', strtotime($s['created_at'])); ?></td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn btn-primary" onclick='openEditModal(<?php echo json_encode($s, JSON_HEX_APOS | JSON_HEX_QUOT); ?>)'>編集</button>
+                                        <button class="btn btn-danger" onclick="deleteStaff(<?php echo $s['id']; ?>, '<?php echo htmlspecialchars($s['username'], ENT_QUOTES); ?>')">削除</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
                     <?php endif; ?>
                 </tbody>
             </table>
@@ -291,24 +315,26 @@ $successMessage = $_GET['success'] ?? '';
     <div id="addModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeAddModal()">&times;</span>
-            <h2>新規教室登録</h2>
-            <form action="classrooms_save.php" method="POST" enctype="multipart/form-data">
+            <h2>新規スタッフ登録</h2>
+            <form action="staff_management_save.php" method="POST">
                 <input type="hidden" name="action" value="add">
                 <div class="form-group">
-                    <label>教室名 *</label>
-                    <input type="text" name="classroom_name" required>
+                    <label>ユーザー名 *</label>
+                    <input type="text" name="username" required>
+                    <small>ログイン時に使用します（半角英数字）</small>
                 </div>
                 <div class="form-group">
-                    <label>住所</label>
-                    <textarea name="address"></textarea>
+                    <label>パスワード *</label>
+                    <input type="password" name="password" required minlength="6">
+                    <small>6文字以上</small>
                 </div>
                 <div class="form-group">
-                    <label>電話番号</label>
-                    <input type="tel" name="phone">
+                    <label>氏名 *</label>
+                    <input type="text" name="full_name" required>
                 </div>
                 <div class="form-group">
-                    <label>ロゴ画像（2MB以内のJPEG, PNG, GIF）</label>
-                    <input type="file" name="logo" accept="image/*">
+                    <label>メールアドレス</label>
+                    <input type="email" name="email">
                 </div>
                 <button type="submit" class="btn btn-success" style="width: 100%;">登録</button>
             </form>
@@ -319,26 +345,34 @@ $successMessage = $_GET['success'] ?? '';
     <div id="editModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeEditModal()">&times;</span>
-            <h2>教室情報編集</h2>
-            <form action="classrooms_save.php" method="POST" enctype="multipart/form-data">
+            <h2>スタッフ情報編集</h2>
+            <form action="staff_management_save.php" method="POST">
                 <input type="hidden" name="action" value="edit">
-                <input type="hidden" name="classroom_id" id="edit_classroom_id">
+                <input type="hidden" name="user_id" id="edit_user_id">
                 <div class="form-group">
-                    <label>教室名 *</label>
-                    <input type="text" name="classroom_name" id="edit_classroom_name" required>
+                    <label>ユーザー名</label>
+                    <input type="text" id="edit_username" disabled style="background: #f5f5f5;">
+                    <small>ユーザー名は変更できません</small>
                 </div>
                 <div class="form-group">
-                    <label>住所</label>
-                    <textarea name="address" id="edit_address"></textarea>
+                    <label>新しいパスワード</label>
+                    <input type="password" name="password" minlength="6">
+                    <small>変更しない場合は空欄にしてください</small>
                 </div>
                 <div class="form-group">
-                    <label>電話番号</label>
-                    <input type="tel" name="phone" id="edit_phone">
+                    <label>氏名 *</label>
+                    <input type="text" name="full_name" id="edit_full_name" required>
                 </div>
                 <div class="form-group">
-                    <label>ロゴ画像（2MB以内のJPEG, PNG, GIF）</label>
-                    <input type="file" name="logo" accept="image/*">
-                    <div id="current_logo" style="margin-top: 10px;"></div>
+                    <label>メールアドレス</label>
+                    <input type="email" name="email" id="edit_email">
+                </div>
+                <div class="form-group">
+                    <label>ステータス *</label>
+                    <select name="is_active" id="edit_is_active" required>
+                        <option value="1">有効</option>
+                        <option value="0">無効</option>
+                    </select>
                 </div>
                 <button type="submit" class="btn btn-success" style="width: 100%;">更新</button>
             </form>
@@ -354,19 +388,12 @@ $successMessage = $_GET['success'] ?? '';
             document.getElementById('addModal').style.display = 'none';
         }
 
-        function openEditModal(classroom) {
-            document.getElementById('edit_classroom_id').value = classroom.id;
-            document.getElementById('edit_classroom_name').value = classroom.classroom_name;
-            document.getElementById('edit_address').value = classroom.address || '';
-            document.getElementById('edit_phone').value = classroom.phone || '';
-
-            const logoDiv = document.getElementById('current_logo');
-            if (classroom.logo_path) {
-                logoDiv.innerHTML = '<p style="color: #666; font-size: 12px;">現在のロゴ:</p><img src="../' + classroom.logo_path + '" style="max-width: 200px; max-height: 100px;">';
-            } else {
-                logoDiv.innerHTML = '<p style="color: #666; font-size: 12px;">現在ロゴは未設定です</p>';
-            }
-
+        function openEditModal(staff) {
+            document.getElementById('edit_user_id').value = staff.id;
+            document.getElementById('edit_username').value = staff.username;
+            document.getElementById('edit_full_name').value = staff.full_name;
+            document.getElementById('edit_email').value = staff.email || '';
+            document.getElementById('edit_is_active').value = staff.is_active;
             document.getElementById('editModal').style.display = 'block';
         }
 
@@ -374,11 +401,11 @@ $successMessage = $_GET['success'] ?? '';
             document.getElementById('editModal').style.display = 'none';
         }
 
-        function deleteClassroom(classroomId, classroomName) {
-            if (confirm(`本当に「${classroomName}」を削除しますか？\n\nこの操作は取り消せません。この教室に所属する管理者、スタッフ、生徒、およびすべての関連データが削除されます。`)) {
+        function deleteStaff(userId, username) {
+            if (confirm(`本当に「${username}」を削除しますか？\n\nこの操作は取り消せません。`)) {
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = 'classrooms_save.php';
+                form.action = 'staff_management_save.php';
 
                 const actionInput = document.createElement('input');
                 actionInput.type = 'hidden';
@@ -388,8 +415,8 @@ $successMessage = $_GET['success'] ?? '';
 
                 const idInput = document.createElement('input');
                 idInput.type = 'hidden';
-                idInput.name = 'classroom_id';
-                idInput.value = classroomId;
+                idInput.name = 'user_id';
+                idInput.value = userId;
                 form.appendChild(idInput);
 
                 document.body.appendChild(form);

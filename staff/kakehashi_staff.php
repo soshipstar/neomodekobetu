@@ -18,6 +18,23 @@ $staffId = $_SESSION['user_id'];
 // スタッフの教室IDを取得
 $classroomId = $_SESSION['classroom_id'] ?? null;
 
+// 削除処理
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_staff_kakehashi'])) {
+    $deleteStudentId = $_POST['student_id'];
+    $deletePeriodId = $_POST['period_id'];
+
+    try {
+        $stmt = $pdo->prepare("DELETE FROM kakehashi_staff WHERE student_id = ? AND period_id = ?");
+        $stmt->execute([$deleteStudentId, $deletePeriodId]);
+
+        $_SESSION['success'] = 'スタッフ用かけはしを削除しました。';
+        header("Location: kakehashi_staff.php?student_id=$deleteStudentId");
+        exit;
+    } catch (Exception $e) {
+        $_SESSION['error'] = '削除に失敗しました: ' . $e->getMessage();
+    }
+}
+
 // 自分の教室の生徒を取得
 if ($classroomId) {
     $stmt = $pdo->prepare("
@@ -393,7 +410,7 @@ if ($selectedStudentId) {
             <?php endif; ?>
 
             <?php if (isset($_SESSION['error'])): ?>
-                <div class="alert alert-warning">
+                <div class="alert alert-info">
                     <?= htmlspecialchars($_SESSION['error']) ?>
                 </div>
                 <?php unset($_SESSION['error']); ?>
@@ -551,6 +568,16 @@ if ($selectedStudentId) {
                                     <span>AIで自動生成</span>
                                 </button>
                             </div>
+                        </form>
+                    <?php endif; ?>
+
+                    <!-- 削除フォーム -->
+                    <?php if ($kakehashiData): ?>
+                        <form method="POST" style="margin-top: 20px; text-align: center;" onsubmit="return confirm('このスタッフ用かけはしを削除してもよろしいですか？\nこの操作は取り消せません。');">
+                            <input type="hidden" name="delete_staff_kakehashi" value="1">
+                            <input type="hidden" name="student_id" value="<?= $selectedStudentId ?>">
+                            <input type="hidden" name="period_id" value="<?= $selectedPeriodId ?>">
+                            <button type="submit" style="background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600;">🗑️ このスタッフ用かけはしを削除</button>
                         </form>
                     <?php endif; ?>
                 <?php endif; ?>

@@ -104,6 +104,14 @@ if ($classroomId) {
             s.withdrawal_date,
             s.is_active,
             s.created_at,
+            s.scheduled_monday,
+            s.scheduled_tuesday,
+            s.scheduled_wednesday,
+            s.scheduled_thursday,
+            s.scheduled_friday,
+            s.scheduled_saturday,
+            s.scheduled_sunday,
+            s.username,
             u.full_name as guardian_name
         FROM students s
         INNER JOIN users u ON s.guardian_id = u.id
@@ -126,6 +134,14 @@ if ($classroomId) {
             s.withdrawal_date,
             s.is_active,
             s.created_at,
+            s.scheduled_monday,
+            s.scheduled_tuesday,
+            s.scheduled_wednesday,
+            s.scheduled_thursday,
+            s.scheduled_friday,
+            s.scheduled_saturday,
+            s.scheduled_sunday,
+            s.username,
             u.full_name as guardian_name
         FROM students s
         {$joinType} users u ON s.guardian_id = u.id
@@ -997,6 +1013,9 @@ function getGradeBadgeColor($gradeLevel) {
                 </div>
                 <div class="modal-footer">
                     <button type="button" onclick="closeModal()" class="btn btn-secondary">キャンセル</button>
+                    <button type="button" onclick="printStudentLogin()" class="btn btn-success" style="margin-left: 10px;">
+                        🖨️ 生徒用資料を印刷
+                    </button>
                     <div style="flex: 1;"></div>
                     <button type="button" onclick="deleteStudent()" class="btn btn-danger" style="margin-right: 10px;">削除</button>
                     <button type="submit" class="btn btn-primary">更新する</button>
@@ -1085,6 +1104,19 @@ function getGradeBadgeColor($gradeLevel) {
                 document.body.appendChild(form);
                 form.submit();
             }
+        }
+
+        function printStudentLogin() {
+            const studentId = document.getElementById('edit_student_id').value;
+            const username = document.getElementById('edit_student_username').value;
+
+            if (!username) {
+                alert('生徒用ログイン情報が設定されていません。\n\nまず、ユーザー名とパスワードを設定して保存してください。');
+                return;
+            }
+
+            // 印刷用ページを新しいウィンドウで開く
+            window.open(`student_login_print.php?student_id=${studentId}`, '_blank', 'width=800,height=600');
         }
 
         // モーダル外クリックで閉じる

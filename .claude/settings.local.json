@@ -24,7 +24,14 @@
       "Bash(php:*)",
       "Bash(/c/xampp/php/php.exe:*)",
       "Bash(where:*)",
-      "Bash(cmd.exe /c \"php run_migrations_support_plans.php\")"
+      "Bash(cmd.exe /c \"php run_migrations_support_plans.php\")",
+      "Bash(cmd.exe /c \"php C:\\Users\\TANI\\app\\kobetu\\run_migrations_support_plans.php\")",
+      "Bash(cmd.exe /c \"php run_migration_v29.php\")",
+      "Bash(cmd.exe /c \"php -l C:\\Users\\TANI\\app\\kobetu\\staff\\kakehashi_guardian_view.php\")",
+      "Bash(cmd.exe /c \"php -l C:\\Users\\TANI\\app\\kobetu\\staff\\kakehashi_guardian_save.php\")",
+      "Bash(cmd.exe /c \"php -l C:\\Users\\TANI\\app\\kobetu\\staff\\delete_activity.php\")",
+      "Bash(cmd.exe /c \"php C:\\Users\\TANI\\app\\kobetu\\fix_master_admin_classroom.php\")",
+      "Bash(cmd.exe /c:*)"
     ],
     "deny": [],
     "ask": []

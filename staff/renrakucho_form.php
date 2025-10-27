@@ -123,22 +123,22 @@ if ($classroomId) {
     if (!empty($currentStudentIds)) {
         $placeholders = str_repeat('?,', count($currentStudentIds) - 1) . '?';
         $stmt = $pdo->prepare("
-            SELECT s.id, s.student_name
+            SELECT s.id, s.student_name, s.grade
             FROM students s
             INNER JOIN users u ON s.guardian_id = u.id
             WHERE s.is_active = 1 AND u.classroom_id = ? AND s.id NOT IN ($placeholders)
-            ORDER BY s.student_name
+            ORDER BY s.grade, s.student_name
         ");
         $params = array_merge([$classroomId], $currentStudentIds);
         $stmt->execute($params);
     } else {
         // 参加生徒がいない場合は全員表示
         $stmt = $pdo->prepare("
-            SELECT s.id, s.student_name
+            SELECT s.id, s.student_name, s.grade
             FROM students s
             INNER JOIN users u ON s.guardian_id = u.id
             WHERE s.is_active = 1 AND u.classroom_id = ?
-            ORDER BY s.student_name
+            ORDER BY s.grade, s.student_name
         ");
         $stmt->execute([$classroomId]);
     }
@@ -148,16 +148,49 @@ if ($classroomId) {
     if (!empty($currentStudentIds)) {
         $placeholders = str_repeat('?,', count($currentStudentIds) - 1) . '?';
         $stmt = $pdo->prepare("
-            SELECT id, student_name
+            SELECT id, student_name, grade
             FROM students
             WHERE is_active = 1 AND id NOT IN ($placeholders)
-            ORDER BY student_name
+            ORDER BY grade, student_name
         ");
         $stmt->execute($currentStudentIds);
     } else {
-        $stmt = $pdo->query("SELECT id, student_name FROM students WHERE is_active = 1 ORDER BY student_name");
+        $stmt = $pdo->query("SELECT id, student_name, grade FROM students WHERE is_active = 1 ORDER BY grade, student_name");
     }
     $availableStudents = $stmt->fetchAll();
+}
+
+// 本日参加予定の生徒を取得（曜日ベース）
+$todayDayOfWeek = date('w', strtotime($recordDate)); // 0=日曜, 1=月曜, ...
+$dayColumns = [
+    0 => 'schedule_sun',
+    1 => 'schedule_mon',
+    2 => 'schedule_tue',
+    3 => 'schedule_wed',
+    4 => 'schedule_thu',
+    5 => 'schedule_fri',
+    6 => 'schedule_sat'
+];
+$todayColumn = $dayColumns[$todayDayOfWeek];
+
+$scheduledStudentIds = [];
+if ($classroomId) {
+    $stmt = $pdo->prepare("
+        SELECT s.id
+        FROM students s
+        INNER JOIN users u ON s.guardian_id = u.id
+        WHERE s.is_active = 1 AND u.classroom_id = ? AND s.$todayColumn = 1
+    ");
+    $stmt->execute([$classroomId]);
+    $scheduledStudentIds = array_column($stmt->fetchAll(), 'id');
+} else {
+    $stmt = $pdo->prepare("
+        SELECT id
+        FROM students
+        WHERE is_active = 1 AND $todayColumn = 1
+    ");
+    $stmt->execute();
+    $scheduledStudentIds = array_column($stmt->fetchAll(), 'id');
 }
 
 // 5領域の定義
@@ -391,11 +424,70 @@ $domains = [
             padding-bottom: 10px;
         }
 
+        /* 検索フィルタ */
+        .search-filters {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .filter-group {
+            margin-bottom: 10px;
+        }
+
+        .filter-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .filter-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-scheduled {
+            width: 100%;
+            padding: 10px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-scheduled:hover {
+            background: #218838;
+        }
+
         .student-list {
             display: flex;
             flex-direction: column;
             gap: 10px;
             margin-bottom: 20px;
+            max-height: 400px;
+            overflow-y: auto;
         }
 
         .student-item {
@@ -419,10 +511,35 @@ $domains = [
             background: #e3f2fd;
         }
 
+        .student-item-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+
         .student-item-name {
             font-size: 16px;
             font-weight: 600;
             color: #333;
+        }
+
+        .student-item-grade {
+            font-size: 12px;
+            background: #667eea;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .student-item-badge {
+            font-size: 11px;
+            background: #28a745;
+            color: white;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-weight: 600;
         }
 
         .student-item-check {
@@ -501,6 +618,38 @@ $domains = [
 
         .remove-student-btn:hover {
             background: #c82333;
+        }
+
+        .save-student-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+            display: none;
+        }
+
+        .save-student-btn:hover {
+            background: #218838;
+        }
+
+        .save-student-btn.visible {
+            display: inline-block;
+        }
+
+        .save-student-btn.saved {
+            background: #6c757d;
+            cursor: default;
+        }
+
+        .save-student-btn.saved:hover {
+            background: #6c757d;
+            transform: none;
         }
     </style>
 </head>
@@ -598,7 +747,10 @@ $domains = [
                 $studentId = $student['id'];
                 $existingData = $existingStudentRecords[$studentId] ?? null;
                 ?>
-                <div class="student-card">
+                <div class="student-card" data-student-id="<?php echo $studentId; ?>">
+                    <?php if ($activityId): ?>
+                    <button type="button" class="save-student-btn" data-student-id="<?php echo $studentId; ?>" onclick="saveStudent(<?php echo $studentId; ?>)">この生徒の修正を保存</button>
+                    <?php endif; ?>
                     <h3><?php echo htmlspecialchars($student['student_name'], ENT_QUOTES, 'UTF-8'); ?></h3>
 
                     <input type="hidden" name="students[<?php echo $studentId; ?>][id]" value="<?php echo $studentId; ?>">
@@ -681,7 +833,7 @@ $domains = [
             <!-- 送信ボタン -->
             <div class="form-actions">
                 <button type="submit" name="action" value="save" class="btn btn-primary">
-                    <?php echo $activityId ? '修正して保存' : '確定して保存'; ?>
+                    <?php echo $activityId ? '全体をこの内容で保存' : '確定して保存'; ?>
                 </button>
             </div>
         </form>
@@ -691,10 +843,53 @@ $domains = [
     <div class="modal" id="addStudentModal">
         <div class="modal-content">
             <h3 class="modal-header">参加生徒を追加</h3>
+
+            <!-- 検索フィルタ -->
+            <div class="search-filters">
+                <div class="filter-group">
+                    <label>学年で絞り込み:</label>
+                    <select id="gradeFilter" onchange="filterStudents()">
+                        <option value="">すべての学年</option>
+                        <option value="小1">小1</option>
+                        <option value="小2">小2</option>
+                        <option value="小3">小3</option>
+                        <option value="小4">小4</option>
+                        <option value="小5">小5</option>
+                        <option value="小6">小6</option>
+                        <option value="中1">中1</option>
+                        <option value="中2">中2</option>
+                        <option value="中3">中3</option>
+                        <option value="高1">高1</option>
+                        <option value="高2">高2</option>
+                        <option value="高3">高3</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>氏名で検索:</label>
+                    <input type="text" id="nameFilter" placeholder="氏名の一部を入力" oninput="filterStudents()">
+                </div>
+                <div class="filter-group">
+                    <button type="button" class="btn btn-scheduled" onclick="showScheduledOnly()">📅 本日参加予定の生徒から選択</button>
+                </div>
+            </div>
+
             <div class="student-list" id="availableStudentList">
                 <?php foreach ($availableStudents as $student): ?>
-                <div class="student-item" data-student-id="<?php echo $student['id']; ?>" data-student-name="<?php echo htmlspecialchars($student['student_name'], ENT_QUOTES, 'UTF-8'); ?>" onclick="toggleStudentSelection(this)">
-                    <div class="student-item-name"><?php echo htmlspecialchars($student['student_name'], ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="student-item"
+                     data-student-id="<?php echo $student['id']; ?>"
+                     data-student-name="<?php echo htmlspecialchars($student['student_name'], ENT_QUOTES, 'UTF-8'); ?>"
+                     data-student-grade="<?php echo htmlspecialchars($student['grade'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                     data-is-scheduled="<?php echo in_array($student['id'], $scheduledStudentIds) ? '1' : '0'; ?>"
+                     onclick="toggleStudentSelection(this)">
+                    <div class="student-item-info">
+                        <div class="student-item-name"><?php echo htmlspecialchars($student['student_name'], ENT_QUOTES, 'UTF-8'); ?></div>
+                        <?php if (!empty($student['grade'])): ?>
+                            <div class="student-item-grade"><?php echo htmlspecialchars($student['grade'], ENT_QUOTES, 'UTF-8'); ?></div>
+                        <?php endif; ?>
+                        <?php if (in_array($student['id'], $scheduledStudentIds)): ?>
+                            <div class="student-item-badge">本日予定</div>
+                        <?php endif; ?>
+                    </div>
                     <div class="student-item-check"></div>
                 </div>
                 <?php endforeach; ?>
@@ -721,12 +916,67 @@ $domains = [
             document.querySelectorAll('.student-item').forEach(item => {
                 item.classList.remove('selected');
             });
+            // フィルタをリセット
+            document.getElementById('gradeFilter').value = '';
+            document.getElementById('nameFilter').value = '';
+            filterStudents();
         }
 
         // モーダルを閉じる
         function closeAddStudentModal() {
             document.getElementById('addStudentModal').classList.remove('active');
             selectedStudentsForAdd.clear();
+        }
+
+        // 生徒リストをフィルタリング
+        function filterStudents() {
+            const gradeFilter = document.getElementById('gradeFilter').value;
+            const nameFilter = document.getElementById('nameFilter').value.toLowerCase();
+            const studentItems = document.querySelectorAll('#availableStudentList .student-item');
+
+            let visibleCount = 0;
+            studentItems.forEach(item => {
+                const studentName = item.dataset.studentName.toLowerCase();
+                const studentGrade = item.dataset.studentGrade || '';
+
+                const gradeMatch = !gradeFilter || studentGrade === gradeFilter;
+                const nameMatch = !nameFilter || studentName.includes(nameFilter);
+
+                if (gradeMatch && nameMatch) {
+                    item.style.display = '';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // 検索結果が0件の場合にメッセージを表示（オプション）
+            // console.log(`検索結果: ${visibleCount}名`);
+        }
+
+        // 本日参加予定の生徒のみ表示
+        function showScheduledOnly() {
+            const studentItems = document.querySelectorAll('#availableStudentList .student-item');
+
+            let scheduledCount = 0;
+            studentItems.forEach(item => {
+                const isScheduled = item.dataset.isScheduled === '1';
+
+                if (isScheduled) {
+                    item.style.display = '';
+                    scheduledCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // フィルタをリセット
+            document.getElementById('gradeFilter').value = '';
+            document.getElementById('nameFilter').value = '';
+
+            if (scheduledCount === 0) {
+                alert('本日参加予定の生徒はいません');
+            }
         }
 
         // 生徒選択をトグル
@@ -942,6 +1192,125 @@ $domains = [
             }
 
             return true;
+        });
+
+        // 各生徒カードの入力変更を監視
+        function initializeChangeDetection() {
+            const studentCards = document.querySelectorAll('.student-card');
+
+            studentCards.forEach(card => {
+                const studentId = card.dataset.studentId;
+                const saveBtn = card.querySelector('.save-student-btn');
+
+                if (!saveBtn) return; // 編集モード時のみ
+
+                // 入力フィールドを取得
+                const inputs = card.querySelectorAll('textarea, select');
+
+                inputs.forEach(input => {
+                    input.addEventListener('input', function() {
+                        // 変更があったらボタンを表示
+                        if (!saveBtn.classList.contains('saved')) {
+                            saveBtn.classList.add('visible');
+                        }
+                    });
+
+                    input.addEventListener('change', function() {
+                        // 変更があったらボタンを表示
+                        if (!saveBtn.classList.contains('saved')) {
+                            saveBtn.classList.add('visible');
+                        }
+                    });
+                });
+            });
+        }
+
+        // 個別生徒の保存処理
+        function saveStudent(studentId) {
+            const card = document.querySelector(`.student-card[data-student-id="${studentId}"]`);
+            const saveBtn = card.querySelector('.save-student-btn');
+
+            // ボタンを無効化
+            saveBtn.disabled = true;
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = '保存中...';
+
+            // フォームデータを収集
+            const dailyNote = card.querySelector(`textarea[name="students[${studentId}][daily_note]"]`).value;
+            const domain1 = card.querySelector(`select[name="students[${studentId}][domain1]"]`).value;
+            const domain1Content = card.querySelector(`textarea[name="students[${studentId}][domain1_content]"]`).value;
+            const domain2 = card.querySelector(`select[name="students[${studentId}][domain2]"]`).value;
+            const domain2Content = card.querySelector(`textarea[name="students[${studentId}][domain2_content]"]`).value;
+
+            // バリデーション
+            if (!domain1 || !domain1Content.trim()) {
+                alert('気になったこと1つ目の領域と内容を入力してください');
+                saveBtn.disabled = false;
+                saveBtn.textContent = originalText;
+                return;
+            }
+
+            if (!domain2 || !domain2Content.trim()) {
+                alert('気になったこと2つ目の領域と内容を入力してください');
+                saveBtn.disabled = false;
+                saveBtn.textContent = originalText;
+                return;
+            }
+
+            if (domain1 === domain2) {
+                alert('同じ領域を2回選択することはできません');
+                saveBtn.disabled = false;
+                saveBtn.textContent = originalText;
+                return;
+            }
+
+            // Ajaxリクエスト
+            const activityId = document.querySelector('input[name="activity_id"]').value;
+            const formData = new FormData();
+            formData.append('action', 'save_student');
+            formData.append('activity_id', activityId);
+            formData.append('student_id', studentId);
+            formData.append('daily_note', dailyNote);
+            formData.append('domain1', domain1);
+            formData.append('domain1_content', domain1Content);
+            formData.append('domain2', domain2);
+            formData.append('domain2_content', domain2Content);
+
+            fetch('renrakucho_save.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 成功時
+                    saveBtn.textContent = '修正が完了しました';
+                    saveBtn.classList.add('saved');
+                    saveBtn.disabled = true;
+
+                    // 3秒後にボタンを元に戻す（再編集可能にする）
+                    setTimeout(() => {
+                        saveBtn.classList.remove('saved', 'visible');
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = 'この生徒の修正を保存';
+                    }, 3000);
+                } else {
+                    alert('保存に失敗しました: ' + (data.error || '不明なエラー'));
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('保存中にエラーが発生しました');
+                saveBtn.disabled = false;
+                saveBtn.textContent = originalText;
+            });
+        }
+
+        // ページ読み込み時に変更検知を初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeChangeDetection();
         });
     </script>
 </body>
