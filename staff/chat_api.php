@@ -28,12 +28,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         try {
             // スタッフは全てのルームにアクセス可能
 
-            // メッセージを取得
+            // メッセージを取得（削除されていないもののみ）
             $stmt = $pdo->prepare("
                 SELECT
                     cm.id,
                     cm.message,
                     cm.sender_type,
+                    cm.sender_id,
                     cm.message_type,
                     cm.created_at,
                     cm.attachment_path,
@@ -42,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                     u.full_name as sender_name
                 FROM chat_messages cm
                 LEFT JOIN users u ON cm.sender_id = u.id
-                WHERE cm.room_id = ? AND cm.id > ?
+                WHERE cm.room_id = ? AND cm.id > ? AND (cm.is_deleted = 0 OR cm.is_deleted IS NULL)
                 ORDER BY cm.created_at ASC, cm.id ASC
                 LIMIT 50
             ");
@@ -248,6 +249,54 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'submission_id' => $submissionId,
                 'message' => '提出期限を設定しました'
             ]);
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'データベースエラー: ' . $e->getMessage()]);
+        }
+    }
+
+    // メッセージ削除
+    elseif ($action === 'delete_message') {
+        $messageId = $_POST['message_id'] ?? null;
+
+        if (!$messageId) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'メッセージIDが指定されていません']);
+            exit;
+        }
+
+        try {
+            // メッセージの送信者を確認（自分が送信したメッセージのみ削除可能）
+            $stmt = $pdo->prepare("
+                SELECT sender_id, sender_type
+                FROM chat_messages
+                WHERE id = ?
+            ");
+            $stmt->execute([$messageId]);
+            $message = $stmt->fetch();
+
+            if (!$message) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'error' => 'メッセージが見つかりません']);
+                exit;
+            }
+
+            // 自分が送信したメッセージかチェック
+            if ($message['sender_id'] != $userId || $message['sender_type'] != $userType) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'error' => '削除権限がありません']);
+                exit;
+            }
+
+            // メッセージを削除（is_deletedフラグを立てる）
+            $stmt = $pdo->prepare("
+                UPDATE chat_messages
+                SET is_deleted = 1
+                WHERE id = ?
+            ");
+            $stmt->execute([$messageId]);
+
+            echo json_encode(['success' => true, 'message' => 'メッセージを削除しました']);
         } catch (PDOException $e) {
             http_response_code(500);
             echo json_encode(['success' => false, 'error' => 'データベースエラー: ' . $e->getMessage()]);

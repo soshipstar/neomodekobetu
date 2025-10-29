@@ -54,7 +54,17 @@ $stmt->execute([$studentId]);
 $room = $stmt->fetch();
 $roomId = $room ? $room['id'] : null;
 
-// メッセージを取得（ルームが存在する場合のみ）
+// メッセージを既読にする（生徒からの未読メッセージ）
+if ($roomId) {
+    $stmt = $pdo->prepare("
+        UPDATE student_chat_messages
+        SET is_read = 1
+        WHERE room_id = ? AND sender_type = 'student' AND is_read = 0
+    ");
+    $stmt->execute([$roomId]);
+}
+
+// メッセージを取得（ルームが存在する場合のみ、削除されていないもののみ）
 $messages = [];
 if ($roomId) {
     $stmt = $pdo->prepare("
@@ -74,7 +84,7 @@ if ($roomId) {
         FROM student_chat_messages scm
         LEFT JOIN students s ON scm.sender_type = 'student' AND scm.sender_id = s.id
         LEFT JOIN users u ON scm.sender_type = 'staff' AND scm.sender_id = u.id
-        WHERE scm.room_id = ?
+        WHERE scm.room_id = ? AND (scm.is_deleted = 0 OR scm.is_deleted IS NULL)
         ORDER BY scm.created_at ASC
     ");
     $stmt->execute([$roomId]);
@@ -204,6 +214,28 @@ if ($roomId) {
             font-size: 11px;
             color: #999;
             margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .message.sent .message-time {
+            flex-direction: row-reverse;
+        }
+
+        .delete-message-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .delete-message-btn:hover {
+            background: #c82333;
         }
 
         .message-attachment {
@@ -343,7 +375,7 @@ if ($roomId) {
                 </div>
             <?php else: ?>
                 <?php foreach ($messages as $msg): ?>
-                    <div class="message <?php echo $msg['sender_type'] === 'staff' ? 'sent' : 'received'; ?>">
+                    <div class="message <?php echo $msg['sender_type'] === 'staff' ? 'sent' : 'received'; ?>" data-message-id="<?php echo $msg['id']; ?>">
                         <div class="message-avatar">
                             <?php echo $msg['sender_type'] === 'staff' ? '👨‍🏫' : '🎓'; ?>
                         </div>
@@ -364,7 +396,10 @@ if ($roomId) {
                                 <?php endif; ?>
                             </div>
                             <div class="message-time">
-                                <?php echo date('m/d H:i', strtotime($msg['created_at'])); ?>
+                                <span><?php echo date('m/d H:i', strtotime($msg['created_at'])); ?></span>
+                                <?php if ($msg['sender_type'] === 'staff' && $msg['sender_id'] == $currentUser['id']): ?>
+                                    <button class="delete-message-btn" onclick="deleteMessage(<?php echo $msg['id']; ?>)">取消</button>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -406,6 +441,10 @@ if ($roomId) {
     const fileInput = document.getElementById('fileInput');
     const attachmentPreview = document.getElementById('attachmentPreview');
     const fileName = document.getElementById('fileName');
+    const roomId = <?php echo $roomId ?? 0; ?>;
+
+    // 最後に取得したメッセージID
+    let lastMessageId = <?php echo !empty($messages) ? max(array_column($messages, 'id')) : 0; ?>;
 
     function scrollToBottom() {
         messagesArea.scrollTop = messagesArea.scrollHeight;
@@ -435,12 +474,106 @@ if ($roomId) {
         fileName.textContent = '';
     }
 
+    // メッセージをDOMに追加
+    function addMessageToDOM(msg) {
+        // 空のステート表示を削除
+        const emptyState = messagesArea.querySelector('.empty-state');
+        if (emptyState) {
+            emptyState.remove();
+        }
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message ' + (msg.sender_type === 'staff' ? 'sent' : 'received');
+        messageDiv.dataset.messageId = msg.id;
+
+        const avatarIcon = msg.sender_type === 'staff' ? '👨‍🏫' : '🎓';
+        const isOwnMessage = msg.sender_type === 'staff' && msg.sender_id === <?php echo $currentUser['id']; ?>;
+
+        let attachmentHTML = '';
+        if (msg.attachment_path) {
+            attachmentHTML = `
+                <div class="message-attachment">
+                    <a href="download_student_chat_attachment.php?id=${msg.id}" target="_blank">
+                        📎 ${escapeHtml(msg.attachment_original_name || 'ファイル')}
+                        (${(msg.attachment_size / 1024).toFixed(1)}KB)
+                    </a>
+                </div>
+            `;
+        }
+
+        const messageDate = new Date(msg.created_at);
+        const timeStr = String(messageDate.getMonth() + 1).padStart(2, '0') + '/' +
+                       String(messageDate.getDate()).padStart(2, '0') + ' ' +
+                       String(messageDate.getHours()).padStart(2, '0') + ':' +
+                       String(messageDate.getMinutes()).padStart(2, '0');
+
+        let deleteButtonHTML = '';
+        if (isOwnMessage) {
+            deleteButtonHTML = `<button class="delete-message-btn" onclick="deleteMessage(${msg.id})">取消</button>`;
+        }
+
+        messageDiv.innerHTML = `
+            <div class="message-avatar">${avatarIcon}</div>
+            <div class="message-content">
+                <div class="message-sender">${escapeHtml(msg.sender_name || '不明')}</div>
+                <div class="message-bubble">
+                    ${escapeHtml(msg.message || '').replace(/\n/g, '<br>')}
+                    ${attachmentHTML}
+                </div>
+                <div class="message-time">
+                    <span>${timeStr}</span>
+                    ${deleteButtonHTML}
+                </div>
+            </div>
+        `;
+
+        messagesArea.appendChild(messageDiv);
+        scrollToBottom();
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // 新着メッセージを取得
+    async function fetchNewMessages() {
+        if (!roomId) {
+            console.log('No roomId, skipping fetch');
+            return;
+        }
+
+        try {
+            console.log('Fetching new messages, roomId:', roomId, 'lastMessageId:', lastMessageId);
+            const response = await fetch(`get_student_chat_messages.php?room_id=${roomId}&last_message_id=${lastMessageId}`);
+            const result = await response.json();
+            console.log('Fetch result:', result);
+
+            if (result.success && result.messages.length > 0) {
+                console.log('Adding', result.messages.length, 'messages to DOM');
+                result.messages.forEach(msg => {
+                    console.log('Adding message:', msg);
+                    addMessageToDOM(msg);
+                    lastMessageId = Math.max(lastMessageId, msg.id);
+                });
+            } else {
+                console.log('No new messages');
+            }
+        } catch (error) {
+            console.error('Error fetching messages:', error);
+        }
+    }
+
     messageForm.addEventListener('submit', async function(e) {
         e.preventDefault();
 
         const formData = new FormData(this);
         sendBtn.disabled = true;
         sendBtn.textContent = '送信中...';
+
+        console.log('Sending message...');
 
         try {
             const response = await fetch('send_student_chat_message.php', {
@@ -449,12 +582,17 @@ if ($roomId) {
             });
 
             const result = await response.json();
+            console.log('Send result:', result);
 
             if (result.success) {
+                console.log('Message sent successfully, ID:', result.message_id);
                 messageInput.value = '';
                 clearAttachment();
-                location.reload();
+                // 新着メッセージを取得（送信したメッセージを含む）
+                console.log('Fetching new messages after send...');
+                await fetchNewMessages();
             } else {
+                console.error('Send failed:', result.error);
                 alert('送信に失敗しました: ' + (result.error || '不明なエラー'));
             }
         } catch (error) {
@@ -473,9 +611,42 @@ if ($roomId) {
         }
     });
 
-    setInterval(function() {
-        location.reload();
-    }, 5000);
+    // メッセージ削除
+    async function deleteMessage(messageId) {
+        if (!confirm('このメッセージを削除しますか？')) {
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('message_id', messageId);
+
+            const response = await fetch('delete_student_chat_message.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // メッセージをDOMから削除
+                const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+                if (messageDiv) {
+                    messageDiv.remove();
+                }
+            } else {
+                alert('削除に失敗しました: ' + (result.error || '不明なエラー'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('通信エラーが発生しました');
+        }
+    }
+
+    // 3秒ごとに新着メッセージをチェック
+    if (roomId) {
+        setInterval(fetchNewMessages, 3000);
+    }
     </script>
 </body>
 </html>

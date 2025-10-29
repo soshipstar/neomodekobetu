@@ -624,8 +624,12 @@ function getGradeBadgeColor($gradeLevel) {
                         <a href="student_weekly_plans.php">
                             <span class="menu-icon">📝</span>週間計画表
                         </a>
+                        <a href="student_submissions.php">
+                            <span class="menu-icon">📋</span>提出物一覧
+                        </a>
                     </div>
                 </div>
+
 
                 <!-- かけはし管理ドロップダウン -->
                 <div class="dropdown">
@@ -878,7 +882,7 @@ function getGradeBadgeColor($gradeLevel) {
                         <?php foreach ($students as $student): ?>
                             <?php
                             $age = $student['birth_date'] ? calculateAge($student['birth_date']) : '-';
-                            $calculatedGrade = $student['birth_date'] ? calculateGradeLevel($student['birth_date']) : $student['grade_level'];
+                            $calculatedGrade = $student['birth_date'] ? calculateGradeLevel($student['birth_date'], null, $student['grade_adjustment'] ?? 0) : $student['grade_level'];
                             ?>
                             <tr>
                                 <td><?php echo $student['id']; ?></td>

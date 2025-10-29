@@ -10,6 +10,7 @@ error_reporting(E_ALL);
 
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/student_helper.php';
 
 // スタッフまたは管理者のみアクセス可能
 requireUserType(['staff', 'admin']);
@@ -171,7 +172,9 @@ if (!$isHoliday) {
             SELECT
                 s.id,
                 s.student_name,
+                s.birth_date,
                 s.grade_level,
+                s.grade_adjustment,
                 u.full_name as guardian_name,
                 an.id as absence_id,
                 an.reason as absence_reason,
@@ -188,7 +191,9 @@ if (!$isHoliday) {
             SELECT
                 s.id,
                 s.student_name,
+                s.birth_date,
                 s.grade_level,
+                s.grade_adjustment,
                 u.full_name as guardian_name,
                 an.id as absence_id,
                 an.reason as absence_reason,
@@ -211,7 +216,10 @@ if (!$isHoliday) {
     ];
 
     foreach ($scheduledStudents as $student) {
-        $gradeLevel = $student['grade_level'] ?? 'elementary';
+        // 学年を再計算（学年調整を考慮）
+        $gradeLevel = $student['birth_date']
+            ? calculateGradeLevel($student['birth_date'], null, $student['grade_adjustment'] ?? 0)
+            : ($student['grade_level'] ?? 'elementary');
         if (isset($studentsByGrade[$gradeLevel])) {
             $studentsByGrade[$gradeLevel][] = $student;
         }
@@ -223,7 +231,9 @@ if (!$isHoliday) {
             SELECT
                 s.id,
                 s.student_name,
+                s.birth_date,
                 s.grade_level,
+                s.grade_adjustment,
                 u.full_name as guardian_name,
                 e.event_name,
                 er.notes,
@@ -241,7 +251,9 @@ if (!$isHoliday) {
             SELECT
                 s.id,
                 s.student_name,
+                s.birth_date,
                 s.grade_level,
+                s.grade_adjustment,
                 u.full_name as guardian_name,
                 e.event_name,
                 er.notes,
@@ -265,7 +277,10 @@ if (!$isHoliday) {
     ];
 
     foreach ($eventParticipants as $participant) {
-        $gradeLevel = $participant['grade_level'] ?? 'elementary';
+        // 学年を再計算（学年調整を考慮）
+        $gradeLevel = $participant['birth_date']
+            ? calculateGradeLevel($participant['birth_date'], null, $participant['grade_adjustment'] ?? 0)
+            : ($participant['grade_level'] ?? 'elementary');
         if (isset($eventsByGrade[$gradeLevel])) {
             $eventsByGrade[$gradeLevel][] = $participant;
         }
@@ -1600,6 +1615,9 @@ if ($classroomId) {
                         </a>
                         <a href="student_weekly_plans.php">
                             <span class="menu-icon">📝</span>週間計画表
+                        </a>
+                        <a href="student_submissions.php">
+                            <span class="menu-icon">📋</span>提出物一覧
                         </a>
                     </div>
                 </div>

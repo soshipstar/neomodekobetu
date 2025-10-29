@@ -152,27 +152,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             transform: translateY(0);
         }
 
-        .test-accounts {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
-        }
-
-        .test-accounts h3 {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 10px;
-        }
-
-        .test-accounts ul {
-            list-style: none;
-            font-size: 12px;
-            color: #999;
-        }
-
-        .test-accounts ul li {
-            margin-bottom: 5px;
-        }
     </style>
 </head>
 <body>
@@ -211,15 +190,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <button type="submit" class="login-button">ログイン</button>
         </form>
-
-        <div class="test-accounts">
-            <h3>テストアカウント</h3>
-            <ul>
-                <li>管理者: admin / admin123</li>
-                <li>スタッフ: staff01 / staff123</li>
-                <li>保護者: guardian01 / guardian123</li>
-            </ul>
-        </div>
 
         <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
             <a href="/student/login.php" style="color: #667eea; text-decoration: none; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 5px;">

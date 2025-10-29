@@ -31,7 +31,11 @@
       "Bash(cmd.exe /c \"php -l C:\\Users\\TANI\\app\\kobetu\\staff\\kakehashi_guardian_save.php\")",
       "Bash(cmd.exe /c \"php -l C:\\Users\\TANI\\app\\kobetu\\staff\\delete_activity.php\")",
       "Bash(cmd.exe /c \"php C:\\Users\\TANI\\app\\kobetu\\fix_master_admin_classroom.php\")",
-      "Bash(cmd.exe /c:*)"
+      "Bash(cmd.exe /c \"php run_migration_v39.php\")",
+      "Bash(cmd.exe /c \"php run_migration_v40.php\")",
+      "Bash(cmd.exe /c \"php run_migration_v41.php\")",
+      "Bash(cmd.exe /c:*)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []

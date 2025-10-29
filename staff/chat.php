@@ -365,10 +365,28 @@ if ($selectedRoomId) {
             font-size: 11px;
             color: #999;
             margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .message.sent .message-info {
-            text-align: right;
+            flex-direction: row-reverse;
+        }
+
+        .delete-message-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .delete-message-btn:hover {
+            background: #c82333;
         }
 
         .sender-name {
@@ -1345,6 +1363,7 @@ if ($selectedRoomId) {
 
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isOwn ? 'sent' : 'received'}`;
+            messageDiv.dataset.messageId = msg.id;
 
             let html = '<div>';
             if (!isOwn) {
@@ -1375,7 +1394,13 @@ if ($selectedRoomId) {
                 html += `</a>`;
             }
             html += `</div>`;
-            html += `<div class="message-info">${formatDateTime(msg.created_at)}</div>`;
+            html += `<div class="message-info">`;
+            html += `<span>${formatDateTime(msg.created_at)}</span>`;
+            // 自分が送信したメッセージには削除ボタンを表示
+            if (isOwn) {
+                html += `<button class="delete-message-btn" onclick="deleteMessage(${msg.id})">取消</button>`;
+            }
+            html += `</div>`;
             html += '</div>';
 
             messageDiv.innerHTML = html;
@@ -1473,6 +1498,39 @@ if ($selectedRoomId) {
                 return time;
             } else {
                 return date.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) + ' ' + time;
+            }
+        }
+
+        // メッセージ削除
+        async function deleteMessage(messageId) {
+            if (!confirm('このメッセージを削除しますか？')) {
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('action', 'delete_message');
+                formData.append('message_id', messageId);
+
+                const response = await fetch('chat_api.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // メッセージをDOMから削除
+                    const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+                    if (messageDiv) {
+                        messageDiv.remove();
+                    }
+                } else {
+                    alert('削除に失敗しました: ' + (result.error || result.message || '不明なエラー'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('通信エラーが発生しました');
             }
         }
 

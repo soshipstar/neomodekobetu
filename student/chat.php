@@ -378,6 +378,9 @@ $messages = $stmt->fetchAll();
     const attachmentPreview = document.getElementById('attachmentPreview');
     const fileName = document.getElementById('fileName');
 
+    // 最後に取得したメッセージID
+    let lastMessageId = <?php echo !empty($messages) ? max(array_column($messages, 'id')) : 0; ?>;
+
     // メッセージエリアを最下部にスクロール
     function scrollToBottom() {
         messagesArea.scrollTop = messagesArea.scrollHeight;
@@ -408,6 +411,83 @@ $messages = $stmt->fetchAll();
         fileName.textContent = '';
     }
 
+    // メッセージをDOMに追加
+    function addMessageToDOM(msg) {
+        // 空のステート表示を削除
+        const emptyState = messagesArea.querySelector('.empty-state');
+        if (emptyState) {
+            emptyState.remove();
+        }
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message ' + (msg.sender_type === 'student' ? 'sent' : 'received');
+
+        const avatarIcon = msg.sender_type === 'student' ? '👤' : '👨‍🏫';
+
+        let attachmentHTML = '';
+        if (msg.attachment_path) {
+            attachmentHTML = `
+                <div class="message-attachment">
+                    <a href="download_attachment.php?id=${msg.id}" target="_blank">
+                        📎 ${escapeHtml(msg.attachment_original_name || 'ファイル')}
+                        (${(msg.attachment_size / 1024).toFixed(1)}KB)
+                    </a>
+                </div>
+            `;
+        }
+
+        const messageDate = new Date(msg.created_at);
+        const timeStr = String(messageDate.getMonth() + 1).padStart(2, '0') + '/' +
+                       String(messageDate.getDate()).padStart(2, '0') + ' ' +
+                       String(messageDate.getHours()).padStart(2, '0') + ':' +
+                       String(messageDate.getMinutes()).padStart(2, '0');
+
+        messageDiv.innerHTML = `
+            <div class="message-avatar">${avatarIcon}</div>
+            <div class="message-content">
+                <div class="message-sender">${escapeHtml(msg.sender_name || '不明')}</div>
+                <div class="message-bubble">
+                    ${escapeHtml(msg.message || '').replace(/\n/g, '<br>')}
+                    ${attachmentHTML}
+                </div>
+                <div class="message-time">${timeStr}</div>
+            </div>
+        `;
+
+        messagesArea.appendChild(messageDiv);
+        scrollToBottom();
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // 新着メッセージを取得
+    async function fetchNewMessages() {
+        try {
+            console.log('Fetching new messages, lastMessageId:', lastMessageId);
+            const response = await fetch(`get_messages.php?last_message_id=${lastMessageId}`);
+            const result = await response.json();
+            console.log('Fetch result:', result);
+
+            if (result.success && result.messages.length > 0) {
+                console.log('Adding', result.messages.length, 'messages to DOM');
+                result.messages.forEach(msg => {
+                    console.log('Adding message:', msg);
+                    addMessageToDOM(msg);
+                    lastMessageId = Math.max(lastMessageId, msg.id);
+                });
+            } else {
+                console.log('No new messages');
+            }
+        } catch (error) {
+            console.error('Error fetching messages:', error);
+        }
+    }
+
     // メッセージ送信
     messageForm.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -416,6 +496,8 @@ $messages = $stmt->fetchAll();
         sendBtn.disabled = true;
         sendBtn.textContent = '送信中...';
 
+        console.log('Sending message...');
+
         try {
             const response = await fetch('send_message.php', {
                 method: 'POST',
@@ -423,12 +505,17 @@ $messages = $stmt->fetchAll();
             });
 
             const result = await response.json();
+            console.log('Send result:', result);
 
             if (result.success) {
+                console.log('Message sent successfully, ID:', result.message_id);
                 messageInput.value = '';
                 clearAttachment();
-                location.reload(); // メッセージ一覧を再読み込み
+                // 新着メッセージを取得（送信したメッセージを含む）
+                console.log('Fetching new messages after send...');
+                await fetchNewMessages();
             } else {
+                console.error('Send failed:', result.error);
                 alert('送信に失敗しました: ' + (result.error || '不明なエラー'));
             }
         } catch (error) {
@@ -448,10 +535,8 @@ $messages = $stmt->fetchAll();
         }
     });
 
-    // 5秒ごとに新着メッセージをチェック
-    setInterval(function() {
-        location.reload();
-    }, 5000);
+    // 3秒ごとに新着メッセージをチェック
+    setInterval(fetchNewMessages, 3000);
     </script>
 </body>
 </html>

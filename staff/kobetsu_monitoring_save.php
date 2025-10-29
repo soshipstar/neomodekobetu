@@ -24,6 +24,10 @@ $studentId = $_POST['student_id'] ?? null;
 $monitoringId = $_POST['monitoring_id'] ?? null;
 $monitoringDate = $_POST['monitoring_date'] ?? null;
 $overallComment = $_POST['overall_comment'] ?? '';
+$shortTermGoalAchievement = $_POST['short_term_goal_achievement'] ?? '';
+$shortTermGoalComment = $_POST['short_term_goal_comment'] ?? '';
+$longTermGoalAchievement = $_POST['long_term_goal_achievement'] ?? '';
+$longTermGoalComment = $_POST['long_term_goal_comment'] ?? '';
 $details = $_POST['details'] ?? [];
 $isDraft = isset($_POST['save_draft']) ? 1 : 0; // 下書き保存ボタンが押された場合は1
 
@@ -68,6 +72,10 @@ try {
             UPDATE monitoring_records SET
                 monitoring_date = ?,
                 overall_comment = ?,
+                short_term_goal_achievement = ?,
+                short_term_goal_comment = ?,
+                long_term_goal_achievement = ?,
+                long_term_goal_comment = ?,
                 is_draft = ?,
                 updated_at = NOW()
             WHERE id = ?
@@ -75,6 +83,10 @@ try {
         $stmt->execute([
             $monitoringDate,
             $overallComment,
+            $shortTermGoalAchievement,
+            $shortTermGoalComment,
+            $longTermGoalAchievement,
+            $longTermGoalComment,
             $isDraft,
             $monitoringId
         ]);
@@ -91,9 +103,13 @@ try {
                 student_name,
                 monitoring_date,
                 overall_comment,
+                short_term_goal_achievement,
+                short_term_goal_comment,
+                long_term_goal_achievement,
+                long_term_goal_comment,
                 is_draft,
                 created_by
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         $stmt->execute([
             $planId,
@@ -101,6 +117,10 @@ try {
             $plan['student_name'],
             $monitoringDate,
             $overallComment,
+            $shortTermGoalAchievement,
+            $shortTermGoalComment,
+            $longTermGoalAchievement,
+            $longTermGoalComment,
             $isDraft,
             $staffId
         ]);

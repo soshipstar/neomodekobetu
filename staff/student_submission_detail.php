@@ -1,19 +1,49 @@
 <?php
 /**
- * 生徒用提出物管理画面
- * - 週間計画表の提出物
- * - 保護者チャット経由の提出物
- * - 生徒自身が登録した提出物
+ * スタッフ用 - 生徒の提出物詳細
  */
 
-require_once __DIR__ . '/../includes/student_auth.php';
+require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../config/database.php';
 
-requireStudentLogin();
+requireUserType(['staff', 'admin']);
 
 $pdo = getDbConnection();
-$student = getCurrentStudent();
-$studentId = $student['id'];
+$currentUser = getCurrentUser();
+$classroomId = $_SESSION['classroom_id'] ?? null;
+
+$studentId = $_GET['student_id'] ?? null;
+
+if (!$studentId) {
+    header('Location: student_submissions.php');
+    exit;
+}
+
+// 生徒情報を取得（アクセス権限チェック含む）
+if ($classroomId) {
+    $stmt = $pdo->prepare("
+        SELECT s.id, s.student_name, g.full_name as guardian_name
+        FROM students s
+        INNER JOIN users g ON s.guardian_id = g.id
+        WHERE s.id = ? AND g.classroom_id = ?
+    ");
+    $stmt->execute([$studentId, $classroomId]);
+} else {
+    $stmt = $pdo->prepare("
+        SELECT s.id, s.student_name, g.full_name as guardian_name
+        FROM students s
+        INNER JOIN users g ON s.guardian_id = g.id
+        WHERE s.id = ?
+    ");
+    $stmt->execute([$studentId]);
+}
+
+$student = $stmt->fetch();
+
+if (!$student) {
+    header('Location: student_submissions.php');
+    exit;
+}
 
 // すべての提出物を統合
 $allSubmissions = [];
@@ -27,7 +57,8 @@ $stmt = $pdo->prepare("
         wps.due_date,
         wps.is_completed,
         wps.completed_at,
-        'weekly_plan' as source
+        'weekly_plan' as source,
+        wp.week_start_date
     FROM weekly_plan_submissions wps
     INNER JOIN weekly_plans wp ON wps.weekly_plan_id = wp.id
     WHERE wp.student_id = ?
@@ -92,7 +123,7 @@ $completed = array_filter($allSubmissions, function($s) { return $s['is_complete
 $sourceLabels = [
     'weekly_plan' => '週間計画表',
     'guardian_chat' => '保護者チャット',
-    'student' => '自分で登録'
+    'student' => '生徒が登録'
 ];
 ?>
 <!DOCTYPE html>
@@ -100,7 +131,7 @@ $sourceLabels = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>提出物管理 - 個別支援連絡帳システム</title>
+    <title><?php echo htmlspecialchars($student['student_name'], ENT_QUOTES, 'UTF-8'); ?>の提出物 - 個別支援連絡帳システム</title>
     <style>
         * {
             margin: 0;
@@ -120,22 +151,27 @@ $sourceLabels = [
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: white;
             padding: 20px 30px;
             border-radius: 10px;
             margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 10px;
         }
 
         .header h1 {
             font-size: 24px;
+            color: #333;
         }
 
         .back-btn {
-            background: rgba(255, 255, 255, 0.2);
+            background: #6c757d;
             color: white;
             padding: 8px 16px;
             border-radius: 5px;
@@ -144,23 +180,12 @@ $sourceLabels = [
         }
 
         .back-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
+            background: #5a6268;
         }
 
-        .add-btn {
-            background: #28a745;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
+        .student-info {
             font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-bottom: 20px;
-        }
-
-        .add-btn:hover {
-            background: #218838;
+            color: #666;
         }
 
         .section {
@@ -185,7 +210,6 @@ $sourceLabels = [
             padding: 20px;
             margin-bottom: 15px;
             border-left: 4px solid #667eea;
-            position: relative;
         }
 
         .submission-card.urgent {
@@ -269,56 +293,16 @@ $sourceLabels = [
             margin-bottom: 10px;
         }
 
-        .submission-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 5px;
+        .submission-link {
             font-size: 13px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.2s;
+            color: #667eea;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 10px;
         }
 
-        .btn-complete {
-            background: #28a745;
-            color: white;
-        }
-
-        .btn-complete:hover {
-            background: #218838;
-        }
-
-        .btn-uncomplete {
-            background: #ffc107;
-            color: #333;
-        }
-
-        .btn-uncomplete:hover {
-            background: #e0a800;
-        }
-
-        .btn-delete {
-            background: #dc3545;
-            color: white;
-        }
-
-        .btn-delete:hover {
-            background: #c82333;
-        }
-
-        .btn-edit {
-            background: #007bff;
-            color: white;
-        }
-
-        .btn-edit:hover {
-            background: #0056b3;
+        .submission-link:hover {
+            text-decoration: underline;
         }
 
         .empty-state {
@@ -334,7 +318,7 @@ $sourceLabels = [
 
         .summary {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 15px;
             margin-bottom: 20px;
         }
@@ -363,91 +347,12 @@ $sourceLabels = [
             color: #e74c3c;
         }
 
+        .summary-card.overdue .summary-number {
+            color: #95a5a6;
+        }
+
         .summary-card.completed .summary-number {
             color: #28a745;
-        }
-
-        /* モーダル */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            max-width: 500px;
-            width: 90%;
-        }
-
-        .modal-header {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: #333;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-            color: #333;
-        }
-
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-
-        .form-group textarea {
-            min-height: 80px;
-            resize: vertical;
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            margin-top: 20px;
-        }
-
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #5a6268;
-        }
-
-        .btn-primary {
-            background: #667eea;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #5568d3;
         }
 
         @media (max-width: 768px) {
@@ -459,50 +364,54 @@ $sourceLabels = [
                 margin-left: 0;
                 margin-top: 10px;
             }
-
-            .submission-actions {
-                flex-direction: column;
-            }
-
-            .submission-actions .btn {
-                width: 100%;
-            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>📤 提出物管理</h1>
-            <a href="dashboard.php" class="back-btn">← マイページ</a>
+            <div class="header-top">
+                <h1>📋 <?php echo htmlspecialchars($student['student_name'], ENT_QUOTES, 'UTF-8'); ?>さんの提出物</h1>
+                <a href="student_submissions.php" class="back-btn">← 一覧に戻る</a>
+            </div>
+            <div class="student-info">
+                保護者: <?php echo htmlspecialchars($student['guardian_name'], ENT_QUOTES, 'UTF-8'); ?>
+            </div>
         </div>
-
-        <button class="add-btn" onclick="openAddModal()">➕ 提出物を追加</button>
 
         <?php
         $today = date('Y-m-d');
         $urgentCount = 0;
+        $overdueCount = 0;
         $pendingCount = count($pending);
         $completedCount = count($completed);
 
         foreach ($pending as $sub) {
             $daysLeft = (strtotime($sub['due_date']) - strtotime($today)) / 86400;
-            if ($daysLeft <= 3) $urgentCount++;
+            if ($daysLeft < 0) {
+                $overdueCount++;
+            } elseif ($daysLeft <= 3) {
+                $urgentCount++;
+            }
         }
         ?>
 
         <div class="summary">
+            <div class="summary-card overdue">
+                <div class="summary-number"><?php echo $overdueCount; ?></div>
+                <div class="summary-label">期限切れ</div>
+            </div>
             <div class="summary-card urgent">
                 <div class="summary-number"><?php echo $urgentCount; ?></div>
-                <div class="summary-label">⚠️ 期限間近</div>
+                <div class="summary-label">期限間近</div>
             </div>
             <div class="summary-card">
                 <div class="summary-number"><?php echo $pendingCount; ?></div>
-                <div class="summary-label">📝 未提出</div>
+                <div class="summary-label">未提出</div>
             </div>
             <div class="summary-card completed">
                 <div class="summary-number"><?php echo $completedCount; ?></div>
-                <div class="summary-label">✅ 提出済み</div>
+                <div class="summary-label">提出済み</div>
             </div>
         </div>
 
@@ -567,19 +476,15 @@ $sourceLabels = [
                             </div>
                         <?php endif; ?>
 
-                        <div class="submission-actions">
-                            <button class="btn btn-complete" onclick="completeSubmission('<?php echo $sub['source']; ?>', <?php echo $sub['id']; ?>)">
-                                ✅ 完了にする
-                            </button>
-                            <?php if ($sub['source'] === 'student'): ?>
-                                <button class="btn btn-edit" onclick="editSubmission(<?php echo $sub['id']; ?>, '<?php echo htmlspecialchars($sub['title'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($sub['description'] ?? '', ENT_QUOTES, 'UTF-8'); ?>', '<?php echo $sub['due_date']; ?>')">
-                                    ✏️ 編集
-                                </button>
-                                <button class="btn btn-delete" onclick="deleteSubmission(<?php echo $sub['id']; ?>)">
-                                    🗑️ 削除
-                                </button>
-                            <?php endif; ?>
-                        </div>
+                        <?php if ($sub['source'] === 'weekly_plan'): ?>
+                            <a href="student_weekly_plan_detail.php?student_id=<?php echo $studentId; ?>&date=<?php echo $sub['week_start_date']; ?>" class="submission-link">
+                                → 週間計画表で確認
+                            </a>
+                        <?php elseif ($sub['source'] === 'guardian_chat'): ?>
+                            <a href="chat.php?room_id=<?php echo $sub['room_id'] ?? ''; ?>" class="submission-link">
+                                → チャットで確認
+                            </a>
+                        <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>
@@ -613,179 +518,19 @@ $sourceLabels = [
                             </div>
                         <?php endif; ?>
 
-                        <div class="submission-actions">
-                            <button class="btn btn-uncomplete" onclick="uncompleteSubmission('<?php echo $sub['source']; ?>', <?php echo $sub['id']; ?>)">
-                                ↩️ 未完了に戻す
-                            </button>
-                            <?php if ($sub['source'] === 'student'): ?>
-                                <button class="btn btn-delete" onclick="deleteSubmission(<?php echo $sub['id']; ?>)">
-                                    🗑️ 削除
-                                </button>
-                            <?php endif; ?>
-                        </div>
+                        <?php if ($sub['source'] === 'weekly_plan'): ?>
+                            <a href="student_weekly_plan_detail.php?student_id=<?php echo $studentId; ?>&date=<?php echo $sub['week_start_date']; ?>" class="submission-link">
+                                → 週間計画表で確認
+                            </a>
+                        <?php elseif ($sub['source'] === 'guardian_chat'): ?>
+                            <a href="chat.php?room_id=<?php echo $sub['room_id'] ?? ''; ?>" class="submission-link">
+                                → チャットで確認
+                            </a>
+                        <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
     </div>
-
-    <!-- 追加/編集モーダル -->
-    <div id="submissionModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header" id="modalTitle">提出物を追加</div>
-            <form id="submissionForm">
-                <input type="hidden" id="submissionId" name="id">
-                <div class="form-group">
-                    <label for="title">提出物名 *</label>
-                    <input type="text" id="title" name="title" required>
-                </div>
-                <div class="form-group">
-                    <label for="description">詳細説明</label>
-                    <textarea id="description" name="description"></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="due_date">提出期限 *</label>
-                    <input type="date" id="due_date" name="due_date" required>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()">キャンセル</button>
-                    <button type="submit" class="btn btn-primary">保存</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <script>
-        function openAddModal() {
-            document.getElementById('modalTitle').textContent = '提出物を追加';
-            document.getElementById('submissionForm').reset();
-            document.getElementById('submissionId').value = '';
-            document.getElementById('submissionModal').classList.add('active');
-        }
-
-        function editSubmission(id, title, description, dueDate) {
-            document.getElementById('modalTitle').textContent = '提出物を編集';
-            document.getElementById('submissionId').value = id;
-            document.getElementById('title').value = title;
-            document.getElementById('description').value = description;
-            document.getElementById('due_date').value = dueDate;
-            document.getElementById('submissionModal').classList.add('active');
-        }
-
-        function closeModal() {
-            document.getElementById('submissionModal').classList.remove('active');
-        }
-
-        document.getElementById('submissionForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            const formData = new FormData(this);
-
-            try {
-                const response = await fetch('submissions_api.php', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    location.reload();
-                } else {
-                    alert('エラー: ' + (result.error || '保存に失敗しました'));
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('通信エラーが発生しました');
-            }
-        });
-
-        async function completeSubmission(source, id) {
-            if (!confirm('この提出物を完了にしますか？')) return;
-
-            const formData = new FormData();
-            formData.append('action', 'complete');
-            formData.append('source', source);
-            formData.append('id', id);
-
-            try {
-                const response = await fetch('submissions_api.php', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    location.reload();
-                } else {
-                    alert('エラー: ' + (result.error || '完了に失敗しました'));
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('通信エラーが発生しました');
-            }
-        }
-
-        async function uncompleteSubmission(source, id) {
-            if (!confirm('この提出物を未完了に戻しますか？')) return;
-
-            const formData = new FormData();
-            formData.append('action', 'uncomplete');
-            formData.append('source', source);
-            formData.append('id', id);
-
-            try {
-                const response = await fetch('submissions_api.php', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    location.reload();
-                } else {
-                    alert('エラー: ' + (result.error || '更新に失敗しました'));
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('通信エラーが発生しました');
-            }
-        }
-
-        async function deleteSubmission(id) {
-            if (!confirm('この提出物を削除しますか？')) return;
-
-            const formData = new FormData();
-            formData.append('action', 'delete');
-            formData.append('id', id);
-
-            try {
-                const response = await fetch('submissions_api.php', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    location.reload();
-                } else {
-                    alert('エラー: ' + (result.error || '削除に失敗しました'));
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('通信エラーが発生しました');
-            }
-        }
-
-        // モーダル外クリックで閉じる
-        document.getElementById('submissionModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeModal();
-            }
-        });
-    </script>
 </body>
 </html>

@@ -621,6 +621,71 @@ if ($selectedPlanId) {
                         </table>
                     </div>
 
+                    <!-- 短期目標・長期目標の振り返り -->
+                    <div class="section-title" style="margin-top: 30px;">目標の達成状況</div>
+
+                    <!-- 長期目標 -->
+                    <div style="margin-bottom: 25px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
+                        <h4 style="color: #667eea; margin-bottom: 12px; font-size: 16px;">🎯 長期目標</h4>
+                        <?php if (!empty($planData['long_term_goal_text'])): ?>
+                            <div style="padding: 12px; background: white; border-radius: 6px; margin-bottom: 15px; line-height: 1.6;">
+                                <?= nl2br(htmlspecialchars($planData['long_term_goal_text'])) ?>
+                            </div>
+                        <?php else: ?>
+                            <div style="padding: 12px; background: white; border-radius: 6px; margin-bottom: 15px; color: #999; font-style: italic;">
+                                長期目標が設定されていません
+                            </div>
+                        <?php endif; ?>
+
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">達成状況</label>
+                            <select name="long_term_goal_achievement" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                                <option value="">-- 選択してください --</option>
+                                <option value="未着手" <?= ($monitoringData['long_term_goal_achievement'] ?? '') == '未着手' ? 'selected' : '' ?>>未着手</option>
+                                <option value="進行中" <?= ($monitoringData['long_term_goal_achievement'] ?? '') == '進行中' ? 'selected' : '' ?>>進行中</option>
+                                <option value="達成" <?= ($monitoringData['long_term_goal_achievement'] ?? '') == '達成' ? 'selected' : '' ?>>達成</option>
+                                <option value="継続中" <?= ($monitoringData['long_term_goal_achievement'] ?? '') == '継続中' ? 'selected' : '' ?>>継続中</option>
+                                <option value="見直し必要" <?= ($monitoringData['long_term_goal_achievement'] ?? '') == '見直し必要' ? 'selected' : '' ?>>見直し必要</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">コメント</label>
+                            <textarea name="long_term_goal_comment" rows="4" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; font-family: inherit; resize: vertical;" placeholder="長期目標に対する振り返りや所見を記入してください"><?= htmlspecialchars($monitoringData['long_term_goal_comment'] ?? '') ?></textarea>
+                        </div>
+                    </div>
+
+                    <!-- 短期目標 -->
+                    <div style="margin-bottom: 25px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #28a745;">
+                        <h4 style="color: #28a745; margin-bottom: 12px; font-size: 16px;">📌 短期目標</h4>
+                        <?php if (!empty($planData['short_term_goal_text'])): ?>
+                            <div style="padding: 12px; background: white; border-radius: 6px; margin-bottom: 15px; line-height: 1.6;">
+                                <?= nl2br(htmlspecialchars($planData['short_term_goal_text'])) ?>
+                            </div>
+                        <?php else: ?>
+                            <div style="padding: 12px; background: white; border-radius: 6px; margin-bottom: 15px; color: #999; font-style: italic;">
+                                短期目標が設定されていません
+                            </div>
+                        <?php endif; ?>
+
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">達成状況</label>
+                            <select name="short_term_goal_achievement" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                                <option value="">-- 選択してください --</option>
+                                <option value="未着手" <?= ($monitoringData['short_term_goal_achievement'] ?? '') == '未着手' ? 'selected' : '' ?>>未着手</option>
+                                <option value="進行中" <?= ($monitoringData['short_term_goal_achievement'] ?? '') == '進行中' ? 'selected' : '' ?>>進行中</option>
+                                <option value="達成" <?= ($monitoringData['short_term_goal_achievement'] ?? '') == '達成' ? 'selected' : '' ?>>達成</option>
+                                <option value="継続中" <?= ($monitoringData['short_term_goal_achievement'] ?? '') == '継続中' ? 'selected' : '' ?>>継続中</option>
+                                <option value="見直し必要" <?= ($monitoringData['short_term_goal_achievement'] ?? '') == '見直し必要' ? 'selected' : '' ?>>見直し必要</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">コメント</label>
+                            <textarea name="short_term_goal_comment" rows="4" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; font-family: inherit; resize: vertical;" placeholder="短期目標に対する振り返りや所見を記入してください"><?= htmlspecialchars($monitoringData['short_term_goal_comment'] ?? '') ?></textarea>
+                        </div>
+                    </div>
+
                     <!-- 総合所見 -->
                     <div class="section-title">総合所見</div>
                     <div class="form-group">

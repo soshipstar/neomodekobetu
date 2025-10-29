@@ -756,7 +756,9 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
             <div class="message success">
                 <?php if ($_GET['success'] == '1'): ?>
                     週間計画表を保存しました
-                <?php else: ?>
+                <?php elseif ($_GET['success'] == '2'): ?>
+                    達成度評価を保存しました
+                <?php elseif ($_GET['success'] == '3'): ?>
                     コメントを投稿しました
                 <?php endif; ?>
             </div>
@@ -866,8 +868,8 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
                             <?php if (!empty($submissions)): ?>
                                 <?php foreach ($submissions as $index => $sub): ?>
                                     <div class="submission-item">
-                                        <input type="text" name="submissions[<?php echo $index; ?>][item]" value="<?php echo htmlspecialchars($sub['submission_item'], ENT_QUOTES, 'UTF-8'); ?>" placeholder="提出物名" required>
-                                        <input type="date" name="submissions[<?php echo $index; ?>][due_date]" value="<?php echo $sub['due_date']; ?>" required>
+                                        <input type="text" name="submissions[<?php echo $index; ?>][item]" value="<?php echo htmlspecialchars($sub['submission_item'], ENT_QUOTES, 'UTF-8'); ?>" placeholder="提出物名">
+                                        <input type="date" name="submissions[<?php echo $index; ?>][due_date]" value="<?php echo $sub['due_date']; ?>">
                                         <div class="completed-check">
                                             <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
                                                 <input type="checkbox" name="submissions[<?php echo $index; ?>][completed]" value="1" <?php echo $sub['is_completed'] ? 'checked' : ''; ?>>
@@ -878,6 +880,19 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
                                         <input type="hidden" name="submissions[<?php echo $index; ?>][id]" value="<?php echo $sub['id']; ?>">
                                     </div>
                                 <?php endforeach; ?>
+                            <?php else: ?>
+                                <!-- 初期状態で1つの空の提出物欄を表示（提出物はオプション） -->
+                                <div class="submission-item">
+                                    <input type="text" name="submissions[0][item]" placeholder="提出物名（任意）">
+                                    <input type="date" name="submissions[0][due_date]">
+                                    <div class="completed-check">
+                                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                            <input type="checkbox" name="submissions[0][completed]" value="1">
+                                            <span style="font-size: 13px;">完了</span>
+                                        </label>
+                                    </div>
+                                    <button type="button" class="remove-btn" onclick="removeSubmission(this)">×</button>
+                                </div>
                             <?php endif; ?>
                         </div>
                         <button type="button" class="add-submission-btn" onclick="addSubmission()">+ 提出物を追加</button>
@@ -1210,7 +1225,7 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
                     <form method="POST" action="add_staff_plan_comment.php">
                         <input type="hidden" name="weekly_plan_id" value="<?php echo $weeklyPlan['id']; ?>">
                         <input type="hidden" name="student_id" value="<?php echo $studentId; ?>">
-                        <input type="hidden" name="date" value="<?php echo $targetDate; ?>">
+                        <input type="hidden" name="week_start_date" value="<?php echo $weekStartDate; ?>">
                         <textarea name="comment" placeholder="コメントを入力..." required></textarea>
                         <button type="submit">コメントを投稿</button>
                     </form>
@@ -1363,15 +1378,15 @@ $nextWeek = date('Y-m-d', strtotime('+7 days', strtotime($weekStartDate)));
     <?php endif; ?>
 
     <script>
-        let submissionCounter = <?php echo !empty($submissions) ? count($submissions) : 0; ?>;
+        let submissionCounter = <?php echo !empty($submissions) ? count($submissions) : 1; ?>;
 
         function addSubmission() {
             const container = document.getElementById('submissionsContainer');
             const newItem = document.createElement('div');
             newItem.className = 'submission-item';
             newItem.innerHTML = `
-                <input type="text" name="submissions[${submissionCounter}][item]" placeholder="提出物名" required>
-                <input type="date" name="submissions[${submissionCounter}][due_date]" required>
+                <input type="text" name="submissions[${submissionCounter}][item]" placeholder="提出物名">
+                <input type="date" name="submissions[${submissionCounter}][due_date]">
                 <div class="completed-check">
                     <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
                         <input type="checkbox" name="submissions[${submissionCounter}][completed]" value="1">

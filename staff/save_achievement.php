@@ -52,7 +52,7 @@ try {
             $stmt = $pdo->prepare("
                 SELECT COUNT(*) as count
                 FROM students s
-                INNER JOIN guardians g ON s.guardian_id = g.id
+                INNER JOIN users g ON s.guardian_id = g.id
                 WHERE s.id = ? AND g.classroom_id = ?
             ");
             $stmt->execute([$studentId, $classroomId]);
@@ -83,11 +83,18 @@ try {
 
     // 各曜日の達成度データをJSON形式で収集
     $dailyAchievement = [];
-    $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-    foreach ($days as $day) {
-        $achievement = isset($_POST["daily_achievement_{$day}"]) ? (int)$_POST["daily_achievement_{$day}"] : 0;
-        $comment = $_POST["daily_comment_{$day}"] ?? null;
-        $dailyAchievement[$day] = [
+    $dayKeys = ['day_0', 'day_1', 'day_2', 'day_3', 'day_4', 'day_5', 'day_6'];
+    $dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+    // フォームから送られてくる daily_achievement 配列を処理
+    $postedAchievement = $_POST['daily_achievement'] ?? [];
+
+    foreach ($dayKeys as $index => $dayKey) {
+        $dayName = $dayNames[$index];
+        $achievement = isset($postedAchievement[$dayKey]) ? (int)$postedAchievement[$dayKey] : 0;
+        $comment = $_POST["daily_comment_{$dayKey}"] ?? null;
+
+        $dailyAchievement[$dayName] = [
             'achievement' => $achievement,
             'comment' => $comment
         ];
@@ -136,13 +143,11 @@ try {
         $weeklyPlanId
     ]);
 
-    $_SESSION['success_message'] = '達成度評価を保存しました';
-
     // リダイレクト先を決定
     if ($returnDate) {
-        header("Location: student_weekly_plan_detail.php?student_id={$studentId}&date={$returnDate}");
+        header("Location: student_weekly_plan_detail.php?student_id={$studentId}&date={$returnDate}&success=2");
     } else {
-        header("Location: student_weekly_plan_detail.php?student_id={$studentId}");
+        header("Location: student_weekly_plan_detail.php?student_id={$studentId}&success=2");
     }
     exit;
 

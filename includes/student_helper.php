@@ -39,28 +39,28 @@ function calculateGradeLevel($birthDate, $referenceDate = null, $gradeAdjustment
     }
 
     // その年度での学年を計算
-    // 小学1年生は満6歳になる年度（誕生年度 + 6）
+    // 小学1年生は誕生年度から7年後（満6歳になる年度の翌年4月入学）
     $gradeYear = $fiscalYear - $birthFiscalYear;
 
     // 学年調整を適用
     $gradeYear += $gradeAdjustment;
 
     // 学年判定
-    // 小学部: 小1～小6（学年差6～11）
-    // 中学部: 中1～中3（学年差12～14）
-    // 高等部: 高1～高3（学年差15～17）
+    // 小学部: 小1～小6（年度差7～12）
+    // 中学部: 中1～中3（年度差13～15）
+    // 高等部: 高1～高3（年度差16～18）
 
-    if ($gradeYear >= 6 && $gradeYear <= 11) {
+    if ($gradeYear >= 7 && $gradeYear <= 12) {
         return 'elementary';
-    } elseif ($gradeYear >= 12 && $gradeYear <= 14) {
+    } elseif ($gradeYear >= 13 && $gradeYear <= 15) {
         return 'junior_high';
-    } elseif ($gradeYear >= 15 && $gradeYear <= 17) {
+    } elseif ($gradeYear >= 16 && $gradeYear <= 18) {
         return 'high_school';
     } else {
         // 年齢範囲外の場合は年齢で判断
-        if ($gradeYear < 12) {
+        if ($gradeYear < 13) {
             return 'elementary';
-        } elseif ($gradeYear < 15) {
+        } elseif ($gradeYear < 16) {
             return 'junior_high';
         } else {
             return 'high_school';

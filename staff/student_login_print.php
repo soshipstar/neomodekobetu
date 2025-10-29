@@ -41,10 +41,8 @@ if (empty($student['username']) || empty($student['password_plain'])) {
     die('この生徒にはログイン情報が設定されていません。');
 }
 
-// ログインURLを生成（現在のホストを使用）
-$protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-$host = $_SERVER['HTTP_HOST'];
-$loginUrl = $protocol . '://' . $host . '/kobetu/student/login.php';
+// ログインURLを固定値で設定
+$loginUrl = 'https://kobetu.narze.xyz/student/login.php';
 
 // 現在の日付
 $currentDate = date('Y年m月d日');

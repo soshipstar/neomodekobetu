@@ -40,12 +40,7 @@ if ($classroomId) {
                  FROM student_chat_messages scm
                  WHERE scm.room_id = scr.id
                    AND scm.sender_type = 'student'
-                   AND scm.created_at > COALESCE(
-                       (SELECT MAX(created_at)
-                        FROM student_chat_messages
-                        WHERE room_id = scr.id AND sender_type = 'staff'),
-                       '1970-01-01'
-                   )), 0
+                   AND scm.is_read = 0), 0
             ) as unread_count
         FROM students s
         INNER JOIN users g ON s.guardian_id = g.id
@@ -76,12 +71,7 @@ if ($classroomId) {
                  FROM student_chat_messages scm
                  WHERE scm.room_id = scr.id
                    AND scm.sender_type = 'student'
-                   AND scm.created_at > COALESCE(
-                       (SELECT MAX(created_at)
-                        FROM student_chat_messages
-                        WHERE room_id = scr.id AND sender_type = 'staff'),
-                       '1970-01-01'
-                   )), 0
+                   AND scm.is_read = 0), 0
             ) as unread_count
         FROM students s
         LEFT JOIN student_chat_rooms scr ON s.id = scr.student_id
@@ -730,6 +720,9 @@ foreach ($allStudents as $student) {
                         </a>
                         <a href="student_weekly_plans.php">
                             <span class="menu-icon">📝</span>週間計画表
+                        </a>
+                        <a href="student_submissions.php">
+                            <span class="menu-icon">📋</span>提出物一覧
                         </a>
                     </div>
                 </div>

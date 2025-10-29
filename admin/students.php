@@ -435,6 +435,17 @@ function getGradeBadgeColor($gradeLevel) {
                         <input type="date" name="birth_date" required>
                         <div style="font-size: 12px; color: #666; margin-top: 5px;">※学年は生年月日から自動で計算されます</div>
                     </div>
+                    <div class="form-group">
+                        <label>学年調整</label>
+                        <select name="grade_adjustment">
+                            <option value="0" selected>調整なし (0)</option>
+                            <option value="1">1学年上 (+1)</option>
+                            <option value="2">2学年上 (+2)</option>
+                            <option value="-1">1学年下 (-1)</option>
+                            <option value="-2">2学年下 (-2)</option>
+                        </select>
+                        <div style="font-size: 12px; color: #666; margin-top: 5px;">※生年月日から自動計算された学年を調整できます</div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>支援開始日 *</label>
@@ -576,7 +587,7 @@ function getGradeBadgeColor($gradeLevel) {
                         <?php foreach ($students as $student): ?>
                             <?php
                             $age = $student['birth_date'] ? calculateAge($student['birth_date']) : '-';
-                            $calculatedGrade = $student['birth_date'] ? calculateGradeLevel($student['birth_date']) : $student['grade_level'];
+                            $calculatedGrade = $student['birth_date'] ? calculateGradeLevel($student['birth_date'], null, $student['grade_adjustment'] ?? 0) : $student['grade_level'];
                             ?>
                             <tr>
                                 <td><?php echo $student['id']; ?></td>
@@ -648,6 +659,17 @@ function getGradeBadgeColor($gradeLevel) {
                     <label>生年月日 *</label>
                     <input type="date" name="birth_date" id="edit_birth_date" required>
                     <div style="font-size: 12px; color: #666; margin-top: 5px;">※学年は生年月日から自動で計算されます</div>
+                </div>
+                <div class="form-group">
+                    <label>学年調整</label>
+                    <select name="grade_adjustment" id="edit_grade_adjustment">
+                        <option value="0">調整なし (0)</option>
+                        <option value="1">1学年上 (+1)</option>
+                        <option value="2">2学年上 (+2)</option>
+                        <option value="-1">1学年下 (-1)</option>
+                        <option value="-2">2学年下 (-2)</option>
+                    </select>
+                    <div style="font-size: 12px; color: #666; margin-top: 5px;">※生年月日から自動計算された学年を調整できます</div>
                 </div>
                 <div class="form-group">
                     <label>支援開始日 *</label>
@@ -770,6 +792,7 @@ function getGradeBadgeColor($gradeLevel) {
             document.getElementById('edit_birth_date').value = student.birth_date || '';
             document.getElementById('edit_support_start_date').value = student.support_start_date || '';
             document.getElementById('edit_guardian_id').value = student.guardian_id || '';
+            document.getElementById('edit_grade_adjustment').value = student.grade_adjustment || '0';
             document.getElementById('edit_status').value = student.status || 'active';
             document.getElementById('edit_withdrawal_date').value = student.withdrawal_date || '';
 

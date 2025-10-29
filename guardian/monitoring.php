@@ -534,6 +534,74 @@ if ($selectedMonitoringId) {
                             </div>
                         <?php endif; ?>
 
+                        <!-- 短期目標・長期目標の達成状況 -->
+                        <?php if (!empty($monitoringData['short_term_goal_achievement']) || !empty($monitoringData['short_term_goal_comment']) ||
+                                  !empty($monitoringData['long_term_goal_achievement']) || !empty($monitoringData['long_term_goal_comment'])): ?>
+                            <div class="section-title" style="margin-top: 30px;">目標の達成状況</div>
+
+                            <!-- 長期目標 -->
+                            <?php if (!empty($monitoringData['long_term_goal_achievement']) || !empty($monitoringData['long_term_goal_comment'])): ?>
+                                <div style="margin-bottom: 25px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
+                                    <h4 style="color: #667eea; margin-bottom: 15px; font-size: 16px;">🎯 長期目標</h4>
+
+                                    <?php if (!empty($planData['long_term_goal_text'])): ?>
+                                        <div style="padding: 12px; background: white; border-radius: 6px; margin-bottom: 15px; line-height: 1.6;">
+                                            <?= nl2br(htmlspecialchars($planData['long_term_goal_text'])) ?>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($monitoringData['long_term_goal_achievement'])): ?>
+                                        <div style="margin-bottom: 12px;">
+                                            <div style="font-weight: 600; color: #555; margin-bottom: 6px;">達成状況</div>
+                                            <div style="display: inline-block; padding: 6px 14px; background: #667eea; color: white; border-radius: 5px; font-size: 14px; font-weight: 600;">
+                                                <?= htmlspecialchars($monitoringData['long_term_goal_achievement']) ?>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($monitoringData['long_term_goal_comment'])): ?>
+                                        <div>
+                                            <div style="font-weight: 600; color: #555; margin-bottom: 6px;">コメント</div>
+                                            <div style="padding: 12px; background: white; border-radius: 6px; line-height: 1.6;">
+                                                <?= nl2br(htmlspecialchars($monitoringData['long_term_goal_comment'])) ?>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+
+                            <!-- 短期目標 -->
+                            <?php if (!empty($monitoringData['short_term_goal_achievement']) || !empty($monitoringData['short_term_goal_comment'])): ?>
+                                <div style="margin-bottom: 25px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #28a745;">
+                                    <h4 style="color: #28a745; margin-bottom: 15px; font-size: 16px;">📌 短期目標</h4>
+
+                                    <?php if (!empty($planData['short_term_goal_text'])): ?>
+                                        <div style="padding: 12px; background: white; border-radius: 6px; margin-bottom: 15px; line-height: 1.6;">
+                                            <?= nl2br(htmlspecialchars($planData['short_term_goal_text'])) ?>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($monitoringData['short_term_goal_achievement'])): ?>
+                                        <div style="margin-bottom: 12px;">
+                                            <div style="font-weight: 600; color: #555; margin-bottom: 6px;">達成状況</div>
+                                            <div style="display: inline-block; padding: 6px 14px; background: #28a745; color: white; border-radius: 5px; font-size: 14px; font-weight: 600;">
+                                                <?= htmlspecialchars($monitoringData['short_term_goal_achievement']) ?>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($monitoringData['short_term_goal_comment'])): ?>
+                                        <div>
+                                            <div style="font-weight: 600; color: #555; margin-bottom: 6px;">コメント</div>
+                                            <div style="padding: 12px; background: white; border-radius: 6px; line-height: 1.6;">
+                                                <?= nl2br(htmlspecialchars($monitoringData['short_term_goal_comment'])) ?>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+                        <?php endif; ?>
+
                         <!-- 総合コメント -->
                         <?php if ($monitoringData['overall_comment']): ?>
                             <div class="section-title">総合コメント</div>

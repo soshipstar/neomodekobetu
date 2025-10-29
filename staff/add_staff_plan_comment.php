@@ -55,7 +55,7 @@ try {
     ");
     $stmt->execute([$weeklyPlanId, $currentUser['id'], $comment]);
 
-    header('Location: student_weekly_plan_detail.php?student_id=' . $studentId . '&date=' . urlencode($weekStartDate) . '&success=1');
+    header('Location: student_weekly_plan_detail.php?student_id=' . $studentId . '&date=' . urlencode($weekStartDate) . '&success=3');
     exit;
 
 } catch (Exception $e) {
