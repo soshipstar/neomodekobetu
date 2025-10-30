@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 exit;
             }
 
-            // メッセージを取得
+            // メッセージを取得（削除されていないもののみ）
             $stmt = $pdo->prepare("
                 SELECT
                     cm.id,
@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                     u.full_name as sender_name
                 FROM chat_messages cm
                 LEFT JOIN users u ON cm.sender_id = u.id
-                WHERE cm.room_id = ? AND cm.id > ?
+                WHERE cm.room_id = ? AND cm.id > ? AND (cm.is_deleted = 0 OR cm.is_deleted IS NULL)
                 ORDER BY cm.created_at ASC, cm.id ASC
                 LIMIT 50
             ");

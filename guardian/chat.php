@@ -14,6 +14,11 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'guardian') {
 $pdo = getDbConnection();
 $guardianId = $_SESSION['user_id'];
 
+// 保護者の教室IDを取得
+$stmt = $pdo->prepare("SELECT classroom_id FROM users WHERE id = ?");
+$stmt->execute([$guardianId]);
+$classroomId = $stmt->fetchColumn();
+
 // 保護者に紐づく生徒を取得
 $stmt = $pdo->prepare("SELECT id, student_name FROM students WHERE guardian_id = ? AND is_active = 1 ORDER BY student_name");
 $stmt->execute([$guardianId]);
@@ -94,16 +99,21 @@ if ($selectedStudentId) {
         }
     }
 
-    // 未来のイベント一覧を取得
-    $stmt = $pdo->prepare("
-        SELECT id, event_name, event_date, event_description
-        FROM events
-        WHERE event_date >= CURDATE()
-        ORDER BY event_date ASC
-        LIMIT 30
-    ");
-    $stmt->execute();
-    $upcomingEvents = $stmt->fetchAll();
+    // 未来のイベント一覧を取得（生徒の所属する教室のイベントのみ）
+    $upcomingEvents = [];
+    if ($classroomId) {
+        $stmt = $pdo->prepare("
+            SELECT id, event_name, event_date, event_description
+            FROM events
+            WHERE event_date >= CURDATE()
+                AND classroom_id = ?
+                AND classroom_id IS NOT NULL
+            ORDER BY event_date ASC
+            LIMIT 30
+        ");
+        $stmt->execute([$classroomId]);
+        $upcomingEvents = $stmt->fetchAll();
+    }
 }
 ?>
 <!DOCTYPE html>

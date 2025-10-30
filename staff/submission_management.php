@@ -80,12 +80,12 @@ if ($classroomId) {
     $stmt->execute([$classroomId]);
     $submissions = $stmt->fetchAll();
 
-    // 統計
+    // 統計（完了件数は最近1か月のみ）
     $stmt = $pdo->prepare("
         SELECT
             COUNT(*) as total,
             SUM(CASE WHEN is_completed = 0 THEN 1 ELSE 0 END) as pending,
-            SUM(CASE WHEN is_completed = 1 THEN 1 ELSE 0 END) as completed,
+            SUM(CASE WHEN is_completed = 1 AND completed_at >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) THEN 1 ELSE 0 END) as completed,
             SUM(CASE WHEN is_completed = 0 AND due_date < CURDATE() THEN 1 ELSE 0 END) as overdue
         FROM submission_requests sr
         INNER JOIN students s ON sr.student_id = s.id

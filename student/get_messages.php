@@ -29,7 +29,7 @@ if (!$room) {
 
 $roomId = $room['id'];
 
-// 最新メッセージを取得（last_message_id より新しいもの）
+// 最新メッセージを取得（last_message_id より新しいもの、削除されていないもののみ）
 $stmt = $pdo->prepare("
     SELECT
         scm.id,
@@ -48,7 +48,7 @@ $stmt = $pdo->prepare("
     FROM student_chat_messages scm
     LEFT JOIN students s ON scm.sender_type = 'student' AND scm.sender_id = s.id
     LEFT JOIN users u ON scm.sender_type = 'staff' AND scm.sender_id = u.id
-    WHERE scm.room_id = ? AND scm.id > ?
+    WHERE scm.room_id = ? AND scm.id > ? AND (scm.is_deleted = 0 OR scm.is_deleted IS NULL)
     ORDER BY scm.created_at ASC
 ");
 $stmt->execute([$roomId, $lastMessageId]);
