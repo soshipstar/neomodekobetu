@@ -159,6 +159,8 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $studentId = $_POST['student_id'] ?? null;
         $absenceDate = $_POST['absence_date'] ?? null;
         $reason = trim($_POST['reason'] ?? '');
+        $requestMakeup = ($_POST['request_makeup'] ?? '0') === '1';
+        $makeupDate = $_POST['makeup_date'] ?? null;
 
         if (!$roomId || !$studentId || !$absenceDate) {
             http_response_code(400);
@@ -198,6 +200,14 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $message .= " / " . $reason;
             }
 
+            // 振替依頼がある場合はメッセージに追加
+            if ($requestMakeup && $makeupDate) {
+                $makeupDateObj = new DateTime($makeupDate);
+                $makeupDateStr = $makeupDateObj->format('n月j日');
+                $makeupDayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][(int)$makeupDateObj->format('w')];
+                $message .= " / 振替希望: " . $makeupDateStr . "(" . $makeupDayOfWeek . ")";
+            }
+
             $pdo->beginTransaction();
 
             // メッセージを保存
@@ -210,14 +220,23 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$roomId, $userId, $userType, $message]);
             $messageId = $pdo->lastInsertId();
 
-            // 欠席連絡レコードを保存
+            // 欠席連絡レコードを保存（振替依頼情報も含む）
             $stmt = $pdo->prepare("
                 INSERT INTO absence_notifications (
-                    message_id, student_id, absence_date, reason
+                    message_id, student_id, absence_date, reason,
+                    makeup_request_date, makeup_status
                 )
-                VALUES (?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?)
             ");
-            $stmt->execute([$messageId, $studentId, $absenceDate, $reason ?: null]);
+            $makeupStatus = ($requestMakeup && $makeupDate) ? 'pending' : 'none';
+            $stmt->execute([
+                $messageId,
+                $studentId,
+                $absenceDate,
+                $reason ?: null,
+                ($requestMakeup && $makeupDate) ? $makeupDate : null,
+                $makeupStatus
+            ]);
 
             // ルームの最終メッセージ時刻を更新
             $stmt = $pdo->prepare("UPDATE chat_rooms SET last_message_at = NOW() WHERE id = ?");

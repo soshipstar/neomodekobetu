@@ -637,6 +637,30 @@ if ($selectedStudentId) {
                         id="absenceReason"
                         placeholder="欠席理由（任意）&#10;例：体調不良のため"
                     ></textarea>
+
+                    <!-- 振替依頼 -->
+                    <div style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #28a745;">
+                        <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 10px;">
+                            <input type="checkbox" id="requestMakeup" onchange="toggleMakeupDate()" style="margin-right: 8px; width: 18px; height: 18px;">
+                            <span style="font-weight: 600; color: #333;">振替を希望する</span>
+                        </label>
+                        <div id="makeupDateSection" style="display: none;">
+                            <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">振替希望日を選択してください</label>
+                            <select class="absence-date-select" id="makeupDate">
+                                <option value="">選択してください</option>
+                                <?php
+                                // 今日から30日後までの日付を生成
+                                for ($i = 0; $i <= 30; $i++) {
+                                    $date = date('Y-m-d', strtotime("+$i days"));
+                                    $display = date('n月j日（', strtotime($date)) . ['日', '月', '火', '水', '木', '金', '土'][date('w', strtotime($date))] . '）';
+                                    echo "<option value=\"{$date}\">{$display}</option>";
+                                }
+                                ?>
+                            </select>
+                            <p style="font-size: 12px; color: #666; margin-top: 5px;">※スタッフの承認後、選択した日の出席予定者に追加されます</p>
+                        </div>
+                    </div>
+
                     <button type="button" class="send-absence-btn" onclick="sendAbsenceNotification()" id="sendAbsenceBtn">
                         欠席連絡を送信
                     </button>
@@ -976,13 +1000,32 @@ if ($selectedStudentId) {
             detailsDiv.classList.add('show');
         }
 
+        // 振替依頼の表示/非表示を切り替え
+        function toggleMakeupDate() {
+            const checkbox = document.getElementById('requestMakeup');
+            const dateSelector = document.getElementById('makeupDateSelector');
+            if (checkbox.checked) {
+                dateSelector.style.display = 'block';
+            } else {
+                dateSelector.style.display = 'none';
+                document.getElementById('makeupDate').value = '';
+            }
+        }
+
         // 欠席連絡を送信
         function sendAbsenceNotification() {
             const absenceDate = document.getElementById('absenceDate').value;
             const reason = document.getElementById('absenceReason').value.trim();
+            const requestMakeup = document.getElementById('requestMakeup').checked;
+            const makeupDate = document.getElementById('makeupDate').value;
 
             if (!absenceDate) {
                 alert('欠席する日を選択してください。');
+                return;
+            }
+
+            if (requestMakeup && !makeupDate) {
+                alert('振替希望日を選択してください。');
                 return;
             }
 
@@ -999,6 +1042,10 @@ if ($selectedStudentId) {
             formData.append('student_id', <?= $selectedStudentId ?? 'null' ?>);
             formData.append('absence_date', absenceDate);
             formData.append('reason', reason);
+            formData.append('request_makeup', requestMakeup ? '1' : '0');
+            if (requestMakeup && makeupDate) {
+                formData.append('makeup_date', makeupDate);
+            }
 
             fetch('chat_api.php', {
                 method: 'POST',
@@ -1009,6 +1056,9 @@ if ($selectedStudentId) {
                 if (data.success) {
                     document.getElementById('absenceDate').value = '';
                     document.getElementById('absenceReason').value = '';
+                    document.getElementById('requestMakeup').checked = false;
+                    document.getElementById('makeupDate').value = '';
+                    document.getElementById('makeupDateSelector').style.display = 'none';
                     selectMessageType('normal');
                     // loadMessages()は3秒ごとのポーリングで自動実行されるため不要
                 } else {

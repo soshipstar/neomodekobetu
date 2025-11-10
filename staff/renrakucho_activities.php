@@ -70,13 +70,13 @@ if ($classroomId) {
 }
 $activeDates = array_column($stmt->fetchAll(), 'date');
 
-// この月の休日を取得
+// この月の休日を取得（自分の教室のみ）
 $stmt = $pdo->prepare("
     SELECT holiday_date, holiday_name, holiday_type
     FROM holidays
-    WHERE YEAR(holiday_date) = ? AND MONTH(holiday_date) = ?
+    WHERE YEAR(holiday_date) = ? AND MONTH(holiday_date) = ? AND classroom_id = ?
 ");
-$stmt->execute([$year, $month]);
+$stmt->execute([$year, $month, $classroomId]);
 $holidays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $holidayDates = [];
 foreach ($holidays as $holiday) {
@@ -86,13 +86,13 @@ foreach ($holidays as $holiday) {
     ];
 }
 
-// この月のイベントを取得
+// この月のイベントを取得（自分の教室のみ）
 $stmt = $pdo->prepare("
-    SELECT event_date, event_name, event_description, event_color
+    SELECT id, event_date, event_name, event_description, event_color, staff_comment, guardian_message, target_audience
     FROM events
-    WHERE YEAR(event_date) = ? AND MONTH(event_date) = ?
+    WHERE YEAR(event_date) = ? AND MONTH(event_date) = ? AND classroom_id = ?
 ");
-$stmt->execute([$year, $month]);
+$stmt->execute([$year, $month, $classroomId]);
 $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $eventDates = [];
 foreach ($events as $event) {
@@ -100,9 +100,13 @@ foreach ($events as $event) {
         $eventDates[$event['event_date']] = [];
     }
     $eventDates[$event['event_date']][] = [
+        'id' => $event['id'],
         'name' => $event['event_name'],
         'description' => $event['event_description'],
-        'color' => $event['event_color']
+        'color' => $event['event_color'],
+        'staff_comment' => $event['staff_comment'],
+        'guardian_message' => $event['guardian_message'],
+        'target_audience' => $event['target_audience']
     ];
 }
 
@@ -144,6 +148,118 @@ if ($classroomId) {
 }
 $activities = $stmt->fetchAll();
 
+// 通知情報を取得（過去3日以内、教室に関係なく全スタッフに表示）
+$threeDaysAgo = date('Y-m-d H:i:s', strtotime('-3 days'));
+
+// 1. 保護者からの新しいメッセージ（未読）
+if ($classroomId) {
+    $stmt = $pdo->prepare("
+        SELECT cm.id, cm.created_at, cm.message, s.student_name, u.full_name as guardian_name, cr.id as room_id
+        FROM chat_messages cm
+        INNER JOIN chat_rooms cr ON cm.room_id = cr.id
+        INNER JOIN students s ON cr.student_id = s.id
+        INNER JOIN users u ON s.guardian_id = u.id
+        WHERE cm.sender_type = 'guardian'
+        AND cm.is_read = 0
+        AND cm.created_at >= ?
+        AND u.classroom_id = ?
+        ORDER BY cm.created_at DESC
+    ");
+    $stmt->execute([$threeDaysAgo, $classroomId]);
+} else {
+    $stmt = $pdo->prepare("
+        SELECT cm.id, cm.created_at, cm.message, s.student_name, u.full_name as guardian_name, cr.id as room_id
+        FROM chat_messages cm
+        INNER JOIN chat_rooms cr ON cm.room_id = cr.id
+        INNER JOIN students s ON cr.student_id = s.id
+        INNER JOIN users u ON s.guardian_id = u.id
+        WHERE cm.sender_type = 'guardian'
+        AND cm.is_read = 0
+        AND cm.created_at >= ?
+        ORDER BY cm.created_at DESC
+    ");
+    $stmt->execute([$threeDaysAgo]);
+}
+$newMessages = $stmt->fetchAll();
+
+// 2. 新しいかけはし（スタッフが作成）
+if ($classroomId) {
+    $stmt = $pdo->prepare("
+        SELECT ks.id, ks.created_at, ks.updated_at, s.student_name, u.full_name as staff_name, kp.period_name
+        FROM kakehashi_staff ks
+        INNER JOIN students s ON ks.student_id = s.id
+        INNER JOIN users su ON s.guardian_id = su.id
+        INNER JOIN users u ON ks.staff_id = u.id
+        INNER JOIN kakehashi_periods kp ON ks.period_id = kp.id
+        WHERE ks.created_at >= ?
+        AND su.classroom_id = ?
+        ORDER BY ks.created_at DESC
+    ");
+    $stmt->execute([$threeDaysAgo, $classroomId]);
+} else {
+    $stmt = $pdo->prepare("
+        SELECT ks.id, ks.created_at, ks.updated_at, s.student_name, u.full_name as staff_name, kp.period_name
+        FROM kakehashi_staff ks
+        INNER JOIN students s ON ks.student_id = s.id
+        INNER JOIN users u ON ks.staff_id = u.id
+        INNER JOIN kakehashi_periods kp ON ks.period_id = kp.id
+        WHERE ks.created_at >= ?
+        ORDER BY ks.created_at DESC
+    ");
+    $stmt->execute([$threeDaysAgo]);
+}
+$newKakehashi = $stmt->fetchAll();
+
+// 3. モニタリング表の保護者確認（3日以内に確認されたもの）
+if ($classroomId) {
+    $stmt = $pdo->prepare("
+        SELECT mr.id, mr.guardian_confirmed_at, mr.student_name, mr.monitoring_date
+        FROM monitoring_records mr
+        INNER JOIN students s ON mr.student_id = s.id
+        INNER JOIN users u ON s.guardian_id = u.id
+        WHERE mr.guardian_confirmed = 1
+        AND mr.guardian_confirmed_at >= ?
+        AND u.classroom_id = ?
+        ORDER BY mr.guardian_confirmed_at DESC
+    ");
+    $stmt->execute([$threeDaysAgo, $classroomId]);
+} else {
+    $stmt = $pdo->prepare("
+        SELECT mr.id, mr.guardian_confirmed_at, mr.student_name, mr.monitoring_date
+        FROM monitoring_records mr
+        WHERE mr.guardian_confirmed = 1
+        AND mr.guardian_confirmed_at >= ?
+        ORDER BY mr.guardian_confirmed_at DESC
+    ");
+    $stmt->execute([$threeDaysAgo]);
+}
+$confirmedMonitoring = $stmt->fetchAll();
+
+// 4. 個別支援計画の保護者確認（3日以内に確認されたもの）
+if ($classroomId) {
+    $stmt = $pdo->prepare("
+        SELECT isp.id, isp.guardian_confirmed_at, isp.student_name, isp.created_date
+        FROM individual_support_plans isp
+        INNER JOIN students s ON isp.student_id = s.id
+        INNER JOIN users u ON s.guardian_id = u.id
+        WHERE isp.guardian_confirmed = 1
+        AND isp.guardian_confirmed_at >= ?
+        AND u.classroom_id = ?
+        ORDER BY isp.guardian_confirmed_at DESC
+    ");
+    $stmt->execute([$threeDaysAgo, $classroomId]);
+} else {
+    $stmt = $pdo->prepare("
+        SELECT isp.id, isp.guardian_confirmed_at, isp.student_name, isp.created_date
+        FROM individual_support_plans isp
+        WHERE isp.guardian_confirmed = 1
+        AND isp.guardian_confirmed_at >= ?
+        ORDER BY isp.guardian_confirmed_at DESC
+    ");
+    $stmt->execute([$threeDaysAgo]);
+}
+$confirmedPlans = $stmt->fetchAll();
+
 // 本日の参加予定者を取得（休日を除外）
 $todayDayOfWeek = date('w', strtotime($selectedDate)); // 0=日曜, 1=月曜, ...
 $dayColumns = [
@@ -157,9 +273,9 @@ $dayColumns = [
 ];
 $todayColumn = $dayColumns[$todayDayOfWeek];
 
-// 休日チェック
-$stmt = $pdo->prepare("SELECT COUNT(*) FROM holidays WHERE holiday_date = ?");
-$stmt->execute([$selectedDate]);
+// 休日チェック（自分の教室の休日のみ）
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM holidays WHERE holiday_date = ? AND classroom_id = ?");
+$stmt->execute([$selectedDate, $classroomId]);
 $isHoliday = $stmt->fetchColumn() > 0;
 
 $scheduledStudents = [];
@@ -555,6 +671,28 @@ if ($classroomId) {
     ");
     $submissionRequestCount = (int)$stmt->fetchColumn();
 }
+
+// 4. 承認待ちの振替依頼の件数を取得（自分の教室のみ）
+$makeupRequestCount = 0;
+if ($classroomId) {
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*) as count
+        FROM absence_notifications an
+        INNER JOIN students s ON an.student_id = s.id
+        INNER JOIN users u ON s.guardian_id = u.id
+        WHERE u.classroom_id = ?
+        AND an.makeup_status = 'pending'
+    ");
+    $stmt->execute([$classroomId]);
+    $makeupRequestCount = (int)$stmt->fetchColumn();
+} else {
+    $stmt = $pdo->query("
+        SELECT COUNT(*) as count
+        FROM absence_notifications an
+        WHERE an.makeup_status = 'pending'
+    ");
+    $makeupRequestCount = (int)$stmt->fetchColumn();
+}
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -627,6 +765,74 @@ if ($classroomId) {
             text-decoration: none;
             border-radius: 5px;
             font-size: 14px;
+        }
+
+        .notifications-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .notification-item {
+            padding: 15px;
+            border-left: 4px solid #667eea;
+            background: #f8f9fa;
+            margin-bottom: 12px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .notification-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .notification-item.message {
+            border-left-color: #28a745;
+        }
+
+        .notification-item.kakehashi {
+            border-left-color: #ffc107;
+        }
+
+        .notification-item.monitoring {
+            border-left-color: #17a2b8;
+        }
+
+        .notification-item.plan {
+            border-left-color: #6f42c1;
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .notification-meta {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .notification-link {
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .notification-link:hover {
+            background: #5568d3;
         }
 
         .calendar-container {
@@ -758,6 +964,15 @@ if ($classroomId) {
             display: flex;
             align-items: center;
             gap: 2px;
+        }
+
+        .event-label.clickable {
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .event-label.clickable:hover {
+            opacity: 0.7;
         }
 
         .event-marker {
@@ -1556,6 +1771,102 @@ if ($classroomId) {
                 font-size: 16px;
             }
         }
+
+        /* イベントモーダル */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .modal-header h2 {
+            color: #333;
+            font-size: 22px;
+            margin: 0;
+        }
+
+        .modal-close {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #999;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .event-detail-section {
+            margin-bottom: 20px;
+        }
+
+        .event-detail-section h4 {
+            color: #667eea;
+            font-size: 16px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .event-detail-section p {
+            color: #333;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 0;
+            white-space: pre-wrap;
+        }
+
+        .event-detail-section.staff-only {
+            background: #fff8e8;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #ff9800;
+        }
+
+        .event-detail-section.staff-only h4 {
+            color: #ff9800;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+        }
     </style>
 </head>
 <body>
@@ -1596,6 +1907,9 @@ if ($classroomId) {
                     <div class="dropdown-menu">
                         <a href="chat.php">
                             <span class="menu-icon">💬</span>保護者チャット
+                        </a>
+                        <a href="makeup_requests.php">
+                            <span class="menu-icon">🔄</span>振替依頼管理
                         </a>
                         <a href="submission_management.php">
                             <span class="menu-icon">📮</span>提出期限管理
@@ -1989,6 +2303,78 @@ if ($classroomId) {
         </div>
         <?php endif; ?>
 
+        <!-- 通知セクション -->
+        <?php if (!empty($newMessages) || !empty($newKakehashi) || !empty($confirmedMonitoring) || !empty($confirmedPlans)): ?>
+        <div class="notifications-container">
+            <h2 style="margin-bottom: 15px; color: #333; font-size: 18px;">📢 お知らせ（過去3日以内）</h2>
+
+            <!-- 保護者からの新しいメッセージ -->
+            <?php if (!empty($newMessages)): ?>
+                <?php foreach ($newMessages as $msg): ?>
+                <div class="notification-item message">
+                    <div class="notification-content">
+                        <div class="notification-title">💬 保護者からの新しいメッセージ</div>
+                        <div class="notification-meta">
+                            <?php echo htmlspecialchars($msg['student_name'], ENT_QUOTES, 'UTF-8'); ?>の保護者（<?php echo htmlspecialchars($msg['guardian_name'], ENT_QUOTES, 'UTF-8'); ?>）
+                            - <?php echo date('Y年m月d日 H:i', strtotime($msg['created_at'])); ?>
+                        </div>
+                    </div>
+                    <a href="chat.php?room_id=<?php echo $msg['room_id']; ?>" class="notification-link">チャットを開く</a>
+                </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+
+            <!-- 新しいかけはし -->
+            <?php if (!empty($newKakehashi)): ?>
+                <?php foreach ($newKakehashi as $kakehashi): ?>
+                <div class="notification-item kakehashi">
+                    <div class="notification-content">
+                        <div class="notification-title">📋 新しいかけはしが作成されました</div>
+                        <div class="notification-meta">
+                            <?php echo htmlspecialchars($kakehashi['student_name'], ENT_QUOTES, 'UTF-8'); ?> - <?php echo htmlspecialchars($kakehashi['period_name'], ENT_QUOTES, 'UTF-8'); ?>
+                            （作成: <?php echo htmlspecialchars($kakehashi['staff_name'], ENT_QUOTES, 'UTF-8'); ?>）
+                            - <?php echo date('Y年m月d日 H:i', strtotime($kakehashi['created_at'])); ?>
+                        </div>
+                    </div>
+                    <a href="kakehashi_staff_generate.php" class="notification-link">かけはしを確認</a>
+                </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+
+            <!-- モニタリング表の保護者確認 -->
+            <?php if (!empty($confirmedMonitoring)): ?>
+                <?php foreach ($confirmedMonitoring as $monitoring): ?>
+                <div class="notification-item monitoring">
+                    <div class="notification-content">
+                        <div class="notification-title">✅ モニタリング表が保護者に確認されました</div>
+                        <div class="notification-meta">
+                            <?php echo htmlspecialchars($monitoring['student_name'], ENT_QUOTES, 'UTF-8'); ?> - モニタリング実施日: <?php echo date('Y年m月d日', strtotime($monitoring['monitoring_date'])); ?>
+                            - 確認日時: <?php echo date('Y年m月d日 H:i', strtotime($monitoring['guardian_confirmed_at'])); ?>
+                        </div>
+                    </div>
+                    <a href="students.php" class="notification-link">生徒一覧を確認</a>
+                </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+
+            <!-- 個別支援計画の保護者確認 -->
+            <?php if (!empty($confirmedPlans)): ?>
+                <?php foreach ($confirmedPlans as $plan): ?>
+                <div class="notification-item plan">
+                    <div class="notification-content">
+                        <div class="notification-title">✅ 個別支援計画が保護者に確認されました</div>
+                        <div class="notification-meta">
+                            <?php echo htmlspecialchars($plan['student_name'], ENT_QUOTES, 'UTF-8'); ?> - 作成日: <?php echo date('Y年m月d日', strtotime($plan['created_date'])); ?>
+                            - 確認日時: <?php echo date('Y年m月d日 H:i', strtotime($plan['guardian_confirmed_at'])); ?>
+                        </div>
+                    </div>
+                    <a href="students.php" class="notification-link">生徒一覧を確認</a>
+                </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+
         <!-- 2カラムレイアウト -->
         <div class="two-column-layout">
             <!-- 左カラム: カレンダー -->
@@ -2057,7 +2443,8 @@ if ($classroomId) {
                             // イベントを表示
                             if (isset($eventDates[$currentDate])) {
                                 foreach ($eventDates[$currentDate] as $event) {
-                                    echo "<div class='event-label'>";
+                                    $eventJson = htmlspecialchars(json_encode($event), ENT_QUOTES, 'UTF-8');
+                                    echo "<div class='event-label clickable' onclick='event.stopPropagation(); showEventModal(" . $eventJson . ");'>";
                                     echo "<span class='event-marker' style='background: " . htmlspecialchars($event['color']) . ";'></span>";
                                     echo htmlspecialchars($event['name']);
                                     echo "</div>";
@@ -2090,9 +2477,9 @@ if ($classroomId) {
                     <?php else: ?>
                         <?php
                         $gradeInfo = [
-                            'elementary' => ['label' => '小学部', 'icon' => '🎒'],
-                            'junior_high' => ['label' => '中学部', 'icon' => '📚'],
-                            'high_school' => ['label' => '高等部', 'icon' => '🎓']
+                            'elementary' => ['label' => '小学生', 'icon' => '🎒'],
+                            'junior_high' => ['label' => '中学生', 'icon' => '📚'],
+                            'high_school' => ['label' => '高校生', 'icon' => '🎓']
                         ];
 
                         foreach ($gradeInfo as $gradeKey => $info):
@@ -2165,7 +2552,7 @@ if ($classroomId) {
             </div>
 
             <!-- 未作成タスクサマリー -->
-            <?php if ($planNeedingCount > 0 || $monitoringNeedingCount > 0 || $guardianKakehashiCount > 0 || $staffKakehashiCount > 0 || $submissionRequestCount > 0): ?>
+            <?php if ($planNeedingCount > 0 || $monitoringNeedingCount > 0 || $guardianKakehashiCount > 0 || $staffKakehashiCount > 0 || $submissionRequestCount > 0 || $makeupRequestCount > 0): ?>
                 <div class="task-summary-box main-content">
                     <h2 style="margin-bottom: 15px; color: #333; font-size: 20px;">📋 未作成・未提出タスク</h2>
                     <div class="task-summary-grid">
@@ -2230,6 +2617,19 @@ if ($classroomId) {
                             <?php if ($submissionRequestCount > 0): ?>
                                 <div class="task-card-link">
                                     <a href="submission_management.php" class="btn-task-detail">詳細を確認</a>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- 振替依頼 -->
+                        <div class="task-card <?php echo $makeupRequestCount > 0 ? 'has-warnings' : ''; ?>">
+                            <div class="task-card-title">振替依頼</div>
+                            <div class="task-card-count <?php echo $makeupRequestCount > 0 ? 'warning' : 'success'; ?>">
+                                <?php echo $makeupRequestCount; ?>件
+                            </div>
+                            <?php if ($makeupRequestCount > 0): ?>
+                                <div class="task-card-link">
+                                    <a href="makeup_requests.php" class="btn-task-detail">詳細を確認</a>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -2307,5 +2707,118 @@ if ($classroomId) {
             </div>
         </div>
     </div>
+
+    <!-- イベント詳細モーダル -->
+    <div id="eventModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeEventModal()">&times;</button>
+            <div class="modal-header">
+                <h2 id="eventModalTitle">イベント詳細</h2>
+            </div>
+            <div id="eventModalContent">
+                <!-- イベントの内容がここに表示されます -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // アコーディオン切り替え
+        function toggleAccordion(element) {
+            const content = element.nextElementSibling;
+            const arrow = element.querySelector('.accordion-arrow');
+
+            if (content.classList.contains('active')) {
+                content.classList.remove('active');
+                arrow.textContent = '▼';
+            } else {
+                content.classList.add('active');
+                arrow.textContent = '▲';
+            }
+        }
+
+        // ハンバーガーメニュー
+        document.getElementById('hamburger').addEventListener('click', function() {
+            this.classList.toggle('active');
+            document.getElementById('userInfo').classList.toggle('mobile-active');
+        });
+
+        // イベント詳細モーダルを表示（スタッフ用）
+        function showEventModal(eventData) {
+            const targetAudienceLabels = {
+                'all': '全体',
+                'elementary': '小学生',
+                'junior_high_school': '中高生',
+                'guardian': '保護者',
+                'other': 'その他'
+            };
+
+            document.getElementById('eventModalTitle').textContent = eventData.name || 'イベント詳細';
+
+            let html = '';
+
+            // 説明
+            if (eventData.description) {
+                html += '<div class="event-detail-section">';
+                html += '<h4>説明</h4>';
+                html += '<p>' + escapeHtml(eventData.description) + '</p>';
+                html += '</div>';
+            }
+
+            // 保護者・生徒連絡用
+            if (eventData.guardian_message) {
+                html += '<div class="event-detail-section">';
+                html += '<h4>保護者・生徒連絡用</h4>';
+                html += '<p>' + escapeHtml(eventData.guardian_message) + '</p>';
+                html += '</div>';
+            }
+
+            // 対象者
+            if (eventData.target_audience) {
+                html += '<div class="event-detail-section">';
+                html += '<h4>対象者</h4>';
+                html += '<p>' + (targetAudienceLabels[eventData.target_audience] || '全体') + '</p>';
+                html += '</div>';
+            }
+
+            // スタッフ向けコメント（スタッフのみ表示）
+            if (eventData.staff_comment) {
+                html += '<div class="event-detail-section staff-only">';
+                html += '<h4>📝 スタッフ向けコメント</h4>';
+                html += '<p>' + escapeHtml(eventData.staff_comment) + '</p>';
+                html += '</div>';
+            }
+
+            if (html === '') {
+                html = '<div class="no-data">詳細情報はありません</div>';
+            }
+
+            document.getElementById('eventModalContent').innerHTML = html;
+            document.getElementById('eventModal').classList.add('active');
+        }
+
+        // イベントモーダルを閉じる
+        function closeEventModal() {
+            document.getElementById('eventModal').classList.remove('active');
+        }
+
+        // モーダル外クリックで閉じる
+        document.getElementById('eventModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeEventModal();
+            }
+        });
+
+        // HTMLエスケープ
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+    </script>
 </body>
 </html>
