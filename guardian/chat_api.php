@@ -4,6 +4,7 @@
  */
 session_start();
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/email_helper.php';
 
 header('Content-Type: application/json');
 
@@ -146,7 +147,52 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare("UPDATE chat_rooms SET last_message_at = NOW() WHERE id = ?");
             $stmt->execute([$roomId]);
 
-            echo json_encode(['success' => true, 'message_id' => $pdo->lastInsertId()]);
+            $messageId = $pdo->lastInsertId();
+
+            // メール通知を送信（保護者が送信した場合はスタッフに通知）
+            if ($userType === 'guardian') {
+                try {
+                    // ルーム情報と生徒の担当スタッフ情報を取得
+                    $stmt = $pdo->prepare("
+                        SELECT
+                            cr.student_id,
+                            s.student_name,
+                            u.full_name as guardian_name,
+                            staff.email as staff_email,
+                            staff.full_name as staff_name
+                        FROM chat_rooms cr
+                        INNER JOIN students s ON cr.student_id = s.id
+                        INNER JOIN users u ON cr.guardian_id = u.id
+                        LEFT JOIN users staff ON staff.classroom_id = u.classroom_id AND staff.user_type = 'staff'
+                        WHERE cr.id = ? AND u.id = ?
+                        LIMIT 1
+                    ");
+                    $stmt->execute([$roomId, $userId]);
+                    $roomInfo = $stmt->fetch();
+
+                    if ($roomInfo && !empty($roomInfo['staff_email'])) {
+                        // チャットURLを生成
+                        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+                        $host = $_SERVER['HTTP_HOST'];
+                        $chatUrl = "{$protocol}://{$host}/staff/chat.php?room_id={$roomId}";
+
+                        // メール通知を送信
+                        sendChatNotificationEmail(
+                            $roomInfo['staff_email'],
+                            $roomInfo['staff_name'],
+                            $roomInfo['guardian_name'],
+                            $roomInfo['student_name'],
+                            $message ?: '（添付ファイル）',
+                            $chatUrl
+                        );
+                    }
+                } catch (Exception $e) {
+                    // メール送信エラーはログに記録するが、APIレスポンスには影響させない
+                    error_log("Chat email notification failed: " . $e->getMessage());
+                }
+            }
+
+            echo json_encode(['success' => true, 'message_id' => $messageId]);
         } catch (PDOException $e) {
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'データベースエラー: ' . $e->getMessage()]);
@@ -159,12 +205,20 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $studentId = $_POST['student_id'] ?? null;
         $absenceDate = $_POST['absence_date'] ?? null;
         $reason = trim($_POST['reason'] ?? '');
+        $makeupOption = $_POST['makeup_option'] ?? null;
         $requestMakeup = ($_POST['request_makeup'] ?? '0') === '1';
         $makeupDate = $_POST['makeup_date'] ?? null;
 
         if (!$roomId || !$studentId || !$absenceDate) {
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => '必要な情報が指定されていません']);
+            exit;
+        }
+
+        // 振替オプションの選択は必須
+        if (!$makeupOption) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => '振替日の選択は必須です']);
             exit;
         }
 
@@ -200,8 +254,10 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $message .= " / " . $reason;
             }
 
-            // 振替依頼がある場合はメッセージに追加
-            if ($requestMakeup && $makeupDate) {
+            // 振替依頼の内容をメッセージに追加
+            if ($makeupOption === 'decide_later') {
+                $message .= " / 振替希望: 後日決定（イベント等で振替予定）";
+            } elseif ($makeupOption === 'choose_date' && $makeupDate) {
                 $makeupDateObj = new DateTime($makeupDate);
                 $makeupDateStr = $makeupDateObj->format('n月j日');
                 $makeupDayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][(int)$makeupDateObj->format('w')];
@@ -228,13 +284,28 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 )
                 VALUES (?, ?, ?, ?, ?, ?)
             ");
-            $makeupStatus = ($requestMakeup && $makeupDate) ? 'pending' : 'none';
+
+            // 振替ステータスの判定
+            if ($makeupOption === 'decide_later') {
+                // 後日決める場合も「承認待ち」として扱う
+                $makeupStatus = 'pending';
+                $saveMakeupDate = null; // 日付は未定
+            } elseif ($makeupOption === 'choose_date' && $makeupDate) {
+                // 日付指定の場合
+                $makeupStatus = 'pending';
+                $saveMakeupDate = $makeupDate;
+            } else {
+                // 振替なし（通常はここには来ない）
+                $makeupStatus = 'none';
+                $saveMakeupDate = null;
+            }
+
             $stmt->execute([
                 $messageId,
                 $studentId,
                 $absenceDate,
                 $reason ?: null,
-                ($requestMakeup && $makeupDate) ? $makeupDate : null,
+                $saveMakeupDate,
                 $makeupStatus
             ]);
 

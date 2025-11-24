@@ -140,7 +140,7 @@ if ($selectedStudentId) {
         .container {
             max-width: 1000px;
             margin: 0 auto;
-            background: white;
+            background: var(--apple-bg-primary);
             border-radius: var(--radius-xl);
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             overflow: hidden;
@@ -161,7 +161,7 @@ if ($selectedStudentId) {
         .header h1 {
             font-size: var(--text-title-2);
             font-weight: 600;
-            color: white;
+            color: var(--text-primary);
         }
 
         .nav-links {
@@ -170,16 +170,16 @@ if ($selectedStudentId) {
         }
 
         .nav-links a {
-            color: white;
+            color: var(--text-primary);
             text-decoration: none;
             padding: var(--spacing-sm) 16px;
             border-radius: var(--radius-sm);
-            background: rgba(255,255,255,0.2);
+            background: var(--apple-gray-5);
             transition: all var(--duration-normal) var(--ease-out);
         }
 
         .nav-links a:hover {
-            background: rgba(255,255,255,0.3);
+            background: var(--apple-gray-5);
         }
 
         /* デスクトップ用レイアウト（デフォルト） */
@@ -208,7 +208,7 @@ if ($selectedStudentId) {
             border: 2px solid #e1e8ed;
             border-radius: var(--radius-sm);
             font-size: 15px;
-            background: white;
+            background: var(--apple-bg-primary);
             cursor: pointer;
         }
 
@@ -245,7 +245,7 @@ if ($selectedStudentId) {
         }
 
         .message.received .message-bubble {
-            background: white;
+            background: var(--apple-bg-primary);
             color: var(--text-primary);
             border-bottom-left-radius: 4px;
         }
@@ -275,7 +275,7 @@ if ($selectedStudentId) {
 
         .absence-form-area {
             padding: 15px 20px;
-            background: #fff8f0;
+            background: var(--apple-bg-secondary);
             border-top: 1px solid var(--apple-gray-5);
             display: none;
         }
@@ -298,8 +298,8 @@ if ($selectedStudentId) {
         }
 
         .close-absence-form {
-            background: #ff6b35;
-            color: white;
+            background: var(--apple-bg-secondary);
+            color: var(--text-primary);
             border: none;
             padding: 5px 15px;
             border-radius: 6px;
@@ -331,8 +331,8 @@ if ($selectedStudentId) {
         .send-absence-btn {
             width: 100%;
             padding: var(--spacing-md);
-            background: #ff6b35;
-            color: white;
+            background: var(--apple-bg-secondary);
+            color: var(--text-primary);
             border: none;
             border-radius: var(--radius-sm);
             font-size: 15px;
@@ -348,7 +348,7 @@ if ($selectedStudentId) {
         /* イベント参加フォーム */
         .event-form-area {
             padding: 15px 20px;
-            background: #f0f8ff;
+            background: var(--apple-bg-secondary);
             border-top: 1px solid var(--apple-gray-5);
             display: none;
         }
@@ -371,8 +371,8 @@ if ($selectedStudentId) {
         }
 
         .close-event-form {
-            background: #2563eb;
-            color: white;
+            background: var(--apple-blue);
+            color: var(--text-primary);
             border: none;
             padding: 5px 15px;
             border-radius: 6px;
@@ -383,14 +383,14 @@ if ($selectedStudentId) {
         .event-select {
             width: 100%;
             padding: var(--spacing-md);
-            border: 2px solid #2563eb;
+            border: 2px solid var(--apple-blue);
             border-radius: var(--radius-sm);
             font-size: var(--text-subhead);
             margin-bottom: var(--spacing-md);
         }
 
         .event-details {
-            background: white;
+            background: var(--apple-bg-primary);
             padding: var(--spacing-md);
             border-radius: var(--radius-sm);
             margin-bottom: var(--spacing-md);
@@ -405,7 +405,7 @@ if ($selectedStudentId) {
         .event-notes {
             width: 100%;
             padding: var(--spacing-md);
-            border: 2px solid #2563eb;
+            border: 2px solid var(--apple-blue);
             border-radius: var(--radius-sm);
             font-size: var(--text-subhead);
             resize: vertical;
@@ -417,8 +417,8 @@ if ($selectedStudentId) {
         .send-event-btn {
             width: 100%;
             padding: var(--spacing-md);
-            background: #2563eb;
-            color: white;
+            background: var(--apple-blue);
+            color: var(--text-primary);
             border: none;
             border-radius: var(--radius-sm);
             font-size: 15px;
@@ -433,7 +433,7 @@ if ($selectedStudentId) {
 
         .input-area {
             padding: var(--spacing-lg);
-            background: white;
+            background: var(--apple-bg-primary);
             border-top: 1px solid var(--apple-gray-5);
         }
 
@@ -447,7 +447,7 @@ if ($selectedStudentId) {
             flex: 1;
             padding: var(--spacing-md);
             border: 2px solid #e1e8ed;
-            background: white;
+            background: var(--apple-bg-primary);
             border-radius: var(--radius-sm);
             cursor: pointer;
             font-size: var(--text-subhead);
@@ -465,7 +465,7 @@ if ($selectedStudentId) {
         }
 
         .message-type-btn.absence.active {
-            background: #ff6b35;
+            background: var(--apple-bg-secondary);
             border-color: #ff6b35;
         }
 
@@ -594,7 +594,7 @@ if ($selectedStudentId) {
             gap: 5px;
             margin-top: 8px;
             padding: var(--spacing-sm) 12px;
-            background: rgba(255,255,255,0.2);
+            background: var(--apple-gray-5);
             border-radius: var(--radius-sm);
             color: inherit;
             text-decoration: none;
@@ -603,7 +603,7 @@ if ($selectedStudentId) {
         }
 
         .message.received .attachment-link {
-            background: #e8eaf6;
+            background: rgba(107, 70, 193, 0.1);
         }
 
         .attachment-link:hover {
@@ -654,26 +654,63 @@ if ($selectedStudentId) {
                         placeholder="欠席理由（任意）&#10;例：体調不良のため"
                     ></textarea>
 
-                    <!-- 振替依頼 -->
-                    <div style="margin-top: 15px; padding: 15px; background: var(--apple-gray-6); border-radius: var(--radius-sm); border-left: 4px solid var(--apple-green);">
-                        <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: var(--spacing-md);">
-                            <input type="checkbox" id="requestMakeup" onchange="toggleMakeupDate()" style="margin-right: 8px; width: 18px; height: 18px;">
-                            <span style="font-weight: 600; color: var(--text-primary);">振替を希望する</span>
-                        </label>
-                        <div id="makeupDateSection" style="display: none;">
-                            <label style="display: block; margin-bottom: 5px; font-size: var(--text-subhead); color: var(--text-secondary);">振替希望日を選択してください</label>
-                            <select class="absence-date-select" id="makeupDate">
+                    <!-- 振替日選択（必須） -->
+                    <div style="margin-top: 15px; padding: 20px; background: linear-gradient(135deg, rgba(52, 199, 89, 0.1) 0%, rgba(48, 209, 88, 0.05) 100%); border-radius: var(--radius-md); border: 2px solid var(--apple-green);">
+                        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                            <span style="font-size: 24px; margin-right: 10px;">🔄</span>
+                            <div>
+                                <div style="font-weight: 700; font-size: var(--text-body); color: var(--text-primary); margin-bottom: 4px;">
+                                    振替日を選択してください <span style="color: var(--apple-red); font-weight: 700;">*</span>
+                                </div>
+                                <div style="font-size: var(--text-caption-1); color: var(--text-secondary);">
+                                    欠席した分の授業を振替できます
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="background: var(--apple-bg-primary); padding: 15px; border-radius: var(--radius-sm); margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 8px; font-size: var(--text-subhead); font-weight: 600; color: var(--text-primary);">
+                                振替希望日
+                            </label>
+                            <select class="absence-date-select" id="makeupOption" onchange="handleMakeupOptionChange()" style="margin-bottom: 10px;">
                                 <option value="">選択してください</option>
-                                <?php
-                                // 今日から30日後までの日付を生成
-                                for ($i = 0; $i <= 30; $i++) {
-                                    $date = date('Y-m-d', strtotime("+$i days"));
-                                    $display = date('n月j日（', strtotime($date)) . ['日', '月', '火', '水', '木', '金', '土'][date('w', strtotime($date))] . '）';
-                                    echo "<option value=\"{$date}\">{$display}</option>";
-                                }
-                                ?>
+                                <option value="decide_later" style="font-weight: 600; color: var(--apple-blue);">📅 後日決める（イベント等で振替予定）</option>
+                                <option value="choose_date" style="font-weight: 600; color: var(--apple-green);">📆 今すぐ日にちを決める</option>
                             </select>
-                            <p style="font-size: var(--text-caption-1); color: var(--text-secondary); margin-top: 5px;">※スタッフの承認後、選択した日の出席予定者に追加されます</p>
+
+                            <div id="makeupDateSection" style="display: none; margin-top: 15px;">
+                                <label style="display: block; margin-bottom: 8px; font-size: var(--text-subhead); font-weight: 600; color: var(--text-primary);">
+                                    振替する日を選択
+                                </label>
+                                <select class="absence-date-select" id="makeupDate">
+                                    <option value="">日付を選択してください</option>
+                                    <?php
+                                    // 今日から60日後までの日付を生成
+                                    for ($i = 0; $i <= 60; $i++) {
+                                        $date = date('Y-m-d', strtotime("+$i days"));
+                                        $display = date('n月j日（', strtotime($date)) . ['日', '月', '火', '水', '木', '金', '土'][date('w', strtotime($date))] . '）';
+                                        echo "<option value=\"{$date}\">{$display}</option>";
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="background: var(--apple-bg-primary); padding: 12px; border-radius: var(--radius-sm); border-left: 3px solid var(--apple-blue);">
+                            <div style="font-size: var(--text-caption-1); color: var(--text-secondary); line-height: 1.5;">
+                                <div style="margin-bottom: 5px;">💡 <strong>振替のメリット</strong></div>
+                                <div style="padding-left: 20px;">
+                                    • 欠席分の授業を無駄にしません<br>
+                                    • お子様の学習ペースを保てます<br>
+                                    • スタッフが承認後、すぐに予定に追加されます
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="makeupWarning" style="display: none; margin-top: 10px; padding: 10px; background: rgba(255, 59, 48, 0.1); border-radius: var(--radius-sm); border-left: 3px solid var(--apple-red);">
+                            <span style="color: var(--apple-red); font-size: var(--text-caption-1); font-weight: 600;">
+                                ⚠️ 振替日の選択は必須です
+                            </span>
                         </div>
                     </div>
 
@@ -838,9 +875,9 @@ if ($selectedStudentId) {
             // 欠席連絡メッセージの場合は特別なスタイル
             const isEvent = msg.message_type === 'event_registration';
             if (isAbsence) {
-                html += `<div class="message-bubble" style="background: #ffe6e6; border-left: 4px solid #ff6b35; color: #333; font-weight: 500; white-space: normal; word-wrap: break-word;">`;
+                html += `<div class="message-bubble" style="background: rgba(255, 107, 53, 0.1); border-left: 4px solid var(--apple-orange); color: var(--text-primary); font-weight: 500; white-space: normal; word-wrap: break-word;">`;
             } else if (isEvent) {
-                html += `<div class="message-bubble" style="background: #e6f2ff; border-left: 4px solid #2563eb; color: #333; font-weight: 500; white-space: normal; word-wrap: break-word;">`;
+                html += `<div class="message-bubble" style="background: rgba(37, 99, 235, 0.1); border-left: 4px solid var(--apple-blue); color: var(--text-primary); font-weight: 500; white-space: normal; word-wrap: break-word;">`;
             } else {
                 html += `<div class="message-bubble">`;
             }
@@ -1012,14 +1049,18 @@ if ($selectedStudentId) {
             detailsDiv.classList.add('show');
         }
 
-        // 振替依頼の表示/非表示を切り替え
-        function toggleMakeupDate() {
-            const checkbox = document.getElementById('requestMakeup');
-            const dateSelector = document.getElementById('makeupDateSelector');
-            if (checkbox.checked) {
-                dateSelector.style.display = 'block';
+        // 振替オプションの変更処理
+        function handleMakeupOptionChange() {
+            const makeupOption = document.getElementById('makeupOption').value;
+            const makeupDateSection = document.getElementById('makeupDateSection');
+            const makeupWarning = document.getElementById('makeupWarning');
+
+            makeupWarning.style.display = 'none';
+
+            if (makeupOption === 'choose_date') {
+                makeupDateSection.style.display = 'block';
             } else {
-                dateSelector.style.display = 'none';
+                makeupDateSection.style.display = 'none';
                 document.getElementById('makeupDate').value = '';
             }
         }
@@ -1028,16 +1069,25 @@ if ($selectedStudentId) {
         function sendAbsenceNotification() {
             const absenceDate = document.getElementById('absenceDate').value;
             const reason = document.getElementById('absenceReason').value.trim();
-            const requestMakeup = document.getElementById('requestMakeup').checked;
+            const makeupOption = document.getElementById('makeupOption').value;
             const makeupDate = document.getElementById('makeupDate').value;
+            const makeupWarning = document.getElementById('makeupWarning');
 
             if (!absenceDate) {
                 alert('欠席する日を選択してください。');
                 return;
             }
 
-            if (requestMakeup && !makeupDate) {
-                alert('振替希望日を選択してください。');
+            // 振替オプションの選択は必須
+            if (!makeupOption) {
+                makeupWarning.style.display = 'block';
+                document.getElementById('makeupOption').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+
+            // 「今すぐ日にちを決める」を選択した場合は日付も必須
+            if (makeupOption === 'choose_date' && !makeupDate) {
+                alert('振替する日を選択してください。');
                 return;
             }
 
@@ -1054,9 +1104,17 @@ if ($selectedStudentId) {
             formData.append('student_id', <?= $selectedStudentId ?? 'null' ?>);
             formData.append('absence_date', absenceDate);
             formData.append('reason', reason);
-            formData.append('request_makeup', requestMakeup ? '1' : '0');
-            if (requestMakeup && makeupDate) {
+
+            // 振替オプション送信
+            formData.append('makeup_option', makeupOption);
+            if (makeupOption === 'decide_later') {
+                formData.append('request_makeup', '1');
+                formData.append('makeup_date', ''); // 後日決める
+            } else if (makeupOption === 'choose_date' && makeupDate) {
+                formData.append('request_makeup', '1');
                 formData.append('makeup_date', makeupDate);
+            } else {
+                formData.append('request_makeup', '0');
             }
 
             fetch('chat_api.php', {
@@ -1068,10 +1126,12 @@ if ($selectedStudentId) {
                 if (data.success) {
                     document.getElementById('absenceDate').value = '';
                     document.getElementById('absenceReason').value = '';
-                    document.getElementById('requestMakeup').checked = false;
+                    document.getElementById('makeupOption').value = '';
                     document.getElementById('makeupDate').value = '';
-                    document.getElementById('makeupDateSelector').style.display = 'none';
+                    document.getElementById('makeupDateSection').style.display = 'none';
+                    document.getElementById('makeupWarning').style.display = 'none';
                     selectMessageType('normal');
+                    alert('欠席連絡を送信しました。振替の承認をお待ちください。');
                     // loadMessages()は3秒ごとのポーリングで自動実行されるため不要
                 } else {
                     alert('送信エラー: ' + data.message);
