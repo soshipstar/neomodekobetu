@@ -50,9 +50,9 @@ if ($classroomId) {
 if ($departmentFilter) {
     // grade_levelの値に変換
     $gradeMapping = [
-        '小学部' => 'elementary',
-        '中等部' => 'junior_high',
-        '高等部' => 'high_school'
+        '小学生' => 'elementary',
+        '中学生' => 'junior_high',
+        '高校生' => 'high_school'
     ];
     if (isset($gradeMapping[$departmentFilter])) {
         $sql .= " AND s.grade_level = ?";
@@ -60,16 +60,17 @@ if ($departmentFilter) {
     }
 }
 
-$sql .= " ORDER BY s.grade_level, s.student_name ASC";
+// 会話順（最新メッセージ順）にソート - NULLは最後に表示
+$sql .= " ORDER BY CASE WHEN cr.last_message_at IS NULL THEN 1 ELSE 0 END, cr.last_message_at DESC, s.student_name ASC";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $allStudents = $stmt->fetchAll();
 
 // 学部別に分類
-$elementary = []; // 小学部
-$junior = [];     // 中等部
-$senior = [];     // 高等部
+$elementary = []; // 小学生
+$junior = [];     // 中学生
+$senior = [];     // 高校生
 
 foreach ($allStudents as $student) {
     $grade = $student['grade_level'];
@@ -125,6 +126,7 @@ if ($selectedRoomId) {
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+    <link rel="stylesheet" href="/assets/css/apple-design.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>チャット - スタッフページ</title>
@@ -137,17 +139,17 @@ if ($selectedRoomId) {
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #000000;
             min-height: 100vh;
-            padding: 20px;
+            padding: var(--spacing-md);
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            background: #1c1c1e;
+            border-radius: var(--radius-xl);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -157,7 +159,7 @@ if ($selectedRoomId) {
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 20px 30px;
+            padding: var(--spacing-lg) 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -174,10 +176,10 @@ if ($selectedRoomId) {
             flex-direction: column;
             gap: 4px;
             cursor: pointer;
-            padding: 8px;
+            padding: var(--spacing-sm);
             background: rgba(255,255,255,0.2);
-            border-radius: 8px;
-            transition: all 0.3s;
+            border-radius: var(--radius-sm);
+            transition: all var(--duration-normal) var(--ease-out);
         }
 
         .hamburger:hover {
@@ -189,7 +191,7 @@ if ($selectedRoomId) {
             height: 3px;
             background: white;
             border-radius: 2px;
-            transition: all 0.3s;
+            transition: all var(--duration-normal) var(--ease-out);
         }
 
         .hamburger.active span:nth-child(1) {
@@ -205,8 +207,9 @@ if ($selectedRoomId) {
         }
 
         .header h1 {
-            font-size: 24px;
+            font-size: var(--text-title-2);
             font-weight: 600;
+            color: white;
         }
 
         .nav-links {
@@ -217,10 +220,10 @@ if ($selectedRoomId) {
         .nav-links a {
             color: white;
             text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 8px;
+            padding: var(--spacing-sm) 16px;
+            border-radius: var(--radius-sm);
             background: rgba(255,255,255,0.2);
-            transition: all 0.3s;
+            transition: all var(--duration-normal) var(--ease-out);
         }
 
         .nav-links a:hover {
@@ -235,8 +238,8 @@ if ($selectedRoomId) {
 
         .rooms-sidebar {
             width: 320px;
-            border-right: 1px solid #e0e0e0;
-            background: #f8f9fa;
+            border-right: 1px solid #2c2c2e;
+            background: #2c2c2e;
             overflow-y: auto;
             transition: transform 0.3s ease;
         }
@@ -258,17 +261,17 @@ if ($selectedRoomId) {
 
         .room-item {
             padding: 15px 20px;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid #3a3a3c;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all var(--duration-fast) var(--ease-out);
         }
 
         .room-item:hover {
-            background: #e8eaf6;
+            background: #3a3a3c;
         }
 
         .room-item.active {
-            background: linear-gradient(135deg, #f0f4ff 0%, #faf0ff 100%);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
             border-left: 4px solid #667eea;
         }
 
@@ -282,21 +285,21 @@ if ($selectedRoomId) {
         .student-name {
             font-weight: 600;
             font-size: 15px;
-            color: #333;
+            color: #f5f5f7;
         }
 
         .unread-badge {
-            background: #dc3545;
+            background: #ff3b30;
             color: white;
             padding: 2px 8px;
-            border-radius: 12px;
+            border-radius: var(--radius-md);
             font-size: 11px;
             font-weight: 600;
         }
 
         .guardian-name {
-            font-size: 13px;
-            color: #666;
+            font-size: var(--text-footnote);
+            color: #98989d;
         }
 
         .chat-container {
@@ -308,27 +311,27 @@ if ($selectedRoomId) {
 
         .chat-header {
             padding: 15px 20px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #e0e0e0;
+            background: #2c2c2e;
+            border-bottom: 1px solid #3a3a3c;
         }
 
         .chat-title {
             font-size: 18px;
             font-weight: 600;
-            color: #333;
+            color: #f5f5f7;
         }
 
         .chat-subtitle {
-            font-size: 13px;
-            color: #666;
+            font-size: var(--text-footnote);
+            color: #98989d;
             margin-top: 2px;
         }
 
         .messages-area {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
-            background: #f8f9fa;
+            padding: var(--spacing-lg);
+            background: #1c1c1e;
         }
 
         .message {
@@ -343,15 +346,15 @@ if ($selectedRoomId) {
 
         .message-bubble {
             max-width: 85%;
-            padding: 12px 16px;
+            padding: var(--spacing-md) 16px;
             border-radius: 18px;
             word-wrap: break-word;
             line-height: 1.5;
         }
 
         .message.received .message-bubble {
-            background: white;
-            color: #333;
+            background: #2c2c2e;
+            color: #f5f5f7;
             border-bottom-left-radius: 4px;
         }
 
@@ -363,7 +366,7 @@ if ($selectedRoomId) {
 
         .message-info {
             font-size: 11px;
-            color: #999;
+            color: #98989d;
             margin-top: 4px;
             display: flex;
             align-items: center;
@@ -375,31 +378,31 @@ if ($selectedRoomId) {
         }
 
         .delete-message-btn {
-            background: #dc3545;
+            background: var(--apple-red);
             color: white;
             border: none;
             padding: 3px 8px;
             border-radius: 4px;
             font-size: 10px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all var(--duration-fast) var(--ease-out);
         }
 
         .delete-message-btn:hover {
-            background: #c82333;
+            background: var(--apple-red);
         }
 
         .sender-name {
             font-weight: 600;
-            font-size: 12px;
+            font-size: var(--text-caption-1);
             margin-bottom: 4px;
-            color: #667eea;
+            color: #bf5af2;
         }
 
         .input-area {
-            padding: 20px;
-            background: white;
-            border-top: 1px solid #e0e0e0;
+            padding: var(--spacing-lg);
+            background: #2c2c2e;
+            border-top: 1px solid #3a3a3c;
         }
 
         .input-form {
@@ -409,14 +412,16 @@ if ($selectedRoomId) {
 
         .input-form textarea {
             flex: 1;
-            padding: 12px;
-            border: 2px solid #e1e8ed;
-            border-radius: 12px;
+            padding: var(--spacing-md);
+            border: 2px solid #3a3a3c;
+            border-radius: var(--radius-md);
             font-size: 15px;
             resize: none;
             font-family: inherit;
             min-height: 50px;
             max-height: 150px;
+            background: #1c1c1e;
+            color: #f5f5f7;
         }
 
         .input-form textarea:focus {
@@ -425,15 +430,15 @@ if ($selectedRoomId) {
         }
 
         .send-btn {
-            padding: 12px 30px;
+            padding: var(--spacing-md) 30px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 12px;
+            border-radius: var(--radius-md);
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all var(--duration-normal) var(--ease-out);
         }
 
         .send-btn:hover {
@@ -450,32 +455,34 @@ if ($selectedRoomId) {
         .empty-state {
             text-align: center;
             padding: 60px 20px;
-            color: #666;
+            color: #98989d;
         }
 
         .filter-section {
             padding: 15px;
-            background: white;
-            border-bottom: 2px solid #e0e0e0;
+            background: #1c1c1e;
+            border-bottom: 2px solid #3a3a3c;
         }
 
         .department-filter {
             width: 100%;
-            padding: 10px;
-            border: 2px solid #e1e8ed;
-            border-radius: 8px;
-            font-size: 14px;
-            background: white;
+            padding: var(--spacing-md);
+            border: 2px solid #3a3a3c;
+            border-radius: var(--radius-sm);
+            font-size: var(--text-subhead);
+            background: #2c2c2e;
+            color: #f5f5f7;
             cursor: pointer;
         }
 
         .search-input {
             width: 100%;
-            padding: 10px;
-            border: 2px solid #e1e8ed;
-            border-radius: 8px;
-            font-size: 14px;
-            background: white;
+            padding: var(--spacing-md);
+            border: 2px solid #3a3a3c;
+            border-radius: var(--radius-sm);
+            font-size: var(--text-subhead);
+            background: #1c1c1e;
+            color: #f5f5f7;
         }
 
         .search-input:focus {
@@ -483,46 +490,55 @@ if ($selectedRoomId) {
             border-color: #667eea;
         }
 
+        .search-input::placeholder {
+            color: #636366;
+        }
+
         .accordion {
-            margin-bottom: 10px;
+            margin-bottom: var(--spacing-md);
         }
 
         .accordion-header {
-            padding: 12px 15px;
-            background: #f8f9fa;
+            padding: var(--spacing-md) 15px;
+            background: #3a3a3c;
             cursor: pointer;
             display: flex;
             justify-content: space-between;
             align-items: center;
             transition: background 0.2s;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid #48484a;
         }
 
         .accordion-header:hover {
-            background: #e9ecef;
+            background: #48484a;
         }
 
         .accordion-header.active {
-            background: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
 
         .accordion-title {
-            font-size: 14px;
+            font-size: var(--text-subhead);
             font-weight: 600;
             display: flex;
             align-items: center;
             gap: 8px;
+            color: #f5f5f7;
+        }
+
+        .accordion-header.active .accordion-title {
+            color: white;
         }
 
         .accordion-count {
-            font-size: 12px;
+            font-size: var(--text-caption-1);
             opacity: 0.8;
         }
 
         .accordion-icon {
             transition: transform 0.3s;
-            font-size: 12px;
+            font-size: var(--text-caption-1);
         }
 
         .accordion-header.active .accordion-icon {
@@ -542,9 +558,9 @@ if ($selectedRoomId) {
         .department-badge {
             display: inline-block;
             padding: 2px 8px;
-            background: #667eea;
+            background: var(--primary-purple);
             color: white;
-            border-radius: 10px;
+            border-radius: var(--radius-md);
             font-size: 10px;
             margin-left: 5px;
         }
@@ -555,15 +571,15 @@ if ($selectedRoomId) {
         }
 
         .file-input-label {
-            padding: 12px 20px;
-            background: #f8f9fa;
+            padding: var(--spacing-md) 20px;
+            background: #1c1c1e;
             color: #667eea;
             border: 2px solid #667eea;
-            border-radius: 12px;
+            border-radius: var(--radius-md);
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all var(--duration-normal) var(--ease-out);
             display: inline-flex;
             align-items: center;
             gap: 5px;
@@ -579,11 +595,12 @@ if ($selectedRoomId) {
         }
 
         .file-preview {
-            margin-bottom: 10px;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            font-size: 13px;
+            margin-bottom: var(--spacing-md);
+            padding: var(--spacing-md);
+            background: #3a3a3c;
+            border-radius: var(--radius-sm);
+            font-size: var(--text-footnote);
+            color: #f5f5f7;
             display: none;
         }
 
@@ -600,13 +617,13 @@ if ($selectedRoomId) {
         }
 
         .remove-file {
-            background: #dc3545;
+            background: var(--apple-red);
             color: white;
             border: none;
             padding: 4px 10px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: var(--text-caption-1);
         }
 
         /* デスクトップ用レイアウト（デフォルト） */
@@ -615,7 +632,7 @@ if ($selectedRoomId) {
                 display: none !important;
             }
 
-            .nav-links {
+            .user-info {
                 display: flex !important;
             }
 
@@ -652,26 +669,8 @@ if ($selectedRoomId) {
                 display: flex;
             }
 
-            .nav-links {
-                display: none;
-                position: fixed;
-                top: 60px;
-                right: 20px;
-                flex-direction: column;
-                background: white;
-                padding: 10px;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 1000;
-            }
-
-            .nav-links.show {
-                display: flex;
-            }
-
-            .nav-links a {
-                color: #667eea;
-                background: #f8f9fa;
+            .user-info {
+                display: none !important;
             }
 
             .rooms-sidebar {
@@ -694,11 +693,11 @@ if ($selectedRoomId) {
             }
 
             .chat-header {
-                padding: 12px 15px;
+                padding: var(--spacing-md) 15px;
             }
 
             .chat-title {
-                font-size: 16px;
+                font-size: var(--text-callout);
             }
 
             .messages-area {
@@ -707,7 +706,7 @@ if ($selectedRoomId) {
 
             .message-bubble {
                 max-width: 75%;
-                font-size: 14px;
+                font-size: var(--text-subhead);
             }
 
             .input-area {
@@ -715,23 +714,23 @@ if ($selectedRoomId) {
             }
 
             .input-form textarea {
-                font-size: 14px;
+                font-size: var(--text-subhead);
             }
 
             .send-btn {
-                padding: 12px 20px;
-                font-size: 14px;
+                padding: var(--spacing-md) 20px;
+                font-size: var(--text-subhead);
             }
 
             .file-input-label {
-                padding: 10px 15px;
-                font-size: 14px;
+                padding: var(--spacing-md) 15px;
+                font-size: var(--text-subhead);
             }
         }
 
         @media (max-width: 480px) {
             .header h1 {
-                font-size: 16px;
+                font-size: var(--text-callout);
             }
 
             .rooms-sidebar {
@@ -756,17 +755,18 @@ if ($selectedRoomId) {
             align-items: center;
             gap: 5px;
             margin-top: 8px;
-            padding: 8px 12px;
+            padding: var(--spacing-sm) 12px;
             background: rgba(255,255,255,0.2);
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             color: inherit;
             text-decoration: none;
-            font-size: 13px;
-            transition: all 0.2s;
+            font-size: var(--text-footnote);
+            transition: all var(--duration-fast) var(--ease-out);
         }
 
         .message.received .attachment-link {
-            background: #e8eaf6;
+            background: rgba(102, 126, 234, 0.2);
+            color: #bf5af2;
         }
 
         .attachment-link:hover {
@@ -781,7 +781,7 @@ if ($selectedRoomId) {
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.7);
             z-index: 2000;
             align-items: center;
             justify-content: center;
@@ -792,9 +792,9 @@ if ($selectedRoomId) {
         }
 
         .submission-modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
+            background: #2c2c2e;
+            padding: var(--spacing-2xl);
+            border-radius: var(--radius-lg);
             max-width: 500px;
             width: 90%;
         }
@@ -802,35 +802,42 @@ if ($selectedRoomId) {
         .submission-modal-header {
             font-size: 20px;
             font-weight: 600;
-            margin-bottom: 20px;
-            color: #333;
+            margin-bottom: var(--spacing-lg);
+            color: #f5f5f7;
         }
 
         .submission-form-group {
-            margin-bottom: 20px;
+            margin-bottom: var(--spacing-lg);
         }
 
         .submission-form-group label {
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: #333;
+            color: #f5f5f7;
         }
 
         .submission-form-group input,
         .submission-form-group textarea {
             width: 100%;
-            padding: 10px;
-            border: 2px solid #e1e8ed;
-            border-radius: 8px;
-            font-size: 14px;
+            padding: var(--spacing-md);
+            border: 2px solid #3a3a3c;
+            border-radius: var(--radius-sm);
+            font-size: var(--text-subhead);
             font-family: inherit;
+            background: #1c1c1e;
+            color: #f5f5f7;
         }
 
         .submission-form-group input:focus,
         .submission-form-group textarea:focus {
             outline: none;
             border-color: #667eea;
+        }
+
+        .submission-form-group input::placeholder,
+        .submission-form-group textarea::placeholder {
+            color: #636366;
         }
 
         .submission-form-group textarea {
@@ -842,26 +849,26 @@ if ($selectedRoomId) {
             display: flex;
             gap: 10px;
             justify-content: flex-end;
-            margin-top: 20px;
+            margin-top: var(--spacing-lg);
         }
 
         .btn-submission {
-            padding: 10px 20px;
+            padding: var(--spacing-md) 20px;
             border: none;
-            border-radius: 8px;
-            font-size: 14px;
+            border-radius: var(--radius-sm);
+            font-size: var(--text-subhead);
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all var(--duration-normal) var(--ease-out);
         }
 
         .btn-submission-cancel {
-            background: #6c757d;
+            background: var(--apple-gray);
             color: white;
         }
 
         .btn-submission-cancel:hover {
-            background: #5a6268;
+            background: var(--apple-gray);
         }
 
         .btn-submission-submit {
@@ -875,15 +882,15 @@ if ($selectedRoomId) {
         }
 
         .submission-btn {
-            padding: 12px 20px;
+            padding: var(--spacing-md) 20px;
             background: #ff9800;
             color: white;
             border: 2px solid #ff9800;
-            border-radius: 12px;
+            border-radius: var(--radius-md);
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all var(--duration-normal) var(--ease-out);
             display: inline-flex;
             align-items: center;
             gap: 5px;
@@ -901,19 +908,19 @@ if ($selectedRoomId) {
         }
 
         .dropdown-toggle {
-            padding: 8px 16px;
+            padding: var(--spacing-sm) 16px;
             background: rgba(255,255,255,0.2);
             color: white;
             text-decoration: none;
-            border-radius: 8px;
-            font-size: 14px;
+            border-radius: var(--radius-sm);
+            font-size: var(--text-subhead);
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 5px;
             border: none;
             font-family: inherit;
-            transition: all 0.3s;
+            transition: all var(--duration-normal) var(--ease-out);
         }
 
         .dropdown-toggle:hover {
@@ -934,13 +941,14 @@ if ($selectedRoomId) {
             position: absolute;
             top: 100%;
             right: 0;
-            background: white;
-            border-radius: 5px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            background: #2c2c2e;
+            border-radius: var(--radius-sm);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
             min-width: 200px;
             margin-top: 5px;
             z-index: 1000;
             overflow: hidden;
+            border: 1px solid #3a3a3c;
         }
 
         .dropdown.open .dropdown-menu {
@@ -949,11 +957,11 @@ if ($selectedRoomId) {
 
         .dropdown-menu a {
             display: block;
-            padding: 12px 20px;
-            color: #333;
+            padding: var(--spacing-md) 20px;
+            color: #f5f5f7;
             text-decoration: none;
             transition: background 0.2s;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid #3a3a3c;
         }
 
         .dropdown-menu a:last-child {
@@ -961,7 +969,7 @@ if ($selectedRoomId) {
         }
 
         .dropdown-menu a:hover {
-            background: #f8f9fa;
+            background: #3a3a3c;
         }
 
         .dropdown-menu a .menu-icon {
@@ -977,10 +985,10 @@ if ($selectedRoomId) {
         .logout-btn {
             color: white;
             text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 8px;
+            padding: var(--spacing-sm) 16px;
+            border-radius: var(--radius-sm);
             background: rgba(255,255,255,0.2);
-            transition: all 0.3s;
+            transition: all var(--duration-normal) var(--ease-out);
         }
 
         .logout-btn:hover {
@@ -1082,14 +1090,36 @@ if ($selectedRoomId) {
                     </div>
                 </div>
 
+                <!-- ユーザー設定ドロップダウン -->
+                <div class="dropdown">
+                    <button class="dropdown-toggle" onclick="toggleDropdown(event, this)">
+                        👤 アカウント
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="profile.php">
+                            <span class="menu-icon">👤</span>プロフィール編集
+                        </a>
+                        <a href="/logout.php">
+                            <span class="menu-icon">🚪</span>ログアウト
+                        </a>
+                    </div>
+                </div>
+
                 <a href="renrakucho_activities.php" class="logout-btn">← 活動管理</a>
-                <a href="/logout.php" class="logout-btn">ログアウト</a>
             </div>
         </div>
 
         <div class="main-content">
             <!-- 生徒一覧サイドバー -->
             <div class="rooms-sidebar" id="roomsSidebar">
+                <!-- 一斉送信ボタン -->
+                <div class="filter-section">
+                    <button onclick="openBroadcastModal()" style="width: 100%; padding: var(--spacing-md); background: #30d158; color: white; border: none; border-radius: var(--radius-sm); font-size: var(--text-subhead); font-weight: 600; cursor: pointer; margin-bottom: var(--spacing-md);">
+                        📢 一斉送信
+                    </button>
+                </div>
+
                 <!-- 検索ボックス -->
                 <div class="filter-section">
                     <input type="text" id="searchInput" class="search-input" placeholder="🔍 生徒名・保護者名で検索..." onkeyup="filterStudents()">
@@ -1101,12 +1131,12 @@ if ($selectedRoomId) {
                         <p>生徒がいません</p>
                     </div>
                 <?php else: ?>
-                    <!-- 小学部 -->
+                    <!-- 小学生 -->
                     <?php if (!empty($elementary)): ?>
                     <div class="accordion">
                         <div class="accordion-header" onclick="toggleAccordion(this)">
                             <div class="accordion-title">
-                                <span>🎒 小学部</span>
+                                <span>🎒 小学生</span>
                                 <span class="accordion-count">(<?= count($elementary) ?>名)</span>
                             </div>
                             <span class="accordion-icon">▼</span>
@@ -1134,12 +1164,12 @@ if ($selectedRoomId) {
                     </div>
                     <?php endif; ?>
 
-                    <!-- 中等部 -->
+                    <!-- 中学生 -->
                     <?php if (!empty($junior)): ?>
                     <div class="accordion">
                         <div class="accordion-header" onclick="toggleAccordion(this)">
                             <div class="accordion-title">
-                                <span>📚 中等部</span>
+                                <span>📚 中学生</span>
                                 <span class="accordion-count">(<?= count($junior) ?>名)</span>
                             </div>
                             <span class="accordion-icon">▼</span>
@@ -1167,12 +1197,12 @@ if ($selectedRoomId) {
                     </div>
                     <?php endif; ?>
 
-                    <!-- 高等部 -->
+                    <!-- 高校生 -->
                     <?php if (!empty($senior)): ?>
                     <div class="accordion">
                         <div class="accordion-header" onclick="toggleAccordion(this)">
                             <div class="accordion-title">
-                                <span>🎓 高等部</span>
+                                <span>🎓 高校生</span>
                                 <span class="accordion-count">(<?= count($senior) ?>名)</span>
                             </div>
                             <span class="accordion-icon">▼</span>
@@ -1277,12 +1307,12 @@ if ($selectedRoomId) {
                 <div class="submission-form-group">
                     <label>参考資料の添付（任意）</label>
                     <input type="file" id="submissionAttachment" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt">
-                    <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                    <div style="font-size: var(--text-caption-1); color: #98989d; margin-top: 5px;">
                         最大3MBまで（画像・PDF・Word・Excel・テキスト）
                     </div>
-                    <div id="submissionFilePreview" style="display: none; margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 13px;">
+                    <div id="submissionFilePreview" style="display: none; margin-top: 10px; padding: var(--spacing-md); background: #3a3a3c; border-radius: var(--radius-sm); font-size: var(--text-footnote); color: #f5f5f7;">
                         📎 <span id="submissionFileName"></span> (<span id="submissionFileSize"></span>)
-                        <button type="button" onclick="removeSubmissionFile()" style="margin-left: 10px; padding: 2px 8px; background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;">削除</button>
+                        <button type="button" onclick="removeSubmissionFile()" style="margin-left: 10px; padding: 2px 8px; background: #ff3b30; color: white; border: none; border-radius: 3px; cursor: pointer;">削除</button>
                     </div>
                 </div>
                 <div class="submission-modal-footer">
@@ -1373,20 +1403,16 @@ if ($selectedRoomId) {
             // 欠席連絡・イベント参加メッセージの場合は特別なスタイル
             const isEvent = msg.message_type === 'event_registration';
             if (isAbsence) {
-                html += `<div class="message-bubble" style="background: #ffe6e6; border-left: 4px solid #ff6b35; color: #333; font-weight: 500; white-space: nowrap; max-width: none; width: auto;">`;
+                html += `<div class="message-bubble" style="background: #ffe6e6; border-left: 4px solid #ff6b35; color: #333; font-weight: 500; white-space: normal; word-wrap: break-word;">`;
             } else if (isEvent) {
-                html += `<div class="message-bubble" style="background: #e6f2ff; border-left: 4px solid #2563eb; color: #333; font-weight: 500; white-space: nowrap; max-width: none; width: auto;">`;
+                html += `<div class="message-bubble" style="background: #e6f2ff; border-left: 4px solid #2563eb; color: #333; font-weight: 500; white-space: normal; word-wrap: break-word;">`;
             } else {
                 html += `<div class="message-bubble">`;
             }
 
             if (msg.message) {
-                // 欠席連絡・イベント参加は改行をスペースに置き換え、通常メッセージは<br>に変換
-                if (isAbsence || isEvent) {
-                    html += escapeHtml(msg.message).replace(/\n/g, ' ');
-                } else {
-                    html += escapeHtml(msg.message).replace(/\n/g, '<br>');
-                }
+                // 欠席連絡・イベント参加も改行を<br>に変換
+                html += escapeHtml(msg.message).replace(/\n/g, '<br>');
             }
             if (msg.attachment_path) {
                 html += `<a href="download_attachment.php?id=${msg.id}" class="attachment-link" target="_blank">`;
@@ -1534,13 +1560,42 @@ if ($selectedRoomId) {
             }
         }
 
+        // リアルタイム更新用の関数（新しいAPI使用）
+        function checkNewMessages() {
+            if (!roomId) return;
+
+            fetch(`chat_realtime.php?room_id=${roomId}&last_message_id=${lastMessageId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.new_messages && data.new_messages.length > 0) {
+                        const messagesArea = document.getElementById('messagesArea');
+                        const shouldScroll = messagesArea.scrollHeight - messagesArea.scrollTop <= messagesArea.clientHeight + 100;
+
+                        data.new_messages.forEach(msg => {
+                            appendMessage(msg);
+                            lastMessageId = Math.max(lastMessageId, msg.id);
+                        });
+
+                        if (shouldScroll) {
+                            scrollToBottom();
+                        }
+                    }
+
+                    // 未読数をバッジ更新（オプション）
+                    if (data.unread_count !== undefined) {
+                        // ここで未読バッジを更新可能
+                    }
+                })
+                .catch(error => console.error('リアルタイム更新エラー:', error));
+        }
+
         // 初期読み込み
         if (roomId) {
             loadMessages();
             scrollToBottom();
 
-            // 3秒ごとに新しいメッセージをチェック
-            setInterval(loadMessages, 3000);
+            // 5秒ごとに新しいメッセージをチェック（リアルタイム更新）
+            setInterval(checkNewMessages, 5000);
         }
 
         // アコーディオンの初期化（すべて開く）
@@ -1744,6 +1799,131 @@ if ($selectedRoomId) {
                 e.stopPropagation();
             });
         });
+
+        // 一斉送信モーダル関連
+        function openBroadcastModal() {
+            document.getElementById('broadcastModal').style.display = 'block';
+        }
+
+        function closeBroadcastModal() {
+            document.getElementById('broadcastModal').style.display = 'none';
+            document.getElementById('broadcastMessage').value = '';
+            // すべてのチェックボックスを解除
+            document.querySelectorAll('.guardian-checkbox').forEach(cb => cb.checked = false);
+        }
+
+        function selectAllGuardians(checked) {
+            document.querySelectorAll('.guardian-checkbox').forEach(cb => {
+                cb.checked = checked;
+            });
+        }
+
+        function sendBroadcast() {
+            const message = document.getElementById('broadcastMessage').value.trim();
+            const selectedGuardians = Array.from(document.querySelectorAll('.guardian-checkbox:checked'))
+                .map(cb => cb.value);
+
+            if (!message) {
+                alert('メッセージを入力してください');
+                return;
+            }
+
+            if (selectedGuardians.length === 0) {
+                alert('送信先を選択してください');
+                return;
+            }
+
+            if (!confirm(`${selectedGuardians.length}名の保護者にメッセージを送信しますか？`)) {
+                return;
+            }
+
+            // 一斉送信
+            fetch('broadcast_message.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    guardian_ids: selectedGuardians
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('メッセージを送信しました');
+                    closeBroadcastModal();
+                    location.reload();
+                } else {
+                    alert('送信に失敗しました: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('送信に失敗しました');
+            });
+        }
     </script>
+
+    <!-- 一斉送信モーダル -->
+    <div id="broadcastModal" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7);">
+        <div style="background-color: #2c2c2e; margin: 5% auto; padding: var(--spacing-2xl); width: 80%; max-width: 800px; border-radius: var(--radius-md); max-height: 80vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
+                <h2 style="margin: 0; color: #f5f5f7;">📢 一斉送信</h2>
+                <button onclick="closeBroadcastModal()" style="background: none; border: none; font-size: var(--text-title-2); cursor: pointer; color: #f5f5f7;">×</button>
+            </div>
+
+            <div style="margin-bottom: var(--spacing-lg);">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #f5f5f7;">メッセージ</label>
+                <textarea id="broadcastMessage" rows="5" style="width: 100%; padding: var(--spacing-md); border: 2px solid #3a3a3c; border-radius: var(--radius-sm); font-size: var(--text-subhead); font-family: inherit; resize: vertical; background: #1c1c1e; color: #f5f5f7;" placeholder="送信するメッセージを入力してください"></textarea>
+            </div>
+
+            <div style="margin-bottom: var(--spacing-lg);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
+                    <label style="font-weight: 600; color: #f5f5f7;">送信先を選択</label>
+                    <div>
+                        <button onclick="selectAllGuardians(true)" style="padding: 6px 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: var(--radius-sm); font-size: var(--text-footnote); cursor: pointer; margin-right: 5px;">全選択</button>
+                        <button onclick="selectAllGuardians(false)" style="padding: 6px 12px; background: #636366; color: white; border: none; border-radius: var(--radius-sm); font-size: var(--text-footnote); cursor: pointer;">全解除</button>
+                    </div>
+                </div>
+                <div style="max-height: 300px; overflow-y: auto; border: 1px solid #3a3a3c; border-radius: var(--radius-sm); padding: var(--spacing-md); background: #1c1c1e;">
+                    <?php
+                    // 保護者の重複を除去
+                    $uniqueGuardians = [];
+                    foreach ($allStudents as $student) {
+                        if ($student['guardian_id'] && !isset($uniqueGuardians[$student['guardian_id']])) {
+                            $uniqueGuardians[$student['guardian_id']] = [
+                                'guardian_id' => $student['guardian_id'],
+                                'guardian_name' => $student['guardian_name'],
+                                'student_names' => []
+                            ];
+                        }
+                        if ($student['guardian_id']) {
+                            $uniqueGuardians[$student['guardian_id']]['student_names'][] = $student['student_name'];
+                        }
+                    }
+                    ?>
+                    <?php foreach ($uniqueGuardians as $guardian): ?>
+                        <label style="display: block; padding: var(--spacing-md); cursor: pointer; border-bottom: 1px solid #3a3a3c;">
+                            <input type="checkbox" class="guardian-checkbox" value="<?= $guardian['guardian_id'] ?>" style="margin-right: 10px;">
+                            <span style="font-weight: 600; color: #f5f5f7;"><?= htmlspecialchars($guardian['guardian_name'] ?? '名前未登録') ?></span>
+                            <span style="color: #98989d; font-size: var(--text-footnote); margin-left: 10px;">
+                                (<?= implode('、', array_map('htmlspecialchars', $guardian['student_names'])) ?>さんの保護者)
+                            </span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button onclick="closeBroadcastModal()" style="padding: var(--spacing-md) 24px; background: #636366; color: white; border: none; border-radius: var(--radius-sm); font-size: var(--text-subhead); cursor: pointer;">
+                    キャンセル
+                </button>
+                <button onclick="sendBroadcast()" style="padding: var(--spacing-md) 24px; background: #30d158; color: white; border: none; border-radius: var(--radius-sm); font-size: var(--text-subhead); cursor: pointer;">
+                    送信
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

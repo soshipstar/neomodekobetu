@@ -119,6 +119,7 @@ if ($selectedStudentId) {
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+    <link rel="stylesheet" href="/assets/css/apple-design.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>チャット - 保護者ページ</title>
@@ -131,16 +132,16 @@ if ($selectedStudentId) {
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--apple-bg-secondary);
             min-height: 100vh;
-            padding: 20px;
+            padding: var(--spacing-md);
         }
 
         .container {
             max-width: 1000px;
             margin: 0 auto;
             background: white;
-            border-radius: 20px;
+            border-radius: var(--radius-xl);
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             overflow: hidden;
             display: flex;
@@ -151,15 +152,16 @@ if ($selectedStudentId) {
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 20px 30px;
+            padding: var(--spacing-lg) 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .header h1 {
-            font-size: 24px;
+            font-size: var(--text-title-2);
             font-weight: 600;
+            color: white;
         }
 
         .nav-links {
@@ -170,27 +172,41 @@ if ($selectedStudentId) {
         .nav-links a {
             color: white;
             text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 8px;
+            padding: var(--spacing-sm) 16px;
+            border-radius: var(--radius-sm);
             background: rgba(255,255,255,0.2);
-            transition: all 0.3s;
+            transition: all var(--duration-normal) var(--ease-out);
         }
 
         .nav-links a:hover {
             background: rgba(255,255,255,0.3);
         }
 
+        /* デスクトップ用レイアウト（デフォルト） */
+        @media (min-width: 769px) {
+            .nav-links {
+                display: flex !important;
+            }
+        }
+
+        /* レスポンシブデザイン */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+        }
+
         .student-selector {
             padding: 15px 20px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #e0e0e0;
+            background: var(--apple-gray-6);
+            border-bottom: 1px solid var(--apple-gray-5);
         }
 
         .student-selector select {
             width: 100%;
-            padding: 10px;
+            padding: var(--spacing-md);
             border: 2px solid #e1e8ed;
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             font-size: 15px;
             background: white;
             cursor: pointer;
@@ -206,8 +222,8 @@ if ($selectedStudentId) {
         .messages-area {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
-            background: #f8f9fa;
+            padding: var(--spacing-lg);
+            background: var(--apple-gray-6);
         }
 
         .message {
@@ -222,7 +238,7 @@ if ($selectedStudentId) {
 
         .message-bubble {
             max-width: 85%;
-            padding: 12px 16px;
+            padding: var(--spacing-md) 16px;
             border-radius: 18px;
             word-wrap: break-word;
             line-height: 1.5;
@@ -230,7 +246,7 @@ if ($selectedStudentId) {
 
         .message.received .message-bubble {
             background: white;
-            color: #333;
+            color: var(--text-primary);
             border-bottom-left-radius: 4px;
         }
 
@@ -242,7 +258,7 @@ if ($selectedStudentId) {
 
         .message-info {
             font-size: 11px;
-            color: #999;
+            color: var(--text-secondary);
             margin-top: 4px;
         }
 
@@ -252,15 +268,15 @@ if ($selectedStudentId) {
 
         .sender-name {
             font-weight: 600;
-            font-size: 12px;
+            font-size: var(--text-caption-1);
             margin-bottom: 4px;
-            color: #667eea;
+            color: var(--primary-purple);
         }
 
         .absence-form-area {
             padding: 15px 20px;
             background: #fff8f0;
-            border-top: 1px solid #e0e0e0;
+            border-top: 1px solid var(--apple-gray-5);
             display: none;
         }
 
@@ -278,7 +294,7 @@ if ($selectedStudentId) {
         .absence-form-title {
             font-weight: 600;
             color: #ff6b35;
-            font-size: 16px;
+            font-size: var(--text-callout);
         }
 
         .close-absence-form {
@@ -288,44 +304,44 @@ if ($selectedStudentId) {
             padding: 5px 15px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 13px;
+            font-size: var(--text-footnote);
         }
 
         .absence-date-select {
             width: 100%;
-            padding: 10px;
+            padding: var(--spacing-md);
             border: 2px solid #ff6b35;
-            border-radius: 8px;
-            font-size: 14px;
-            margin-bottom: 10px;
+            border-radius: var(--radius-sm);
+            font-size: var(--text-subhead);
+            margin-bottom: var(--spacing-md);
         }
 
         .absence-reason {
             width: 100%;
-            padding: 10px;
+            padding: var(--spacing-md);
             border: 2px solid #ff6b35;
-            border-radius: 8px;
-            font-size: 14px;
+            border-radius: var(--radius-sm);
+            font-size: var(--text-subhead);
             resize: vertical;
             min-height: 60px;
-            margin-bottom: 10px;
+            margin-bottom: var(--spacing-md);
             font-family: inherit;
         }
 
         .send-absence-btn {
             width: 100%;
-            padding: 12px;
+            padding: var(--spacing-md);
             background: #ff6b35;
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
         }
 
         .send-absence-btn:disabled {
-            background: #ccc;
+            background: var(--apple-gray-4);
             cursor: not-allowed;
         }
 
@@ -333,7 +349,7 @@ if ($selectedStudentId) {
         .event-form-area {
             padding: 15px 20px;
             background: #f0f8ff;
-            border-top: 1px solid #e0e0e0;
+            border-top: 1px solid var(--apple-gray-5);
             display: none;
         }
 
@@ -351,7 +367,7 @@ if ($selectedStudentId) {
         .event-form-title {
             font-weight: 600;
             color: #2563eb;
-            font-size: 16px;
+            font-size: var(--text-callout);
         }
 
         .close-event-form {
@@ -361,25 +377,25 @@ if ($selectedStudentId) {
             padding: 5px 15px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 13px;
+            font-size: var(--text-footnote);
         }
 
         .event-select {
             width: 100%;
-            padding: 10px;
+            padding: var(--spacing-md);
             border: 2px solid #2563eb;
-            border-radius: 8px;
-            font-size: 14px;
-            margin-bottom: 10px;
+            border-radius: var(--radius-sm);
+            font-size: var(--text-subhead);
+            margin-bottom: var(--spacing-md);
         }
 
         .event-details {
             background: white;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 10px;
+            padding: var(--spacing-md);
+            border-radius: var(--radius-sm);
+            margin-bottom: var(--spacing-md);
             display: none;
-            font-size: 13px;
+            font-size: var(--text-footnote);
         }
 
         .event-details.show {
@@ -388,37 +404,37 @@ if ($selectedStudentId) {
 
         .event-notes {
             width: 100%;
-            padding: 10px;
+            padding: var(--spacing-md);
             border: 2px solid #2563eb;
-            border-radius: 8px;
-            font-size: 14px;
+            border-radius: var(--radius-sm);
+            font-size: var(--text-subhead);
             resize: vertical;
             min-height: 60px;
-            margin-bottom: 10px;
+            margin-bottom: var(--spacing-md);
             font-family: inherit;
         }
 
         .send-event-btn {
             width: 100%;
-            padding: 12px;
+            padding: var(--spacing-md);
             background: #2563eb;
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
         }
 
         .send-event-btn:disabled {
-            background: #ccc;
+            background: var(--apple-gray-4);
             cursor: not-allowed;
         }
 
         .input-area {
-            padding: 20px;
+            padding: var(--spacing-lg);
             background: white;
-            border-top: 1px solid #e0e0e0;
+            border-top: 1px solid var(--apple-gray-5);
         }
 
         .message-type-selector {
@@ -429,23 +445,23 @@ if ($selectedStudentId) {
 
         .message-type-btn {
             flex: 1;
-            padding: 10px;
+            padding: var(--spacing-md);
             border: 2px solid #e1e8ed;
             background: white;
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             cursor: pointer;
-            font-size: 14px;
-            transition: all 0.2s;
+            font-size: var(--text-subhead);
+            transition: all var(--duration-fast) var(--ease-out);
         }
 
         .message-type-btn:hover {
-            border-color: #667eea;
+            border-color: var(--primary-purple);
         }
 
         .message-type-btn.active {
-            background: #667eea;
+            background: var(--primary-purple);
             color: white;
-            border-color: #667eea;
+            border-color: var(--primary-purple);
         }
 
         .message-type-btn.absence.active {
@@ -460,9 +476,9 @@ if ($selectedStudentId) {
 
         .input-form textarea {
             flex: 1;
-            padding: 12px;
+            padding: var(--spacing-md);
             border: 2px solid #e1e8ed;
-            border-radius: 12px;
+            border-radius: var(--radius-md);
             font-size: 15px;
             resize: none;
             font-family: inherit;
@@ -472,19 +488,19 @@ if ($selectedStudentId) {
 
         .input-form textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--primary-purple);
         }
 
         .send-btn {
-            padding: 12px 30px;
+            padding: var(--spacing-md) 30px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 12px;
+            border-radius: var(--radius-md);
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all var(--duration-normal) var(--ease-out);
         }
 
         .send-btn:hover {
@@ -501,14 +517,14 @@ if ($selectedStudentId) {
         .empty-state {
             text-align: center;
             padding: 60px 20px;
-            color: #666;
+            color: var(--text-secondary);
         }
 
         .date-divider {
             text-align: center;
-            margin: 20px 0;
-            color: #999;
-            font-size: 12px;
+            margin: var(--spacing-lg) 0;
+            color: var(--text-secondary);
+            font-size: var(--text-caption-1);
             font-weight: 600;
         }
 
@@ -518,22 +534,22 @@ if ($selectedStudentId) {
         }
 
         .file-input-label {
-            padding: 12px 20px;
-            background: #f8f9fa;
-            color: #667eea;
-            border: 2px solid #667eea;
-            border-radius: 12px;
+            padding: var(--spacing-md) 20px;
+            background: var(--apple-gray-6);
+            color: var(--primary-purple);
+            border: 2px solid var(--primary-purple);
+            border-radius: var(--radius-md);
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all var(--duration-normal) var(--ease-out);
             display: inline-flex;
             align-items: center;
             gap: 5px;
         }
 
         .file-input-label:hover {
-            background: #667eea;
+            background: var(--primary-purple);
             color: white;
         }
 
@@ -543,10 +559,10 @@ if ($selectedStudentId) {
 
         .file-preview {
             margin-top: 10px;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            font-size: 13px;
+            padding: var(--spacing-md);
+            background: var(--apple-gray-6);
+            border-radius: var(--radius-sm);
+            font-size: var(--text-footnote);
             display: none;
         }
 
@@ -563,13 +579,13 @@ if ($selectedStudentId) {
         }
 
         .remove-file {
-            background: #dc3545;
+            background: var(--apple-red);
             color: white;
             border: none;
             padding: 4px 10px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: var(--text-caption-1);
         }
 
         .attachment-link {
@@ -577,13 +593,13 @@ if ($selectedStudentId) {
             align-items: center;
             gap: 5px;
             margin-top: 8px;
-            padding: 8px 12px;
+            padding: var(--spacing-sm) 12px;
             background: rgba(255,255,255,0.2);
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             color: inherit;
             text-decoration: none;
-            font-size: 13px;
-            transition: all 0.2s;
+            font-size: var(--text-footnote);
+            transition: all var(--duration-fast) var(--ease-out);
         }
 
         .message.received .attachment-link {
@@ -639,13 +655,13 @@ if ($selectedStudentId) {
                     ></textarea>
 
                     <!-- 振替依頼 -->
-                    <div style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #28a745;">
-                        <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 10px;">
+                    <div style="margin-top: 15px; padding: 15px; background: var(--apple-gray-6); border-radius: var(--radius-sm); border-left: 4px solid var(--apple-green);">
+                        <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: var(--spacing-md);">
                             <input type="checkbox" id="requestMakeup" onchange="toggleMakeupDate()" style="margin-right: 8px; width: 18px; height: 18px;">
-                            <span style="font-weight: 600; color: #333;">振替を希望する</span>
+                            <span style="font-weight: 600; color: var(--text-primary);">振替を希望する</span>
                         </label>
                         <div id="makeupDateSection" style="display: none;">
-                            <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">振替希望日を選択してください</label>
+                            <label style="display: block; margin-bottom: 5px; font-size: var(--text-subhead); color: var(--text-secondary);">振替希望日を選択してください</label>
                             <select class="absence-date-select" id="makeupDate">
                                 <option value="">選択してください</option>
                                 <?php
@@ -657,7 +673,7 @@ if ($selectedStudentId) {
                                 }
                                 ?>
                             </select>
-                            <p style="font-size: 12px; color: #666; margin-top: 5px;">※スタッフの承認後、選択した日の出席予定者に追加されます</p>
+                            <p style="font-size: var(--text-caption-1); color: var(--text-secondary); margin-top: 5px;">※スタッフの承認後、選択した日の出席予定者に追加されます</p>
                         </div>
                     </div>
 
@@ -698,7 +714,7 @@ if ($selectedStudentId) {
                 <div class="input-area">
                     <!-- メッセージタイプセレクター（プルダウン） -->
                     <div class="message-type-selector">
-                        <select onchange="selectMessageType(this.value)" style="width: 100%; padding: 10px; border: 2px solid #667eea; border-radius: 8px; font-size: 14px;">
+                        <select onchange="selectMessageType(this.value)" style="width: 100%; padding: var(--spacing-md); border: 2px solid var(--primary-purple); border-radius: var(--radius-sm); font-size: var(--text-subhead);">
                             <option value="normal">💬 通常メッセージ</option>
                             <option value="absence">🚫 欠席連絡</option>
                             <option value="event">🎉 イベント参加申込</option>
@@ -822,20 +838,16 @@ if ($selectedStudentId) {
             // 欠席連絡メッセージの場合は特別なスタイル
             const isEvent = msg.message_type === 'event_registration';
             if (isAbsence) {
-                html += `<div class="message-bubble" style="background: #ffe6e6; border-left: 4px solid #ff6b35; color: #333; font-weight: 500; white-space: nowrap; max-width: none; width: auto;">`;
+                html += `<div class="message-bubble" style="background: #ffe6e6; border-left: 4px solid #ff6b35; color: #333; font-weight: 500; white-space: normal; word-wrap: break-word;">`;
             } else if (isEvent) {
-                html += `<div class="message-bubble" style="background: #e6f2ff; border-left: 4px solid #2563eb; color: #333; font-weight: 500; white-space: nowrap; max-width: none; width: auto;">`;
+                html += `<div class="message-bubble" style="background: #e6f2ff; border-left: 4px solid #2563eb; color: #333; font-weight: 500; white-space: normal; word-wrap: break-word;">`;
             } else {
                 html += `<div class="message-bubble">`;
             }
 
             if (msg.message) {
-                // 欠席連絡・イベント参加は改行をスペースに置き換え、通常メッセージは<br>に変換
-                if (isAbsence || isEvent) {
-                    html += escapeHtml(msg.message).replace(/\n/g, ' ');
-                } else {
-                    html += escapeHtml(msg.message).replace(/\n/g, '<br>');
-                }
+                // 欠席連絡・イベント参加も改行を<br>に変換
+                html += escapeHtml(msg.message).replace(/\n/g, '<br>');
             }
             if (msg.attachment_path) {
                 html += `<a href="download_attachment.php?id=${msg.id}" class="attachment-link" target="_blank">`;
@@ -993,7 +1005,7 @@ if ($selectedStudentId) {
             let html = `<strong>${eventName}</strong><br>`;
             html += `日時: ${dateStr}(${dayOfWeek})<br>`;
             if (eventDesc) {
-                html += `<div style="margin-top: 8px; color: #666;">${escapeHtml(eventDesc)}</div>`;
+                html += `<div style="margin-top: 8px; color: var(--text-secondary);">${escapeHtml(eventDesc)}</div>`;
             }
 
             detailsDiv.innerHTML = html;
@@ -1126,13 +1138,42 @@ if ($selectedStudentId) {
             });
         }
 
+        // リアルタイム更新用の関数（新しいAPI使用）
+        function checkNewMessages() {
+            if (!roomId) return;
+
+            fetch(`chat_realtime.php?room_id=${roomId}&last_message_id=${lastMessageId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.new_messages && data.new_messages.length > 0) {
+                        const messagesArea = document.getElementById('messagesArea');
+                        const shouldScroll = messagesArea.scrollHeight - messagesArea.scrollTop <= messagesArea.clientHeight + 100;
+
+                        data.new_messages.forEach(msg => {
+                            appendMessage(msg);
+                            lastMessageId = Math.max(lastMessageId, msg.id);
+                        });
+
+                        if (shouldScroll) {
+                            scrollToBottom();
+                        }
+                    }
+
+                    // 未読数をバッジ更新（オプション）
+                    if (data.unread_count !== undefined) {
+                        // ここで未読バッジを更新可能
+                    }
+                })
+                .catch(error => console.error('リアルタイム更新エラー:', error));
+        }
+
         // 初期読み込み
         if (roomId) {
             loadMessages();
             scrollToBottom();
 
-            // 3秒ごとに新しいメッセージをチェック
-            setInterval(loadMessages, 3000);
+            // 5秒ごとに新しいメッセージをチェック（リアルタイム更新）
+            setInterval(checkNewMessages, 5000);
         }
     </script>
 </body>
