@@ -11,6 +11,7 @@ error_reporting(E_ALL);
 
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/kakehashi_auto_generator.php';
 
 // スタッフまたは管理者のみアクセス可能
 requireUserType(['staff', 'admin']);
@@ -19,371 +20,475 @@ $pdo = getDbConnection();
 $currentUser = getCurrentUser();
 $today = date('Y-m-d');
 
+// is_hiddenカラムが存在するか確認し、なければ追加
+try {
+    $stmt = $pdo->query("SHOW COLUMNS FROM individual_support_plans LIKE 'is_hidden'");
+    if ($stmt->rowCount() === 0) {
+        $pdo->exec("ALTER TABLE individual_support_plans ADD COLUMN is_hidden TINYINT(1) DEFAULT 0");
+    }
+} catch (Exception $e) {
+    error_log("Add is_hidden column to individual_support_plans error: " . $e->getMessage());
+}
+
+try {
+    $stmt = $pdo->query("SHOW COLUMNS FROM monitoring_records LIKE 'is_hidden'");
+    if ($stmt->rowCount() === 0) {
+        $pdo->exec("ALTER TABLE monitoring_records ADD COLUMN is_hidden TINYINT(1) DEFAULT 0");
+    }
+} catch (Exception $e) {
+    error_log("Add is_hidden column to monitoring_records error: " . $e->getMessage());
+}
+
+// 初回モニタリング未作成の非表示フラグ用カラムを追加
+try {
+    $stmt = $pdo->query("SHOW COLUMNS FROM students LIKE 'hide_initial_monitoring'");
+    if ($stmt->rowCount() === 0) {
+        $pdo->exec("ALTER TABLE students ADD COLUMN hide_initial_monitoring TINYINT(1) DEFAULT 0");
+    }
+} catch (Exception $e) {
+    error_log("Add hide_initial_monitoring column to students error: " . $e->getMessage());
+}
+
+// かけはし期間の自動生成（期限1ヶ月前に次の期間を生成）
+try {
+    autoGenerateNextKakehashiPeriods($pdo);
+} catch (Exception $e) {
+    error_log("Auto-generate kakehashi periods error: " . $e->getMessage());
+}
+
 // スタッフの教室IDを取得
 $classroomId = $_SESSION['classroom_id'] ?? null;
 
-// 1. 個別支援計画書が未作成または古い生徒を取得（自分の教室のみ）
+// 生徒一覧を取得（最新の個別支援計画書・モニタリングを確認するため）
+$studentCondition = $classroomId ? "AND u.classroom_id = ?" : "";
+$studentParams = $classroomId ? [$classroomId] : [];
+
+// 1. 個別支援計画書一覧を取得（未提出・下書き・期限切れ）
+// 各生徒の最新の提出済み計画書IDを取得
 $studentsNeedingPlan = [];
 
-if ($classroomId) {
-    // 1-1. 個別支援計画書が1つも作成されていない生徒
-    $stmt = $pdo->prepare("
-        SELECT s.id, s.student_name, s.support_start_date,
-               NULL as latest_plan_date,
-               'なし' as status
-        FROM students s
-        INNER JOIN users u ON s.guardian_id = u.id
-        WHERE s.is_active = 1 AND u.classroom_id = ?
-        AND NOT EXISTS (
-            SELECT 1 FROM individual_support_plans isp
-            WHERE isp.student_id = s.id
-        )
-        ORDER BY s.student_name
-    ");
-    $stmt->execute([$classroomId]);
-    $studentsNeedingPlan = array_merge($studentsNeedingPlan, $stmt->fetchAll());
+$sql = "
+    SELECT
+        s.id,
+        s.student_name,
+        s.support_start_date,
+        isp.id as plan_id,
+        isp.created_date,
+        isp.is_draft,
+        COALESCE(isp.is_hidden, 0) as is_hidden,
+        DATEDIFF(CURDATE(), isp.created_date) as days_since_plan,
+        (
+            SELECT MAX(isp2.id)
+            FROM individual_support_plans isp2
+            WHERE isp2.student_id = s.id AND isp2.is_draft = 0
+        ) as latest_submitted_plan_id
+    FROM students s
+    INNER JOIN users u ON s.guardian_id = u.id
+    LEFT JOIN individual_support_plans isp ON s.id = isp.student_id
+    WHERE s.is_active = 1
+    {$studentCondition}
+    ORDER BY s.student_name, isp.created_date DESC
+";
+$stmt = $pdo->prepare($sql);
+$stmt->execute($studentParams);
+$allPlanData = $stmt->fetchAll();
 
-    // 1-2. 最新の個別支援計画書から6ヶ月以上経過している生徒
-    $stmt = $pdo->prepare("
-        SELECT s.id, s.student_name, s.support_start_date,
-               MAX(isp.created_date) as latest_plan_date,
-               '最新から6ヶ月以上経過' as status
-        FROM students s
-        INNER JOIN users u ON s.guardian_id = u.id
-        INNER JOIN individual_support_plans isp ON s.id = isp.student_id
-        WHERE s.is_active = 1 AND u.classroom_id = ?
-        GROUP BY s.id
-        HAVING DATEDIFF(CURDATE(), MAX(isp.created_date)) >= 180
-        ORDER BY s.student_name
-    ");
-    $stmt->execute([$classroomId]);
-    $studentsNeedingPlan = array_merge($studentsNeedingPlan, $stmt->fetchAll());
-} else {
-    // 1-1. 個別支援計画書が1つも作成されていない生徒
-    $stmt = $pdo->query("
-        SELECT s.id, s.student_name, s.support_start_date,
-               NULL as latest_plan_date,
-               'なし' as status
-        FROM students s
-        WHERE s.is_active = 1
-        AND NOT EXISTS (
-            SELECT 1 FROM individual_support_plans isp
-            WHERE isp.student_id = s.id
-        )
-        ORDER BY s.student_name
-    ");
-    $studentsNeedingPlan = array_merge($studentsNeedingPlan, $stmt->fetchAll());
-
-    // 1-2. 最新の個別支援計画書から6ヶ月以上経過している生徒
-    $stmt = $pdo->query("
-        SELECT s.id, s.student_name, s.support_start_date,
-               MAX(isp.created_date) as latest_plan_date,
-               '最新から6ヶ月以上経過' as status
-        FROM students s
-        INNER JOIN individual_support_plans isp ON s.id = isp.student_id
-        WHERE s.is_active = 1
-        GROUP BY s.id
-        HAVING DATEDIFF(CURDATE(), MAX(isp.created_date)) >= 180
-        ORDER BY s.student_name
-    ");
-    $studentsNeedingPlan = array_merge($studentsNeedingPlan, $stmt->fetchAll());
+// 生徒ごとにグループ化
+$studentPlans = [];
+foreach ($allPlanData as $row) {
+    $studentId = $row['id'];
+    if (!isset($studentPlans[$studentId])) {
+        $studentPlans[$studentId] = [
+            'student_name' => $row['student_name'],
+            'support_start_date' => $row['support_start_date'],
+            'plans' => [],
+            'latest_submitted_plan_id' => $row['latest_submitted_plan_id']
+        ];
+    }
+    if ($row['plan_id']) {
+        $studentPlans[$studentId]['plans'][] = $row;
+    }
 }
 
-// 2. モニタリングが未作成または古い生徒を取得（自分の教室のみ）
+// 次の個別支援計画書期限が1ヶ月以内かチェックする関数
+function isNextPlanDeadlineWithinOneMonth($supportStartDate, $latestPlanDate) {
+    if (!$supportStartDate) return false;
+
+    $oneMonthLater = new DateTime();
+    $oneMonthLater->modify('+1 month');
+
+    if (!$latestPlanDate) {
+        // 計画書がない場合、初回期限は支援開始日の前日
+        $firstDeadline = new DateTime($supportStartDate);
+        $firstDeadline->modify('-1 day');
+        return $firstDeadline <= $oneMonthLater;
+    }
+
+    // 次の計画書期限は最新計画書から180日後
+    $nextDeadline = new DateTime($latestPlanDate);
+    $nextDeadline->modify('+180 days');
+    return $nextDeadline <= $oneMonthLater;
+}
+
+// 表示対象を抽出
+foreach ($studentPlans as $studentId => $data) {
+    $latestSubmittedId = $data['latest_submitted_plan_id'];
+    $supportStartDate = $data['support_start_date'];
+
+    // 最新の提出済み計画書の日付を取得
+    $latestSubmittedPlanDate = null;
+    foreach ($data['plans'] as $plan) {
+        if ($plan['plan_id'] == $latestSubmittedId) {
+            $latestSubmittedPlanDate = $plan['created_date'];
+            break;
+        }
+    }
+
+    // 計画書がない場合
+    if (empty($data['plans'])) {
+        // 次の期限が1ヶ月以内の場合のみ表示
+        if (isNextPlanDeadlineWithinOneMonth($supportStartDate, null)) {
+            $studentsNeedingPlan[] = [
+                'id' => $studentId,
+                'student_name' => $data['student_name'],
+                'support_start_date' => $supportStartDate,
+                'plan_id' => null,
+                'latest_plan_date' => null,
+                'days_since_plan' => null,
+                'status_code' => 'none',
+                'has_newer' => false,
+                'is_hidden' => false
+            ];
+        }
+        continue;
+    }
+
+    // 下書きがあるかチェック（下書きがあれば期限切れは表示しない）
+    $hasDraft = false;
+    $draftPlan = null;
+    foreach ($data['plans'] as $plan) {
+        if ($plan['is_draft'] && !$plan['is_hidden']) {
+            $hasDraft = true;
+            $draftPlan = $plan;
+            break; // 最新の下書きを使用
+        }
+    }
+
+    // 下書きがある場合は下書きのみ表示（次の期限が1ヶ月以内の場合のみ）
+    if ($hasDraft && $draftPlan) {
+        if (isNextPlanDeadlineWithinOneMonth($supportStartDate, $latestSubmittedPlanDate)) {
+            $hasNewer = $latestSubmittedId && $draftPlan['plan_id'] != $latestSubmittedId;
+            $studentsNeedingPlan[] = [
+                'id' => $studentId,
+                'student_name' => $data['student_name'],
+                'support_start_date' => $supportStartDate,
+                'plan_id' => $draftPlan['plan_id'],
+                'latest_plan_date' => $draftPlan['created_date'],
+                'days_since_plan' => $draftPlan['days_since_plan'],
+                'status_code' => 'draft',
+                'has_newer' => $hasNewer,
+                'is_hidden' => false
+            ];
+        }
+        continue; // この生徒は下書きのみ表示、期限切れは表示しない
+    }
+
+    // 下書きがない場合、最新の提出済みが期限切れかチェック
+    foreach ($data['plans'] as $plan) {
+        // 非表示のものはスキップ
+        if ($plan['is_hidden']) continue;
+
+        // 提出済みで150日以上経過（残り1ヶ月以内）かつ最新の提出済み
+        if (!$plan['is_draft'] && $plan['days_since_plan'] >= 150 && $plan['plan_id'] == $latestSubmittedId) {
+            $studentsNeedingPlan[] = [
+                'id' => $studentId,
+                'student_name' => $data['student_name'],
+                'support_start_date' => $supportStartDate,
+                'plan_id' => $plan['plan_id'],
+                'latest_plan_date' => $plan['created_date'],
+                'days_since_plan' => $plan['days_since_plan'],
+                'status_code' => 'outdated',
+                'has_newer' => false,
+                'is_hidden' => false
+            ];
+            break; // 1件だけ表示
+        }
+    }
+}
+
+// 2. モニタリング一覧を取得
 $studentsNeedingMonitoring = [];
 
-if ($classroomId) {
-    // 2-1. モニタリングが1つも作成されていない生徒（個別支援計画書がある生徒のみ）
-    $stmt = $pdo->prepare("
-        SELECT DISTINCT s.id, s.student_name, s.support_start_date,
-               NULL as latest_monitoring_date,
-               'なし' as status
-        FROM students s
-        INNER JOIN users u ON s.guardian_id = u.id
-        INNER JOIN individual_support_plans isp ON s.id = isp.student_id
-        WHERE s.is_active = 1 AND u.classroom_id = ?
-        AND NOT EXISTS (
-            SELECT 1 FROM monitoring_records mr
-            WHERE mr.student_id = s.id
-        )
-        ORDER BY s.student_name
-    ");
-    $stmt->execute([$classroomId]);
-    $studentsNeedingMonitoring = array_merge($studentsNeedingMonitoring, $stmt->fetchAll());
+$sql = "
+    SELECT
+        s.id,
+        s.student_name,
+        s.support_start_date,
+        COALESCE(s.hide_initial_monitoring, 0) as hide_initial_monitoring,
+        mr.id as monitoring_id,
+        mr.plan_id,
+        mr.monitoring_date,
+        mr.is_draft,
+        COALESCE(mr.is_hidden, 0) as is_hidden,
+        DATEDIFF(CURDATE(), mr.monitoring_date) as days_since_monitoring,
+        (
+            SELECT MAX(mr2.id)
+            FROM monitoring_records mr2
+            WHERE mr2.student_id = s.id AND mr2.is_draft = 0
+        ) as latest_submitted_monitoring_id
+    FROM students s
+    INNER JOIN users u ON s.guardian_id = u.id
+    LEFT JOIN monitoring_records mr ON s.id = mr.student_id
+    WHERE s.is_active = 1
+    AND EXISTS (SELECT 1 FROM individual_support_plans isp WHERE isp.student_id = s.id)
+    {$studentCondition}
+    ORDER BY s.student_name, mr.monitoring_date DESC
+";
+$stmt = $pdo->prepare($sql);
+$stmt->execute($studentParams);
+$allMonitoringData = $stmt->fetchAll();
 
-    // 2-2. 最新のモニタリングから3ヶ月以上経過している生徒
-    $stmt = $pdo->prepare("
-        SELECT s.id, s.student_name, s.support_start_date,
-               MAX(mr.monitoring_date) as latest_monitoring_date,
-               '最新から3ヶ月以上経過' as status
-        FROM students s
-        INNER JOIN users u ON s.guardian_id = u.id
-        INNER JOIN monitoring_records mr ON s.id = mr.student_id
-        WHERE s.is_active = 1 AND u.classroom_id = ?
-        GROUP BY s.id
-        HAVING DATEDIFF(CURDATE(), MAX(mr.monitoring_date)) >= 90
-        ORDER BY s.student_name
-    ");
-    $stmt->execute([$classroomId]);
-    $studentsNeedingMonitoring = array_merge($studentsNeedingMonitoring, $stmt->fetchAll());
-} else {
-    // 2-1. モニタリングが1つも作成されていない生徒（個別支援計画書がある生徒のみ）
-    $stmt = $pdo->query("
-        SELECT DISTINCT s.id, s.student_name, s.support_start_date,
-               NULL as latest_monitoring_date,
-               'なし' as status
-        FROM students s
-        INNER JOIN individual_support_plans isp ON s.id = isp.student_id
-        WHERE s.is_active = 1
-        AND NOT EXISTS (
-            SELECT 1 FROM monitoring_records mr
-            WHERE mr.student_id = s.id
-        )
-        ORDER BY s.student_name
-    ");
-    $studentsNeedingMonitoring = array_merge($studentsNeedingMonitoring, $stmt->fetchAll());
+// 生徒ごとにグループ化
+$studentMonitorings = [];
+foreach ($allMonitoringData as $row) {
+    $studentId = $row['id'];
+    if (!isset($studentMonitorings[$studentId])) {
+        $studentMonitorings[$studentId] = [
+            'student_name' => $row['student_name'],
+            'support_start_date' => $row['support_start_date'],
+            'hide_initial_monitoring' => $row['hide_initial_monitoring'],
+            'monitorings' => [],
+            'latest_submitted_monitoring_id' => $row['latest_submitted_monitoring_id']
+        ];
+    }
+    if ($row['monitoring_id']) {
+        $studentMonitorings[$studentId]['monitorings'][] = $row;
+    }
+}
 
-    // 2-2. 最新のモニタリングから3ヶ月以上経過している生徒
-    $stmt = $pdo->query("
-        SELECT s.id, s.student_name, s.support_start_date,
-               MAX(mr.monitoring_date) as latest_monitoring_date,
-               '最新から3ヶ月以上経過' as status
-        FROM students s
-        INNER JOIN monitoring_records mr ON s.id = mr.student_id
-        WHERE s.is_active = 1
-        GROUP BY s.id
-        HAVING DATEDIFF(CURDATE(), MAX(mr.monitoring_date)) >= 90
-        ORDER BY s.student_name
-    ");
-    $studentsNeedingMonitoring = array_merge($studentsNeedingMonitoring, $stmt->fetchAll());
+// 次のモニタリング期限が1ヶ月以内かチェックする関数
+// モニタリングは個別支援計画書の5ヶ月後が期限
+function isNextMonitoringDeadlineWithinOneMonth($supportStartDate, $latestMonitoringDate) {
+    if (!$supportStartDate) return false;
+
+    $oneMonthLater = new DateTime();
+    $oneMonthLater->modify('+1 month');
+
+    if (!$latestMonitoringDate) {
+        // モニタリングがない場合、初回期限は支援開始日から5ヶ月後
+        $firstDeadline = new DateTime($supportStartDate);
+        $firstDeadline->modify('+5 months');
+        $firstDeadline->modify('-1 day');
+        return $firstDeadline <= $oneMonthLater;
+    }
+
+    // 次のモニタリング期限は最新モニタリングから180日後
+    $nextDeadline = new DateTime($latestMonitoringDate);
+    $nextDeadline->modify('+180 days');
+    return $nextDeadline <= $oneMonthLater;
+}
+
+// 表示対象を抽出
+foreach ($studentMonitorings as $studentId => $data) {
+    $latestSubmittedId = $data['latest_submitted_monitoring_id'];
+    $supportStartDate = $data['support_start_date'];
+
+    // 最新の提出済みモニタリングの日付を取得
+    $latestSubmittedMonitoringDate = null;
+    foreach ($data['monitorings'] as $monitoring) {
+        if ($monitoring['monitoring_id'] == $latestSubmittedId) {
+            $latestSubmittedMonitoringDate = $monitoring['monitoring_date'];
+            break;
+        }
+    }
+
+    // モニタリング期限を計算する関数
+    $calcMonitoringDeadline = function($supportStartDate, $latestMonitoringDate) {
+        if (!$supportStartDate) return null;
+
+        if (!$latestMonitoringDate) {
+            // 初回期限は支援開始日から5ヶ月後の前日
+            $deadline = new DateTime($supportStartDate);
+            $deadline->modify('+5 months');
+            $deadline->modify('-1 day');
+            return $deadline->format('Y-m-d');
+        }
+
+        // 次の期限は最新モニタリングから180日後
+        $deadline = new DateTime($latestMonitoringDate);
+        $deadline->modify('+180 days');
+        return $deadline->format('Y-m-d');
+    };
+
+    // モニタリングがない場合
+    if (empty($data['monitorings'])) {
+        // 次の期限が1ヶ月以内の場合のみ表示（非表示フラグがセットされている場合は除外）
+        if (isNextMonitoringDeadlineWithinOneMonth($supportStartDate, null) && !$data['hide_initial_monitoring']) {
+            $monitoringDeadline = $calcMonitoringDeadline($supportStartDate, null);
+            $studentsNeedingMonitoring[] = [
+                'id' => $studentId,
+                'student_name' => $data['student_name'],
+                'support_start_date' => $supportStartDate,
+                'monitoring_id' => null,
+                'monitoring_deadline' => $monitoringDeadline,
+                'days_since_monitoring' => null,
+                'status_code' => 'none',
+                'has_newer' => false,
+                'is_hidden' => false
+            ];
+        }
+        continue;
+    }
+
+    // 下書きがあるかチェック
+    $hasDraft = false;
+    $draftMonitoring = null;
+    foreach ($data['monitorings'] as $monitoring) {
+        if ($monitoring['is_draft'] && !$monitoring['is_hidden']) {
+            $hasDraft = true;
+            $draftMonitoring = $monitoring;
+            break;
+        }
+    }
+
+    // 下書きがある場合は下書きのみ表示（次の期限が1ヶ月以内の場合のみ）
+    if ($hasDraft && $draftMonitoring) {
+        if (isNextMonitoringDeadlineWithinOneMonth($supportStartDate, $latestSubmittedMonitoringDate)) {
+            $hasNewer = $latestSubmittedId && $draftMonitoring['monitoring_id'] != $latestSubmittedId;
+            $monitoringDeadline = $calcMonitoringDeadline($supportStartDate, $latestSubmittedMonitoringDate);
+            $studentsNeedingMonitoring[] = [
+                'id' => $studentId,
+                'student_name' => $data['student_name'],
+                'support_start_date' => $supportStartDate,
+                'monitoring_id' => $draftMonitoring['monitoring_id'],
+                'plan_id' => $draftMonitoring['plan_id'],
+                'monitoring_deadline' => $monitoringDeadline,
+                'days_since_monitoring' => $draftMonitoring['days_since_monitoring'],
+                'status_code' => 'draft',
+                'has_newer' => $hasNewer,
+                'is_hidden' => false
+            ];
+        }
+        continue;
+    }
+
+    // 下書きがない場合、最新の提出済みが期限切れかチェック
+    foreach ($data['monitorings'] as $monitoring) {
+        // 非表示のものはスキップ
+        if ($monitoring['is_hidden']) continue;
+
+        // 提出済みで150日以上経過（残り1ヶ月以内）
+        if (!$monitoring['is_draft'] && $monitoring['days_since_monitoring'] >= 150 && $monitoring['monitoring_id'] == $latestSubmittedId) {
+            $monitoringDeadline = $calcMonitoringDeadline($supportStartDate, $monitoring['monitoring_date']);
+            $studentsNeedingMonitoring[] = [
+                'id' => $studentId,
+                'student_name' => $data['student_name'],
+                'support_start_date' => $supportStartDate,
+                'monitoring_id' => $monitoring['monitoring_id'],
+                'plan_id' => $monitoring['plan_id'],
+                'monitoring_deadline' => $monitoringDeadline,
+                'days_since_monitoring' => $monitoring['days_since_monitoring'],
+                'status_code' => 'outdated',
+                'has_newer' => false,
+                'is_hidden' => false
+            ];
+            break;
+        }
+    }
 }
 
 // 3. かけはし未提出の生徒を取得
+// ※ 各生徒の最新期間のみを対象とする（より新しい期間が提出済みなら古い期間は表示しない）
 
-// 3-1. 保護者かけはし未提出（期限切れも含む、非表示を除外、自分の教室のみ）
+// 3-1. 保護者かけはし未提出（各生徒の最新の未提出期間のみ、非表示を除外、1ヶ月以内のみ）
 $pendingGuardianKakehashi = [];
-if ($classroomId) {
-    try {
-        $stmt = $pdo->prepare("
-            SELECT
-                s.id as student_id,
-                s.student_name,
-                kp.id as period_id,
-                kp.period_name,
-                kp.submission_deadline,
-                kp.start_date,
-                kp.end_date,
-                DATEDIFF(kp.submission_deadline, ?) as days_left,
-                kg.id as kakehashi_id,
-                kg.is_submitted,
-                COALESCE(kg.is_hidden, 0) as is_hidden
-            FROM students s
-            INNER JOIN users u ON s.guardian_id = u.id
-            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-            LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = s.id
-            WHERE s.is_active = 1 AND u.classroom_id = ?
-            AND kp.is_active = 1
-            AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
-            AND COALESCE(kg.is_hidden, 0) = 0
-            ORDER BY kp.submission_deadline ASC, s.student_name
-        ");
-        $stmt->execute([$today, $classroomId]);
-        $pendingGuardianKakehashi = $stmt->fetchAll();
-    } catch (Exception $e) {
-        // is_hiddenカラムが存在しない場合は、非表示チェックなしで取得
-        error_log("Guardian kakehashi fetch error: " . $e->getMessage());
-        $stmt = $pdo->prepare("
-            SELECT
-                s.id as student_id,
-                s.student_name,
-                kp.id as period_id,
-                kp.period_name,
-                kp.submission_deadline,
-                kp.start_date,
-                kp.end_date,
-                DATEDIFF(kp.submission_deadline, ?) as days_left,
-                kg.id as kakehashi_id,
-                kg.is_submitted
-            FROM students s
-            INNER JOIN users u ON s.guardian_id = u.id
-            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-            LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = s.id
-            WHERE s.is_active = 1 AND u.classroom_id = ?
-            AND kp.is_active = 1
-            AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
-            ORDER BY kp.submission_deadline ASC, s.student_name
-        ");
-        $stmt->execute([$today, $classroomId]);
-        $pendingGuardianKakehashi = $stmt->fetchAll();
-    }
-} else {
-    try {
-        $stmt = $pdo->prepare("
-            SELECT
-                s.id as student_id,
-                s.student_name,
-                kp.id as period_id,
-                kp.period_name,
-                kp.submission_deadline,
-                kp.start_date,
-                kp.end_date,
-                DATEDIFF(kp.submission_deadline, ?) as days_left,
-                kg.id as kakehashi_id,
-                kg.is_submitted,
-                COALESCE(kg.is_hidden, 0) as is_hidden
-            FROM students s
-            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-            LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = s.id
-            WHERE s.is_active = 1
-            AND kp.is_active = 1
-            AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
-            AND COALESCE(kg.is_hidden, 0) = 0
-            ORDER BY kp.submission_deadline ASC, s.student_name
-        ");
-        $stmt->execute([$today]);
-        $pendingGuardianKakehashi = $stmt->fetchAll();
-    } catch (Exception $e) {
-        // is_hiddenカラムが存在しない場合は、非表示チェックなしで取得
-        error_log("Guardian kakehashi fetch error: " . $e->getMessage());
-        $stmt = $pdo->prepare("
-            SELECT
-                s.id as student_id,
-                s.student_name,
-                kp.id as period_id,
-                kp.period_name,
-                kp.submission_deadline,
-                kp.start_date,
-                kp.end_date,
-                DATEDIFF(kp.submission_deadline, ?) as days_left,
-                kg.id as kakehashi_id,
-                kg.is_submitted
-            FROM students s
-            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-            LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = s.id
-            WHERE s.is_active = 1
-            AND kp.is_active = 1
-            AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
-            ORDER BY kp.submission_deadline ASC, s.student_name
-        ");
-        $stmt->execute([$today]);
-        $pendingGuardianKakehashi = $stmt->fetchAll();
-    }
+$guardianSql = "
+    SELECT
+        s.id as student_id,
+        s.student_name,
+        kp.id as period_id,
+        kp.period_name,
+        kp.submission_deadline,
+        kp.start_date,
+        kp.end_date,
+        DATEDIFF(kp.submission_deadline, ?) as days_left,
+        kg.id as kakehashi_id,
+        kg.is_submitted,
+        COALESCE(kg.is_hidden, 0) as is_hidden
+    FROM students s
+    INNER JOIN users u ON s.guardian_id = u.id
+    INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+    LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = s.id
+    WHERE s.is_active = 1
+    AND kp.is_active = 1
+    AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
+    AND COALESCE(kg.is_hidden, 0) = 0
+    AND kp.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
+    AND kp.submission_deadline = (
+        SELECT MAX(kp2.submission_deadline)
+        FROM kakehashi_periods kp2
+        WHERE kp2.student_id = s.id AND kp2.is_active = 1
+        AND kp2.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
+    )
+    " . ($classroomId ? "AND u.classroom_id = ?" : "") . "
+    ORDER BY kp.submission_deadline ASC, s.student_name
+";
+try {
+    $stmt = $pdo->prepare($guardianSql);
+    $params = $classroomId ? [$today, $classroomId] : [$today];
+    $stmt->execute($params);
+    $pendingGuardianKakehashi = $stmt->fetchAll();
+} catch (Exception $e) {
+    error_log("Guardian kakehashi fetch error: " . $e->getMessage());
 }
 
-// 3-2. スタッフかけはし未作成（期限切れも含む、非表示を除外、自分の教室のみ）
+// 3-2. スタッフかけはし未作成（各生徒の最新の未提出期間のみ、非表示を除外、1ヶ月以内のみ）
 $pendingStaffKakehashi = [];
-if ($classroomId) {
-    try {
-        $stmt = $pdo->prepare("
-            SELECT
-                s.id as student_id,
-                s.student_name,
-                kp.id as period_id,
-                kp.period_name,
-                kp.submission_deadline,
-                kp.start_date,
-                kp.end_date,
-                DATEDIFF(kp.submission_deadline, ?) as days_left,
-                ks.id as kakehashi_id,
-                ks.is_submitted,
-                COALESCE(ks.is_hidden, 0) as is_hidden
-            FROM students s
-            INNER JOIN users u ON s.guardian_id = u.id
-            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-            LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
-            WHERE s.is_active = 1 AND u.classroom_id = ?
-            AND kp.is_active = 1
-            AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
-            AND COALESCE(ks.is_hidden, 0) = 0
-            ORDER BY kp.submission_deadline ASC, s.student_name
-        ");
-        $stmt->execute([$today, $classroomId]);
-        $pendingStaffKakehashi = $stmt->fetchAll();
-    } catch (Exception $e) {
-        // is_hiddenカラムが存在しない場合は、非表示チェックなしで取得
-        error_log("Staff kakehashi fetch error: " . $e->getMessage());
-        $stmt = $pdo->prepare("
-            SELECT
-                s.id as student_id,
-                s.student_name,
-                kp.id as period_id,
-                kp.period_name,
-                kp.submission_deadline,
-                kp.start_date,
-                kp.end_date,
-                DATEDIFF(kp.submission_deadline, ?) as days_left,
-                ks.id as kakehashi_id,
-                ks.is_submitted
-            FROM students s
-            INNER JOIN users u ON s.guardian_id = u.id
-            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-            LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
-            WHERE s.is_active = 1 AND u.classroom_id = ?
-            AND kp.is_active = 1
-            AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
-            ORDER BY kp.submission_deadline ASC, s.student_name
-        ");
-        $stmt->execute([$today, $classroomId]);
-        $pendingStaffKakehashi = $stmt->fetchAll();
-    }
-} else {
-    try {
-        $stmt = $pdo->prepare("
-            SELECT
-                s.id as student_id,
-                s.student_name,
-                kp.id as period_id,
-                kp.period_name,
-                kp.submission_deadline,
-                kp.start_date,
-                kp.end_date,
-                DATEDIFF(kp.submission_deadline, ?) as days_left,
-                ks.id as kakehashi_id,
-                ks.is_submitted,
-                COALESCE(ks.is_hidden, 0) as is_hidden
-            FROM students s
-            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-            LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
-            WHERE s.is_active = 1
-            AND kp.is_active = 1
-            AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
-            AND COALESCE(ks.is_hidden, 0) = 0
-            ORDER BY kp.submission_deadline ASC, s.student_name
-        ");
-        $stmt->execute([$today]);
-        $pendingStaffKakehashi = $stmt->fetchAll();
-    } catch (Exception $e) {
-        // is_hiddenカラムが存在しない場合は、非表示チェックなしで取得
-        error_log("Staff kakehashi fetch error: " . $e->getMessage());
-        $stmt = $pdo->prepare("
-            SELECT
-                s.id as student_id,
-                s.student_name,
-                kp.id as period_id,
-                kp.period_name,
-                kp.submission_deadline,
-                kp.start_date,
-                kp.end_date,
-                DATEDIFF(kp.submission_deadline, ?) as days_left,
-                ks.id as kakehashi_id,
-                ks.is_submitted
-            FROM students s
-            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-            LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
-            WHERE s.is_active = 1
-            AND kp.is_active = 1
-            AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
-            ORDER BY kp.submission_deadline ASC, s.student_name
-        ");
-        $stmt->execute([$today]);
-        $pendingStaffKakehashi = $stmt->fetchAll();
-    }
+$staffSql = "
+    SELECT
+        s.id as student_id,
+        s.student_name,
+        kp.id as period_id,
+        kp.period_name,
+        kp.submission_deadline,
+        kp.start_date,
+        kp.end_date,
+        DATEDIFF(kp.submission_deadline, ?) as days_left,
+        ks.id as kakehashi_id,
+        ks.is_submitted,
+        COALESCE(ks.is_hidden, 0) as is_hidden
+    FROM students s
+    INNER JOIN users u ON s.guardian_id = u.id
+    INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+    LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
+    WHERE s.is_active = 1
+    AND kp.is_active = 1
+    AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
+    AND COALESCE(ks.is_hidden, 0) = 0
+    AND kp.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
+    AND kp.submission_deadline = (
+        SELECT MAX(kp2.submission_deadline)
+        FROM kakehashi_periods kp2
+        WHERE kp2.student_id = s.id AND kp2.is_active = 1
+        AND kp2.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
+    )
+    " . ($classroomId ? "AND u.classroom_id = ?" : "") . "
+    ORDER BY kp.submission_deadline ASC, s.student_name
+";
+try {
+    $stmt = $pdo->prepare($staffSql);
+    $params = $classroomId ? [$today, $classroomId] : [$today];
+    $stmt->execute($params);
+    $pendingStaffKakehashi = $stmt->fetchAll();
+} catch (Exception $e) {
+    error_log("Staff kakehashi fetch error: " . $e->getMessage());
 }
 
 ?>
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+    <link rel="stylesheet" href="/assets/css/apple-design.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>未作成タスク一覧 - スタッフページ</title>
@@ -396,24 +501,24 @@ if ($classroomId) {
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--apple-bg-secondary);
             min-height: 100vh;
-            padding: 20px;
+            padding: var(--spacing-md);
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            background: white;
-            border-radius: 20px;
+            background: var(--apple-bg-primary);
+            border-radius: var(--radius-xl);
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             overflow: hidden;
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
+            background: var(--apple-bg-secondary);
+            color: var(--text-primary);
+            padding: var(--spacing-2xl);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -432,18 +537,18 @@ if ($classroomId) {
         .nav-links a {
             color: white;
             text-decoration: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            background: rgba(255,255,255,0.2);
-            transition: all 0.3s;
+            padding: var(--spacing-md) 20px;
+            border-radius: var(--radius-sm);
+            background: var(--apple-gray-5);
+            transition: all var(--duration-normal) var(--ease-out);
         }
 
         .nav-links a:hover {
-            background: rgba(255,255,255,0.3);
+            background: var(--apple-gray-5);
         }
 
         .content {
-            padding: 30px;
+            padding: var(--spacing-2xl);
         }
 
         .section {
@@ -454,49 +559,49 @@ if ($classroomId) {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: var(--spacing-lg);
             padding-bottom: 10px;
-            border-bottom: 3px solid #667eea;
+            border-bottom: 3px solid var(--primary-purple);
         }
 
         .section-title {
             font-size: 22px;
             font-weight: 600;
-            color: #667eea;
+            color: var(--primary-purple);
         }
 
         .count-badge {
-            background: #dc3545;
+            background: var(--apple-red);
             color: white;
             padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 14px;
+            border-radius: var(--radius-xl);
+            font-size: var(--text-subhead);
             font-weight: 600;
         }
 
         .count-badge.success {
-            background: #28a745;
+            background: var(--apple-green);
         }
 
         .table-wrapper {
             overflow-x: auto;
-            border-radius: 10px;
+            border-radius: var(--radius-md);
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            background: white;
+            background: var(--apple-bg-primary);
         }
 
         th {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: var(--apple-bg-secondary);
+            color: var(--text-primary);
             padding: 15px;
             text-align: left;
             font-weight: 600;
-            font-size: 14px;
+            font-size: var(--text-subhead);
         }
 
         td {
@@ -505,57 +610,68 @@ if ($classroomId) {
         }
 
         tr:hover {
-            background: #f8f9fa;
+            background: var(--apple-gray-6);
         }
 
         .status-badge {
             display: inline-block;
             padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
+            border-radius: var(--radius-md);
+            font-size: var(--text-caption-1);
             font-weight: 600;
         }
 
         .status-badge.none {
-            background: #dc3545;
+            background: var(--apple-red);
             color: white;
         }
 
         .status-badge.outdated {
-            background: #ffc107;
-            color: #333;
+            background: var(--apple-orange);
+            color: var(--text-primary);
         }
 
         .status-badge.overdue {
-            background: #6c757d;
+            background: var(--apple-gray);
             color: white;
         }
 
         .status-badge.urgent {
-            background: #dc3545;
+            background: var(--apple-red);
             color: white;
         }
 
         .status-badge.warning {
-            background: #ffc107;
-            color: #333;
+            background: var(--apple-orange);
+            color: var(--text-primary);
+        }
+
+        .has-newer-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: var(--radius-sm);
+            font-size: var(--text-caption-2);
+            font-weight: 600;
+            background: var(--apple-blue);
+            color: white;
+            margin-left: 8px;
         }
 
         .btn {
-            padding: 8px 16px;
+            padding: var(--spacing-sm) 16px;
             border: none;
             border-radius: 6px;
-            font-size: 14px;
+            font-size: var(--text-subhead);
             cursor: pointer;
             text-decoration: none;
             display: inline-block;
-            transition: all 0.3s;
+            transition: all var(--duration-normal) var(--ease-out);
             font-weight: 500;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: var(--apple-bg-secondary);
+            color: var(--text-primary);
         }
 
         .btn-primary:hover {
@@ -564,78 +680,78 @@ if ($classroomId) {
         }
 
         .btn-success {
-            background: #28a745;
+            background: var(--apple-green);
             color: white;
         }
 
         .btn-success:hover {
-            background: #218838;
+            background: var(--apple-green);
         }
 
         .empty-state {
             text-align: center;
-            padding: 40px;
-            color: #666;
+            padding: var(--spacing-2xl);
+            color: var(--text-secondary);
         }
 
         .empty-state h3 {
-            color: #28a745;
-            margin-bottom: 10px;
+            color: var(--apple-green);
+            margin-bottom: var(--spacing-md);
         }
 
         .summary-cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
-            margin-bottom: 30px;
+            margin-bottom: var(--spacing-2xl);
         }
 
         .summary-card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
+            background: var(--apple-bg-primary);
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-md);
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border-left: 4px solid #667eea;
+            border-left: 4px solid var(--primary-purple);
         }
 
         .summary-card.urgent {
-            border-left-color: #dc3545;
+            border-left-color: var(--apple-red);
         }
 
         .summary-card.warning {
-            border-left-color: #ffc107;
+            border-left-color: var(--apple-orange);
         }
 
         .summary-card.success {
-            border-left-color: #28a745;
+            border-left-color: var(--apple-green);
         }
 
         .summary-card-title {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 10px;
+            font-size: var(--text-subhead);
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-md);
         }
 
         .summary-card-value {
             font-size: 32px;
             font-weight: 700;
-            color: #333;
+            color: var(--text-primary);
         }
 
         .btn-hide {
             padding: 6px 12px;
-            background: #6c757d;
+            background: var(--apple-gray);
             color: white;
             border: none;
             border-radius: 6px;
-            font-size: 13px;
+            font-size: var(--text-footnote);
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all var(--duration-normal) var(--ease-out);
             margin-left: 10px;
         }
 
         .btn-hide:hover {
-            background: #5a6268;
+            background: var(--apple-gray);
         }
 
         .btn-hide:disabled {
@@ -704,20 +820,49 @@ if ($classroomId) {
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($studentsNeedingPlan as $student): ?>
+                                <?php foreach ($studentsNeedingPlan as $student):
+                                    $statusCode = $student['status_code'];
+                                    $daysSince = $student['days_since_plan'];
+                                    $hasNewer = $student['has_newer'];
+
+                                    if ($statusCode === 'none') {
+                                        $statusLabel = 'なし';
+                                        $statusClass = 'none';
+                                    } elseif ($statusCode === 'draft') {
+                                        $statusLabel = '下書きあり（未提出）';
+                                        $statusClass = 'warning';
+                                    } elseif ($daysSince >= 180) {
+                                        $statusLabel = '期限切れ（' . floor($daysSince / 30) . 'ヶ月経過）';
+                                        $statusClass = 'overdue';
+                                    } else {
+                                        $daysLeft = 180 - $daysSince;
+                                        $statusLabel = '1か月以内（残り' . $daysLeft . '日）';
+                                        $statusClass = 'urgent';
+                                    }
+                                ?>
                                     <tr>
                                         <td><?php echo htmlspecialchars($student['student_name']); ?></td>
                                         <td><?php echo $student['support_start_date'] ? date('Y年n月j日', strtotime($student['support_start_date'])) : '-'; ?></td>
                                         <td><?php echo $student['latest_plan_date'] ? date('Y年n月j日', strtotime($student['latest_plan_date'])) : '-'; ?></td>
                                         <td>
-                                            <span class="status-badge <?php echo $student['status'] === 'なし' ? 'none' : 'outdated'; ?>">
-                                                <?php echo htmlspecialchars($student['status']); ?>
+                                            <span class="status-badge <?php echo $statusClass; ?>">
+                                                <?php echo htmlspecialchars($statusLabel); ?>
                                             </span>
+                                            <?php if ($hasNewer): ?>
+                                                <span class="has-newer-badge">最新あり</span>
+                                            <?php endif; ?>
                                         </td>
                                         <td>
-                                            <a href="kobetsu_plan.php?student_id=<?php echo $student['id']; ?>" class="btn btn-primary">
-                                                計画書を作成
-                                            </a>
+                                            <div class="action-buttons">
+                                                <a href="kobetsu_plan.php?student_id=<?php echo $student['id']; ?><?php echo $student['plan_id'] ? '&plan_id=' . $student['plan_id'] : ''; ?>" class="btn btn-primary">
+                                                    計画書を作成
+                                                </a>
+                                                <?php if ($student['plan_id']): ?>
+                                                    <button class="btn-hide" onclick="hideItem('plan', <?php echo $student['plan_id']; ?>, this)">
+                                                        非表示
+                                                    </button>
+                                                <?php endif; ?>
+                                            </div>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -750,26 +895,70 @@ if ($classroomId) {
                                 <tr>
                                     <th>生徒名</th>
                                     <th>支援開始日</th>
-                                    <th>最新モニタリング日</th>
+                                    <th>モニタリング期限</th>
                                     <th>状態</th>
                                     <th>アクション</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($studentsNeedingMonitoring as $student): ?>
+                                <?php foreach ($studentsNeedingMonitoring as $student):
+                                    $statusCode = $student['status_code'];
+                                    $hasNewer = $student['has_newer'];
+                                    $monitoringDeadline = $student['monitoring_deadline'] ?? null;
+
+                                    // 期限までの日数を計算
+                                    $daysUntilDeadline = null;
+                                    if ($monitoringDeadline) {
+                                        $deadlineDate = new DateTime($monitoringDeadline);
+                                        $today = new DateTime();
+                                        $diff = $today->diff($deadlineDate);
+                                        $daysUntilDeadline = $diff->invert ? -$diff->days : $diff->days;
+                                    }
+
+                                    if ($statusCode === 'none') {
+                                        $statusLabel = '初回モニタリング未作成';
+                                        $statusClass = 'none';
+                                    } elseif ($statusCode === 'draft') {
+                                        $statusLabel = '下書きあり（未提出）';
+                                        $statusClass = 'warning';
+                                    } elseif ($daysUntilDeadline !== null && $daysUntilDeadline < 0) {
+                                        $statusLabel = '期限切れ（' . abs($daysUntilDeadline) . '日超過）';
+                                        $statusClass = 'overdue';
+                                    } elseif ($daysUntilDeadline !== null && $daysUntilDeadline <= 30) {
+                                        $statusLabel = '1か月以内（残り' . $daysUntilDeadline . '日）';
+                                        $statusClass = 'urgent';
+                                    } else {
+                                        $statusLabel = '対応が必要';
+                                        $statusClass = 'warning';
+                                    }
+                                ?>
                                     <tr>
                                         <td><?php echo htmlspecialchars($student['student_name']); ?></td>
                                         <td><?php echo $student['support_start_date'] ? date('Y年n月j日', strtotime($student['support_start_date'])) : '-'; ?></td>
-                                        <td><?php echo $student['latest_monitoring_date'] ? date('Y年n月j日', strtotime($student['latest_monitoring_date'])) : '-'; ?></td>
+                                        <td><?php echo $monitoringDeadline ? date('Y年n月j日', strtotime($monitoringDeadline)) : '-'; ?></td>
                                         <td>
-                                            <span class="status-badge <?php echo $student['status'] === 'なし' ? 'none' : 'outdated'; ?>">
-                                                <?php echo htmlspecialchars($student['status']); ?>
+                                            <span class="status-badge <?php echo $statusClass; ?>">
+                                                <?php echo htmlspecialchars($statusLabel); ?>
                                             </span>
+                                            <?php if ($hasNewer): ?>
+                                                <span class="has-newer-badge">最新あり</span>
+                                            <?php endif; ?>
                                         </td>
                                         <td>
-                                            <a href="kobetsu_monitoring.php?student_id=<?php echo $student['id']; ?>" class="btn btn-primary">
-                                                モニタリング作成
-                                            </a>
+                                            <div class="action-buttons">
+                                                <a href="kobetsu_monitoring.php?student_id=<?php echo $student['id']; ?><?php echo $student['monitoring_id'] ? '&monitoring_id=' . $student['monitoring_id'] : ''; ?>" class="btn btn-primary">
+                                                    モニタリング作成
+                                                </a>
+                                                <?php if ($student['monitoring_id']): ?>
+                                                    <button class="btn-hide" onclick="hideItem('monitoring', <?php echo $student['monitoring_id']; ?>, this)">
+                                                        非表示
+                                                    </button>
+                                                <?php elseif ($student['status_code'] === 'none'): ?>
+                                                    <button class="btn-hide" onclick="hideInitialMonitoring(<?php echo $student['id']; ?>, this)">
+                                                        非表示
+                                                    </button>
+                                                <?php endif; ?>
+                                            </div>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -913,6 +1102,92 @@ if ($classroomId) {
     </div>
 
     <script>
+        function hideItem(type, id, button) {
+            if (!confirm('この項目を非表示にしますか？\n非表示にした項目は、タスク一覧に表示されなくなります。')) {
+                return;
+            }
+
+            button.disabled = true;
+            button.textContent = '処理中...';
+
+            fetch('pending_tasks_toggle_hide.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `type=${type}&id=${id}&action=hide`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const row = button.closest('tr');
+                    row.style.opacity = '0';
+                    row.style.transition = 'opacity 0.3s';
+
+                    setTimeout(() => {
+                        row.remove();
+                        const tbody = row.closest('tbody');
+                        if (tbody && tbody.children.length === 0) {
+                            location.reload();
+                        }
+                    }, 300);
+                } else {
+                    alert('エラー: ' + (data.error || '不明なエラーが発生しました'));
+                    button.disabled = false;
+                    button.textContent = '非表示';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('通信エラーが発生しました');
+                button.disabled = false;
+                button.textContent = '非表示';
+            });
+        }
+
+        function hideInitialMonitoring(studentId, button) {
+            if (!confirm('この生徒の初回モニタリング未作成を非表示にしますか？\n非表示にすると、タスク一覧に表示されなくなります。')) {
+                return;
+            }
+
+            button.disabled = true;
+            button.textContent = '処理中...';
+
+            fetch('pending_tasks_toggle_hide.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `type=initial_monitoring&student_id=${studentId}&action=hide`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const row = button.closest('tr');
+                    row.style.opacity = '0';
+                    row.style.transition = 'opacity 0.3s';
+
+                    setTimeout(() => {
+                        row.remove();
+                        const tbody = row.closest('tbody');
+                        if (tbody && tbody.children.length === 0) {
+                            location.reload();
+                        }
+                    }, 300);
+                } else {
+                    alert('エラー: ' + (data.error || '不明なエラーが発生しました'));
+                    button.disabled = false;
+                    button.textContent = '非表示';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('通信エラーが発生しました');
+                button.disabled = false;
+                button.textContent = '非表示';
+            });
+        }
+
         function hideKakehashi(type, periodId, studentId, button) {
             if (!confirm('このかけはしを非表示にしますか？\n非表示にしたかけはしは、タスク一覧に表示されなくなります。')) {
                 return;
@@ -931,15 +1206,12 @@ if ($classroomId) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // 行を削除（フェードアウト効果）
                     const row = button.closest('tr');
                     row.style.opacity = '0';
                     row.style.transition = 'opacity 0.3s';
 
                     setTimeout(() => {
                         row.remove();
-
-                        // テーブルが空になったら空の状態を表示
                         const tbody = row.closest('tbody');
                         if (tbody && tbody.children.length === 0) {
                             location.reload();
