@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>PWA Icon Generator</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .icons { display: flex; flex-wrap: wrap; gap: 20px; }
+        .icon-container { text-align: center; }
+        canvas { border: 1px solid #ccc; }
+        button { margin: 20px 0; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>PWA Icon Generator</h1>
+    <p>各アイコンを右クリックして「名前を付けて画像を保存」してください。</p>
+    <button onclick="downloadAll()">全てダウンロード</button>
+    <div class="icons" id="icons"></div>
+
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+
+        function createIcon(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // グラデーション背景
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#667eea');
+            gradient.addColorStop(1, '#764ba2');
+
+            // 角丸矩形を描画
+            const radius = size * 0.1875;
+            ctx.beginPath();
+            ctx.moveTo(radius, 0);
+            ctx.lineTo(size - radius, 0);
+            ctx.quadraticCurveTo(size, 0, size, radius);
+            ctx.lineTo(size, size - radius);
+            ctx.quadraticCurveTo(size, size, size - radius, size);
+            ctx.lineTo(radius, size);
+            ctx.quadraticCurveTo(0, size, 0, size - radius);
+            ctx.lineTo(0, radius);
+            ctx.quadraticCurveTo(0, 0, radius, 0);
+            ctx.closePath();
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // 白い本（ノート）
+            const bookX = size * 0.22;
+            const bookY = size * 0.18;
+            const bookW = size * 0.56;
+            const bookH = size * 0.64;
+            const bookRadius = size * 0.04;
+
+            ctx.beginPath();
+            ctx.moveTo(bookX + bookRadius, bookY);
+            ctx.lineTo(bookX + bookW - bookRadius, bookY);
+            ctx.quadraticCurveTo(bookX + bookW, bookY, bookX + bookW, bookY + bookRadius);
+            ctx.lineTo(bookX + bookW, bookY + bookH - bookRadius);
+            ctx.quadraticCurveTo(bookX + bookW, bookY + bookH, bookX + bookW - bookRadius, bookY + bookH);
+            ctx.lineTo(bookX + bookRadius, bookY + bookH);
+            ctx.quadraticCurveTo(bookX, bookY + bookH, bookX, bookY + bookH - bookRadius);
+            ctx.lineTo(bookX, bookY + bookRadius);
+            ctx.quadraticCurveTo(bookX, bookY, bookX + bookRadius, bookY);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.fill();
+
+            // テキストライン（紫）
+            ctx.fillStyle = '#667eea';
+            ctx.fillRect(bookX + size * 0.05, size * 0.31, size * 0.35, size * 0.035);
+
+            // グレーのライン
+            ctx.fillStyle = '#86868b';
+            ctx.fillRect(bookX + size * 0.05, size * 0.39, size * 0.27, size * 0.025);
+            ctx.fillRect(bookX + size * 0.05, size * 0.45, size * 0.31, size * 0.025);
+            ctx.fillRect(bookX + size * 0.05, size * 0.51, size * 0.23, size * 0.025);
+
+            // 緑のチャットバブル
+            ctx.beginPath();
+            ctx.arc(size * 0.74, size * 0.74, size * 0.156, 0, Math.PI * 2);
+            ctx.fillStyle = '#34C759';
+            ctx.fill();
+
+            // バブル内の白いライン
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = size * 0.025;
+            ctx.lineCap = 'round';
+
+            ctx.beginPath();
+            ctx.moveTo(size * 0.66, size * 0.71);
+            ctx.lineTo(size * 0.82, size * 0.71);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(size * 0.66, size * 0.77);
+            ctx.lineTo(size * 0.76, size * 0.77);
+            ctx.stroke();
+
+            return canvas;
+        }
+
+        function downloadAll() {
+            sizes.forEach((size, index) => {
+                setTimeout(() => {
+                    const canvas = document.getElementById(`canvas-${size}`);
+                    const link = document.createElement('a');
+                    link.download = `icon-${size}x${size}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                }, index * 500);
+            });
+        }
+
+        // アイコンを生成して表示
+        const container = document.getElementById('icons');
+        sizes.forEach(size => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'icon-container';
+
+            const canvas = createIcon(size);
+            canvas.id = `canvas-${size}`;
+
+            const label = document.createElement('div');
+            label.textContent = `${size}x${size}`;
+
+            wrapper.appendChild(canvas);
+            wrapper.appendChild(label);
+            container.appendChild(wrapper);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,754 @@
+/**
+ * チャット共通CSS
+ * 保護者・生徒・スタッフ共通のチャットスタイル
+ */
+
+/* ========================================
+   チャットレイアウト
+   ======================================== */
+
+.chat-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 80px);
+    max-height: calc(100vh - 80px);
+    background: var(--apple-bg-primary);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+}
+
+/* サイドバー有りのレイアウト */
+.page-wrapper .chat-wrapper {
+    height: calc(100vh - 40px);
+    max-height: calc(100vh - 40px);
+}
+
+@media (max-width: 768px) {
+    .chat-wrapper,
+    .page-wrapper .chat-wrapper {
+        height: calc(100vh - 60px);
+        max-height: calc(100vh - 60px);
+        border-radius: 0;
+    }
+}
+
+/* ========================================
+   チャットヘッダー
+   ======================================== */
+
+.chat-header {
+    background: var(--apple-bg-secondary);
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--apple-gray-5);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.chat-header-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: var(--text-headline);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.chat-header-title .icon {
+    font-size: 24px;
+}
+
+.chat-student-selector {
+    padding: var(--spacing-md);
+    background: var(--apple-bg-secondary);
+    border-bottom: 1px solid var(--apple-gray-5);
+    flex-shrink: 0;
+}
+
+.chat-student-selector select {
+    width: 100%;
+    padding: var(--spacing-md);
+    border: 2px solid var(--apple-gray-5);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-subhead);
+    background: var(--apple-bg-primary);
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.chat-student-selector select:focus {
+    outline: none;
+    border-color: var(--apple-green);
+}
+
+/* ========================================
+   メッセージエリア
+   ======================================== */
+
+.messages-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-lg);
+    background: var(--apple-bg-secondary);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+/* ========================================
+   メッセージバブル
+   ======================================== */
+
+.message {
+    display: flex;
+    gap: var(--spacing-sm);
+    max-width: 80%;
+    animation: messageSlideIn 0.2s ease-out;
+}
+
+@keyframes messageSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.message.sent {
+    margin-left: auto;
+    flex-direction: row-reverse;
+}
+
+.message.received {
+    margin-right: auto;
+}
+
+.message-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    background: var(--apple-gray-4);
+}
+
+.message.sent .message-avatar {
+    background: var(--apple-green);
+}
+
+.message.received .message-avatar {
+    background: var(--apple-blue);
+}
+
+.message-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.message-sender {
+    font-size: var(--text-caption-1);
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.message-bubble {
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    word-wrap: break-word;
+    line-height: 1.6;
+    font-size: var(--text-body);
+}
+
+.message.received .message-bubble {
+    background: var(--apple-bg-primary);
+    color: var(--text-primary);
+    border-bottom-left-radius: var(--radius-xs);
+    box-shadow: var(--shadow-sm);
+}
+
+.message.sent .message-bubble {
+    background: var(--apple-green);
+    color: white;
+    border-bottom-right-radius: var(--radius-xs);
+}
+
+/* 保護者用：紫のグラデーション */
+.role-guardian .message.sent .message-bubble {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* スタッフ用：青 */
+.role-staff .message.sent .message-bubble {
+    background: var(--apple-blue);
+}
+
+/* 生徒用：オレンジ */
+.role-student .message.sent .message-bubble {
+    background: var(--apple-orange);
+}
+
+.message-time {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+}
+
+.message.sent .message-time {
+    text-align: right;
+}
+
+/* ========================================
+   特殊メッセージ（欠席連絡・イベント参加）
+   ======================================== */
+
+.message-bubble.absence {
+    background: rgba(255, 149, 0, 0.1) !important;
+    border-left: 4px solid var(--apple-orange);
+    color: var(--text-primary) !important;
+}
+
+.message-bubble.event {
+    background: rgba(0, 122, 255, 0.1) !important;
+    border-left: 4px solid var(--apple-blue);
+    color: var(--text-primary) !important;
+}
+
+.message-bubble.system {
+    background: rgba(142, 142, 147, 0.1) !important;
+    border-left: 4px solid var(--apple-gray);
+    color: var(--text-primary) !important;
+    font-style: italic;
+}
+
+/* ========================================
+   添付ファイル
+   ======================================== */
+
+.message-attachment {
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: var(--radius-sm);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.message-attachment a {
+    color: inherit;
+    text-decoration: none;
+    font-size: var(--text-footnote);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.message-attachment a:hover {
+    text-decoration: underline;
+}
+
+.message.sent .message-attachment {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ========================================
+   入力エリア
+   ======================================== */
+
+.chat-input-area {
+    padding: var(--spacing-md);
+    background: var(--apple-bg-primary);
+    border-top: 1px solid var(--apple-gray-5);
+    flex-shrink: 0;
+}
+
+/* メッセージタイプセレクター */
+.message-type-selector {
+    margin-bottom: var(--spacing-md);
+}
+
+.message-type-selector select {
+    width: 100%;
+    padding: var(--spacing-md);
+    border: 2px solid var(--apple-gray-5);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-subhead);
+    background: var(--apple-bg-primary);
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.message-type-selector select:focus {
+    outline: none;
+    border-color: var(--apple-green);
+}
+
+/* 入力フォーム */
+.chat-input-form {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: flex-end;
+}
+
+.chat-textarea {
+    flex: 1;
+    min-height: 44px;
+    max-height: 120px;
+    padding: var(--spacing-md);
+    border: 2px solid var(--apple-gray-5);
+    border-radius: var(--radius-lg);
+    font-size: var(--text-body);
+    font-family: inherit;
+    resize: none;
+    background: var(--apple-bg-secondary);
+    color: var(--text-primary);
+    transition: border-color var(--duration-fast);
+}
+
+.chat-textarea:focus {
+    outline: none;
+    border-color: var(--apple-green);
+}
+
+.chat-textarea::placeholder {
+    color: var(--text-tertiary);
+}
+
+/* ファイル添付ボタン */
+.file-attach-btn {
+    width: 44px;
+    height: 44px;
+    border: 2px solid var(--apple-gray-5);
+    border-radius: 50%;
+    background: var(--apple-bg-secondary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+    transition: all var(--duration-fast);
+}
+
+.file-attach-btn:hover {
+    border-color: var(--apple-green);
+    color: var(--apple-green);
+}
+
+.file-attach-input {
+    display: none;
+}
+
+/* 送信ボタン */
+.chat-send-btn {
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: var(--apple-green);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+    transition: all var(--duration-fast);
+}
+
+.chat-send-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(52, 199, 89, 0.4);
+}
+
+.chat-send-btn:disabled {
+    background: var(--apple-gray-4);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* ロール別送信ボタン */
+.role-guardian .chat-send-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.role-guardian .chat-send-btn:hover {
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.role-staff .chat-send-btn {
+    background: var(--apple-blue);
+}
+
+.role-staff .chat-send-btn:hover {
+    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
+}
+
+.role-student .chat-send-btn {
+    background: var(--apple-orange);
+}
+
+.role-student .chat-send-btn:hover {
+    box-shadow: 0 4px 12px rgba(255, 149, 0, 0.4);
+}
+
+/* ファイルプレビュー */
+.file-preview {
+    display: none;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--apple-bg-secondary);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--spacing-sm);
+    align-items: center;
+    justify-content: space-between;
+    font-size: var(--text-footnote);
+}
+
+.file-preview.show {
+    display: flex;
+}
+
+.file-preview-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    color: var(--text-primary);
+}
+
+.file-preview-remove {
+    background: var(--apple-red);
+    color: white;
+    border: none;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: var(--text-caption-1);
+}
+
+/* ========================================
+   欠席連絡・イベント参加フォーム
+   ======================================== */
+
+.special-form-area {
+    display: none;
+    padding: var(--spacing-lg);
+    background: var(--apple-bg-secondary);
+    border-top: 1px solid var(--apple-gray-5);
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+.special-form-area.show {
+    display: block;
+}
+
+.special-form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.special-form-title {
+    font-weight: 600;
+    font-size: var(--text-callout);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.special-form-title.absence {
+    color: var(--apple-orange);
+}
+
+.special-form-title.event {
+    color: var(--apple-blue);
+}
+
+.special-form-close {
+    background: var(--apple-gray-5);
+    color: var(--text-primary);
+    border: none;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: var(--text-footnote);
+}
+
+.special-form-close:hover {
+    background: var(--apple-gray-4);
+}
+
+.special-form-select {
+    width: 100%;
+    padding: var(--spacing-md);
+    border: 2px solid var(--apple-gray-5);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-subhead);
+    margin-bottom: var(--spacing-md);
+    background: var(--apple-bg-primary);
+    color: var(--text-primary);
+}
+
+.special-form-select.absence:focus {
+    border-color: var(--apple-orange);
+}
+
+.special-form-select.event:focus {
+    border-color: var(--apple-blue);
+}
+
+.special-form-textarea {
+    width: 100%;
+    padding: var(--spacing-md);
+    border: 2px solid var(--apple-gray-5);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-subhead);
+    resize: vertical;
+    min-height: 80px;
+    margin-bottom: var(--spacing-md);
+    font-family: inherit;
+    background: var(--apple-bg-primary);
+    color: var(--text-primary);
+}
+
+.special-form-submit {
+    width: 100%;
+    padding: var(--spacing-md);
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-subhead);
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity var(--duration-fast);
+}
+
+.special-form-submit:hover {
+    opacity: 0.9;
+}
+
+.special-form-submit:disabled {
+    background: var(--apple-gray-4) !important;
+    cursor: not-allowed;
+}
+
+.special-form-submit.absence {
+    background: var(--apple-orange);
+    color: white;
+}
+
+.special-form-submit.event {
+    background: var(--apple-blue);
+    color: white;
+}
+
+/* 振替日選択セクション */
+.makeup-section {
+    margin-top: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    background: rgba(52, 199, 89, 0.1);
+    border: 2px solid var(--apple-green);
+    border-radius: var(--radius-md);
+}
+
+.makeup-section-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.makeup-section-icon {
+    font-size: 24px;
+}
+
+.makeup-section-title {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.makeup-section-subtitle {
+    font-size: var(--text-caption-1);
+    color: var(--text-secondary);
+}
+
+.makeup-required {
+    color: var(--apple-red);
+    font-weight: 700;
+}
+
+.makeup-info-box {
+    background: var(--apple-bg-primary);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--apple-blue);
+    margin-top: var(--spacing-md);
+}
+
+.makeup-info-box .title {
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+}
+
+.makeup-warning {
+    display: none;
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: rgba(255, 59, 48, 0.1);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--apple-red);
+    color: var(--apple-red);
+    font-size: var(--text-caption-1);
+    font-weight: 600;
+}
+
+.makeup-warning.show {
+    display: block;
+}
+
+/* ========================================
+   イベント詳細表示
+   ======================================== */
+
+.event-details-box {
+    display: none;
+    background: var(--apple-bg-primary);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--spacing-md);
+    font-size: var(--text-footnote);
+    line-height: 1.6;
+}
+
+.event-details-box.show {
+    display: block;
+}
+
+.event-details-box strong {
+    color: var(--apple-blue);
+}
+
+/* ========================================
+   空のステート
+   ======================================== */
+
+.chat-empty-state {
+    text-align: center;
+    padding: var(--spacing-2xl);
+    color: var(--text-secondary);
+}
+
+.chat-empty-state-icon {
+    font-size: 64px;
+    margin-bottom: var(--spacing-lg);
+    opacity: 0.5;
+}
+
+.chat-empty-state h3 {
+    font-size: var(--text-headline);
+    margin-bottom: var(--spacing-sm);
+    color: var(--text-primary);
+}
+
+.chat-empty-state p {
+    font-size: var(--text-subhead);
+}
+
+/* ========================================
+   日付区切り
+   ======================================== */
+
+.date-divider {
+    text-align: center;
+    margin: var(--spacing-lg) 0;
+    position: relative;
+}
+
+.date-divider::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 100%;
+    height: 1px;
+    background: var(--apple-gray-5);
+}
+
+.date-divider span {
+    background: var(--apple-bg-secondary);
+    padding: 0 var(--spacing-md);
+    position: relative;
+    color: var(--text-tertiary);
+    font-size: var(--text-caption-1);
+    font-weight: 500;
+}
+
+/* ========================================
+   レスポンシブ
+   ======================================== */
+
+@media (max-width: 768px) {
+    .message {
+        max-width: 90%;
+    }
+
+    .message-bubble {
+        padding: var(--spacing-sm) var(--spacing-md);
+        font-size: var(--text-subhead);
+    }
+
+    .chat-input-area {
+        padding: var(--spacing-sm);
+    }
+
+    .chat-input-form {
+        flex-wrap: wrap;
+    }
+
+    .chat-textarea {
+        width: 100%;
+        order: 1;
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .file-attach-btn {
+        order: 2;
+    }
+
+    .chat-send-btn {
+        order: 3;
+        flex: 1;
+        width: auto;
+        border-radius: var(--radius-md);
+    }
+
+    .chat-header {
+        padding: var(--spacing-md);
+    }
+
+    .chat-header-title {
+        font-size: var(--text-callout);
+    }
+
+    .special-form-area {
+        padding: var(--spacing-md);
+    }
+}
+
+/* iOS Safe Area */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .chat-input-area {
+        padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom));
+    }
+}

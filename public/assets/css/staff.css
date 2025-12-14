@@ -1,0 +1,223 @@
+/**
+ * スタッフ用CSS
+ * アクセントカラー: 青 (--apple-blue)
+ */
+
+/* ========================================
+   スタッフ用アクセントカラー
+   ======================================== */
+
+.role-staff .sidebar-menu a:hover {
+    background: rgba(0, 122, 255, 0.1);
+    border-left-color: var(--apple-blue);
+}
+
+.role-staff .sidebar-menu a.active {
+    background: rgba(0, 122, 255, 0.15);
+    border-left-color: var(--apple-blue);
+    color: var(--apple-blue);
+}
+
+.role-staff .sidebar-user-info {
+    background: rgba(0, 122, 255, 0.1);
+}
+
+.role-staff .user-info-box {
+    background: rgba(0, 122, 255, 0.1);
+    color: var(--apple-blue);
+}
+
+.role-staff .stat-card .number {
+    color: var(--apple-blue);
+}
+
+.role-staff .menu-card h3 {
+    color: var(--apple-blue);
+}
+
+/* ========================================
+   スタッフ固有コンポーネント
+   ======================================== */
+
+/* 活動カレンダー */
+.activity-calendar {
+    background: var(--apple-bg-primary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.calendar-title {
+    font-size: var(--text-headline);
+    font-weight: 600;
+}
+
+.calendar-nav {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.calendar-day-header {
+    text-align: center;
+    padding: var(--spacing-sm);
+    font-size: var(--text-caption-1);
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out);
+}
+
+.calendar-day:hover {
+    background: rgba(0, 122, 255, 0.1);
+}
+
+.calendar-day.today {
+    background: var(--apple-blue);
+    color: white;
+}
+
+.calendar-day.has-records {
+    position: relative;
+}
+
+.calendar-day.has-records::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    width: 6px;
+    height: 6px;
+    background: var(--apple-green);
+    border-radius: 50%;
+}
+
+.calendar-day.holiday {
+    color: var(--apple-red);
+}
+
+.calendar-day.other-month {
+    color: var(--apple-gray-3);
+}
+
+/* 生徒選択リスト */
+.student-list {
+    background: var(--apple-bg-primary);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.student-item {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--apple-gray-5);
+    cursor: pointer;
+    transition: background var(--duration-fast) var(--ease-out);
+}
+
+.student-item:last-child {
+    border-bottom: none;
+}
+
+.student-item:hover {
+    background: rgba(0, 122, 255, 0.05);
+}
+
+.student-item.selected {
+    background: rgba(0, 122, 255, 0.1);
+    border-left: 3px solid var(--apple-blue);
+}
+
+.student-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--apple-gray-5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    margin-right: var(--spacing-md);
+}
+
+.student-info {
+    flex: 1;
+}
+
+.student-name {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.student-grade {
+    font-size: var(--text-caption-1);
+    color: var(--text-secondary);
+}
+
+/* 通知バッジ */
+.notification-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background: var(--apple-red);
+    color: white;
+    border-radius: var(--radius-full);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* 未読メッセージバッジ */
+.unread-badge {
+    background: var(--apple-blue);
+}
+
+/* かけはしステータス */
+.kakehashi-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.kakehashi-status.completed {
+    background: rgba(52, 199, 89, 0.15);
+    color: var(--apple-green);
+}
+
+.kakehashi-status.pending {
+    background: rgba(255, 149, 0, 0.15);
+    color: var(--apple-orange);
+}
+
+.kakehashi-status.not-started {
+    background: rgba(142, 142, 147, 0.15);
+    color: var(--apple-gray-2);
+}

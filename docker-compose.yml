@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kobetu_app
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+      - ./public/uploads:/var/www/html/public/uploads
+    environment:
+      - DB_HOST=db
+      - DB_NAME=kobetudb
+      - DB_USER=kobetudb
+      - DB_PASS=kobetu1234
+      - CHATGPT_API_KEY=${CHATGPT_API_KEY:-}
+      - APP_ENV=development
+      - APP_DEBUG=true
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - kobetu_network
+
+  db:
+    image: mysql:8.0
+    container_name: kobetu_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: kobetudb
+      MYSQL_USER: kobetudb
+      MYSQL_PASSWORD: kobetu1234
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kobetu_network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: kobetu_phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: root_password
+    ports:
+      - "8081:80"
+    depends_on:
+      - db
+    networks:
+      - kobetu_network
+
+networks:
+  kobetu_network:
+    driver: bridge
+
+volumes:
+  mysql_data:

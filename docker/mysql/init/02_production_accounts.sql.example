@@ -1,0 +1,35 @@
+-- 本番環境用 初期アカウント設定
+-- このファイルを 02_production_accounts.sql にリネームして使用
+-- 重要: デプロイ後は必ずパスワードを変更してください
+
+-- ============================================
+-- 強力なパスワードを使用した初期アカウント
+-- ============================================
+
+-- 既存の弱いパスワードのアカウントを削除（存在する場合）
+DELETE FROM students WHERE guardian_id IN (SELECT id FROM users WHERE username IN ('admin', 'staff01', 'guardian01'));
+DELETE FROM users WHERE username IN ('admin', 'staff01', 'guardian01');
+
+-- 管理者アカウント
+-- パスワード: K0betu@Admin2025! （デプロイ後に変更必須）
+INSERT INTO users (username, password, full_name, user_type, email, classroom_id, is_master) VALUES
+('admin', '$2y$10$ebLTiw.2d0V.Llm16bKXwe4KrG0bQwf970YcelvHE3lYivL27JpMu', '管理者', 'admin', 'admin@example.com', 1, 1);
+
+-- スタッフアカウント
+-- パスワード: K0betu@Staff2025! （デプロイ後に変更必須）
+INSERT INTO users (username, password, full_name, user_type, email, classroom_id) VALUES
+('staff01', '$2y$10$C7Uh/lkRh./r.4L6IV.euOLr2ge3mgXb7oi7cyy2KYKP9VmXrtzyS', 'スタッフ01', 'staff', 'staff01@example.com', 1);
+
+-- 保護者アカウント
+-- パスワード: K0betu@Guard2025! （デプロイ後に変更必須）
+INSERT INTO users (username, password, full_name, user_type, email, classroom_id) VALUES
+('guardian01', '$2y$10$gCDQflY/usImMA8x.58Scef2lFz8lwR.FdSxf06HsHUXzyyscR0mG', '保護者01', 'guardian', 'guardian01@example.com', 1);
+
+-- ============================================
+-- パスワードポリシー
+-- ============================================
+-- 本番環境では以下のパスワードポリシーを推奨:
+-- - 最低12文字以上
+-- - 大文字、小文字、数字、記号を含む
+-- - 辞書に載っている単語を含まない
+-- - 3ヶ月ごとに変更

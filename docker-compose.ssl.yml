@@ -1,0 +1,82 @@
+# HTTPS対応版 Docker Compose 設定
+# Let's Encrypt + Nginx リバースプロキシ使用
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: kobetu_nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./docker/certbot/conf:/etc/letsencrypt:ro
+      - ./docker/certbot/www:/var/www/certbot:ro
+    depends_on:
+      - app
+    networks:
+      - kobetu_network
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+
+  certbot:
+    image: certbot/certbot
+    container_name: kobetu_certbot
+    restart: unless-stopped
+    volumes:
+      - ./docker/certbot/conf:/etc/letsencrypt
+      - ./docker/certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kobetu_app
+    restart: always
+    expose:
+      - "80"
+    volumes:
+      - ./public/uploads:/var/www/html/public/uploads
+    environment:
+      - DB_HOST=db
+      - DB_NAME=${DB_NAME:-kobetudb}
+      - DB_USER=${DB_USER:-kobetudb}
+      - DB_PASS=${DB_PASS}
+      - CHATGPT_API_KEY=${CHATGPT_API_KEY:-}
+      - APP_ENV=production
+      - APP_DEBUG=false
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - kobetu_network
+
+  db:
+    image: mysql:8.0
+    container_name: kobetu_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME:-kobetudb}
+      MYSQL_USER: ${DB_USER:-kobetudb}
+      MYSQL_PASSWORD: ${DB_PASS}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kobetu_network
+
+networks:
+  kobetu_network:
+    driver: bridge
+
+volumes:
+  mysql_data:

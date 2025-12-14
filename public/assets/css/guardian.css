@@ -1,0 +1,900 @@
+/**
+ * 保護者用CSS
+ * アクセントカラー: 緑 (--apple-green)
+ */
+
+/* ========================================
+   保護者用アクセントカラー
+   ======================================== */
+
+.role-guardian .sidebar-menu a:hover {
+    background: rgba(52, 199, 89, 0.1);
+    border-left-color: var(--apple-green);
+}
+
+.role-guardian .sidebar-menu a.active {
+    background: rgba(52, 199, 89, 0.15);
+    border-left-color: var(--apple-green);
+    color: var(--apple-green);
+}
+
+.role-guardian .sidebar-user-info {
+    background: rgba(52, 199, 89, 0.1);
+}
+
+.role-guardian .user-info-box {
+    background: rgba(52, 199, 89, 0.1);
+    color: var(--apple-green);
+}
+
+.role-guardian .stat-card .number {
+    color: var(--apple-green);
+}
+
+.role-guardian .menu-card h3 {
+    color: var(--apple-green);
+}
+
+/* ========================================
+   保護者固有コンポーネント
+   ======================================== */
+
+/* お子様カード */
+.child-card {
+    background: var(--apple-bg-primary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+    border-left: 4px solid var(--apple-green);
+    margin-bottom: var(--spacing-md);
+}
+
+.child-card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.child-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--apple-green) 0%, var(--apple-teal) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.child-name {
+    font-size: var(--text-headline);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.child-grade {
+    font-size: var(--text-subhead);
+    color: var(--text-secondary);
+}
+
+/* 連絡帳エントリー */
+.communication-entry {
+    background: var(--apple-bg-primary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.communication-date {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: var(--text-subhead);
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.communication-date .day-label {
+    background: var(--apple-green);
+    color: white;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-caption-1);
+    font-weight: 600;
+}
+
+.communication-content {
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+/* かけはし入力フォーム */
+.kakehashi-form {
+    background: var(--apple-bg-primary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-xl);
+    box-shadow: var(--shadow-sm);
+}
+
+.kakehashi-section {
+    margin-bottom: var(--spacing-xl);
+}
+
+.kakehashi-section-title {
+    font-size: var(--text-headline);
+    font-weight: 600;
+    color: var(--apple-green);
+    margin-bottom: var(--spacing-md);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.kakehashi-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: var(--spacing-md);
+    border: 1px solid var(--apple-gray-5);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-body);
+    line-height: 1.6;
+    resize: vertical;
+    transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.kakehashi-textarea:focus {
+    outline: none;
+    border-color: var(--apple-green);
+    box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.1);
+}
+
+/* 週間計画表示 */
+.weekly-plan-card {
+    background: var(--apple-bg-primary);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.weekly-plan-header {
+    background: linear-gradient(135deg, var(--apple-green) 0%, var(--apple-teal) 100%);
+    color: white;
+    padding: var(--spacing-lg);
+}
+
+.weekly-plan-title {
+    font-size: var(--text-headline);
+    font-weight: 600;
+}
+
+.weekly-plan-period {
+    font-size: var(--text-subhead);
+    opacity: 0.9;
+    margin-top: 4px;
+}
+
+.weekly-plan-content {
+    padding: var(--spacing-lg);
+}
+
+.weekly-plan-day {
+    display: flex;
+    padding: var(--spacing-md) 0;
+    border-bottom: 1px solid var(--apple-gray-5);
+}
+
+.weekly-plan-day:last-child {
+    border-bottom: none;
+}
+
+.weekly-plan-day-label {
+    width: 60px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.weekly-plan-day-content {
+    flex: 1;
+    color: var(--text-primary);
+}
+
+/* 確認済みバッジ */
+.confirmed-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: rgba(52, 199, 89, 0.15);
+    color: var(--apple-green);
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.confirmed-badge::before {
+    content: '✓';
+}
+
+/* ========================================
+   ダッシュボード - カレンダー
+   ======================================== */
+
+.calendar-section {
+    background: var(--apple-bg-primary);
+    padding: var(--spacing-xl);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 2px solid var(--apple-green);
+}
+
+.calendar-header h2 {
+    color: var(--text-primary);
+    font-size: var(--text-title-3);
+    font-weight: bold;
+}
+
+.calendar-nav {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.calendar-nav a {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--apple-green);
+    color: white;
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-footnote);
+    transition: opacity var(--duration-fast);
+}
+
+.calendar-nav a:hover {
+    opacity: 0.9;
+}
+
+.calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.calendar-day-header {
+    text-align: center;
+    padding: var(--spacing-sm);
+    font-weight: bold;
+    color: var(--text-secondary);
+    font-size: var(--text-footnote);
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    border: 1px solid var(--apple-gray-5);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-xs);
+    background: var(--apple-bg-primary);
+    position: relative;
+    min-height: 70px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.calendar-day.empty {
+    background: var(--apple-gray-6);
+    opacity: 0.5;
+}
+
+.calendar-day.today {
+    border: 2px solid var(--apple-green);
+    background: rgba(52, 199, 89, 0.1);
+}
+
+.calendar-day.holiday {
+    background: rgba(255, 59, 48, 0.1);
+}
+
+.calendar-day-number {
+    font-size: var(--text-subhead);
+    font-weight: 600;
+    margin-bottom: 2px;
+    color: var(--text-primary);
+}
+
+.calendar-day-number.sunday {
+    color: var(--apple-red);
+}
+
+.calendar-day-number.saturday {
+    color: var(--apple-blue);
+}
+
+.calendar-day-content {
+    font-size: 10px;
+    line-height: 1.3;
+    width: 100%;
+}
+
+.event-marker {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-right: 3px;
+}
+
+.holiday-label {
+    color: var(--apple-red);
+    font-weight: bold;
+    font-size: 9px;
+}
+
+.event-label {
+    color: var(--text-primary);
+    font-size: 9px;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+}
+
+.event-label.clickable {
+    cursor: pointer;
+    transition: opacity var(--duration-fast);
+}
+
+.event-label.clickable:hover {
+    opacity: 0.7;
+}
+
+.schedule-label {
+    color: var(--apple-green);
+    font-size: 9px;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+}
+
+.schedule-label.no-note {
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.schedule-marker,
+.note-marker {
+    margin-right: 2px;
+    font-size: 8px;
+}
+
+.note-label {
+    font-size: 9px;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.note-label.confirmed {
+    color: var(--apple-green);
+}
+
+.note-label.unconfirmed {
+    color: var(--apple-red);
+}
+
+.note-label.confirmed-past {
+    color: var(--apple-green);
+}
+
+.note-label.unconfirmed-past {
+    color: var(--apple-orange);
+}
+
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-lg);
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--apple-gray-5);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: var(--text-footnote);
+    color: var(--text-secondary);
+}
+
+.legend-box {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+}
+
+/* ========================================
+   ダッシュボード - 通知バナー
+   ======================================== */
+
+.notification-banner {
+    background: var(--apple-bg-primary);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.notification-banner.urgent {
+    border-left: 5px solid var(--apple-red);
+    background: rgba(255, 69, 58, 0.05);
+}
+
+.notification-banner.pending {
+    border-left: 5px solid var(--apple-teal);
+    background: rgba(90, 200, 250, 0.05);
+}
+
+.notification-banner.overdue {
+    border-left: 5px solid var(--apple-gray);
+    background: var(--apple-bg-secondary);
+}
+
+.notification-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    font-size: var(--text-headline);
+    font-weight: bold;
+}
+
+.notification-header.urgent {
+    color: var(--apple-red);
+}
+
+.notification-header.pending {
+    color: var(--apple-teal);
+}
+
+.notification-header.overdue {
+    color: var(--apple-gray);
+}
+
+.notification-item {
+    background: var(--apple-bg-secondary);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--spacing-sm);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.notification-item:last-child {
+    margin-bottom: 0;
+}
+
+.notification-info {
+    flex: 1;
+}
+
+.notification-student {
+    font-weight: bold;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.notification-period {
+    font-size: var(--text-subhead);
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+}
+
+.notification-deadline {
+    font-size: var(--text-subhead);
+    font-weight: bold;
+}
+
+.notification-deadline.urgent {
+    color: var(--apple-red);
+}
+
+.notification-deadline.pending {
+    color: var(--apple-teal);
+}
+
+.notification-deadline.overdue {
+    color: var(--apple-gray);
+}
+
+.notification-action {
+    margin-left: var(--spacing-md);
+}
+
+.notification-btn {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: var(--apple-green);
+    color: white;
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-subhead);
+    font-weight: bold;
+    display: inline-block;
+    transition: opacity var(--duration-fast);
+}
+
+.notification-btn:hover {
+    opacity: 0.9;
+}
+
+/* ========================================
+   ダッシュボード - 生徒セクション
+   ======================================== */
+
+.student-section {
+    background: var(--apple-bg-primary);
+    padding: var(--spacing-xl);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.student-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 2px solid var(--apple-green);
+}
+
+.student-name {
+    font-size: var(--text-title-3);
+    font-weight: bold;
+    color: var(--text-primary);
+    margin-right: var(--spacing-sm);
+}
+
+.grade-badge {
+    background: var(--apple-green);
+    color: white;
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    font-size: var(--text-caption-1);
+}
+
+.note-item {
+    background: var(--apple-bg-secondary);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--spacing-md);
+    border-left: 4px solid var(--apple-green);
+}
+
+.note-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+}
+
+.activity-name {
+    font-weight: bold;
+    color: var(--apple-green);
+    font-size: var(--text-callout);
+}
+
+.note-date {
+    color: var(--text-secondary);
+    font-size: var(--text-subhead);
+}
+
+.note-content {
+    color: var(--text-primary);
+    line-height: 1.8;
+    white-space: pre-wrap;
+    font-size: var(--text-body);
+}
+
+.confirmation-box {
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--apple-gray-5);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.confirmation-checkbox {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    cursor: pointer;
+}
+
+.confirmation-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--apple-green);
+}
+
+.confirmation-checkbox label {
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text-primary);
+    user-select: none;
+}
+
+.confirmation-checkbox.confirmed label {
+    color: var(--apple-green);
+}
+
+.confirmation-date {
+    font-size: var(--text-footnote);
+    color: var(--apple-green);
+    font-weight: 500;
+}
+
+.no-notes,
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-2xl);
+    color: var(--text-secondary);
+}
+
+.empty-state h2 {
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
+}
+
+/* ========================================
+   モーダル共通
+   ======================================== */
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    overflow-y: auto;
+}
+
+.modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--apple-bg-primary);
+    padding: var(--spacing-2xl);
+    border-radius: var(--radius-md);
+    max-width: 700px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-close {
+    position: absolute;
+    right: var(--spacing-md);
+    top: var(--spacing-md);
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--text-secondary);
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    color: var(--text-primary);
+}
+
+.modal-header {
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 2px solid var(--apple-green);
+}
+
+.modal-header h2 {
+    color: var(--text-primary);
+    font-size: var(--text-title-2);
+    margin: 0;
+}
+
+.modal-date {
+    color: var(--text-secondary);
+    font-size: var(--text-subhead);
+    margin-top: var(--spacing-xs);
+}
+
+.event-detail-section {
+    margin-bottom: var(--spacing-lg);
+}
+
+.event-detail-section h4 {
+    color: var(--apple-green);
+    font-size: var(--text-callout);
+    margin-bottom: var(--spacing-sm);
+    font-weight: 600;
+}
+
+.event-detail-section p {
+    color: var(--text-primary);
+    font-size: var(--text-subhead);
+    line-height: 1.6;
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+/* ========================================
+   レスポンシブ - モバイル
+   ======================================== */
+
+@media (max-width: 768px) {
+    .calendar-section {
+        padding: var(--spacing-md);
+    }
+
+    .calendar-header {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        align-items: flex-start;
+    }
+
+    .calendar-header h2 {
+        font-size: var(--text-headline);
+    }
+
+    .calendar-nav {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .calendar-nav a {
+        padding: var(--spacing-sm);
+        font-size: var(--text-caption-1);
+        flex: 1;
+        text-align: center;
+    }
+
+    .calendar {
+        gap: 2px;
+    }
+
+    .calendar-day-header {
+        padding: var(--spacing-xs);
+        font-size: 11px;
+    }
+
+    .calendar-day {
+        min-height: 50px;
+        padding: 2px;
+        aspect-ratio: auto;
+    }
+
+    .calendar-day-number {
+        font-size: var(--text-caption-1);
+    }
+
+    .calendar-day-content {
+        font-size: 8px;
+    }
+
+    .event-label,
+    .schedule-label,
+    .note-label,
+    .holiday-label {
+        font-size: 7px;
+        line-height: 1.2;
+        word-break: break-all;
+    }
+
+    .event-marker {
+        width: 4px;
+        height: 4px;
+    }
+
+    .schedule-marker,
+    .note-marker {
+        font-size: 6px;
+    }
+
+    .legend {
+        gap: var(--spacing-sm);
+    }
+
+    .legend-item {
+        font-size: 10px;
+        gap: 4px;
+    }
+
+    .legend-box {
+        width: 14px;
+        height: 14px;
+    }
+
+    .notification-banner {
+        padding: var(--spacing-md);
+    }
+
+    .notification-header {
+        font-size: var(--text-callout);
+        flex-wrap: wrap;
+    }
+
+    .notification-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+
+    .notification-action {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .notification-btn {
+        width: 100%;
+        text-align: center;
+        padding: var(--spacing-md);
+    }
+
+    .student-section {
+        padding: var(--spacing-md);
+    }
+
+    .student-header {
+        flex-wrap: wrap;
+        gap: var(--spacing-sm);
+    }
+
+    .student-name {
+        font-size: var(--text-headline);
+    }
+
+    .note-item {
+        padding: var(--spacing-md);
+    }
+
+    .note-header {
+        flex-direction: column;
+        gap: var(--spacing-xs);
+        align-items: flex-start;
+    }
+
+    .confirmation-box {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+
+    .modal-content {
+        width: 95%;
+        padding: var(--spacing-lg);
+        max-height: 85vh;
+    }
+}

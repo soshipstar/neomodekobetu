@@ -1,0 +1,3 @@
+# チャット添付ファイル - 直接アクセス制限
+Order Deny,Allow
+Deny from all

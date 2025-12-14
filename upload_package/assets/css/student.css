@@ -1,0 +1,264 @@
+/**
+ * 生徒用CSS
+ * アクセントカラー: オレンジ (--apple-orange)
+ */
+
+/* ========================================
+   生徒用アクセントカラー
+   ======================================== */
+
+.role-student .sidebar-menu a:hover {
+    background: rgba(255, 149, 0, 0.1);
+    border-left-color: var(--apple-orange);
+}
+
+.role-student .sidebar-menu a.active {
+    background: rgba(255, 149, 0, 0.15);
+    border-left-color: var(--apple-orange);
+    color: var(--apple-orange);
+}
+
+.role-student .sidebar-user-info {
+    background: rgba(255, 149, 0, 0.1);
+}
+
+.role-student .user-info-box {
+    background: rgba(255, 149, 0, 0.1);
+    color: var(--apple-orange);
+}
+
+.role-student .stat-card .number {
+    color: var(--apple-orange);
+}
+
+.role-student .menu-card h3 {
+    color: var(--apple-orange);
+}
+
+/* ========================================
+   生徒固有コンポーネント
+   ======================================== */
+
+/* 提出物カード */
+.submission-card {
+    background: var(--apple-bg-primary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: var(--spacing-md);
+    border-left: 4px solid var(--apple-orange);
+}
+
+.submission-card.urgent {
+    border-left-color: var(--apple-red);
+    background: rgba(255, 59, 48, 0.02);
+}
+
+.submission-card.completed {
+    border-left-color: var(--apple-green);
+    opacity: 0.8;
+}
+
+.submission-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-sm);
+}
+
+.submission-title {
+    font-size: var(--text-headline);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.submission-deadline {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--text-caption-1);
+    color: var(--text-secondary);
+}
+
+.submission-deadline.soon {
+    color: var(--apple-orange);
+    font-weight: 500;
+}
+
+.submission-deadline.overdue {
+    color: var(--apple-red);
+    font-weight: 600;
+}
+
+.submission-description {
+    color: var(--text-secondary);
+    font-size: var(--text-subhead);
+    line-height: 1.5;
+}
+
+/* 締め切りバッジ */
+.deadline-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.deadline-badge.normal {
+    background: rgba(0, 122, 255, 0.15);
+    color: var(--apple-blue);
+}
+
+.deadline-badge.soon {
+    background: rgba(255, 149, 0, 0.15);
+    color: var(--apple-orange);
+}
+
+.deadline-badge.urgent {
+    background: rgba(255, 59, 48, 0.15);
+    color: var(--apple-red);
+}
+
+.deadline-badge.completed {
+    background: rgba(52, 199, 89, 0.15);
+    color: var(--apple-green);
+}
+
+/* スケジュールタイムライン */
+.schedule-timeline {
+    background: var(--apple-bg-primary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.schedule-item {
+    display: flex;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md) 0;
+    border-bottom: 1px solid var(--apple-gray-5);
+}
+
+.schedule-item:last-child {
+    border-bottom: none;
+}
+
+.schedule-time {
+    width: 60px;
+    flex-shrink: 0;
+    font-size: var(--text-subhead);
+    font-weight: 600;
+    color: var(--apple-orange);
+}
+
+.schedule-content {
+    flex: 1;
+}
+
+.schedule-title {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.schedule-location {
+    font-size: var(--text-caption-1);
+    color: var(--text-secondary);
+}
+
+/* チャット入力エリア */
+.chat-input-area {
+    background: var(--apple-bg-primary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: flex-end;
+}
+
+.chat-textarea {
+    flex: 1;
+    min-height: 44px;
+    max-height: 120px;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--apple-gray-5);
+    border-radius: var(--radius-md);
+    font-size: var(--text-body);
+    resize: none;
+    transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.chat-textarea:focus {
+    outline: none;
+    border-color: var(--apple-orange);
+    box-shadow: 0 0 0 3px rgba(255, 149, 0, 0.1);
+}
+
+.chat-send-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--apple-orange);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.chat-send-btn:hover {
+    transform: scale(1.1);
+}
+
+.chat-send-btn:disabled {
+    background: var(--apple-gray-4);
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* 週間計画進捗 */
+.weekly-progress {
+    background: var(--apple-bg-primary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.progress-title {
+    font-size: var(--text-headline);
+    font-weight: 600;
+}
+
+.progress-percentage {
+    font-size: var(--text-title-3);
+    font-weight: 600;
+    color: var(--apple-orange);
+}
+
+.progress-bar {
+    height: 8px;
+    background: var(--apple-gray-5);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--apple-orange) 0%, var(--apple-yellow) 100%);
+    border-radius: var(--radius-full);
+    transition: width var(--duration-normal) var(--ease-out);
+}

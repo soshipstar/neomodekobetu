@@ -1,0 +1,49 @@
+# Apache設定 - セキュリティ強化
+
+# HTTPSリダイレクト（本番環境で有効化）
+# RewriteEngine On
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# セキュリティヘッダー
+<IfModule mod_headers.c>
+    # XSS対策
+    Header set X-XSS-Protection "1; mode=block"
+
+    # クリックジャッキング対策
+    Header set X-Frame-Options "SAMEORIGIN"
+
+    # MIMEタイプスニッフィング防止
+    Header set X-Content-Type-Options "nosniff"
+
+    # Referrerポリシー
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Content Security Policy (必要に応じて調整)
+    # Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;"
+</IfModule>
+
+# ディレクトリリスティング無効化
+Options -Indexes
+
+# 不要なファイルへのアクセスをブロック
+<FilesMatch "\.(env|sql|log|bak|backup|git|svn)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# .htaccessファイル自体へのアクセスをブロック
+<Files ".htaccess">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# PHPエラー表示を無効化（本番環境）
+php_flag display_errors off
+php_flag log_errors on
+
+# ファイルアップロード制限
+php_value upload_max_filesize 64M
+php_value post_max_size 64M
+php_value max_execution_time 300
+php_value max_input_time 300

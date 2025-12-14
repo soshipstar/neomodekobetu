@@ -1,0 +1,41 @@
+# Git
+.git
+.gitignore
+
+# Docker
+docker-compose*.yml
+Dockerfile
+.dockerignore
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Env files (use docker-compose environment instead)
+.env
+.env.docker
+.env.example
+.env.local
+
+# Documentation
+*.md
+!README.md
+
+# Python scripts (development only)
+*.py
+
+# Claude
+.claude
+
+# Uploads (mounted as volume)
+uploads/*
+!uploads/.gitkeep
