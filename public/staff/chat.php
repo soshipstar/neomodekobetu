@@ -460,14 +460,14 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
             <!-- 小学生 -->
             <?php if (!empty($elementary)): ?>
             <div class="accordion">
-                <div class="accordion-header active" onclick="toggleAccordion(this)">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
                     <div class="accordion-title">
                         <span>🎒 小学生</span>
                         <span class="accordion-count">(<?= count($elementary) ?>名)</span>
                     </div>
                     <span class="accordion-icon">▼</span>
                 </div>
-                <div class="accordion-content active">
+                <div class="accordion-content">
                     <?php foreach ($elementary as $student): ?>
                         <div class="student-item <?= $selectedStudentId == $student['student_id'] ? 'active' : '' ?>"
                              data-student-name="<?= htmlspecialchars($student['student_name']) ?>"
@@ -491,14 +491,14 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
             <!-- 中学生 -->
             <?php if (!empty($junior)): ?>
             <div class="accordion">
-                <div class="accordion-header active" onclick="toggleAccordion(this)">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
                     <div class="accordion-title">
                         <span>📚 中学生</span>
                         <span class="accordion-count">(<?= count($junior) ?>名)</span>
                     </div>
                     <span class="accordion-icon">▼</span>
                 </div>
-                <div class="accordion-content active">
+                <div class="accordion-content">
                     <?php foreach ($junior as $student): ?>
                         <div class="student-item <?= $selectedStudentId == $student['student_id'] ? 'active' : '' ?>"
                              data-student-name="<?= htmlspecialchars($student['student_name']) ?>"
@@ -522,14 +522,14 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
             <!-- 高校生 -->
             <?php if (!empty($senior)): ?>
             <div class="accordion">
-                <div class="accordion-header active" onclick="toggleAccordion(this)">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
                     <div class="accordion-title">
                         <span>🎓 高校生</span>
                         <span class="accordion-count">(<?= count($senior) ?>名)</span>
                     </div>
                     <span class="accordion-icon">▼</span>
                 </div>
-                <div class="accordion-content active">
+                <div class="accordion-content">
                     <?php foreach ($senior as $student): ?>
                         <div class="student-item <?= $selectedStudentId == $student['student_id'] ? 'active' : '' ?>"
                              data-student-name="<?= htmlspecialchars($student['student_name']) ?>"
