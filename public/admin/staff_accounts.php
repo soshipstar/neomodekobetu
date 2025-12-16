@@ -182,7 +182,7 @@ renderPageStart('admin', $currentPage, 'スタッフアカウント管理');
 
 <script>
     function openAddModal() {
-        document.getElementById('addModal').style.display = 'block';
+        document.getElementById('addModal').style.display = 'flex';
     }
 
     function closeAddModal() {
@@ -196,7 +196,7 @@ renderPageStart('admin', $currentPage, 'スタッフアカウント管理');
         document.getElementById('edit_email').value = staff.email || '';
         document.getElementById('edit_classroom_id').value = staff.classroom_id || '';
         document.getElementById('edit_is_active').value = staff.is_active;
-        document.getElementById('editModal').style.display = 'block';
+        document.getElementById('editModal').style.display = 'flex';
     }
 
     function closeEditModal() {

@@ -1,19 +1,17 @@
 <?php
 /**
- * 管理者アカウント管理（マスター管理者専用）
- */
+ * 管琁E��E��カウント管琁E���Eスター管琁E��E��用�E�E */
 
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/layouts/page_wrapper.php';
 
-// マスター管理者チェック
+// マスター管琁E��E��ェチE��
 requireMasterAdmin();
 
 $pdo = getDbConnection();
 
-// 全管理者アカウントを取得
-$stmt = $pdo->query("
+// 全管琁E��E��カウントを取征E$stmt = $pdo->query("
     SELECT
         u.*,
         c.classroom_name
@@ -24,22 +22,20 @@ $stmt = $pdo->query("
 ");
 $admins = $stmt->fetchAll();
 
-// 教室一覧を取得
-$stmt = $pdo->query("SELECT id, classroom_name FROM classrooms ORDER BY classroom_name");
+// 教室一覧を取征E$stmt = $pdo->query("SELECT id, classroom_name FROM classrooms ORDER BY classroom_name");
 $classrooms = $stmt->fetchAll();
 
 $successMessage = $_GET['success'] ?? '';
 
-// ページ開始
-$currentPage = 'admin_accounts';
-renderPageStart('admin', $currentPage, '管理者アカウント管理');
+// ペ�Eジ開姁E$currentPage = 'admin_accounts';
+renderPageStart('admin', $currentPage, '管琁E��E��カウント管琁E);
 ?>
 
-<!-- ページヘッダー -->
+<!-- ペ�Eジヘッダー -->
 <div class="page-header">
     <div class="page-header-content">
-        <h1 class="page-title">管理者アカウント管理</h1>
-        <p class="page-subtitle">マスター管理者専用</p>
+        <h1 class="page-title">管琁E��E��カウント管琁E/h1>
+        <p class="page-subtitle">マスター管琁E��E��用</p>
     </div>
 </div>
 
@@ -50,22 +46,22 @@ renderPageStart('admin', $currentPage, '管理者アカウント管理');
 <div class="card">
     <div class="card-body">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
-            <h2 style="font-size: var(--text-headline); color: var(--apple-purple);">管理者アカウント一覧</h2>
-            <button class="btn btn-primary" onclick="openAddModal()">新規管理者登録</button>
+            <h2 style="font-size: var(--text-headline); color: var(--apple-purple);">管琁E��E��カウント一覧</h2>
+            <button class="btn btn-primary" onclick="openAddModal()">新規管琁E��E��録</button>
         </div>
 
         <table class="table">
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>ユーザー名</th>
+                    <th>ユーザー吁E/th>
                     <th>氏名</th>
                     <th>メールアドレス</th>
-                    <th>権限</th>
+                    <th>権陁E/th>
                     <th>所属教室</th>
-                    <th>ステータス</th>
+                    <th>スチE�Eタス</th>
                     <th>登録日</th>
-                    <th>操作</th>
+                    <th>操佁E/th>
                 </tr>
             </thead>
             <tbody>
@@ -77,9 +73,9 @@ renderPageStart('admin', $currentPage, '管理者アカウント管理');
                         <td><?= htmlspecialchars($admin['email'] ?? '-') ?></td>
                         <td>
                             <?php if ($admin['is_master']): ?>
-                                <span class="badge" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); color: white;">マスター管理者</span>
+                                <span class="badge" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); color: white;">マスター管琁E��E/span>
                             <?php else: ?>
-                                <span class="badge badge-secondary">通常管理者</span>
+                                <span class="badge badge-secondary">通常管琁E��E/span>
                             <?php endif; ?>
                         </td>
                         <td><?= htmlspecialchars($admin['classroom_name'] ?? '-') ?></td>
@@ -91,9 +87,9 @@ renderPageStart('admin', $currentPage, '管理者アカウント管理');
                         <td><?= date('Y/m/d', strtotime($admin['created_at'])) ?></td>
                         <td>
                             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                <button class="btn btn-primary btn-sm" onclick='openEditModal(<?= json_encode($admin, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'>編集</button>
+                                <button class="btn btn-primary btn-sm" onclick='openEditModal(<?= json_encode($admin, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'>編雁E/button>
                                 <?php if ($admin['id'] != $_SESSION['user_id']): ?>
-                                    <button class="btn btn-success btn-sm" onclick="convertToStaff(<?= $admin['id'] ?>, '<?= htmlspecialchars($admin['username'], ENT_QUOTES) ?>')">スタッフに変換</button>
+                                    <button class="btn btn-success btn-sm" onclick="convertToStaff(<?= $admin['id'] ?>, '<?= htmlspecialchars($admin['username'], ENT_QUOTES) ?>')">スタチE��に変換</button>
                                     <button class="btn btn-danger btn-sm" onclick="deleteAdmin(<?= $admin['id'] ?>, '<?= htmlspecialchars($admin['username'], ENT_QUOTES) ?>')">削除</button>
                                 <?php endif; ?>
                             </div>
@@ -109,18 +105,18 @@ renderPageStart('admin', $currentPage, '管理者アカウント管理');
 <div id="addModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeAddModal()">&times;</span>
-        <h2 style="margin-bottom: var(--spacing-lg);">新規管理者登録</h2>
+        <h2 style="margin-bottom: var(--spacing-lg);">新規管琁E��E��録</h2>
         <form action="admin_accounts_save.php" method="POST">
             <input type="hidden" name="action" value="add">
             <div class="form-group">
-                <label class="form-label">ユーザー名 *</label>
+                <label class="form-label">ユーザー吁E*</label>
                 <input type="text" name="username" class="form-control" required>
-                <small style="color: var(--text-secondary);">ログイン時に使用します（半角英数字）</small>
+                <small style="color: var(--text-secondary);">ログイン時に使用します（半角英数字！E/small>
             </div>
             <div class="form-group">
-                <label class="form-label">パスワード *</label>
+                <label class="form-label">パスワーチE*</label>
                 <input type="password" name="password" class="form-control" required minlength="6">
-                <small style="color: var(--text-secondary);">6文字以上</small>
+                <small style="color: var(--text-secondary);">6斁E��以丁E/small>
             </div>
             <div class="form-group">
                 <label class="form-label">氏名 *</label>
@@ -131,10 +127,10 @@ renderPageStart('admin', $currentPage, '管理者アカウント管理');
                 <input type="email" name="email" class="form-control">
             </div>
             <div class="form-group">
-                <label class="form-label">権限 *</label>
+                <label class="form-label">権陁E*</label>
                 <select name="is_master" class="form-control" required>
-                    <option value="0">通常管理者</option>
-                    <option value="1">マスター管理者</option>
+                    <option value="0">通常管琁E��E/option>
+                    <option value="1">マスター管琁E��E/option>
                 </select>
             </div>
             <div class="form-group">
@@ -151,23 +147,23 @@ renderPageStart('admin', $currentPage, '管理者アカウント管理');
     </div>
 </div>
 
-<!-- 編集モーダル -->
+<!-- 編雁E��ーダル -->
 <div id="editModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeEditModal()">&times;</span>
-        <h2 style="margin-bottom: var(--spacing-lg);">管理者情報編集</h2>
+        <h2 style="margin-bottom: var(--spacing-lg);">管琁E��E��報編雁E/h2>
         <form action="admin_accounts_save.php" method="POST">
             <input type="hidden" name="action" value="edit">
             <input type="hidden" name="user_id" id="edit_user_id">
             <div class="form-group">
-                <label class="form-label">ユーザー名</label>
+                <label class="form-label">ユーザー吁E/label>
                 <input type="text" id="edit_username" class="form-control" disabled style="background: var(--apple-gray-6);">
-                <small style="color: var(--text-secondary);">ユーザー名は変更できません</small>
+                <small style="color: var(--text-secondary);">ユーザー名�E変更できません</small>
             </div>
             <div class="form-group">
-                <label class="form-label">新しいパスワード</label>
+                <label class="form-label">新しいパスワーチE/label>
                 <input type="password" name="password" class="form-control" minlength="6">
-                <small style="color: var(--text-secondary);">変更しない場合は空欄にしてください</small>
+                <small style="color: var(--text-secondary);">変更しなぁE��合�E空欁E��してください</small>
             </div>
             <div class="form-group">
                 <label class="form-label">氏名 *</label>
@@ -178,10 +174,10 @@ renderPageStart('admin', $currentPage, '管理者アカウント管理');
                 <input type="email" name="email" id="edit_email" class="form-control">
             </div>
             <div class="form-group">
-                <label class="form-label">権限 *</label>
+                <label class="form-label">権陁E*</label>
                 <select name="is_master" id="edit_is_master" class="form-control" required>
-                    <option value="0">通常管理者</option>
-                    <option value="1">マスター管理者</option>
+                    <option value="0">通常管琁E��E/option>
+                    <option value="1">マスター管琁E��E/option>
                 </select>
             </div>
             <div class="form-group">
@@ -193,7 +189,7 @@ renderPageStart('admin', $currentPage, '管理者アカウント管理');
                 </select>
             </div>
             <div class="form-group">
-                <label class="form-label">ステータス *</label>
+                <label class="form-label">スチE�Eタス *</label>
                 <select name="is_active" id="edit_is_active" class="form-control" required>
                     <option value="1">有効</option>
                     <option value="0">無効</option>
@@ -206,7 +202,7 @@ renderPageStart('admin', $currentPage, '管理者アカウント管理');
 
 <script>
     function openAddModal() {
-        document.getElementById('addModal').style.display = 'block';
+        document.getElementById('addModal').style.display = 'flex';
     }
 
     function closeAddModal() {
@@ -221,7 +217,7 @@ renderPageStart('admin', $currentPage, '管理者アカウント管理');
         document.getElementById('edit_is_master').value = admin.is_master;
         document.getElementById('edit_classroom_id').value = admin.classroom_id || '';
         document.getElementById('edit_is_active').value = admin.is_active;
-        document.getElementById('editModal').style.display = 'block';
+        document.getElementById('editModal').style.display = 'flex';
     }
 
     function closeEditModal() {
@@ -229,7 +225,7 @@ renderPageStart('admin', $currentPage, '管理者アカウント管理');
     }
 
     function convertToStaff(userId, username) {
-        if (confirm(`「${username}」を管理者からスタッフアカウントに切り替えますか？\n\n管理者権限がなくなり、スタッフとしてのみログイン可能になります。`)) {
+        if (confirm(`、E{username}」を管琁E��E��らスタチE��アカウントに刁E��替えますか�E�\n\n管琁E��E��限がなくなり、スタチE��としてのみログイン可能になります。`)) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = 'admin_accounts_save.php';
@@ -240,7 +236,7 @@ renderPageStart('admin', $currentPage, '管理者アカウント管理');
     }
 
     function deleteAdmin(userId, username) {
-        if (confirm(`本当に「${username}」を削除しますか？\n\nこの操作は取り消せません。`)) {
+        if (confirm(`本当に、E{username}」を削除しますか�E�\n\nこ�E操作�E取り消せません。`)) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = 'admin_accounts_save.php';
@@ -250,8 +246,7 @@ renderPageStart('admin', $currentPage, '管理者アカウント管理');
         }
     }
 
-    // モーダル外クリックで閉じる
-    let modalMouseDownTarget = null;
+    // モーダル外クリチE��で閉じめE    let modalMouseDownTarget = null;
     window.addEventListener('mousedown', function(event) {
         modalMouseDownTarget = event.target;
     });

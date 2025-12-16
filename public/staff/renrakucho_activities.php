@@ -119,6 +119,18 @@ foreach ($events as $event) {
     ];
 }
 
+// この月の学校休業日活動を取得
+$stmt = $pdo->prepare("
+    SELECT activity_date
+    FROM school_holiday_activities
+    WHERE YEAR(activity_date) = ? AND MONTH(activity_date) = ? AND classroom_id = ?
+");
+$stmt->execute([$year, $month, $classroomId]);
+$schoolHolidayDates = [];
+foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+    $schoolHolidayDates[$row['activity_date']] = true;
+}
+
 // 選択された日付の活動一覧を取得（同じ教室のスタッフの活動を全て表示）
 if ($classroomId) {
     $stmt = $pdo->prepare("
@@ -159,6 +171,50 @@ $activities = $stmt->fetchAll();
 
 // 通知情報を取得（過去3日以内、教室に関係なく全スタッフに表示）
 $threeDaysAgo = date('Y-m-d H:i:s', strtotime('-3 days'));
+
+// 0. 振替希望（承認待ち）
+$pendingMakeupRequests = [];
+if ($classroomId) {
+    $stmt = $pdo->prepare("
+        SELECT
+            an.id,
+            an.student_id,
+            an.absence_date,
+            an.makeup_request_date,
+            an.reason,
+            s.student_name,
+            cm.created_at as requested_at
+        FROM absence_notifications an
+        INNER JOIN students s ON an.student_id = s.id
+        INNER JOIN users u ON s.guardian_id = u.id
+        LEFT JOIN chat_messages cm ON an.message_id = cm.id
+        WHERE an.makeup_status = 'pending'
+        AND an.makeup_request_date IS NOT NULL
+        AND u.classroom_id = ?
+        ORDER BY an.makeup_request_date ASC
+    ");
+    $stmt->execute([$classroomId]);
+} else {
+    $stmt = $pdo->prepare("
+        SELECT
+            an.id,
+            an.student_id,
+            an.absence_date,
+            an.makeup_request_date,
+            an.reason,
+            s.student_name,
+            cm.created_at as requested_at
+        FROM absence_notifications an
+        INNER JOIN students s ON an.student_id = s.id
+        LEFT JOIN chat_messages cm ON an.message_id = cm.id
+        WHERE an.makeup_status = 'pending'
+        AND an.makeup_request_date IS NOT NULL
+        ORDER BY an.makeup_request_date ASC
+    ");
+    $stmt->execute();
+}
+$pendingMakeupRequests = $stmt->fetchAll();
+$pendingMakeupCount = count($pendingMakeupRequests);
 
 // 1. 保護者からの新しいメッセージ（未読）
 if ($classroomId) {
@@ -389,6 +445,115 @@ if (!$isHoliday) {
         $stmt->execute([$selectedDate]);
     }
     $scheduledStudents = $stmt->fetchAll();
+
+    // 承認済み振替依頼の生徒を追加（振替希望日が本日の場合）
+    if ($classroomId) {
+        $stmt = $pdo->prepare("
+            SELECT
+                s.id,
+                s.student_name,
+                s.birth_date,
+                s.grade_level,
+                s.grade_adjustment,
+                u.full_name as guardian_name,
+                NULL as absence_id,
+                '振替' as absence_reason,
+                'makeup' as participant_type
+            FROM absence_notifications an
+            INNER JOIN students s ON an.student_id = s.id
+            INNER JOIN users u ON s.guardian_id = u.id
+            WHERE an.makeup_request_date = ?
+              AND an.makeup_status = 'approved'
+              AND u.classroom_id = ?
+              AND s.is_active = 1
+            ORDER BY s.student_name
+        ");
+        $stmt->execute([$selectedDate, $classroomId]);
+    } else {
+        $stmt = $pdo->prepare("
+            SELECT
+                s.id,
+                s.student_name,
+                s.birth_date,
+                s.grade_level,
+                s.grade_adjustment,
+                u.full_name as guardian_name,
+                NULL as absence_id,
+                '振替' as absence_reason,
+                'makeup' as participant_type
+            FROM absence_notifications an
+            INNER JOIN students s ON an.student_id = s.id
+            LEFT JOIN users u ON s.guardian_id = u.id
+            WHERE an.makeup_request_date = ?
+              AND an.makeup_status = 'approved'
+              AND s.is_active = 1
+            ORDER BY s.student_name
+        ");
+        $stmt->execute([$selectedDate]);
+    }
+    $makeupStudents = $stmt->fetchAll();
+
+    // 振替参加者を通常参加者リストに追加（重複チェック）
+    $existingIds = array_column($scheduledStudents, 'id');
+    foreach ($makeupStudents as $makeupStudent) {
+        if (!in_array($makeupStudent['id'], $existingIds)) {
+            $scheduledStudents[] = $makeupStudent;
+            $existingIds[] = $makeupStudent['id'];
+        }
+    }
+
+    // 追加利用者を取得
+    if ($classroomId) {
+        $stmt = $pdo->prepare("
+            SELECT
+                s.id,
+                s.student_name,
+                s.birth_date,
+                s.grade_level,
+                s.grade_adjustment,
+                u.full_name as guardian_name,
+                NULL as absence_id,
+                '追加利用' as absence_reason,
+                'additional' as participant_type
+            FROM additional_usages au
+            INNER JOIN students s ON au.student_id = s.id
+            INNER JOIN users u ON s.guardian_id = u.id
+            WHERE au.usage_date = ?
+              AND u.classroom_id = ?
+              AND s.is_active = 1
+            ORDER BY s.student_name
+        ");
+        $stmt->execute([$selectedDate, $classroomId]);
+    } else {
+        $stmt = $pdo->prepare("
+            SELECT
+                s.id,
+                s.student_name,
+                s.birth_date,
+                s.grade_level,
+                s.grade_adjustment,
+                u.full_name as guardian_name,
+                NULL as absence_id,
+                '追加利用' as absence_reason,
+                'additional' as participant_type
+            FROM additional_usages au
+            INNER JOIN students s ON au.student_id = s.id
+            LEFT JOIN users u ON s.guardian_id = u.id
+            WHERE au.usage_date = ?
+              AND s.is_active = 1
+            ORDER BY s.student_name
+        ");
+        $stmt->execute([$selectedDate]);
+    }
+    $additionalStudents = $stmt->fetchAll();
+
+    // 追加利用者を参加者リストに追加（重複チェック）
+    foreach ($additionalStudents as $additionalStudent) {
+        if (!in_array($additionalStudent['id'], $existingIds)) {
+            $scheduledStudents[] = $additionalStudent;
+            $existingIds[] = $additionalStudent['id'];
+        }
+    }
 
     // 学部別に分類
     $studentsByGrade = [
@@ -1960,6 +2125,38 @@ renderPageStart('staff', $currentPage, '活動管理');
             border-radius: 50%;
         }
 
+        .day-type-label {
+            font-size: 9px;
+            padding: 1px 4px;
+            border-radius: 3px;
+            margin-bottom: 2px;
+            display: inline-block;
+        }
+
+        .day-type-label.weekday {
+            background: rgba(52, 199, 89, 0.25);
+            color: #059669;
+        }
+
+        .day-type-label.school-holiday {
+            background: rgba(59, 130, 246, 0.25);
+            color: #2563eb;
+        }
+
+        /* 選択日のラベルを見やすく */
+        .calendar-day.selected .day-type-label {
+            background: rgba(255, 255, 255, 0.9);
+            font-weight: 600;
+        }
+
+        .calendar-day.selected .day-type-label.weekday {
+            color: #047857;
+        }
+
+        .calendar-day.selected .day-type-label.school-holiday {
+            color: #1d4ed8;
+        }
+
         .activity-section {
             grid-column: 1 / -1;
             background: var(--apple-bg-secondary);
@@ -2735,6 +2932,41 @@ renderPageStart('staff', $currentPage, '活動管理');
             </div>
         <?php endif; ?>
 
+        <!-- 振替希望通知 -->
+        <?php if ($pendingMakeupCount > 0): ?>
+            <div class="notification-banner urgent" style="margin-bottom: 20px;">
+                <div class="notification-header urgent">
+                    🔄 振替希望があります（<?= $pendingMakeupCount ?>件）
+                </div>
+                <?php foreach ($pendingMakeupRequests as $request):
+                    $makeupDate = new DateTime($request['makeup_request_date']);
+                    $absenceDate = new DateTime($request['absence_date']);
+                ?>
+                    <div class="notification-item">
+                        <div class="notification-info">
+                            <div class="notification-student">
+                                <?= htmlspecialchars($request['student_name']) ?>さん
+                            </div>
+                            <div class="notification-period">
+                                欠席日: <?= $absenceDate->format('n月j日') ?>（<?= ['日','月','火','水','木','金','土'][$absenceDate->format('w')] ?>）
+                                → 振替希望日: <strong><?= $makeupDate->format('n月j日') ?>（<?= ['日','月','火','水','木','金','土'][$makeupDate->format('w')] ?>）</strong>
+                            </div>
+                            <?php if ($request['reason']): ?>
+                                <div class="notification-period" style="font-size: var(--text-caption-1); color: var(--text-tertiary);">
+                                    理由: <?= htmlspecialchars($request['reason']) ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                        <div class="notification-action">
+                            <a href="makeup_requests.php?status=pending" class="notification-btn">
+                                対応する
+                            </a>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+
         <!-- 旧バージョンのコメントアウト -->
         <?php if (false && !empty($studentsWithoutPlan)): ?>
             <div class="notification-banner urgent">
@@ -3003,13 +3235,20 @@ renderPageStart('staff', $currentPage, '活動管理');
                             if ($dayOfWeek === 0) $dayClass = 'sunday';
                             if ($dayOfWeek === 6) $dayClass = 'saturday';
 
-                            echo "<div class='" . implode(' ', $classes) . "' onclick=\"location.href='?year=$year&month=$month&date=$currentDate'\">";
+                            echo "<div class='" . implode(' ', $classes) . "' onclick=\"navigateToDate('$year', '$month', '$currentDate')\">";
                             echo "<div class='calendar-day-number $dayClass'>$day</div>";
                             echo "<div class='calendar-day-content'>";
 
                             // 休日を表示
                             if (isset($holidayDates[$currentDate])) {
                                 echo "<div class='holiday-label'>" . htmlspecialchars($holidayDates[$currentDate]['name']) . "</div>";
+                            } else {
+                                // 学校休業日/平日の表示
+                                if (array_key_exists($currentDate, $schoolHolidayDates)) {
+                                    echo "<div class='day-type-label school-holiday'>学休</div>";
+                                } else {
+                                    echo "<div class='day-type-label weekday'>平日</div>";
+                                }
                             }
 
                             // イベントを表示
@@ -3221,6 +3460,23 @@ renderPageStart('staff', $currentPage, '活動管理');
     </div>
 
     <script>
+        // ページ読み込み時にスクロール位置を復元
+        (function() {
+            const savedScroll = sessionStorage.getItem('calendarScrollPos');
+            if (savedScroll) {
+                sessionStorage.removeItem('calendarScrollPos');
+                setTimeout(() => {
+                    window.scrollTo(0, parseInt(savedScroll, 10));
+                }, 0);
+            }
+        })();
+
+        // カレンダー日付クリック時（スクロール位置を保存して遷移）
+        function navigateToDate(year, month, date) {
+            sessionStorage.setItem('calendarScrollPos', window.scrollY);
+            location.href = '?year=' + year + '&month=' + month + '&date=' + date;
+        }
+
         // アコーディオン切り替え
         function toggleAccordion(element) {
             const content = element.nextElementSibling;
@@ -3250,10 +3506,13 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         // ハンバーガーメニュー
-        document.getElementById('hamburger').addEventListener('click', function() {
-            this.classList.toggle('active');
-            document.getElementById('userInfo').classList.toggle('mobile-active');
-        });
+        const hamburger = document.getElementById('hamburger');
+        if (hamburger) {
+            hamburger.addEventListener('click', function() {
+                this.classList.toggle('active');
+                document.getElementById('userInfo').classList.toggle('mobile-active');
+            });
+        }
 
         // イベント詳細モーダルを表示（スタッフ用）
         function showEventModal(eventData) {
@@ -3315,11 +3574,14 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         // モーダル外クリックで閉じる
-        document.getElementById('eventModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeEventModal();
-            }
-        });
+        const eventModal = document.getElementById('eventModal');
+        if (eventModal) {
+            eventModal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeEventModal();
+                }
+            });
+        }
 
         // HTMLエスケープ
         function escapeHtml(text) {

@@ -412,7 +412,8 @@ function appendMessage(msg) {
 
     let html = '<div class="message-content">';
     if (!isOwn) {
-        html += '<div class="message-sender">' + escapeHtml(msg.sender_name || 'スタッフ') + '</div>';
+        // スタッフからのメッセージにスタッフ名を表示
+        html += '<div class="message-sender staff-sender">' + escapeHtml(msg.sender_name || 'スタッフ') + '</div>';
     }
 
     html += '<div class="' + bubbleClass + '">';

@@ -403,8 +403,8 @@ renderPageStart('staff', $currentPage, '学校休業日活動設定');
             for ($day = 1; $day <= $daysInMonth; $day++):
                 $dateStr = sprintf('%04d-%02d-%02d', $year, $month, $day);
                 $dayOfWeek = ($firstDayOfWeek + $day - 1) % 7;
-                $isHoliday = isset($holidayDates[$dateStr]);
-                $isSchoolHoliday = isset($activityDates[$dateStr]);
+                $isHoliday = array_key_exists($dateStr, $holidayDates);
+                $isSchoolHoliday = array_key_exists($dateStr, $activityDates);
 
                 $dayNumClass = '';
                 if ($dayOfWeek === 0) $dayNumClass = 'sunday';

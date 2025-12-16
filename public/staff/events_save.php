@@ -50,9 +50,12 @@ try {
                 $eventColor = '#28a745'; // デフォルト色
             }
 
-            // 対象者の妥当性チェック
-            $validTargetAudiences = ['elementary', 'junior_high_school', 'all', 'guardian', 'other'];
-            if (!in_array($targetAudience, $validTargetAudiences)) {
+            // 対象者の妥当性チェック（複数選択対応）
+            $validTargetAudiences = ['all', 'preschool', 'elementary', 'junior_high', 'high_school', 'guardian', 'other'];
+            if (is_array($targetAudience)) {
+                $targetAudience = array_filter($targetAudience, fn($t) => in_array($t, $validTargetAudiences));
+                $targetAudience = !empty($targetAudience) ? implode(',', $targetAudience) : 'all';
+            } elseif (!in_array($targetAudience, $validTargetAudiences)) {
                 $targetAudience = 'all';
             }
 
@@ -95,9 +98,12 @@ try {
                 $eventColor = '#28a745'; // デフォルト色
             }
 
-            // 対象者の妥当性チェック
-            $validTargetAudiences = ['elementary', 'junior_high_school', 'all', 'guardian', 'other'];
-            if (!in_array($targetAudience, $validTargetAudiences)) {
+            // 対象者の妥当性チェック（複数選択対応）
+            $validTargetAudiences = ['all', 'preschool', 'elementary', 'junior_high', 'high_school', 'guardian', 'other'];
+            if (is_array($targetAudience)) {
+                $targetAudience = array_filter($targetAudience, fn($t) => in_array($t, $validTargetAudiences));
+                $targetAudience = !empty($targetAudience) ? implode(',', $targetAudience) : 'all';
+            } elseif (!in_array($targetAudience, $validTargetAudiences)) {
                 $targetAudience = 'all';
             }
 

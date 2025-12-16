@@ -393,7 +393,44 @@
 }
 
 .schedule-marker,
-.note-marker {
+.note-marker,
+.makeup-marker,
+.absence-marker {
+    margin-right: 2px;
+    font-size: 8px;
+}
+
+/* 振替活動日 */
+.makeup-label {
+    color: var(--apple-blue);
+    font-size: 9px;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+}
+
+/* 欠席日 */
+.absence-label {
+    color: var(--apple-red);
+    font-size: 9px;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+}
+
+/* 追加利用 */
+.additional-label {
+    color: var(--apple-green);
+    font-size: 9px;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+}
+
+.additional-marker {
     margin-right: 2px;
     font-size: 8px;
 }
@@ -828,7 +865,10 @@
     .schedule-label,
     .note-label,
     .holiday-label,
-    .activity-type-label {
+    .activity-type-label,
+    .makeup-label,
+    .absence-label,
+    .additional-label {
         font-size: 7px;
         line-height: 1.2;
         word-break: break-all;

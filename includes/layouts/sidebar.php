@@ -60,6 +60,8 @@ $menuConfig = [
         ['page' => 'events', 'icon' => '📅', 'label' => 'イベント', 'url' => '/staff/events.php'],
         // 管理・設定
         ['type' => 'divider', 'label' => '管理・設定'],
+        ['page' => 'additional_usage', 'icon' => '📅', 'label' => '利用日変更', 'url' => '/staff/additional_usage.php'],
+        ['page' => 'makeup_requests', 'icon' => '🔄', 'label' => '振替管理', 'url' => '/staff/makeup_requests.php'],
         ['page' => 'students', 'icon' => '👥', 'label' => '生徒管理', 'url' => '/staff/students.php'],
         ['page' => 'guardians', 'icon' => '👤', 'label' => '保護者管理', 'url' => '/staff/guardians.php'],
         ['page' => 'holidays', 'icon' => '🗓️', 'label' => '休日設定', 'url' => '/staff/holidays.php'],

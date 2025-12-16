@@ -1,33 +1,29 @@
 <?php
 /**
- * スタッフ管理（管理者用）
- */
+ * スタチE��管琁E��管琁E��E���E�E */
 
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/layouts/page_wrapper.php';
 
-// 管理者チェック
+// 管琁E��E��ェチE��
 requireUserType('admin');
 
 $pdo = getDbConnection();
 $currentUser = getCurrentUser();
 $classroomId = $currentUser['classroom_id'];
 
-// マスター管理者の場合は専用ページにリダイレクト
-if (isMasterAdmin()) {
+// マスター管琁E��E�E場合�E専用ペ�EジにリダイレクチEif (isMasterAdmin()) {
     header('Location: staff_accounts.php');
     exit;
 }
 
-// 教室名を取得
-$stmt = $pdo->prepare("SELECT classroom_name FROM classrooms WHERE id = ?");
+// 教室名を取征E$stmt = $pdo->prepare("SELECT classroom_name FROM classrooms WHERE id = ?");
 $stmt->execute([$classroomId]);
 $classroom = $stmt->fetch();
 $classroomName = $classroom ? $classroom['classroom_name'] : '';
 
-// 自分の教室のスタッフアカウントのみを取得
-$stmt = $pdo->prepare("
+// 自刁E�E教室のスタチE��アカウント�Eみを取征E$stmt = $pdo->prepare("
     SELECT *
     FROM users
     WHERE user_type = 'staff' AND classroom_id = ?
@@ -38,15 +34,14 @@ $staff = $stmt->fetchAll();
 
 $successMessage = $_GET['success'] ?? '';
 
-// ページ開始
-$currentPage = 'staff_management';
-renderPageStart('admin', $currentPage, 'スタッフ管理');
+// ペ�Eジ開姁E$currentPage = 'staff_management';
+renderPageStart('admin', $currentPage, 'スタチE��管琁E);
 ?>
 
-<!-- ページヘッダー -->
+<!-- ペ�Eジヘッダー -->
 <div class="page-header">
     <div class="page-header-content">
-        <h1 class="page-title">スタッフ管理</h1>
+        <h1 class="page-title">スタチE��管琁E/h1>
         <p class="page-subtitle"><?= htmlspecialchars($classroomName) ?></p>
     </div>
 </div>
@@ -58,27 +53,27 @@ renderPageStart('admin', $currentPage, 'スタッフ管理');
 <div class="card">
     <div class="card-body">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
-            <h2 style="font-size: var(--text-headline); color: var(--apple-purple);">スタッフアカウント一覧</h2>
-            <button class="btn btn-primary" onclick="openAddModal()">新規スタッフ登録</button>
+            <h2 style="font-size: var(--text-headline); color: var(--apple-purple);">スタチE��アカウント一覧</h2>
+            <button class="btn btn-primary" onclick="openAddModal()">新規スタチE��登録</button>
         </div>
 
         <table class="table">
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>ユーザー名</th>
+                    <th>ユーザー吁E/th>
                     <th>氏名</th>
                     <th>メールアドレス</th>
-                    <th>ステータス</th>
+                    <th>スチE�Eタス</th>
                     <th>登録日</th>
-                    <th>操作</th>
+                    <th>操佁E/th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($staff)): ?>
                     <tr>
                         <td colspan="7" style="text-align: center; padding: var(--spacing-2xl); color: var(--text-secondary);">
-                            スタッフアカウントが登録されていません
+                            スタチE��アカウントが登録されてぁE��せん
                         </td>
                     </tr>
                 <?php else: ?>
@@ -96,7 +91,7 @@ renderPageStart('admin', $currentPage, 'スタッフ管理');
                             <td><?= date('Y/m/d', strtotime($s['created_at'])) ?></td>
                             <td>
                                 <div style="display: flex; gap: 8px;">
-                                    <button class="btn btn-primary btn-sm" onclick='openEditModal(<?= json_encode($s, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'>編集</button>
+                                    <button class="btn btn-primary btn-sm" onclick='openEditModal(<?= json_encode($s, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'>編雁E/button>
                                     <button class="btn btn-danger btn-sm" onclick="deleteStaff(<?= $s['id'] ?>, '<?= htmlspecialchars($s['username'], ENT_QUOTES) ?>')">削除</button>
                                 </div>
                             </td>
@@ -112,18 +107,18 @@ renderPageStart('admin', $currentPage, 'スタッフ管理');
 <div id="addModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeAddModal()">&times;</span>
-        <h2 style="margin-bottom: var(--spacing-lg);">新規スタッフ登録</h2>
+        <h2 style="margin-bottom: var(--spacing-lg);">新規スタチE��登録</h2>
         <form action="staff_management_save.php" method="POST">
             <input type="hidden" name="action" value="add">
             <div class="form-group">
-                <label class="form-label">ユーザー名 *</label>
+                <label class="form-label">ユーザー吁E*</label>
                 <input type="text" name="username" class="form-control" required>
-                <small style="color: var(--text-secondary);">ログイン時に使用します（半角英数字）</small>
+                <small style="color: var(--text-secondary);">ログイン時に使用します（半角英数字！E/small>
             </div>
             <div class="form-group">
-                <label class="form-label">パスワード *</label>
+                <label class="form-label">パスワーチE*</label>
                 <input type="password" name="password" class="form-control" required minlength="6">
-                <small style="color: var(--text-secondary);">6文字以上</small>
+                <small style="color: var(--text-secondary);">6斁E��以丁E/small>
             </div>
             <div class="form-group">
                 <label class="form-label">氏名 *</label>
@@ -138,23 +133,23 @@ renderPageStart('admin', $currentPage, 'スタッフ管理');
     </div>
 </div>
 
-<!-- 編集モーダル -->
+<!-- 編雁E��ーダル -->
 <div id="editModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeEditModal()">&times;</span>
-        <h2 style="margin-bottom: var(--spacing-lg);">スタッフ情報編集</h2>
+        <h2 style="margin-bottom: var(--spacing-lg);">スタチE��惁E��編雁E/h2>
         <form action="staff_management_save.php" method="POST">
             <input type="hidden" name="action" value="edit">
             <input type="hidden" name="user_id" id="edit_user_id">
             <div class="form-group">
-                <label class="form-label">ユーザー名</label>
+                <label class="form-label">ユーザー吁E/label>
                 <input type="text" id="edit_username" class="form-control" disabled style="background: var(--apple-gray-6);">
-                <small style="color: var(--text-secondary);">ユーザー名は変更できません</small>
+                <small style="color: var(--text-secondary);">ユーザー名�E変更できません</small>
             </div>
             <div class="form-group">
-                <label class="form-label">新しいパスワード</label>
+                <label class="form-label">新しいパスワーチE/label>
                 <input type="password" name="password" class="form-control" minlength="6">
-                <small style="color: var(--text-secondary);">変更しない場合は空欄にしてください</small>
+                <small style="color: var(--text-secondary);">変更しなぁE��合�E空欁E��してください</small>
             </div>
             <div class="form-group">
                 <label class="form-label">氏名 *</label>
@@ -165,7 +160,7 @@ renderPageStart('admin', $currentPage, 'スタッフ管理');
                 <input type="email" name="email" id="edit_email" class="form-control">
             </div>
             <div class="form-group">
-                <label class="form-label">ステータス *</label>
+                <label class="form-label">スチE�Eタス *</label>
                 <select name="is_active" id="edit_is_active" class="form-control" required>
                     <option value="1">有効</option>
                     <option value="0">無効</option>
@@ -178,7 +173,7 @@ renderPageStart('admin', $currentPage, 'スタッフ管理');
 
 <script>
     function openAddModal() {
-        document.getElementById('addModal').style.display = 'block';
+        document.getElementById('addModal').style.display = 'flex';
     }
 
     function closeAddModal() {
@@ -191,7 +186,7 @@ renderPageStart('admin', $currentPage, 'スタッフ管理');
         document.getElementById('edit_full_name').value = staff.full_name;
         document.getElementById('edit_email').value = staff.email || '';
         document.getElementById('edit_is_active').value = staff.is_active;
-        document.getElementById('editModal').style.display = 'block';
+        document.getElementById('editModal').style.display = 'flex';
     }
 
     function closeEditModal() {
@@ -199,7 +194,7 @@ renderPageStart('admin', $currentPage, 'スタッフ管理');
     }
 
     function deleteStaff(userId, username) {
-        if (confirm(`本当に「${username}」を削除しますか？\n\nこの操作は取り消せません。`)) {
+        if (confirm(`本当に、E{username}」を削除しますか�E�\n\nこ�E操作�E取り消せません。`)) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = 'staff_management_save.php';
@@ -221,8 +216,7 @@ renderPageStart('admin', $currentPage, 'スタッフ管理');
         }
     }
 
-    // モーダル外クリックで閉じる
-    let modalMouseDownTarget = null;
+    // モーダル外クリチE��で閉じめE    let modalMouseDownTarget = null;
     window.addEventListener('mousedown', function(event) {
         modalMouseDownTarget = event.target;
     });

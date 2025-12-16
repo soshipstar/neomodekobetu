@@ -16,6 +16,17 @@ $pdo = getDbConnection();
 // 教室IDを取得
 $classroomId = $_SESSION['classroom_id'] ?? null;
 
+// 教室の対象学年設定を取得
+$targetGrades = ['preschool', 'elementary', 'junior_high', 'high_school']; // デフォルト
+if ($classroomId) {
+    $stmt = $pdo->prepare("SELECT target_grades FROM classrooms WHERE id = ?");
+    $stmt->execute([$classroomId]);
+    $classroom = $stmt->fetch();
+    if ($classroom && !empty($classroom['target_grades'])) {
+        $targetGrades = explode(',', $classroom['target_grades']);
+    }
+}
+
 // 検索パラメータを取得
 $searchKeyword = $_GET['keyword'] ?? '';
 $searchStartDate = $_GET['start_date'] ?? '';
@@ -61,10 +72,10 @@ if (!empty($searchEndDate)) {
     $params[] = $searchEndDate;
 }
 
-// 対象者フィルター
+// 対象者フィルター（複数選択対応）
 if (!empty($searchTargetAudience)) {
-    $sql .= " AND e.target_audience = ?";
-    $params[] = $searchTargetAudience;
+    $sql .= " AND (e.target_audience LIKE ? OR e.target_audience = 'all')";
+    $params[] = '%' . $searchTargetAudience . '%';
 }
 
 $sql .= " ORDER BY e.event_date DESC";
@@ -75,10 +86,20 @@ $events = $stmt->fetchAll();
 
 $targetAudienceLabels = [
     'all' => '全体',
+    'preschool' => '未就学児',
     'elementary' => '小学生',
-    'junior_high_school' => '中高生',
+    'junior_high' => '中学生',
+    'high_school' => '高校生',
     'guardian' => '保護者',
     'other' => 'その他'
+];
+
+// 学年ラベル（教室設定連動用）
+$gradeLabels = [
+    'preschool' => '未就学児',
+    'elementary' => '小学生',
+    'junior_high' => '中学生',
+    'high_school' => '高校生'
 ];
 
 // ページ開始
@@ -163,6 +184,51 @@ renderPageStart('staff', $currentPage, 'イベント管理');
 .modal-close:hover {
     color: var(--text-primary);
 }
+.checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+}
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: var(--apple-bg-secondary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--duration-fast);
+    border: 1px solid var(--apple-gray-5);
+}
+.checkbox-item:hover {
+    background: var(--apple-gray-5);
+}
+.checkbox-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--apple-blue);
+    cursor: pointer;
+}
+.checkbox-item label {
+    cursor: pointer;
+    font-size: var(--text-subhead);
+    color: var(--text-primary);
+}
+.target-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    margin: 1px;
+}
+.target-badge.all { background: #e0e7ff; color: #3730a3; }
+.target-badge.preschool { background: #fce7f3; color: #9d174d; }
+.target-badge.elementary { background: #d1fae5; color: #065f46; }
+.target-badge.junior_high { background: #dbeafe; color: #1e40af; }
+.target-badge.high_school { background: #fef3c7; color: #92400e; }
+.target-badge.guardian { background: #ede9fe; color: #5b21b6; }
+.target-badge.other { background: #f3f4f6; color: #374151; }
 .modal-footer {
     margin-top: var(--spacing-lg);
     padding-top: 20px;
@@ -231,14 +297,29 @@ renderPageStart('staff', $currentPage, 'イベント管理');
             </div>
             <div class="form-group">
                 <label class="form-label">対象者 *</label>
-                <select name="target_audience" class="form-control" required>
-                    <option value="all">全体</option>
-                    <option value="elementary">小学生</option>
-                    <option value="junior_high_school">中高生向け</option>
-                    <option value="guardian">保護者</option>
-                    <option value="other">その他</option>
-                </select>
-                <small style="color: var(--text-secondary);">このイベントの対象者を選択してください</small>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="target_audience[]" value="all" id="ta_all">
+                        <label for="ta_all">全体</label>
+                    </div>
+                    <?php foreach ($targetGrades as $grade): ?>
+                        <?php if (isset($gradeLabels[$grade])): ?>
+                        <div class="checkbox-item">
+                            <input type="checkbox" name="target_audience[]" value="<?= $grade ?>" id="ta_<?= $grade ?>">
+                            <label for="ta_<?= $grade ?>"><?= $gradeLabels[$grade] ?></label>
+                        </div>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="target_audience[]" value="guardian" id="ta_guardian">
+                        <label for="ta_guardian">保護者</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="target_audience[]" value="other" id="ta_other">
+                        <label for="ta_other">その他</label>
+                    </div>
+                </div>
+                <small style="color: var(--text-secondary);">このイベントの対象者を選択してください（複数選択可）</small>
             </div>
             <div class="form-group">
                 <label class="form-label">カレンダー表示色</label>
@@ -340,7 +421,17 @@ renderPageStart('staff', $currentPage, 'イベント管理');
                             <td><?= date('Y年n月j日（' . ['日', '月', '火', '水', '木', '金', '土'][date('w', strtotime($event['event_date']))] . '）', strtotime($event['event_date'])) ?></td>
                             <td><?= htmlspecialchars($event['event_name']) ?></td>
                             <td>
-                                <span class="badge badge-info"><?= $targetAudienceLabels[$event['target_audience']] ?? '全体' ?></span>
+                                <?php
+                                $audiences = explode(',', $event['target_audience'] ?? 'all');
+                                foreach ($audiences as $aud):
+                                    $aud = trim($aud);
+                                    if (isset($targetAudienceLabels[$aud])):
+                                ?>
+                                    <span class="target-badge <?= $aud ?>"><?= $targetAudienceLabels[$aud] ?></span>
+                                <?php
+                                    endif;
+                                endforeach;
+                                ?>
                             </td>
                             <td>
                                 <span class="event-color-badge" style="background: <?= htmlspecialchars($event['event_color']) ?>;"></span>
@@ -401,22 +492,35 @@ renderPageStart('staff', $currentPage, 'イベント管理');
                 <small style="color: var(--text-secondary);">保護者・生徒がカレンダーで確認できます</small>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <div class="form-group">
-                    <label class="form-label">対象者</label>
-                    <select name="target_audience" id="edit_target_audience" class="form-control">
-                        <option value="all">全体</option>
-                        <option value="elementary">小学生</option>
-                        <option value="junior_high_school">中高生</option>
-                        <option value="guardian">保護者</option>
-                        <option value="other">その他</option>
-                    </select>
+            <div class="form-group">
+                <label class="form-label">対象者</label>
+                <div class="checkbox-group" id="edit_target_audience_group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="target_audience[]" value="all" id="edit_ta_all">
+                        <label for="edit_ta_all">全体</label>
+                    </div>
+                    <?php foreach ($targetGrades as $grade): ?>
+                        <?php if (isset($gradeLabels[$grade])): ?>
+                        <div class="checkbox-item">
+                            <input type="checkbox" name="target_audience[]" value="<?= $grade ?>" id="edit_ta_<?= $grade ?>">
+                            <label for="edit_ta_<?= $grade ?>"><?= $gradeLabels[$grade] ?></label>
+                        </div>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="target_audience[]" value="guardian" id="edit_ta_guardian">
+                        <label for="edit_ta_guardian">保護者</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="target_audience[]" value="other" id="edit_ta_other">
+                        <label for="edit_ta_other">その他</label>
+                    </div>
                 </div>
+            </div>
 
-                <div class="form-group">
-                    <label class="form-label">イベント色</label>
-                    <input type="color" name="event_color" id="edit_event_color" value="#667eea" style="width: 60px; height: 40px; border: none; cursor: pointer;">
-                </div>
+            <div class="form-group">
+                <label class="form-label">イベント色</label>
+                <input type="color" name="event_color" id="edit_event_color" value="#667eea" style="width: 60px; height: 40px; border: none; cursor: pointer;">
             </div>
 
             <div class="modal-footer">
@@ -436,8 +540,14 @@ function openEditModal(event) {
     document.getElementById('edit_event_description').value = event.event_description || '';
     document.getElementById('edit_staff_comment').value = event.staff_comment || '';
     document.getElementById('edit_guardian_message').value = event.guardian_message || '';
-    document.getElementById('edit_target_audience').value = event.target_audience || 'all';
     document.getElementById('edit_event_color').value = event.event_color || '#667eea';
+
+    // チェックボックスをリセットして設定
+    const checkboxes = document.querySelectorAll('#edit_target_audience_group input[type="checkbox"]');
+    const audiences = (event.target_audience || 'all').split(',').map(s => s.trim());
+    checkboxes.forEach(cb => {
+        cb.checked = audiences.includes(cb.value);
+    });
 
     document.getElementById('editModal').classList.add('active');
 }

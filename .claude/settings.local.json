@@ -38,7 +38,9 @@
       "Bash(docker logs:*)",
       "Bash(pip install:*)",
       "Bash(python:*)",
-      "Bash(docker ps:*)"
+      "Bash(docker ps:*)",
+      "Bash(docker restart:*)",
+      "Bash(docker inspect:*)"
     ],
     "deny": [],
     "ask": []

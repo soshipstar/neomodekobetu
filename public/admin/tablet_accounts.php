@@ -342,7 +342,7 @@ renderPageStart('admin', $currentPage, 'タブレットユーザー管理');
             document.getElementById('classroom_id').value = '';
             document.getElementById('password').value = '';
             document.getElementById('password').required = true;
-            document.getElementById('userModal').style.display = 'block';
+            document.getElementById('userModal').style.display = 'flex';
         }
 
         function openEditModal(user) {
@@ -354,7 +354,7 @@ renderPageStart('admin', $currentPage, 'タブレットユーザー管理');
             document.getElementById('classroom_id').value = user.classroom_id || '';
             document.getElementById('password').value = '';
             document.getElementById('password').required = false;
-            document.getElementById('userModal').style.display = 'block';
+            document.getElementById('userModal').style.display = 'flex';
         }
 
         function closeModal() {

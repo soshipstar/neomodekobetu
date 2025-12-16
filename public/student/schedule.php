@@ -200,13 +200,60 @@ for ($day = 1; $day <= $daysInMonth; $day++) {
     }
 }
 
+// 振替活動日を取得（承認済みの振替希望日）
+$makeupDays = [];
+$stmt = $pdo->prepare("
+    SELECT makeup_request_date
+    FROM absence_notifications
+    WHERE student_id = ?
+    AND makeup_status = 'approved'
+    AND makeup_request_date BETWEEN ? AND ?
+");
+$stmt->execute([$studentId, $monthStart, $monthEnd]);
+while ($row = $stmt->fetch()) {
+    $day = date('j', strtotime($row['makeup_request_date']));
+    $makeupDays[$day] = ['type' => 'makeup', 'date' => $row['makeup_request_date']];
+}
+
+// 欠席日を取得
+$absenceDays = [];
+$stmt = $pdo->prepare("
+    SELECT absence_date, reason
+    FROM absence_notifications
+    WHERE student_id = ?
+    AND absence_date BETWEEN ? AND ?
+");
+$stmt->execute([$studentId, $monthStart, $monthEnd]);
+while ($row = $stmt->fetch()) {
+    $day = date('j', strtotime($row['absence_date']));
+    $absenceDays[$day] = ['type' => 'absence', 'date' => $row['absence_date'], 'reason' => $row['reason']];
+}
+
+// 追加利用日を取得
+$additionalDays = [];
+try {
+    $stmt = $pdo->prepare("
+        SELECT usage_date
+        FROM additional_usages
+        WHERE student_id = ?
+        AND usage_date BETWEEN ? AND ?
+    ");
+    $stmt->execute([$studentId, $monthStart, $monthEnd]);
+    while ($row = $stmt->fetch()) {
+        $day = date('j', strtotime($row['usage_date']));
+        $additionalDays[$day] = ['type' => 'additional', 'date' => $row['usage_date']];
+    }
+} catch (Exception $e) {
+    error_log("Error fetching additional usage days: " . $e->getMessage());
+}
+
 // カレンダーデータを統合
 $calendarData = [];
 for ($day = 1; $day <= $daysInMonth; $day++) {
     // 活動種別を判定（休日でない場合のみ）
     $activityType = null;
-    if (!isset($holidays[$day])) {
-        if (isset($schoolHolidayActivities[$day])) {
+    if (!array_key_exists($day, $holidays)) {
+        if (array_key_exists($day, $schoolHolidayActivities)) {
             $activityType = 'school_holiday'; // 学校休業日活動
         } else {
             $activityType = 'weekday'; // 平日活動
@@ -219,7 +266,10 @@ for ($day = 1; $day <= $daysInMonth; $day++) {
         'submissions' => $submissions[$day] ?? [],
         'plans' => $weeklyPlans[$day] ?? [],
         'activity' => $activitySchedules[$day] ?? null,
-        'activityType' => $activityType
+        'activityType' => $activityType,
+        'makeup' => $makeupDays[$day] ?? null,
+        'absence' => $absenceDays[$day] ?? null,
+        'additional' => $additionalDays[$day] ?? null
     ];
 }
 
@@ -322,6 +372,9 @@ renderPageStart('student', $currentPage, 'スケジュール');
 .calendar .indicator.activity-type { font-size: 9px; padding: 1px 4px; }
 .calendar .indicator.weekday-activity { background: rgba(52, 199, 89, 0.2); color: var(--apple-green); }
 .calendar .indicator.school-holiday-activity { background: rgba(0, 122, 255, 0.2); color: var(--apple-blue); }
+.calendar .indicator.makeup { background: var(--apple-teal); color: white; font-weight: 600; }
+.calendar .indicator.absence { background: var(--apple-red); color: white; font-weight: 600; }
+.calendar .indicator.additional { background: var(--apple-green); color: white; font-weight: 600; }
 
 .calendar .sunday { color: var(--apple-red); }
 .calendar .saturday { color: var(--apple-blue); }
@@ -488,9 +541,9 @@ renderPageStart('student', $currentPage, 'スケジュール');
                     // 活動種別を表示（休日でない場合のみ）
                     if (empty($data['holidays']) && !empty($data['activityType']) && $count < $maxDisplay) {
                         if ($data['activityType'] === 'school_holiday') {
-                            echo "<span class='indicator activity-type school-holiday-activity'>🏫 学校休業日活動</span>";
+                            echo "<span class='indicator activity-type school-holiday-activity'>学休</span>";
                         } else {
-                            echo "<span class='indicator activity-type weekday-activity'>📚 平日活動</span>";
+                            echo "<span class='indicator activity-type weekday-activity'>平日</span>";
                         }
                         $count++;
                     }
@@ -503,6 +556,24 @@ renderPageStart('student', $currentPage, 'スケジュール');
 
                     if (!empty($data['activity']) && $count < $maxDisplay) {
                         echo "<span class='indicator activity'>👤 活動予定日</span>";
+                        $count++;
+                    }
+
+                    // 振替活動日を表示
+                    if (!empty($data['makeup']) && $count < $maxDisplay) {
+                        echo "<span class='indicator makeup'>🔄 振替活動日</span>";
+                        $count++;
+                    }
+
+                    // 欠席日を表示
+                    if (!empty($data['absence']) && $count < $maxDisplay) {
+                        echo "<span class='indicator absence'>❌ 欠席</span>";
+                        $count++;
+                    }
+
+                    // 追加利用日を表示
+                    if (!empty($data['additional']) && $count < $maxDisplay) {
+                        echo "<span class='indicator additional'>➕ 追加利用</span>";
                         $count++;
                     }
 
@@ -582,6 +653,25 @@ function showDetail(dateStr, data) {
     if (data.activity) {
         html += '<div class="modal-section"><h3>👤 活動予定日</h3>';
         html += '<div class="modal-item"><div class="modal-item-value">この日はあなたの活動予定日です</div></div></div>';
+    }
+
+    // 振替活動日
+    if (data.makeup) {
+        html += '<div class="modal-section"><h3>🔄 振替活動日</h3>';
+        html += '<div class="modal-item"><div class="modal-item-value">この日は振替で活動する日です</div></div></div>';
+    }
+
+    // 欠席日
+    if (data.absence) {
+        html += '<div class="modal-section absence"><h3>❌ 欠席</h3>';
+        let reasonText = data.absence.reason ? '理由: ' + escapeHtml(data.absence.reason) : 'この日は欠席予定です';
+        html += '<div class="modal-item"><div class="modal-item-value">' + reasonText + '</div></div></div>';
+    }
+
+    // 追加利用日
+    if (data.additional) {
+        html += '<div class="modal-section"><h3>➕ 追加利用</h3>';
+        html += '<div class="modal-item"><div class="modal-item-value">この日は追加利用で活動する日です</div></div></div>';
     }
 
     if (data.submissions && data.submissions.length > 0) {

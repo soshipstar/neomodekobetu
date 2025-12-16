@@ -1088,6 +1088,109 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
                         <strong>⚠️ イベント参加申し込み:</strong> 保護者はチャット画面から「イベント参加」を選択してイベントに申し込みます。スタッフは活動管理画面で参加者を確認できます。
                     </div>
                 </div>
+
+                <div class="feature-box">
+                    <div class="feature-title">📅 利用日変更</div>
+                    <p>生徒の利用日を追加・キャンセルできます。</p>
+                    <ul>
+                        <li>生徒を選択してカレンダーを表示</li>
+                        <li>チェックボックスで利用日のON/OFFを切り替え</li>
+                        <li>通常利用日のキャンセル → 保護者に自動通知</li>
+                        <li>追加利用日の登録 → 参加予定者に反映</li>
+                    </ul>
+
+                    <h3 style="font-size: var(--text-callout); margin: 15px 0 10px 0; color: var(--primary-purple);">カレンダーの見方</h3>
+                    <table class="schedule-table" style="font-size: 13px;">
+                        <tbody>
+                            <tr>
+                                <td style="background: rgba(0, 122, 255, 0.1);"><strong>青背景</strong></td>
+                                <td>通常利用日（生徒の登録曜日）</td>
+                            </tr>
+                            <tr>
+                                <td><span style="background: rgba(52, 199, 89, 0.15); color: #059669; padding: 2px 6px; border-radius: 3px; font-size: 11px;">追加</span></td>
+                                <td>追加利用日として登録済み</td>
+                            </tr>
+                            <tr>
+                                <td><span style="background: rgba(255, 59, 48, 0.15); color: #dc2626; padding: 2px 6px; border-radius: 3px; font-size: 11px;">キャンセル</span></td>
+                                <td>利用をキャンセル済み</td>
+                            </tr>
+                            <tr>
+                                <td style="background: rgba(255, 59, 48, 0.05);"><strong>赤背景</strong></td>
+                                <td>休日（操作不可）</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="tip-box" style="margin-top: 10px;">
+                        <strong>💡 使い方:</strong>
+                        <p style="margin-top: 8px;">
+                            チェックを入れると「利用する」、外すと「利用しない」になります。通常利用日をキャンセルすると、保護者チャットに自動で通知が送信されます。
+                        </p>
+                    </div>
+                </div>
+
+                <div class="feature-box">
+                    <div class="feature-title">🔄 振替管理</div>
+                    <p>保護者からの振替希望を管理します。</p>
+                    <ul>
+                        <li>保護者が欠席連絡時に振替希望日を選択</li>
+                        <li>スタッフが承認/却下を判断</li>
+                        <li>承認した振替は参加予定者リストに自動反映</li>
+                    </ul>
+
+                    <h3 style="font-size: var(--text-callout); margin: 15px 0 10px 0; color: var(--primary-purple);">振替の流れ</h3>
+                    <div class="step-box">
+                        <span class="step-number">1</span>
+                        保護者がチャットで欠席連絡 + 振替希望日を選択
+                    </div>
+                    <div class="step-box">
+                        <span class="step-number">2</span>
+                        「振替管理」ページに承認待ちとして表示
+                    </div>
+                    <div class="step-box">
+                        <span class="step-number">3</span>
+                        スタッフが「承認」または「却下」をクリック
+                    </div>
+                    <div class="step-box">
+                        <span class="step-number">4</span>
+                        承認された振替は、当日の参加予定者に自動表示
+                    </div>
+
+                    <div class="note-box" style="margin-top: 10px;">
+                        <strong>⚠️ 注意:</strong> 振替希望日が未設定の欠席連絡は、通常の欠席として処理されます。振替管理ページには表示されません。
+                    </div>
+                </div>
+
+                <div class="feature-box">
+                    <div class="feature-title">🏫 学校休業日活動設定</div>
+                    <p>夏休み・春休み等の学校休業期間に活動する日を設定します。</p>
+                    <ul>
+                        <li>カレンダーで活動日をチェック</li>
+                        <li>保護者・生徒カレンダーに「学休」ラベルで表示</li>
+                        <li>チェックなしの日は「平日」として表示</li>
+                    </ul>
+
+                    <h3 style="font-size: var(--text-callout); margin: 15px 0 10px 0; color: var(--primary-purple);">カレンダー表示</h3>
+                    <table class="schedule-table" style="font-size: 13px;">
+                        <tbody>
+                            <tr>
+                                <td><span style="background: rgba(59, 130, 246, 0.25); color: #2563eb; padding: 2px 6px; border-radius: 3px; font-size: 11px;">学休</span></td>
+                                <td>学校休業日活動（夏休み・春休み等）</td>
+                            </tr>
+                            <tr>
+                                <td><span style="background: rgba(52, 199, 89, 0.25); color: #059669; padding: 2px 6px; border-radius: 3px; font-size: 11px;">平日</span></td>
+                                <td>通常の平日活動</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="tip-box" style="margin-top: 10px;">
+                        <strong>💡 設定のタイミング:</strong>
+                        <p style="margin-top: 8px;">
+                            長期休暇（夏休み・冬休み・春休み）の前に、活動を行う日を設定してください。保護者・生徒のカレンダーに反映され、活動日がわかりやすくなります。
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <!-- よくある質問 -->

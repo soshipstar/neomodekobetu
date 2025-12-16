@@ -1,28 +1,25 @@
 <?php
 /**
- * スタッフ用 - 休日管理ページ
+ * スタチE��用 - 休日管琁E�Eージ
  */
 
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/layouts/page_wrapper.php';
 
-// ログインチェック
+// ログインチェチE��
 requireLogin();
 checkUserType(['staff', 'admin']);
 
 $pdo = getDbConnection();
 
-// 教室IDを取得
-$classroomId = $_SESSION['classroom_id'] ?? null;
+// 教室IDを取征E$classroomId = $_SESSION['classroom_id'] ?? null;
 
-// 検索パラメータを取得
-$searchKeyword = $_GET['keyword'] ?? '';
+// 検索パラメータを取征E$searchKeyword = $_GET['keyword'] ?? '';
 $searchStartDate = $_GET['start_date'] ?? '';
 $searchEndDate = $_GET['end_date'] ?? '';
 
-// 休日一覧を取得（検索機能付き、教室でフィルタリング）
-$sql = "
+// 休日一覧を取得（検索機�E付き、教室でフィルタリング�E�E$sql = "
     SELECT
         h.id,
         h.holiday_date,
@@ -43,14 +40,12 @@ if (!empty($searchKeyword)) {
     $params[] = '%' . $searchKeyword . '%';
 }
 
-// 期間検索（開始日）
-if (!empty($searchStartDate)) {
+// 期間検索�E�開始日�E�Eif (!empty($searchStartDate)) {
     $sql .= " AND h.holiday_date >= ?";
     $params[] = $searchStartDate;
 }
 
-// 期間検索（終了日）
-if (!empty($searchEndDate)) {
+// 期間検索�E�終亁E���E�Eif (!empty($searchEndDate)) {
     $sql .= " AND h.holiday_date <= ?";
     $params[] = $searchEndDate;
 }
@@ -61,9 +56,8 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $holidays = $stmt->fetchAll();
 
-// ページ開始
-$currentPage = 'holidays';
-renderPageStart('staff', $currentPage, '休日管理');
+// ペ�Eジ開姁E$currentPage = 'holidays';
+renderPageStart('staff', $currentPage, '休日管琁E);
 ?>
 
 <style>
@@ -84,11 +78,11 @@ renderPageStart('staff', $currentPage, '休日管理');
 }
 </style>
 
-<!-- ページヘッダー -->
+<!-- ペ�Eジヘッダー -->
 <div class="page-header">
     <div class="page-header-content">
-        <h1 class="page-title">休日管理</h1>
-        <p class="page-subtitle">休日・祝日の登録と管理</p>
+        <h1 class="page-title">休日管琁E/h1>
+        <p class="page-subtitle">休日・祝日の登録と管琁E/p>
     </div>
 </div>
 
@@ -98,16 +92,16 @@ renderPageStart('staff', $currentPage, '休日管理');
         switch ($_GET['success']) {
             case 'created':
                 if (isset($_GET['count'])) {
-                    echo '定期休日として' . (int)$_GET['count'] . '件の休日を登録しました。';
+                    echo '定期休日として' . (int)$_GET['count'] . '件の休日を登録しました、E;
                 } else {
-                    echo '休日を登録しました。';
+                    echo '休日を登録しました、E;
                 }
                 break;
             case 'deleted':
-                echo '休日を削除しました。';
+                echo '休日を削除しました、E;
                 break;
             default:
-                echo '処理が完了しました。';
+                echo '処琁E��完亁E��ました、E;
         }
         ?>
     </div>
@@ -124,14 +118,12 @@ renderPageStart('staff', $currentPage, '休日管理');
     <div class="card-body">
         <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-blue);">新規休日登録</h2>
 
-        <!-- タブ切り替え -->
+        <!-- タブ�Eり替ぁE-->
         <div class="holiday-tabs" style="display: flex; gap: 10px; margin-bottom: 20px;">
             <button type="button" class="tab-btn active" data-tab="regular" style="flex: 1; padding: 12px; border: 2px solid var(--apple-blue); background: var(--apple-blue); color: white; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                定期休日（毎週の休み）
-            </button>
+                定期休日�E�毎週の休み�E�E            </button>
             <button type="button" class="tab-btn" data-tab="special" style="flex: 1; padding: 12px; border: 2px solid #ddd; background: white; color: #333; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                特別休日（祝日・イベント等）
-            </button>
+                特別休日�E�祝日・イベント等！E            </button>
         </div>
 
         <!-- 定期休日フォーム -->
@@ -140,9 +132,9 @@ renderPageStart('staff', $currentPage, '休日管理');
                 <input type="hidden" name="action" value="create_regular">
 
                 <div class="form-group">
-                    <label class="form-label">休日名 *</label>
-                    <input type="text" name="holiday_name" class="form-control" required placeholder="例: 定休日、日曜休み">
-                    <small style="color: var(--text-secondary);">カレンダーに表示される名前です</small>
+                    <label class="form-label">休日吁E*</label>
+                    <input type="text" name="holiday_name" class="form-control" required placeholder="侁E 定休日、日曜休み">
+                    <small style="color: var(--text-secondary);">カレンダーに表示される名前でぁE/small>
                 </div>
 
                 <div class="form-group" style="margin-top: 15px;">
@@ -159,13 +151,13 @@ renderPageStart('staff', $currentPage, '休日管理');
                         </label>
                         <?php endforeach; ?>
                     </div>
-                    <small style="color: var(--text-secondary); display: block; margin-top: 8px;">選択した曜日が年度末（3月末）まで登録されます</small>
+                    <small style="color: var(--text-secondary); display: block; margin-top: 8px;">選択した曜日が年度末�E�E月末�E�まで登録されまぁE/small>
                 </div>
 
                 <div class="form-group" style="margin-top: 15px;">
                     <label class="form-label">登録開始日</label>
                     <input type="date" name="start_date" class="form-control" value="<?= date('Y-m-d') ?>">
-                    <small style="color: var(--text-secondary);">この日以降の該当曜日が登録されます（デフォルト: 今日）</small>
+                    <small style="color: var(--text-secondary);">こ�E日以降�E該当曜日が登録されます（デフォルチE 今日�E�E/small>
                 </div>
 
                 <div style="text-align: right; margin-top: 20px;">
@@ -180,14 +172,14 @@ renderPageStart('staff', $currentPage, '休日管理');
                 <input type="hidden" name="action" value="create_special">
 
                 <div class="form-group">
-                    <label class="form-label">日付 *</label>
+                    <label class="form-label">日仁E*</label>
                     <input type="date" name="holiday_date" class="form-control" required>
                 </div>
 
                 <div class="form-group" style="margin-top: 15px;">
-                    <label class="form-label">休日名 *</label>
-                    <input type="text" name="holiday_name" class="form-control" required placeholder="例: 元日、夏季休業、年末年始">
-                    <small style="color: var(--text-secondary);">カレンダーに表示される名前です</small>
+                    <label class="form-label">休日吁E*</label>
+                    <input type="text" name="holiday_name" class="form-control" required placeholder="侁E 允E��、夏季休業、年末年姁E>
+                    <small style="color: var(--text-secondary);">カレンダーに表示される名前でぁE/small>
                 </div>
 
                 <div style="text-align: right; margin-top: 20px;">
@@ -199,11 +191,9 @@ renderPageStart('staff', $currentPage, '休日管理');
 </div>
 
 <script>
-// タブ切り替え
-document.querySelectorAll('.tab-btn').forEach(btn => {
+// タブ�Eり替ぁEdocument.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-        // タブボタンのスタイル切り替え
-        document.querySelectorAll('.tab-btn').forEach(b => {
+        // タブ�Eタンのスタイル刁E��替ぁE        document.querySelectorAll('.tab-btn').forEach(b => {
             b.style.background = 'white';
             b.style.color = '#333';
             b.style.borderColor = '#ddd';
@@ -214,8 +204,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.style.borderColor = 'var(--apple-blue)';
         btn.classList.add('active');
 
-        // フォーム切り替え
-        const tab = btn.dataset.tab;
+        // フォーム刁E��替ぁE        const tab = btn.dataset.tab;
         document.querySelectorAll('.holiday-form').forEach(form => {
             form.style.display = 'none';
         });
@@ -223,7 +212,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     });
 });
 
-// チェックボックスの選択時にスタイル変更
+// チェチE��ボックスの選択時にスタイル変更
 document.querySelectorAll('input[name="days_of_week[]"]').forEach(checkbox => {
     checkbox.addEventListener('change', function() {
         const label = this.closest('label');
@@ -245,16 +234,16 @@ document.querySelectorAll('input[name="days_of_week[]"]').forEach(checkbox => {
         <form method="GET" action="holidays.php">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div class="form-group">
-                    <label class="form-label">期間（開始日）</label>
+                    <label class="form-label">期間�E�開始日�E�E/label>
                     <input type="date" name="start_date" class="form-control" value="<?= htmlspecialchars($searchStartDate) ?>">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">期間（終了日）</label>
+                    <label class="form-label">期間�E�終亁E���E�E/label>
                     <input type="date" name="end_date" class="form-control" value="<?= htmlspecialchars($searchEndDate) ?>">
                 </div>
             </div>
             <div class="form-group">
-                <label class="form-label">キーワード</label>
+                <label class="form-label">キーワーチE/label>
                 <input type="text" name="keyword" class="form-control" value="<?= htmlspecialchars($searchKeyword) ?>" placeholder="休日名で検索">
             </div>
             <div style="text-align: right; display: flex; gap: 10px; justify-content: flex-end;">
@@ -279,12 +268,12 @@ document.querySelectorAll('input[name="days_of_week[]"]').forEach(checkbox => {
         <table class="table">
             <thead>
                 <tr>
-                    <th>日付</th>
-                    <th>休日名</th>
-                    <th>タイプ</th>
-                    <th>登録者</th>
+                    <th>日仁E/th>
+                    <th>休日吁E/th>
+                    <th>タイチE/th>
+                    <th>登録老E/th>
                     <th>登録日</th>
-                    <th>操作</th>
+                    <th>操佁E/th>
                 </tr>
             </thead>
             <tbody>
@@ -294,14 +283,14 @@ document.querySelectorAll('input[name="days_of_week[]"]').forEach(checkbox => {
                             <?php if (!empty($searchKeyword) || !empty($searchStartDate) || !empty($searchEndDate)): ?>
                                 検索条件に一致する休日が見つかりませんでした
                             <?php else: ?>
-                                登録されている休日がありません
+                                登録されてぁE��休日がありません
                             <?php endif; ?>
                         </td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($holidays as $holiday): ?>
                         <tr>
-                            <td><?= date('Y年n月j日（' . ['日', '月', '火', '水', '木', '金', '土'][date('w', strtotime($holiday['holiday_date']))] . '）', strtotime($holiday['holiday_date'])) ?></td>
+                            <td><?= date('Y年n朁E日�E�E . ['日', '朁E, '火', '水', '木', '釁E, '圁E][date('w', strtotime($holiday['holiday_date']))] . '�E�E, strtotime($holiday['holiday_date'])) ?></td>
                             <td><?= htmlspecialchars($holiday['holiday_name']) ?></td>
                             <td>
                                 <span class="type-badge <?= $holiday['holiday_type'] === 'regular' ? 'type-regular' : 'type-special' ?>">
@@ -311,7 +300,7 @@ document.querySelectorAll('input[name="days_of_week[]"]').forEach(checkbox => {
                             <td><?= htmlspecialchars($holiday['created_by_name'] ?? '-') ?></td>
                             <td><?= date('Y/m/d', strtotime($holiday['created_at'])) ?></td>
                             <td>
-                                <form method="POST" action="holidays_save.php" style="display: inline;" onsubmit="return confirm('この休日を削除しますか？');">
+                                <form method="POST" action="holidays_save.php" style="display: inline;" onsubmit="return confirm('こ�E休日を削除しますか�E�E);">
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="holiday_id" value="<?= $holiday['id'] ?>">
                                     <button type="submit" class="btn btn-danger btn-sm">削除</button>

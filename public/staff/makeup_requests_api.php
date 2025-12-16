@@ -7,7 +7,7 @@ session_start();
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
 
-requireAuth(['staff', 'admin']);
+requireUserType(['staff', 'admin']);
 
 header('Content-Type: application/json');
 
@@ -68,47 +68,7 @@ try {
         ");
         $stmt->execute([$staffId, $requestId]);
 
-        // 振替希望日の出席予定者に生徒を追加
-        // まず、その日の活動記録があるか確認
-        $stmt = $pdo->prepare("
-            SELECT id FROM renrakucho
-            WHERE classroom_id = ? AND activity_date = ?
-        ");
-        $stmt->execute([$request['classroom_id'], $request['makeup_request_date']]);
-        $renrakucho = $stmt->fetch();
-
-        if ($renrakucho) {
-            // 活動記録が存在する場合、既に登録されているか確認
-            $stmt = $pdo->prepare("
-                SELECT id FROM renrakucho_students
-                WHERE renrakucho_id = ? AND student_id = ?
-            ");
-            $stmt->execute([$renrakucho['id'], $request['student_id']]);
-
-            if (!$stmt->fetch()) {
-                // 未登録の場合のみ追加
-                $stmt = $pdo->prepare("
-                    INSERT INTO renrakucho_students (renrakucho_id, student_id)
-                    VALUES (?, ?)
-                ");
-                $stmt->execute([$renrakucho['id'], $request['student_id']]);
-            }
-        } else {
-            // 活動記録が存在しない場合は新規作成
-            $stmt = $pdo->prepare("
-                INSERT INTO renrakucho (classroom_id, activity_date, created_by, created_at)
-                VALUES (?, ?, ?, NOW())
-            ");
-            $stmt->execute([$request['classroom_id'], $request['makeup_request_date'], $staffId]);
-            $renrakuchoId = $pdo->lastInsertId();
-
-            // 生徒を追加
-            $stmt = $pdo->prepare("
-                INSERT INTO renrakucho_students (renrakucho_id, student_id)
-                VALUES (?, ?)
-            ");
-            $stmt->execute([$renrakuchoId, $request['student_id']]);
-        }
+        // 承認済み振替は renrakucho_activities.php で自動的に参加予定者として表示される
 
         // 保護者にチャットで通知メッセージを送信
         $makeupDate = new DateTime($request['makeup_request_date']);

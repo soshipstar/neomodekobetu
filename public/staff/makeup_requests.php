@@ -20,6 +20,9 @@ $searchDate = $_GET['search_date'] ?? '';
 $where = [];
 $params = [];
 
+// 振替希望日が設定されているものだけ表示（未設定は欠席扱い）
+$where[] = "an.makeup_request_date IS NOT NULL";
+
 if ($status !== 'all') {
     $where[] = "an.makeup_status = ?";
     $params[] = $status;
@@ -372,7 +375,7 @@ renderPageStart('staff', $currentPage, '振替依頼管理');
             <?php else: ?>
                 <?php foreach ($requests as $request):
                     $absenceDate = new DateTime($request['absence_date']);
-                    $makeupDate = new DateTime($request['makeup_request_date']);
+                    $makeupDate = $request['makeup_request_date'] ? new DateTime($request['makeup_request_date']) : null;
                 ?>
                     <div class="request-card <?= $request['makeup_status'] ?>">
                         <div class="request-header">
@@ -403,16 +406,20 @@ renderPageStart('staff', $currentPage, '振替依頼管理');
                             <div class="detail-item">
                                 <div class="detail-label">振替希望日</div>
                                 <div class="detail-value highlight">
-                                    <?= $makeupDate->format('Y年n月j日') ?>
-                                    (<?= ['日', '月', '火', '水', '木', '金', '土'][$makeupDate->format('w')] ?>)
+                                    <?php if ($makeupDate): ?>
+                                        <?= $makeupDate->format('Y年n月j日') ?>
+                                        (<?= ['日', '月', '火', '水', '木', '金', '土'][$makeupDate->format('w')] ?>)
+                                    <?php else: ?>
+                                        <span style="color: var(--apple-orange);">未設定</span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                             <div class="detail-item">
                                 <div class="detail-label">依頼日時</div>
                                 <div class="detail-value">
                                     <?php
-                                        $requestedAt = new DateTime($request['requested_at']);
-                                        echo $requestedAt->format('Y年n月j日 H:i');
+                                        $requestedAt = $request['requested_at'] ? new DateTime($request['requested_at']) : null;
+                                        echo $requestedAt ? $requestedAt->format('Y年n月j日 H:i') : '不明';
                                     ?>
                                 </div>
                             </div>
@@ -486,7 +493,7 @@ let currentRequestId = null;
 
         // 承認処理
         function approveRequest(requestId) {
-            if (!confirm('この振替依頼を承認しますか？\n承認すると、生徒が振替希望日の出席予定者に自動的に追加されます。')) {
+            if (!confirm('この振替依頼を承認しますか？\\n承認すると、生徒が振替希望日の出席予定者に自動的に追加されます。')) {
                 return;
             }
 

@@ -1,19 +1,17 @@
 <?php
 /**
- * 教室管理（マスター管理者専用）
- */
+ * 教室管琁E���Eスター管琁E��E��用�E�E */
 
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/layouts/page_wrapper.php';
 
-// マスター管理者チェック
+// マスター管琁E��E��ェチE��
 requireMasterAdmin();
 
 $pdo = getDbConnection();
 
-// 全教室を取得（サブクエリで正確にカウント）
-$stmt = $pdo->query("
+// 全教室を取得（サブクエリで正確にカウント！E$stmt = $pdo->query("
     SELECT
         c.*,
         (SELECT COUNT(*) FROM users WHERE classroom_id = c.id AND user_type = 'admin') as admin_count,
@@ -26,9 +24,8 @@ $classrooms = $stmt->fetchAll();
 
 $successMessage = $_GET['success'] ?? '';
 
-// ページ開始
-$currentPage = 'classrooms';
-renderPageStart('admin', $currentPage, '教室管理');
+// ペ�Eジ開姁E$currentPage = 'classrooms';
+renderPageStart('admin', $currentPage, '教室管琁E);
 ?>
 
 <style>
@@ -39,11 +36,11 @@ renderPageStart('admin', $currentPage, '教室管理');
 }
 </style>
 
-<!-- ページヘッダー -->
+<!-- ペ�Eジヘッダー -->
 <div class="page-header">
     <div class="page-header-content">
-        <h1 class="page-title">教室管理</h1>
-        <p class="page-subtitle">マスター管理者専用 - 全教室の管理</p>
+        <h1 class="page-title">教室管琁E/h1>
+        <p class="page-subtitle">マスター管琁E��E��用 - 全教室の管琁E/p>
     </div>
 </div>
 
@@ -64,14 +61,14 @@ renderPageStart('admin', $currentPage, '教室管理');
                 <tr>
                     <th>ID</th>
                     <th>ロゴ</th>
-                    <th>教室名</th>
+                    <th>教室吁E/th>
                     <th>住所</th>
                     <th>電話番号</th>
-                    <th>管理者数</th>
-                    <th>スタッフ数</th>
+                    <th>管琁E��E��</th>
+                    <th>スタチE��数</th>
                     <th>生徒数</th>
                     <th>登録日</th>
-                    <th>操作</th>
+                    <th>操佁E/th>
                 </tr>
             </thead>
             <tbody>
@@ -94,7 +91,7 @@ renderPageStart('admin', $currentPage, '教室管理');
                         <td><?= date('Y/m/d', strtotime($classroom['created_at'])) ?></td>
                         <td>
                             <div style="display: flex; gap: 8px;">
-                                <button class="btn btn-primary btn-sm" onclick="openEditModal(<?= htmlspecialchars(json_encode($classroom), ENT_QUOTES) ?>)">編集</button>
+                                <button class="btn btn-primary btn-sm" onclick="openEditModal(<?= htmlspecialchars(json_encode($classroom), ENT_QUOTES) ?>)">編雁E/button>
                                 <button class="btn btn-danger btn-sm" onclick="deleteClassroom(<?= $classroom['id'] ?>, '<?= htmlspecialchars($classroom['classroom_name'], ENT_QUOTES) ?>')">削除</button>
                             </div>
                         </td>
@@ -103,7 +100,7 @@ renderPageStart('admin', $currentPage, '教室管理');
                 <?php if (empty($classrooms)): ?>
                     <tr>
                         <td colspan="10" style="text-align: center; padding: var(--spacing-2xl); color: var(--text-secondary);">
-                            登録されている教室がありません
+                            登録されてぁE��教室がありません
                         </td>
                     </tr>
                 <?php endif; ?>
@@ -120,7 +117,7 @@ renderPageStart('admin', $currentPage, '教室管理');
         <form action="classrooms_save.php" method="POST" enctype="multipart/form-data">
             <input type="hidden" name="action" value="add">
             <div class="form-group">
-                <label class="form-label">教室名 *</label>
+                <label class="form-label">教室吁E*</label>
                 <input type="text" name="classroom_name" class="form-control" required>
             </div>
             <div class="form-group">
@@ -132,7 +129,7 @@ renderPageStart('admin', $currentPage, '教室管理');
                 <input type="tel" name="phone" class="form-control">
             </div>
             <div class="form-group">
-                <label class="form-label">ロゴ画像（2MB以内のJPEG, PNG, GIF）</label>
+                <label class="form-label">ロゴ画像！EMB以冁E�EJPEG, PNG, GIF�E�E/label>
                 <input type="file" name="logo" accept="image/*" class="form-control">
             </div>
             <button type="submit" class="btn btn-success" style="width: 100%;">登録</button>
@@ -140,16 +137,16 @@ renderPageStart('admin', $currentPage, '教室管理');
     </div>
 </div>
 
-<!-- 編集モーダル -->
+<!-- 編雁E��ーダル -->
 <div id="editModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeEditModal()">&times;</span>
-        <h2 style="margin-bottom: var(--spacing-lg);">教室情報編集</h2>
+        <h2 style="margin-bottom: var(--spacing-lg);">教室惁E��編雁E/h2>
         <form action="classrooms_save.php" method="POST" enctype="multipart/form-data">
             <input type="hidden" name="action" value="edit">
             <input type="hidden" name="classroom_id" id="edit_classroom_id">
             <div class="form-group">
-                <label class="form-label">教室名 *</label>
+                <label class="form-label">教室吁E*</label>
                 <input type="text" name="classroom_name" id="edit_classroom_name" class="form-control" required>
             </div>
             <div class="form-group">
@@ -161,7 +158,7 @@ renderPageStart('admin', $currentPage, '教室管理');
                 <input type="tel" name="phone" id="edit_phone" class="form-control">
             </div>
             <div class="form-group">
-                <label class="form-label">ロゴ画像（2MB以内のJPEG, PNG, GIF）</label>
+                <label class="form-label">ロゴ画像！EMB以冁E�EJPEG, PNG, GIF�E�E/label>
                 <input type="file" name="logo" accept="image/*" class="form-control">
                 <div id="current_logo" style="margin-top: 10px;"></div>
             </div>
@@ -172,7 +169,7 @@ renderPageStart('admin', $currentPage, '教室管理');
 
 <script>
     function openAddModal() {
-        document.getElementById('addModal').style.display = 'block';
+        document.getElementById('addModal').style.display = 'flex';
     }
 
     function closeAddModal() {
@@ -189,10 +186,10 @@ renderPageStart('admin', $currentPage, '教室管理');
         if (classroom.logo_path) {
             logoDiv.innerHTML = '<p style="color: var(--text-secondary); font-size: var(--text-caption-1);">現在のロゴ:</p><img src="../' + classroom.logo_path + '" style="max-width: 200px; max-height: 100px;">';
         } else {
-            logoDiv.innerHTML = '<p style="color: var(--text-secondary); font-size: var(--text-caption-1);">現在ロゴは未設定です</p>';
+            logoDiv.innerHTML = '<p style="color: var(--text-secondary); font-size: var(--text-caption-1);">現在ロゴは未設定でぁE/p>';
         }
 
-        document.getElementById('editModal').style.display = 'block';
+        document.getElementById('editModal').style.display = 'flex';
     }
 
     function closeEditModal() {
@@ -200,7 +197,7 @@ renderPageStart('admin', $currentPage, '教室管理');
     }
 
     function deleteClassroom(classroomId, classroomName) {
-        if (confirm(`本当に「${classroomName}」を削除しますか？\n\nこの操作は取り消せません。この教室に所属する管理者、スタッフ、生徒、およびすべての関連データが削除されます。`)) {
+        if (confirm(`本当に、E{classroomName}」を削除しますか�E�\n\nこ�E操作�E取り消せません。この教室に所属する管琁E��E��スタチE��、生徒、およ�Eすべての関連チE�Eタが削除されます。`)) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = 'classrooms_save.php';
@@ -222,8 +219,7 @@ renderPageStart('admin', $currentPage, '教室管理');
         }
     }
 
-    // モーダル外クリックで閉じる
-    let modalMouseDownTarget = null;
+    // モーダル外クリチE��で閉じめE    let modalMouseDownTarget = null;
 
     window.addEventListener('mousedown', function(event) {
         modalMouseDownTarget = event.target;

@@ -381,6 +381,110 @@ if ($hasIntegratedNotesTable && !empty($students)) {
     }
 }
 
+// カレンダー表示月の振替活動日と欠席日を取得
+$calendarMakeupDays = []; // 振替で追加された活動日
+$calendarAbsenceDays = []; // 欠席日
+if (!empty($students)) {
+    try {
+        $studentIds = array_column($students, 'id');
+        $placeholders = implode(',', array_fill(0, count($studentIds), '?'));
+        $firstDayStr = date('Y-m-d', $firstDay);
+        $lastDayStr = date('Y-m-d', $lastDay);
+
+        // 振替活動日を取得（承認済みの振替希望日）
+        $stmt = $pdo->prepare("
+            SELECT
+                an.student_id,
+                an.makeup_request_date,
+                s.student_name
+            FROM absence_notifications an
+            INNER JOIN students s ON an.student_id = s.id
+            WHERE an.student_id IN ($placeholders)
+            AND an.makeup_status = 'approved'
+            AND an.makeup_request_date BETWEEN ? AND ?
+        ");
+        $stmt->execute(array_merge($studentIds, [$firstDayStr, $lastDayStr]));
+        $makeupDays = $stmt->fetchAll();
+
+        foreach ($makeupDays as $makeup) {
+            $date = $makeup['makeup_request_date'];
+            if (!isset($calendarMakeupDays[$date])) {
+                $calendarMakeupDays[$date] = [];
+            }
+            $calendarMakeupDays[$date][] = [
+                'student_id' => $makeup['student_id'],
+                'student_name' => $makeup['student_name']
+            ];
+        }
+
+        // 欠席日を取得（欠席連絡があり、拒否されていないもの）
+        $stmt = $pdo->prepare("
+            SELECT
+                an.student_id,
+                an.absence_date,
+                an.reason,
+                s.student_name
+            FROM absence_notifications an
+            INNER JOIN students s ON an.student_id = s.id
+            WHERE an.student_id IN ($placeholders)
+            AND an.absence_date BETWEEN ? AND ?
+        ");
+        $stmt->execute(array_merge($studentIds, [$firstDayStr, $lastDayStr]));
+        $absenceDays = $stmt->fetchAll();
+
+        foreach ($absenceDays as $absence) {
+            $date = $absence['absence_date'];
+            if (!isset($calendarAbsenceDays[$date])) {
+                $calendarAbsenceDays[$date] = [];
+            }
+            $calendarAbsenceDays[$date][] = [
+                'student_id' => $absence['student_id'],
+                'student_name' => $absence['student_name'],
+                'reason' => $absence['reason']
+            ];
+        }
+    } catch (Exception $e) {
+        error_log("Error fetching makeup/absence days: " . $e->getMessage());
+    }
+}
+
+// カレンダー表示月の追加利用日を取得
+$calendarAdditionalDays = [];
+if (!empty($students)) {
+    try {
+        $studentIds = array_column($students, 'id');
+        $placeholders = implode(',', array_fill(0, count($studentIds), '?'));
+        $firstDayStr = date('Y-m-d', $firstDay);
+        $lastDayStr = date('Y-m-d', $lastDay);
+
+        $stmt = $pdo->prepare("
+            SELECT
+                au.student_id,
+                au.usage_date,
+                s.student_name
+            FROM additional_usages au
+            INNER JOIN students s ON au.student_id = s.id
+            WHERE au.student_id IN ($placeholders)
+            AND au.usage_date BETWEEN ? AND ?
+        ");
+        $stmt->execute(array_merge($studentIds, [$firstDayStr, $lastDayStr]));
+        $additionalDays = $stmt->fetchAll();
+
+        foreach ($additionalDays as $additional) {
+            $date = $additional['usage_date'];
+            if (!isset($calendarAdditionalDays[$date])) {
+                $calendarAdditionalDays[$date] = [];
+            }
+            $calendarAdditionalDays[$date][] = [
+                'student_id' => $additional['student_id'],
+                'student_name' => $additional['student_name']
+            ];
+        }
+    } catch (Exception $e) {
+        error_log("Error fetching additional usage days: " . $e->getMessage());
+    }
+}
+
 // 学年表示用のラベル
 function getGradeLabel($gradeLevel) {
     $labels = [
@@ -692,14 +796,14 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
             echo "<div class='calendar-day-number $dayClass'>$day</div>";
             echo "<div class='calendar-day-content'>";
 
-            if (isset($holidayDates[$currentDate])) {
+            if (array_key_exists($currentDate, $holidayDates)) {
                 echo "<div class='holiday-label'>" . htmlspecialchars($holidayDates[$currentDate]['name']) . "</div>";
             } else {
                 // 休日でない場合、活動種別を表示
-                if (isset($schoolHolidayActivities[$currentDate])) {
-                    echo "<div class='activity-type-label school-holiday-activity'>🏫 学校休業日活動</div>";
+                if (array_key_exists($currentDate, $schoolHolidayActivities)) {
+                    echo "<div class='activity-type-label school-holiday-activity'>学休</div>";
                 } else {
-                    echo "<div class='activity-type-label weekday-activity'>📚 平日活動</div>";
+                    echo "<div class='activity-type-label weekday-activity'>平日</div>";
                 }
             }
 
@@ -752,6 +856,36 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
                 }
             }
 
+            // 振替活動日を表示
+            if (isset($calendarMakeupDays[$currentDate]) && !empty($calendarMakeupDays[$currentDate])) {
+                foreach ($calendarMakeupDays[$currentDate] as $makeupInfo) {
+                    echo "<div class='makeup-label'>";
+                    echo "<span class='makeup-marker'>🔄</span>";
+                    echo htmlspecialchars($makeupInfo['student_name']) . "さん振替活動日";
+                    echo "</div>";
+                }
+            }
+
+            // 欠席日を表示
+            if (isset($calendarAbsenceDays[$currentDate]) && !empty($calendarAbsenceDays[$currentDate])) {
+                foreach ($calendarAbsenceDays[$currentDate] as $absenceInfo) {
+                    echo "<div class='absence-label'>";
+                    echo "<span class='absence-marker'>❌</span>";
+                    echo htmlspecialchars($absenceInfo['student_name']) . "さん欠席";
+                    echo "</div>";
+                }
+            }
+
+            // 追加利用日を表示
+            if (isset($calendarAdditionalDays[$currentDate]) && !empty($calendarAdditionalDays[$currentDate])) {
+                foreach ($calendarAdditionalDays[$currentDate] as $additionalInfo) {
+                    echo "<div class='additional-label'>";
+                    echo "<span class='additional-marker'>➕</span>";
+                    echo htmlspecialchars($additionalInfo['student_name']) . "さん追加利用";
+                    echo "</div>";
+                }
+            }
+
             echo "</div>";
             echo "</div>";
         }
@@ -790,6 +924,18 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
         <div class="legend-item">
             <span style="color: var(--apple-red); font-weight: 600;">📝</span>
             <span>連絡帳あり（未確認）</span>
+        </div>
+        <div class="legend-item">
+            <span style="color: var(--apple-blue); font-weight: 600;">🔄</span>
+            <span>振替活動日</span>
+        </div>
+        <div class="legend-item">
+            <span style="color: var(--apple-red); font-weight: 600;">❌</span>
+            <span>欠席日</span>
+        </div>
+        <div class="legend-item">
+            <span style="color: var(--apple-green); font-weight: 600;">➕</span>
+            <span>追加利用</span>
         </div>
     </div>
 </div>
@@ -943,7 +1089,8 @@ function showNoteModal(date) {
 
 function showEventModal(eventData) {
     const targetAudienceLabels = {
-        'all': '全体', 'elementary': '小学生', 'junior_high_school': '中高生',
+        'all': '全体', 'preschool': '未就学児', 'elementary': '小学生',
+        'junior_high': '中学生', 'high_school': '高校生',
         'guardian': '保護者', 'other': 'その他'
     };
 
@@ -956,7 +1103,8 @@ function showEventModal(eventData) {
         html += '<div class="event-detail-section"><h4>保護者・生徒連絡用</h4><p>' + escapeHtml(eventData.guardian_message) + '</p></div>';
     }
     if (eventData.target_audience) {
-        html += '<div class="event-detail-section"><h4>対象者</h4><p>' + (targetAudienceLabels[eventData.target_audience] || '全体') + '</p></div>';
+        const audiences = eventData.target_audience.split(',').map(a => targetAudienceLabels[a.trim()] || a.trim()).join('、');
+        html += '<div class="event-detail-section"><h4>対象者</h4><p>' + audiences + '</p></div>';
     }
     if (html === '') html = '<div class="no-data">詳細情報はありません</div>';
     document.getElementById('eventModalContent').innerHTML = html;
