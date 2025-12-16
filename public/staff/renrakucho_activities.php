@@ -392,6 +392,7 @@ if (!$isHoliday) {
 
     // 学部別に分類
     $studentsByGrade = [
+        'preschool' => [],
         'elementary' => [],
         'junior_high' => [],
         'high_school' => []
@@ -402,8 +403,10 @@ if (!$isHoliday) {
         $gradeLevel = $student['birth_date']
             ? calculateGradeLevel($student['birth_date'], null, $student['grade_adjustment'] ?? 0)
             : ($student['grade_level'] ?? 'elementary');
-        if (isset($studentsByGrade[$gradeLevel])) {
-            $studentsByGrade[$gradeLevel][] = $student;
+        // 詳細学年からカテゴリを取得
+        $gradeCategory = getGradeCategory($gradeLevel);
+        if (isset($studentsByGrade[$gradeCategory])) {
+            $studentsByGrade[$gradeCategory][] = $student;
         }
     }
 
@@ -453,6 +456,7 @@ if (!$isHoliday) {
 
     // イベント参加者も学部別に分類
     $eventsByGrade = [
+        'preschool' => [],
         'elementary' => [],
         'junior_high' => [],
         'high_school' => []
@@ -463,8 +467,10 @@ if (!$isHoliday) {
         $gradeLevel = $participant['birth_date']
             ? calculateGradeLevel($participant['birth_date'], null, $participant['grade_adjustment'] ?? 0)
             : ($participant['grade_level'] ?? 'elementary');
-        if (isset($eventsByGrade[$gradeLevel])) {
-            $eventsByGrade[$gradeLevel][] = $participant;
+        // 詳細学年からカテゴリを取得
+        $gradeCategory = getGradeCategory($gradeLevel);
+        if (isset($eventsByGrade[$gradeCategory])) {
+            $eventsByGrade[$gradeCategory][] = $participant;
         }
     }
 }
@@ -3043,6 +3049,7 @@ renderPageStart('staff', $currentPage, '活動管理');
                     <?php else: ?>
                         <?php
                         $gradeInfo = [
+                            'preschool' => ['label' => '未就学児', 'icon' => '👶'],
                             'elementary' => ['label' => '小学生', 'icon' => '🎒'],
                             'junior_high' => ['label' => '中学生', 'icon' => '📚'],
                             'high_school' => ['label' => '高校生', 'icon' => '🎓']
