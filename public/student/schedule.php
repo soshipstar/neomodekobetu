@@ -82,6 +82,25 @@ while ($row = $stmt->fetch()) {
     ];
 }
 
+// 学校休業日活動を取得
+$schoolHolidayActivities = [];
+if ($classroomId) {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT activity_date
+            FROM school_holiday_activities
+            WHERE classroom_id = ? AND activity_date BETWEEN ? AND ?
+        ");
+        $stmt->execute([$classroomId, $monthStart, $monthEnd]);
+        while ($row = $stmt->fetch()) {
+            $day = date('j', strtotime($row['activity_date']));
+            $schoolHolidayActivities[$day] = true;
+        }
+    } catch (Exception $e) {
+        error_log("Error fetching school holiday activities: " . $e->getMessage());
+    }
+}
+
 // 提出物期限取得（統合）
 $submissions = [];
 
@@ -184,12 +203,23 @@ for ($day = 1; $day <= $daysInMonth; $day++) {
 // カレンダーデータを統合
 $calendarData = [];
 for ($day = 1; $day <= $daysInMonth; $day++) {
+    // 活動種別を判定（休日でない場合のみ）
+    $activityType = null;
+    if (!isset($holidays[$day])) {
+        if (isset($schoolHolidayActivities[$day])) {
+            $activityType = 'school_holiday'; // 学校休業日活動
+        } else {
+            $activityType = 'weekday'; // 平日活動
+        }
+    }
+
     $calendarData[$day] = [
         'events' => $events[$day] ?? [],
         'holidays' => $holidays[$day] ?? [],
         'submissions' => $submissions[$day] ?? [],
         'plans' => $weeklyPlans[$day] ?? [],
-        'activity' => $activitySchedules[$day] ?? null
+        'activity' => $activitySchedules[$day] ?? null,
+        'activityType' => $activityType
     ];
 }
 
@@ -289,6 +319,9 @@ renderPageStart('student', $currentPage, 'スケジュール');
 .calendar .indicator.submission-done { background: var(--apple-gray-4); color: white; text-decoration: line-through; }
 .calendar .indicator.plan { background: var(--apple-green); color: white; }
 .calendar .indicator.activity { background: var(--apple-blue); color: white; font-weight: 600; }
+.calendar .indicator.activity-type { font-size: 9px; padding: 1px 4px; }
+.calendar .indicator.weekday-activity { background: rgba(52, 199, 89, 0.2); color: var(--apple-green); }
+.calendar .indicator.school-holiday-activity { background: rgba(0, 122, 255, 0.2); color: var(--apple-blue); }
 
 .calendar .sunday { color: var(--apple-red); }
 .calendar .saturday { color: var(--apple-blue); }
@@ -433,11 +466,11 @@ renderPageStart('student', $currentPage, 'スケジュール');
                     $isToday = ($day == date('j') && $month == date('n') && $year == date('Y'));
                     $class = $isToday ? 'today' : '';
                     $data = $calendarData[$day];
-                    $hasData = !empty($data['events']) || !empty($data['holidays']) || !empty($data['submissions']) || !empty($data['plans']) || !empty($data['activity']);
+                    $hasData = !empty($data['events']) || !empty($data['holidays']) || !empty($data['submissions']) || !empty($data['plans']) || !empty($data['activity']) || !empty($data['activityType']);
                     $dataJson = htmlspecialchars(json_encode($data), ENT_QUOTES, 'UTF-8');
                     $dateStr = sprintf('%04d-%02d-%02d', $year, $month, $day);
 
-                    echo "<td class='$class' " . ($hasData ? "onclick='showDetail(\"$dateStr\", $dataJson)'" : "") . ">";
+                    echo "<td class='$class' onclick='showDetail(\"$dateStr\", $dataJson)'>";
                     $actualDayOfWeek = date('w', strtotime($dateStr));
                     $dayClass = ($actualDayOfWeek == 0) ? 'sunday' : (($actualDayOfWeek == 6) ? 'saturday' : '');
                     echo "<div class='day-number $dayClass'>$day</div>";
@@ -445,9 +478,20 @@ renderPageStart('student', $currentPage, 'スケジュール');
                     $count = 0;
                     $maxDisplay = 4;
 
+                    // 休日の場合
                     foreach ($data['holidays'] as $holiday) {
                         if ($count >= $maxDisplay) break;
                         echo "<span class='indicator holiday'>" . htmlspecialchars($holiday['name'], ENT_QUOTES, 'UTF-8') . "</span>";
+                        $count++;
+                    }
+
+                    // 活動種別を表示（休日でない場合のみ）
+                    if (empty($data['holidays']) && !empty($data['activityType']) && $count < $maxDisplay) {
+                        if ($data['activityType'] === 'school_holiday') {
+                            echo "<span class='indicator activity-type school-holiday-activity'>🏫 学校休業日活動</span>";
+                        } else {
+                            echo "<span class='indicator activity-type weekday-activity'>📚 平日活動</span>";
+                        }
                         $count++;
                     }
 
@@ -458,7 +502,7 @@ renderPageStart('student', $currentPage, 'スケジュール');
                     }
 
                     if (!empty($data['activity']) && $count < $maxDisplay) {
-                        echo "<span class='indicator activity'>活動日</span>";
+                        echo "<span class='indicator activity'>👤 活動予定日</span>";
                         $count++;
                     }
 
@@ -516,6 +560,15 @@ function showDetail(dateStr, data) {
             html += '<div class="modal-item holiday"><div class="modal-item-value">' + escapeHtml(h.name) + '</div></div>';
         });
         html += '</div>';
+    } else if (data.activityType) {
+        // 休日でない場合は活動種別を表示
+        if (data.activityType === 'school_holiday') {
+            html += '<div class="modal-section"><h3>🏫 学校休業日活動</h3>';
+            html += '<div class="modal-item"><div class="modal-item-value">この日は学校休業日活動日です（夏休み・春休み等）</div></div></div>';
+        } else {
+            html += '<div class="modal-section plan"><h3>📚 平日活動</h3>';
+            html += '<div class="modal-item plan"><div class="modal-item-value">この日は通常の平日活動日です</div></div></div>';
+        }
     }
 
     if (data.events && data.events.length > 0) {
@@ -528,7 +581,7 @@ function showDetail(dateStr, data) {
 
     if (data.activity) {
         html += '<div class="modal-section"><h3>👤 活動予定日</h3>';
-        html += '<div class="modal-item"><div class="modal-item-value">この日は活動予定日です</div></div></div>';
+        html += '<div class="modal-item"><div class="modal-item-value">この日はあなたの活動予定日です</div></div></div>';
     }
 
     if (data.submissions && data.submissions.length > 0) {

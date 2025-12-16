@@ -173,6 +173,15 @@ renderPageStart('staff', $currentPage, $pageTitle);
             background: #138496;
         }
 
+        .btn-pdf {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-pdf:hover {
+            background: #c82333;
+        }
+
         .btn-generate {
             background: var(--apple-bg-secondary);
             color: var(--text-primary);
@@ -380,7 +389,10 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 </button>
                 <?php endif; ?>
                 <button type="button" class="btn btn-download" id="downloadBtn">
-                    📥 ダウンロード
+                    📥 Word
+                </button>
+                <button type="button" class="btn btn-pdf" id="pdfBtn">
+                    📄 PDF出力
                 </button>
             </div>
         </div>
@@ -438,14 +450,25 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 </div>
             </div>
 
-            <!-- 各曜日の報告 -->
+            <!-- 活動紹介まとめ -->
             <div class="content-section">
                 <div class="section-header">
-                    <h2>📖 各曜日の活動報告</h2>
+                    <h2>📖 活動紹介まとめ</h2>
                 </div>
                 <div class="form-group">
-                    <label>曜日ごとの活動内容と子どもたちの様子</label>
+                    <label>期間内の活動を時系列でまとめた紹介文</label>
                     <textarea name="weekly_reports" class="form-control" rows="15"><?php echo htmlspecialchars($newsletter['weekly_reports'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
+                </div>
+            </div>
+
+            <!-- 曜日別活動紹介 -->
+            <div class="content-section">
+                <div class="section-header">
+                    <h2>📅 曜日別活動紹介</h2>
+                </div>
+                <div class="form-group">
+                    <label>各曜日の活動を紹介し参加を促す内容</label>
+                    <textarea name="weekly_intro" class="form-control" rows="15"><?php echo htmlspecialchars($newsletter['weekly_intro'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
                 </div>
             </div>
 
@@ -457,6 +480,28 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 <div class="form-group">
                     <label>実施したイベントの結果と様子</label>
                     <textarea name="event_results" class="form-control" rows="10"><?php echo htmlspecialchars($newsletter['event_results'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
+                </div>
+            </div>
+
+            <!-- 小学生の活動報告 -->
+            <div class="content-section">
+                <div class="section-header">
+                    <h2>🎒 小学生の活動報告</h2>
+                </div>
+                <div class="form-group">
+                    <label>小学生の活動内容と様子</label>
+                    <textarea name="elementary_report" class="form-control" rows="10"><?php echo htmlspecialchars($newsletter['elementary_report'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
+                </div>
+            </div>
+
+            <!-- 中学生・高校生の活動報告 -->
+            <div class="content-section">
+                <div class="section-header">
+                    <h2>📚 中学生・高校生の活動報告</h2>
+                </div>
+                <div class="form-group">
+                    <label>中学生・高校生の活動内容と様子</label>
+                    <textarea name="junior_report" class="form-control" rows="10"><?php echo htmlspecialchars($newsletter['junior_report'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
                 </div>
             </div>
 
@@ -589,9 +634,64 @@ renderPageStart('staff', $currentPage, $pageTitle);
             });
         }
 
-        // ダウンロードボタン
+        // フォームデータを収集する関数
+        function collectFormData() {
+            const form = document.getElementById('newsletterForm');
+            return {
+                id: newsletterId,
+                title: form.querySelector('input[name="title"]').value,
+                greeting: form.querySelector('textarea[name="greeting"]').value,
+                event_calendar: form.querySelector('textarea[name="event_calendar"]').value,
+                event_details: form.querySelector('textarea[name="event_details"]').value,
+                weekly_reports: form.querySelector('textarea[name="weekly_reports"]').value,
+                weekly_intro: form.querySelector('textarea[name="weekly_intro"]').value,
+                event_results: form.querySelector('textarea[name="event_results"]').value,
+                elementary_report: form.querySelector('textarea[name="elementary_report"]').value,
+                junior_report: form.querySelector('textarea[name="junior_report"]').value,
+                requests: form.querySelector('textarea[name="requests"]').value,
+                others: form.querySelector('textarea[name="others"]').value
+            };
+        }
+
+        // POSTでフォームを送信してプレビュー
+        function openPreviewWithFormData(url) {
+            const data = collectFormData();
+
+            // 隠しフォームを作成
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = url;
+            form.target = '_blank';
+
+            // データをhidden inputとして追加
+            for (const [key, value] of Object.entries(data)) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = value || '';
+                form.appendChild(input);
+            }
+
+            // プレビューモードフラグを追加
+            const previewInput = document.createElement('input');
+            previewInput.type = 'hidden';
+            previewInput.name = 'preview_mode';
+            previewInput.value = '1';
+            form.appendChild(previewInput);
+
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+        }
+
+        // ダウンロードボタン（Word）
         document.getElementById('downloadBtn').addEventListener('click', () => {
-            window.location.href = 'newsletter_download.php?id=' + newsletterId;
+            openPreviewWithFormData('newsletter_download.php');
+        });
+
+        // PDF出力ボタン
+        document.getElementById('pdfBtn').addEventListener('click', () => {
+            openPreviewWithFormData('newsletter_pdf.php');
         });
 
         // AI生成ボタン
@@ -638,7 +738,10 @@ renderPageStart('staff', $currentPage, $pageTitle);
                         document.querySelector('textarea[name="event_calendar"]').value = result.data.event_calendar || '';
                         document.querySelector('textarea[name="event_details"]').value = result.data.event_details || '';
                         document.querySelector('textarea[name="weekly_reports"]').value = result.data.weekly_reports || '';
+                        document.querySelector('textarea[name="weekly_intro"]').value = result.data.weekly_intro || '';
                         document.querySelector('textarea[name="event_results"]').value = result.data.event_results || '';
+                        document.querySelector('textarea[name="elementary_report"]').value = result.data.elementary_report || '';
+                        document.querySelector('textarea[name="junior_report"]').value = result.data.junior_report || '';
                         document.querySelector('textarea[name="requests"]').value = result.data.requests || '';
                         document.querySelector('textarea[name="others"]').value = result.data.others || '';
 

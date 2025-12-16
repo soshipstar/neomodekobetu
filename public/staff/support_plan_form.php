@@ -48,10 +48,27 @@ $availableTags = [
     '自分取扱説明書', '心理', '言語', '教育', 'イベント', 'その他'
 ];
 
+// 種別の定義
+$planTypes = [
+    'normal' => '通常活動',
+    'event' => 'イベント',
+    'other' => 'その他'
+];
+
+// 対象年齢層の定義
+$targetGrades = [
+    'preschool' => '小学生未満',
+    'elementary' => '小学生',
+    'junior_high' => '中学生',
+    'high_school' => '高校生'
+];
+
 // フォーム送信処理
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $activityDate = $_POST['activity_date'] ?? '';
     $activityName = $_POST['activity_name'] ?? '';
+    $planType = $_POST['plan_type'] ?? 'normal';
+    $targetGrade = isset($_POST['target_grade']) ? implode(',', $_POST['target_grade']) : '';
     $activityPurpose = $_POST['activity_purpose'] ?? '';
     $activityContent = $_POST['activity_content'] ?? '';
     $fiveDomainsConsideration = $_POST['five_domains_consideration'] ?? '';
@@ -66,6 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 UPDATE support_plans
                 SET activity_date = ?,
                     activity_name = ?,
+                    plan_type = ?,
+                    target_grade = ?,
                     activity_purpose = ?,
                     activity_content = ?,
                     tags = ?,
@@ -77,6 +96,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([
                 $activityDate,
                 $activityName,
+                $planType,
+                $targetGrade ?: null,
                 $activityPurpose,
                 $activityContent,
                 $tags,
@@ -90,15 +111,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // 新規作成
             $stmt = $pdo->prepare("
                 INSERT INTO support_plans (
-                    activity_date, activity_name, activity_purpose, activity_content,
+                    activity_date, activity_name, plan_type, target_grade, activity_purpose, activity_content,
                     tags, day_of_week,
                     five_domains_consideration, other_notes,
                     staff_id, classroom_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             $stmt->execute([
                 $activityDate,
                 $activityName,
+                $planType,
+                $targetGrade ?: null,
                 $activityPurpose,
                 $activityContent,
                 $tags,
@@ -356,6 +379,53 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 </div>
 
                 <div class="form-group">
+                    <label>種別<span class="required">*</span></label>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <?php
+                        $selectedType = $plan['plan_type'] ?? 'normal';
+                        foreach ($planTypes as $value => $label):
+                            $checked = ($selectedType === $value) ? 'checked' : '';
+                            $typeColors = [
+                                'normal' => '#007aff',
+                                'event' => '#ff9500',
+                                'other' => '#8e8e93'
+                            ];
+                            $color = $typeColors[$value];
+                        ?>
+                            <label style="display: flex; align-items: center; cursor: pointer; padding: 10px 20px; border: 2px solid <?php echo $color; ?>; border-radius: 8px; background: <?php echo $checked ? $color : 'white'; ?>; color: <?php echo $checked ? 'white' : $color; ?>; font-weight: 600; transition: all 0.2s;">
+                                <input type="radio" name="plan_type" value="<?php echo $value; ?>" <?php echo $checked; ?> style="display: none;" onchange="updateTypeStyle(this)">
+                                <?php echo htmlspecialchars($label); ?>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                    <div class="help-text">通常活動: 日常の活動、イベント: 特別なイベント、その他: 上記以外</div>
+                </div>
+
+                <div class="form-group">
+                    <label>対象年齢層</label>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <?php
+                        $selectedGrades = isset($plan['target_grade']) ? explode(',', $plan['target_grade']) : [];
+                        $gradeColors = [
+                            'preschool' => '#ff69b4',
+                            'elementary' => '#34c759',
+                            'junior_high' => '#007aff',
+                            'high_school' => '#ff9500'
+                        ];
+                        foreach ($targetGrades as $value => $label):
+                            $checked = in_array($value, $selectedGrades);
+                            $color = $gradeColors[$value];
+                        ?>
+                            <label class="grade-checkbox" style="display: flex; align-items: center; cursor: pointer; padding: 10px 20px; border: 2px solid <?php echo $color; ?>; border-radius: 8px; background: <?php echo $checked ? $color : 'white'; ?>; color: <?php echo $checked ? 'white' : $color; ?>; font-weight: 600; transition: all 0.2s;">
+                                <input type="checkbox" name="target_grade[]" value="<?php echo $value; ?>" <?php echo $checked ? 'checked' : ''; ?> style="display: none;" onchange="updateGradeStyle(this, '<?php echo $color; ?>')">
+                                <?php echo htmlspecialchars($label); ?>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                    <div class="help-text">この活動の対象となる年齢層を選択してください（複数選択可、未選択の場合は全年齢対象）</div>
+                </div>
+
+                <div class="form-group">
                     <label>活動の目的</label>
                     <textarea name="activity_purpose" id="activityPurpose"><?php echo htmlspecialchars($plan['activity_purpose'] ?? ''); ?></textarea>
                     <div class="help-text">この活動を通して達成したい目標や狙いを記入してください</div>
@@ -433,6 +503,42 @@ renderPageStart('staff', $currentPage, $pageTitle);
             </form>
         </div>
     </div>
+
+    <script>
+    // 種別選択のスタイル更新
+    function updateTypeStyle(radio) {
+        const typeColors = {
+            'normal': '#007aff',
+            'event': '#ff9500',
+            'other': '#8e8e93'
+        };
+
+        // すべてのラベルをリセット
+        document.querySelectorAll('input[name="plan_type"]').forEach(input => {
+            const label = input.closest('label');
+            const color = typeColors[input.value];
+            if (input.checked) {
+                label.style.background = color;
+                label.style.color = 'white';
+            } else {
+                label.style.background = 'white';
+                label.style.color = color;
+            }
+        });
+    }
+
+    // 対象年齢層のスタイル更新
+    function updateGradeStyle(checkbox, color) {
+        const label = checkbox.closest('label');
+        if (checkbox.checked) {
+            label.style.background = color;
+            label.style.color = 'white';
+        } else {
+            label.style.background = 'white';
+            label.style.color = color;
+        }
+    }
+    </script>
 
     <?php if (!$isEdit): ?>
     <script>

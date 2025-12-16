@@ -50,10 +50,21 @@ $userName = $_SESSION['full_name'] ?? '';
             <div class="menu-content" id="menuDropdown">
                 <?php if (isset($menuItems) && is_array($menuItems)): ?>
                     <?php foreach ($menuItems as $item): ?>
-                        <?php if (!empty($item['master_only']) && !$isMaster) continue; ?>
-                        <a href="<?= htmlspecialchars($item['url']) ?>">
-                            <?= $item['icon'] ?> <?= htmlspecialchars($item['label']) ?>
-                        </a>
+                        <?php
+                        // 区切り線の場合
+                        if (isset($item['type']) && $item['type'] === 'divider'):
+                        ?>
+                            <div class="mobile-menu-divider">
+                                <span><?= htmlspecialchars($item['label']) ?></span>
+                            </div>
+                        <?php
+                        else:
+                            if (!empty($item['master_only']) && !$isMaster) continue;
+                        ?>
+                            <a href="<?= htmlspecialchars($item['url']) ?>">
+                                <?= $item['icon'] ?> <?= htmlspecialchars($item['label']) ?>
+                            </a>
+                        <?php endif; ?>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </div>

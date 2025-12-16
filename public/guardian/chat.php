@@ -125,7 +125,7 @@ if ($selectedStudentId) {
 // ページ開始
 $currentPage = 'chat';
 renderPageStart('guardian', $currentPage, 'チャット', [
-    'extraCss' => ['chat'],
+    'additionalCss' => ['/assets/css/chat.css'],
     'classroom' => $classroom
 ]);
 ?>
@@ -319,9 +319,13 @@ renderPageStart('guardian', $currentPage, 'チャット', [
 <?php endif; ?>
 
 <?php
+$roomIdJs = $roomId ? $roomId : 'null';
+$studentIdJs = $selectedStudentId ? $selectedStudentId : 'null';
+$studentNameJs = json_encode($selectedStudentName);
 $inlineJs = <<<JS
-const roomId = {$roomId};
-const studentName = {json_encode($selectedStudentName)};
+const roomId = {$roomIdJs};
+const studentId = {$studentIdJs};
+const studentName = {$studentNameJs};
 let isLoading = false;
 let lastMessageId = 0;
 let selectedFile = null;
@@ -363,13 +367,14 @@ function loadMessages() {
     fetch('chat_api.php?action=get_messages&room_id=' + roomId + '&last_id=' + lastMessageId)
         .then(response => response.json())
         .then(data => {
-            if (data.success && data.messages.length > 0) {
-                const messagesArea = document.getElementById('messagesArea');
-                const shouldScroll = messagesArea.scrollHeight - messagesArea.scrollTop <= messagesArea.clientHeight + 100;
+            const messagesArea = document.getElementById('messagesArea');
 
-                // 初回ロード時は空状態を削除
-                const emptyState = messagesArea.querySelector('.chat-empty-state');
-                if (emptyState) emptyState.remove();
+            // 初回ロード時は空状態を削除
+            const emptyState = messagesArea.querySelector('.chat-empty-state');
+            if (emptyState) emptyState.remove();
+
+            if (data.success && data.messages.length > 0) {
+                const shouldScroll = messagesArea.scrollHeight - messagesArea.scrollTop <= messagesArea.clientHeight + 100;
 
                 data.messages.forEach(msg => {
                     appendMessage(msg);
@@ -377,9 +382,19 @@ function loadMessages() {
                 });
 
                 if (shouldScroll) scrollToBottom();
+            } else if (data.success && data.messages.length === 0 && lastMessageId === 0) {
+                // メッセージが0件の場合
+                messagesArea.innerHTML = '<div class="chat-empty-state"><div class="chat-empty-state-icon">💬</div><h3>まだメッセージがありません</h3><p>下の入力欄からメッセージを送信してください</p></div>';
+            } else if (!data.success) {
+                console.error('API error:', data.message);
+                messagesArea.innerHTML = '<div class="chat-empty-state"><div class="chat-empty-state-icon">⚠️</div><h3>エラーが発生しました</h3><p>' + (data.message || '再読み込みしてください') + '</p></div>';
             }
         })
-        .catch(error => console.error('メッセージの読み込みエラー:', error));
+        .catch(error => {
+            console.error('メッセージの読み込みエラー:', error);
+            const messagesArea = document.getElementById('messagesArea');
+            messagesArea.innerHTML = '<div class="chat-empty-state"><div class="chat-empty-state-icon">⚠️</div><h3>接続エラー</h3><p>ページを再読み込みしてください</p></div>';
+        });
 }
 
 function appendMessage(msg) {
@@ -594,7 +609,7 @@ function sendAbsenceNotification() {
     const formData = new FormData();
     formData.append('action', 'send_absence_notification');
     formData.append('room_id', roomId);
-    formData.append('student_id', {$selectedStudentId});
+    formData.append('student_id', studentId);
     formData.append('absence_date', absenceDate);
     formData.append('reason', reason);
     formData.append('makeup_option', makeupOption);
@@ -655,7 +670,7 @@ function sendEventRegistration() {
     const formData = new FormData();
     formData.append('action', 'send_event_registration');
     formData.append('room_id', roomId);
-    formData.append('student_id', {$selectedStudentId});
+    formData.append('student_id', studentId);
     formData.append('event_id', eventId);
     formData.append('notes', notes);
 

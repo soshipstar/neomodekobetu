@@ -102,6 +102,24 @@ foreach ($events as $event) {
     ];
 }
 
+// この月の学校休業日活動を取得
+$schoolHolidayActivities = [];
+if ($classroomId) {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT activity_date
+            FROM school_holiday_activities
+            WHERE classroom_id = ? AND YEAR(activity_date) = ? AND MONTH(activity_date) = ?
+        ");
+        $stmt->execute([$classroomId, $year, $month]);
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $schoolHolidayActivities[$row['activity_date']] = true;
+        }
+    } catch (Exception $e) {
+        error_log("Error fetching school holiday activities: " . $e->getMessage());
+    }
+}
+
 // この保護者に紐づく生徒を取得（在籍中のみ）
 try {
     $stmt = $pdo->prepare("
@@ -676,6 +694,13 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
 
             if (isset($holidayDates[$currentDate])) {
                 echo "<div class='holiday-label'>" . htmlspecialchars($holidayDates[$currentDate]['name']) . "</div>";
+            } else {
+                // 休日でない場合、活動種別を表示
+                if (isset($schoolHolidayActivities[$currentDate])) {
+                    echo "<div class='activity-type-label school-holiday-activity'>🏫 学校休業日活動</div>";
+                } else {
+                    echo "<div class='activity-type-label weekday-activity'>📚 平日活動</div>";
+                }
             }
 
             if (isset($eventDates[$currentDate])) {
@@ -743,12 +768,20 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
             <span>今日</span>
         </div>
         <div class="legend-item">
+            <span style="font-size: 12px;">📚</span>
+            <span>平日活動</span>
+        </div>
+        <div class="legend-item">
+            <span style="font-size: 12px;">🏫</span>
+            <span>学校休業日活動</span>
+        </div>
+        <div class="legend-item">
             <span class="event-marker" style="background: var(--apple-green);"></span>
             <span>イベント</span>
         </div>
         <div class="legend-item">
             <span style="color: var(--apple-green); font-weight: 600;">👤</span>
-            <span>活動予定日（未来）</span>
+            <span>活動予定日</span>
         </div>
         <div class="legend-item">
             <span style="color: var(--apple-green); font-weight: 600;">📝</span>

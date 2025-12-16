@@ -11,12 +11,12 @@ define('OPENAI_API_KEY', getenv('OPENAI_API_KEY') ?: 'sk-proj-SRNHsp6fp9nyPDJi4P
  * OpenAI APIを呼び出してテキストを生成
  *
  * @param string $prompt プロンプトテキスト
- * @param string $model モデル名（デフォルト: gpt-4o-mini）
+ * @param string $model モデル名（デフォルト: gpt-5.2）
  * @param int $maxTokens 最大トークン数（デフォルト: 1000）
  * @return string 生成されたテキスト
  * @throws Exception APIエラーが発生した場合
  */
-function callOpenAI($prompt, $model = 'gpt-4o-mini', $maxTokens = 1000) {
+function callOpenAI($prompt, $model = 'gpt-5.2', $maxTokens = 1000) {
     $apiKey = OPENAI_API_KEY;
 
     if (!$apiKey || $apiKey === 'YOUR_OPENAI_API_KEY_HERE') {
@@ -33,7 +33,7 @@ function callOpenAI($prompt, $model = 'gpt-4o-mini', $maxTokens = 1000) {
                 'content' => $prompt
             ]
         ],
-        'max_tokens' => $maxTokens,
+        'max_completion_tokens' => $maxTokens,
         'temperature' => 0.7
     ];
 
@@ -83,7 +83,7 @@ function callOpenAI($prompt, $model = 'gpt-4o-mini', $maxTokens = 1000) {
  */
 function summarizeText($text, $maxLength = 200) {
     $prompt = "以下のテキストを{$maxLength}文字程度で要約してください：\n\n" . $text;
-    return callOpenAI($prompt, 'gpt-4o-mini', 500);
+    return callOpenAI($prompt, 'gpt-5.2', 500);
 }
 
 /**
@@ -96,5 +96,5 @@ function summarizeText($text, $maxLength = 200) {
 function classifyText($text, $categories) {
     $categoriesStr = implode('、', $categories);
     $prompt = "以下のテキストを次のカテゴリーのいずれかに分類してください：" . $categoriesStr . "\n\nテキスト：" . $text . "\n\nカテゴリー名のみを返してください。";
-    return trim(callOpenAI($prompt, 'gpt-4o-mini', 100));
+    return trim(callOpenAI($prompt, 'gpt-5.2', 100));
 }

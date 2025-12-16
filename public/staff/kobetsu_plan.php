@@ -300,7 +300,7 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
 }
 
 .support-table textarea {
-    min-height: 60px;
+    min-height: 150px;
     resize: vertical;
 }
 
@@ -327,6 +327,81 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
 
 .plans-list {
     margin-bottom: var(--spacing-lg);
+}
+
+.plans-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--apple-bg-primary);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom: var(--spacing-lg);
+}
+
+.plans-table th {
+    background: var(--apple-blue);
+    color: white;
+    padding: var(--spacing-md) var(--spacing-lg);
+    text-align: left;
+    font-weight: 600;
+    font-size: var(--text-subhead);
+}
+
+.plans-table td {
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--apple-gray-5);
+    vertical-align: middle;
+}
+
+.plans-table tr:hover {
+    background: var(--apple-gray-6);
+}
+
+.plans-table tr.active-row {
+    background: rgba(0, 122, 255, 0.1);
+}
+
+.plan-link {
+    color: var(--apple-blue);
+    text-decoration: none;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    transition: all var(--duration-fast);
+}
+
+.plan-link:hover {
+    background: var(--apple-blue);
+    color: white;
+}
+
+.basis-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: var(--text-footnote);
+    font-weight: 500;
+    transition: all var(--duration-fast);
+}
+
+.basis-link:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(240, 147, 251, 0.4);
+}
+
+.basis-link.disabled {
+    background: var(--apple-gray-4);
+    cursor: not-allowed;
+    opacity: 0.6;
 }
 
 .plan-item {
@@ -443,45 +518,104 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
         </div>
     <?php endif; ?>
 
-    <!-- かけはし分析（新規作成時のみ） -->
-    <?php if (!$selectedPlanId && !empty($studentPeriods)): ?>
-        <div class="analyze-section">
-            <h3 style="margin-bottom: 15px; color: var(--apple-purple);">📊 かけはしを分析</h3>
-            <p style="margin-bottom: 15px; color: var(--text-secondary);">かけはしデータとモニタリング情報を分析し、個別支援計画書案を生成します。</p>
-            <form method="POST" action="kobetsu_plan_generate.php" onsubmit="return confirmGenerate()" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
-                <input type="hidden" name="student_id" value="<?= $selectedStudentId ?>">
-                <div class="form-group" style="flex: 1; min-width: 200px;">
-                    <label class="form-label">かけはし期間を選択</label>
-                    <select name="period_id" required class="form-control">
-                        <option value="">-- かけはし期間を選択 --</option>
-                        <?php foreach ($studentPeriods as $period): ?>
-                            <option value="<?= $period['id'] ?>">
-                                <?= date('Y/m/d', strtotime($period['submission_deadline'])) ?> 期限
-                                <?php if ($period['guardian_submitted']): ?>(保護者提出済)<?php endif; ?>
-                                <?php if ($period['staff_submitted']): ?>(スタッフ提出済)<?php endif; ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                    📊 分析開始
-                </button>
-            </form>
-        </div>
-    <?php endif; ?>
+    <!-- 既存の計画一覧と新規作成ボタン -->
+    <div class="plans-list">
+        <h3 style="margin-bottom: 15px; color: var(--text-primary);">📋 個別支援計画書一覧</h3>
+        <?php if (!empty($studentPlans)): ?>
+            <table class="plans-table">
+                <thead>
+                    <tr>
+                        <th style="width: 150px;">作成日</th>
+                        <th style="width: 200px;">個別支援計画</th>
+                        <th style="width: 200px;">個別支援計画の根拠</th>
+                        <th style="width: 120px;">状態</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($studentPlans as $plan): ?>
+                        <tr class="<?= $plan['id'] == $selectedPlanId ? 'active-row' : '' ?>">
+                            <td><?= date('Y年m月d日', strtotime($plan['created_date'])) ?></td>
+                            <td>
+                                <a href="kobetsu_plan.php?student_id=<?= $selectedStudentId ?>&plan_id=<?= $plan['id'] ?>"
+                                   class="plan-link">
+                                    📄 計画書を見る
+                                </a>
+                            </td>
+                            <td>
+                                <a href="kobetsu_plan_basis.php?plan_id=<?= $plan['id'] ?>" class="basis-link">
+                                    📊 根拠を見る
+                                </a>
+                            </td>
+                            <td>
+                                <?php if ($plan['is_draft'] ?? true): ?>
+                                    <span style="color: var(--apple-orange); font-weight: 500;">📝 下書き</span>
+                                <?php elseif ($plan['guardian_confirmed'] ?? false): ?>
+                                    <span style="color: var(--apple-green); font-weight: 500;">✅ 確認済</span>
+                                <?php else: ?>
+                                    <span style="color: var(--apple-blue); font-weight: 500;">📤 提出済</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    <!-- 新規作成行 -->
+                    <tr class="<?= !$selectedPlanId ? 'active-row' : '' ?>">
+                        <td>-</td>
+                        <td>
+                            <?php if ($selectedPlanId): ?>
+                                <a href="kobetsu_plan.php?student_id=<?= $selectedStudentId ?>" class="plan-link">
+                                    ➕ 新規作成
+                                </a>
+                            <?php else: ?>
+                                <span class="plan-link" style="background: var(--apple-blue); color: white;">
+                                    ➕ 新規作成中
+                                </span>
+                            <?php endif; ?>
+                        </td>
+                        <td><span style="color: var(--text-secondary);">-</span></td>
+                        <td><span style="color: var(--text-secondary);">-</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        <?php else: ?>
+            <div style="background: var(--apple-bg-secondary); padding: var(--spacing-lg); border-radius: var(--radius-md); text-align: center;">
+                <span class="plan-item active" style="margin-bottom: 10px;">📝 新規作成</span>
+                <p style="color: var(--text-secondary); font-size: var(--text-subhead); margin-top: 10px;">この生徒の初めての個別支援計画書です</p>
+            </div>
+        <?php endif; ?>
+    </div>
 
-    <!-- 既存の計画一覧 -->
-    <?php if (!empty($studentPlans)): ?>
-        <div class="plans-list">
-            <strong>既存の計画:</strong>
-            <?php foreach ($studentPlans as $plan): ?>
-                <a href="kobetsu_plan.php?student_id=<?= $selectedStudentId ?>&plan_id=<?= $plan['id'] ?>"
-                   class="plan-item <?= $plan['id'] == $selectedPlanId ? 'active' : '' ?>">
-                    <?= date('Y/m/d', strtotime($plan['created_date'])) ?>
-                </a>
-            <?php endforeach; ?>
-            <a href="kobetsu_plan.php?student_id=<?= $selectedStudentId ?>" class="plan-item">+ 新規作成</a>
-        </div>
+    <!-- かけはし分析（新規作成時のみ） -->
+    <?php if (!$selectedPlanId): ?>
+        <?php if (!empty($studentPeriods)): ?>
+            <div class="analyze-section">
+                <h3 style="margin-bottom: 15px; color: var(--apple-purple);">📊 AIでかけはしを分析して計画書案を生成</h3>
+                <p style="margin-bottom: 15px; color: var(--text-secondary);">かけはしデータとモニタリング情報を分析し、個別支援計画書案を自動生成します。</p>
+                <form method="POST" action="kobetsu_plan_generate.php" onsubmit="return confirmGenerate()" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                    <input type="hidden" name="student_id" value="<?= $selectedStudentId ?>">
+                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                        <label class="form-label">かけはし期間を選択</label>
+                        <select name="period_id" required class="form-control">
+                            <option value="">-- かけはし期間を選択 --</option>
+                            <?php foreach ($studentPeriods as $period): ?>
+                                <option value="<?= $period['id'] ?>">
+                                    <?= date('Y/m/d', strtotime($period['submission_deadline'])) ?> 期限
+                                    <?php if ($period['guardian_submitted']): ?>(保護者提出済)<?php endif; ?>
+                                    <?php if ($period['staff_submitted']): ?>(スタッフ提出済)<?php endif; ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        📊 AI分析開始
+                    </button>
+                </form>
+            </div>
+        <?php else: ?>
+            <div class="alert alert-info" style="margin-bottom: var(--spacing-lg);">
+                <strong>💡 ヒント:</strong> かけはしデータがあれば、AIで計画書案を自動生成できます。
+                下のフォームに直接入力するか、先にかけはしを作成してください。
+            </div>
+        <?php endif; ?>
     <?php endif; ?>
 
     <!-- 計画書入力フォーム -->
@@ -542,13 +676,13 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
                     <table class="support-table">
                         <thead>
                             <tr>
-                                <th style="width: 100px;">項目</th>
-                                <th style="width: 200px;">支援目標<br>（具体的な到達目標）</th>
-                                <th style="width: 250px;">支援内容<br>（内容・支援の提供上のポイント・5領域（※）との関連性等）</th>
-                                <th style="width: 110px;">達成時期</th>
-                                <th style="width: 150px;">担当者／提供機関</th>
-                                <th style="width: 150px;">留意事項</th>
-                                <th style="width: 80px;">優先順位</th>
+                                <th style="width: 80px;">項目</th>
+                                <th style="width: 220px;">支援目標<br>（具体的な到達目標）</th>
+                                <th style="width: 300px;">支援内容<br>（内容・支援の提供上のポイント・5領域（※）との関連性等）</th>
+                                <th style="width: 90px;">達成時期</th>
+                                <th style="width: 130px;">担当者／提供機関</th>
+                                <th style="width: 140px;">留意事項</th>
+                                <th style="width: 60px;">優先順位</th>
                             </tr>
                         </thead>
                         <tbody id="detailsTable">
@@ -669,7 +803,7 @@ function addDetailRow() {
     const shortTermGoalDate = document.querySelector('input[name="short_term_goal_date"]');
     const achievementDate = shortTermGoalDate ? shortTermGoalDate.value : '';
 
-    row.innerHTML = \`
+    row.innerHTML = `
         <td>
             <input type="text" name="details[\${rowIndex}][category]" placeholder="項目">
             <textarea name="details[\${rowIndex}][sub_category]" rows="2" placeholder="サブカテゴリ"></textarea>
@@ -692,7 +826,7 @@ function addDetailRow() {
         <td>
             <input type="number" name="details[\${rowIndex}][priority]" min="1" max="10">
         </td>
-    \`;
+    `;
 
     rowIndex++;
 }

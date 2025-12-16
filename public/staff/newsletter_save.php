@@ -37,7 +37,10 @@ try {
     $eventCalendar = $_POST['event_calendar'] ?? '';
     $eventDetails = $_POST['event_details'] ?? '';
     $weeklyReports = $_POST['weekly_reports'] ?? '';
+    $weeklyIntro = $_POST['weekly_intro'] ?? '';
     $eventResults = $_POST['event_results'] ?? '';
+    $elementaryReport = $_POST['elementary_report'] ?? '';
+    $juniorReport = $_POST['junior_report'] ?? '';
     $requests = $_POST['requests'] ?? '';
     $others = $_POST['others'] ?? '';
 
@@ -50,7 +53,10 @@ try {
                 event_calendar = ?,
                 event_details = ?,
                 weekly_reports = ?,
+                weekly_intro = ?,
                 event_results = ?,
+                elementary_report = ?,
+                junior_report = ?,
                 requests = ?,
                 others = ?,
                 updated_at = NOW()
@@ -63,7 +69,10 @@ try {
             $eventCalendar,
             $eventDetails,
             $weeklyReports,
+            $weeklyIntro,
             $eventResults,
+            $elementaryReport,
+            $juniorReport,
             $requests,
             $others,
             $id
@@ -89,7 +98,10 @@ try {
                 event_calendar = ?,
                 event_details = ?,
                 weekly_reports = ?,
+                weekly_intro = ?,
                 event_results = ?,
+                elementary_report = ?,
+                junior_report = ?,
                 requests = ?,
                 others = ?,
                 status = 'published',
@@ -104,7 +116,10 @@ try {
             $eventCalendar,
             $eventDetails,
             $weeklyReports,
+            $weeklyIntro,
             $eventResults,
+            $elementaryReport,
+            $juniorReport,
             $requests,
             $others,
             $id

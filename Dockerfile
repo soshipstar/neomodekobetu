@@ -25,7 +25,10 @@ RUN a2enmod rewrite
 RUN echo "upload_max_filesize = 64M" >> /usr/local/etc/php/conf.d/custom.ini \
     && echo "post_max_size = 64M" >> /usr/local/etc/php/conf.d/custom.ini \
     && echo "memory_limit = 256M" >> /usr/local/etc/php/conf.d/custom.ini \
-    && echo "max_execution_time = 300" >> /usr/local/etc/php/conf.d/custom.ini
+    && echo "max_execution_time = 300" >> /usr/local/etc/php/conf.d/custom.ini \
+    && echo "session.save_path = /tmp" >> /usr/local/etc/php/conf.d/custom.ini \
+    && echo "session.gc_probability = 1" >> /usr/local/etc/php/conf.d/custom.ini \
+    && echo "session.gc_divisor = 100" >> /usr/local/etc/php/conf.d/custom.ini
 
 # Apache設定 - DocumentRootをpublicに設定（セキュリティ強化）
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public

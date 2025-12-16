@@ -111,6 +111,23 @@ try {
     $staffKakehashi = $stmt->fetch();
     error_log('スタッフかけはし: ' . ($staffKakehashi ? '取得成功' : '未提出'));
 
+
+    // 本人の願い、目標設定（短期目標、長期目標）の入力チェック
+    $guardianHasRequiredFields = $guardianKakehashi &&
+        !empty(trim($guardianKakehashi['student_wish'] ?? '')) &&
+        !empty(trim($guardianKakehashi['short_term_goal'] ?? '')) &&
+        !empty(trim($guardianKakehashi['long_term_goal'] ?? ''));
+
+    $staffHasRequiredFields = $staffKakehashi &&
+        !empty(trim($staffKakehashi['student_wish'] ?? '')) &&
+        !empty(trim($staffKakehashi['short_term_goal'] ?? '')) &&
+        !empty(trim($staffKakehashi['long_term_goal'] ?? ''));
+
+    if (!$guardianHasRequiredFields && !$staffHasRequiredFields) {
+        $_SESSION['error'] = '本人の願い、目標設定（短期目標、長期目標）が未入力だと個別支援計画書は作成できません。保護者かけはしまたはスタッフかけはしに必要項目を入力してください。';
+        header("Location: kobetsu_plan.php?student_id=$studentId");
+        exit;
+    }
     // 直近のモニタリング表を取得
     $stmt = $pdo->prepare("
         SELECT mr.*, GROUP_CONCAT(
@@ -276,7 +293,7 @@ try {
     $apiKey = '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';
 
     $data = [
-        'model' => 'gpt-4-turbo-preview',
+        'model' => 'gpt-5.2',
         'messages' => [
             [
                 'role' => 'system',
@@ -288,7 +305,7 @@ try {
             ]
         ],
         'temperature' => 0.8,
-        'max_tokens' => 4000
+        'max_completion_tokens' => 4000
     ];
 
     $ch = curl_init('https://api.openai.com/v1/chat/completions');

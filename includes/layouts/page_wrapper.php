@@ -164,22 +164,37 @@ function getMenuConfig(): array
             ['page' => 'staff_accounts', 'icon' => '👔', 'label' => 'スタッフアカウント', 'url' => '/admin/staff_accounts.php', 'master_only' => true],
         ],
         'staff' => [
+            // 日常業務
             ['page' => 'renrakucho_activities', 'icon' => '🏠', 'label' => '活動管理', 'url' => '/staff/renrakucho_activities.php'],
-            ['page' => 'students', 'icon' => '👥', 'label' => '生徒一覧', 'url' => '/staff/students.php'],
-            ['page' => 'chat', 'icon' => '💬', 'label' => 'チャット', 'url' => '/staff/chat.php'],
+            // チャット
+            ['type' => 'divider', 'label' => 'チャット'],
+            ['page' => 'chat', 'icon' => '👨‍👩‍👧', 'label' => '保護者チャット', 'url' => '/staff/chat.php'],
+            ['page' => 'student_chats', 'icon' => '🧒', 'label' => '生徒チャット', 'url' => '/staff/student_chats.php'],
+            // かけはし
+            ['type' => 'divider', 'label' => 'かけはし'],
             ['page' => 'kakehashi_staff', 'icon' => '🌉', 'label' => 'かけはし（職員）', 'url' => '/staff/kakehashi_staff.php'],
             ['page' => 'kakehashi_guardian_view', 'icon' => '📖', 'label' => 'かけはし（保護者）', 'url' => '/staff/kakehashi_guardian_view.php'],
-            ['page' => 'kakehashi_periods', 'icon' => '📆', 'label' => 'かけはし期間', 'url' => '/staff/kakehashi_periods.php'],
+            // 計画・支援
+            ['type' => 'divider', 'label' => '計画・支援'],
+            ['page' => 'support_plans', 'icon' => '📄', 'label' => '支援案', 'url' => '/staff/support_plans.php'],
             ['page' => 'student_weekly_plans', 'icon' => '📝', 'label' => '週間計画', 'url' => '/staff/student_weekly_plans.php'],
-            ['page' => 'support_plans', 'icon' => '📋', 'label' => '個別支援計画', 'url' => '/staff/support_plans.php'],
+            ['page' => 'kobetsu_plan', 'icon' => '📋', 'label' => '個別支援計画', 'url' => '/staff/kobetsu_plan.php'],
             ['page' => 'kobetsu_monitoring', 'icon' => '📊', 'label' => 'モニタリング', 'url' => '/staff/kobetsu_monitoring.php'],
-            ['page' => 'newsletter_create', 'icon' => '📰', 'label' => '施設通信', 'url' => '/staff/newsletter_create.php'],
-            ['page' => 'events', 'icon' => '📅', 'label' => 'イベント', 'url' => '/staff/events.php'],
-            ['page' => 'holidays', 'icon' => '🗓️', 'label' => '休日設定', 'url' => '/staff/holidays.php'],
-            ['page' => 'guardians', 'icon' => '👤', 'label' => '保護者管理', 'url' => '/staff/guardians.php'],
-            ['page' => 'student_chats', 'icon' => '💭', 'label' => '生徒チャット', 'url' => '/staff/student_chats.php'],
+            // 提出物
+            ['type' => 'divider', 'label' => '提出物'],
             ['page' => 'student_submissions', 'icon' => '📤', 'label' => '生徒提出物', 'url' => '/staff/student_submissions.php'],
             ['page' => 'submission_management', 'icon' => '📥', 'label' => '提出物管理', 'url' => '/staff/submission_management.php'],
+            // 情報発信
+            ['type' => 'divider', 'label' => '情報発信'],
+            ['page' => 'newsletter_create', 'icon' => '📰', 'label' => '施設通信', 'url' => '/staff/newsletter_create.php'],
+            ['page' => 'newsletter_settings', 'icon' => '🔧', 'label' => '施設通信設定', 'url' => '/staff/newsletter_settings.php'],
+            ['page' => 'events', 'icon' => '📅', 'label' => 'イベント', 'url' => '/staff/events.php'],
+            // 管理・設定
+            ['type' => 'divider', 'label' => '管理・設定'],
+            ['page' => 'students', 'icon' => '👥', 'label' => '生徒管理', 'url' => '/staff/students.php'],
+            ['page' => 'guardians', 'icon' => '👤', 'label' => '保護者管理', 'url' => '/staff/guardians.php'],
+            ['page' => 'holidays', 'icon' => '🗓️', 'label' => '休日設定', 'url' => '/staff/holidays.php'],
+            ['page' => 'school_holiday_activities', 'icon' => '🏫', 'label' => '学校休業日活動', 'url' => '/staff/school_holiday_activities.php'],
             ['page' => 'manual', 'icon' => '📖', 'label' => 'マニュアル', 'url' => '/staff/manual.php'],
             ['page' => 'profile', 'icon' => '⚙️', 'label' => 'プロフィール', 'url' => '/staff/profile.php'],
         ],

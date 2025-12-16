@@ -24,6 +24,11 @@ try {
     $address = trim($_POST['address'] ?? '');
     $phone = trim($_POST['phone'] ?? '');
 
+    // 対象学年を取得（チェックボックスから配列で受け取る）
+    $targetGrades = isset($_POST['target_grades']) && is_array($_POST['target_grades'])
+        ? implode(',', $_POST['target_grades'])
+        : '';
+
     if (empty($classroomId) || empty($classroomName)) {
         throw new Exception('教室名は必須です。');
     }
@@ -85,20 +90,22 @@ try {
                 address = ?,
                 phone = ?,
                 logo_path = ?,
+                target_grades = ?,
                 updated_at = NOW()
             WHERE id = ?
         ");
-        $stmt->execute([$classroomName, $address, $phone, $logoPath, $classroomId]);
+        $stmt->execute([$classroomName, $address, $phone, $logoPath, $targetGrades, $classroomId]);
     } else {
         $stmt = $pdo->prepare("
             UPDATE classrooms
             SET classroom_name = ?,
                 address = ?,
                 phone = ?,
+                target_grades = ?,
                 updated_at = NOW()
             WHERE id = ?
         ");
-        $stmt->execute([$classroomName, $address, $phone, $classroomId]);
+        $stmt->execute([$classroomName, $address, $phone, $targetGrades, $classroomId]);
     }
 
     header('Location: classroom_settings.php?success=1');

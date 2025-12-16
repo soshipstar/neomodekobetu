@@ -382,7 +382,7 @@ function callChatGPTAPI($prompt) {
     $url = 'https://api.openai.com/v1/chat/completions';
 
     $data = [
-        'model' => 'gpt-4o-mini',
+        'model' => 'gpt-5.2',
         'messages' => [
             [
                 'role' => 'system',
@@ -394,7 +394,7 @@ function callChatGPTAPI($prompt) {
             ]
         ],
         'temperature' => 0.5,
-        'max_tokens' => 800
+        'max_completion_tokens' => 800
     ];
 
     $ch = curl_init($url);

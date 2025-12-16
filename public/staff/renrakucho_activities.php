@@ -2823,34 +2823,7 @@ renderPageStart('staff', $currentPage, '活動管理');
                 </div>
             <?php endif; ?>
 
-            <!-- 未作成かけはし期間 -->
-            <?php if ($totalUncreatedKakehashi > 0): ?>
-                <div class="task-summary-item">
-                    <div class="task-summary-header">
-                        <span class="task-summary-title">🌉 かけはし期間（未作成）</span>
-                        <span class="task-summary-total"><?php echo $totalUncreatedKakehashi; ?>件</span>
-                    </div>
-                    <div class="task-summary-details">
-                        <?php
-                        $overdueUncreated = array_filter($uncreatedKakehashiPeriods, fn($p) => $p['days_left'] < 0);
-                        $urgentUncreated = array_filter($uncreatedKakehashiPeriods, fn($p) => $p['days_left'] >= 0 && $p['days_left'] <= 30);
-                        $pendingUncreated = array_filter($uncreatedKakehashiPeriods, fn($p) => $p['days_left'] > 30);
-                        ?>
-                        <?php if (count($overdueUncreated) > 0): ?>
-                            <span class="task-count overdue">期限切れ <?php echo count($overdueUncreated); ?>件</span>
-                        <?php endif; ?>
-                        <?php if (count($urgentUncreated) > 0): ?>
-                            <span class="task-count urgent">1か月以内 <?php echo count($urgentUncreated); ?>件</span>
-                        <?php endif; ?>
-                        <?php if (count($pendingUncreated) > 0): ?>
-                            <span class="task-count warning">1か月以上 <?php echo count($pendingUncreated); ?>件</span>
-                        <?php endif; ?>
-                        <a href="pending_tasks.php" class="task-summary-link">詳細を確認</a>
-                    </div>
-                </div>
-            <?php endif; ?>
-
-            <!-- 保護者かけはし -->
+<!-- 保護者かけはし -->
             <?php if ($totalGuardianKakehashi > 0): ?>
                 <div class="task-summary-item">
                     <div class="task-summary-header">

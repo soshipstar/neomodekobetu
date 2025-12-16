@@ -601,6 +601,12 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
         </div>
 
         <div class="form-group">
+            <label class="form-label">ファイル添付（任意）</label>
+            <input type="file" id="broadcastFile" class="form-control" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx">
+            <small style="color: var(--text-secondary);">※ 1つのファイルを全員に共有します（最大10MB）</small>
+        </div>
+
+        <div class="form-group">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-sm);">
                 <label class="form-label" style="margin-bottom: 0;">送信先を選択</label>
                 <div>
@@ -919,6 +925,7 @@ function openBroadcastModal() {
 function closeBroadcastModal() {
     document.getElementById('broadcastModal').classList.remove('active');
     document.getElementById('broadcastMessage').value = '';
+    document.getElementById('broadcastFile').value = '';
     document.querySelectorAll('.guardian-checkbox').forEach(cb => cb.checked = false);
 }
 
@@ -928,11 +935,13 @@ function selectAllGuardians(checked) {
 
 function sendBroadcast() {
     const message = document.getElementById('broadcastMessage').value.trim();
+    const fileInput = document.getElementById('broadcastFile');
+    const file = fileInput.files[0];
     const selectedGuardians = Array.from(document.querySelectorAll('.guardian-checkbox:checked'))
         .map(cb => cb.value);
 
-    if (!message) {
-        alert('メッセージを入力してください');
+    if (!message && !file) {
+        alert('メッセージまたはファイルを入力してください');
         return;
     }
 
@@ -941,12 +950,24 @@ function sendBroadcast() {
         return;
     }
 
+    // ファイルサイズチェック（10MB）
+    if (file && file.size > 10 * 1024 * 1024) {
+        alert('ファイルサイズは10MB以下にしてください');
+        return;
+    }
+
     if (!confirm(selectedGuardians.length + '名の保護者にメッセージを送信しますか？')) return;
+
+    const formData = new FormData();
+    formData.append('message', message);
+    formData.append('guardian_ids', JSON.stringify(selectedGuardians));
+    if (file) {
+        formData.append('attachment', file);
+    }
 
     fetch('broadcast_message.php', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: message, guardian_ids: selectedGuardians })
+        body: formData
     })
     .then(response => response.json())
     .then(data => {
@@ -1026,6 +1047,27 @@ document.querySelectorAll('.modal').forEach(modal => {
             this.classList.remove('active');
         }
     });
+});
+
+// サイドバーのスクロール位置を保存・復元
+const sidebar = document.querySelector('.student-sidebar');
+const SCROLL_KEY = 'guardian_chat_sidebar_scroll';
+
+// ページ遷移前にスクロール位置を保存
+document.querySelectorAll('.student-item').forEach(item => {
+    item.addEventListener('click', function(e) {
+        if (sidebar) {
+            sessionStorage.setItem(SCROLL_KEY, sidebar.scrollTop);
+        }
+    });
+});
+
+// ページ読み込み時にスクロール位置を復元
+document.addEventListener('DOMContentLoaded', function() {
+    const savedScroll = sessionStorage.getItem(SCROLL_KEY);
+    if (savedScroll && sidebar) {
+        sidebar.scrollTop = parseInt(savedScroll, 10);
+    }
 });
 
 // 初期化

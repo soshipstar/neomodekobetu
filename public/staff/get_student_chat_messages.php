@@ -62,7 +62,7 @@ $stmt = $pdo->prepare("
     FROM student_chat_messages scm
     LEFT JOIN students s ON scm.sender_type = 'student' AND scm.sender_id = s.id
     LEFT JOIN users u ON scm.sender_type = 'staff' AND scm.sender_id = u.id
-    WHERE scm.room_id = ? AND scm.id > ? AND (scm.is_deleted = 0 OR scm.is_deleted IS NULL)
+    WHERE scm.room_id = ? AND scm.id > ?
     ORDER BY scm.created_at ASC
 ");
 $stmt->execute([$roomId, $lastMessageId]);

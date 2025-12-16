@@ -1,6 +1,7 @@
 <?php
 /**
  * スタッフ用かけはし PDF出力
+ * staff_only=1 パラメータでスタッフのみ表示
  */
 session_start();
 require_once __DIR__ . '/../../config/database.php';
@@ -14,6 +15,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'staff') {
 
 $studentId = $_GET['student_id'] ?? null;
 $periodId = $_GET['period_id'] ?? null;
+$staffOnly = isset($_GET['staff_only']) && $_GET['staff_only'] == '1';
 
 if (!$studentId || !$periodId) {
     $_SESSION['error'] = '生徒IDまたは期間IDが指定されていません。';
@@ -50,29 +52,27 @@ $stmt = $pdo->prepare("SELECT * FROM kakehashi_staff WHERE student_id = ? AND pe
 $stmt->execute([$studentId, $periodId]);
 $kakehashiData = $stmt->fetch();
 
-// 保護者用かけはしデータも取得
-$stmt = $pdo->prepare("SELECT * FROM kakehashi_guardian WHERE student_id = ? AND period_id = ?");
-$stmt->execute([$studentId, $periodId]);
-$guardianData = $stmt->fetch();
+// 保護者用かけはしデータも取得（統合版の場合のみ使用）
+$guardianData = null;
+if (!$staffOnly) {
+    $stmt = $pdo->prepare("SELECT * FROM kakehashi_guardian WHERE student_id = ? AND period_id = ?");
+    $stmt->execute([$studentId, $periodId]);
+    $guardianData = $stmt->fetch();
+}
 
+$pageTitle = $staffOnly ? 'かけはし（スタッフ）' : 'かけはし（スタッフ・保護者 統合版）';
 ?>
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <link rel="stylesheet" href="/assets/css/apple-design.css">
     <meta charset="UTF-8">
-    <title>かけはし（スタッフ） - <?= htmlspecialchars($student['student_name']) ?></title>
+    <title><?= $pageTitle ?> - <?= htmlspecialchars($student['student_name']) ?></title>
     <style>
         @media print {
-            @page {
-                size: A4;
-                margin: 15mm;
-            }
-            .no-print {
-                display: none;
-            }
+            @page { size: A4; margin: 15mm; }
+            .no-print { display: none; }
         }
-
         body {
             font-family: 'MS Gothic', 'MS Mincho', monospace;
             font-size: 11pt;
@@ -81,41 +81,22 @@ $guardianData = $stmt->fetch();
             padding: var(--spacing-lg);
             background: white;
         }
-
         .header {
             text-align: center;
             margin-bottom: var(--spacing-lg);
             border-bottom: 2px solid #333;
             padding-bottom: 10px;
         }
-
-        .header h1 {
-            font-size: 18pt;
-            margin: 0 0 10px 0;
-            color: #333;
-        }
-
+        .header h1 { font-size: 18pt; margin: 0 0 10px 0; color: #333; }
         .meta-info {
             display: flex;
             justify-content: space-between;
             margin-bottom: 15px;
             font-size: 10pt;
         }
-
-        .meta-item {
-            margin-right: 15px;
-        }
-
-        .meta-label {
-            font-weight: bold;
-            display: inline;
-        }
-
-        .section {
-            margin-bottom: 20px;
-            page-break-inside: avoid;
-        }
-
+        .meta-item { margin-right: 15px; }
+        .meta-label { font-weight: bold; display: inline; }
+        .section { margin-bottom: 20px; page-break-inside: avoid; }
         .section-title {
             background: #4a5568;
             color: white;
@@ -125,7 +106,6 @@ $guardianData = $stmt->fetch();
             margin-bottom: 10px;
             border-radius: 4px;
         }
-
         .section-content {
             padding: var(--spacing-md);
             border: 1px solid #ccc;
@@ -134,18 +114,13 @@ $guardianData = $stmt->fetch();
             background: #f9f9f9;
             border-radius: 4px;
         }
-
         .combined-section {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
             margin-top: 10px;
         }
-
-        .sub-section {
-            page-break-inside: avoid;
-        }
-
+        .sub-section { page-break-inside: avoid; }
         .sub-section-label {
             font-weight: bold;
             background: #e2e8f0;
@@ -154,18 +129,7 @@ $guardianData = $stmt->fetch();
             border-radius: 4px;
             text-align: center;
         }
-
-        .domains-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 15px;
-            margin-top: 10px;
-        }
-
-        .domain-item {
-            page-break-inside: avoid;
-        }
-
+        .domain-item { page-break-inside: avoid; }
         .domain-label {
             font-weight: bold;
             background: #e2e8f0;
@@ -173,7 +137,6 @@ $guardianData = $stmt->fetch();
             margin-bottom: 5px;
             border-radius: 4px;
         }
-
         .print-button {
             position: fixed;
             top: 20px;
@@ -188,11 +151,7 @@ $guardianData = $stmt->fetch();
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
             z-index: 1000;
         }
-
-        .print-button:hover {
-            background: #2563eb;
-        }
-
+        .print-button:hover { background: #2563eb; }
         .status-badge {
             display: inline-block;
             padding: 4px 10px;
@@ -200,23 +159,15 @@ $guardianData = $stmt->fetch();
             font-size: 9pt;
             font-weight: 600;
         }
-
-        .status-submitted {
-            background: #10b981;
-            color: white;
-        }
-
-        .status-draft {
-            background: #f59e0b;
-            color: white;
-        }
+        .status-submitted { background: #10b981; color: white; }
+        .status-draft { background: #f59e0b; color: white; }
     </style>
 </head>
 <body>
     <button class="print-button no-print" onclick="window.print()">🖨️ PDF印刷</button>
 
     <div class="header">
-        <h1>🌉 かけはし（スタッフ・保護者 統合版）</h1>
+        <h1>🌉 <?= $pageTitle ?></h1>
     </div>
 
     <div class="meta-info">
@@ -250,6 +201,7 @@ $guardianData = $stmt->fetch();
                 <span class="status-badge status-draft">下書き</span>
             <?php endif; ?>
         </div>
+        <?php if (!$staffOnly): ?>
         <div class="meta-item">
             <span class="meta-label">保護者状態：</span>
             <?php if ($guardianData && $guardianData['is_submitted']): ?>
@@ -258,9 +210,57 @@ $guardianData = $stmt->fetch();
                 <span class="status-badge status-draft">未提出</span>
             <?php endif; ?>
         </div>
+        <?php endif; ?>
     </div>
 
-    <!-- 本人の願い -->
+<?php if ($staffOnly): ?>
+    <!-- スタッフのみ表示 -->
+    <div class="section">
+        <div class="section-title">💫 本人の願い</div>
+        <div class="section-content"><?= $kakehashiData ? htmlspecialchars($kakehashiData['student_wish']) : '（未入力）' ?></div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">🎯 短期目標（6か月）</div>
+        <div class="section-content"><?= $kakehashiData ? htmlspecialchars($kakehashiData['short_term_goal']) : '（未入力）' ?></div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">🎯 長期目標（1年以上）</div>
+        <div class="section-content"><?= $kakehashiData ? htmlspecialchars($kakehashiData['long_term_goal']) : '（未入力）' ?></div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">🌟 五領域の課題</div>
+        <div class="domain-item">
+            <div class="domain-label">❤️ 健康・生活</div>
+            <div class="section-content"><?= $kakehashiData ? htmlspecialchars($kakehashiData['domain_health_life']) : '（未入力）' ?></div>
+        </div>
+        <div class="domain-item" style="margin-top: 15px;">
+            <div class="domain-label">🏃 運動・感覚</div>
+            <div class="section-content"><?= $kakehashiData ? htmlspecialchars($kakehashiData['domain_motor_sensory']) : '（未入力）' ?></div>
+        </div>
+        <div class="domain-item" style="margin-top: 15px;">
+            <div class="domain-label">🧠 認知・行動</div>
+            <div class="section-content"><?= $kakehashiData ? htmlspecialchars($kakehashiData['domain_cognitive_behavior']) : '（未入力）' ?></div>
+        </div>
+        <div class="domain-item" style="margin-top: 15px;">
+            <div class="domain-label">💬 言語・コミュニケーション</div>
+            <div class="section-content"><?= $kakehashiData ? htmlspecialchars($kakehashiData['domain_language_communication']) : '（未入力）' ?></div>
+        </div>
+        <div class="domain-item" style="margin-top: 15px;">
+            <div class="domain-label">👥 人間関係・社会性</div>
+            <div class="section-content"><?= $kakehashiData ? htmlspecialchars($kakehashiData['domain_social_relations']) : '（未入力）' ?></div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">📌 その他の課題</div>
+        <div class="section-content"><?= $kakehashiData ? htmlspecialchars($kakehashiData['other_challenges']) : '（未入力）' ?></div>
+    </div>
+
+<?php else: ?>
+    <!-- スタッフ・保護者統合版 -->
     <div class="section">
         <div class="section-title">💫 本人の願い</div>
         <div class="combined-section">
@@ -275,7 +275,6 @@ $guardianData = $stmt->fetch();
         </div>
     </div>
 
-    <!-- 家庭での願い / 事業所での願い -->
     <div class="section">
         <div class="section-title">🏠 家庭での願い / 🏢 事業所での願い</div>
         <div class="combined-section">
@@ -290,7 +289,6 @@ $guardianData = $stmt->fetch();
         </div>
     </div>
 
-    <!-- 目標設定 -->
     <div class="section">
         <div class="section-title">🎯 短期目標（6か月）</div>
         <div class="combined-section">
@@ -319,11 +317,9 @@ $guardianData = $stmt->fetch();
         </div>
     </div>
 
-    <!-- 五領域の課題 -->
     <div class="section">
         <div class="section-title">🌟 五領域の課題</div>
 
-        <!-- 健康・生活 -->
         <div class="domain-item">
             <div class="domain-label">健康・生活</div>
             <div class="combined-section">
@@ -338,7 +334,6 @@ $guardianData = $stmt->fetch();
             </div>
         </div>
 
-        <!-- 運動・感覚 -->
         <div class="domain-item">
             <div class="domain-label">運動・感覚</div>
             <div class="combined-section">
@@ -353,7 +348,6 @@ $guardianData = $stmt->fetch();
             </div>
         </div>
 
-        <!-- 認知・行動 -->
         <div class="domain-item">
             <div class="domain-label">認知・行動</div>
             <div class="combined-section">
@@ -368,7 +362,6 @@ $guardianData = $stmt->fetch();
             </div>
         </div>
 
-        <!-- 言語・コミュニケーション -->
         <div class="domain-item">
             <div class="domain-label">言語・コミュニケーション</div>
             <div class="combined-section">
@@ -383,7 +376,6 @@ $guardianData = $stmt->fetch();
             </div>
         </div>
 
-        <!-- 人間関係・社会性 -->
         <div class="domain-item">
             <div class="domain-label">人間関係・社会性</div>
             <div class="combined-section">
@@ -399,7 +391,6 @@ $guardianData = $stmt->fetch();
         </div>
     </div>
 
-    <!-- その他の課題 -->
     <div class="section">
         <div class="section-title">📌 その他の課題</div>
         <div class="combined-section">
@@ -413,6 +404,7 @@ $guardianData = $stmt->fetch();
             </div>
         </div>
     </div>
+<?php endif; ?>
 
 </body>
 </html>

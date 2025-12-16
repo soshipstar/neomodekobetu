@@ -132,24 +132,24 @@ try {
         throw new Exception('五領域の記録データが見つかりません。');
     }
 
-    // 前回のスタッフかけはしの長期目標を取得
+    // 前回のスタッフかけはしの目標を取得
     $stmt = $pdo->prepare("
-        SELECT ks.long_term_goal
+        SELECT ks.short_term_goal, ks.long_term_goal, ks.student_wish
         FROM kakehashi_staff ks
         INNER JOIN kakehashi_periods kp ON ks.period_id = kp.id
         WHERE ks.student_id = ?
-        AND kp.period_number < ?
-        AND ks.long_term_goal IS NOT NULL
-        AND ks.long_term_goal != ''
-        ORDER BY kp.period_number DESC
+        AND kp.submission_deadline < ?
+        AND ks.is_submitted = 1
+        ORDER BY kp.submission_deadline DESC
         LIMIT 1
     ");
-    $stmt->execute([$studentId, $currentPeriod['period_number']]);
+    $stmt->execute([$studentId, $currentPeriod['submission_deadline']]);
     $previousKakehashi = $stmt->fetch();
+    $previousShortTermGoal = $previousKakehashi['short_term_goal'] ?? null;
     $previousLongTermGoal = $previousKakehashi['long_term_goal'] ?? null;
 
     // OpenAI APIで五領域の課題を生成
-    $domainsPrompt = "あなたは発達支援・特別支援教育の専門スタッフです。以下の生徒の直近5か月の連絡帳記録を詳細に分析し、今後6か月間の具体的な支援課題を各領域ごとに250文字程度でまとめてください。
+    $domainsPrompt = "あなたは発達支援・特別支援教育の専門スタッフです。以下の生徒の直近5か月の連絡帳記録を詳細に分析し、今後6か月間の具体的な支援課題を各領域ごとに300文字程度でまとめてください。
 
 【生徒情報】
 名前: " . $student['student_name'] . "
@@ -158,7 +158,7 @@ try {
 " . $recordsSummary . "
 
 【分析と課題作成の指針】
-以下の5つの領域について、記録から読み取れる具体的な事実を基に、今後6か月間で取り組むべき課題を250文字程度で詳細に記述してください。
+以下の5つの領域について、記録から読み取れる具体的な事実を基に、今後6か月間で取り組むべき課題を300文字程度で詳細に記述してください。
 
 ■ 健康・生活
 - 食事、排泄、睡眠、衛生管理、身だしなみ、安全意識などの実態
@@ -185,16 +185,16 @@ try {
 - 感情表現、感情調整、共感性の発達
 - 友達関係、協調性、ルール理解の状況
 
-**重要**: 以下のJSON形式のみを出力してください。各領域250文字程度で、観察事実に基づく具体的な内容を記述してください。
+**重要**: 以下のJSON形式のみを出力してください。各領域300文字程度で、観察事実に基づく具体的な内容を記述してください。
 {
-  \"domain_health_life\": \"健康・生活の課題（250文字程度、具体的な観察事実と支援方針）\",
-  \"domain_motor_sensory\": \"運動・感覚の課題（250文字程度、具体的な観察事実と支援方針）\",
-  \"domain_cognitive_behavior\": \"認知・行動の課題（250文字程度、具体的な観察事実と支援方針）\",
-  \"domain_language_communication\": \"言語・コミュニケーションの課題（250文字程度、具体的な観察事実と支援方針）\",
-  \"domain_social_relations\": \"人間関係・社会性の課題（250文字程度、具体的な観察事実と支援方針）\"
+  \"domain_health_life\": \"健康・生活の課題（300文字程度、具体的な観察事実と支援方針）\",
+  \"domain_motor_sensory\": \"運動・感覚の課題（300文字程度、具体的な観察事実と支援方針）\",
+  \"domain_cognitive_behavior\": \"認知・行動の課題（300文字程度、具体的な観察事実と支援方針）\",
+  \"domain_language_communication\": \"言語・コミュニケーションの課題（300文字程度、具体的な観察事実と支援方針）\",
+  \"domain_social_relations\": \"人間関係・社会性の課題（300文字程度、具体的な観察事実と支援方針）\"
 }";
 
-    $domainsResponse = callOpenAI($domainsPrompt, 'gpt-4.0', 2500);
+    $domainsResponse = callOpenAI($domainsPrompt, 'gpt-5.2', 2500);
 
     // レスポンスからJSONを抽出（```json ``` で囲まれている場合があるため）
     $jsonText = $domainsResponse;
@@ -239,7 +239,7 @@ try {
 
 短期目標（6か月）を300文字程度の文章で記述してください（JSON不要、テキストのみ）：";
 
-    $shortTermGoal = callOpenAI($shortTermPrompt, 'gpt-4.0', 800);
+    $shortTermGoal = callOpenAI($shortTermPrompt, 'gpt-5.2', 800);
 
     // 長期目標を生成
     $longTermPrompt = "以下の情報から、今後1年以上を見据えた長期目標を350文字程度で作成してください。
@@ -247,7 +247,7 @@ try {
 【短期目標（今後6か月）】
 " . $shortTermGoal;
 
-    if ($previousLongTermGoal) {
+    if ($previousLongTermGoal || $previousShortTermGoal) {
         $longTermPrompt .= "
 
 【前回の長期目標】
@@ -278,7 +278,7 @@ try {
 
 長期目標（1年以上）を文章で記述してください（JSON不要、テキストのみ）：";
 
-    $longTermGoal = callOpenAI($longTermPrompt, 'gpt-4.0', 900);
+    $longTermGoal = callOpenAI($longTermPrompt, 'gpt-5.2', 900);
 
     // 生成されたデータをセッションに保存
     $_SESSION['generated_kakehashi'] = [

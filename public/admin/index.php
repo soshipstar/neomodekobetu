@@ -150,6 +150,12 @@ renderPageStart('admin', $currentPage, '管理者ダッシュボード', [
         <p>休日・祝日の設定を管理します。</p>
     </a>
 
+    <a href="classroom_settings.php" class="menu-card">
+        <div class="menu-card-icon">⚙️</div>
+        <h3>教室基本設定</h3>
+        <p>教室の基本情報や対象学年の設定を行います。</p>
+    </a>
+
     <?php if ($isMaster): ?>
     <a href="classrooms.php" class="menu-card master-only">
         <div class="menu-card-icon">🏢</div>

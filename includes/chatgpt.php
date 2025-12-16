@@ -80,7 +80,7 @@ function generateIntegratedNote($activityName, $commonActivity, $dailyNote, $dom
     $prompt .= "・保護者が読んで嬉しくなるような、温かく励みになる文章にしてください。";
 
     $data = [
-        'model' => 'gpt-4o-mini',
+        'model' => 'gpt-5.2',
         'messages' => [
             [
                 'role' => 'system',
@@ -92,7 +92,7 @@ function generateIntegratedNote($activityName, $commonActivity, $dailyNote, $dom
             ]
         ],
         'temperature' => 0.7,
-        'max_tokens' => 1000
+        'max_completion_tokens' => 1000
     ];
 
     $ch = curl_init(CHATGPT_API_URL);

@@ -237,61 +237,221 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
             <div class="section">
                 <h2>🏠 システム概要</h2>
                 <p>
-                    個別支援連絡帳システムは、特別支援教育における日々の活動記録と保護者とのコミュニケーションを効率化するためのシステムです。
+                    個別支援連絡帳システムは、放課後等デイサービスにおける日々の活動記録、保護者・生徒とのコミュニケーション、
+                    個別支援計画の作成を効率化するためのシステムです。
                 </p>
-                <p style="margin-top: 15px;">
-                    システムは以下の4つの主要機能で構成されています：
-                </p>
-                <ul>
-                    <li><strong>👨‍👩‍👧 保護者</strong> - 保護者チャット、提出期限管理</li>
-                    <li><strong>🎓 生徒</strong> - 生徒チャット、週間計画表</li>
-                    <li><strong>🌉 かけはし管理</strong> - スタッフかけはし入力、保護者かけはし確認、個別支援計画書作成、モニタリング表作成、施設通信を作成</li>
-                    <li><strong>⚙️ マスタ管理</strong> - 生徒管理、保護者管理、休日管理、イベント管理</li>
-                </ul>
+
+                <div class="feature-box">
+                    <div class="feature-title">システムでできること</div>
+                    <ul>
+                        <li><strong>活動管理</strong> - 支援案の作成、日々の活動記録、保護者への連絡帳送信</li>
+                        <li><strong>チャット</strong> - 保護者・生徒との個別連絡、欠席連絡の受付</li>
+                        <li><strong>かけはし</strong> - 施設・家庭での様子の記録と共有</li>
+                        <li><strong>計画・支援</strong> - 個別支援計画書、モニタリング表の作成（AI支援機能付き）</li>
+                        <li><strong>情報発信</strong> - 施設通信の作成、イベント管理</li>
+                        <li><strong>管理</strong> - 生徒・保護者情報、休日・活動日の管理</li>
+                    </ul>
+                </div>
             </div>
 
-            <!-- メニュー構造 -->
+            <!-- メニュー構成 -->
             <div class="section">
                 <h2>📋 メニュー構成</h2>
                 <p>
-                    各ページの上部にドロップダウンメニューがあり、すべての機能に素早くアクセスできます。
+                    左側のサイドバー（PCの場合）または上部のメニュー（スマホの場合）から各機能にアクセスできます。
                 </p>
 
                 <div class="feature-box">
-                    <div class="feature-title">👨‍👩‍👧 保護者メニュー</div>
+                    <div class="feature-title">🏠 活動管理</div>
+                    <p>日々の活動記録と連絡帳管理のメイン画面です。ここから支援案の作成、活動記録、保護者への送信を行います。</p>
+                </div>
+
+                <div class="feature-box">
+                    <div class="feature-title">💬 チャット</div>
                     <ul>
-                        <li><strong>💬 保護者チャット</strong> - 保護者と1対1のチャット、ファイル添付、欠席・イベント登録の受付</li>
-                        <li><strong>📮 提出期限管理</strong> - 保護者への提出依頼の管理、完了/未完了の確認</li>
+                        <li><strong>👨‍👩‍👧 保護者チャット</strong> - 保護者との1対1チャット。欠席連絡・イベント申込の受付も可能</li>
+                        <li><strong>🧒 生徒チャット</strong> - 生徒との個別チャット。複数生徒への一斉送信も可能</li>
                     </ul>
                 </div>
 
                 <div class="feature-box">
-                    <div class="feature-title">🎓 生徒メニュー</div>
+                    <div class="feature-title">🌉 かけはし</div>
                     <ul>
-                        <li><strong>💬 生徒チャット</strong> - 生徒との個別チャット、一斉送信機能</li>
-                        <li><strong>📝 週間計画表</strong> - 生徒の週間計画の確認と達成度評価</li>
+                        <li><strong>かけはし（職員）</strong> - 施設での様子を記録し保護者と共有</li>
+                        <li><strong>かけはし（保護者）</strong> - 保護者が入力した家庭での様子を確認</li>
                     </ul>
                 </div>
 
                 <div class="feature-box">
-                    <div class="feature-title">🌉 かけはし管理メニュー</div>
+                    <div class="feature-title">📋 計画・支援</div>
                     <ul>
-                        <li><strong>✏️ スタッフかけはし入力</strong> - 施設での様子を記録</li>
-                        <li><strong>📋 保護者かけはし確認</strong> - 家庭での様子を確認</li>
-                        <li><strong>📄 個別支援計画書作成</strong> - AIサポート付き支援計画書の作成</li>
-                        <li><strong>📊 モニタリング表作成</strong> - 支援計画の実施状況評価</li>
-                        <li><strong>📰 施設通信を作成</strong> - 保護者向け通信の作成</li>
+                        <li><strong>支援案</strong> - 活動前の計画を作成。五領域への配慮を記載</li>
+                        <li><strong>週間計画</strong> - 生徒の週間目標と達成度を管理</li>
+                        <li><strong>個別支援計画</strong> - 6ヶ月ごとの支援計画書を作成（AI支援機能付き）</li>
+                        <li><strong>モニタリング</strong> - 支援計画の達成度評価を記録</li>
                     </ul>
                 </div>
 
                 <div class="feature-box">
-                    <div class="feature-title">⚙️ マスタ管理メニュー</div>
+                    <div class="feature-title">📤 提出物</div>
                     <ul>
-                        <li><strong>👥 生徒管理</strong> - 生徒情報の登録・編集</li>
-                        <li><strong>👨‍👩‍👧 保護者管理</strong> - 保護者アカウントの管理</li>
-                        <li><strong>🗓️ 休日管理</strong> - 施設休日の登録</li>
-                        <li><strong>🎉 イベント管理</strong> - イベント情報の登録</li>
+                        <li><strong>生徒提出物</strong> - 生徒への提出依頼と進捗管理</li>
+                        <li><strong>提出物管理</strong> - 保護者への提出依頼と進捗管理</li>
                     </ul>
+                </div>
+
+                <div class="feature-box">
+                    <div class="feature-title">📰 情報発信</div>
+                    <ul>
+                        <li><strong>施設通信</strong> - 月間の施設通信を作成（AI支援機能付き）</li>
+                        <li><strong>施設通信設定</strong> - 施設通信のテンプレート設定</li>
+                        <li><strong>イベント</strong> - イベントの登録と参加者管理</li>
+                    </ul>
+                </div>
+
+                <div class="feature-box">
+                    <div class="feature-title">⚙️ 管理・設定</div>
+                    <ul>
+                        <li><strong>生徒管理</strong> - 生徒情報の登録・編集</li>
+                        <li><strong>保護者管理</strong> - 保護者アカウントの管理</li>
+                        <li><strong>休日設定</strong> - 施設の休日を登録</li>
+                        <li><strong>学校休業日活動</strong> - 夏休み等の活動日を設定</li>
+                        <li><strong>マニュアル</strong> - このページ</li>
+                        <li><strong>プロフィール</strong> - 自分のアカウント設定</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 毎日行うこと -->
+            <div class="section">
+                <h2>📅 毎日行うこと</h2>
+                <p>
+                    以下は活動日に毎日行う業務の流れです。
+                </p>
+
+                <h3>1. 活動前（朝）</h3>
+                <div class="step-box">
+                    <span class="step-number">1</span>
+                    <strong>支援案を確認</strong><br>
+                    活動管理画面で本日の支援案を確認します。未作成の場合は「📝 支援案を管理」から作成してください。
+                </div>
+                <div class="step-box">
+                    <span class="step-number">2</span>
+                    <strong>出席予定者を確認</strong><br>
+                    活動管理画面に表示される出席予定者リストを確認します。欠席連絡がある場合はリストから除外されます。
+                </div>
+                <div class="step-box">
+                    <span class="step-number">3</span>
+                    <strong>チャットを確認</strong><br>
+                    保護者チャットで欠席連絡や問い合わせがないか確認します。未読メッセージがある場合はバッジが表示されます。
+                </div>
+
+                <h3>2. 活動中</h3>
+                <div class="step-box">
+                    <span class="step-number">4</span>
+                    <strong>活動記録を作成</strong><br>
+                    活動管理画面で「新しい活動を追加」→支援案を選択→参加者ごとに「本日の様子」「気になったこと」を入力します。
+                </div>
+
+                <h3>3. 活動後（夕方）</h3>
+                <div class="step-box">
+                    <span class="step-number">5</span>
+                    <strong>記録を統合</strong><br>
+                    「🔄 統合する」ボタンでAIが保護者向けメッセージを生成します。内容を確認・編集してください。
+                </div>
+                <div class="step-box">
+                    <span class="step-number">6</span>
+                    <strong>保護者に送信</strong><br>
+                    統合画面で「📤 保護者に送信」ボタンを押すと、各保護者のダッシュボードに連絡帳が表示されます。
+                </div>
+
+                <div class="note-box">
+                    <strong>⚠️ 送信前の確認ポイント:</strong>
+                    <ul style="margin-top: 8px;">
+                        <li>生徒の名前が正しいか</li>
+                        <li>誤字脱字がないか</li>
+                        <li>個人情報が含まれていないか（他の生徒の名前など）</li>
+                        <li>保護者に適切な表現になっているか</li>
+                    </ul>
+                </div>
+
+                <div class="tip-box">
+                    <strong>💡 効率化のヒント:</strong>
+                    <p style="margin-top: 8px;">
+                        活動中にこまめに記録を入力しておくと、夕方の作業がスムーズになります。
+                        複数スタッフで記録する場合も、それぞれが入力した内容が統合時に自動でまとめられます。
+                    </p>
+                </div>
+            </div>
+
+            <!-- 一定期間ごとにやるべきこと -->
+            <div class="section">
+                <h2>🗓️ 一定期間ごとに行うこと</h2>
+
+                <h3>週次（毎週）</h3>
+                <div class="feature-box">
+                    <div class="feature-title">📝 週間計画の確認</div>
+                    <ul>
+                        <li>生徒の週間計画を確認し、達成度を評価</li>
+                        <li>必要に応じてコメントを追加</li>
+                    </ul>
+                </div>
+
+                <h3>月次（毎月）</h3>
+                <div class="feature-box">
+                    <div class="feature-title">📰 施設通信の作成</div>
+                    <ul>
+                        <li>月末までに翌月の施設通信を作成</li>
+                        <li>イベント予定、お知らせ、前月の活動報告を含める</li>
+                        <li>AI生成機能で効率的に作成可能</li>
+                    </ul>
+                </div>
+
+                <div class="feature-box">
+                    <div class="feature-title">🗓️ 休日・イベントの登録</div>
+                    <ul>
+                        <li>翌月の休日を「休日設定」に登録</li>
+                        <li>イベントがあれば「イベント」に登録</li>
+                        <li>長期休暇期間は「学校休業日活動」で活動日を設定</li>
+                    </ul>
+                </div>
+
+                <h3>6ヶ月ごと（生徒の初回利用日基準）</h3>
+                <div class="color-box orange">
+                    <p><strong>⚠️ 重要:</strong> 以下の書類は生徒ごとに期限が異なります。「活動管理」画面の未作成タスクを定期的に確認してください。</p>
+                </div>
+
+                <div class="feature-box">
+                    <div class="feature-title">🌉 かけはし作成（期限の1ヶ月前から）</div>
+                    <ul>
+                        <li><strong>保護者かけはし:</strong> 保護者に入力を依頼</li>
+                        <li><strong>スタッフかけはし:</strong> 施設での様子・評価を記録</li>
+                    </ul>
+                </div>
+
+                <div class="feature-box">
+                    <div class="feature-title">📊 モニタリング表作成（期限の1ヶ月前から）</div>
+                    <ul>
+                        <li>前回の個別支援計画の達成度を評価</li>
+                        <li>AI支援機能で評価文を生成可能</li>
+                    </ul>
+                </div>
+
+                <div class="feature-box">
+                    <div class="feature-title">📄 個別支援計画書作成（期限当月）</div>
+                    <ul>
+                        <li>かけはし・モニタリングを参考に作成</li>
+                        <li>AI支援機能で素案を生成可能</li>
+                        <li>保護者に確認依頼を送信</li>
+                    </ul>
+                </div>
+
+                <div class="tip-box">
+                    <strong>💡 計画的な作業のコツ:</strong>
+                    <p style="margin-top: 8px;">
+                        期限の1ヶ月前になったら、まず保護者にかけはし入力を依頼しましょう。
+                        保護者の入力を待つ間に、スタッフかけはしとモニタリングを作成しておくと効率的です。
+                    </p>
                 </div>
             </div>
 

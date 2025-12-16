@@ -341,6 +341,26 @@
     font-size: 9px;
 }
 
+/* 活動種別ラベル */
+.activity-type-label {
+    font-size: 8px;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-weight: 600;
+    margin-bottom: 2px;
+    display: inline-block;
+}
+
+.activity-type-label.weekday-activity {
+    background: rgba(52, 199, 89, 0.15);
+    color: var(--apple-green);
+}
+
+.activity-type-label.school-holiday-activity {
+    background: rgba(0, 122, 255, 0.15);
+    color: var(--apple-blue);
+}
+
 .event-label {
     color: var(--text-primary);
     font-size: 9px;
@@ -807,10 +827,15 @@
     .event-label,
     .schedule-label,
     .note-label,
-    .holiday-label {
+    .holiday-label,
+    .activity-type-label {
         font-size: 7px;
         line-height: 1.2;
         word-break: break-all;
+    }
+
+    .activity-type-label {
+        padding: 1px 2px;
     }
 
     .event-marker {

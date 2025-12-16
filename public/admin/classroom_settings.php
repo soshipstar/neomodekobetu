@@ -18,6 +18,16 @@ $stmt->execute([$userId]);
 $user = $stmt->fetch();
 $classroomId = $user['classroom_id'];
 
+// target_gradesカラムが存在するかチェックして追加
+try {
+    $stmt = $pdo->query("SHOW COLUMNS FROM classrooms LIKE 'target_grades'");
+    if ($stmt->rowCount() == 0) {
+        $pdo->exec("ALTER TABLE classrooms ADD COLUMN target_grades VARCHAR(255) DEFAULT 'preschool,elementary,junior_high,high_school'");
+    }
+} catch (Exception $e) {
+    // カラム追加失敗時は継続
+}
+
 // 教室情報を取得
 $classroomData = null;
 if ($classroomId) {
@@ -96,6 +106,45 @@ renderPageStart('admin', $currentPage, '教室情報設定');
     margin-bottom: var(--spacing-lg);
 }
 .quick-link:hover { background: var(--apple-gray-5); }
+
+.checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-sm);
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--apple-bg-secondary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--duration-fast);
+}
+
+.checkbox-item:hover {
+    background: var(--apple-gray-5);
+}
+
+.checkbox-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--apple-purple);
+}
+
+.checkbox-item label {
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.section-divider {
+    margin: var(--spacing-2xl) 0;
+    border-top: 1px solid var(--apple-gray-5);
+    padding-top: var(--spacing-2xl);
+}
 </style>
 
 <!-- ページヘッダー -->
@@ -154,6 +203,36 @@ renderPageStart('admin', $currentPage, '教室情報設定');
                             <img src="../<?= htmlspecialchars($classroomData['logo_path']) ?>" alt="教室ロゴ">
                         </div>
                     <?php endif; ?>
+                </div>
+
+                <div class="section-divider">
+                    <h3 style="margin-bottom: var(--spacing-md); color: var(--text-primary);">対象学年設定</h3>
+                    <div class="form-help" style="margin-bottom: var(--spacing-md);">この教室で対象とする学年を選択してください。スタッフ画面の生徒一覧に反映されます。</div>
+                    <?php
+                    $targetGrades = explode(',', $classroomData['target_grades'] ?? 'preschool,elementary,junior_high,high_school');
+                    ?>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" name="target_grades[]" value="preschool" id="grade_preschool"
+                                <?= in_array('preschool', $targetGrades) ? 'checked' : '' ?>>
+                            <label for="grade_preschool">未就学児</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" name="target_grades[]" value="elementary" id="grade_elementary"
+                                <?= in_array('elementary', $targetGrades) ? 'checked' : '' ?>>
+                            <label for="grade_elementary">小学生</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" name="target_grades[]" value="junior_high" id="grade_junior_high"
+                                <?= in_array('junior_high', $targetGrades) ? 'checked' : '' ?>>
+                            <label for="grade_junior_high">中学生</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" name="target_grades[]" value="high_school" id="grade_high_school"
+                                <?= in_array('high_school', $targetGrades) ? 'checked' : '' ?>>
+                            <label for="grade_high_school">高校生</label>
+                        </div>
+                    </div>
                 </div>
 
                 <div style="text-align: right; margin-top: var(--spacing-2xl);">

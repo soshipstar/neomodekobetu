@@ -48,13 +48,19 @@ $planDetails = $stmt->fetchAll();
     <meta charset="UTF-8">
     <title>個別支援計画書 - <?= htmlspecialchars($planData['student_name']) ?></title>
     <style>
+        :root {
+            --table-font-size: 9pt;
+            --cell-padding: 6px 8px;
+            --cell-min-height: 60px;
+        }
+
         @media print {
             @page {
                 size: A4;
-                margin: 15mm;
+                margin: 8mm;
             }
             .no-print {
-                display: none;
+                display: none !important;
             }
         }
 
@@ -63,7 +69,81 @@ $planDetails = $stmt->fetchAll();
             font-size: 11pt;
             line-height: 1.4;
             margin: 0;
-            padding: var(--spacing-lg);
+            padding: 8px;
+            padding-top: 70px;
+        }
+
+        @media print {
+            body {
+                padding-top: 8px;
+            }
+        }
+
+        .control-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+        }
+
+        .control-group label {
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .control-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .control-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .size-display {
+            background: rgba(255,255,255,0.9);
+            color: #333;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .print-btn {
+            background: #10b981;
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            margin-left: auto;
+        }
+
+        .print-btn:hover {
+            background: #059669;
         }
 
         .header {
@@ -134,13 +214,13 @@ $planDetails = $stmt->fetchAll();
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 15px;
-            font-size: 9pt;
+            font-size: var(--table-font-size);
         }
 
         .details-table th,
         .details-table td {
             border: 1px solid var(--text-primary);
-            padding: 5px;
+            padding: var(--cell-padding);
             text-align: left;
             vertical-align: top;
         }
@@ -149,10 +229,13 @@ $planDetails = $stmt->fetchAll();
             background: #e2e8f0;
             font-weight: bold;
             text-align: center;
+            font-size: var(--table-font-size);
         }
 
         .details-table td {
             white-space: pre-wrap;
+            min-height: var(--cell-min-height);
+            line-height: 1.5;
         }
 
         .category-本人支援 {
@@ -185,28 +268,55 @@ $planDetails = $stmt->fetchAll();
             margin: var(--spacing-md) auto;
             height: 30px;
         }
-
-        .print-button {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 30px;
-            background: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: var(--radius-sm);
-            font-size: 14pt;
-            cursor: pointer;
-            box-shadow: var(--shadow-md);
-        }
-
-        .print-button:hover {
-            background: #2563eb;
-        }
     </style>
 </head>
 <body>
-    <button class="print-button no-print" onclick="window.print()">🖨️ PDF印刷</button>
+    <!-- サイズ調整コントロールパネル -->
+    <div class="control-panel no-print">
+        <div class="control-group">
+            <label>文字サイズ:</label>
+            <button class="control-btn" onclick="adjustFontSize(-1)">−</button>
+            <span class="size-display" id="fontSizeDisplay">9pt</span>
+            <button class="control-btn" onclick="adjustFontSize(1)">+</button>
+        </div>
+        <div class="control-group">
+            <label>セル余白:</label>
+            <button class="control-btn" onclick="adjustPadding(-2)">−</button>
+            <span class="size-display" id="paddingDisplay">6px</span>
+            <button class="control-btn" onclick="adjustPadding(2)">+</button>
+        </div>
+        <div class="control-group">
+            <label>セル高さ:</label>
+            <button class="control-btn" onclick="adjustHeight(-10)">−</button>
+            <span class="size-display" id="heightDisplay">60px</span>
+            <button class="control-btn" onclick="adjustHeight(10)">+</button>
+        </div>
+        <button class="print-btn" onclick="window.print()">🖨️ PDF印刷</button>
+    </div>
+
+    <script>
+        let fontSize = 9;
+        let cellPadding = 6;
+        let cellHeight = 60;
+
+        function adjustFontSize(delta) {
+            fontSize = Math.max(6, Math.min(14, fontSize + delta));
+            document.documentElement.style.setProperty('--table-font-size', fontSize + 'pt');
+            document.getElementById('fontSizeDisplay').textContent = fontSize + 'pt';
+        }
+
+        function adjustPadding(delta) {
+            cellPadding = Math.max(2, Math.min(16, cellPadding + delta));
+            document.documentElement.style.setProperty('--cell-padding', cellPadding + 'px ' + (cellPadding + 2) + 'px');
+            document.getElementById('paddingDisplay').textContent = cellPadding + 'px';
+        }
+
+        function adjustHeight(delta) {
+            cellHeight = Math.max(30, Math.min(150, cellHeight + delta));
+            document.documentElement.style.setProperty('--cell-min-height', cellHeight + 'px');
+            document.getElementById('heightDisplay').textContent = cellHeight + 'px';
+        }
+    </script>
 
     <div class="header">
         <h1>個別支援計画書</h1>
@@ -261,13 +371,13 @@ $planDetails = $stmt->fetchAll();
         <table class="details-table">
             <thead>
                 <tr>
-                    <th style="width: 10%;">項目</th>
-                    <th style="width: 12%;">支援目標</th>
-                    <th style="width: 30%;">支援内容</th>
-                    <th style="width: 10%;">達成時期</th>
-                    <th style="width: 15%;">担当者/<br>提供機関</th>
-                    <th style="width: 15%;">留意事項</th>
-                    <th style="width: 8%;">優先順位</th>
+                    <th style="width: 8%;">項目</th>
+                    <th style="width: 18%;">支援目標</th>
+                    <th style="width: 32%;">支援内容</th>
+                    <th style="width: 8%;">達成時期</th>
+                    <th style="width: 12%;">担当者/<br>提供機関</th>
+                    <th style="width: 16%;">留意事項</th>
+                    <th style="width: 6%;">優先順位</th>
                 </tr>
             </thead>
             <tbody>

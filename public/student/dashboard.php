@@ -98,7 +98,7 @@ $stmt = $pdo->prepare("
     FROM student_chat_rooms scr
     LEFT JOIN student_chat_messages scm ON scr.id = scm.room_id
     WHERE scr.student_id = ? AND scm.sender_type = 'staff'
-    AND (scm.is_read_by_student = 0 OR scm.is_read_by_student IS NULL)
+    AND (scm.is_read = 0 OR scm.is_read IS NULL)
 ");
 $stmt->execute([$studentId]);
 $newMessages = $stmt->fetchColumn();

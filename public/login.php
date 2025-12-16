@@ -6,14 +6,16 @@
 require_once __DIR__ . '/../includes/auth.php';
 
 // すでにログイン済みの場合はダッシュボードへリダイレクト
-if (isLoggedIn()) {
-    $userType = $_SESSION['user_type'];
+if (isLoggedIn() || isset($_SESSION['student_id'])) {
+    $userType = $_SESSION['user_type'] ?? '';
     if ($userType === 'admin') {
         header('Location: /admin/index.php');
     } elseif ($userType === 'staff') {
         header('Location: /staff/renrakucho_activities.php');
     } elseif ($userType === 'tablet_user') {
         header('Location: /tablet/index.php');
+    } elseif ($userType === 'student') {
+        header('Location: /student/dashboard.php');
     } else {
         header('Location: /guardian/dashboard.php');
     }
@@ -44,6 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header('Location: /staff/renrakucho_activities.php');
             } elseif ($userType === 'tablet_user') {
                 header('Location: /tablet/index.php');
+            } elseif ($userType === 'student') {
+                header('Location: /student/dashboard.php');
             } else {
                 header('Location: /guardian/dashboard.php');
             }
@@ -98,29 +102,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: var(--text-secondary);
             font-size: var(--text-subhead);
         }
-
-        .student-link {
-            text-align: center;
-            margin-top: var(--spacing-xl);
-            padding-top: var(--spacing-lg);
-            border-top: 1px solid var(--apple-gray-5);
-        }
-
-        .student-link a {
-            color: var(--primary-purple);
-            text-decoration: none;
-            font-size: var(--text-subhead);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: var(--spacing-xs);
-            transition: all var(--duration-fast) var(--ease-out);
-        }
-
-        .student-link a:hover {
-            color: var(--primary-purple-dark);
-            transform: translateY(-1px);
-        }
     </style>
 </head>
 <body>
@@ -162,13 +143,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <button type="submit" class="btn btn-primary btn-lg">ログイン</button>
         </form>
-
-        <div class="student-link">
-            <a href="/student/login.php">
-                <span>🎓</span>
-                <span>生徒の方はこちら</span>
-            </a>
-        </div>
     </div>
 </body>
 </html>

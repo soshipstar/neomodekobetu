@@ -1,6 +1,6 @@
 <?php
 /**
- * 保護者への一斉送信API
+ * 保護者への一斉送信API（ファイル添付対応）
  */
 session_start();
 require_once __DIR__ . '/../../config/database.php';
@@ -8,7 +8,7 @@ require_once __DIR__ . '/../../config/database.php';
 header('Content-Type: application/json');
 
 // 認証チェック
-if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'staff') {
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['user_type'], ['staff', 'admin'])) {
     echo json_encode(['success' => false, 'error' => '認証エラー']);
     exit;
 }
@@ -16,14 +16,16 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'staff') {
 $pdo = getDbConnection();
 $staffId = $_SESSION['user_id'];
 
-// POSTデータを取得
-$input = json_decode(file_get_contents('php://input'), true);
-$message = $input['message'] ?? '';
-$guardianIds = $input['guardian_ids'] ?? [];
+// POSTデータを取得（FormData形式）
+$message = $_POST['message'] ?? '';
+$guardianIdsJson = $_POST['guardian_ids'] ?? '[]';
+$guardianIds = json_decode($guardianIdsJson, true);
 
 // バリデーション
-if (empty($message)) {
-    echo json_encode(['success' => false, 'error' => 'メッセージが空です']);
+$hasFile = isset($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK;
+
+if (empty($message) && !$hasFile) {
+    echo json_encode(['success' => false, 'error' => 'メッセージまたはファイルが必要です']);
     exit;
 }
 
@@ -34,6 +36,37 @@ if (empty($guardianIds) || !is_array($guardianIds)) {
 
 try {
     $pdo->beginTransaction();
+
+    // ファイルアップロード処理（1回だけ）
+    $attachmentPath = null;
+    $attachmentOriginalName = null;
+    $attachmentSize = null;
+
+    if ($hasFile) {
+        $file = $_FILES['attachment'];
+        $maxSize = 10 * 1024 * 1024; // 10MB
+
+        if ($file['size'] > $maxSize) {
+            throw new Exception('ファイルサイズは10MB以下にしてください');
+        }
+
+        $uploadDir = __DIR__ . '/../uploads/chat_attachments/';
+        if (!file_exists($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $filename = uniqid('broadcast_') . '_' . time() . '.' . $extension;
+        $attachmentPath = 'uploads/chat_attachments/' . $filename;
+        $fullPath = __DIR__ . '/../' . $attachmentPath;
+
+        if (!move_uploaded_file($file['tmp_name'], $fullPath)) {
+            throw new Exception('ファイルのアップロードに失敗しました');
+        }
+
+        $attachmentOriginalName = $file['name'];
+        $attachmentSize = $file['size'];
+    }
 
     $successCount = 0;
     $failedCount = 0;
@@ -75,12 +108,20 @@ try {
             $roomId = $pdo->lastInsertId();
         }
 
-        // メッセージを送信
-        $stmt = $pdo->prepare("
-            INSERT INTO chat_messages (room_id, sender_id, sender_type, message, is_read, created_at)
-            VALUES (?, ?, 'staff', ?, 0, NOW())
-        ");
-        $stmt->execute([$roomId, $staffId, $message]);
+        // メッセージを送信（同じファイルパスを全員に共有）
+        if ($attachmentPath) {
+            $stmt = $pdo->prepare("
+                INSERT INTO chat_messages (room_id, sender_id, sender_type, message, attachment_path, attachment_original_name, attachment_size, is_read, created_at)
+                VALUES (?, ?, 'staff', ?, ?, ?, ?, 0, NOW())
+            ");
+            $stmt->execute([$roomId, $staffId, $message, $attachmentPath, $attachmentOriginalName, $attachmentSize]);
+        } else {
+            $stmt = $pdo->prepare("
+                INSERT INTO chat_messages (room_id, sender_id, sender_type, message, is_read, created_at)
+                VALUES (?, ?, 'staff', ?, 0, NOW())
+            ");
+            $stmt->execute([$roomId, $staffId, $message]);
+        }
 
         // チャットルームの最終メッセージ日時を更新
         $stmt = $pdo->prepare("

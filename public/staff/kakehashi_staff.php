@@ -193,10 +193,18 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
 }
 
 .domains-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: 20px;
     margin-top: var(--spacing-lg);
+}
+
+.domains-grid .form-group {
+    width: 100%;
+}
+
+.domains-grid textarea {
+    min-height: 150px;
 }
 
 .status-badge {
@@ -265,6 +273,114 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
     }
     .domains-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+/* Apple-style buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn-primary {
+    background: linear-gradient(180deg, #007AFF 0%, #0066D6 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(180deg, #0088FF 0%, #007AFF 100%);
+    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
+}
+
+.btn-secondary {
+    background: linear-gradient(180deg, #8E8E93 0%, #636366 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(142, 142, 147, 0.3);
+}
+
+.btn-secondary:hover {
+    background: linear-gradient(180deg, #9E9EA3 0%, #8E8E93 100%);
+    box-shadow: 0 4px 12px rgba(142, 142, 147, 0.4);
+}
+
+.btn-success {
+    background: linear-gradient(180deg, #34C759 0%, #28A745 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(52, 199, 89, 0.3);
+}
+
+.btn-success:hover {
+    background: linear-gradient(180deg, #40D865 0%, #34C759 100%);
+    box-shadow: 0 4px 12px rgba(52, 199, 89, 0.4);
+}
+
+.btn-danger {
+    background: linear-gradient(180deg, #FF3B30 0%, #D63027 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(255, 59, 48, 0.3);
+}
+
+.btn-danger:hover {
+    background: linear-gradient(180deg, #FF4D44 0%, #FF3B30 100%);
+    box-shadow: 0 4px 12px rgba(255, 59, 48, 0.4);
+}
+
+.btn-generate {
+    background: linear-gradient(135deg, #AF52DE 0%, #5856D6 100%);
+    color: white;
+    box-shadow: 0 2px 12px rgba(88, 86, 214, 0.4);
+    padding: 14px 28px;
+    font-size: 16px;
+}
+
+.btn-generate:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(88, 86, 214, 0.5);
+}
+
+.action-buttons-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+    margin-top: var(--spacing-xl);
+    padding: var(--spacing-lg);
+    background: var(--apple-gray-6);
+    border-radius: var(--radius-md);
+}
+
+.action-button-form {
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .action-buttons-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .action-buttons-row .btn {
+        width: 100%;
+        justify-content: center;
     }
 }
 </style>
@@ -371,42 +487,43 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
                     <div class="section-title">💫 本人の願い</div>
                     <div class="form-group">
                         <label class="form-label">本人が望んでいること、なりたい姿</label>
-                        <textarea name="student_wish" class="form-control" rows="4"><?= $kakehashiData['student_wish'] ?? '' ?></textarea>
+                        <textarea name="student_wish" class="form-control" rows="6"><?= $kakehashiData['student_wish'] ?? '' ?></textarea>
                     </div>
 
                     <!-- 目標設定 -->
                     <div class="section-title">🎯 目標設定</div>
                     <div class="form-group">
                         <label class="form-label">短期目標（6か月）</label>
-                        <textarea name="short_term_goal" class="form-control" rows="4"><?= $kakehashiData['short_term_goal'] ?? '' ?></textarea>
+                        <textarea name="short_term_goal" class="form-control" rows="6"><?= $kakehashiData['short_term_goal'] ?? '' ?></textarea>
                     </div>
                     <div class="form-group">
                         <label class="form-label">長期目標（1年以上）</label>
-                        <textarea name="long_term_goal" class="form-control" rows="4"><?= $kakehashiData['long_term_goal'] ?? '' ?></textarea>
+                        <textarea name="long_term_goal" class="form-control" rows="6"><?= $kakehashiData['long_term_goal'] ?? '' ?></textarea>
                     </div>
 
                     <!-- 五領域の課題 -->
                     <div class="section-title">🌟 五領域の課題</div>
+                    <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md); font-size: var(--text-subhead);">各領域300文字程度を目安に、活動記録を基に課題と支援方針を記述してください。</p>
                     <div class="domains-grid">
                         <div class="form-group">
-                            <label class="form-label">健康・生活</label>
-                            <textarea name="domain_health_life" class="form-control" rows="4"><?= $kakehashiData['domain_health_life'] ?? '' ?></textarea>
+                            <label class="form-label">❤️ 健康・生活</label>
+                            <textarea name="domain_health_life" class="form-control" rows="6"><?= $kakehashiData['domain_health_life'] ?? '' ?></textarea>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">運動・感覚</label>
-                            <textarea name="domain_motor_sensory" class="form-control" rows="4"><?= $kakehashiData['domain_motor_sensory'] ?? '' ?></textarea>
+                            <label class="form-label">🏃 運動・感覚</label>
+                            <textarea name="domain_motor_sensory" class="form-control" rows="6"><?= $kakehashiData['domain_motor_sensory'] ?? '' ?></textarea>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">認知・行動</label>
-                            <textarea name="domain_cognitive_behavior" class="form-control" rows="4"><?= $kakehashiData['domain_cognitive_behavior'] ?? '' ?></textarea>
+                            <label class="form-label">🧠 認知・行動</label>
+                            <textarea name="domain_cognitive_behavior" class="form-control" rows="6"><?= $kakehashiData['domain_cognitive_behavior'] ?? '' ?></textarea>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">言語・コミュニケーション</label>
-                            <textarea name="domain_language_communication" class="form-control" rows="4"><?= $kakehashiData['domain_language_communication'] ?? '' ?></textarea>
+                            <label class="form-label">💬 言語・コミュニケーション</label>
+                            <textarea name="domain_language_communication" class="form-control" rows="6"><?= $kakehashiData['domain_language_communication'] ?? '' ?></textarea>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">人間関係・社会性</label>
-                            <textarea name="domain_social_relations" class="form-control" rows="4"><?= $kakehashiData['domain_social_relations'] ?? '' ?></textarea>
+                            <label class="form-label">👥 人間関係・社会性</label>
+                            <textarea name="domain_social_relations" class="form-control" rows="6"><?= $kakehashiData['domain_social_relations'] ?? '' ?></textarea>
                         </div>
                     </div>
 
@@ -414,7 +531,7 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
                     <div class="section-title">📌 その他の課題</div>
                     <div class="form-group">
                         <label class="form-label">その他、記載事項</label>
-                        <textarea name="other_challenges" class="form-control" rows="4"><?= $kakehashiData['other_challenges'] ?? '' ?></textarea>
+                        <textarea name="other_challenges" class="form-control" rows="6"><?= $kakehashiData['other_challenges'] ?? '' ?></textarea>
                     </div>
 
                     <!-- ボタン -->
@@ -436,42 +553,42 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
             </div>
         </form>
 
-        <!-- 自動生成ボタン -->
+        <!-- AI分析機能説明 -->
         <?php if (!$kakehashiData || !$kakehashiData['is_submitted']): ?>
             <div class="generate-info">
-                <strong>🤖 AI自動生成機能</strong><br>
+                <strong>📊 AI分析機能</strong><br>
                 直近5か月の連絡帳データから、AIが五領域の課題と目標を自動生成します。<br>
                 生成された内容は確認・編集できます。
             </div>
-            <form method="POST" action="kakehashi_staff_generate.php" onsubmit="return confirmGenerate()" style="margin-top: 15px;">
-                <input type="hidden" name="student_id" value="<?= $selectedStudentId ?>">
-                <input type="hidden" name="period_id" value="<?= $selectedPeriodId ?>">
-                <div style="display: flex; justify-content: center;">
-                    <button type="submit" class="btn btn-generate">🤖 AIで自動生成</button>
-                </div>
-            </form>
         <?php endif; ?>
 
-        <!-- PDF印刷ボタン -->
-        <?php if ($selectedStudentId && $selectedPeriodId): ?>
-            <div style="margin-top: var(--spacing-lg); text-align: center;">
-                <a href="kakehashi_staff_pdf.php?student_id=<?= $selectedStudentId ?>&period_id=<?= $selectedPeriodId ?>"
+        <!-- アクションボタン（横並び） -->
+        <div class="action-buttons-row">
+            <?php if (!$kakehashiData || !$kakehashiData['is_submitted']): ?>
+                <form method="POST" action="kakehashi_staff_generate.php" onsubmit="return confirmGenerate()" class="action-button-form">
+                    <input type="hidden" name="student_id" value="<?= $selectedStudentId ?>">
+                    <input type="hidden" name="period_id" value="<?= $selectedPeriodId ?>">
+                    <button type="submit" class="btn btn-generate">📊 分析してかけはしを生成</button>
+                </form>
+            <?php endif; ?>
+
+            <?php if ($selectedStudentId && $selectedPeriodId): ?>
+                <a href="kakehashi_staff_pdf.php?student_id=<?= $selectedStudentId ?>&period_id=<?= $selectedPeriodId ?>&staff_only=1"
                    target="_blank"
-                   class="btn btn-primary">
-                    🖨️ PDF印刷用ダウンロード（スタッフ・保護者統合版）
+                   class="btn btn-secondary">
+                    🖨️ スタッフかけはしをPDF出力
                 </a>
-            </div>
-        <?php endif; ?>
+            <?php endif; ?>
 
-        <!-- 削除フォーム -->
-        <?php if ($kakehashiData): ?>
-            <form method="POST" style="margin-top: var(--spacing-lg); text-align: center;" onsubmit="return confirm('このスタッフ用かけはしを削除してもよろしいですか？\nこの操作は取り消せません。');">
-                <input type="hidden" name="delete_staff_kakehashi" value="1">
-                <input type="hidden" name="student_id" value="<?= $selectedStudentId ?>">
-                <input type="hidden" name="period_id" value="<?= $selectedPeriodId ?>">
-                <button type="submit" class="btn btn-danger">🗑️ このスタッフ用かけはしを削除</button>
-            </form>
-        <?php endif; ?>
+            <?php if ($kakehashiData): ?>
+                <form method="POST" onsubmit="return confirm('このスタッフ用かけはしを削除してもよろしいですか？\nこの操作は取り消せません。');" class="action-button-form">
+                    <input type="hidden" name="delete_staff_kakehashi" value="1">
+                    <input type="hidden" name="student_id" value="<?= $selectedStudentId ?>">
+                    <input type="hidden" name="period_id" value="<?= $selectedPeriodId ?>">
+                    <button type="submit" class="btn btn-danger">🗑️ このスタッフ用かけはしを削除</button>
+                </form>
+            <?php endif; ?>
+        </div>
     <?php endif; ?>
 <?php endif; ?>
 

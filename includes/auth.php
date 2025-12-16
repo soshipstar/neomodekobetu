@@ -10,7 +10,7 @@ require_once __DIR__ . '/../config/database.php';
 secureSessionStart();
 
 /**
- * ログイン処理
+ * ログイン処理（スタッフ・管理者・保護者・生徒統合）
  * @param string $username ユーザー名
  * @param string $password パスワード
  * @return array 成功時: ['success' => true, 'user' => ユーザー情報], 失敗時: ['success' => false, 'error' => エラーメッセージ]
@@ -25,6 +25,7 @@ function login($username, $password) {
     $pdo = getDbConnection();
 
     try {
+        // まずusersテーブルで検索（スタッフ・管理者・保護者）
         $stmt = $pdo->prepare("
             SELECT id, username, password, full_name, user_type, email, is_active, is_master, classroom_id
             FROM users
@@ -33,43 +34,66 @@ function login($username, $password) {
         $stmt->execute([$username]);
         $user = $stmt->fetch();
 
-        if (!$user) {
-            return ['success' => false, 'error' => 'ユーザー名またはパスワードが正しくありません'];
+        if ($user && password_verify($password, $user['password'])) {
+            // usersテーブルでログイン成功
+            session_regenerate_id(true);
+            resetRateLimit('login_' . $clientIp);
+
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['username'] = $user['username'];
+            $_SESSION['full_name'] = $user['full_name'];
+            $_SESSION['user_type'] = $user['user_type'];
+            $_SESSION['email'] = $user['email'];
+            $_SESSION['is_master'] = $user['is_master'] ?? 0;
+
+            if ($user['is_master'] == 1) {
+                $_SESSION['classroom_id'] = null;
+            } else {
+                $_SESSION['classroom_id'] = $user['classroom_id'];
+            }
+
+            $_SESSION['login_time'] = time();
+            $_SESSION['last_regeneration'] = time();
+
+            unset($user['password']);
+            return ['success' => true, 'user' => $user];
         }
 
-        // パスワード検証
-        if (!password_verify($password, $user['password'])) {
-            return ['success' => false, 'error' => 'ユーザー名またはパスワードが正しくありません'];
+        // usersテーブルで見つからない場合、studentsテーブルで検索
+        $stmt = $pdo->prepare("
+            SELECT id, student_name, username, password_hash, guardian_id
+            FROM students
+            WHERE username = ? AND password_hash IS NOT NULL
+        ");
+        $stmt->execute([$username]);
+        $student = $stmt->fetch();
+
+        if ($student && password_verify($password, $student['password_hash'])) {
+            // 生徒としてログイン成功
+            session_regenerate_id(true);
+            resetRateLimit('login_' . $clientIp);
+
+            $_SESSION['student_id'] = $student['id'];
+            $_SESSION['student_name'] = $student['student_name'];
+            $_SESSION['student_username'] = $student['username'];
+            $_SESSION['guardian_id'] = $student['guardian_id'];
+            $_SESSION['user_type'] = 'student';
+            $_SESSION['login_time'] = time();
+            $_SESSION['last_regeneration'] = time();
+
+            // 最終ログイン日時を更新
+            $stmt = $pdo->prepare("UPDATE students SET last_login = NOW() WHERE id = ?");
+            $stmt->execute([$student['id']]);
+
+            return ['success' => true, 'user' => [
+                'id' => $student['id'],
+                'username' => $student['username'],
+                'full_name' => $student['student_name'],
+                'user_type' => 'student'
+            ]];
         }
 
-        // ログイン成功時はセッションIDを再生成（セッションフィクセーション対策）
-        session_regenerate_id(true);
-
-        // レート制限をリセット
-        resetRateLimit('login_' . $clientIp);
-
-        // セッションに保存
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['username'] = $user['username'];
-        $_SESSION['full_name'] = $user['full_name'];
-        $_SESSION['user_type'] = $user['user_type'];
-        $_SESSION['email'] = $user['email'];
-        $_SESSION['is_master'] = $user['is_master'] ?? 0;
-
-        // マスター管理者の場合はclassroom_idをNULLに（全教室のデータを見られるように）
-        if ($user['is_master'] == 1) {
-            $_SESSION['classroom_id'] = null;
-        } else {
-            $_SESSION['classroom_id'] = $user['classroom_id'];
-        }
-
-        $_SESSION['login_time'] = time();
-        $_SESSION['last_regeneration'] = time();
-
-        // パスワードを除外して返す
-        unset($user['password']);
-
-        return ['success' => true, 'user' => $user];
+        return ['success' => false, 'error' => 'ユーザー名またはパスワードが正しくありません'];
     } catch (PDOException $e) {
         error_log("Login error: " . $e->getMessage());
         return ['success' => false, 'error' => 'ログイン処理中にエラーが発生しました'];

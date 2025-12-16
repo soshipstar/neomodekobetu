@@ -48,6 +48,13 @@ $dayOfWeek = date('w', $timestamp);
 $daysFromMonday = ($dayOfWeek == 0) ? 6 : $dayOfWeek - 1;
 $weekStartDate = date('Y-m-d', strtotime("-$daysFromMonday days", $timestamp));
 
+// 今週の開始日を計算（一覧に戻るリンク用の週オフセット計算）
+$today = date('Y-m-d');
+$todayDayOfWeek = date('w', strtotime($today));
+$todayDaysFromMonday = ($todayDayOfWeek == 0) ? 6 : $todayDayOfWeek - 1;
+$currentWeekStart = date('Y-m-d', strtotime("-$todayDaysFromMonday days", strtotime($today)));
+$weekOffset = (int)((strtotime($weekStartDate) - strtotime($currentWeekStart)) / (7 * 24 * 60 * 60));
+
 // 週間計画を取得
 $stmt = $pdo->prepare("
     SELECT
@@ -707,7 +714,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         <p class="page-subtitle"><?php echo date('Y年m月d日', strtotime($weekStartDate)); ?>の週</p>
     </div>
     <div class="page-header-actions">
-        <a href="student_weekly_plans.php" class="btn btn-secondary">← 一覧に戻る</a>
+        <a href="student_weekly_plans.php?week=<?php echo $weekOffset; ?>" class="btn btn-secondary">← 一覧に戻る</a>
     </div>
 </div>
 

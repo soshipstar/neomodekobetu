@@ -29,8 +29,8 @@ if (!$room) {
 // メッセージを既読にする
 $stmt = $pdo->prepare("
     UPDATE student_chat_messages
-    SET is_read_by_student = 1
-    WHERE room_id = ? AND sender_type = 'staff' AND (is_read_by_student = 0 OR is_read_by_student IS NULL)
+    SET is_read = 1
+    WHERE room_id = ? AND sender_type = 'staff' AND (is_read = 0 OR is_read IS NULL)
 ");
 $stmt->execute([$roomId]);
 
@@ -63,7 +63,7 @@ $messages = $stmt->fetchAll();
 $_SESSION['user_type'] = 'student';
 $_SESSION['full_name'] = $student['student_name'];
 $currentPage = 'chat';
-renderPageStart('student', $currentPage, 'チャット', ['extraCss' => ['chat']]);
+renderPageStart('student', $currentPage, 'チャット', ['additionalCss' => ['/assets/css/chat.css']]);
 ?>
 
 <style>
@@ -158,6 +158,7 @@ renderPageStart('student', $currentPage, 'チャット', ['extraCss' => ['chat']
 </div>
 
 <?php
+$lastMessageId = $messages ? max(array_column($messages, 'id')) : 0;
 $inlineJs = <<<JS
 const messagesArea = document.getElementById('messagesArea');
 const messageForm = document.getElementById('messageForm');
@@ -168,7 +169,7 @@ const filePreview = document.getElementById('filePreview');
 const fileName = document.getElementById('fileName');
 const fileSize = document.getElementById('fileSize');
 
-let lastMessageId = {$messages ? max(array_column($messages, 'id')) : 0};
+let lastMessageId = {$lastMessageId};
 const MAX_FILE_SIZE = 3 * 1024 * 1024;
 
 function scrollToBottom() {

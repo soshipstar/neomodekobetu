@@ -39,8 +39,14 @@ if (!empty($searchName)) {
 }
 
 if (!empty($searchGrade)) {
-    $where[] = "s.grade_level = ?";
-    $params[] = $searchGrade;
+    // カテゴリで検索（preschool, elementary%, junior_high%, high_school%）
+    if ($searchGrade === 'preschool') {
+        $where[] = "s.grade_level = ?";
+        $params[] = $searchGrade;
+    } else {
+        $where[] = "s.grade_level LIKE ?";
+        $params[] = $searchGrade . '%';
+    }
 }
 
 if (!empty($searchGuardian)) {
@@ -120,13 +126,23 @@ $guardians = $stmt->fetchAll();
 
 // 学年表示用のラベル
 function getGradeLabel($gradeLevel) {
-    $labels = ['elementary' => '小学生', 'junior_high' => '中学生', 'high_school' => '高校生'];
+    $labels = [
+        'preschool' => '未就学児',
+        'elementary_1' => '小学1年生', 'elementary_2' => '小学2年生', 'elementary_3' => '小学3年生',
+        'elementary_4' => '小学4年生', 'elementary_5' => '小学5年生', 'elementary_6' => '小学6年生',
+        'junior_high_1' => '中学1年生', 'junior_high_2' => '中学2年生', 'junior_high_3' => '中学3年生',
+        'high_school_1' => '高校1年生', 'high_school_2' => '高校2年生', 'high_school_3' => '高校3年生',
+        'elementary' => '小学生', 'junior_high' => '中学生', 'high_school' => '高校生'
+    ];
     return $labels[$gradeLevel] ?? '';
 }
 
 function getGradeBadgeColor($gradeLevel) {
-    $colors = ['elementary' => '#28a745', 'junior_high' => '#007bff', 'high_school' => '#dc3545'];
-    return $colors[$gradeLevel] ?? '#6c757d';
+    if ($gradeLevel === 'preschool') return '#ff9500';
+    if (strpos($gradeLevel, 'elementary') === 0) return '#28a745';
+    if (strpos($gradeLevel, 'junior_high') === 0) return '#007bff';
+    if (strpos($gradeLevel, 'high_school') === 0) return '#dc3545';
+    return '#6c757d';
 }
 
 // ページ開始
@@ -333,6 +349,7 @@ renderPageStart('staff', $currentPage, '生徒管理');
                     <label class="form-label">学年</label>
                     <select name="search_grade" class="form-control">
                         <option value="">すべて</option>
+                        <option value="preschool" <?= $searchGrade === 'preschool' ? 'selected' : '' ?>>未就学児</option>
                         <option value="elementary" <?= $searchGrade === 'elementary' ? 'selected' : '' ?>>小学生</option>
                         <option value="junior_high" <?= $searchGrade === 'junior_high' ? 'selected' : '' ?>>中学生</option>
                         <option value="high_school" <?= $searchGrade === 'high_school' ? 'selected' : '' ?>>高校生</option>

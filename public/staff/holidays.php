@@ -123,32 +123,120 @@ renderPageStart('staff', $currentPage, '休日管理');
 <div class="card" style="margin-bottom: var(--spacing-lg);">
     <div class="card-body">
         <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-blue);">新規休日登録</h2>
-        <form action="holidays_save.php" method="POST">
-            <input type="hidden" name="action" value="create">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+
+        <!-- タブ切り替え -->
+        <div class="holiday-tabs" style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <button type="button" class="tab-btn active" data-tab="regular" style="flex: 1; padding: 12px; border: 2px solid var(--apple-blue); background: var(--apple-blue); color: white; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                定期休日（毎週の休み）
+            </button>
+            <button type="button" class="tab-btn" data-tab="special" style="flex: 1; padding: 12px; border: 2px solid #ddd; background: white; color: #333; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                特別休日（祝日・イベント等）
+            </button>
+        </div>
+
+        <!-- 定期休日フォーム -->
+        <div id="regularForm" class="holiday-form">
+            <form action="holidays_save.php" method="POST">
+                <input type="hidden" name="action" value="create_regular">
+
+                <div class="form-group">
+                    <label class="form-label">休日名 *</label>
+                    <input type="text" name="holiday_name" class="form-control" required placeholder="例: 定休日、日曜休み">
+                    <small style="color: var(--text-secondary);">カレンダーに表示される名前です</small>
+                </div>
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <label class="form-label">休業日の曜日 *</label>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
+                        <?php
+                        $dayNames = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
+                        $dayColors = ['#dc3545', '#333', '#333', '#333', '#333', '#333', '#007bff'];
+                        foreach ($dayNames as $i => $dayName):
+                        ?>
+                        <label style="display: flex; align-items: center; gap: 8px; padding: 10px 15px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                            <input type="checkbox" name="days_of_week[]" value="<?= $i ?>" style="width: 18px; height: 18px; cursor: pointer;">
+                            <span style="color: <?= $dayColors[$i] ?>; font-weight: 500;"><?= $dayName ?></span>
+                        </label>
+                        <?php endforeach; ?>
+                    </div>
+                    <small style="color: var(--text-secondary); display: block; margin-top: 8px;">選択した曜日が年度末（3月末）まで登録されます</small>
+                </div>
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <label class="form-label">登録開始日</label>
+                    <input type="date" name="start_date" class="form-control" value="<?= date('Y-m-d') ?>">
+                    <small style="color: var(--text-secondary);">この日以降の該当曜日が登録されます（デフォルト: 今日）</small>
+                </div>
+
+                <div style="text-align: right; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success">定期休日を登録</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- 特別休日フォーム -->
+        <div id="specialForm" class="holiday-form" style="display: none;">
+            <form action="holidays_save.php" method="POST">
+                <input type="hidden" name="action" value="create_special">
+
                 <div class="form-group">
                     <label class="form-label">日付 *</label>
                     <input type="date" name="holiday_date" class="form-control" required>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">休日タイプ *</label>
-                    <select name="holiday_type" class="form-control" required>
-                        <option value="regular">定期休日（毎週の休み）</option>
-                        <option value="special">特別休日（イベント・祝日など）</option>
-                    </select>
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <label class="form-label">休日名 *</label>
+                    <input type="text" name="holiday_name" class="form-control" required placeholder="例: 元日、夏季休業、年末年始">
+                    <small style="color: var(--text-secondary);">カレンダーに表示される名前です</small>
                 </div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">休日名 *</label>
-                <input type="text" name="holiday_name" class="form-control" required placeholder="例: 夏季休業、年末年始、祝日名など">
-                <small style="color: var(--text-secondary);">カレンダーに表示される名前です</small>
-            </div>
-            <div style="text-align: right;">
-                <button type="submit" class="btn btn-success">登録する</button>
-            </div>
-        </form>
+
+                <div style="text-align: right; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success">特別休日を登録</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
+
+<script>
+// タブ切り替え
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        // タブボタンのスタイル切り替え
+        document.querySelectorAll('.tab-btn').forEach(b => {
+            b.style.background = 'white';
+            b.style.color = '#333';
+            b.style.borderColor = '#ddd';
+            b.classList.remove('active');
+        });
+        btn.style.background = 'var(--apple-blue)';
+        btn.style.color = 'white';
+        btn.style.borderColor = 'var(--apple-blue)';
+        btn.classList.add('active');
+
+        // フォーム切り替え
+        const tab = btn.dataset.tab;
+        document.querySelectorAll('.holiday-form').forEach(form => {
+            form.style.display = 'none';
+        });
+        document.getElementById(tab + 'Form').style.display = 'block';
+    });
+});
+
+// チェックボックスの選択時にスタイル変更
+document.querySelectorAll('input[name="days_of_week[]"]').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        const label = this.closest('label');
+        if (this.checked) {
+            label.style.background = '#e3f2fd';
+            label.style.borderColor = 'var(--apple-blue)';
+        } else {
+            label.style.background = 'white';
+            label.style.borderColor = '#ddd';
+        }
+    });
+});
+</script>
 
 <!-- 検索フォーム -->
 <div class="card" style="margin-bottom: var(--spacing-lg);">

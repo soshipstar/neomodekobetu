@@ -33,11 +33,23 @@ if ($classroomId) {
 
 $students = $stmt->fetchAll();
 
+// 週オフセットを取得（0=今週、-1=先週、-2=2週前...）
+$weekOffset = isset($_GET['week']) ? (int)$_GET['week'] : 0;
+
 // 今週の開始日を取得
 $today = date('Y-m-d');
 $dayOfWeek = date('w', strtotime($today));
 $daysFromMonday = ($dayOfWeek == 0) ? 6 : $dayOfWeek - 1;
-$thisWeekStart = date('Y-m-d', strtotime("-$daysFromMonday days", strtotime($today)));
+$currentWeekStart = date('Y-m-d', strtotime("-$daysFromMonday days", strtotime($today)));
+
+// オフセットを適用して表示する週を計算
+$thisWeekStart = date('Y-m-d', strtotime("$weekOffset weeks", strtotime($currentWeekStart)));
+$thisWeekEnd = date('Y-m-d', strtotime('+6 days', strtotime($thisWeekStart)));
+
+// ナビゲーション用のオフセット
+$prevWeekOffset = $weekOffset - 1;
+$nextWeekOffset = $weekOffset + 1;
+$isCurrentWeek = ($weekOffset === 0);
 
 // 各生徒の今週の計画を取得
 $plansByStudent = [];
@@ -59,18 +71,73 @@ renderPageStart('staff', $currentPage, '生徒週間計画表');
 ?>
 
 <style>
-        .week-info {
+        .week-nav {
             background: var(--apple-bg-primary);
             padding: 15px 20px;
             border-radius: var(--radius-md);
             margin-bottom: var(--spacing-lg);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .week-nav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 10px 16px;
+            background: var(--apple-gray-6);
+            color: var(--text-primary);
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all var(--duration-fast) var(--ease-out);
+        }
+
+        .week-nav-btn:hover {
+            background: var(--apple-gray-5);
+        }
+
+        .week-nav-btn.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .week-info {
             text-align: center;
+            flex: 1;
         }
 
         .week-info h2 {
             color: var(--primary-purple);
             font-size: 18px;
+            margin: 0;
+        }
+
+        .week-info .week-range {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .week-info .week-label {
+            display: inline-block;
+            margin-top: 6px;
+            padding: 3px 10px;
+            background: var(--apple-blue);
+            color: white;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .week-info .week-label.past {
+            background: var(--apple-gray);
         }
 
         .student-list {
@@ -180,9 +247,37 @@ renderPageStart('staff', $currentPage, '生徒週間計画表');
     </div>
 </div>
 
-        <div class="week-info">
-            <h2><?php echo date('Y年m月d日', strtotime($thisWeekStart)); ?>の週</h2>
+        <div class="week-nav">
+            <a href="?week=<?php echo $prevWeekOffset; ?>" class="week-nav-btn">
+                ← 前の週
+            </a>
+
+            <div class="week-info">
+                <h2><?php echo date('Y年n月', strtotime($thisWeekStart)); ?></h2>
+                <div class="week-range">
+                    <?php echo date('n/j', strtotime($thisWeekStart)); ?>（月）〜 <?php echo date('n/j', strtotime($thisWeekEnd)); ?>（日）
+                </div>
+                <?php if ($isCurrentWeek): ?>
+                    <span class="week-label">今週</span>
+                <?php elseif ($weekOffset < 0): ?>
+                    <span class="week-label past"><?php echo abs($weekOffset); ?>週前</span>
+                <?php else: ?>
+                    <span class="week-label"><?php echo $weekOffset; ?>週後</span>
+                <?php endif; ?>
+            </div>
+
+            <a href="?week=<?php echo $nextWeekOffset; ?>" class="week-nav-btn <?php echo $nextWeekOffset > 0 ? 'disabled' : ''; ?>">
+                次の週 →
+            </a>
         </div>
+
+        <?php if (!$isCurrentWeek): ?>
+        <div style="text-align: center; margin-bottom: 15px;">
+            <a href="?week=0" class="week-nav-btn" style="background: var(--apple-blue); color: white;">
+                📅 今週に戻る
+            </a>
+        </div>
+        <?php endif; ?>
 
         <?php if (empty($students)): ?>
             <div class="empty-state">
