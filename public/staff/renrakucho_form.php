@@ -1,27 +1,30 @@
 <?php
 /**
- * 連絡帳入力フォームペ�Eジ
+ * 連絡帳入力フォームページ
  */
 
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/layouts/page_wrapper.php';
 
-// スタチE��また�E管琁E��E�Eみアクセス可能
+// スタッフまたは管理者のみアクセス可能
 requireUserType(['staff', 'admin']);
 
 $pdo = getDbConnection();
 $currentUser = getCurrentUser();
 
-// スタチE��の教室IDを取征E$classroomId = $_SESSION['classroom_id'] ?? null;
+// スタッフの教室IDを取得
+$classroomId = $_SESSION['classroom_id'] ?? null;
 
-// POSTチE�Eタまた�EGETパラメータから取征E$studentIds = $_POST['student_ids'] ?? [];
+// POSTデータまたはGETパラメータから取得
+$studentIds = $_POST['student_ids'] ?? [];
 $activityName = $_POST['activity_name'] ?? '';
 $recordDate = $_POST['record_date'] ?? date('Y-m-d');
 $activityId = $_GET['activity_id'] ?? null;
 $supportPlanId = $_POST['support_plan_id'] ?? null;
 
-// 支援案情報を取得（新規作�E時に支援案が選択されてぁE��場合！E$supportPlan = null;
+// 支援案情報を取得（新規作成時に支援案が選択されている場合）
+$supportPlan = null;
 if ($supportPlanId && !$activityId) {
     $stmt = $pdo->prepare("
         SELECT * FROM support_plans WHERE id = ?
@@ -30,7 +33,8 @@ if ($supportPlanId && !$activityId) {
     $supportPlan = $stmt->fetch();
 }
 
-// 既存�E活動を編雁E��る場合（同じ教室のスタチE��が作�Eした活動も編雁E��能�E�Eif ($activityId) {
+// 既存の活動を編集する場合（同じ教室のスタッフが作成した活動も編集可能）
+if ($activityId) {
     if ($classroomId) {
         $stmt = $pdo->prepare("
             SELECT dr.id, dr.activity_name, dr.common_activity, dr.record_date, dr.staff_id,
@@ -53,14 +57,15 @@ if ($supportPlanId && !$activityId) {
     $existingRecord = $stmt->fetch();
 
     if (!$existingRecord) {
-        $_SESSION['error'] = 'こ�E活動にアクセスする権限がありません';
+        $_SESSION['error'] = 'この活動にアクセスする権限がありません';
         header('Location: renrakucho_activities.php');
         exit;
     }
 
     $activityName = $existingRecord['activity_name'];
 
-    // 既存�E参加老E��取征E    $stmt = $pdo->prepare("
+    // 既存の参加者を取得
+    $stmt = $pdo->prepare("
         SELECT DISTINCT student_id FROM student_records WHERE daily_record_id = ?
     ");
     $stmt->execute([$activityId]);
@@ -72,7 +77,8 @@ if (empty($studentIds)) {
     exit;
 }
 
-// 参加老E��報を取得（�E刁E�E教室の生徒�Eみ、セキュリチE��対策！E$placeholders = str_repeat('?,', count($studentIds) - 1) . '?';
+// 参加者情報を取得（自分の教室の生徒のみ、セキュリティ対策）
+$placeholders = str_repeat('?,', count($studentIds) - 1) . '?';
 if ($classroomId) {
     $stmt = $pdo->prepare("
         SELECT s.id, s.student_name
@@ -94,7 +100,8 @@ if ($classroomId) {
 }
 $students = $stmt->fetchAll();
 
-// 既存�E学生記録を取征E$existingStudentRecords = [];
+// 既存の学生記録を取得
+$existingStudentRecords = [];
 
 if ($activityId) {
     $stmt = $pdo->prepare("
@@ -110,7 +117,8 @@ if ($activityId) {
     }
 }
 
-// 追加可能な全生徒を取得（�E刁E�E教室の生徒から、すでに参加してぁE��生徒を除く！E$availableStudents = [];
+// 追加可能な全生徒を取得（自分の教室の生徒から、すでに参加している生徒を除く）
+$availableStudents = [];
 if ($classroomId) {
     $currentStudentIds = array_column($students, 'id');
     if (!empty($currentStudentIds)) {
@@ -125,7 +133,7 @@ if ($classroomId) {
         $params = array_merge([$classroomId], $currentStudentIds);
         $stmt->execute($params);
     } else {
-        // 参加生徒がぁE��ぁE��合�E全員表示
+        // 参加生徒がいない場合は全員表示
         $stmt = $pdo->prepare("
             SELECT s.id, s.student_name, s.grade_level
             FROM students s
@@ -153,7 +161,8 @@ if ($classroomId) {
     $availableStudents = $stmt->fetchAll();
 }
 
-// 本日参加予定�E生徒を取得（曜日ベ�Eス�E�E$todayDayOfWeek = date('w', strtotime($recordDate)); // 0=日曁E 1=月曜, ...
+// 本日参加予定の生徒を取得（曜日ベース）
+$todayDayOfWeek = date('w', strtotime($recordDate)); // 0=日曜, 1=月曜, ...
 $dayColumns = [
     0 => 'scheduled_sunday',
     1 => 'scheduled_monday',
@@ -188,13 +197,14 @@ if ($classroomId) {
 // 5領域の定義
 $domains = [
     'health_life' => '健康・生活',
-    'motor_sensory' => '運動・感要E,
+    'motor_sensory' => '運動・感覚',
     'cognitive_behavior' => '認知・行動',
-    'language_communication' => '言語�Eコミュニケーション',
-    'social_relations' => '人間関係�E社会性'
+    'language_communication' => '言語・コミュニケーション',
+    'social_relations' => '人間関係・社会性'
 ];
 
-// ペ�Eジ開姁E$currentPage = 'renrakucho_form';
+// ページ開始
+$currentPage = 'renrakucho_form';
 $pageTitle = '連絡帳入力フォーム';
 renderPageStart('staff', $currentPage, $pageTitle);
 ?>
@@ -508,7 +518,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .student-item.selected .student-item-check::after {
-            content: '✁E;
+            content: '✓';
             color: white;
             font-weight: bold;
         }
@@ -602,14 +612,14 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
     </style>
 
-<!-- ペ�Eジヘッダー -->
+<!-- ページヘッダー -->
 <div class="page-header">
     <div class="page-header-content">
         <h1 class="page-title">連絡帳入力フォーム</h1>
         <p class="page-subtitle">活動名: <?php echo htmlspecialchars($activityName, ENT_QUOTES, 'UTF-8'); ?></p>
     </div>
     <div class="page-header-actions">
-        <a href="renrakucho_activities.php" class="btn btn-secondary">ↁE活動一覧へ</a>
+        <a href="renrakucho_activities.php" class="btn btn-secondary">← 活動一覧へ</a>
     </div>
 </div>
 
@@ -620,11 +630,11 @@ renderPageStart('staff', $currentPage, $pageTitle);
             </div>
             <?php if (isset($existingRecord) && $existingRecord): ?>
                 <div style="font-size: var(--text-subhead); color: var(--text-secondary);">
-                    作�E老E <?php echo htmlspecialchars($existingRecord['staff_name'], ENT_QUOTES, 'UTF-8'); ?>
+                    作成者: <?php echo htmlspecialchars($existingRecord['staff_name'], ENT_QUOTES, 'UTF-8'); ?>
                     <?php if ($existingRecord['staff_id'] == $currentUser['id']): ?>
-                        <span style="color: var(--primary-purple); font-weight: bold;">(自刁E</span>
+                        <span style="color: var(--primary-purple); font-weight: bold;">(自分)</span>
                     <?php else: ?>
-                        <span style="color: #ff9800; font-weight: bold;">(他�EスタチE��)</span>
+                        <span style="color: #ff9800; font-weight: bold;">(他のスタッフ)</span>
                     <?php endif; ?>
                 </div>
             <?php endif; ?>
@@ -633,7 +643,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         <?php if ($supportPlan): ?>
             <!-- 支援案情報の表示 -->
             <div style="background: var(--apple-bg-primary); padding: var(--spacing-lg); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); border-left: 4px solid var(--primary-purple);">
-                <h2 style="color: var(--primary-purple); font-size: 18px; margin-bottom: 15px;">📝 選択された支援桁E/h2>
+                <h2 style="color: var(--primary-purple); font-size: 18px; margin-bottom: 15px;">📝 選択された支援案</h2>
                 <div style="font-size: var(--text-subhead); line-height: 1.8;">
                     <div style="margin-bottom: 12px;">
                         <strong style="color: var(--primary-purple);">活動名:</strong>
@@ -641,19 +651,19 @@ renderPageStart('staff', $currentPage, $pageTitle);
                     </div>
                     <?php if (!empty($supportPlan['activity_purpose'])): ?>
                         <div style="margin-bottom: 12px;">
-                            <strong style="color: var(--primary-purple);">活動�E目皁E</strong><br>
+                            <strong style="color: var(--primary-purple);">活動の目的:</strong><br>
                             <?php echo nl2br(htmlspecialchars($supportPlan['activity_purpose'], ENT_QUOTES, 'UTF-8')); ?>
                         </div>
                     <?php endif; ?>
                     <?php if (!empty($supportPlan['five_domains_consideration'])): ?>
                         <div style="margin-bottom: 12px;">
-                            <strong style="color: var(--primary-purple);">五領域への配�E:</strong><br>
+                            <strong style="color: var(--primary-purple);">五領域への配慮:</strong><br>
                             <?php echo nl2br(htmlspecialchars($supportPlan['five_domains_consideration'], ENT_QUOTES, 'UTF-8')); ?>
                         </div>
                     <?php endif; ?>
                     <?php if (!empty($supportPlan['other_notes'])): ?>
                         <div style="margin-bottom: 12px;">
-                            <strong style="color: var(--primary-purple);">そ�E仁E</strong><br>
+                            <strong style="color: var(--primary-purple);">その他:</strong><br>
                             <?php echo nl2br(htmlspecialchars($supportPlan['other_notes'], ENT_QUOTES, 'UTF-8')); ?>
                         </div>
                     <?php endif; ?>
@@ -671,20 +681,21 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 <input type="hidden" name="support_plan_id" value="<?php echo $supportPlanId; ?>">
             <?php endif; ?>
 
-            <!-- 共通活動�E力欁E-->
+            <!-- 共通活動入力欄 -->
             <div class="common-activity-section">
-                <h2>本日の活動（�E通！E/h2>
-                <p class="info-text">全ての参加老E��反映される�E通�E活動�E容を記�Eしてください</p>
+                <h2>本日の活動（共通）</h2>
+                <p class="info-text">全ての参加者に反映される共通の活動内容を記入してください</p>
                 <?php if ($supportPlan): ?>
                     <p class="info-text" style="background: #e7f3ff; padding: var(--spacing-md); border-radius: var(--radius-sm); border-left: 4px solid var(--primary-purple); margin-bottom: var(--spacing-md);">
-                        💡 支援案、E?php echo htmlspecialchars($supportPlan['activity_name'], ENT_QUOTES, 'UTF-8'); ?>」�E活動�E容が反映されてぁE��す。忁E��に応じて編雁E��てください、E                    </p>
+                        💡 支援案「<?php echo htmlspecialchars($supportPlan['activity_name'], ENT_QUOTES, 'UTF-8'); ?>」の活動内容が反映されています。必要に応じて編集してください。
+                    </p>
                 <?php endif; ?>
                 <textarea
                     name="common_activity"
                     id="commonActivity"
-                    placeholder="侁E 公園で散歩、E��楽活動、制作活動など"
+                    placeholder="例: 公園で散歩、音楽活動、制作活動など"
                 ><?php
-                    // 既存�E活動を編雁E��る場合�Eそ�E冁E��、新規作�Eで支援案がある場合�E支援案�E冁E��、それ以外�E空
+                    // 既存の活動を編集する場合はその内容、新規作成で支援案がある場合は支援案の内容、それ以外は空
                     if (isset($existingRecord['common_activity'])) {
                         echo htmlspecialchars($existingRecord['common_activity'], ENT_QUOTES, 'UTF-8');
                     } elseif ($supportPlan && !empty($supportPlan['activity_content'])) {
@@ -701,19 +712,19 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 ?>
                 <div class="student-card" data-student-id="<?php echo $studentId; ?>">
                     <?php if ($activityId): ?>
-                    <button type="button" class="save-student-btn" data-student-id="<?php echo $studentId; ?>" onclick="saveStudent(<?php echo $studentId; ?>)">こ�E生徒�E修正を保孁E/button>
+                    <button type="button" class="save-student-btn" data-student-id="<?php echo $studentId; ?>" onclick="saveStudent(<?php echo $studentId; ?>)">この生徒の修正を保存</button>
                     <?php endif; ?>
                     <h3><?php echo htmlspecialchars($student['student_name'], ENT_QUOTES, 'UTF-8'); ?></h3>
 
                     <input type="hidden" name="students[<?php echo $studentId; ?>][id]" value="<?php echo $studentId; ?>">
 
-                    <!-- 本日の様孁E-->
+                    <!-- 本日の様子 -->
                     <div class="domain-group" style="background: #e3f2fd; padding: 15px; border-radius: var(--radius-sm); border-left: 4px solid #2196f3;">
-                        <h4 style="color: #1976d2;">本日の様孁E/h4>
+                        <h4 style="color: #1976d2;">本日の様子</h4>
                         <textarea
                             name="students[<?php echo $studentId; ?>][daily_note]"
                             class="domain-textarea"
-                            placeholder="本日の全体的な様子を自由に記�Eしてください"
+                            placeholder="本日の全体的な様子を自由に記入してください"
                             style="background: var(--apple-bg-primary);"
                         ><?php echo htmlspecialchars($existingData['daily_note'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
                     </div>
@@ -739,7 +750,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                         <textarea
                             name="students[<?php echo $studentId; ?>][domain1_content]"
                             class="domain-textarea"
-                            placeholder="気になったことを記�Eしてください"
+                            placeholder="気になったことを記入してください"
                             required
                         ><?php echo htmlspecialchars($existingData['domain1_content'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
                     </div>
@@ -765,7 +776,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                         <textarea
                             name="students[<?php echo $studentId; ?>][domain2_content]"
                             class="domain-textarea"
-                            placeholder="気になったことを記�Eしてください"
+                            placeholder="気になったことを記入してください"
                             required
                         ><?php echo htmlspecialchars($existingData['domain2_content'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
                     </div>
@@ -776,16 +787,16 @@ renderPageStart('staff', $currentPage, $pageTitle);
             <?php if (!empty($availableStudents)): ?>
             <div class="add-student-section">
                 <button type="button" class="btn-add-student" onclick="openAddStudentModal()">
-                    ➁E参加生徒を追加
+                    ➕ 参加生徒を追加
                 </button>
-                <p class="info-text">追加可能な生征E <?php echo count($availableStudents); ?>吁E/p>
+                <p class="info-text">追加可能な生徒: <?php echo count($availableStudents); ?>名</p>
             </div>
             <?php endif; ?>
 
             <!-- 送信ボタン -->
             <div class="form-actions">
                 <button type="submit" name="action" value="save" class="btn btn-primary">
-                    <?php echo $activityId ? '全体をこ�E冁E��で保孁E : '確定して保孁E; ?>
+                    <?php echo $activityId ? '全体をこの内容で保存' : '確定して保存'; ?>
                 </button>
             </div>
         </form>
@@ -802,26 +813,26 @@ renderPageStart('staff', $currentPage, $pageTitle);
                     <label>学年で絞り込み:</label>
                     <select id="gradeFilter" onchange="filterStudents()">
                         <option value="">すべての学年</option>
-                        <option value="封E">封E</option>
-                        <option value="封E">封E</option>
-                        <option value="封E">封E</option>
-                        <option value="封E">封E</option>
-                        <option value="封E">封E</option>
-                        <option value="封E">封E</option>
+                        <option value="小1">小1</option>
+                        <option value="小2">小2</option>
+                        <option value="小3">小3</option>
+                        <option value="小4">小4</option>
+                        <option value="小5">小5</option>
+                        <option value="小6">小6</option>
                         <option value="中1">中1</option>
                         <option value="中2">中2</option>
                         <option value="中3">中3</option>
-                        <option value="髁E">髁E</option>
-                        <option value="髁E">髁E</option>
-                        <option value="髁E">髁E</option>
+                        <option value="高1">高1</option>
+                        <option value="高2">高2</option>
+                        <option value="高3">高3</option>
                     </select>
                 </div>
                 <div class="filter-group">
                     <label>氏名で検索:</label>
-                    <input type="text" id="nameFilter" placeholder="氏名の一部を�E劁E oninput="filterStudents()">
+                    <input type="text" id="nameFilter" placeholder="氏名の一部を入力" oninput="filterStudents()">
                 </div>
                 <div class="filter-group">
-                    <button type="button" class="btn btn-scheduled" onclick="showScheduledOnly()">📅 本日参加予定�E生徒から選抁E/button>
+                    <button type="button" class="btn btn-scheduled" onclick="showScheduledOnly()">📅 本日参加予定の生徒から選択</button>
                 </div>
             </div>
 
@@ -839,7 +850,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                             <div class="student-item-grade"><?php echo htmlspecialchars($student['grade_level'], ENT_QUOTES, 'UTF-8'); ?></div>
                         <?php endif; ?>
                         <?php if (in_array($student['id'], $scheduledStudentIds)): ?>
-                            <div class="student-item-badge">本日予宁E/div>
+                            <div class="student-item-badge">本日予定</div>
                         <?php endif; ?>
                     </div>
                     <div class="student-item-check"></div>
@@ -854,18 +865,21 @@ renderPageStart('staff', $currentPage, $pageTitle);
     </div>
 
     <script>
-        // 5領域の定義�E�EavaScriptでも使用�E�E        const domains = <?php echo json_encode($domains); ?>;
+        // 5領域の定義（JavaScriptでも使用）
+        const domains = <?php echo json_encode($domains); ?>;
 
-        // 選択された生徒を管琁E        let selectedStudentsForAdd = new Set();
+        // 選択された生徒を管理
+        let selectedStudentsForAdd = new Set();
 
-        // モーダルを開ぁE        function openAddStudentModal() {
+        // モーダルを開く
+        function openAddStudentModal() {
             document.getElementById('addStudentModal').classList.add('active');
             selectedStudentsForAdd.clear();
-            // 選択状態をリセチE��
+            // 選択状態をリセット
             document.querySelectorAll('.student-item').forEach(item => {
                 item.classList.remove('selected');
             });
-            // フィルタをリセチE��
+            // フィルタをリセット
             document.getElementById('gradeFilter').value = '';
             document.getElementById('nameFilter').value = '';
             filterStudents();
@@ -899,10 +913,11 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 }
             });
 
-            // 検索結果ぁE件の場合にメチE��ージを表示�E�オプション�E�E            // console.log(`検索結果: ${visibleCount}名`);
+            // 検索結果0件の場合にメッセージを表示（オプション）
+            // console.log(`検索結果: ${visibleCount}名`);
         }
 
-        // 本日参加予定�E生徒�Eみ表示
+        // 本日参加予定の生徒のみ表示
         function showScheduledOnly() {
             const studentItems = document.querySelectorAll('#availableStudentList .student-item');
 
@@ -918,12 +933,12 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 }
             });
 
-            // フィルタをリセチE��
+            // フィルタをリセット
             document.getElementById('gradeFilter').value = '';
             document.getElementById('nameFilter').value = '';
 
             if (scheduledCount === 0) {
-                alert('本日参加予定�E生徒�EぁE��せん');
+                alert('本日参加予定の生徒はいません');
             }
         }
 
@@ -954,13 +969,13 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 const studentItem = document.querySelector(`.student-item[data-student-id="${studentId}"]`);
                 const studentName = studentItem.dataset.studentName;
 
-                // 生徒カードを作�E
+                // 生徒カードを作成
                 const studentCard = createStudentCard(studentId, studentName);
 
                 // 送信ボタンの前に挿入
                 submitSection.parentNode.insertBefore(studentCard, submitSection);
 
-                // モーダルから該当�E生徒を削除
+                // モーダルから該当の生徒を削除
                 studentItem.remove();
             });
 
@@ -969,7 +984,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
             closeAddStudentModal();
 
-            // スクロールして追加された生徒が見えるよぁE��する
+            // スクロールして追加された生徒が見えるようにする
             setTimeout(() => {
                 const newCards = document.querySelectorAll('.student-card.new');
                 if (newCards.length > 0) {
@@ -978,7 +993,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             }, 100);
         }
 
-        // 生徒カードを作�E
+        // 生徒カードを作成
         function createStudentCard(studentId, studentName) {
             const card = document.createElement('div');
             card.className = 'student-card new';
@@ -989,18 +1004,18 @@ renderPageStart('staff', $currentPage, $pageTitle);
             ).join('');
 
             card.innerHTML = `
-                <button type="button" class="remove-student-btn" onclick="removeStudentCard(${studentId})">✁Eこ�E生徒を削除</button>
+                <button type="button" class="remove-student-btn" onclick="removeStudentCard(${studentId})">✕ この生徒を削除</button>
                 <h3>${escapeHtml(studentName)}</h3>
 
                 <input type="hidden" name="students[${studentId}][id]" value="${studentId}">
 
-                <!-- 本日の様孁E-->
+                <!-- 本日の様子 -->
                 <div class="domain-group" style="background: #e3f2fd; padding: 15px; border-radius: var(--radius-sm); border-left: 4px solid #2196f3;">
-                    <h4 style="color: #1976d2;">本日の様孁E/h4>
+                    <h4 style="color: #1976d2;">本日の様子</h4>
                     <textarea
                         name="students[${studentId}][daily_note]"
                         class="domain-textarea"
-                        placeholder="本日の全体的な様子を自由に記�Eしてください"
+                        placeholder="本日の全体的な様子を自由に記入してください"
                         style="background: var(--apple-bg-primary);"
                     ></textarea>
                 </div>
@@ -1015,7 +1030,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                     <textarea
                         name="students[${studentId}][domain1_content]"
                         class="domain-textarea"
-                        placeholder="気になったことを記�Eしてください"
+                        placeholder="気になったことを記入してください"
                         required
                     ></textarea>
                 </div>
@@ -1030,7 +1045,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                     <textarea
                         name="students[${studentId}][domain2_content]"
                         class="domain-textarea"
-                        placeholder="気になったことを記�Eしてください"
+                        placeholder="気になったことを記入してください"
                         required
                     ></textarea>
                 </div>
@@ -1051,8 +1066,9 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
             const studentName = card.querySelector('h3').textContent;
 
-            if (confirm(`、E{studentName}」�E入力を削除しますか�E�`)) {
-                // モーダルのリストに戻ぁE                const studentList = document.getElementById('availableStudentList');
+            if (confirm(`「${studentName}」の入力を削除しますか？`)) {
+                // モーダルのリストに戻す
+                const studentList = document.getElementById('availableStudentList');
                 const studentItem = document.createElement('div');
                 studentItem.className = 'student-item';
                 studentItem.dataset.studentId = studentId;
@@ -1085,11 +1101,12 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 addSection.style.display = 'none';
             } else {
                 addSection.style.display = 'block';
-                infoText.textContent = `追加可能な生征E ${count}名`;
+                infoText.textContent = `追加可能な生徒: ${count}名`;
             }
         }
 
-        // HTMLエスケーチE        function escapeHtml(text) {
+        // HTMLエスケープ
+        function escapeHtml(text) {
             const map = {
                 '&': '&amp;',
                 '<': '&lt;',
@@ -1100,23 +1117,24 @@ renderPageStart('staff', $currentPage, $pageTitle);
             return String(text).replace(/[&<>"']/g, m => map[m]);
         }
 
-        // モーダル外クリチE��で閉じめE        document.getElementById('addStudentModal').addEventListener('click', function(e) {
+        // モーダル外クリックで閉じる
+        document.getElementById('addStudentModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeAddStudentModal();
             }
         });
 
-        // フォーム送信前�EバリチE�Eション
+        // フォーム送信前のバリデーション
         document.getElementById('renrakuchoForm').addEventListener('submit', function(e) {
             const commonActivity = document.getElementById('commonActivity').value.trim();
 
             if (commonActivity === '') {
-                alert('本日の活動（�E通）を入力してください');
+                alert('本日の活動（共通）を入力してください');
                 e.preventDefault();
                 return false;
             }
 
-            // 吁E��徒�E領域が重褁E��てぁE��ぁE��チェチE��
+            // 各生徒の領域が重複していないかチェック
             const studentCards = document.querySelectorAll('.student-card');
             let hasError = false;
 
@@ -1126,7 +1144,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 const domain2 = selects[1].value;
 
                 if (domain1 === domain2 && domain1 !== '') {
-                    alert('同じ領域めE回選択することはできません');
+                    alert('同じ領域を2回選択することはできません');
                     hasError = true;
                 }
             });
@@ -1139,16 +1157,18 @@ renderPageStart('staff', $currentPage, $pageTitle);
             return true;
         });
 
-        // 吁E��徒カード�E入力変更を監要E        function initializeChangeDetection() {
+        // 各生徒カードの入力変更を監視
+        function initializeChangeDetection() {
             const studentCards = document.querySelectorAll('.student-card');
 
             studentCards.forEach(card => {
                 const studentId = card.dataset.studentId;
                 const saveBtn = card.querySelector('.save-student-btn');
 
-                if (!saveBtn) return; // 編雁E��ード時のみ
+                if (!saveBtn) return; // 編集モード時のみ
 
-                // 入力フィールドを取征E                const inputs = card.querySelectorAll('textarea, select');
+                // 入力フィールドを取得
+                const inputs = card.querySelectorAll('textarea, select');
 
                 inputs.forEach(input => {
                     input.addEventListener('input', function() {
@@ -1168,43 +1188,47 @@ renderPageStart('staff', $currentPage, $pageTitle);
             });
         }
 
-        // 個別生徒�E保存�E琁E        function saveStudent(studentId) {
+        // 個別生徒の保存処理
+        function saveStudent(studentId) {
             const card = document.querySelector(`.student-card[data-student-id="${studentId}"]`);
             const saveBtn = card.querySelector('.save-student-btn');
 
-            // ボタンを無効匁E            saveBtn.disabled = true;
+            // ボタンを無効化
+            saveBtn.disabled = true;
             const originalText = saveBtn.textContent;
             saveBtn.textContent = '保存中...';
 
-            // フォームチE�Eタを収雁E            const dailyNote = card.querySelector(`textarea[name="students[${studentId}][daily_note]"]`).value;
+            // フォームデータを収集
+            const dailyNote = card.querySelector(`textarea[name="students[${studentId}][daily_note]"]`).value;
             const domain1 = card.querySelector(`select[name="students[${studentId}][domain1]"]`).value;
             const domain1Content = card.querySelector(`textarea[name="students[${studentId}][domain1_content]"]`).value;
             const domain2 = card.querySelector(`select[name="students[${studentId}][domain2]"]`).value;
             const domain2Content = card.querySelector(`textarea[name="students[${studentId}][domain2_content]"]`).value;
 
-            // バリチE�Eション
+            // バリデーション
             if (!domain1 || !domain1Content.trim()) {
-                alert('気になったこと1つ目の領域と冁E��を�E力してください');
+                alert('気になったこと1つ目の領域と内容を入力してください');
                 saveBtn.disabled = false;
                 saveBtn.textContent = originalText;
                 return;
             }
 
             if (!domain2 || !domain2Content.trim()) {
-                alert('気になったこと2つ目の領域と冁E��を�E力してください');
+                alert('気になったこと2つ目の領域と内容を入力してください');
                 saveBtn.disabled = false;
                 saveBtn.textContent = originalText;
                 return;
             }
 
             if (domain1 === domain2) {
-                alert('同じ領域めE回選択することはできません');
+                alert('同じ領域を2回選択することはできません');
                 saveBtn.disabled = false;
                 saveBtn.textContent = originalText;
                 return;
             }
 
-            // AjaxリクエスチE            const activityId = document.querySelector('input[name="activity_id"]').value;
+            // Ajaxリクエスト
+            const activityId = document.querySelector('input[name="activity_id"]').value;
             const formData = new FormData();
             formData.append('action', 'save_student');
             formData.append('activity_id', activityId);
@@ -1222,17 +1246,19 @@ renderPageStart('staff', $currentPage, $pageTitle);
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // 成功晁E                    saveBtn.textContent = '修正が完亁E��ました';
+                    // 成功時
+                    saveBtn.textContent = '修正が完了しました';
                     saveBtn.classList.add('saved');
                     saveBtn.disabled = true;
 
-                    // 3秒後にボタンを�Eに戻す（�E編雁E��能にする�E�E                    setTimeout(() => {
+                    // 3秒後にボタンを元に戻す（再編集可能にする）
+                    setTimeout(() => {
                         saveBtn.classList.remove('saved', 'visible');
                         saveBtn.disabled = false;
-                        saveBtn.textContent = 'こ�E生徒�E修正を保孁E;
+                        saveBtn.textContent = 'この生徒の修正を保存';
                     }, 3000);
                 } else {
-                    alert('保存に失敗しました: ' + (data.error || '不�Eなエラー'));
+                    alert('保存に失敗しました: ' + (data.error || '不明なエラー'));
                     saveBtn.disabled = false;
                     saveBtn.textContent = originalText;
                 }
@@ -1245,7 +1271,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             });
         }
 
-        // ペ�Eジ読み込み時に変更検知を�E期化
+        // ページ読み込み時に変更検知を初期化
         document.addEventListener('DOMContentLoaded', function() {
             initializeChangeDetection();
         });

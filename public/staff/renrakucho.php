@@ -1,24 +1,29 @@
 <?php
 /**
- * 連絡帳入力�Eージ�E�スタチE��用�E�E */
+ * 連絡帳入力ページ（スタッフ用）
+ */
 
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/layouts/page_wrapper.php';
 
-// スタチE��また�E管琁E��E�Eみアクセス可能
+// スタッフまたは管理者のみアクセス可能
 requireUserType(['staff', 'admin']);
 
 $pdo = getDbConnection();
 $currentUser = getCurrentUser();
 
-// スタチE��の教室IDを取征E$classroomId = $_SESSION['classroom_id'] ?? null;
+// スタッフの教室IDを取得
+$classroomId = $_SESSION['classroom_id'] ?? null;
 
-// 学年フィルター取征E$gradeFilter = $_GET['grade'] ?? 'all';
+// 学年フィルター取得
+$gradeFilter = $_GET['grade'] ?? 'all';
 
-// 日付を取得！ERLパラメータから、また�E本日�E�E$today = $_GET['date'] ?? date('Y-m-d');
+// 日付を取得（URLパラメータから、または本日）
+$today = $_GET['date'] ?? date('Y-m-d');
 
-// 本日の曜日を取征E$todayDayOfWeek = date('w', strtotime($today));
+// 本日の曜日を取得
+$todayDayOfWeek = date('w', strtotime($today));
 $dayColumns = [
     0 => 'scheduled_sunday',
     1 => 'scheduled_monday',
@@ -30,11 +35,13 @@ $dayColumns = [
 ];
 $todayColumn = $dayColumns[$todayDayOfWeek];
 
-// 本日が休日かチェチE���E��E刁E�E教室の休日のみ�E�E$stmt = $pdo->prepare("SELECT COUNT(*) FROM holidays WHERE holiday_date = ? AND classroom_id = ?");
+// 本日が休日かチェック（自分の教室の休日のみ）
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM holidays WHERE holiday_date = ? AND classroom_id = ?");
 $stmt->execute([$today, $classroomId]);
 $isTodayHoliday = $stmt->fetchColumn() > 0;
 
-// 本日の予定参加老EDを取得（�E刁E�E教室の生徒�Eみ�E�E$scheduledStudentIds = [];
+// 本日の予定参加者IDを取得（自分の教室の生徒のみ）
+$scheduledStudentIds = [];
 if (!$isTodayHoliday) {
     if ($classroomId) {
         $stmt = $pdo->prepare("
@@ -55,7 +62,8 @@ if (!$isTodayHoliday) {
     $scheduledStudentIds = array_column($stmt->fetchAll(), 'id');
 }
 
-// 生徒を取得（学年フィルターと本日の予定参加老E��ィルター対応、教室フィルタリング�E�Eif ($classroomId) {
+// 生徒を取得（学年フィルターと本日の予定参加者フィルター対応、教室フィルタリング）
+if ($classroomId) {
     $sql = "
         SELECT s.id, s.student_name, s.grade_level
         FROM students s
@@ -71,11 +79,12 @@ if (!$isTodayHoliday) {
 }
 
 if ($gradeFilter === 'scheduled') {
-    // 本日の予定参加老E��ィルター
+    // 本日の予定参加者フィルター
     if (empty($scheduledStudentIds)) {
         $allStudents = [];
     } else {
-        // 名前付きプレースホルダーを生戁E        $placeholders = [];
+        // 名前付きプレースホルダーを生成
+        $placeholders = [];
         $params = $classroomId ? ['classroom_id' => $classroomId] : [];
         foreach ($scheduledStudentIds as $index => $id) {
             $key = 'student_id_' . $index;
@@ -115,7 +124,7 @@ if ($gradeFilter === 'scheduled') {
     $allStudents = $stmt->fetchAll();
 }
 
-// 既存�E本日の記録があるかチェチE��
+// 既存の本日の記録があるかチェック
 $stmt = $pdo->prepare("
     SELECT dr.id, dr.common_activity, dr.record_date
     FROM daily_records dr
@@ -124,7 +133,8 @@ $stmt = $pdo->prepare("
 $stmt->execute([$today, $currentUser['id']]);
 $existingRecord = $stmt->fetch();
 
-// 既存�E記録がある場合、参加老E��取征E$existingParticipants = [];
+// 既存の記録がある場合、参加者を取得
+$existingParticipants = [];
 if ($existingRecord) {
     $stmt = $pdo->prepare("
         SELECT sr.*, s.student_name
@@ -140,11 +150,13 @@ if ($existingRecord) {
 $searchTag = $_GET['plan_tag'] ?? '';
 $searchDayOfWeek = $_GET['plan_day'] ?? '';
 
-// 今日の曜日を取征E$todayDayOfWeek = date('w', strtotime($today));
+// 今日の曜日を取得
+$todayDayOfWeek = date('w', strtotime($today));
 $dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 $todayDayName = $dayNames[$todayDayOfWeek];
 
-// 支援案を取得（検索条件付き�E�E$planWhere = [];
+// 支援案を取得（検索条件付き）
+$planWhere = [];
 $planParams = [];
 
 if ($classroomId) {
@@ -152,13 +164,14 @@ if ($classroomId) {
     $planParams[] = $classroomId;
 }
 
-// 日付また�Eタグ・曜日で絞り込み
+// 日付またはタグ・曜日で絞り込み
 if (empty($searchTag) && empty($searchDayOfWeek)) {
-    // 検索条件がなぁE��合�E、その日の支援案�Eみ
+    // 検索条件がない場合、その日の支援案のみ
     $planWhere[] = "sp.activity_date = ?";
     $planParams[] = $today;
 } else {
-    // 検索条件がある場吁E    if (!empty($searchTag)) {
+    // 検索条件がある場合
+    if (!empty($searchTag)) {
         $planWhere[] = "FIND_IN_SET(?, sp.tags) > 0";
         $planParams[] = $searchTag;
     }
@@ -182,7 +195,8 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($planParams);
 $supportPlans = $stmt->fetchAll();
 
-// 未読チャチE��メチE��ージを取得（スタチE��用�E�保護老E��ら�E未読メチE��ージ�E�E$unreadChatMessages = [];
+// 未読チャットメッセージを取得（スタッフ用：保護者からの未読メッセージ）
+$unreadChatMessages = [];
 try {
     if ($classroomId) {
         $stmt = $pdo->prepare("
@@ -228,8 +242,9 @@ try {
 }
 $totalUnreadMessages = array_sum(array_column($unreadChatMessages, 'unread_count'));
 
-// ペ�Eジ開姁E$currentPage = 'renrakucho';
-renderPageStart('staff', $currentPage, '連絡帳入劁E);
+// ページ開始
+$currentPage = 'renrakucho';
+renderPageStart('staff', $currentPage, '連絡帳入力');
 ?>
 
 <style>
@@ -390,39 +405,41 @@ renderPageStart('staff', $currentPage, '連絡帳入劁E);
 }
 </style>
 
-<!-- ペ�Eジヘッダー -->
+<!-- ページヘッダー -->
 <div class="page-header">
     <div class="page-header-content">
-        <h1 class="page-title">連絡帳入劁E/h1>
-        <p class="page-subtitle">記録日: <?= date('Y年m朁E日�E�E . ['日', '朁E, '火', '水', '木', '釁E, '圁E][date('w', strtotime($today))] . '�E�E, strtotime($today)) ?></p>
+        <h1 class="page-title">連絡帳入力</h1>
+        <p class="page-subtitle">記録日: <?= date('Y年n月j日', strtotime($today)) . '（' . ['日', '月', '火', '水', '木', '金', '土'][date('w', strtotime($today))] . '）' ?></p>
     </div>
 </div>
 
-<!-- クイチE��リンク -->
+<!-- クイックリンク -->
 <div class="quick-links">
-    <a href="kakehashi_staff.php" class="quick-link">🌉 スタチE��かけはぁE/a>
-    <a href="kakehashi_guardian_view.php" class="quick-link">📋 保護老E��け�Eし確誁E/a>
+    <a href="kakehashi_staff.php" class="quick-link">🌉 スタッフかけはし</a>
+    <a href="kakehashi_guardian_view.php" class="quick-link">📋 保護者かけはし確認</a>
     <a href="renrakucho_activities.php" class="quick-link">📝 活動一覧</a>
 </div>
 
-<!-- 新着チャチE��メチE��ージ通知 -->
+<!-- 新着チャットメッセージ通知 -->
 <?php if ($totalUnreadMessages > 0): ?>
     <div class="unread-notification">
         <div class="unread-notification-header">
-            💬 新着メチE��ージがあります！E?= $totalUnreadMessages ?>件�E�E        </div>
+            💬 新着メッセージがあります！（<?= $totalUnreadMessages ?>件）
+        </div>
         <?php foreach ($unreadChatMessages as $chatRoom): ?>
             <div class="unread-chat-item">
                 <div>
                     <div style="font-weight: bold; color: var(--text-primary); margin-bottom: 5px;">
-                        <?= htmlspecialchars($chatRoom['student_name']) ?>さん�E�E?= htmlspecialchars($chatRoom['guardian_name']) ?>様！E                    </div>
+                        <?= htmlspecialchars($chatRoom['student_name']) ?>さん（<?= htmlspecialchars($chatRoom['guardian_name']) ?>様）
+                    </div>
                     <div style="font-size: var(--text-subhead); color: var(--text-secondary); margin-bottom: 3px;">
-                        未読メチE��ージ: <?= $chatRoom['unread_count'] ?>件
+                        未読メッセージ: <?= $chatRoom['unread_count'] ?>件
                     </div>
                     <div style="font-size: var(--text-subhead); font-weight: bold; color: var(--apple-blue);">
-                        最新: <?= date('Y年n朁E日 H:i', strtotime($chatRoom['last_message_at'])) ?>
+                        最新: <?= date('Y年n月j日 H:i', strtotime($chatRoom['last_message_at'])) ?>
                     </div>
                 </div>
-                <a href="chat.php?room_id=<?= $chatRoom['room_id'] ?>" class="btn btn-primary btn-sm">チャチE��を開ぁE/a>
+                <a href="chat.php?room_id=<?= $chatRoom['room_id'] ?>" class="btn btn-primary btn-sm">チャットを開く</a>
             </div>
         <?php endforeach; ?>
     </div>
@@ -439,11 +456,11 @@ renderPageStart('staff', $currentPage, '連絡帳入劁E);
 <?php endif; ?>
 
 <?php if ($isTodayHoliday): ?>
-    <div class="alert alert-danger">本日は休日です、E/div>
+    <div class="alert alert-danger">本日は休日です。</div>
 <?php endif; ?>
 
 <?php if ($existingRecord): ?>
-    <div class="alert alert-success">本日の記録が既に存在します。修正する場合�E下記�Eフォームから編雁E��てください、E/div>
+    <div class="alert alert-success">本日の記録が既に存在します。修正する場合は下記のフォームから編集してください。</div>
 <?php endif; ?>
 
 <!-- 学年フィルター -->
@@ -451,16 +468,16 @@ renderPageStart('staff', $currentPage, '連絡帳入劁E);
     <label style="font-weight: 600; color: var(--text-primary);">フィルター:</label>
     <a href="?date=<?= urlencode($today) ?>&grade=all" class="grade-btn <?= $gradeFilter === 'all' ? 'active' : '' ?>">すべて</a>
     <a href="?date=<?= urlencode($today) ?>&grade=scheduled" class="grade-btn grade-btn-scheduled <?= $gradeFilter === 'scheduled' ? 'active' : '' ?>">
-        本日の予定参加老E?php if (!$isTodayHoliday && !empty($scheduledStudentIds)): ?> (<?= count($scheduledStudentIds) ?>吁E<?php endif; ?>
+        本日の予定参加者<?php if (!$isTodayHoliday && !empty($scheduledStudentIds)): ?> (<?= count($scheduledStudentIds) ?>名)<?php endif; ?>
     </a>
-    <a href="?date=<?= urlencode($today) ?>&grade=elementary" class="grade-btn <?= $gradeFilter === 'elementary' ? 'active' : '' ?>">小学甁E/a>
-    <a href="?date=<?= urlencode($today) ?>&grade=junior_high" class="grade-btn <?= $gradeFilter === 'junior_high' ? 'active' : '' ?>">中学甁E/a>
-    <a href="?date=<?= urlencode($today) ?>&grade=high_school" class="grade-btn <?= $gradeFilter === 'high_school' ? 'active' : '' ?>">高校甁E/a>
+    <a href="?date=<?= urlencode($today) ?>&grade=elementary" class="grade-btn <?= $gradeFilter === 'elementary' ? 'active' : '' ?>">小学生</a>
+    <a href="?date=<?= urlencode($today) ?>&grade=junior_high" class="grade-btn <?= $gradeFilter === 'junior_high' ? 'active' : '' ?>">中学生</a>
+    <a href="?date=<?= urlencode($today) ?>&grade=high_school" class="grade-btn <?= $gradeFilter === 'high_school' ? 'active' : '' ?>">高校生</a>
 </div>
 
 <div class="card">
     <div class="card-body">
-        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-blue);">新しい活動�E追加</h2>
+        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-blue);">新しい活動の追加</h2>
 
         <!-- 支援案検索 -->
         <div class="plan-search-box">
@@ -474,7 +491,7 @@ renderPageStart('staff', $currentPage, '連絡帳入劁E);
                     <select name="plan_tag" class="form-control">
                         <option value="">すべて</option>
                         <?php
-                        $tags = ['プログラミング', 'チE��スタイル', 'CAD', '動画', 'イラスチE, '企業支援', '農業', '音楽', '飁E, '学翁E, '自刁E��扱説明書', '忁E��', '言誁E, '教育', 'イベンチE, 'そ�E仁E];
+                        $tags = ['プログラミング', 'テキスタイル', 'CAD', '動画', 'イラスト', '企業支援', '農業', '音楽', '食', '学習', '自分取扱説明書', '心理', '言語', '教育', 'イベント', 'その他'];
                         foreach ($tags as $tag):
                         ?>
                             <option value="<?= htmlspecialchars($tag) ?>" <?= $searchTag === $tag ? 'selected' : '' ?>><?= htmlspecialchars($tag) ?></option>
@@ -502,18 +519,21 @@ renderPageStart('staff', $currentPage, '連絡帳入劁E);
             </form>
         </div>
 
-        <!-- 支援案選抁E-->
+        <!-- 支援案選択 -->
         <div class="form-group">
             <label class="form-label">
-                支援案を選抁E                <span style="font-size: var(--text-caption-1); color: var(--text-secondary); font-weight: normal;">(任愁E</span>
-                <a href="support_plan_form.php" style="font-size: var(--text-caption-1); margin-left: 10px;">📝 こ�E日の支援案を作�E</a>
+                支援案を選択
+                <span style="font-size: var(--text-caption-1); color: var(--text-secondary); font-weight: normal;">(任意)</span>
+                <a href="support_plan_form.php" style="font-size: var(--text-caption-1); margin-left: 10px;">📝 この日の支援案を作成</a>
             </label>
             <?php if (empty($supportPlans)): ?>
                 <div class="plan-info-box">
-                    💡 こ�E日�E�E?= date('Y年m朁E日', strtotime($today)) ?>�E��E支援案がまだ作�EされてぁE��せん、E                    <a href="support_plan_form.php" style="color: var(--apple-blue); text-decoration: underline;">支援案を作�E</a>してから活動を追加すると、より効玁E��に記録できます、E                </div>
+                    💡 この日（<?= date('Y年n月j日', strtotime($today)) ?>）の支援案がまだ作成されていません。
+                    <a href="support_plan_form.php" style="color: var(--apple-blue); text-decoration: underline;">支援案を作成</a>してから活動を追加すると、より効率的に記録できます。
+                </div>
             <?php endif; ?>
             <select id="supportPlan" class="form-control">
-                <option value="">支援案を選択しなぁE��手動�E力！E/option>
+                <option value="">支援案を選択しない（手動入力）</option>
                 <?php foreach ($supportPlans as $plan): ?>
                     <option value="<?= $plan['id'] ?>"
                             data-activity-name="<?= htmlspecialchars($plan['activity_name'], ENT_QUOTES, 'UTF-8') ?>"
@@ -522,15 +542,15 @@ renderPageStart('staff', $currentPage, '連絡帳入劁E);
                             data-domains="<?= htmlspecialchars($plan['five_domains_consideration'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
                             data-other="<?= htmlspecialchars($plan['other_notes'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
                         <?= htmlspecialchars($plan['activity_name']) ?>
-                        <span style="color: var(--text-secondary);">(作�E老E <?= htmlspecialchars($plan['staff_name']) ?>)</span>
+                        <span style="color: var(--text-secondary);">(作成者: <?= htmlspecialchars($plan['staff_name']) ?>)</span>
                     </option>
                 <?php endforeach; ?>
             </select>
         </div>
 
-        <!-- 支援案�E冁E��表示 -->
+        <!-- 支援案の内容表示 -->
         <div id="supportPlanDetails" class="plan-details-box">
-            <h3 style="color: var(--apple-blue); font-size: var(--text-callout); margin-bottom: var(--spacing-md);">選択した支援案�E冁E��</h3>
+            <h3 style="color: var(--apple-blue); font-size: var(--text-callout); margin-bottom: var(--spacing-md);">選択した支援案の内容</h3>
             <div id="planPurpose"></div>
             <div id="planContent"></div>
             <div id="planDomains"></div>
@@ -539,16 +559,16 @@ renderPageStart('staff', $currentPage, '連絡帳入劁E);
 
         <div class="form-group">
             <label class="form-label">活動名 <span style="color: var(--apple-red);">*</span></label>
-            <input type="text" id="activityName" class="form-control" placeholder="侁E 午前の活動、外�E活動、制作活動など" required>
+            <input type="text" id="activityName" class="form-control" placeholder="例: 午前の活動、外出活動、制作活動など" required>
         </div>
 
-        <h3 style="margin-top: var(--spacing-lg); margin-bottom: var(--spacing-md); font-size: var(--text-headline); color: var(--text-primary);">参加老E��抁E/h3>
+        <h3 style="margin-top: var(--spacing-lg); margin-bottom: var(--spacing-md); font-size: var(--text-headline); color: var(--text-primary);">参加者選択</h3>
         <div class="student-selection">
             <?php
             $gradeLabelMap = [
-                'elementary' => ['封E, 'badge-elementary'],
+                'elementary' => ['小', 'badge-elementary'],
                 'junior_high' => ['中', 'badge-junior-high'],
-                'high_school' => ['髁E, 'badge-high-school']
+                'high_school' => ['高', 'badge-high-school']
             ];
 
             foreach ($allStudents as $student):
@@ -563,12 +583,12 @@ renderPageStart('staff', $currentPage, '連絡帳入劁E);
                 </label>
             <?php endforeach; ?>
         </div>
-        <button type="button" class="btn btn-success" id="addParticipantsBtn">参加老E��追加</button>
+        <button type="button" class="btn btn-success" id="addParticipantsBtn">参加者を追加</button>
     </div>
 </div>
 
 <div id="formArea" style="display: none;">
-    <!-- フォームはJavaScriptで動的に生�E -->
+    <!-- フォームはJavaScriptで動的に生成 -->
 </div>
 
 <?php
@@ -584,7 +604,8 @@ const activityNameInput = document.getElementById('activityName');
 const existingRecord = {$existingRecordJson};
 const existingParticipants = {$existingParticipantsJson};
 
-// 支援案選択時の処琁EsupportPlanSelect.addEventListener('change', function() {
+// 支援案選択時の処理
+supportPlanSelect.addEventListener('change', function() {
     const selectedOption = this.options[this.selectedIndex];
 
     if (this.value === '') {
@@ -595,22 +616,23 @@ const existingParticipants = {$existingParticipantsJson};
         return;
     }
 
-    // 支援案�E冁E��を表示
+    // 支援案の内容を表示
     const activityName = selectedOption.dataset.activityName || '';
     const purpose = selectedOption.dataset.purpose || '';
     const content = selectedOption.dataset.content || '';
     const domains = selectedOption.dataset.domains || '';
     const other = selectedOption.dataset.other || '';
 
-    // 活動名を�E動�E劁E    activityNameInput.value = activityName;
+    // 活動名を自動入力
+    activityNameInput.value = activityName;
     activityNameInput.readOnly = true;
     activityNameInput.style.backgroundColor = 'var(--apple-gray-6)';
 
-    // 支援案�E冁E��を表示
-    document.getElementById('planPurpose').innerHTML = purpose ? '<div style="margin-bottom: 8px;"><strong style="color: var(--apple-blue);">活動�E目皁E</strong><br>' + escapeHtml(purpose) + '</div>' : '';
-    document.getElementById('planContent').innerHTML = content ? '<div style="margin-bottom: 8px;"><strong style="color: var(--apple-blue);">活動�E冁E��:</strong><br>' + escapeHtml(content) + '</div>' : '';
-    document.getElementById('planDomains').innerHTML = domains ? '<div style="margin-bottom: 8px;"><strong style="color: var(--apple-blue);">五領域への配�E:</strong><br>' + escapeHtml(domains) + '</div>' : '';
-    document.getElementById('planOther').innerHTML = other ? '<div><strong style="color: var(--apple-blue);">そ�E仁E</strong><br>' + escapeHtml(other) + '</div>' : '';
+    // 支援案の内容を表示
+    document.getElementById('planPurpose').innerHTML = purpose ? '<div style="margin-bottom: 8px;"><strong style="color: var(--apple-blue);">活動の目的:</strong><br>' + escapeHtml(purpose) + '</div>' : '';
+    document.getElementById('planContent').innerHTML = content ? '<div style="margin-bottom: 8px;"><strong style="color: var(--apple-blue);">活動の内容:</strong><br>' + escapeHtml(content) + '</div>' : '';
+    document.getElementById('planDomains').innerHTML = domains ? '<div style="margin-bottom: 8px;"><strong style="color: var(--apple-blue);">五領域への配慮:</strong><br>' + escapeHtml(domains) + '</div>' : '';
+    document.getElementById('planOther').innerHTML = other ? '<div><strong style="color: var(--apple-blue);">その他:</strong><br>' + escapeHtml(other) + '</div>' : '';
 
     supportPlanDetails.style.display = 'block';
 });
@@ -627,24 +649,25 @@ addParticipantsBtn.addEventListener('click', function() {
     const checkedBoxes = document.querySelectorAll('input[name="students[]"]:checked');
 
     if (activityName === '') {
-        alert('活動名を�E力してください');
+        alert('活動名を入力してください');
         return;
     }
 
     if (checkedBoxes.length === 0) {
-        alert('参加老E��選択してください');
+        alert('参加者を選択してください');
         return;
     }
 
-    // 次のペ�Eジ�E�フォーム入力）へ遷移
+    // 次のページ（フォーム入力）へ遷移
     const studentIds = Array.from(checkedBoxes).map(cb => cb.value);
 
-    // フォーム入力�EージへチE�Eタを渡して遷移
+    // フォーム入力ページへデータを渡して遷移
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = 'renrakucho_form.php';
 
-    // 支援桁EDを追加�E�選択されてぁE��場合！E    const supportPlanId = supportPlanSelect.value;
+    // 支援案IDを追加（選択されている場合）
+    const supportPlanId = supportPlanSelect.value;
     if (supportPlanId) {
         const planInput = document.createElement('input');
         planInput.type = 'hidden';
@@ -667,7 +690,7 @@ addParticipantsBtn.addEventListener('click', function() {
     dateInput.value = '{$today}';
     form.appendChild(dateInput);
 
-    // 参加老EDを追加
+    // 参加者IDを追加
     studentIds.forEach(id => {
         const input = document.createElement('input');
         input.type = 'hidden';

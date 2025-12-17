@@ -69,6 +69,8 @@ $sql = "
         inote.id,
         inote.integrated_content,
         inote.sent_at,
+        inote.guardian_confirmed,
+        inote.guardian_confirmed_at,
         dr.activity_name,
         dr.common_activity,
         dr.record_date,
@@ -294,6 +296,52 @@ renderPageStart('guardian', $currentPage, '連絡帳一覧', ['classroom' => $cl
     .note-badges { justify-content: flex-start; }
 }
 
+.confirmation-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--apple-gray-5);
+}
+
+.confirmation-checkbox {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.confirmation-checkbox input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.confirmation-checkbox label {
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.confirmation-checkbox.confirmed label {
+    color: var(--apple-green);
+}
+
+.confirmation-date {
+    font-size: var(--text-footnote);
+    color: var(--apple-green);
+}
+
+.note-item.unconfirmed {
+    border-left-color: var(--apple-orange);
+}
+
+.note-item.confirmed {
+    border-left-color: var(--apple-green);
+}
+
 @media print {
     .search-section, .btn { display: none !important; }
     .note-item { page-break-inside: avoid; }
@@ -430,7 +478,7 @@ renderPageStart('guardian', $currentPage, '連絡帳一覧', ['classroom' => $cl
             </div>
         <?php else: ?>
             <?php foreach ($notes as $note): ?>
-                <div class="note-item">
+                <div class="note-item <?= $note['guardian_confirmed'] ? 'confirmed' : 'unconfirmed' ?>">
                     <div class="note-header">
                         <div class="note-title">
                             <div class="activity-name"><?= htmlspecialchars($note['activity_name']) ?></div>
@@ -454,10 +502,57 @@ renderPageStart('guardian', $currentPage, '連絡帳一覧', ['classroom' => $cl
                         </div>
                     </div>
                     <div class="note-content"><?= nl2br(htmlspecialchars($note['integrated_content'])) ?></div>
+                    <div class="confirmation-box">
+                        <div class="confirmation-checkbox <?= $note['guardian_confirmed'] ? 'confirmed' : '' ?>">
+                            <input
+                                type="checkbox"
+                                id="confirm_<?= $note['id'] ?>"
+                                <?= $note['guardian_confirmed'] ? 'checked disabled' : '' ?>
+                                onchange="confirmNote(<?= $note['id'] ?>)"
+                            >
+                            <label for="confirm_<?= $note['id'] ?>">確認しました</label>
+                        </div>
+                        <?php if ($note['guardian_confirmed'] && $note['guardian_confirmed_at']): ?>
+                            <span class="confirmation-date">
+                                確認日時: <?= date('Y年n月j日 H:i', strtotime($note['guardian_confirmed_at'])) ?>
+                            </span>
+                        <?php endif; ?>
+                    </div>
                 </div>
             <?php endforeach; ?>
         <?php endif; ?>
     </div>
 </div>
 
-<?php renderPageEnd(); ?>
+<?php
+$inlineJs = <<<JS
+function confirmNote(noteId) {
+    if (!confirm('この連絡帳を「確認しました」にしてよろしいですか?')) {
+        document.getElementById('confirm_' + noteId).checked = false;
+        return;
+    }
+
+    fetch('confirm_note.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'note_id=' + noteId
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('エラーが発生しました: ' + (data.error || '不明なエラー'));
+            document.getElementById('confirm_' + noteId).checked = false;
+        }
+    })
+    .catch(error => {
+        alert('通信エラーが発生しました');
+        console.error('Error:', error);
+        document.getElementById('confirm_' + noteId).checked = false;
+    });
+}
+JS;
+
+renderPageEnd(['inlineJs' => $inlineJs]);
+?>

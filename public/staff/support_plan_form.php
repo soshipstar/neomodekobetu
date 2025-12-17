@@ -1,13 +1,13 @@
 <?php
 /**
- * 支援案作�E・編雁E��ォーム
+ * 支援案作成・編集フォーム
  */
 
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/layouts/page_wrapper.php';
 
-// スタチE��また�E管琁E��E�Eみアクセス可能
+// スタッフまたは管理者のみアクセス可能
 requireUserType(['staff', 'admin']);
 
 $pdo = getDbConnection();
@@ -17,7 +17,8 @@ $classroomId = $_SESSION['classroom_id'] ?? null;
 $planId = $_GET['id'] ?? null;
 $isEdit = !empty($planId);
 
-// 編雁E��ード�E場合、支援案データを取征E$plan = null;
+// 編集モードの場合、支援案データを取得
+$plan = null;
 if ($isEdit) {
     if ($classroomId) {
         $stmt = $pdo->prepare("
@@ -34,7 +35,7 @@ if ($isEdit) {
     $plan = $stmt->fetch();
 
     if (!$plan) {
-        $_SESSION['error'] = 'こ�E支援案にアクセスする権限がありません';
+        $_SESSION['error'] = 'この支援案にアクセスする権限がありません';
         header('Location: support_plans.php');
         exit;
     }
@@ -42,27 +43,28 @@ if ($isEdit) {
 
 // タグの定義
 $availableTags = [
-    'プログラミング', 'チE��スタイル', 'CAD', '動画', 'イラスチE,
-    '企業支援', '農業', '音楽', '飁E, '学翁E,
-    '自刁E��扱説明書', '忁E��', '言誁E, '教育', 'イベンチE, 'そ�E仁E
+    'プログラミング', 'テキスタイル', 'CAD', '動画', 'イラスト',
+    '企業支援', '農業', '音楽', '食', '学習',
+    '自分取扱説明書', '心理', '言語', '教育', 'イベント', 'その他'
 ];
 
 // 種別の定義
 $planTypes = [
-    'normal' => '通常活勁E,
-    'event' => 'イベンチE,
-    'other' => 'そ�E仁E
+    'normal' => '通常活動',
+    'event' => 'イベント',
+    'other' => 'その他'
 ];
 
 // 対象年齢層の定義
 $targetGrades = [
     'preschool' => '小学生未満',
-    'elementary' => '小学甁E,
-    'junior_high' => '中学甁E,
-    'high_school' => '高校甁E
+    'elementary' => '小学生',
+    'junior_high' => '中学生',
+    'high_school' => '高校生'
 ];
 
-// フォーム送信処琁Eif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// フォーム送信処理
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $activityDate = $_POST['activity_date'] ?? '';
     $activityName = $_POST['activity_name'] ?? '';
     $planType = $_POST['plan_type'] ?? 'normal';
@@ -106,7 +108,7 @@ $targetGrades = [
             ]);
             $_SESSION['success'] = '支援案を更新しました';
         } else {
-            // 新規作�E
+            // 新規作成
             $stmt = $pdo->prepare("
                 INSERT INTO support_plans (
                     activity_date, activity_name, plan_type, target_grade, activity_purpose, activity_content,
@@ -129,7 +131,7 @@ $targetGrades = [
                 $currentUser['id'],
                 $classroomId
             ]);
-            $_SESSION['success'] = '支援案を作�Eしました';
+            $_SESSION['success'] = '支援案を作成しました';
         }
 
         header('Location: support_plans.php');
@@ -140,8 +142,9 @@ $targetGrades = [
     }
 }
 
-// ペ�Eジ開姁E$currentPage = 'support_plan_form';
-$pageTitle = $isEdit ? '支援案編雁E : '支援案作�E';
+// ページ開始
+$currentPage = 'support_plan_form';
+$pageTitle = $isEdit ? '支援案編集' : '支援案作成';
 renderPageStart('staff', $currentPage, $pageTitle);
 ?>
 
@@ -260,14 +263,14 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
     </style>
 
-<!-- ペ�Eジヘッダー -->
+<!-- ページヘッダー -->
 <div class="page-header">
     <div class="page-header-content">
-        <h1 class="page-title"><?php echo $isEdit ? '支援案編雁E : '支援案作�E'; ?></h1>
-        <p class="page-subtitle">活動日専用の事前計画を作�E</p>
+        <h1 class="page-title"><?php echo $isEdit ? '支援案編集' : '支援案作成'; ?></h1>
+        <p class="page-subtitle">活動日専用の事前計画を作成</p>
     </div>
     <div class="page-header-actions">
-        <a href="support_plans.php" class="btn btn-secondary">ↁE支援案一覧へ</a>
+        <a href="support_plans.php" class="btn btn-secondary">← 支援案一覧へ</a>
     </div>
 </div>
 
@@ -282,50 +285,55 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
         <div class="form-container">
             <div class="info-box">
-                💡 支援案�E活動日専用の事前計画です。連絡帳作�E時に、その日の支援案が自動的に利用可能になります、E            </div>
+                支援案は活動日専用の事前計画です。連絡帳作成時に、その日の支援案が自動的に利用可能になります。
+            </div>
 
             <?php if (!$isEdit): ?>
                 <div style="margin-bottom: var(--spacing-lg); text-align: center;">
                     <button type="button" id="copyFromPastBtn" class="cancel-btn" style="background: var(--primary-purple); color: white;">
-                        📋 過去の支援案を引用する
+                        過去の支援案を引用する
                     </button>
                 </div>
 
                 <!-- 過去の支援案選択モーダル -->
                 <div id="copyModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
                     <div style="background: var(--apple-bg-primary); max-width: 900px; margin: 50px auto; border-radius: var(--radius-md); padding: var(--spacing-2xl);">
-                        <h2 style="margin-bottom: var(--spacing-lg);">過去の支援案を選抁E/h2>
+                        <h2 style="margin-bottom: var(--spacing-lg);">過去の支援案を選択</h2>
 
                         <!-- 検索ボックス -->
                         <div style="margin-bottom: var(--spacing-lg);">
-                            <input type="text" id="searchPlan" placeholder="🔍 活動名で検索..." style="width: 100%; padding: var(--spacing-md); border: 2px solid var(--primary-purple); border-radius: var(--radius-sm); font-size: var(--text-subhead);">
+                            <input type="text" id="searchPlan" placeholder="活動名で検索..." style="width: 100%; padding: var(--spacing-md); border: 2px solid var(--primary-purple); border-radius: var(--radius-sm); font-size: var(--text-subhead);">
                             <div style="font-size: var(--text-caption-1); color: var(--text-secondary); margin-top: 5px;">
-                                活動名を�E力すると、リアルタイムで絞り込まれまぁE                            </div>
+                                活動名を入力すると、リアルタイムで絞り込まれます。
+                            </div>
                         </div>
 
-                        <!-- 期間選抁E-->
+                        <!-- 期間選択 -->
                         <div style="margin-bottom: var(--spacing-lg);">
-                            <div style="font-size: var(--text-subhead); color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">📆 表示期間</div>
+                            <div style="font-size: var(--text-subhead); color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">表示期間</div>
 
-                            <!-- クイチE��選択�Eタン -->
+                            <!-- クイック選択ボタン -->
                             <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
                                 <button type="button" class="period-btn" data-period="7" style="padding: var(--spacing-sm) 16px; border: 2px solid var(--primary-purple); background: var(--apple-bg-primary); color: var(--primary-purple); border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-subhead); font-weight: 600;">
-                                    1週閁E                                </button>
+                                    1週間
+                                </button>
                                 <button type="button" class="period-btn active" data-period="30" style="padding: var(--spacing-sm) 16px; border: 2px solid var(--primary-purple); background: var(--primary-purple); color: white; border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-subhead); font-weight: 600;">
-                                    1ヶ朁E                                </button>
+                                    1ヶ月
+                                </button>
                                 <button type="button" class="period-btn" data-period="90" style="padding: var(--spacing-sm) 16px; border: 2px solid var(--primary-purple); background: var(--apple-bg-primary); color: var(--primary-purple); border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-subhead); font-weight: 600;">
-                                    3ヶ朁E                                </button>
+                                    3ヶ月
+                                </button>
                                 <button type="button" class="period-btn" data-period="all" style="padding: var(--spacing-sm) 16px; border: 2px solid var(--primary-purple); background: var(--apple-bg-primary); color: var(--primary-purple); border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-subhead); font-weight: 600;">
                                     すべて
                                 </button>
                             </div>
 
-                            <!-- 日付篁E��持E��E-->
+                            <!-- 日付範囲指定 -->
                             <div style="background: var(--apple-gray-6); padding: 15px; border-radius: var(--radius-sm); border: 2px solid #e9ecef;">
-                                <div style="font-size: var(--text-footnote); color: var(--text-secondary); margin-bottom: var(--spacing-md); font-weight: 600;">期間を指宁E/div>
+                                <div style="font-size: var(--text-footnote); color: var(--text-secondary); margin-bottom: var(--spacing-md); font-weight: 600;">期間を指定</div>
                                 <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                                     <input type="date" id="startDate" style="padding: var(--spacing-sm); border: 2px solid var(--primary-purple); border-radius: var(--radius-sm); font-size: var(--text-subhead);">
-                                    <span style="color: var(--text-secondary); font-weight: 600;">�E�E/span>
+                                    <span style="color: var(--text-secondary); font-weight: 600;">〜</span>
                                     <input type="date" id="endDate" style="padding: var(--spacing-sm); border: 2px solid var(--primary-purple); border-radius: var(--radius-sm); font-size: var(--text-subhead);">
                                     <button type="button" id="applyDateRange" style="padding: var(--spacing-sm) 20px; background: var(--primary-purple); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-subhead); font-weight: 600;">
                                         適用
@@ -337,17 +345,18 @@ renderPageStart('staff', $currentPage, $pageTitle);
                             </div>
                         </div>
 
-                        <!-- 表示刁E��タチE-->
+                        <!-- 表示切り替えタブ -->
                         <div style="margin-bottom: var(--spacing-lg); border-bottom: 2px solid var(--apple-gray-5);">
                             <button type="button" id="viewByDateTab" class="cancel-btn" style="padding: var(--spacing-md) 20px; border-radius: var(--radius-sm) 5px 0 0; background: var(--primary-purple); color: white; margin-right: 5px; border: none;">
-                                📅 日付頁E                            </button>
+                                日付順
+                            </button>
                             <button type="button" id="viewByListTab" class="cancel-btn" style="padding: var(--spacing-md) 20px; border-radius: var(--radius-sm) 5px 0 0; background: #e9ecef; color: var(--text-primary); border: none;">
-                                📋 一覧
+                                一覧
                             </button>
                         </div>
 
                         <div id="pastPlansContainer"></div>
-                        <button type="button" onclick="document.getElementById('copyModal').style.display='none'; document.getElementById('searchPlan').value='';" class="cancel-btn" style="margin-top: var(--spacing-lg);">閉じめE/button>
+                        <button type="button" onclick="document.getElementById('copyModal').style.display='none'; document.getElementById('searchPlan').value='';" class="cancel-btn" style="margin-top: var(--spacing-lg);">閉じる</button>
                     </div>
                 </div>
             <?php endif; ?>
@@ -358,7 +367,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                         活動予定日<span class="required">*</span>
                     </label>
                     <input type="date" name="activity_date" value="<?php echo htmlspecialchars($plan['activity_date'] ?? ''); ?>" required>
-                    <div class="help-text">こ�E支援案を使用する活動�E予定日を選択してください</div>
+                    <div class="help-text">この支援案を使用する活動の予定日を選択してください</div>
                 </div>
 
                 <div class="form-group">
@@ -366,7 +375,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                         活動名<span class="required">*</span>
                     </label>
                     <input type="text" name="activity_name" id="activityName" value="<?php echo htmlspecialchars($plan['activity_name'] ?? ''); ?>" required>
-                    <div class="help-text">侁E 公園での自然観察、クチE��ング活動、グループワーク</div>
+                    <div class="help-text">例: 公園での自然観察、クッキング活動、グループワーク</div>
                 </div>
 
                 <div class="form-group">
@@ -389,7 +398,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                             </label>
                         <?php endforeach; ?>
                     </div>
-                    <div class="help-text">通常活勁E 日常の活動、イベンチE 特別なイベント、その仁E 上記以夁E/div>
+                    <div class="help-text">通常活動: 日常の活動、イベント: 特別なイベント、その他: 上記以外</div>
                 </div>
 
                 <div class="form-group">
@@ -413,19 +422,19 @@ renderPageStart('staff', $currentPage, $pageTitle);
                             </label>
                         <?php endforeach; ?>
                     </div>
-                    <div class="help-text">こ�E活動�E対象となる年齢層を選択してください�E�褁E��選択可、未選択�E場合�E全年齢対象�E�E/div>
+                    <div class="help-text">この活動の対象となる年齢層を選択してください（複数選択可、未選択の場合は全年齢対象）</div>
                 </div>
 
                 <div class="form-group">
-                    <label>活動�E目皁E/label>
+                    <label>活動の目的</label>
                     <textarea name="activity_purpose" id="activityPurpose"><?php echo htmlspecialchars($plan['activity_purpose'] ?? ''); ?></textarea>
-                    <div class="help-text">こ�E活動を通して達�EしたぁE��標や狙いを記�Eしてください</div>
+                    <div class="help-text">この活動を通して達成したい目標や狙いを記載してください</div>
                 </div>
 
                 <div class="form-group">
-                    <label>活動�E冁E��</label>
+                    <label>活動の内容</label>
                     <textarea name="activity_content" id="activityContent"><?php echo htmlspecialchars($plan['activity_content'] ?? ''); ?></textarea>
-                    <div class="help-text">具体的な活動�E流れめE�E容を記�Eしてください</div>
+                    <div class="help-text">具体的な活動の流れや内容を記載してください</div>
                 </div>
 
                 <div class="form-group">
@@ -443,7 +452,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                             </label>
                         <?php endforeach; ?>
                     </div>
-                    <div class="help-text">活動に関連するタグを選択してください�E�褁E��選択可�E�E/div>
+                    <div class="help-text">活動に関連するタグを選択してください（複数選択可）</div>
                 </div>
 
                 <div class="form-group">
@@ -470,25 +479,25 @@ renderPageStart('staff', $currentPage, $pageTitle);
                             </label>
                         <?php endforeach; ?>
                     </div>
-                    <div class="help-text">こ�E支援案を実施する曜日を選択してください�E�褁E��選択可�E�E/div>
+                    <div class="help-text">この支援案を実施する曜日を選択してください（複数選択可）</div>
                 </div>
 
                 <div class="form-group">
-                    <label>五領域への配�E</label>
+                    <label>五領域への配慮</label>
                     <textarea name="five_domains_consideration" id="fiveDomains"><?php echo htmlspecialchars($plan['five_domains_consideration'] ?? ''); ?></textarea>
-                    <div class="help-text">健康・生活、E��動�E感覚、認知・行動、言語�Eコミュニケーション、人間関係�E社会性の吁E��域への配�Eを記�Eしてください</div>
+                    <div class="help-text">健康・生活、運動・感覚、認知・行動、言語・コミュニケーション、人間関係・社会性の五領域への配慮を記載してください</div>
                 </div>
 
                 <div class="form-group">
-                    <label>そ�E仁E/label>
+                    <label>その他</label>
                     <textarea name="other_notes" id="otherNotes"><?php echo htmlspecialchars($plan['other_notes'] ?? ''); ?></textarea>
-                    <div class="help-text">特記事頁E��注意点などがあれ�E記�Eしてください</div>
+                    <div class="help-text">特記事項や注意点などがあれば記載してください</div>
                 </div>
 
                 <div class="button-group">
                     <a href="support_plans.php" class="cancel-btn">キャンセル</a>
                     <button type="submit" class="submit-btn">
-                        <?php echo $isEdit ? '更新する' : '作�Eする'; ?>
+                        <?php echo $isEdit ? '更新する' : '作成する'; ?>
                     </button>
                 </div>
             </form>
@@ -496,7 +505,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
     </div>
 
     <script>
-    // 種別選択�Eスタイル更新
+    // 種別選択のスタイル更新
     function updateTypeStyle(radio) {
         const typeColors = {
             'normal': '#007aff',
@@ -504,7 +513,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             'other': '#8e8e93'
         };
 
-        // すべてのラベルをリセチE��
+        // すべてのラベルをリセット
         document.querySelectorAll('input[name="plan_type"]').forEach(input => {
             const label = input.closest('label');
             const color = typeColors[input.value];
@@ -533,7 +542,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
     <?php if (!$isEdit): ?>
     <script>
-    // 過去の支援案を引用する機�E
+    // 過去の支援案を引用する機能
     const copyFromPastBtn = document.getElementById('copyFromPastBtn');
     const copyModal = document.getElementById('copyModal');
     const pastPlansContainer = document.getElementById('pastPlansContainer');
@@ -548,17 +557,19 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
     let allPlans = [];
     let currentView = 'date'; // 'date' or 'list'
-    let currentPeriod = '30'; // チE��ォルト�E1ヶ朁E    let currentStartDate = null;
+    let currentPeriod = '30'; // デフォルトは1ヶ月
+    let currentStartDate = null;
     let currentEndDate = null;
 
-    // 期間ボタンのイベントリスナ�E
+    // 期間ボタンのイベントリスナー
     periodBtns.forEach(btn => {
         btn.addEventListener('click', async function() {
             currentPeriod = this.dataset.period;
             currentStartDate = null;
             currentEndDate = null;
 
-            // ボタンのアクチE��ブ状態を刁E��替ぁE            periodBtns.forEach(b => {
+            // ボタンのアクティブ状態を切り替え
+            periodBtns.forEach(b => {
                 b.style.background = 'white';
                 b.style.color = '#667eea';
                 b.classList.remove('active');
@@ -571,26 +582,27 @@ renderPageStart('staff', $currentPage, $pageTitle);
             startDate.value = '';
             endDate.value = '';
 
-            // 支援案を再取征E            await loadPlans();
+            // 支援案を再取得
+            await loadPlans();
         });
     });
 
-    // 日付篁E��適用ボタン
+    // 日付範囲適用ボタン
     applyDateRange.addEventListener('click', async function() {
         if (!startDate.value || !endDate.value) {
-            alert('開始日と終亁E��を両方入力してください');
+            alert('開始日と終了日を両方入力してください');
             return;
         }
 
         if (startDate.value > endDate.value) {
-            alert('開始日は終亁E��より前�E日付を持E��してください');
+            alert('開始日は終了日より前の日付を指定してください');
             return;
         }
 
         currentStartDate = startDate.value;
         currentEndDate = endDate.value;
 
-        // 期間ボタンを非アクチE��ブに
+        // 期間ボタンを非アクティブに
         periodBtns.forEach(b => {
             b.style.background = 'white';
             b.style.color = '#667eea';
@@ -600,14 +612,15 @@ renderPageStart('staff', $currentPage, $pageTitle);
         await loadPlans();
     });
 
-    // 日付篁E��クリアボタン
+    // 日付範囲クリアボタン
     clearDateRange.addEventListener('click', function() {
         startDate.value = '';
         endDate.value = '';
         currentStartDate = null;
         currentEndDate = null;
 
-        // チE��ォルト�E1ヶ月に戻ぁE        currentPeriod = '30';
+        // デフォルトの1ヶ月に戻す
+        currentPeriod = '30';
         periodBtns.forEach(b => {
             if (b.dataset.period === '30') {
                 b.style.background = '#667eea';
@@ -629,9 +642,11 @@ renderPageStart('staff', $currentPage, $pageTitle);
             let url = 'get_past_support_plans.php';
 
             if (currentStartDate && currentEndDate) {
-                // 日付篁E��が指定されてぁE��場吁E                url += `?start_date=${currentStartDate}&end_date=${currentEndDate}`;
+                // 日付範囲が指定されている場合
+                url += `?start_date=${currentStartDate}&end_date=${currentEndDate}`;
             } else {
-                // 期間ボタンが選択されてぁE��場吁E                url += `?period=${currentPeriod}`;
+                // 期間ボタンが選択されている場合
+                url += `?period=${currentPeriod}`;
             }
 
             const response = await fetch(url);
@@ -644,16 +659,17 @@ renderPageStart('staff', $currentPage, $pageTitle);
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('過去の支援案�E取得に失敗しました');
+            alert('過去の支援案の取得に失敗しました');
         }
     }
 
     copyFromPastBtn.addEventListener('click', async function() {
-        // 過去の支援案を取征E        await loadPlans();
+        // 過去の支援案を取得
+        await loadPlans();
         copyModal.style.display = 'flex';
     });
 
-    // 検索機�E
+    // 検索機能
     searchPlan.addEventListener('input', function() {
         const searchTerm = this.value.toLowerCase();
         const filteredPlans = allPlans.filter(plan =>
@@ -664,7 +680,8 @@ renderPageStart('staff', $currentPage, $pageTitle);
         renderPlans(filteredPlans);
     });
 
-    // タブ�Eり替ぁE    viewByDateTab.addEventListener('click', function() {
+    // タブ切り替え
+    viewByDateTab.addEventListener('click', function() {
         currentView = 'date';
         viewByDateTab.style.background = '#667eea';
         viewByDateTab.style.color = 'white';
@@ -716,7 +733,8 @@ renderPageStart('staff', $currentPage, $pageTitle);
             plansByDate[plan.activity_date].push(plan);
         });
 
-        // 日付頁E��ソート（新しい頁E��E        const sortedDates = Object.keys(plansByDate).sort((a, b) => b.localeCompare(a));
+        // 日付順にソート（新しい順）
+        const sortedDates = Object.keys(plansByDate).sort((a, b) => b.localeCompare(a));
 
         let html = '';
         sortedDates.forEach(date => {
@@ -736,7 +754,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
     }
 
     function renderByList(plans) {
-        let html = '<div style="margin-bottom: 15px; color: var(--text-secondary); font-size: var(--text-subhead);">全 ' + plans.length + ' 件の支援桁E/div>';
+        let html = '<div style="margin-bottom: 15px; color: var(--text-secondary); font-size: var(--text-subhead);">全 ' + plans.length + ' 件の支援案</div>';
         plans.forEach(plan => {
             html += renderPlanCard(plan, true);
         });
@@ -744,11 +762,12 @@ renderPageStart('staff', $currentPage, $pageTitle);
     }
 
     function formatDate(dateStr) {
-        // YYYY-MM-DD形式�E斁E���Eを解极E        const parts = dateStr.split('-');
+        // YYYY-MM-DD形式の文字列を解析
+        const parts = dateStr.split('-');
         const year = parseInt(parts[0], 10);
         const month = parseInt(parts[1], 10);
         const day = parseInt(parts[2], 10);
-        return year + '年' + month + '朁E + day + '日';
+        return year + '年' + month + '月' + day + '日';
     }
 
     function renderPlanCard(plan, showDate = false) {
@@ -758,25 +777,26 @@ renderPageStart('staff', $currentPage, $pageTitle);
             <div style="border: 1px solid var(--apple-gray-5); border-radius: var(--radius-sm); padding: 15px; margin-bottom: 15px; background: var(--apple-gray-6);">
                 <div style="margin-bottom: var(--spacing-md);">
                     <strong style="font-size: var(--text-callout);">${escapeHtml(plan.activity_name)}</strong>
-                    ${showDate ? `<span style="color: var(--primary-purple); font-size: var(--text-subhead); margin-left: 10px;">📅 ${dateStr}</span>` : ''}
+                    ${showDate ? `<span style="color: var(--primary-purple); font-size: var(--text-subhead); margin-left: 10px;">${dateStr}</span>` : ''}
                 </div>
-                ${plan.activity_purpose ? `<div style="margin-bottom: 8px; font-size: var(--text-subhead);"><strong>目皁E</strong> ${escapeHtml(plan.activity_purpose).substring(0, 100)}${plan.activity_purpose.length > 100 ? '...' : ''}</div>` : ''}
-                ${plan.activity_content ? `<div style="margin-bottom: 8px; font-size: var(--text-subhead);"><strong>冁E��:</strong> ${escapeHtml(plan.activity_content).substring(0, 100)}${plan.activity_content.length > 100 ? '...' : ''}</div>` : ''}
+                ${plan.activity_purpose ? `<div style="margin-bottom: 8px; font-size: var(--text-subhead);"><strong>目的:</strong> ${escapeHtml(plan.activity_purpose).substring(0, 100)}${plan.activity_purpose.length > 100 ? '...' : ''}</div>` : ''}
+                ${plan.activity_content ? `<div style="margin-bottom: 8px; font-size: var(--text-subhead);"><strong>内容:</strong> ${escapeHtml(plan.activity_content).substring(0, 100)}${plan.activity_content.length > 100 ? '...' : ''}</div>` : ''}
                 <button type="button" class="submit-btn" style="padding: var(--spacing-sm) 16px; font-size: var(--text-subhead); margin-top: 10px;" onclick="copyPlan(${plan.id})">
-                    こ�E支援案を引用
+                    この支援案を引用
                 </button>
             </div>
         `;
     }
 
-    // HTMLエスケーチE    function escapeHtml(text) {
+    // HTMLエスケープ
+    function escapeHtml(text) {
         if (!text) return '';
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     }
 
-    // 支援案をコピ�E
+    // 支援案をコピー
     async function copyPlan(planId) {
         try {
             const response = await fetch('get_support_plan.php?id=' + planId);
@@ -790,15 +810,15 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 document.getElementById('otherNotes').value = plan.other_notes || '';
 
                 copyModal.style.display = 'none';
-                alert('支援案�E冁E��を引用しました。活動予定日を設定して保存してください、E);
+                alert('支援案の内容を引用しました。活動予定日を設定して保存してください。');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('支援案�E引用に失敗しました');
+            alert('支援案の引用に失敗しました');
         }
     }
 
-    // モーダルの外�EをクリチE��したら閉じる
+    // モーダルの外側をクリックしたら閉じる
     copyModal.addEventListener('click', function(e) {
         if (e.target === copyModal) {
             copyModal.style.display = 'none';

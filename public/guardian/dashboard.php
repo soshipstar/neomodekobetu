@@ -262,7 +262,7 @@ try {
     error_log("Error fetching submission requests: " . $e->getMessage());
 }
 
-// 各生徒の最新の連絡帳を取得
+// 各生徒の未確認の連絡帳を取得（ダッシュボードでは未確認のみ表示）
 $notesData = [];
 if ($hasIntegratedNotesTable) {
     foreach ($students as $student) {
@@ -278,7 +278,7 @@ if ($hasIntegratedNotesTable) {
                     dr.record_date
                 FROM integrated_notes inote
                 INNER JOIN daily_records dr ON inote.daily_record_id = dr.id
-                WHERE inote.student_id = ? AND inote.is_sent = 1
+                WHERE inote.student_id = ? AND inote.is_sent = 1 AND inote.guardian_confirmed = 0
                 ORDER BY dr.record_date DESC, inote.sent_at DESC
                 LIMIT 10
             ");
@@ -955,9 +955,14 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
                 <span class="grade-badge"><?= getGradeLabel($student['grade_level']) ?></span>
             </div>
 
+            <div style="text-align: right; margin-bottom: var(--spacing-md);">
+                <a href="communication_logs.php?student_id=<?= $student['id'] ?>" style="color: var(--apple-blue); text-decoration: none; font-size: var(--text-footnote);">
+                    すべての連絡帳を見る →
+                </a>
+            </div>
             <?php if (empty($notesData[$student['id']])): ?>
-                <div class="no-notes">
-                    まだ連絡帳が送信されていません
+                <div class="no-notes" style="color: var(--apple-green);">
+                    ✓ 確認が必要な連絡帳はありません
                 </div>
             <?php else: ?>
                 <?php foreach ($notesData[$student['id']] as $note): ?>

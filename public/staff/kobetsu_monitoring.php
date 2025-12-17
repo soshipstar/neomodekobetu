@@ -1,20 +1,22 @@
 <?php
 /**
- * スタチE��用 モニタリング表作�Eペ�Eジ
+ * スタッフ用 モニタリング表作成ページ
  */
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/layouts/page_wrapper.php';
 
-// スタチE��また�E管琁E��E�Eみアクセス可能
+// スタッフまたは管理者のみアクセス可能
 requireUserType(['staff', 'admin']);
 
 $pdo = getDbConnection();
 $staffId = $_SESSION['user_id'];
 
-// スタチE��の教室IDを取征E$classroomId = $_SESSION['classroom_id'] ?? null;
+// スタッフの教室IDを取得
+$classroomId = $_SESSION['classroom_id'] ?? null;
 
-// 削除処琁Eif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_monitoring_id'])) {
+// 削除処理
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_monitoring_id'])) {
     $deleteId = $_POST['delete_monitoring_id'];
 
     try {
@@ -26,9 +28,10 @@ $staffId = $_SESSION['user_id'];
         $stmt = $pdo->prepare("DELETE FROM monitoring_records WHERE id = ?");
         $stmt->execute([$deleteId]);
 
-        $_SESSION['success'] = 'モニタリング表を削除しました、E;
+        $_SESSION['success'] = 'モニタリング表を削除しました。';
 
-        // リダイレクト�Eを決宁E        $studentId = $_POST['student_id'] ?? null;
+        // リダイレクト先を決定
+        $studentId = $_POST['student_id'] ?? null;
         $planId = $_POST['plan_id'] ?? null;
 
         if ($studentId && $planId) {
@@ -42,7 +45,8 @@ $staffId = $_SESSION['user_id'];
     }
 }
 
-// 自刁E�E教室の生徒を取征Eif ($classroomId) {
+// 自分の教室の生徒を取得
+if ($classroomId) {
     $stmt = $pdo->prepare("
         SELECT s.id, s.student_name
         FROM students s
@@ -56,11 +60,15 @@ $staffId = $_SESSION['user_id'];
 }
 $students = $stmt->fetchAll();
 
-// 選択された生征E$selectedStudentId = $_GET['student_id'] ?? null;
+// 選択された生徒
+$selectedStudentId = $_GET['student_id'] ?? null;
 $selectedPlanId = $_GET['plan_id'] ?? null;
 $selectedMonitoringId = $_GET['monitoring_id'] ?? null;
 
-// 選択された生徒�E個別支援計画一覧�E�モニタリング期限が今日から1ヶ月以冁E�Eも�E、また�E既存モニタリングがあるもの�E�E// モニタリング期限 = 個別支援計画書のcreated_date + 5ヶ朁E// つまり、created_date + 5ヶ朁E<= 今日 + 1ヶ朁EↁEcreated_date <= 今日 - 4ヶ朁E$studentPlans = [];
+// 選択された生徒の個別支援計画一覧（モニタリング期限が今日から1ヶ月以内のもの、または既存モニタリングがあるもの）
+// モニタリング期限 = 個別支援計画書のcreated_date + 5ヶ月
+// つまり、created_date + 5ヶ月 <= 今日 + 1ヶ月 → created_date <= 今日 - 4ヶ月
+$studentPlans = [];
 if ($selectedStudentId) {
     $stmt = $pdo->prepare("
         SELECT DISTINCT isp.*
@@ -88,13 +96,15 @@ if ($selectedPlanId) {
     if ($planData) {
         $selectedStudentId = $planData['student_id'];
 
-        // 明細を取征E        $stmt = $pdo->prepare("SELECT * FROM individual_support_plan_details WHERE plan_id = ? ORDER BY row_order");
+        // 明細を取得
+        $stmt = $pdo->prepare("SELECT * FROM individual_support_plan_details WHERE plan_id = ? ORDER BY row_order");
         $stmt->execute([$selectedPlanId]);
         $planDetails = $stmt->fetchAll();
     }
 }
 
-// 既存�EモニタリングチE�Eタを取征E$monitoringData = null;
+// 既存のモニタリングデータを取得
+$monitoringData = null;
 $monitoringDetails = [];
 if ($selectedMonitoringId) {
     $stmt = $pdo->prepare("SELECT * FROM monitoring_records WHERE id = ?");
@@ -105,16 +115,18 @@ if ($selectedMonitoringId) {
         $selectedPlanId = $monitoringData['plan_id'];
         $selectedStudentId = $monitoringData['student_id'];
 
-        // モニタリング明細を取征E        $stmt = $pdo->prepare("SELECT * FROM monitoring_details WHERE monitoring_id = ?");
+        // モニタリング明細を取得
+        $stmt = $pdo->prepare("SELECT * FROM monitoring_details WHERE monitoring_id = ?");
         $stmt->execute([$selectedMonitoringId]);
         $monitoringDetailsRaw = $stmt->fetchAll();
 
-        // plan_detail_idをキーにした配�Eに変換
+        // plan_detail_idをキーにした配列に変換
         foreach ($monitoringDetailsRaw as $detail) {
             $monitoringDetails[$detail['plan_detail_id']] = $detail;
         }
 
-        // 計画チE�Eタも取征E        $stmt = $pdo->prepare("SELECT * FROM individual_support_plans WHERE id = ?");
+        // 計画データも取得
+        $stmt = $pdo->prepare("SELECT * FROM individual_support_plans WHERE id = ?");
         $stmt->execute([$selectedPlanId]);
         $planData = $stmt->fetch();
 
@@ -131,8 +143,10 @@ if ($selectedPlanId) {
     $stmt->execute([$selectedPlanId]);
     $existingMonitorings = $stmt->fetchAll();
 }
-// ペ�Eジ開姁E$currentPage = 'kobetsu_monitoring';
-renderPageStart('staff', $currentPage, 'モニタリング表作�E');
+
+// ページ開始
+$currentPage = 'kobetsu_monitoring';
+renderPageStart('staff', $currentPage, 'モニタリング表作成');
 ?>
 
 <style>
@@ -392,21 +406,22 @@ renderPageStart('staff', $currentPage, 'モニタリング表作�E');
 }
 </style>
 
-<!-- ペ�Eジヘッダー -->
+<!-- ページヘッダー -->
 <div class="page-header">
     <div class="page-header-content">
-        <h1 class="page-title">モニタリング表作�E</h1>
+        <h1 class="page-title">モニタリング表作成</h1>
         <p class="page-subtitle">
-            支援目標�E達�E状況を評価
+            支援目標の達成状況を評価
             <?php if ($monitoringData && ($monitoringData['guardian_confirmed'] ?? 0)): ?>
                 <span class="guardian-confirmed-badge">
-                    ✁E保護老E��認済み�E�E?= date('Y/m/d H:i', strtotime($monitoringData['guardian_confirmed_at'])) ?>�E�E                </span>
+                    ✓ 保護者確認済み（<?= date('Y/m/d H:i', strtotime($monitoringData['guardian_confirmed_at'])) ?>）
+                </span>
             <?php endif; ?>
         </p>
     </div>
 </div>
 
-<a href="renrakucho_activities.php" class="quick-link">ↁE活動管琁E��戻めE/a>
+<a href="renrakucho_activities.php" class="quick-link">← 活動管理に戻る</a>
             <?php if (isset($_SESSION['success'])): ?>
                 <div class="alert alert-success">
                     <?= htmlspecialchars($_SESSION['success']) ?>
@@ -421,10 +436,10 @@ renderPageStart('staff', $currentPage, 'モニタリング表作�E');
                 <?php unset($_SESSION['error']); ?>
             <?php endif; ?>
 
-            <!-- 生徒�E計画選択エリア -->
+            <!-- 生徒・計画選択エリア -->
             <div class="selection-area">
                 <div class="form-group">
-                    <label>生徒を選抁E*</label>
+                    <label>生徒を選択 *</label>
                     <select id="studentSelect" onchange="changeStudent()">
                         <option value="">-- 生徒を選択してください --</option>
                         <?php foreach ($students as $student): ?>
@@ -437,12 +452,12 @@ renderPageStart('staff', $currentPage, 'モニタリング表作�E');
 
                 <?php if (!empty($studentPlans)): ?>
                     <div class="form-group">
-                        <label>個別支援計画書を選抁E*</label>
+                        <label>個別支援計画書を選択 *</label>
                         <select id="planSelect" onchange="changePlan()">
                             <option value="">-- 計画書を選択してください --</option>
                             <?php foreach ($studentPlans as $plan): ?>
                                 <option value="<?= $plan['id'] ?>" <?= $plan['id'] == $selectedPlanId ? 'selected' : '' ?>>
-                                    <?= date('Y年m朁E日', strtotime($plan['created_date'])) ?> 作�E
+                                    <?= date('Y年m月d日', strtotime($plan['created_date'])) ?> 作成
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -451,29 +466,29 @@ renderPageStart('staff', $currentPage, 'モニタリング表作�E');
             </div>
 
             <?php if ($selectedPlanId && $planData): ?>
-                <!-- 既存�Eモニタリング一覧 -->
+                <!-- 既存のモニタリング一覧 -->
                 <?php if (!empty($existingMonitorings)): ?>
                     <div class="monitoring-list">
-                        <strong>既存�Eモニタリング:</strong>
+                        <strong>既存のモニタリング:</strong>
                         <?php foreach ($existingMonitorings as $monitoring): ?>
                             <div style="display: inline-flex; align-items: center; gap: 5px;">
                                 <a href="kobetsu_monitoring.php?student_id=<?= $selectedStudentId ?>&plan_id=<?= $selectedPlanId ?>&monitoring_id=<?= $monitoring['id'] ?>"
                                    class="monitoring-item <?= $monitoring['id'] == $selectedMonitoringId ? 'active' : '' ?>">
                                     <?= date('Y/m/d', strtotime($monitoring['monitoring_date'])) ?>
                                 </a>
-                                <form method="POST" style="display: inline;" onsubmit="return confirm('こ�Eモニタリング表を削除してもよろしぁE��すか�E�E);">
+                                <form method="POST" style="display: inline;" onsubmit="return confirm('このモニタリング表を削除してもよろしいですか？');">
                                     <input type="hidden" name="delete_monitoring_id" value="<?= $monitoring['id'] ?>">
                                     <input type="hidden" name="student_id" value="<?= $selectedStudentId ?>">
                                     <input type="hidden" name="plan_id" value="<?= $selectedPlanId ?>">
-                                    <button type="submit" style="background: var(--apple-red); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: var(--text-caption-1);">🗑�E�E/button>
+                                    <button type="submit" style="background: var(--apple-red); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: var(--text-caption-1);">🗑️</button>
                                 </form>
                             </div>
                         <?php endforeach; ?>
-                        <a href="kobetsu_monitoring.php?student_id=<?= $selectedStudentId ?>&plan_id=<?= $selectedPlanId ?>" class="monitoring-item">+ 新規作�E</a>
+                        <a href="kobetsu_monitoring.php?student_id=<?= $selectedStudentId ?>&plan_id=<?= $selectedPlanId ?>" class="monitoring-item">+ 新規作成</a>
                     </div>
                 <?php endif; ?>
 
-                <!-- 計画惁E��表示 -->
+                <!-- 計画情報表示 -->
                 <div class="plan-info">
                     <h3 style="margin-bottom: 15px; color: #1976d2;">対象の個別支援計画書</h3>
                     <div class="info-row">
@@ -482,16 +497,16 @@ renderPageStart('staff', $currentPage, 'モニタリング表作�E');
                             <div class="info-value"><?= htmlspecialchars($planData['student_name']) ?></div>
                         </div>
                         <div class="info-item">
-                            <div class="info-label">作�E年月日</div>
-                            <div class="info-value"><?= date('Y年m朁E日', strtotime($planData['created_date'])) ?></div>
+                            <div class="info-label">作成年月日</div>
+                            <div class="info-value"><?= date('Y年m月d日', strtotime($planData['created_date'])) ?></div>
                         </div>
                         <div class="info-item">
-                            <div class="info-label">長期目標達成時朁E/div>
-                            <div class="info-value"><?= $planData['long_term_goal_date'] ? date('Y年m朁E日', strtotime($planData['long_term_goal_date'])) : '未設宁E ?></div>
+                            <div class="info-label">長期目標達成時期</div>
+                            <div class="info-value"><?= $planData['long_term_goal_date'] ? date('Y年m月d日', strtotime($planData['long_term_goal_date'])) : '未設定' ?></div>
                         </div>
                         <div class="info-item">
-                            <div class="info-label">短期目標達成時朁E/div>
-                            <div class="info-value"><?= $planData['short_term_goal_date'] ? date('Y年m朁E日', strtotime($planData['short_term_goal_date'])) : '未設宁E ?></div>
+                            <div class="info-label">短期目標達成時期</div>
+                            <div class="info-value"><?= $planData['short_term_goal_date'] ? date('Y年m月d日', strtotime($planData['short_term_goal_date'])) : '未設定' ?></div>
                         </div>
                     </div>
                 </div>
@@ -512,27 +527,29 @@ renderPageStart('staff', $currentPage, 'モニタリング表作�E');
 
                     <!-- モニタリング表 -->
                     <div class="section-title">
-                        支援目標�E達�E状況E                        <button type="button" class="btn-ai-generate" onclick="generateAllEvaluations()">
-                            🤁EAIで評価を�E動生戁E                        </button>
+                        支援目標の達成状況
+                        <button type="button" class="btn-ai-generate" onclick="generateAllEvaluations()">
+                            🤖 AIで評価を自動生成
+                        </button>
                     </div>
 
                     <div id="generateProgress" class="generate-progress" style="display: none;">
                         <div class="progress-bar">
                             <div class="progress-fill" id="progressFill"></div>
                         </div>
-                        <div class="progress-text" id="progressText">生�E中...</div>
+                        <div class="progress-text" id="progressText">生成中...</div>
                     </div>
 
                     <div class="table-wrapper">
                         <table class="monitoring-table">
                             <thead>
                                 <tr>
-                                    <th style="width: 100px;">頁E��</th>
-                                    <th style="width: 180px;">支援目樁E/th>
-                                    <th style="width: 200px;">支援冁E��</th>
-                                    <th style="width: 100px;">達�E時期</th>
-                                    <th style="width: 120px;">達�E状況E/th>
-                                    <th style="width: 300px;">モニタリングコメンチE/th>
+                                    <th style="width: 100px;">項目</th>
+                                    <th style="width: 180px;">支援目標</th>
+                                    <th style="width: 200px;">支援内容</th>
+                                    <th style="width: 100px;">達成時期</th>
+                                    <th style="width: 120px;">達成状況</th>
+                                    <th style="width: 300px;">モニタリングコメント</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -551,34 +568,34 @@ renderPageStart('staff', $currentPage, 'モニタリング表作�E');
                                         </td>
                                         <td>
                                             <div class="plan-content">
-                                                <?= nl2br(htmlspecialchars($detail['support_goal'] ?: '�E�未設定！E)) ?>
+                                                <?= nl2br(htmlspecialchars($detail['support_goal'] ?: '（未設定）')) ?>
                                             </div>
                                         </td>
                                         <td>
                                             <div class="plan-content">
-                                                <?= nl2br(htmlspecialchars($detail['support_content'] ?: '�E�未設定！E)) ?>
+                                                <?= nl2br(htmlspecialchars($detail['support_content'] ?: '（未設定）')) ?>
                                             </div>
                                         </td>
                                         <td>
                                             <div class="plan-content">
-                                                <?= $detail['achievement_date'] ? date('Y/m/d', strtotime($detail['achievement_date'])) : '�E�未設定！E ?>
+                                                <?= $detail['achievement_date'] ? date('Y/m/d', strtotime($detail['achievement_date'])) : '（未設定）' ?>
                                             </div>
                                         </td>
                                         <td>
                                             <input type="hidden" name="details[<?= $detail['id'] ?>][plan_detail_id]" value="<?= $detail['id'] ?>">
                                             <select name="details[<?= $detail['id'] ?>][achievement_status]" id="status_<?= $detail['id'] ?>">
-                                                <option value="">-- 選抁E--</option>
-                                                <option value="未着扁E <?= ($monitoringDetail['achievement_status'] ?? '') == '未着扁E ? 'selected' : '' ?>>未着扁E/option>
+                                                <option value="">-- 選択 --</option>
+                                                <option value="未着手" <?= ($monitoringDetail['achievement_status'] ?? '') == '未着手' ? 'selected' : '' ?>>未着手</option>
                                                 <option value="進行中" <?= ($monitoringDetail['achievement_status'] ?? '') == '進行中' ? 'selected' : '' ?>>進行中</option>
-                                                <option value="達�E" <?= ($monitoringDetail['achievement_status'] ?? '') == '達�E' ? 'selected' : '' ?>>達�E</option>
+                                                <option value="達成" <?= ($monitoringDetail['achievement_status'] ?? '') == '達成' ? 'selected' : '' ?>>達成</option>
                                                 <option value="継続中" <?= ($monitoringDetail['achievement_status'] ?? '') == '継続中' ? 'selected' : '' ?>>継続中</option>
-                                                <option value="見直し忁E��E <?= ($monitoringDetail['achievement_status'] ?? '') == '見直し忁E��E ? 'selected' : '' ?>>見直し忁E��E/option>
+                                                <option value="見直し必要" <?= ($monitoringDetail['achievement_status'] ?? '') == '見直し必要' ? 'selected' : '' ?>>見直し必要</option>
                                             </select>
                                         </td>
                                         <td>
                                             <textarea name="details[<?= $detail['id'] ?>][monitoring_comment]" rows="3" id="comment_<?= $detail['id'] ?>"><?= htmlspecialchars($monitoringDetail['monitoring_comment'] ?? '') ?></textarea>
                                             <button type="button" class="btn-ai-single" onclick="generateSingleEvaluation(<?= $detail['id'] ?>)" id="btn_single_<?= $detail['id'] ?>">
-                                                🤁EAI生�E
+                                                🤖 AI生成
                                             </button>
                                         </td>
                                     </tr>
@@ -587,90 +604,91 @@ renderPageStart('staff', $currentPage, 'モニタリング表作�E');
                         </table>
                     </div>
 
-                    <!-- 短期目標�E長期目標�E振り返り -->
-                    <div class="section-title" style="margin-top: var(--spacing-2xl);">目標�E達�E状況E/div>
+                    <!-- 短期目標・長期目標の振り返り -->
+                    <div class="section-title" style="margin-top: var(--spacing-2xl);">目標の達成状況</div>
 
-                    <!-- 長期目樁E-->
+                    <!-- 長期目標 -->
                     <div style="margin-bottom: 25px; padding: var(--spacing-lg); background: var(--apple-gray-6); border-radius: var(--radius-sm); border-left: 4px solid var(--primary-purple);">
-                        <h4 style="color: var(--primary-purple); margin-bottom: 12px; font-size: var(--text-callout);">🎯 長期目樁E/h4>
+                        <h4 style="color: var(--primary-purple); margin-bottom: 12px; font-size: var(--text-callout);">🎯 長期目標</h4>
                         <?php if (!empty($planData['long_term_goal_text'])): ?>
                             <div style="padding: var(--spacing-md); background: var(--apple-bg-primary); border-radius: 6px; margin-bottom: 15px; line-height: 1.6;">
                                 <?= nl2br(htmlspecialchars($planData['long_term_goal_text'])) ?>
                             </div>
                         <?php else: ?>
                             <div style="padding: var(--spacing-md); background: var(--apple-bg-primary); border-radius: 6px; margin-bottom: 15px; color: var(--text-secondary); font-style: italic;">
-                                長期目標が設定されてぁE��せん
+                                長期目標が設定されていません
                             </div>
                         <?php endif; ?>
 
                         <div class="form-group" style="margin-bottom: 12px;">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">達�E状況E/label>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">達成状況</label>
                             <select name="long_term_goal_achievement" style="width: 100%; padding: var(--spacing-md); border: 1px solid var(--apple-gray-5); border-radius: 6px; font-size: var(--text-subhead);">
                                 <option value="">-- 選択してください --</option>
-                                <option value="未着扁E <?= ($monitoringData['long_term_goal_achievement'] ?? '') == '未着扁E ? 'selected' : '' ?>>未着扁E/option>
+                                <option value="未着手" <?= ($monitoringData['long_term_goal_achievement'] ?? '') == '未着手' ? 'selected' : '' ?>>未着手</option>
                                 <option value="進行中" <?= ($monitoringData['long_term_goal_achievement'] ?? '') == '進行中' ? 'selected' : '' ?>>進行中</option>
-                                <option value="達�E" <?= ($monitoringData['long_term_goal_achievement'] ?? '') == '達�E' ? 'selected' : '' ?>>達�E</option>
+                                <option value="達成" <?= ($monitoringData['long_term_goal_achievement'] ?? '') == '達成' ? 'selected' : '' ?>>達成</option>
                                 <option value="継続中" <?= ($monitoringData['long_term_goal_achievement'] ?? '') == '継続中' ? 'selected' : '' ?>>継続中</option>
-                                <option value="見直し忁E��E <?= ($monitoringData['long_term_goal_achievement'] ?? '') == '見直し忁E��E ? 'selected' : '' ?>>見直し忁E��E/option>
+                                <option value="見直し必要" <?= ($monitoringData['long_term_goal_achievement'] ?? '') == '見直し必要' ? 'selected' : '' ?>>見直し必要</option>
                             </select>
                         </div>
 
                         <div class="form-group">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">コメンチE/label>
-                            <textarea name="long_term_goal_comment" rows="4" style="width: 100%; padding: var(--spacing-md); border: 1px solid var(--apple-gray-5); border-radius: 6px; font-size: var(--text-subhead); font-family: inherit; resize: vertical;" placeholder="長期目標に対する振り返りめE��見を記�Eしてください"><?= htmlspecialchars($monitoringData['long_term_goal_comment'] ?? '') ?></textarea>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">コメント</label>
+                            <textarea name="long_term_goal_comment" rows="4" style="width: 100%; padding: var(--spacing-md); border: 1px solid var(--apple-gray-5); border-radius: 6px; font-size: var(--text-subhead); font-family: inherit; resize: vertical;" placeholder="長期目標に対する振り返りや意見を記入してください"><?= htmlspecialchars($monitoringData['long_term_goal_comment'] ?? '') ?></textarea>
                         </div>
                     </div>
 
-                    <!-- 短期目樁E-->
+                    <!-- 短期目標 -->
                     <div style="margin-bottom: 25px; padding: var(--spacing-lg); background: var(--apple-gray-6); border-radius: var(--radius-sm); border-left: 4px solid var(--apple-green);">
-                        <h4 style="color: var(--apple-green); margin-bottom: 12px; font-size: var(--text-callout);">📌 短期目樁E/h4>
+                        <h4 style="color: var(--apple-green); margin-bottom: 12px; font-size: var(--text-callout);">📌 短期目標</h4>
                         <?php if (!empty($planData['short_term_goal_text'])): ?>
                             <div style="padding: var(--spacing-md); background: var(--apple-bg-primary); border-radius: 6px; margin-bottom: 15px; line-height: 1.6;">
                                 <?= nl2br(htmlspecialchars($planData['short_term_goal_text'])) ?>
                             </div>
                         <?php else: ?>
                             <div style="padding: var(--spacing-md); background: var(--apple-bg-primary); border-radius: 6px; margin-bottom: 15px; color: var(--text-secondary); font-style: italic;">
-                                短期目標が設定されてぁE��せん
+                                短期目標が設定されていません
                             </div>
                         <?php endif; ?>
 
                         <div class="form-group" style="margin-bottom: 12px;">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">達�E状況E/label>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">達成状況</label>
                             <select name="short_term_goal_achievement" style="width: 100%; padding: var(--spacing-md); border: 1px solid var(--apple-gray-5); border-radius: 6px; font-size: var(--text-subhead);">
                                 <option value="">-- 選択してください --</option>
-                                <option value="未着扁E <?= ($monitoringData['short_term_goal_achievement'] ?? '') == '未着扁E ? 'selected' : '' ?>>未着扁E/option>
+                                <option value="未着手" <?= ($monitoringData['short_term_goal_achievement'] ?? '') == '未着手' ? 'selected' : '' ?>>未着手</option>
                                 <option value="進行中" <?= ($monitoringData['short_term_goal_achievement'] ?? '') == '進行中' ? 'selected' : '' ?>>進行中</option>
-                                <option value="達�E" <?= ($monitoringData['short_term_goal_achievement'] ?? '') == '達�E' ? 'selected' : '' ?>>達�E</option>
+                                <option value="達成" <?= ($monitoringData['short_term_goal_achievement'] ?? '') == '達成' ? 'selected' : '' ?>>達成</option>
                                 <option value="継続中" <?= ($monitoringData['short_term_goal_achievement'] ?? '') == '継続中' ? 'selected' : '' ?>>継続中</option>
-                                <option value="見直し忁E��E <?= ($monitoringData['short_term_goal_achievement'] ?? '') == '見直し忁E��E ? 'selected' : '' ?>>見直し忁E��E/option>
+                                <option value="見直し必要" <?= ($monitoringData['short_term_goal_achievement'] ?? '') == '見直し必要' ? 'selected' : '' ?>>見直し必要</option>
                             </select>
                         </div>
 
                         <div class="form-group">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">コメンチE/label>
-                            <textarea name="short_term_goal_comment" rows="4" style="width: 100%; padding: var(--spacing-md); border: 1px solid var(--apple-gray-5); border-radius: 6px; font-size: var(--text-subhead); font-family: inherit; resize: vertical;" placeholder="短期目標に対する振り返りめE��見を記�Eしてください"><?= htmlspecialchars($monitoringData['short_term_goal_comment'] ?? '') ?></textarea>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">コメント</label>
+                            <textarea name="short_term_goal_comment" rows="4" style="width: 100%; padding: var(--spacing-md); border: 1px solid var(--apple-gray-5); border-radius: 6px; font-size: var(--text-subhead); font-family: inherit; resize: vertical;" placeholder="短期目標に対する振り返りや意見を記入してください"><?= htmlspecialchars($monitoringData['short_term_goal_comment'] ?? '') ?></textarea>
                         </div>
                     </div>
 
-                    <!-- 総合所要E-->
-                    <div class="section-title">総合所要E/div>
+                    <!-- 総合所見 -->
+                    <div class="section-title">総合所見</div>
                     <div class="form-group">
                         <textarea name="overall_comment" rows="6"><?= htmlspecialchars($monitoringData['overall_comment'] ?? '') ?></textarea>
                     </div>
 
                     <!-- ボタン -->
                     <div class="button-group">
-                        <button type="submit" name="save_draft" class="btn btn-secondary">📝 下書き保存（保護老E��公開！E/button>
-                        <button type="submit" class="btn btn-success">✁E作�E・提�E�E�保護老E��公開！E/button>
+                        <button type="submit" name="save_draft" class="btn btn-secondary">📝 下書き保存（保護者非公開）</button>
+                        <button type="submit" class="btn btn-success">✓ 作成・提出（保護者公開）</button>
                     </div>
                 </form>
             <?php else: ?>
                 <div class="alert alert-info">
-                    生徒を選択し、個別支援計画書を選択してください、E                </div>
+                    生徒を選択し、個別支援計画書を選択してください。
+                </div>
             <?php endif; ?>
 
 <script>
-// ペ�Eジ変数
+// ページ変数
         const planId = <?= json_encode($selectedPlanId) ?>;
         const studentId = <?= json_encode($selectedStudentId) ?>;
         const detailIds = <?= json_encode(array_column($planDetails, 'id')) ?>;
@@ -690,14 +708,14 @@ renderPageStart('staff', $currentPage, 'モニタリング表作�E');
             }
         }
 
-        // 全ての評価を一括生�E
+        // 全ての評価を一括生成
         async function generateAllEvaluations() {
             if (!planId || !studentId) {
                 alert('計画と生徒を選択してください');
                 return;
             }
 
-            if (!confirm('過去6ヶ月�E連絡帳チE�Eタを基に、AIで全ての目標�E評価を�E動生成します、En既存�E入力�E容は上書きされます。続行しますか�E�E)) {
+            if (!confirm('過去6ヶ月の連絡帳データを基に、AIで全ての目標の評価を自動生成します。\n既存の入力内容は上書きされます。続行しますか？')) {
                 return;
             }
 
@@ -708,10 +726,10 @@ renderPageStart('staff', $currentPage, 'モニタリング表作�E');
 
             // UIを生成中状態に
             btn.disabled = true;
-            btn.textContent = '⏳ 生�E中...';
+            btn.textContent = '⏳ 生成中...';
             progressDiv.style.display = 'block';
             progressFill.style.width = '0%';
-            progressText.textContent = '過去の連絡帳チE�Eタを�E析中...';
+            progressText.textContent = '過去の連絡帳データを分析中...';
 
             try {
                 const response = await fetch('monitoring_generate_api.php', {
@@ -734,7 +752,7 @@ renderPageStart('staff', $currentPage, 'モニタリング表作�E');
                     progressFill.style.width = '80%';
                     progressText.textContent = 'フォームに反映中...';
 
-                    // 吁E��標に評価を反映
+                    // 各目標に評価を反映
                     const evaluations = data.data;
                     for (const [detailId, evaluation] of Object.entries(evaluations)) {
                         const statusSelect = document.getElementById(`status_${detailId}`);
@@ -749,13 +767,13 @@ renderPageStart('staff', $currentPage, 'モニタリング表作�E');
                     }
 
                     progressFill.style.width = '100%';
-                    progressText.textContent = '✁E生�E完亁E���E容を確認し、忁E��に応じて編雁E��てください、E;
+                    progressText.textContent = '✓ 生成完了！内容を確認し、必要に応じて編集してください。';
 
                     setTimeout(() => {
                         progressDiv.style.display = 'none';
                     }, 3000);
                 } else {
-                    throw new Error(data.error || '生�Eに失敗しました');
+                    throw new Error(data.error || '生成に失敗しました');
                 }
             } catch (error) {
                 console.error('Generation error:', error);
@@ -763,11 +781,12 @@ renderPageStart('staff', $currentPage, 'モニタリング表作�E');
                 progressDiv.style.display = 'none';
             } finally {
                 btn.disabled = false;
-                btn.textContent = '🤁EAIで評価を�E動生戁E;
+                btn.textContent = '🤖 AIで評価を自動生成';
             }
         }
 
-        // 個別の評価を生戁E        async function generateSingleEvaluation(detailId) {
+        // 個別の評価を生成
+        async function generateSingleEvaluation(detailId) {
             if (!planId || !studentId) {
                 alert('計画と生徒を選択してください');
                 return;
@@ -779,7 +798,7 @@ renderPageStart('staff', $currentPage, 'モニタリング表作�E');
 
             // UIを生成中状態に
             btn.disabled = true;
-            btn.textContent = '⏳ 生�E中...';
+            btn.textContent = '⏳ 生成中...';
             btn.classList.add('generating-indicator');
             commentTextarea.classList.add('generating');
 
@@ -814,14 +833,14 @@ renderPageStart('staff', $currentPage, 'モニタリング表作�E');
                         commentTextarea.style.borderColor = '';
                     }, 2000);
                 } else {
-                    throw new Error(data.error || '生�Eに失敗しました');
+                    throw new Error(data.error || '生成に失敗しました');
                 }
             } catch (error) {
                 console.error('Generation error:', error);
                 alert('エラーが発生しました: ' + error.message);
             } finally {
                 btn.disabled = false;
-                btn.textContent = '🤁EAI生�E';
+                btn.textContent = '🤖 AI生成';
                 btn.classList.remove('generating-indicator');
                 commentTextarea.classList.remove('generating');
             }
