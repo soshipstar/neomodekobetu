@@ -1,10 +1,11 @@
 <?php
 /**
  * 教室データの保存・編集・削除処理（マスター管理者専用）
+ * ミニマム版
  */
 
-require_once __DIR__ . '/../../config/database.php';
-require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/auth.php';
 
 // マスター管理者チェック
 requireMasterAdmin();
@@ -139,9 +140,6 @@ try {
 
                 foreach ($students as $studentId) {
                     // 生徒に関連するデータを削除
-                    $stmt = $pdo->prepare("DELETE FROM daily_records WHERE student_id = ?");
-                    $stmt->execute([$studentId]);
-
                     $stmt = $pdo->prepare("DELETE FROM kakehashi_guardian WHERE student_id = ?");
                     $stmt->execute([$studentId]);
 
@@ -160,7 +158,15 @@ try {
                     $stmt = $pdo->prepare("DELETE FROM individual_support_plans WHERE student_id = ?");
                     $stmt->execute([$studentId]);
 
-                    $stmt = $pdo->prepare("DELETE FROM integrated_notes WHERE student_id = ?");
+                    // チャットメッセージとルームを削除
+                    $stmt = $pdo->prepare("DELETE cm FROM chat_messages cm INNER JOIN chat_rooms cr ON cm.room_id = cr.id WHERE cr.student_id = ?");
+                    $stmt->execute([$studentId]);
+
+                    $stmt = $pdo->prepare("DELETE FROM chat_rooms WHERE student_id = ?");
+                    $stmt->execute([$studentId]);
+
+                    // かけはし期間を削除
+                    $stmt = $pdo->prepare("DELETE FROM kakehashi_periods WHERE student_id = ?");
                     $stmt->execute([$studentId]);
                 }
 

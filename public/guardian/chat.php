@@ -92,12 +92,23 @@ if ($selectedStudentId) {
             6 => 'scheduled_saturday'
         ];
 
+        // 既存の欠席連絡を取得（今日から30日間）
+        $startDate = date('Y-m-d');
+        $endDate = date('Y-m-d', strtotime('+30 days'));
+        $stmt = $pdo->prepare("
+            SELECT absence_date FROM absence_notifications
+            WHERE student_id = ? AND absence_date BETWEEN ? AND ?
+        ");
+        $stmt->execute([$selectedStudentId, $startDate, $endDate]);
+        $existingAbsences = array_column($stmt->fetchAll(), 'absence_date');
+
         for ($i = 0; $i < 30; $i++) {
             $date = date('Y-m-d', strtotime("+$i days"));
             $dayOfWeek = (int)date('w', strtotime($date));
             $columnName = $dayMapping[$dayOfWeek];
 
-            if ($schedule[$columnName] == 1) {
+            // 通常の参加予定日かつ欠席連絡がまだない日のみ表示
+            if ($schedule[$columnName] == 1 && !in_array($date, $existingAbsences)) {
                 $scheduledDays[] = [
                     'date' => $date,
                     'display' => date('n月j日', strtotime($date)) . '(' . ['日', '月', '火', '水', '木', '金', '土'][$dayOfWeek] . ')'

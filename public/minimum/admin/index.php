@@ -1,11 +1,12 @@
 <?php
 /**
  * 管理者用トップページ
+ * ミニマム版
  */
 
-require_once __DIR__ . '/../../config/database.php';
-require_once __DIR__ . '/../../includes/auth.php';
-require_once __DIR__ . '/../../includes/layouts/page_wrapper.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/layouts/page_wrapper.php';
 
 // ログインチェック
 requireLogin();
@@ -55,14 +56,6 @@ if ($isMaster) {
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM students WHERE is_active = 1 AND classroom_id = ?");
     $stmt->execute([$classroomId]);
     $stats['active_students'] = $stmt->fetchColumn();
-
-    $stmt = $pdo->prepare("
-        SELECT COUNT(*) FROM daily_records dr
-        INNER JOIN users u ON dr.staff_id = u.id
-        WHERE u.classroom_id = ?
-    ");
-    $stmt->execute([$classroomId]);
-    $stats['total_records'] = $stmt->fetchColumn();
 }
 
 // ページ開始
@@ -118,10 +111,6 @@ renderPageStart('admin', $currentPage, '管理者ダッシュボード', [
         <h3>有効な生徒数</h3>
         <div class="number"><?= $stats['active_students'] ?></div>
     </div>
-    <div class="stat-card">
-        <h3>総記録数</h3>
-        <div class="number"><?= $stats['total_records'] ?></div>
-    </div>
     <?php endif; ?>
 </div>
 
@@ -151,43 +140,19 @@ renderPageStart('admin', $currentPage, '管理者ダッシュボード', [
     <a href="students.php" class="menu-card">
         <div class="menu-card-icon">👥</div>
         <h3>生徒管理</h3>
-        <p>生徒の登録・編集・削除を行います。学年や保護者の紐付け設定も可能です。</p>
+        <p>生徒の登録・編集・削除を行います。</p>
     </a>
 
     <a href="guardians.php" class="menu-card">
         <div class="menu-card-icon">👤</div>
         <h3>保護者管理</h3>
-        <p>保護者アカウントの登録・編集を行います。生徒との紐付け管理も可能です。</p>
+        <p>保護者アカウントの登録・編集を行います。</p>
     </a>
 
     <a href="staff_management.php" class="menu-card">
         <div class="menu-card-icon">👨‍💼</div>
         <h3>スタッフ管理</h3>
         <p>スタッフアカウントの登録・編集・削除を行います。</p>
-    </a>
-
-    <a href="tablet_accounts.php" class="menu-card">
-        <div class="menu-card-icon">📱</div>
-        <h3>タブレットユーザー管理</h3>
-        <p>タブレットユーザーアカウントの登録・編集を行います。</p>
-    </a>
-
-    <a href="events.php" class="menu-card">
-        <div class="menu-card-icon">📅</div>
-        <h3>イベント管理</h3>
-        <p>施設のイベントや予定を管理します。</p>
-    </a>
-
-    <a href="holidays.php" class="menu-card">
-        <div class="menu-card-icon">🗓️</div>
-        <h3>休日管理</h3>
-        <p>休日・祝日の設定を管理します。</p>
-    </a>
-
-    <a href="classroom_settings.php" class="menu-card">
-        <div class="menu-card-icon">⚙️</div>
-        <h3>教室基本設定</h3>
-        <p>教室の基本情報や対象学年の設定を行います。</p>
     </a>
     <?php endif; ?>
 </div>

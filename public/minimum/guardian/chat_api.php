@@ -3,8 +3,8 @@
  * チャットAPI（保護者用）
  */
 session_start();
-require_once __DIR__ . '/../../config/database.php';
-require_once __DIR__ . '/../../includes/email_helper.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../../../includes/email_helper.php';
 
 header('Content-Type: application/json');
 
@@ -109,7 +109,7 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     exit;
                 }
 
-                $uploadDir = __DIR__ . '/../uploads/chat_attachments/';
+                $uploadDir = __DIR__ . '/../../uploads/chat_attachments/';
                 if (!is_dir($uploadDir)) {
                     mkdir($uploadDir, 0755, true);
                 }
@@ -174,7 +174,7 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         // チャットURLを生成
                         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
                         $host = $_SERVER['HTTP_HOST'];
-                        $chatUrl = "{$protocol}://{$host}/staff/chat.php?room_id={$roomId}";
+                        $chatUrl = "{$protocol}://{$host}/minimum/staff/chat.php?room_id={$roomId}";
 
                         // メール通知を送信
                         sendChatNotificationEmail(
@@ -248,7 +248,7 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$studentId, $absenceDate]);
             if ($stmt->fetch()) {
                 http_response_code(400);
-                echo json_encode(['success' => false, 'message' => 'この日はすでに欠席連絡が登録されています']);
+                echo json_encode(["success" => false, "message" => "この日はすでに欠席連絡が登録されています"]);
                 exit;
             }
 

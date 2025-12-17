@@ -34,6 +34,10 @@ $searchStartDate = $_GET['start_date'] ?? '';
 $searchEndDate = $_GET['end_date'] ?? '';
 $searchDomain = $_GET['domain'] ?? '';
 
+// 検索条件が何も指定されていない場合は直近1か月のみ表示
+$isSearching = !empty($selectedStudentId) || !empty($searchKeyword) || !empty($searchStartDate) || !empty($searchEndDate) || !empty($searchDomain);
+$defaultStartDate = date('Y-m-d', strtotime('-1 month'));
+
 // この保護者に紐づく生徒を取得
 $stmt = $pdo->prepare("
     SELECT id, student_name, grade_level, birth_date
@@ -109,6 +113,12 @@ if (!empty($searchStartDate)) {
 if (!empty($searchEndDate)) {
     $sql .= " AND dr.record_date <= ?";
     $params[] = $searchEndDate;
+}
+
+// 検索条件がない場合はデフォルトで直近1か月のみ表示
+if (!$isSearching) {
+    $sql .= " AND dr.record_date >= ?";
+    $params[] = $defaultStartDate;
 }
 
 if (!empty($searchDomain)) {
@@ -464,6 +474,11 @@ renderPageStart('guardian', $currentPage, '連絡帳一覧', ['classroom' => $cl
             <div class="search-info">
                 <strong>検索結果:</strong> <?= count($notes) ?>件の連絡帳が見つかりました
             </div>
+        <?php else: ?>
+            <div class="search-info" style="background: rgba(88, 86, 214, 0.1); border-left-color: var(--apple-purple);">
+                <strong>📅 直近1か月分を表示中</strong>（<?= date('Y年n月j日', strtotime($defaultStartDate)) ?>以降）<br>
+                <span style="font-size: var(--text-caption-1);">過去の連絡帳を見るには、上の検索フォームで期間を指定してください</span>
+            </div>
         <?php endif; ?>
 
         <?php if (empty($notes)): ?>
@@ -472,8 +487,8 @@ renderPageStart('guardian', $currentPage, '連絡帳一覧', ['classroom' => $cl
                     <h3 style="margin-bottom: var(--spacing-md);">検索条件に一致する連絡帳が見つかりませんでした</h3>
                     <p>検索条件を変更してお試しください</p>
                 <?php else: ?>
-                    <h3 style="margin-bottom: var(--spacing-md);">まだ連絡帳が送信されていません</h3>
-                    <p>スタッフから連絡帳が送信されるとここに表示されます</p>
+                    <h3 style="margin-bottom: var(--spacing-md);">直近1か月に連絡帳はありません</h3>
+                    <p>過去の連絡帳を見るには、上の検索フォームで期間を指定してください</p>
                 <?php endif; ?>
             </div>
         <?php else: ?>

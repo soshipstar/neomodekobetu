@@ -1,24 +1,72 @@
 <?php
 /**
  * ログインページ
+ * 教室のservice_typeに応じて通常版またはminimum版にリダイレクト
  */
 
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../config/database.php';
+
+/**
+ * 教室のservice_typeを取得
+ */
+function getClassroomServiceType($pdo, $classroomId) {
+    if (!$classroomId) return 'normal';
+    $stmt = $pdo->prepare("SELECT service_type FROM classrooms WHERE id = ?");
+    $stmt->execute([$classroomId]);
+    $result = $stmt->fetch();
+    return $result ? ($result['service_type'] ?? 'normal') : 'normal';
+}
+
+/**
+ * ユーザータイプとservice_typeに応じたリダイレクト先を取得
+ */
+function getRedirectUrl($userType, $serviceType, $isMaster = false) {
+    // マスター管理者は常に通常版の管理画面へ（両方にアクセス可能）
+    if ($isMaster) {
+        return '/admin/index.php';
+    }
+
+    // minimum版の場合
+    if ($serviceType === 'minimum') {
+        switch ($userType) {
+            case 'admin':
+                return '/minimum/admin/index.php';
+            case 'staff':
+                return '/minimum/staff/index.php';
+            case 'guardian':
+                return '/minimum/guardian/dashboard.php';
+            default:
+                return '/login.php';
+        }
+    }
+
+    // 通常版の場合
+    switch ($userType) {
+        case 'admin':
+            return '/admin/index.php';
+        case 'staff':
+            return '/staff/renrakucho_activities.php';
+        case 'tablet_user':
+            return '/tablet/index.php';
+        case 'student':
+            return '/student/dashboard.php';
+        case 'guardian':
+            return '/guardian/dashboard.php';
+        default:
+            return '/login.php';
+    }
+}
 
 // すでにログイン済みの場合はダッシュボードへリダイレクト
 if (isLoggedIn() || isset($_SESSION['student_id'])) {
+    $pdo = getDbConnection();
     $userType = $_SESSION['user_type'] ?? '';
-    if ($userType === 'admin') {
-        header('Location: /admin/index.php');
-    } elseif ($userType === 'staff') {
-        header('Location: /staff/renrakucho_activities.php');
-    } elseif ($userType === 'tablet_user') {
-        header('Location: /tablet/index.php');
-    } elseif ($userType === 'student') {
-        header('Location: /student/dashboard.php');
-    } else {
-        header('Location: /guardian/dashboard.php');
-    }
+    $classroomId = $_SESSION['classroom_id'] ?? null;
+    $isMaster = $_SESSION['is_master'] ?? false;
+    $serviceType = getClassroomServiceType($pdo, $classroomId);
+
+    header('Location: ' . getRedirectUrl($userType, $serviceType, $isMaster));
     exit;
 }
 
@@ -38,19 +86,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = login($username, $password);
 
         if ($result['success']) {
-            // ログイン成功 - ユーザータイプに応じてリダイレクト
+            // ログイン成功 - 教室のservice_typeを確認してリダイレクト
+            $pdo = getDbConnection();
             $userType = $result['user']['user_type'];
-            if ($userType === 'admin') {
-                header('Location: /admin/index.php');
-            } elseif ($userType === 'staff') {
-                header('Location: /staff/renrakucho_activities.php');
-            } elseif ($userType === 'tablet_user') {
-                header('Location: /tablet/index.php');
-            } elseif ($userType === 'student') {
-                header('Location: /student/dashboard.php');
-            } else {
-                header('Location: /guardian/dashboard.php');
-            }
+            $classroomId = $result['user']['classroom_id'] ?? null;
+            $isMaster = $result['user']['is_master'] ?? false;
+            $serviceType = getClassroomServiceType($pdo, $classroomId);
+
+            header('Location: ' . getRedirectUrl($userType, $serviceType, $isMaster));
             exit;
         } else {
             $error = $result['error'];

@@ -1,18 +1,19 @@
 <?php
 /**
  * 教室管理（マスター管理者専用）
+ * ミニマム版
  */
 
-require_once __DIR__ . '/../../config/database.php';
-require_once __DIR__ . '/../../includes/auth.php';
-require_once __DIR__ . '/../../includes/layouts/page_wrapper.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/layouts/page_wrapper.php';
 
 // マスター管理者チェック
 requireMasterAdmin();
 
 $pdo = getDbConnection();
 
-// 全教室を取得（サブクエリで正確にカウント）
+// 全教室を取得
 $stmt = $pdo->query("
     SELECT
         c.*,
@@ -25,6 +26,7 @@ $stmt = $pdo->query("
 $classrooms = $stmt->fetchAll();
 
 $successMessage = $_GET['success'] ?? '';
+$errorMessage = $_GET['error'] ?? '';
 
 // ページ開始
 $currentPage = 'classrooms';
@@ -94,6 +96,10 @@ renderPageStart('admin', $currentPage, '教室管理');
 
 <?php if ($successMessage): ?>
     <div class="alert alert-success"><?= htmlspecialchars($successMessage) ?></div>
+<?php endif; ?>
+
+<?php if ($errorMessage): ?>
+    <div class="alert alert-danger"><?= htmlspecialchars($errorMessage) ?></div>
 <?php endif; ?>
 
 <!-- 新規登録ボタン -->

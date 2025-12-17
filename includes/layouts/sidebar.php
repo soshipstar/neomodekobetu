@@ -21,12 +21,13 @@ $isMaster = function_exists('isMasterAdmin') ? isMasterAdmin() : false;
 $menuConfig = [
     'admin' => [
         ['page' => 'index', 'icon' => '🏠', 'label' => 'ダッシュボード', 'url' => '/admin/index.php'],
-        ['page' => 'students', 'icon' => '👥', 'label' => '生徒管理', 'url' => '/admin/students.php'],
-        ['page' => 'guardians', 'icon' => '👤', 'label' => '保護者管理', 'url' => '/admin/guardians.php'],
-        ['page' => 'staff_management', 'icon' => '👨‍💼', 'label' => 'スタッフ管理', 'url' => '/admin/staff_management.php'],
-        ['page' => 'tablet_accounts', 'icon' => '📱', 'label' => 'タブレットユーザー', 'url' => '/admin/tablet_accounts.php'],
-        ['page' => 'events', 'icon' => '📅', 'label' => 'イベント管理', 'url' => '/admin/events.php'],
-        ['page' => 'holidays', 'icon' => '🗓️', 'label' => '休日管理', 'url' => '/admin/holidays.php'],
+        // 施設管理者専用（マスターには非表示）
+        ['page' => 'students', 'icon' => '👥', 'label' => '生徒管理', 'url' => '/admin/students.php', 'non_master' => true],
+        ['page' => 'guardians', 'icon' => '👤', 'label' => '保護者管理', 'url' => '/admin/guardians.php', 'non_master' => true],
+        ['page' => 'staff_management', 'icon' => '👨‍💼', 'label' => 'スタッフ管理', 'url' => '/admin/staff_management.php', 'non_master' => true],
+        ['page' => 'tablet_accounts', 'icon' => '📱', 'label' => 'タブレットユーザー', 'url' => '/admin/tablet_accounts.php', 'non_master' => true],
+        ['page' => 'events', 'icon' => '📅', 'label' => 'イベント管理', 'url' => '/admin/events.php', 'non_master' => true],
+        ['page' => 'holidays', 'icon' => '🗓️', 'label' => '休日管理', 'url' => '/admin/holidays.php', 'non_master' => true],
         // マスター専用
         ['page' => 'classrooms', 'icon' => '🏢', 'label' => '教室管理', 'url' => '/admin/classrooms.php', 'master_only' => true],
         ['page' => 'admin_accounts', 'icon' => '👑', 'label' => '管理者アカウント', 'url' => '/admin/admin_accounts.php', 'master_only' => true],
@@ -149,6 +150,8 @@ $userTypeLabel = match($role) {
             else:
                 // マスター専用項目のチェック
                 if (!empty($item['master_only']) && !$isMaster) continue;
+                // 施設管理者専用項目のチェック（マスターには非表示）
+                if (!empty($item['non_master']) && $isMaster) continue;
 
                 $isActive = ($currentPage === $item['page']);
                 $activeClass = $isActive ? 'active' : '';

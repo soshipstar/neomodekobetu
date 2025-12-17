@@ -453,8 +453,8 @@ renderPageStart('staff', $currentPage, '利用日変更');
             $isToday = ($currentDate === date('Y-m-d'));
             $isHoliday = in_array($currentDate, $holidayDates);
             $isRegularDay = in_array($dayOfWeek, $scheduledDays) && !$isHoliday;
-            $isAdditional = isset($additionalUsages[$currentDate]);
-            $isCancelled = isset($absenceDates[$currentDate]);
+            $isAdditional = array_key_exists($currentDate, $additionalUsages);
+            $isCancelled = array_key_exists($currentDate, $absenceDates);
 
             if ($isToday) $classes[] = 'today';
             if ($isHoliday) $classes[] = 'holiday';
