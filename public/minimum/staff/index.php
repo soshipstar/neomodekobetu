@@ -67,7 +67,8 @@ if ($classroomId) {
         INNER JOIN individual_support_plans isp ON mr.plan_id = isp.id
         INNER JOIN students s ON isp.student_id = s.id
         WHERE s.classroom_id = ?
-        AND mr.overall_comment IS NULL OR mr.overall_comment = ''
+        AND s.is_active = 1
+        AND (mr.overall_comment IS NULL OR mr.overall_comment = '')
     ");
     $stmt->execute([$classroomId]);
     $stats['pending_monitoring'] = $stmt->fetchColumn();

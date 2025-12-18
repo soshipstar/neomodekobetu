@@ -19,11 +19,16 @@ $classroomId = $_SESSION['classroom_id'] ?? null;
 // 教室の対象学年設定を取得
 $targetGrades = ['preschool', 'elementary', 'junior_high', 'high_school']; // デフォルト
 if ($classroomId) {
-    $stmt = $pdo->prepare("SELECT target_grades FROM classrooms WHERE id = ?");
-    $stmt->execute([$classroomId]);
-    $classroom = $stmt->fetch();
-    if ($classroom && !empty($classroom['target_grades'])) {
-        $targetGrades = explode(',', $classroom['target_grades']);
+    try {
+        // target_gradesカラムが存在するか確認
+        $stmt = $pdo->prepare("SELECT target_grades FROM classrooms WHERE id = ?");
+        $stmt->execute([$classroomId]);
+        $classroom = $stmt->fetch();
+        if ($classroom && !empty($classroom['target_grades'])) {
+            $targetGrades = explode(',', $classroom['target_grades']);
+        }
+    } catch (PDOException $e) {
+        // target_gradesカラムが存在しない場合はデフォルト値を使用
     }
 }
 

@@ -41,6 +41,9 @@ $menuConfig = [
         ['type' => 'divider', 'label' => '管理'],
         ['page' => 'students', 'icon' => '👥', 'label' => '生徒管理', 'url' => '/minimum/staff/students.php'],
         ['page' => 'guardians', 'icon' => '👤', 'label' => '保護者管理', 'url' => '/minimum/staff/guardians.php'],
+        // ヘルプ
+        ['type' => 'divider', 'label' => 'ヘルプ'],
+        ['page' => 'guide', 'icon' => '📘', 'label' => '業務フローガイド', 'url' => '/minimum/staff/guide.php'],
     ],
     'guardian' => [
         ['page' => 'dashboard', 'icon' => '🏠', 'label' => 'ダッシュボード', 'url' => '/minimum/guardian/dashboard.php'],

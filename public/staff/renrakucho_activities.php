@@ -2058,6 +2058,13 @@ renderPageStart('staff', $currentPage, '活動管理');
             color: white;
         }
 
+        .calendar-day.selected .calendar-day-number,
+        .calendar-day.selected .calendar-day-content,
+        .calendar-day.selected .event-label,
+        .calendar-day.selected .holiday-label {
+            color: white;
+        }
+
         .calendar-day.has-activity {
             background: rgba(255, 159, 10, 0.15);
         }
@@ -2881,6 +2888,10 @@ renderPageStart('staff', $currentPage, '活動管理');
 
         .event-detail-section.staff-only h4 {
             color: #ff9800;
+        }
+
+        .event-detail-section.staff-only p {
+            color: #f5f5f5;
         }
 
         .no-data {

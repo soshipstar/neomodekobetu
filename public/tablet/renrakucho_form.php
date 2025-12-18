@@ -208,7 +208,7 @@ $domains = [
     <link rel="stylesheet" href="/assets/css/apple-design.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>連絡帳入力フォーム - 個別支援連絡帳システム</title>
+    <title>連絡帳入力フォーム - きづり</title>
     <style>
         * {
             margin: 0;
