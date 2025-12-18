@@ -205,8 +205,10 @@ renderPageStart('staff', $currentPage, '支援案一覧');
 <div class="page-header">
     <div class="page-header-content">
         <h1 class="page-title">支援案一覧</h1>
-        <div style="display: flex; gap: 10px; margin-top: var(--spacing-md);">
+        <div style="display: flex; gap: 10px; margin-top: var(--spacing-md); flex-wrap: wrap;">
             <a href="support_plan_form.php" class="btn btn-success">+ 新しい支援案を作成</a>
+            <a href="daily_routines_settings.php" class="btn btn-primary" style="background: var(--primary-purple);">毎日の支援を設定</a>
+            <a href="tag_settings.php" class="btn btn-secondary" style="background: var(--apple-orange);">タグを設定</a>
         </div>
     </div>
 </div>

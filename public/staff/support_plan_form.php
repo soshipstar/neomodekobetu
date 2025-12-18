@@ -41,12 +41,30 @@ if ($isEdit) {
     }
 }
 
-// タグの定義
-$availableTags = [
+// タグの定義（データベースから取得、なければデフォルト）
+$defaultTags = [
     'プログラミング', 'テキスタイル', 'CAD', '動画', 'イラスト',
     '企業支援', '農業', '音楽', '食', '学習',
     '自分取扱説明書', '心理', '言語', '教育', 'イベント', 'その他'
 ];
+
+$availableTags = $defaultTags;
+if ($classroomId) {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT tag_name FROM classroom_tags
+            WHERE classroom_id = ? AND is_active = 1
+            ORDER BY sort_order ASC
+        ");
+        $stmt->execute([$classroomId]);
+        $dbTags = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        if (!empty($dbTags)) {
+            $availableTags = $dbTags;
+        }
+    } catch (PDOException $e) {
+        // テーブルがない場合はデフォルトを使用
+    }
+}
 
 // 種別の定義
 $planTypes = [
@@ -261,6 +279,182 @@ renderPageStart('staff', $currentPage, $pageTitle);
             margin-bottom: var(--spacing-lg);
             border-left: 4px solid var(--apple-red);
         }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .routine-btn {
+            display: inline-block;
+            padding: var(--spacing-sm) 16px;
+            background: #ff9800;
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: var(--text-footnote);
+            font-weight: 600;
+            cursor: pointer;
+            margin: 4px;
+            transition: all var(--duration-fast) var(--ease-out);
+        }
+
+        .routine-btn:hover {
+            background: #f57c00;
+            transform: translateY(-1px);
+        }
+
+        .routine-btn.added {
+            background: var(--apple-green);
+        }
+
+        .no-routines {
+            color: var(--text-secondary);
+            font-size: var(--text-footnote);
+            font-style: italic;
+        }
+
+        /* スケジュール管理スタイル */
+        .schedule-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: var(--apple-bg-primary);
+            border: 1px solid var(--apple-gray-5);
+            border-radius: var(--radius-sm);
+            margin-bottom: 8px;
+            transition: all var(--duration-fast) var(--ease-out);
+        }
+
+        .schedule-item:hover {
+            border-color: var(--primary-purple);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .schedule-item.routine {
+            border-left: 4px solid #ff9800;
+        }
+
+        .schedule-item.main-activity {
+            border-left: 4px solid var(--apple-blue);
+        }
+
+        .schedule-order {
+            width: 28px;
+            height: 28px;
+            background: var(--primary-purple);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: var(--text-footnote);
+            flex-shrink: 0;
+        }
+
+        .schedule-item.routine .schedule-order {
+            background: #ff9800;
+        }
+
+        .schedule-item.main-activity .schedule-order {
+            background: var(--apple-blue);
+        }
+
+        .schedule-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .schedule-name {
+            font-weight: 500;
+        }
+
+        .schedule-content-preview {
+            font-size: var(--text-caption-1);
+            color: var(--text-secondary);
+            margin-top: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .schedule-type {
+            font-size: var(--text-caption-1);
+            color: var(--text-secondary);
+            background: var(--apple-gray-6);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .schedule-duration {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .schedule-duration input {
+            width: 60px;
+            padding: 4px 8px;
+            border: 1px solid var(--apple-gray-5);
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .schedule-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .schedule-actions button {
+            padding: 4px 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: var(--text-caption-1);
+        }
+
+        .move-up-btn, .move-down-btn {
+            background: var(--apple-gray-5);
+            color: var(--text-primary);
+        }
+
+        .remove-btn {
+            background: var(--apple-red);
+            color: white;
+        }
+
+        .routine-selector-btn {
+            padding: 8px 16px;
+            background: #fff3e0;
+            border: 2px solid #ff9800;
+            border-radius: var(--radius-sm);
+            color: #e65100;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--duration-fast) var(--ease-out);
+        }
+
+        .routine-selector-btn:hover {
+            background: #ff9800;
+            color: white;
+        }
+
+        .routine-selector-btn.added {
+            background: #ff9800;
+            color: white;
+            opacity: 0.6;
+        }
+
+        .time-warning {
+            color: var(--apple-red);
+            font-weight: 600;
+        }
+
+        .time-ok {
+            color: var(--apple-green);
+            font-weight: 600;
+        }
     </style>
 
 <!-- ページヘッダー -->
@@ -425,16 +619,102 @@ renderPageStart('staff', $currentPage, $pageTitle);
                     <div class="help-text">この活動の対象となる年齢層を選択してください（複数選択可、未選択の場合は全年齢対象）</div>
                 </div>
 
+                <!-- 総活動時間 -->
+                <div class="form-group">
+                    <label>総活動時間<span class="required">*</span></label>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="number" name="total_duration" id="totalDuration"
+                               value="<?php echo htmlspecialchars($plan['total_duration'] ?? '180'); ?>"
+                               min="30" max="480" style="width: 100px;" required>
+                        <span style="font-weight: 600;">分</span>
+                        <span style="color: var(--text-secondary); font-size: var(--text-footnote); margin-left: 10px;">
+                            （残り時間: <span id="remainingTime">-</span>分）
+                        </span>
+                    </div>
+                    <div class="help-text">活動全体の所要時間を入力してください（30〜480分）</div>
+                </div>
+
                 <div class="form-group">
                     <label>活動の目的</label>
                     <textarea name="activity_purpose" id="activityPurpose"><?php echo htmlspecialchars($plan['activity_purpose'] ?? ''); ?></textarea>
                     <div class="help-text">この活動を通して達成したい目標や狙いを記載してください</div>
                 </div>
 
+                <!-- 活動スケジュール設定 -->
+                <div class="form-group" style="background: #f5f5f5; padding: 20px; border-radius: var(--radius-md); border: 2px solid var(--apple-gray-5);">
+                    <label style="color: var(--text-primary); margin-bottom: 15px; font-size: var(--text-callout);">活動スケジュール</label>
+                    <p style="font-size: var(--text-footnote); color: var(--text-secondary); margin-bottom: 15px;">
+                        毎日の支援と主活動を追加し、順番と所要時間を設定してください。<br>
+                        <a href="daily_routines_settings.php" style="color: var(--primary-purple);">毎日の支援を設定する</a>
+                    </p>
+
+                    <!-- 毎日の支援選択 -->
+                    <div style="margin-bottom: 15px;">
+                        <label style="font-size: var(--text-footnote); color: var(--text-secondary); margin-bottom: 8px; display: block;">毎日の支援を追加</label>
+                        <div id="dailyRoutinesSelector" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            <p style="color: var(--text-secondary); font-size: var(--text-footnote);">読み込み中...</p>
+                        </div>
+                    </div>
+
+                    <!-- 主活動追加 -->
+                    <div style="margin-bottom: 15px; background: #e3f2fd; padding: 15px; border-radius: var(--radius-sm);">
+                        <label style="font-size: var(--text-footnote); color: var(--apple-blue); font-weight: 600; margin-bottom: 10px; display: block;">主活動を追加</label>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                            <input type="text" id="newMainActivity" placeholder="主活動名を入力" style="flex: 1; min-width: 200px;">
+                            <input type="number" id="newMainActivityDuration" placeholder="時間" min="5" max="240" style="width: 80px;">
+                            <span style="align-self: center;">分</span>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <textarea id="newMainActivityContent" placeholder="主活動の内容を入力（この内容がAI生成時に参照されます）" style="width: 100%; min-height: 80px; resize: vertical;"></textarea>
+                        </div>
+                        <button type="button" id="addMainActivityBtn" class="cancel-btn" style="background: var(--apple-blue); color: white; padding: 8px 16px;">主活動を追加</button>
+                    </div>
+
+                    <!-- スケジュールリスト -->
+                    <div id="scheduleList" style="background: white; border-radius: var(--radius-sm); padding: 10px; min-height: 100px; border: 1px dashed var(--apple-gray-4);">
+                        <p id="scheduleEmpty" style="color: var(--text-secondary); font-size: var(--text-footnote); text-align: center; padding: 20px;">
+                            活動を追加してください
+                        </p>
+                    </div>
+
+                    <!-- 隠しフィールド（スケジュールデータ保存用） -->
+                    <input type="hidden" name="activity_schedule" id="activityScheduleData">
+                </div>
+
+                <!-- AI詳細生成ボタン -->
+                <div class="form-group" style="background: #e8f5e9; padding: 15px; border-radius: var(--radius-sm); border-left: 4px solid #4caf50;">
+                    <label style="color: #2e7d32; margin-bottom: 10px;">AIで活動内容を生成</label>
+                    <p style="font-size: var(--text-footnote); color: var(--text-secondary); margin-bottom: 10px;">
+                        活動名、目的、スケジュールを設定後、AIが時間配分を含めた詳細な活動内容を自動生成します。
+                    </p>
+                    <button type="button" id="generateDetailBtn" class="cancel-btn" style="background: #4caf50; color: white; width: auto;">
+                        スケジュールをもとに活動内容を生成
+                    </button>
+                    <div id="detailGenerating" style="display: none; margin-top: 10px; color: #2e7d32;">
+                        <span class="spinner" style="display: inline-block; width: 16px; height: 16px; border: 2px solid #4caf50; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px; vertical-align: middle;"></span>
+                        生成中...（しばらくお待ちください）
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label>活動の内容</label>
-                    <textarea name="activity_content" id="activityContent"><?php echo htmlspecialchars($plan['activity_content'] ?? ''); ?></textarea>
-                    <div class="help-text">具体的な活動の流れや内容を記載してください</div>
+                    <textarea name="activity_content" id="activityContent" style="min-height: 300px;"><?php echo htmlspecialchars($plan['activity_content'] ?? ''); ?></textarea>
+                    <div class="help-text">具体的な活動の流れや内容を記載してください（AIで自動生成可能）</div>
+                </div>
+
+                <!-- AI生成ボタン -->
+                <div class="form-group" style="background: #e3f2fd; padding: 15px; border-radius: var(--radius-sm); border-left: 4px solid #2196F3;">
+                    <label style="color: #1565c0; margin-bottom: 10px;">AIで詳細を生成</label>
+                    <p style="font-size: var(--text-footnote); color: var(--text-secondary); margin-bottom: 10px;">
+                        活動名、目的、内容を入力後、AIが「五領域への配慮」と「その他」を自動生成します。
+                    </p>
+                    <button type="button" id="generateAiBtn" class="cancel-btn" style="background: #1976D2; color: white; width: auto;">
+                        AIで五領域への配慮を生成
+                    </button>
+                    <div id="aiGenerating" style="display: none; margin-top: 10px; color: #1565c0;">
+                        <span class="spinner" style="display: inline-block; width: 16px; height: 16px; border: 2px solid #1976D2; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px; vertical-align: middle;"></span>
+                        生成中...
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -484,7 +764,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
                 <div class="form-group">
                     <label>五領域への配慮</label>
-                    <textarea name="five_domains_consideration" id="fiveDomains"><?php echo htmlspecialchars($plan['five_domains_consideration'] ?? ''); ?></textarea>
+                    <textarea name="five_domains_consideration" id="fiveDomains" style="min-height: 300px;"><?php echo htmlspecialchars($plan['five_domains_consideration'] ?? ''); ?></textarea>
                     <div class="help-text">健康・生活、運動・感覚、認知・行動、言語・コミュニケーション、人間関係・社会性の五領域への配慮を記載してください</div>
                 </div>
 
@@ -826,5 +1106,453 @@ renderPageStart('staff', $currentPage, $pageTitle);
     });
     </script>
     <?php endif; ?>
+
+    <script>
+    // スケジュール管理
+    let scheduleItems = [];
+    let availableRoutines = [];
+
+    // 毎日の支援を読み込む（選択用）
+    async function loadDailyRoutinesForSelector() {
+        const container = document.getElementById('dailyRoutinesSelector');
+
+        try {
+            const response = await fetch('get_daily_routines.php');
+            const result = await response.json();
+
+            if (result.success && result.data.length > 0) {
+                availableRoutines = result.data;
+                renderRoutineSelector();
+            } else {
+                container.innerHTML = '<p class="no-routines">毎日の支援が登録されていません。<a href="daily_routines_settings.php" style="color: var(--primary-purple);">設定する</a></p>';
+            }
+        } catch (error) {
+            console.error('Error loading daily routines:', error);
+            container.innerHTML = '<p class="no-routines">読み込みに失敗しました</p>';
+        }
+    }
+
+    // ルーティーン選択ボタンを描画
+    function renderRoutineSelector() {
+        const container = document.getElementById('dailyRoutinesSelector');
+        let html = '';
+
+        availableRoutines.forEach(routine => {
+            const isAdded = scheduleItems.some(item => item.type === 'routine' && item.routineId === routine.id);
+            const timeStr = routine.scheduled_time ? ` (${routine.scheduled_time}分)` : '';
+            html += `<button type="button" class="routine-selector-btn ${isAdded ? 'added' : ''}"
+                        data-id="${routine.id}"
+                        data-name="${escapeAttr(routine.routine_name)}"
+                        data-content="${escapeAttr(routine.routine_content || '')}"
+                        data-duration="${routine.scheduled_time || 15}"
+                        onclick="addRoutineToSchedule(this)"
+                        ${isAdded ? 'disabled' : ''}>
+                ${escapeHtml(routine.routine_name)}${timeStr}
+            </button>`;
+        });
+
+        container.innerHTML = html || '<p class="no-routines">毎日の支援が登録されていません</p>';
+    }
+
+    // ルーティーンをスケジュールに追加
+    function addRoutineToSchedule(btn) {
+        const id = parseInt(btn.dataset.id);
+        const name = btn.dataset.name;
+        const content = btn.dataset.content;
+        const duration = parseInt(btn.dataset.duration) || 15;
+
+        scheduleItems.push({
+            type: 'routine',
+            routineId: id,
+            name: name,
+            content: content,
+            duration: duration
+        });
+
+        renderScheduleList();
+        renderRoutineSelector();
+        updateRemainingTime();
+    }
+
+    // 主活動を追加
+    document.getElementById('addMainActivityBtn').addEventListener('click', function() {
+        const nameInput = document.getElementById('newMainActivity');
+        const durationInput = document.getElementById('newMainActivityDuration');
+        const contentInput = document.getElementById('newMainActivityContent');
+
+        const name = nameInput.value.trim();
+        const duration = parseInt(durationInput.value) || 30;
+        const content = contentInput.value.trim();
+
+        if (!name) {
+            alert('主活動名を入力してください');
+            return;
+        }
+
+        scheduleItems.push({
+            type: 'main-activity',
+            name: name,
+            content: content,
+            duration: duration
+        });
+
+        nameInput.value = '';
+        durationInput.value = '';
+        contentInput.value = '';
+
+        renderScheduleList();
+        updateRemainingTime();
+    });
+
+    // スケジュールリストを描画
+    function renderScheduleList() {
+        const container = document.getElementById('scheduleList');
+        const emptyMsg = document.getElementById('scheduleEmpty');
+
+        if (scheduleItems.length === 0) {
+            container.innerHTML = '<p id="scheduleEmpty" style="color: var(--text-secondary); font-size: var(--text-footnote); text-align: center; padding: 20px;">活動を追加してください</p>';
+            document.getElementById('activityScheduleData').value = '';
+            return;
+        }
+
+        let html = '';
+        scheduleItems.forEach((item, index) => {
+            const typeLabel = item.type === 'routine' ? '毎日の支援' : '主活動';
+            const contentPreview = item.content ? `<div class="schedule-content-preview">${escapeHtml(item.content.substring(0, 100))}${item.content.length > 100 ? '...' : ''}</div>` : '';
+            html += `
+                <div class="schedule-item ${item.type}" data-index="${index}">
+                    <div class="schedule-order">${index + 1}</div>
+                    <div class="schedule-info">
+                        <div class="schedule-name">${escapeHtml(item.name)}</div>
+                        ${contentPreview}
+                    </div>
+                    <span class="schedule-type">${typeLabel}</span>
+                    <div class="schedule-duration">
+                        <input type="number" value="${item.duration}" min="5" max="240"
+                               onchange="updateItemDuration(${index}, this.value)">
+                        <span>分</span>
+                    </div>
+                    <div class="schedule-actions">
+                        <button type="button" class="move-up-btn" onclick="moveItem(${index}, -1)" ${index === 0 ? 'disabled' : ''}>↑</button>
+                        <button type="button" class="move-down-btn" onclick="moveItem(${index}, 1)" ${index === scheduleItems.length - 1 ? 'disabled' : ''}>↓</button>
+                        <button type="button" class="remove-btn" onclick="removeItem(${index})">×</button>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+
+        // 隠しフィールドにデータを保存
+        document.getElementById('activityScheduleData').value = JSON.stringify(scheduleItems);
+    }
+
+    // アイテムの時間を更新
+    function updateItemDuration(index, value) {
+        scheduleItems[index].duration = parseInt(value) || 15;
+        updateRemainingTime();
+        document.getElementById('activityScheduleData').value = JSON.stringify(scheduleItems);
+    }
+
+    // アイテムを移動
+    function moveItem(index, direction) {
+        const newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= scheduleItems.length) return;
+
+        const temp = scheduleItems[index];
+        scheduleItems[index] = scheduleItems[newIndex];
+        scheduleItems[newIndex] = temp;
+
+        renderScheduleList();
+    }
+
+    // アイテムを削除
+    function removeItem(index) {
+        const item = scheduleItems[index];
+        scheduleItems.splice(index, 1);
+
+        renderScheduleList();
+        if (item.type === 'routine') {
+            renderRoutineSelector();
+        }
+        updateRemainingTime();
+    }
+
+    // 残り時間を更新
+    function updateRemainingTime() {
+        const totalDuration = parseInt(document.getElementById('totalDuration').value) || 180;
+        const usedTime = scheduleItems.reduce((sum, item) => sum + item.duration, 0);
+        const remaining = totalDuration - usedTime;
+
+        const remainingSpan = document.getElementById('remainingTime');
+        remainingSpan.textContent = remaining;
+        remainingSpan.className = remaining < 0 ? 'time-warning' : 'time-ok';
+    }
+
+    // 総活動時間変更時に残り時間を更新
+    document.getElementById('totalDuration').addEventListener('change', updateRemainingTime);
+
+    // AI詳細生成機能（スケジュールベース）
+    document.getElementById('generateDetailBtn').addEventListener('click', async function() {
+        const activityName = document.getElementById('activityName').value.trim();
+        const activityPurpose = document.getElementById('activityPurpose').value.trim();
+        const totalDuration = parseInt(document.getElementById('totalDuration').value) || 180;
+
+        if (!activityName) {
+            alert('活動名を入力してください');
+            return;
+        }
+
+        if (scheduleItems.length === 0) {
+            alert('活動スケジュールに少なくとも1つの活動を追加してください');
+            return;
+        }
+
+        // 対象年齢層を取得
+        const targetGrades = [];
+        document.querySelectorAll('input[name="target_grade[]"]:checked').forEach(cb => {
+            targetGrades.push(cb.value);
+        });
+
+        const btn = this;
+        const loadingDiv = document.getElementById('detailGenerating');
+
+        btn.disabled = true;
+        loadingDiv.style.display = 'block';
+
+        try {
+            const formData = new FormData();
+            formData.append('activity_name', activityName);
+            formData.append('activity_purpose', activityPurpose);
+            formData.append('total_duration', totalDuration);
+            formData.append('schedule', JSON.stringify(scheduleItems));
+            formData.append('target_grade', targetGrades.join(','));
+
+            const response = await fetch('generate_support_plan_schedule_ai.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // 値を文字列に変換する関数（オブジェクトの場合は中身のテキストを抽出）
+                function toStringValue(val) {
+                    if (val === null || val === undefined) return '';
+                    if (typeof val === 'string') {
+                        // JSON文字列の場合はパースして中身を取得
+                        if (val.trim().startsWith('{') || val.trim().startsWith('[')) {
+                            try {
+                                const parsed = JSON.parse(val);
+                                if (typeof parsed === 'object' && parsed !== null) {
+                                    // オブジェクトの最初の文字列値を取得
+                                    for (const key of Object.keys(parsed)) {
+                                        if (typeof parsed[key] === 'string') {
+                                            return parsed[key];
+                                        }
+                                    }
+                                }
+                            } catch (e) {
+                                // パース失敗時はそのまま返す
+                            }
+                        }
+                        return val;
+                    }
+                    if (typeof val === 'object') {
+                        // オブジェクトから文字列値を抽出
+                        for (const key of Object.keys(val)) {
+                            if (typeof val[key] === 'string') {
+                                return val[key];
+                            }
+                        }
+                        // 文字列値がなければ空文字
+                        return '';
+                    }
+                    return String(val);
+                }
+
+                const contentValue = toStringValue(result.data.activity_content);
+                const otherNotesValue = toStringValue(result.data.other_notes);
+
+                // 活動の内容を設定
+                const contentField = document.getElementById('activityContent');
+                if (contentField.value.trim() === '') {
+                    contentField.value = contentValue;
+                } else {
+                    if (confirm('既存の「活動の内容」を上書きしますか？')) {
+                        contentField.value = contentValue;
+                    }
+                }
+
+                // その他（配慮事項）を設定
+                if (otherNotesValue) {
+                    const otherNotesField = document.getElementById('otherNotes');
+                    if (otherNotesField.value.trim() === '') {
+                        otherNotesField.value = otherNotesValue;
+                    } else {
+                        if (confirm('既存の「その他」を上書きしますか？')) {
+                            otherNotesField.value = otherNotesValue;
+                        }
+                    }
+                }
+
+                alert('AIによる活動内容の生成が完了しました');
+            } else {
+                alert('生成に失敗しました: ' + (result.error || '不明なエラー'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('通信エラーが発生しました');
+        } finally {
+            btn.disabled = false;
+            loadingDiv.style.display = 'none';
+        }
+    });
+
+    // AI生成機能（五領域への配慮）
+    document.getElementById('generateAiBtn').addEventListener('click', async function() {
+        const activityName = document.getElementById('activityName').value.trim();
+        const activityPurpose = document.getElementById('activityPurpose').value.trim();
+        const activityContent = document.getElementById('activityContent').value.trim();
+
+        if (!activityName) {
+            alert('活動名を入力してください');
+            return;
+        }
+
+        const btn = this;
+        const loadingDiv = document.getElementById('aiGenerating');
+
+        btn.disabled = true;
+        loadingDiv.style.display = 'block';
+
+        try {
+            const formData = new FormData();
+            formData.append('activity_name', activityName);
+            formData.append('activity_purpose', activityPurpose);
+            formData.append('activity_content', activityContent);
+
+            const response = await fetch('generate_support_plan_ai.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // 値を文字列に変換する関数（オブジェクトの場合は中身のテキストを抽出）
+                function toStringValue(val, formatAsDomains = false) {
+                    if (val === null || val === undefined) return '';
+                    if (typeof val === 'string') {
+                        // JSON文字列の場合はパースして処理
+                        if (val.trim().startsWith('{') || val.trim().startsWith('[')) {
+                            try {
+                                const parsed = JSON.parse(val);
+                                return toStringValue(parsed, formatAsDomains);
+                            } catch (e) {
+                                // パース失敗時はそのまま返す
+                            }
+                        }
+                        return val;
+                    }
+                    if (typeof val === 'object') {
+                        // 五領域のオブジェクトの場合は整形して出力
+                        const domainKeys = ['健康・生活', '運動・感覚', '認知・行動', '言語・コミュニケーション', '人間関係・社会性'];
+                        const keys = Object.keys(val);
+
+                        // 五領域のキーが含まれているかチェック
+                        const hasDomainKeys = domainKeys.some(dk => keys.includes(dk));
+
+                        if (hasDomainKeys || formatAsDomains) {
+                            // 五領域形式で整形
+                            let result = [];
+                            for (const key of keys) {
+                                if (typeof val[key] === 'string' && val[key].trim()) {
+                                    result.push(`【${key}】\n${val[key]}`);
+                                }
+                            }
+                            return result.join('\n\n');
+                        } else {
+                            // 単一の文字列値を取得
+                            for (const key of keys) {
+                                if (typeof val[key] === 'string') {
+                                    return val[key];
+                                }
+                            }
+                        }
+                        return '';
+                    }
+                    return String(val);
+                }
+
+                const fiveDomainsValue = toStringValue(result.data.five_domains_consideration, true);
+                const otherNotesValue = toStringValue(result.data.other_notes);
+
+                // 五領域への配慮を設定
+                const fiveDomainsField = document.getElementById('fiveDomains');
+                if (fiveDomainsField.value.trim() === '') {
+                    fiveDomainsField.value = fiveDomainsValue;
+                } else {
+                    if (confirm('既存の「五領域への配慮」を上書きしますか？')) {
+                        fiveDomainsField.value = fiveDomainsValue;
+                    }
+                }
+
+                // その他を設定
+                const otherNotesField = document.getElementById('otherNotes');
+                if (otherNotesField.value.trim() === '') {
+                    otherNotesField.value = otherNotesValue;
+                } else {
+                    if (confirm('既存の「その他」を上書きしますか？')) {
+                        otherNotesField.value = otherNotesValue;
+                    }
+                }
+
+                alert('AIによる生成が完了しました');
+            } else {
+                alert('生成に失敗しました: ' + (result.error || '不明なエラー'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('通信エラーが発生しました');
+        } finally {
+            btn.disabled = false;
+            loadingDiv.style.display = 'none';
+        }
+    });
+
+    // ページ読み込み時の初期化
+    document.addEventListener('DOMContentLoaded', function() {
+        loadDailyRoutinesForSelector();
+        updateRemainingTime();
+
+        // Enterキーによるフォーム送信を防止（テキストエリア以外）
+        const form = document.getElementById('mainForm');
+        form.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                return false;
+            }
+        });
+    });
+
+    // HTMLエスケープ
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // 属性用エスケープ
+    function escapeAttr(text) {
+        if (!text) return '';
+        return text.replace(/&/g, '&amp;')
+                   .replace(/"/g, '&quot;')
+                   .replace(/'/g, '&#39;')
+                   .replace(/</g, '&lt;')
+                   .replace(/>/g, '&gt;');
+    }
+    </script>
 
 <?php renderPageEnd(); ?>

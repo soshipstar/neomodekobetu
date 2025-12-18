@@ -65,7 +65,7 @@ function renderPageStart(string $role, string $currentPage, string $pageTitle, a
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($pageTitle) ?> - 個別支援システム</title>
+    <title><?= htmlspecialchars($pageTitle) ?> - きづり</title>
 
     <!-- 共通CSS -->
     <link rel="stylesheet" href="/assets/css/apple-design.css">

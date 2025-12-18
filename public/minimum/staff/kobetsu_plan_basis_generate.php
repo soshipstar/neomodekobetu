@@ -203,7 +203,7 @@ try {
                 ['role' => 'system', 'content' => 'あなたは児童発達支援・放課後等デイサービスの専門家です。保護者に対して丁寧で分かりやすい説明を行います。'],
                 ['role' => 'user', 'content' => $prompt]
             ],
-            'max_tokens' => 2000,
+            'max_completion_tokens' => 2000,
             'temperature' => 0.7
         ])
     ]);

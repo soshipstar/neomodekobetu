@@ -1,6 +1,6 @@
 {
-    "name": "個別支援連絡帳システム",
-    "short_name": "連絡帳",
+    "name": "個別支援連絡帳システム きづり",
+    "short_name": "きづり",
     "description": "保護者・スタッフ・生徒のための個別支援連絡帳システム",
     "start_url": "/login.php",
     "display": "standalone",

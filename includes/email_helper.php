@@ -10,7 +10,7 @@
 function getEmailConfig() {
     return [
         'from_email' => 'info@narze.xyz',
-        'from_name' => '個別支援連絡帳システム',
+        'from_name' => '個別支援連絡帳システム きづり',
         'smtp_host' => 'localhost', // 本番環境では適切なSMTPサーバーを設定
         'smtp_port' => 25,
         'smtp_username' => '',
@@ -216,7 +216,7 @@ function createChatNotificationEmailBody($recipientName, $senderName, $studentNa
             </p>
         </div>
         <div class="footer">
-            <p>&copy; 個別支援連絡帳システム</p>
+            <p>&copy; 個別支援連絡帳システム きづり</p>
             <p>このメールに返信しないでください</p>
         </div>
     </div>
@@ -238,7 +238,7 @@ function isValidEmail($email) {
  * テストメール送信（動作確認用）
  */
 function sendTestEmail($to) {
-    $subject = "【テスト】個別支援連絡帳システム - メール送信テスト";
+    $subject = "【テスト】個別支援連絡帳システム きづり - メール送信テスト";
     $message = <<<HTML
 <!DOCTYPE html>
 <html lang="ja">

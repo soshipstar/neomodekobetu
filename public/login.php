@@ -72,6 +72,17 @@ if (isLoggedIn() || isset($_SESSION['student_id'])) {
 
 $error = '';
 
+// デバッグモード（URLに?debug=1がある場合のみ）
+if (isset($_GET['debug']) && $_GET['debug'] === '1') {
+    echo '<pre>';
+    echo 'Session Status: ' . session_status() . "\n";
+    echo 'Session ID: ' . session_id() . "\n";
+    echo 'Session Save Path: ' . session_save_path() . "\n";
+    echo 'CSRF Token in Session: ' . (isset($_SESSION['csrf_token']) ? 'SET (' . substr($_SESSION['csrf_token'], 0, 10) . '...)' : 'NOT SET') . "\n";
+    echo 'POST csrf_token: ' . (isset($_POST['csrf_token']) ? substr($_POST['csrf_token'], 0, 10) . '...' : 'NOT SET') . "\n";
+    echo '</pre>';
+}
+
 // ログイン処理
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // CSRF検証
@@ -106,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ログイン - 個別支援連絡帳システム</title>
+    <title>ログイン - 個別支援連絡帳システム きづり</title>
     <link rel="stylesheet" href="/assets/css/apple-design.css">
     <?php include __DIR__ . '/../includes/pwa_header.php'; ?>
     <style>
@@ -150,7 +161,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <div class="login-container">
         <div class="login-header">
-            <h1>個別支援連絡帳システム</h1>
+            <h1>個別支援連絡帳システム<br>きづり</h1>
             <p>ログインしてください</p>
         </div>
 
