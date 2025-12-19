@@ -3286,6 +3286,20 @@ renderPageStart('staff', $currentPage, '活動管理');
 
             <!-- 右カラム: 本日の参加予定者 -->
             <div class="right-column">
+                <!-- 業務日誌クイックアクセス -->
+                <div class="work-diary-box" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: var(--radius-md); margin-bottom: 15px; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="color: white;">
+                            <div style="font-weight: bold; font-size: var(--text-callout); margin-bottom: 4px;">📓 業務日誌</div>
+                            <div style="font-size: var(--text-footnote); opacity: 0.9;"><?php echo date('n月j日'); ?>の業務記録</div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <a href="work_diary.php?date=<?php echo date('Y-m-d'); ?>" style="padding: 8px 16px; background: white; color: #667eea; text-decoration: none; border-radius: var(--radius-sm); font-weight: bold; font-size: var(--text-footnote);">作成・編集</a>
+                            <a href="work_diary_calendar.php" style="padding: 8px 12px; background: rgba(255,255,255,0.2); color: white; text-decoration: none; border-radius: var(--radius-sm); font-size: var(--text-footnote);">履歴</a>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="scheduled-students-box">
                     <h3>📋 本日の参加予定者</h3>
                     <?php if ($isHoliday): ?>

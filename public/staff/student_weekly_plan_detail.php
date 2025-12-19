@@ -145,6 +145,32 @@ if ($weeklyPlan) {
     $submissions = $stmt->fetchAll();
 }
 
+// 個別支援計画の5領域目標を取得（編集モード用）
+$domainGoals = [];
+$stmt = $pdo->prepare("
+    SELECT isp.id as plan_id, isp.created_date,
+           ispd.sub_category, ispd.support_goal
+    FROM individual_support_plans isp
+    INNER JOIN individual_support_plan_details ispd ON isp.id = ispd.plan_id
+    WHERE isp.student_id = ? AND isp.is_draft = 0 AND ispd.category = '本人支援'
+    ORDER BY isp.created_date DESC, ispd.row_order ASC
+");
+$stmt->execute([$studentId]);
+$allDomainGoals = $stmt->fetchAll();
+
+// 最新の計画のみ取得
+if (!empty($allDomainGoals)) {
+    $latestPlanId = $allDomainGoals[0]['plan_id'];
+    foreach ($allDomainGoals as $goal) {
+        if ($goal['plan_id'] == $latestPlanId && !empty($goal['support_goal'])) {
+            $domainGoals[] = [
+                'sub_category' => $goal['sub_category'],
+                'support_goal' => $goal['support_goal']
+            ];
+        }
+    }
+}
+
 // コメントを取得
 $comments = [];
 if ($weeklyPlan) {
@@ -561,6 +587,169 @@ renderPageStart('staff', $currentPage, $pageTitle);
             margin-bottom: var(--spacing-lg);
         }
 
+        /* 5段階評価チェックボックス */
+        .eval-form-section {
+            margin-top: var(--spacing-2xl);
+            padding: var(--spacing-lg);
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border: 2px solid var(--primary-purple);
+            border-radius: var(--radius-md);
+        }
+
+        .eval-form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-md);
+            border-bottom: 2px solid var(--primary-purple);
+        }
+
+        .eval-form-header h3 {
+            color: var(--primary-purple);
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .eval-item {
+            margin-bottom: var(--spacing-lg);
+            padding: var(--spacing-md);
+            background: var(--apple-bg-primary);
+            border-radius: var(--radius-sm);
+        }
+
+        .eval-item-header {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .eval-item-content {
+            font-size: var(--text-subhead);
+            padding: var(--spacing-sm);
+            background: var(--apple-gray-6);
+            border-radius: 4px;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .eval-5-scale {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .eval-5-scale-label {
+            font-size: var(--text-caption-1);
+            color: var(--text-secondary);
+            min-width: 70px;
+        }
+
+        .eval-5-scale-boxes {
+            display: flex;
+            gap: 8px;
+        }
+
+        .eval-5-scale-boxes label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .eval-5-scale-boxes input[type="radio"] {
+            display: none;
+        }
+
+        .eval-5-scale-boxes .eval-box {
+            width: 36px;
+            height: 36px;
+            border: 2px solid var(--apple-gray-4);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--apple-gray-3);
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        .eval-5-scale-boxes input[type="radio"]:checked + .eval-box {
+            border-color: var(--primary-purple);
+            background: var(--primary-purple);
+            color: white;
+        }
+
+        .eval-5-scale-boxes label:hover .eval-box {
+            border-color: var(--primary-purple);
+        }
+
+        .eval-5-scale-legend {
+            font-size: var(--text-caption-2);
+            color: var(--text-tertiary);
+            margin-left: auto;
+        }
+
+        .eval-comment-input {
+            width: 100%;
+            min-height: 50px;
+            padding: var(--spacing-sm);
+            border: 1px solid var(--apple-gray-5);
+            border-radius: var(--radius-sm);
+            font-size: var(--text-footnote);
+            font-family: inherit;
+            resize: vertical;
+        }
+
+        .eval-submit-btn {
+            display: block;
+            width: 100%;
+            padding: 15px 30px;
+            background: var(--apple-green);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: var(--text-body);
+            font-weight: 600;
+            cursor: pointer;
+            transition: background var(--duration-fast);
+            margin-top: var(--spacing-lg);
+        }
+
+        .eval-submit-btn:hover {
+            opacity: 0.9;
+        }
+
+        .eval-overall-comment {
+            margin-top: var(--spacing-lg);
+            padding: var(--spacing-md);
+            background: var(--apple-bg-primary);
+            border-radius: var(--radius-sm);
+        }
+
+        .eval-overall-comment h4 {
+            color: var(--primary-purple);
+            margin-bottom: 10px;
+            font-size: var(--text-callout);
+        }
+
+        .eval-overall-comment textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: var(--spacing-md);
+            border: 1px solid var(--apple-gray-5);
+            border-radius: var(--radius-sm);
+            font-size: var(--text-subhead);
+            font-family: inherit;
+            resize: vertical;
+        }
+
         /* 達成度評価モーダル */
         .achievement-modal {
             display: none;
@@ -789,6 +978,30 @@ renderPageStart('staff', $currentPage, $pageTitle);
                         <textarea name="shared_goal" placeholder="生徒と一緒に決めた目標を記入してください"><?php echo htmlspecialchars($weeklyPlan['shared_goal'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
                     </div>
 
+                    <?php if (!empty($domainGoals)): ?>
+                    <!-- 個別支援計画の5領域目標（参考表示） -->
+                    <div class="plan-section domain-goals-reference" style="background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); border: 1px dashed #4caf50; padding: 15px; border-radius: var(--radius-md);">
+                        <h3 style="color: #2e7d32; font-size: var(--text-subhead); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                            <span>📋</span> 個別支援計画の目標（参考）
+                        </h3>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <?php foreach ($domainGoals as $goal): ?>
+                                <div style="background: white; padding: 10px 12px; border-radius: var(--radius-sm); border-left: 3px solid #4caf50;">
+                                    <div style="font-size: var(--text-footnote); color: #666; margin-bottom: 4px;">
+                                        <?php echo htmlspecialchars($goal['sub_category'], ENT_QUOTES, 'UTF-8'); ?>
+                                    </div>
+                                    <div style="font-size: var(--text-subhead); color: var(--text-primary);">
+                                        <?php echo htmlspecialchars($goal['support_goal'], ENT_QUOTES, 'UTF-8'); ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <p style="margin-top: 10px; font-size: var(--text-footnote); color: #666; text-align: center;">
+                            ※ 保存後この表示は非表示になります
+                        </p>
+                    </div>
+                    <?php endif; ?>
+
                     <!-- やるべきこと -->
                     <div class="plan-section">
                         <h3>✅ やるべきこと</h3>
@@ -870,47 +1083,40 @@ renderPageStart('staff', $currentPage, $pageTitle);
             <div class="plan-container">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
                     <h2 style="color: var(--text-primary); font-size: 20px;">📝 週間計画</h2>
-                    <a href="?student_id=<?php echo $studentId; ?>&date=<?php echo $targetDate; ?>&edit=1" class="btn btn-edit">編集する</a>
+                    <div style="display: flex; gap: 10px;">
+                        <a href="student_weekly_plan_pdf.php?student_id=<?php echo $studentId; ?>&date=<?php echo $weekStartDate; ?>" class="btn btn-secondary" target="_blank">PDF出力</a>
+                        <a href="?student_id=<?php echo $studentId; ?>&date=<?php echo $targetDate; ?>&edit=1" class="btn btn-edit">編集する</a>
+                    </div>
                 </div>
 
                 <!-- 今週の目標 -->
                 <div class="plan-section">
                     <h3>🎯 今週の目標</h3>
-                    <div class="view-content <?php echo empty($weeklyPlan['weekly_goal']) ? 'empty' : ''; ?>">
-                        <?php echo !empty($weeklyPlan['weekly_goal']) ? nl2br(htmlspecialchars($weeklyPlan['weekly_goal'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?>
-                    </div>
+                    <div class="view-content <?php echo empty($weeklyPlan['weekly_goal']) ? 'empty' : ''; ?>"><?php echo !empty($weeklyPlan['weekly_goal']) ? nl2br(htmlspecialchars($weeklyPlan['weekly_goal'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?></div>
                 </div>
 
                 <!-- いっしょに決めた目標 -->
                 <div class="plan-section">
                     <h3>🤝 いっしょに決めた目標</h3>
-                    <div class="view-content <?php echo empty($weeklyPlan['shared_goal']) ? 'empty' : ''; ?>">
-                        <?php echo !empty($weeklyPlan['shared_goal']) ? nl2br(htmlspecialchars($weeklyPlan['shared_goal'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?>
-                    </div>
+                    <div class="view-content <?php echo empty($weeklyPlan['shared_goal']) ? 'empty' : ''; ?>"><?php echo !empty($weeklyPlan['shared_goal']) ? nl2br(htmlspecialchars($weeklyPlan['shared_goal'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?></div>
                 </div>
 
                 <!-- やるべきこと -->
                 <div class="plan-section">
                     <h3>✅ やるべきこと</h3>
-                    <div class="view-content <?php echo empty($weeklyPlan['must_do']) ? 'empty' : ''; ?>">
-                        <?php echo !empty($weeklyPlan['must_do']) ? nl2br(htmlspecialchars($weeklyPlan['must_do'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?>
-                    </div>
+                    <div class="view-content <?php echo empty($weeklyPlan['must_do']) ? 'empty' : ''; ?>"><?php echo !empty($weeklyPlan['must_do']) ? nl2br(htmlspecialchars($weeklyPlan['must_do'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?></div>
                 </div>
 
                 <!-- やったほうがいいこと -->
                 <div class="plan-section">
                     <h3>👍 やったほうがいいこと</h3>
-                    <div class="view-content <?php echo empty($weeklyPlan['should_do']) ? 'empty' : ''; ?>">
-                        <?php echo !empty($weeklyPlan['should_do']) ? nl2br(htmlspecialchars($weeklyPlan['should_do'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?>
-                    </div>
+                    <div class="view-content <?php echo empty($weeklyPlan['should_do']) ? 'empty' : ''; ?>"><?php echo !empty($weeklyPlan['should_do']) ? nl2br(htmlspecialchars($weeklyPlan['should_do'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?></div>
                 </div>
 
                 <!-- やりたいこと -->
                 <div class="plan-section">
                     <h3>💡 やりたいこと</h3>
-                    <div class="view-content <?php echo empty($weeklyPlan['want_to_do']) ? 'empty' : ''; ?>">
-                        <?php echo !empty($weeklyPlan['want_to_do']) ? nl2br(htmlspecialchars($weeklyPlan['want_to_do'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?>
-                    </div>
+                    <div class="view-content <?php echo empty($weeklyPlan['want_to_do']) ? 'empty' : ''; ?>"><?php echo !empty($weeklyPlan['want_to_do']) ? nl2br(htmlspecialchars($weeklyPlan['want_to_do'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?></div>
                 </div>
 
                 <!-- 各曜日の計画 -->
@@ -928,9 +1134,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                                 <div class="day-label"><?php echo $day; ?></div>
                                 <div class="day-date"><?php echo $date; ?></div>
                             </div>
-                            <div class="view-content <?php echo empty($content) ? 'empty' : ''; ?>">
-                                <?php echo !empty($content) ? nl2br(htmlspecialchars($content, ENT_QUOTES, 'UTF-8')) : '予定なし'; ?>
-                            </div>
+                            <div class="view-content <?php echo empty($content) ? 'empty' : ''; ?>"><?php echo !empty($content) ? nl2br(htmlspecialchars($content, ENT_QUOTES, 'UTF-8')) : '予定なし'; ?></div>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -976,7 +1180,166 @@ renderPageStart('staff', $currentPage, $pageTitle);
                     </div>
                 <?php endif; ?>
 
-                <!-- 達成度評価表示 -->
+                <!-- 5段階評価フォーム（未評価の場合） -->
+                <?php if ($weeklyPlan && !$weeklyPlan['evaluated_at']): ?>
+                    <div class="eval-form-section">
+                        <form method="POST" action="save_achievement.php">
+                            <input type="hidden" name="weekly_plan_id" value="<?php echo $weeklyPlan['id']; ?>">
+                            <input type="hidden" name="student_id" value="<?php echo $studentId; ?>">
+                            <input type="hidden" name="return_date" value="<?php echo $targetDate; ?>">
+                            <input type="hidden" name="is_current_week" value="1">
+
+                            <div class="eval-form-header">
+                                <h3>⭐ 一週間の振り返り評価</h3>
+                                <div style="font-size: var(--text-caption-1); color: var(--text-secondary);">
+                                    1=できなかった ← → 5=よくできた
+                                </div>
+                            </div>
+
+                            <!-- 今週の目標 -->
+                            <?php if (!empty($weeklyPlan['weekly_goal'])): ?>
+                                <div class="eval-item">
+                                    <div class="eval-item-header">🎯 今週の目標</div>
+                                    <div class="eval-item-content"><?php echo nl2br(htmlspecialchars($weeklyPlan['weekly_goal'], ENT_QUOTES, 'UTF-8')); ?></div>
+                                    <div class="eval-5-scale">
+                                        <div class="eval-5-scale-boxes">
+                                            <?php for ($i = 1; $i <= 5; $i++): ?>
+                                                <label>
+                                                    <input type="radio" name="weekly_goal_achievement" value="<?php echo $i; ?>" <?php echo $i === 3 ? 'checked' : ''; ?>>
+                                                    <span class="eval-box"><?php echo $i; ?></span>
+                                                </label>
+                                            <?php endfor; ?>
+                                        </div>
+                                    </div>
+                                    <textarea name="weekly_goal_comment" class="eval-comment-input" placeholder="コメント（任意）"></textarea>
+                                </div>
+                            <?php endif; ?>
+
+                            <!-- いっしょに決めた目標 -->
+                            <?php if (!empty($weeklyPlan['shared_goal'])): ?>
+                                <div class="eval-item">
+                                    <div class="eval-item-header">🤝 いっしょに決めた目標</div>
+                                    <div class="eval-item-content"><?php echo nl2br(htmlspecialchars($weeklyPlan['shared_goal'], ENT_QUOTES, 'UTF-8')); ?></div>
+                                    <div class="eval-5-scale">
+                                        <div class="eval-5-scale-boxes">
+                                            <?php for ($i = 1; $i <= 5; $i++): ?>
+                                                <label>
+                                                    <input type="radio" name="shared_goal_achievement" value="<?php echo $i; ?>" <?php echo $i === 3 ? 'checked' : ''; ?>>
+                                                    <span class="eval-box"><?php echo $i; ?></span>
+                                                </label>
+                                            <?php endfor; ?>
+                                        </div>
+                                    </div>
+                                    <textarea name="shared_goal_comment" class="eval-comment-input" placeholder="コメント（任意）"></textarea>
+                                </div>
+                            <?php endif; ?>
+
+                            <!-- やるべきこと -->
+                            <?php if (!empty($weeklyPlan['must_do'])): ?>
+                                <div class="eval-item">
+                                    <div class="eval-item-header">✅ やるべきこと</div>
+                                    <div class="eval-item-content"><?php echo nl2br(htmlspecialchars($weeklyPlan['must_do'], ENT_QUOTES, 'UTF-8')); ?></div>
+                                    <div class="eval-5-scale">
+                                        <div class="eval-5-scale-boxes">
+                                            <?php for ($i = 1; $i <= 5; $i++): ?>
+                                                <label>
+                                                    <input type="radio" name="must_do_achievement" value="<?php echo $i; ?>" <?php echo $i === 3 ? 'checked' : ''; ?>>
+                                                    <span class="eval-box"><?php echo $i; ?></span>
+                                                </label>
+                                            <?php endfor; ?>
+                                        </div>
+                                    </div>
+                                    <textarea name="must_do_comment" class="eval-comment-input" placeholder="コメント（任意）"></textarea>
+                                </div>
+                            <?php endif; ?>
+
+                            <!-- やったほうがいいこと -->
+                            <?php if (!empty($weeklyPlan['should_do'])): ?>
+                                <div class="eval-item">
+                                    <div class="eval-item-header">👍 やったほうがいいこと</div>
+                                    <div class="eval-item-content"><?php echo nl2br(htmlspecialchars($weeklyPlan['should_do'], ENT_QUOTES, 'UTF-8')); ?></div>
+                                    <div class="eval-5-scale">
+                                        <div class="eval-5-scale-boxes">
+                                            <?php for ($i = 1; $i <= 5; $i++): ?>
+                                                <label>
+                                                    <input type="radio" name="should_do_achievement" value="<?php echo $i; ?>" <?php echo $i === 3 ? 'checked' : ''; ?>>
+                                                    <span class="eval-box"><?php echo $i; ?></span>
+                                                </label>
+                                            <?php endfor; ?>
+                                        </div>
+                                    </div>
+                                    <textarea name="should_do_comment" class="eval-comment-input" placeholder="コメント（任意）"></textarea>
+                                </div>
+                            <?php endif; ?>
+
+                            <!-- やりたいこと -->
+                            <?php if (!empty($weeklyPlan['want_to_do'])): ?>
+                                <div class="eval-item">
+                                    <div class="eval-item-header">💡 やりたいこと</div>
+                                    <div class="eval-item-content"><?php echo nl2br(htmlspecialchars($weeklyPlan['want_to_do'], ENT_QUOTES, 'UTF-8')); ?></div>
+                                    <div class="eval-5-scale">
+                                        <div class="eval-5-scale-boxes">
+                                            <?php for ($i = 1; $i <= 5; $i++): ?>
+                                                <label>
+                                                    <input type="radio" name="want_to_do_achievement" value="<?php echo $i; ?>" <?php echo $i === 3 ? 'checked' : ''; ?>>
+                                                    <span class="eval-box"><?php echo $i; ?></span>
+                                                </label>
+                                            <?php endfor; ?>
+                                        </div>
+                                    </div>
+                                    <textarea name="want_to_do_comment" class="eval-comment-input" placeholder="コメント（任意）"></textarea>
+                                </div>
+                            <?php endif; ?>
+
+                            <!-- 各曜日の計画 -->
+                            <?php
+                            $hasAnyCurrentDailyPlan = false;
+                            foreach ($days as $index => $day) {
+                                $dayKey = "day_$index";
+                                if (!empty($planData[$dayKey])) {
+                                    $hasAnyCurrentDailyPlan = true;
+                                    break;
+                                }
+                            }
+                            ?>
+                            <?php if ($hasAnyCurrentDailyPlan): ?>
+                                <div class="eval-item" style="background: var(--apple-gray-6);">
+                                    <div class="eval-item-header" style="font-size: var(--text-callout);">📅 各曜日の計画達成度</div>
+                                    <?php foreach ($days as $index => $day):
+                                        $dayKey = "day_$index";
+                                        if (!empty($planData[$dayKey])):
+                                            $date = date('m/d', strtotime("+$index days", strtotime($weekStartDate)));
+                                    ?>
+                                        <div style="margin-bottom: var(--spacing-md); padding: var(--spacing-md); background: var(--apple-bg-primary); border-radius: var(--radius-sm);">
+                                            <div style="font-weight: 600; color: var(--primary-purple); margin-bottom: 8px;"><?php echo $day; ?> (<?php echo $date; ?>)</div>
+                                            <div class="eval-item-content"><?php echo nl2br(htmlspecialchars($planData[$dayKey], ENT_QUOTES, 'UTF-8')); ?></div>
+                                            <div class="eval-5-scale">
+                                                <div class="eval-5-scale-boxes">
+                                                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                                                        <label>
+                                                            <input type="radio" name="daily_achievement[<?php echo $dayKey; ?>]" value="<?php echo $i; ?>" <?php echo $i === 3 ? 'checked' : ''; ?>>
+                                                            <span class="eval-box"><?php echo $i; ?></span>
+                                                        </label>
+                                                    <?php endfor; ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endif; endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+
+                            <!-- 総合コメント -->
+                            <div class="eval-overall-comment">
+                                <h4>📝 週全体の総合コメント</h4>
+                                <textarea name="overall_comment" placeholder="週全体を振り返っての総合コメントを入力してください"></textarea>
+                            </div>
+
+                            <button type="submit" class="eval-submit-btn">振り返りを完了</button>
+                        </form>
+                    </div>
+                <?php endif; ?>
+
+                <!-- 達成度評価表示（評価済みの場合） -->
                 <?php if ($weeklyPlan && $weeklyPlan['evaluated_at']): ?>
                     <div class="achievement-display-section" style="margin-top: var(--spacing-2xl); padding: var(--spacing-lg); background: var(--apple-bg-secondary); border: 2px solid #4a90e2; border-radius: var(--radius-md);">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
@@ -989,15 +1352,19 @@ renderPageStart('staff', $currentPage, $pageTitle);
                         <?php
                         $achievementLabels = [
                             0 => '未評価',
-                            1 => '未達成',
-                            2 => '一部達成',
-                            3 => '達成'
+                            1 => '1 - できなかった',
+                            2 => '2',
+                            3 => '3',
+                            4 => '4',
+                            5 => '5 - よくできた'
                         ];
                         $achievementColors = [
                             0 => '#999',
                             1 => '#e74c3c',
                             2 => '#f39c12',
-                            3 => '#27ae60'
+                            3 => '#3498db',
+                            4 => '#2ecc71',
+                            5 => '#27ae60'
                         ];
                         ?>
 
@@ -1213,83 +1580,102 @@ renderPageStart('staff', $currentPage, $pageTitle);
                     <input type="hidden" name="student_id" value="<?php echo $studentId; ?>">
                     <input type="hidden" name="return_date" value="<?php echo $targetDate; ?>">
 
+                    <div style="text-align: right; margin-bottom: var(--spacing-md); font-size: var(--text-caption-1); color: var(--text-secondary);">
+                        1=できなかった ← → 5=よくできた
+                    </div>
+
                     <!-- 今週の目標 -->
                     <?php if (!empty($prevWeekPlan['weekly_goal'])): ?>
-                        <div class="achievement-section">
-                            <h4>🎯 今週の目標</h4>
-                            <div class="goal-content">
-                                <?php echo nl2br(htmlspecialchars($prevWeekPlan['weekly_goal'], ENT_QUOTES, 'UTF-8')); ?>
+                        <div class="eval-item">
+                            <div class="eval-item-header">🎯 今週の目標</div>
+                            <div class="eval-item-content"><?php echo nl2br(htmlspecialchars($prevWeekPlan['weekly_goal'], ENT_QUOTES, 'UTF-8')); ?></div>
+                            <div class="eval-5-scale">
+                                <div class="eval-5-scale-boxes">
+                                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                                        <label>
+                                            <input type="radio" name="weekly_goal_achievement" value="<?php echo $i; ?>" <?php echo $i === 3 ? 'checked' : ''; ?>>
+                                            <span class="eval-box"><?php echo $i; ?></span>
+                                        </label>
+                                    <?php endfor; ?>
+                                </div>
                             </div>
-                            <div class="achievement-radios">
-                                <label><input type="radio" name="weekly_goal_achievement" value="1"> 未達成</label>
-                                <label><input type="radio" name="weekly_goal_achievement" value="2"> 一部達成</label>
-                                <label><input type="radio" name="weekly_goal_achievement" value="3" checked> 達成</label>
-                            </div>
-                            <textarea name="weekly_goal_comment" class="achievement-comment" placeholder="コメント（任意）"></textarea>
+                            <textarea name="weekly_goal_comment" class="eval-comment-input" placeholder="コメント（任意）"></textarea>
                         </div>
                     <?php endif; ?>
 
                     <!-- いっしょに決めた目標 -->
                     <?php if (!empty($prevWeekPlan['shared_goal'])): ?>
-                        <div class="achievement-section">
-                            <h4>🤝 いっしょに決めた目標</h4>
-                            <div class="goal-content">
-                                <?php echo nl2br(htmlspecialchars($prevWeekPlan['shared_goal'], ENT_QUOTES, 'UTF-8')); ?>
+                        <div class="eval-item">
+                            <div class="eval-item-header">🤝 いっしょに決めた目標</div>
+                            <div class="eval-item-content"><?php echo nl2br(htmlspecialchars($prevWeekPlan['shared_goal'], ENT_QUOTES, 'UTF-8')); ?></div>
+                            <div class="eval-5-scale">
+                                <div class="eval-5-scale-boxes">
+                                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                                        <label>
+                                            <input type="radio" name="shared_goal_achievement" value="<?php echo $i; ?>" <?php echo $i === 3 ? 'checked' : ''; ?>>
+                                            <span class="eval-box"><?php echo $i; ?></span>
+                                        </label>
+                                    <?php endfor; ?>
+                                </div>
                             </div>
-                            <div class="achievement-radios">
-                                <label><input type="radio" name="shared_goal_achievement" value="1"> 未達成</label>
-                                <label><input type="radio" name="shared_goal_achievement" value="2"> 一部達成</label>
-                                <label><input type="radio" name="shared_goal_achievement" value="3" checked> 達成</label>
-                            </div>
-                            <textarea name="shared_goal_comment" class="achievement-comment" placeholder="コメント（任意）"></textarea>
+                            <textarea name="shared_goal_comment" class="eval-comment-input" placeholder="コメント（任意）"></textarea>
                         </div>
                     <?php endif; ?>
 
                     <!-- やるべきこと -->
                     <?php if (!empty($prevWeekPlan['must_do'])): ?>
-                        <div class="achievement-section">
-                            <h4>✅ やるべきこと</h4>
-                            <div class="goal-content">
-                                <?php echo nl2br(htmlspecialchars($prevWeekPlan['must_do'], ENT_QUOTES, 'UTF-8')); ?>
+                        <div class="eval-item">
+                            <div class="eval-item-header">✅ やるべきこと</div>
+                            <div class="eval-item-content"><?php echo nl2br(htmlspecialchars($prevWeekPlan['must_do'], ENT_QUOTES, 'UTF-8')); ?></div>
+                            <div class="eval-5-scale">
+                                <div class="eval-5-scale-boxes">
+                                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                                        <label>
+                                            <input type="radio" name="must_do_achievement" value="<?php echo $i; ?>" <?php echo $i === 3 ? 'checked' : ''; ?>>
+                                            <span class="eval-box"><?php echo $i; ?></span>
+                                        </label>
+                                    <?php endfor; ?>
+                                </div>
                             </div>
-                            <div class="achievement-radios">
-                                <label><input type="radio" name="must_do_achievement" value="1"> 未達成</label>
-                                <label><input type="radio" name="must_do_achievement" value="2"> 一部達成</label>
-                                <label><input type="radio" name="must_do_achievement" value="3" checked> 達成</label>
-                            </div>
-                            <textarea name="must_do_comment" class="achievement-comment" placeholder="コメント（任意）"></textarea>
+                            <textarea name="must_do_comment" class="eval-comment-input" placeholder="コメント（任意）"></textarea>
                         </div>
                     <?php endif; ?>
 
                     <!-- やったほうがいいこと -->
                     <?php if (!empty($prevWeekPlan['should_do'])): ?>
-                        <div class="achievement-section">
-                            <h4>👍 やったほうがいいこと</h4>
-                            <div class="goal-content">
-                                <?php echo nl2br(htmlspecialchars($prevWeekPlan['should_do'], ENT_QUOTES, 'UTF-8')); ?>
+                        <div class="eval-item">
+                            <div class="eval-item-header">👍 やったほうがいいこと</div>
+                            <div class="eval-item-content"><?php echo nl2br(htmlspecialchars($prevWeekPlan['should_do'], ENT_QUOTES, 'UTF-8')); ?></div>
+                            <div class="eval-5-scale">
+                                <div class="eval-5-scale-boxes">
+                                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                                        <label>
+                                            <input type="radio" name="should_do_achievement" value="<?php echo $i; ?>" <?php echo $i === 3 ? 'checked' : ''; ?>>
+                                            <span class="eval-box"><?php echo $i; ?></span>
+                                        </label>
+                                    <?php endfor; ?>
+                                </div>
                             </div>
-                            <div class="achievement-radios">
-                                <label><input type="radio" name="should_do_achievement" value="1"> 未達成</label>
-                                <label><input type="radio" name="should_do_achievement" value="2"> 一部達成</label>
-                                <label><input type="radio" name="should_do_achievement" value="3" checked> 達成</label>
-                            </div>
-                            <textarea name="should_do_comment" class="achievement-comment" placeholder="コメント（任意）"></textarea>
+                            <textarea name="should_do_comment" class="eval-comment-input" placeholder="コメント（任意）"></textarea>
                         </div>
                     <?php endif; ?>
 
                     <!-- やりたいこと -->
                     <?php if (!empty($prevWeekPlan['want_to_do'])): ?>
-                        <div class="achievement-section">
-                            <h4>💡 やりたいこと</h4>
-                            <div class="goal-content">
-                                <?php echo nl2br(htmlspecialchars($prevWeekPlan['want_to_do'], ENT_QUOTES, 'UTF-8')); ?>
+                        <div class="eval-item">
+                            <div class="eval-item-header">💡 やりたいこと</div>
+                            <div class="eval-item-content"><?php echo nl2br(htmlspecialchars($prevWeekPlan['want_to_do'], ENT_QUOTES, 'UTF-8')); ?></div>
+                            <div class="eval-5-scale">
+                                <div class="eval-5-scale-boxes">
+                                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                                        <label>
+                                            <input type="radio" name="want_to_do_achievement" value="<?php echo $i; ?>" <?php echo $i === 3 ? 'checked' : ''; ?>>
+                                            <span class="eval-box"><?php echo $i; ?></span>
+                                        </label>
+                                    <?php endfor; ?>
+                                </div>
                             </div>
-                            <div class="achievement-radios">
-                                <label><input type="radio" name="want_to_do_achievement" value="1"> 未達成</label>
-                                <label><input type="radio" name="want_to_do_achievement" value="2"> 一部達成</label>
-                                <label><input type="radio" name="want_to_do_achievement" value="3" checked> 達成</label>
-                            </div>
-                            <textarea name="want_to_do_comment" class="achievement-comment" placeholder="コメント（任意）"></textarea>
+                            <textarea name="want_to_do_comment" class="eval-comment-input" placeholder="コメント（任意）"></textarea>
                         </div>
                     <?php endif; ?>
 
@@ -1307,21 +1693,24 @@ renderPageStart('staff', $currentPage, $pageTitle);
                     ?>
 
                     <?php if ($hasAnyDailyPlan): ?>
-                        <div class="achievement-section">
-                            <h4>📅 各曜日の計画達成度</h4>
+                        <div class="eval-item" style="background: var(--apple-gray-6);">
+                            <div class="eval-item-header" style="font-size: var(--text-callout);">📅 各曜日の計画達成度</div>
                             <?php foreach ($days as $index => $day):
                                 $dayKey = "day_$index";
                                 if (!empty($prevPlanData[$dayKey])):
                             ?>
-                                <div style="margin-bottom: var(--spacing-lg); padding: 15px; background: var(--apple-bg-primary); border-radius: var(--radius-sm);">
+                                <div style="margin-bottom: var(--spacing-md); padding: var(--spacing-md); background: var(--apple-bg-primary); border-radius: var(--radius-sm);">
                                     <div style="font-weight: 600; color: var(--primary-purple); margin-bottom: 8px;"><?php echo $day; ?></div>
-                                    <div class="goal-content" style="margin-bottom: var(--spacing-md);">
-                                        <?php echo nl2br(htmlspecialchars($prevPlanData[$dayKey], ENT_QUOTES, 'UTF-8')); ?>
-                                    </div>
-                                    <div class="achievement-radios">
-                                        <label><input type="radio" name="daily_achievement[<?php echo $dayKey; ?>]" value="1"> 未達成</label>
-                                        <label><input type="radio" name="daily_achievement[<?php echo $dayKey; ?>]" value="2"> 一部達成</label>
-                                        <label><input type="radio" name="daily_achievement[<?php echo $dayKey; ?>]" value="3" checked> 達成</label>
+                                    <div class="eval-item-content"><?php echo nl2br(htmlspecialchars($prevPlanData[$dayKey], ENT_QUOTES, 'UTF-8')); ?></div>
+                                    <div class="eval-5-scale">
+                                        <div class="eval-5-scale-boxes">
+                                            <?php for ($i = 1; $i <= 5; $i++): ?>
+                                                <label>
+                                                    <input type="radio" name="daily_achievement[<?php echo $dayKey; ?>]" value="<?php echo $i; ?>" <?php echo $i === 3 ? 'checked' : ''; ?>>
+                                                    <span class="eval-box"><?php echo $i; ?></span>
+                                                </label>
+                                            <?php endfor; ?>
+                                        </div>
                                     </div>
                                 </div>
                             <?php endif; endforeach; ?>
