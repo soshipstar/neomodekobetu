@@ -29,7 +29,7 @@ $where = [];
 $params = [];
 
 if ($classroomId) {
-    $where[] = "u.classroom_id = ?";
+    $where[] = "s.classroom_id = ?";
     $params[] = $classroomId;
 }
 
@@ -73,35 +73,24 @@ switch ($sortBy) {
     case 'created': $orderBy = "ORDER BY s.created_at DESC"; break;
 }
 
-// 生徒を取得
-if ($classroomId) {
-    $sql = "
-        SELECT
-            s.id, s.student_name, s.birth_date, s.support_start_date, s.grade_level, s.grade_adjustment,
-            s.guardian_id, s.status, s.withdrawal_date, s.is_active, s.created_at,
-            s.scheduled_monday, s.scheduled_tuesday, s.scheduled_wednesday,
-            s.scheduled_thursday, s.scheduled_friday, s.scheduled_saturday, s.scheduled_sunday,
-            s.username, u.full_name as guardian_name
-        FROM students s
-        INNER JOIN users u ON s.guardian_id = u.id
-        {$whereClause}
-        {$orderBy}
-    ";
-} else {
-    $joinType = !empty($searchGuardian) ? "INNER JOIN" : "LEFT JOIN";
-    $sql = "
-        SELECT
-            s.id, s.student_name, s.birth_date, s.support_start_date, s.grade_level, s.grade_adjustment,
-            s.guardian_id, s.status, s.withdrawal_date, s.is_active, s.created_at,
-            s.scheduled_monday, s.scheduled_tuesday, s.scheduled_wednesday,
-            s.scheduled_thursday, s.scheduled_friday, s.scheduled_saturday, s.scheduled_sunday,
-            s.username, u.full_name as guardian_name
-        FROM students s
-        {$joinType} users u ON s.guardian_id = u.id
-        {$whereClause}
-        {$orderBy}
-    ";
-}
+// 生徒を取得（保護者検索時のみINNER JOIN、それ以外はLEFT JOINで保護者なしの生徒も表示）
+$joinType = !empty($searchGuardian) ? "INNER JOIN" : "LEFT JOIN";
+$sql = "
+    SELECT
+        s.id, s.student_name, s.birth_date, s.support_start_date, s.grade_level, s.grade_adjustment,
+        s.guardian_id, s.status, s.withdrawal_date, s.is_active, s.created_at,
+        s.scheduled_monday, s.scheduled_tuesday, s.scheduled_wednesday,
+        s.scheduled_thursday, s.scheduled_friday, s.scheduled_saturday, s.scheduled_sunday,
+        s.desired_start_date, s.desired_weekly_count,
+        s.desired_monday, s.desired_tuesday, s.desired_wednesday,
+        s.desired_thursday, s.desired_friday, s.desired_saturday, s.desired_sunday,
+        s.waiting_notes,
+        s.username, u.full_name as guardian_name
+    FROM students s
+    {$joinType} users u ON s.guardian_id = u.id
+    {$whereClause}
+    {$orderBy}
+";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
@@ -290,10 +279,11 @@ renderPageStart('staff', $currentPage, '生徒管理');
             </div>
             <div class="form-group">
                 <label class="form-label">状態</label>
-                <select name="status" id="status" class="form-control" onchange="toggleWithdrawalDate()">
+                <select name="status" id="status" class="form-control" onchange="toggleStatusFields()">
                     <option value="active" selected>在籍</option>
                     <option value="trial">体験</option>
                     <option value="short_term">短期利用</option>
+                    <option value="waiting">待機</option>
                     <option value="withdrawn">退所</option>
                 </select>
             </div>
@@ -302,7 +292,60 @@ renderPageStart('staff', $currentPage, '生徒管理');
                 <input type="date" name="withdrawal_date" id="withdrawal_date" class="form-control">
                 <small style="color: var(--text-secondary);">※退所日以降のかけはし・計画書・モニタリング表は作成されません</small>
             </div>
-            <div class="form-group">
+            <!-- 待機児童フィールド -->
+            <div id="waiting_fields_group" style="display: none;">
+                <div style="background: var(--apple-gray-6); padding: 15px; border-radius: var(--radius-sm); border: 2px solid var(--apple-orange); margin-bottom: var(--spacing-md);">
+                    <h4 style="color: var(--apple-orange); margin-bottom: 15px; font-size: var(--text-subhead);">待機児童情報</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label class="form-label">入所希望日</label>
+                            <input type="date" name="desired_start_date" id="desired_start_date" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">希望利用回数（週）</label>
+                            <select name="desired_weekly_count" id="desired_weekly_count" class="form-control">
+                                <option value="">選択してください</option>
+                                <option value="1">週1回</option>
+                                <option value="2">週2回</option>
+                                <option value="3">週3回</option>
+                                <option value="4">週4回</option>
+                                <option value="5">週5回</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">希望曜日</label>
+                        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 5px; font-weight: normal;">
+                                <input type="checkbox" name="desired_monday" value="1"> 月曜日
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; font-weight: normal;">
+                                <input type="checkbox" name="desired_tuesday" value="1"> 火曜日
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; font-weight: normal;">
+                                <input type="checkbox" name="desired_wednesday" value="1"> 水曜日
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; font-weight: normal;">
+                                <input type="checkbox" name="desired_thursday" value="1"> 木曜日
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; font-weight: normal;">
+                                <input type="checkbox" name="desired_friday" value="1"> 金曜日
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; font-weight: normal;">
+                                <input type="checkbox" name="desired_saturday" value="1"> 土曜日
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; font-weight: normal;">
+                                <input type="checkbox" name="desired_sunday" value="1"> 日曜日
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">待機メモ</label>
+                        <textarea name="waiting_notes" id="waiting_notes" class="form-control" rows="2" placeholder="空き次第連絡希望、など"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group" id="scheduled_days_group">
                 <label class="form-label">参加予定曜日</label>
                 <div style="display: flex; gap: 15px; flex-wrap: wrap;">
                     <label style="display: flex; align-items: center; gap: 5px; font-weight: normal;">
@@ -488,10 +531,11 @@ renderPageStart('staff', $currentPage, '生徒管理');
             </div>
             <div class="form-group">
                 <label class="form-label">状態</label>
-                <select name="status" id="edit_status" class="form-control" onchange="toggleEditWithdrawalDate()">
+                <select name="status" id="edit_status" class="form-control" onchange="toggleEditStatusFields()">
                     <option value="active">在籍</option>
                     <option value="trial">体験</option>
                     <option value="short_term">短期利用</option>
+                    <option value="waiting">待機</option>
                     <option value="withdrawn">退所</option>
                 </select>
             </div>
@@ -499,7 +543,60 @@ renderPageStart('staff', $currentPage, '生徒管理');
                 <label class="form-label">退所日</label>
                 <input type="date" name="withdrawal_date" id="edit_withdrawal_date" class="form-control">
             </div>
-            <div class="form-group">
+            <!-- 待機児童フィールド（編集用） -->
+            <div id="edit_waiting_fields_group" style="display: none;">
+                <div style="background: var(--apple-gray-6); padding: 15px; border-radius: var(--radius-sm); border: 2px solid var(--apple-orange); margin-bottom: var(--spacing-md);">
+                    <h4 style="color: var(--apple-orange); margin-bottom: 15px; font-size: var(--text-subhead);">待機児童情報</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label class="form-label">入所希望日</label>
+                            <input type="date" name="desired_start_date" id="edit_desired_start_date" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">希望利用回数（週）</label>
+                            <select name="desired_weekly_count" id="edit_desired_weekly_count" class="form-control">
+                                <option value="">選択してください</option>
+                                <option value="1">週1回</option>
+                                <option value="2">週2回</option>
+                                <option value="3">週3回</option>
+                                <option value="4">週4回</option>
+                                <option value="5">週5回</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">希望曜日</label>
+                        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 5px; font-weight: normal;">
+                                <input type="checkbox" name="desired_monday" id="edit_desired_monday" value="1"> 月曜日
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; font-weight: normal;">
+                                <input type="checkbox" name="desired_tuesday" id="edit_desired_tuesday" value="1"> 火曜日
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; font-weight: normal;">
+                                <input type="checkbox" name="desired_wednesday" id="edit_desired_wednesday" value="1"> 水曜日
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; font-weight: normal;">
+                                <input type="checkbox" name="desired_thursday" id="edit_desired_thursday" value="1"> 木曜日
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; font-weight: normal;">
+                                <input type="checkbox" name="desired_friday" id="edit_desired_friday" value="1"> 金曜日
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; font-weight: normal;">
+                                <input type="checkbox" name="desired_saturday" id="edit_desired_saturday" value="1"> 土曜日
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; font-weight: normal;">
+                                <input type="checkbox" name="desired_sunday" id="edit_desired_sunday" value="1"> 日曜日
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">待機メモ</label>
+                        <textarea name="waiting_notes" id="edit_waiting_notes" class="form-control" rows="2" placeholder="空き次第連絡希望、など"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group" id="edit_scheduled_days_group">
                 <label class="form-label">参加予定曜日</label>
                 <div style="display: flex; gap: 15px; flex-wrap: wrap;">
                     <label style="display: flex; align-items: center; gap: 5px; font-weight: normal;">
@@ -562,7 +659,7 @@ function editStudent(student) {
     document.getElementById('edit_status').value = student.status || 'active';
     document.getElementById('edit_withdrawal_date').value = student.withdrawal_date || '';
 
-    // 曜日チェックボックスの設定
+    // 参加予定曜日チェックボックスの設定
     document.getElementById('edit_scheduled_monday').checked = student.scheduled_monday == 1;
     document.getElementById('edit_scheduled_tuesday').checked = student.scheduled_tuesday == 1;
     document.getElementById('edit_scheduled_wednesday').checked = student.scheduled_wednesday == 1;
@@ -571,11 +668,23 @@ function editStudent(student) {
     document.getElementById('edit_scheduled_saturday').checked = student.scheduled_saturday == 1;
     document.getElementById('edit_scheduled_sunday').checked = student.scheduled_sunday == 1;
 
+    // 待機児童情報の設定
+    document.getElementById('edit_desired_start_date').value = student.desired_start_date || '';
+    document.getElementById('edit_desired_weekly_count').value = student.desired_weekly_count || '';
+    document.getElementById('edit_desired_monday').checked = student.desired_monday == 1;
+    document.getElementById('edit_desired_tuesday').checked = student.desired_tuesday == 1;
+    document.getElementById('edit_desired_wednesday').checked = student.desired_wednesday == 1;
+    document.getElementById('edit_desired_thursday').checked = student.desired_thursday == 1;
+    document.getElementById('edit_desired_friday').checked = student.desired_friday == 1;
+    document.getElementById('edit_desired_saturday').checked = student.desired_saturday == 1;
+    document.getElementById('edit_desired_sunday').checked = student.desired_sunday == 1;
+    document.getElementById('edit_waiting_notes').value = student.waiting_notes || '';
+
     // 生徒用ログイン情報の設定
     document.getElementById('edit_student_username').value = student.username || '';
     document.getElementById('edit_student_password').value = '';
 
-    toggleEditWithdrawalDate();
+    toggleEditStatusFields();
     document.getElementById('editModal').classList.add('active');
 }
 
@@ -583,23 +692,47 @@ function closeModal() {
     document.getElementById('editModal').classList.remove('active');
 }
 
-function toggleWithdrawalDate() {
+function toggleStatusFields() {
     const status = document.getElementById('status').value;
-    const group = document.getElementById('withdrawal_date_group');
-    group.style.display = status === 'withdrawn' ? 'block' : 'none';
+    const withdrawalGroup = document.getElementById('withdrawal_date_group');
+    const waitingGroup = document.getElementById('waiting_fields_group');
+    const scheduledGroup = document.getElementById('scheduled_days_group');
+
+    // 退所フィールド
+    withdrawalGroup.style.display = status === 'withdrawn' ? 'block' : 'none';
     if (status !== 'withdrawn') {
         document.getElementById('withdrawal_date').value = '';
     }
+
+    // 待機フィールド
+    waitingGroup.style.display = status === 'waiting' ? 'block' : 'none';
+
+    // 参加予定曜日（待機の場合は非表示）
+    scheduledGroup.style.display = status === 'waiting' ? 'none' : 'block';
 }
 
-function toggleEditWithdrawalDate() {
+function toggleEditStatusFields() {
     const status = document.getElementById('edit_status').value;
-    const group = document.getElementById('edit_withdrawal_date_group');
-    group.style.display = status === 'withdrawn' ? 'block' : 'none';
+    const withdrawalGroup = document.getElementById('edit_withdrawal_date_group');
+    const waitingGroup = document.getElementById('edit_waiting_fields_group');
+    const scheduledGroup = document.getElementById('edit_scheduled_days_group');
+
+    // 退所フィールド
+    withdrawalGroup.style.display = status === 'withdrawn' ? 'block' : 'none';
     if (status !== 'withdrawn') {
         document.getElementById('edit_withdrawal_date').value = '';
     }
+
+    // 待機フィールド
+    waitingGroup.style.display = status === 'waiting' ? 'block' : 'none';
+
+    // 参加予定曜日（待機の場合は非表示）
+    scheduledGroup.style.display = status === 'waiting' ? 'none' : 'block';
 }
+
+// 旧関数の互換性保持
+function toggleWithdrawalDate() { toggleStatusFields(); }
+function toggleEditWithdrawalDate() { toggleEditStatusFields(); }
 
 function deleteStudent() {
     const studentId = document.getElementById('edit_student_id').value;

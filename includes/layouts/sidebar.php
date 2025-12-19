@@ -24,6 +24,7 @@ $menuConfig = [
         // 施設管理者専用（マスターには非表示）
         ['page' => 'students', 'icon' => '👥', 'label' => '生徒管理', 'url' => '/admin/students.php', 'non_master' => true],
         ['page' => 'guardians', 'icon' => '👤', 'label' => '保護者管理', 'url' => '/admin/guardians.php', 'non_master' => true],
+        ['page' => 'waiting_list', 'icon' => '⏳', 'label' => '待機児童管理', 'url' => '/admin/waiting_list.php', 'non_master' => true],
         ['page' => 'staff_management', 'icon' => '👨‍💼', 'label' => 'スタッフ管理', 'url' => '/admin/staff_management.php', 'non_master' => true],
         ['page' => 'tablet_accounts', 'icon' => '📱', 'label' => 'タブレットユーザー', 'url' => '/admin/tablet_accounts.php', 'non_master' => true],
         ['page' => 'events', 'icon' => '📅', 'label' => 'イベント管理', 'url' => '/admin/events.php', 'non_master' => true],
@@ -65,6 +66,7 @@ $menuConfig = [
         ['page' => 'makeup_requests', 'icon' => '🔄', 'label' => '振替管理', 'url' => '/staff/makeup_requests.php'],
         ['page' => 'students', 'icon' => '👥', 'label' => '生徒管理', 'url' => '/staff/students.php'],
         ['page' => 'guardians', 'icon' => '👤', 'label' => '保護者管理', 'url' => '/staff/guardians.php'],
+        ['page' => 'waiting_list', 'icon' => '⏳', 'label' => '待機児童管理', 'url' => '/admin/waiting_list.php'],
         ['page' => 'holidays', 'icon' => '🗓️', 'label' => '休日設定', 'url' => '/staff/holidays.php'],
         ['page' => 'school_holiday_activities', 'icon' => '🏫', 'label' => '学校休業日活動', 'url' => '/staff/school_holiday_activities.php'],
         ['page' => 'manual', 'icon' => '📖', 'label' => 'マニュアル', 'url' => '/staff/manual.php'],
@@ -127,7 +129,7 @@ $userTypeLabel = match($role) {
         <?php if (isset($classroom) && $classroom && !empty($classroom['logo_path'])): ?>
             <img src="/<?= htmlspecialchars($classroom['logo_path']) ?>" alt="教室ロゴ" class="sidebar-logo">
         <?php else: ?>
-            <span class="logo-emoji"><?= $config['icon'] ?></span>
+            <img src="/uploads/kiduri.png" alt="きづり" class="sidebar-logo">
         <?php endif; ?>
         <div class="sidebar-header-text">
             <h1><?= htmlspecialchars($config['title']) ?></h1>
