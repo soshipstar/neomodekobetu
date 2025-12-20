@@ -217,10 +217,204 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
 }
 
 @media print {
-    .sidebar, .mobile-header, .quick-link { display: none !important; }
+    .sidebar, .mobile-header, .quick-link, .manual-nav { display: none !important; }
     .main-content { margin: 0 !important; padding: 0 !important; }
 }
+
+/* マニュアルレイアウト */
+.manual-layout {
+    display: flex;
+    gap: var(--spacing-xl);
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* 左サイドバー目次 */
+.manual-nav {
+    position: sticky;
+    top: 20px;
+    width: 200px;
+    min-width: 200px;
+    height: fit-content;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    background: var(--apple-bg-primary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.manual-nav-title {
+    font-size: var(--text-footnote);
+    font-weight: 600;
+    color: var(--apple-blue);
+    margin-bottom: var(--spacing-sm);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.manual-nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.manual-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 500;
+    transition: all var(--duration-fast);
+    border-left: 3px solid transparent;
+}
+
+.manual-nav-link:hover {
+    background: var(--apple-gray-6);
+    border-left-color: var(--apple-blue);
+    color: var(--apple-blue);
+}
+
+.manual-nav-link.active {
+    background: rgba(0, 122, 255, 0.1);
+    border-left-color: var(--apple-blue);
+    color: var(--apple-blue);
+}
+
+.manual-nav-link .nav-icon {
+    font-size: 14px;
+    width: 18px;
+    text-align: center;
+}
+
+/* メインコンテンツ */
+.manual-main {
+    flex: 1;
+    min-width: 0;
+}
+
+/* モバイル用トグルボタン */
+.manual-nav-toggle {
+    display: none;
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background: var(--apple-blue);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
+    z-index: 1000;
+}
+
+.manual-nav-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 122, 255, 0.5);
+}
+
+/* モバイル用オーバーレイ */
+.manual-nav-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 998;
+}
+
+.manual-nav-overlay.show {
+    display: block;
+}
+
+@media (max-width: 900px) {
+    .manual-layout {
+        display: block;
+    }
+
+    .manual-nav {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 280px;
+        max-height: 70vh;
+        z-index: 999;
+    }
+
+    .manual-nav.show {
+        display: block;
+    }
+
+    .manual-nav-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+/* セクションへのスクロールオフセット */
+.section[id] {
+    scroll-margin-top: 20px;
+}
+
+/* トップに戻るボタン */
+.back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 50px;
+    height: 50px;
+    background: var(--apple-blue);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--duration-fast);
+    z-index: 1000;
+}
+
+.back-to-top.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.back-to-top:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 122, 255, 0.5);
+}
+
+.manual-logo-header {
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+.manual-logo {
+    width: 100px;
+    height: auto;
+    margin-bottom: var(--spacing-md);
+}
 </style>
+
+<!-- ロゴ -->
+<div class="manual-logo-header">
+    <img src="/uploads/kiduri.png" alt="きづり" class="manual-logo">
+</div>
 
 <!-- ページヘッダー -->
 <div class="page-header">
@@ -232,9 +426,39 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
 
 <a href="renrakucho_activities.php" class="quick-link">← 活動管理へ戻る</a>
 
-<div class="manual-container">
+<!-- モバイル用オーバーレイ -->
+<div class="manual-nav-overlay" id="manualNavOverlay" onclick="toggleManualNav()"></div>
+
+<!-- モバイル用目次ボタン -->
+<button class="manual-nav-toggle" onclick="toggleManualNav()" title="目次">📖</button>
+
+<div class="manual-layout" id="manualLayout">
+    <!-- 左サイドバー目次 -->
+    <nav class="manual-nav" id="manualNav">
+        <div class="manual-nav-title">📖 目次</div>
+        <div class="manual-nav-list">
+            <a href="#overview" class="manual-nav-link"><span class="nav-icon">🏠</span>システム概要</a>
+            <a href="#menu" class="manual-nav-link"><span class="nav-icon">📋</span>メニュー構成</a>
+            <a href="#daily" class="manual-nav-link"><span class="nav-icon">📅</span>毎日行うこと</a>
+            <a href="#periodic" class="manual-nav-link"><span class="nav-icon">🗓️</span>一定期間ごと</a>
+            <a href="#basic" class="manual-nav-link"><span class="nav-icon">📝</span>基本的な使い方</a>
+            <a href="#guardian" class="manual-nav-link"><span class="nav-icon">👨‍👩‍👧</span>保護者機能</a>
+            <a href="#student" class="manual-nav-link"><span class="nav-icon">🎓</span>生徒機能</a>
+            <a href="#submission" class="manual-nav-link"><span class="nav-icon">📤</span>提出物管理</a>
+            <a href="#kakehashi" class="manual-nav-link"><span class="nav-icon">🌉</span>かけはし管理</a>
+            <a href="#schedule" class="manual-nav-link"><span class="nav-icon">📅</span>書類スケジュール</a>
+            <a href="#master" class="manual-nav-link"><span class="nav-icon">⚙️</span>マスタ管理</a>
+            <a href="#faq" class="manual-nav-link"><span class="nav-icon">❓</span>よくある質問</a>
+            <a href="#tips" class="manual-nav-link"><span class="nav-icon">💡</span>ヒントとコツ</a>
+            <a href="#contact" class="manual-nav-link"><span class="nav-icon">📞</span>お問い合わせ</a>
+        </div>
+    </nav>
+
+    <!-- メインコンテンツ -->
+    <div class="manual-main">
+        <div class="manual-container">
             <!-- システム概要 -->
-            <div class="section">
+            <div class="section" id="overview">
                 <h2>🏠 システム概要</h2>
                 <p>
                     個別支援連絡帳システムは、放課後等デイサービスにおける日々の活動記録、保護者・生徒とのコミュニケーション、
@@ -255,7 +479,7 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
             </div>
 
             <!-- メニュー構成 -->
-            <div class="section">
+            <div class="section" id="menu">
                 <h2>📋 メニュー構成</h2>
                 <p>
                     左側のサイドバー（PCの場合）または上部のメニュー（スマホの場合）から各機能にアクセスできます。
@@ -264,6 +488,11 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
                 <div class="feature-box">
                     <div class="feature-title">🏠 活動管理</div>
                     <p>日々の活動記録と連絡帳管理のメイン画面です。ここから支援案の作成、活動記録、保護者への送信を行います。</p>
+                </div>
+
+                <div class="feature-box">
+                    <div class="feature-title">🔄 振替管理</div>
+                    <p>保護者からの振替希望を確認し、承認・却下を行います。承認した振替は参加予定者リストに自動反映されます。</p>
                 </div>
 
                 <div class="feature-box">
@@ -312,10 +541,12 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
                 <div class="feature-box">
                     <div class="feature-title">⚙️ 管理・設定</div>
                     <ul>
-                        <li><strong>生徒管理</strong> - 生徒情報の登録・編集</li>
-                        <li><strong>保護者管理</strong> - 保護者アカウントの管理</li>
+                        <li><strong>生徒登録・変更</strong> - 生徒情報の登録・編集</li>
+                        <li><strong>保護者登録・変更</strong> - 保護者アカウントの管理</li>
+                        <li><strong>待機児童管理</strong> - 利用待ちの児童と曜日別定員を管理</li>
+                        <li><strong>利用日一括変更</strong> - 生徒の利用日を一括で追加・キャンセル</li>
+                        <li><strong>学校休業日設定</strong> - 夏休み等の活動日を設定</li>
                         <li><strong>休日設定</strong> - 施設の休日を登録</li>
-                        <li><strong>学校休業日活動</strong> - 夏休み等の活動日を設定</li>
                         <li><strong>マニュアル</strong> - このページ</li>
                         <li><strong>プロフィール</strong> - 自分のアカウント設定</li>
                     </ul>
@@ -323,7 +554,7 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
             </div>
 
             <!-- 毎日行うこと -->
-            <div class="section">
+            <div class="section" id="daily">
                 <h2>📅 毎日行うこと</h2>
                 <p>
                     以下は活動日に毎日行う業務の流れです。
@@ -385,7 +616,7 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
             </div>
 
             <!-- 一定期間ごとにやるべきこと -->
-            <div class="section">
+            <div class="section" id="periodic">
                 <h2>🗓️ 一定期間ごとに行うこと</h2>
 
                 <h3>週次（毎週）</h3>
@@ -456,7 +687,7 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
             </div>
 
             <!-- 基本的な使い方 -->
-            <div class="section">
+            <div class="section" id="basic">
                 <h2>📝 基本的な使い方</h2>
 
                 <h3>1. 支援案の作成</h3>
@@ -563,7 +794,7 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
             </div>
 
             <!-- 保護者機能 -->
-            <div class="section">
+            <div class="section" id="guardian">
                 <h2>👨‍👩‍👧 保護者機能</h2>
                 <p>保護者とのコミュニケーションと提出物管理を行います。</p>
 
@@ -625,7 +856,7 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
             </div>
 
             <!-- 生徒機能 -->
-            <div class="section">
+            <div class="section" id="student">
                 <h2>🎓 生徒機能</h2>
                 <p>生徒とのコミュニケーションと学習計画の管理を行います。</p>
 
@@ -668,14 +899,117 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
                         <li>保護者との共有</li>
                     </ul>
 
+                    <h3 style="font-size: var(--text-callout); margin: 15px 0 10px 0; color: var(--primary-purple);">5段階達成度評価</h3>
+                    <p>週の終わりに、スタッフが生徒の達成度を5段階で評価できます。</p>
+
+                    <table class="schedule-table" style="font-size: 13px; margin-top: 10px;">
+                        <tbody>
+                            <tr>
+                                <td style="text-align: center; width: 80px;"><strong>5</strong></td>
+                                <td>とてもよくできた - 目標を大きく上回る達成</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: center;"><strong>4</strong></td>
+                                <td>よくできた - 目標を達成</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: center;"><strong>3</strong></td>
+                                <td>ふつう - 概ね達成</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: center;"><strong>2</strong></td>
+                                <td>もう少し - 一部未達成</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: center;"><strong>1</strong></td>
+                                <td>がんばろう - 達成できなかった</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3 style="font-size: var(--text-callout); margin: 15px 0 10px 0; color: var(--primary-purple);">評価項目</h3>
+                    <ul>
+                        <li><strong>今週の目標</strong> - 生徒が設定した週間目標の達成度</li>
+                        <li><strong>いっしょに決めた目標</strong> - スタッフと一緒に設定した目標</li>
+                        <li><strong>やるべきこと</strong> - 必須タスクの達成度</li>
+                        <li><strong>やったほうがいいこと</strong> - 推奨タスクの達成度</li>
+                        <li><strong>やりたいこと</strong> - 自主的な活動の達成度</li>
+                        <li><strong>各曜日の計画</strong> - 曜日ごとの計画達成度</li>
+                    </ul>
+
+                    <div class="tip-box" style="margin-top: 10px;">
+                        <strong>💡 評価のタイミング:</strong>
+                        <p style="margin-top: 8px;">
+                            翌週の計画を見るときに前週の達成度評価を入力できます。評価は保護者と共有され、生徒の成長記録として活用できます。
+                        </p>
+                    </div>
+
                     <div class="note-box" style="margin-top: 10px;">
-                        <strong>⚠️ 注意:</strong> 週間計画表は生徒自身がログインして設定する必要があります。生徒用ログイン情報は「生徒管理」ページで設定できます。
+                        <strong>⚠️ 注意:</strong> 週間計画表は生徒自身がログインして設定する必要があります。生徒用ログイン情報は「生徒登録・変更」ページで設定できます。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 提出物管理 -->
+            <div class="section" id="submission">
+                <h2>📤 提出物管理</h2>
+                <p>生徒と保護者への提出物を一元管理します。</p>
+
+                <div class="feature-box">
+                    <div class="feature-title">📋 生徒提出物</div>
+                    <p>生徒が自分で管理する提出物（宿題、レポート等）を一覧で確認できます。</p>
+
+                    <h3 style="font-size: var(--text-callout); margin: 15px 0 10px 0; color: var(--primary-purple);">確認できる情報</h3>
+                    <ul>
+                        <li><strong>週間計画の提出物</strong> - 週間計画表に登録された課題</li>
+                        <li><strong>保護者経由の提出物</strong> - 保護者チャットで設定した提出期限</li>
+                        <li><strong>生徒自身の登録</strong> - 生徒がマイページで登録した提出物</li>
+                    </ul>
+
+                    <h3 style="font-size: var(--text-callout); margin: 15px 0 10px 0; color: var(--primary-purple);">ステータス表示</h3>
+                    <table class="schedule-table" style="font-size: 13px;">
+                        <tbody>
+                            <tr>
+                                <td style="background: rgba(255, 59, 48, 0.15); width: 100px;"><strong>期限超過</strong></td>
+                                <td>期限を過ぎた未完了の提出物（赤色表示）</td>
+                            </tr>
+                            <tr>
+                                <td style="background: rgba(255, 149, 0, 0.15);"><strong>期限間近</strong></td>
+                                <td>3日以内に期限が迫っている提出物（オレンジ表示）</td>
+                            </tr>
+                            <tr>
+                                <td style="background: rgba(52, 199, 89, 0.15);"><strong>完了</strong></td>
+                                <td>提出済みの提出物（緑色表示）</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="tip-box" style="margin-top: 10px;">
+                        <strong>💡 活用のヒント:</strong>
+                        <p style="margin-top: 8px;">
+                            生徒提出物一覧で各生徒の提出状況を確認し、期限が近い・過ぎている場合は声かけをしましょう。生徒チャットで直接リマインドすることもできます。
+                        </p>
+                    </div>
+                </div>
+
+                <div class="feature-box">
+                    <div class="feature-title">📮 提出物管理（保護者向け）</div>
+                    <p>保護者への提出依頼を一括管理します。</p>
+                    <ul>
+                        <li>チャットで設定した全ての提出期限を一覧表示</li>
+                        <li>完了/未完了のステータス管理</li>
+                        <li>期限超過の自動アラート表示</li>
+                        <li>生徒別・期限別でのソート</li>
+                    </ul>
+
+                    <div class="note-box" style="margin-top: 10px;">
+                        <strong>⚠️ 提出物の設定:</strong> 提出期限の設定は保護者チャット画面から行います。「📅 提出期限を設定」ボタンをクリックして作成してください。
                     </div>
                 </div>
             </div>
 
             <!-- かけはし管理 -->
-            <div class="section">
+            <div class="section" id="kakehashi">
                 <h2>🌉 かけはし管理</h2>
                 <p>引継ぎ記録から支援計画まで、生徒の成長を総合的に管理します。</p>
 
@@ -775,7 +1109,7 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
             </div>
 
             <!-- 書類作成スケジュール -->
-            <div class="section">
+            <div class="section" id="schedule">
                 <h2>📅 書類作成スケジュールと期限ルール</h2>
                 <p>
                     かけはし・個別支援計画書・モニタリング表は、決まったサイクルで作成する必要があります。
@@ -1001,7 +1335,7 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
             </div>
 
             <!-- マスタ管理 -->
-            <div class="section">
+            <div class="section" id="master">
                 <h2>⚙️ マスタ管理</h2>
                 <p>システムの基本情報を管理します。</p>
 
@@ -1090,7 +1424,58 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
                 </div>
 
                 <div class="feature-box">
-                    <div class="feature-title">📅 利用日変更</div>
+                    <div class="feature-title">⏳ 待機児童管理</div>
+                    <p>利用待ちの児童と教室の定員を管理します。</p>
+
+                    <h3 style="font-size: var(--text-callout); margin: 15px 0 10px 0; color: var(--primary-purple);">曜日別定員設定</h3>
+                    <ul>
+                        <li>各曜日の最大定員を設定</li>
+                        <li>営業日/休業日を曜日ごとに設定</li>
+                        <li>現在の利用者数と空き状況を一覧表示</li>
+                    </ul>
+
+                    <h3 style="font-size: var(--text-callout); margin: 15px 0 10px 0; color: var(--primary-purple);">待機児童の登録・管理</h3>
+                    <div class="step-box">
+                        <span class="step-number">1</span>
+                        生徒登録画面で「待機」ステータスを選択して登録
+                    </div>
+                    <div class="step-box">
+                        <span class="step-number">2</span>
+                        希望利用曜日を設定
+                    </div>
+                    <div class="step-box">
+                        <span class="step-number">3</span>
+                        空きが出たら「在籍」に変更して正式利用開始
+                    </div>
+
+                    <h3 style="font-size: var(--text-callout); margin: 15px 0 10px 0; color: var(--primary-purple);">ダッシュボード表示</h3>
+                    <table class="schedule-table" style="font-size: 13px;">
+                        <tbody>
+                            <tr>
+                                <td style="background: rgba(52, 199, 89, 0.15);"><strong>空きあり</strong></td>
+                                <td>定員に余裕がある曜日（緑色表示）</td>
+                            </tr>
+                            <tr>
+                                <td style="background: rgba(255, 149, 0, 0.15);"><strong>残りわずか</strong></td>
+                                <td>残り2〜3名の曜日（オレンジ表示）</td>
+                            </tr>
+                            <tr>
+                                <td style="background: rgba(255, 59, 48, 0.15);"><strong>満員</strong></td>
+                                <td>定員に達した曜日（赤色表示）</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="tip-box" style="margin-top: 10px;">
+                        <strong>💡 活用のヒント:</strong>
+                        <p style="margin-top: 8px;">
+                            待機児童の希望曜日と空き状況を照らし合わせることで、効率的な利用調整ができます。空きが出た曜日を希望している待機児童に優先的に連絡しましょう。
+                        </p>
+                    </div>
+                </div>
+
+                <div class="feature-box">
+                    <div class="feature-title">📅 利用日一括変更</div>
                     <p>生徒の利用日を追加・キャンセルできます。</p>
                     <ul>
                         <li>生徒を選択してカレンダーを表示</li>
@@ -1194,7 +1579,7 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
             </div>
 
             <!-- よくある質問 -->
-            <div class="section">
+            <div class="section" id="faq">
                 <h2>❓ よくある質問</h2>
 
                 <div class="feature-box">
@@ -1266,7 +1651,7 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
             </div>
 
             <!-- ヒントとコツ -->
-            <div class="section">
+            <div class="section" id="tips">
                 <h2>💡 ヒントとコツ</h2>
 
                 <div class="tip-box">
@@ -1320,7 +1705,7 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
             </div>
 
             <!-- お問い合わせ -->
-            <div class="section">
+            <div class="section" id="contact">
                 <h2>📞 お問い合わせ</h2>
                 <p>
                     システムの使い方で不明な点がある場合は、施設の管理者にお問い合わせください。
@@ -1330,7 +1715,8 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
                 </p>
             </div>
         </div>
-</div>
+    </div><!-- /.manual-main -->
+</div><!-- /.manual-layout -->
 
 <?php
 $inlineJs = <<<JS
@@ -1345,6 +1731,73 @@ document.addEventListener('keydown', function(e) {
         e.preventDefault();
         printManual();
     }
+});
+
+// モバイル用目次トグル
+function toggleManualNav() {
+    const nav = document.getElementById('manualNav');
+    const overlay = document.getElementById('manualNavOverlay');
+    nav.classList.toggle('show');
+    overlay.classList.toggle('show');
+}
+
+// トップに戻るボタン
+document.addEventListener('DOMContentLoaded', function() {
+    // ボタンを作成
+    const backToTop = document.createElement('button');
+    backToTop.className = 'back-to-top';
+    backToTop.innerHTML = '↑';
+    backToTop.title = 'トップに戻る';
+    backToTop.onclick = function() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    document.body.appendChild(backToTop);
+
+    // スクロール時の表示制御とアクティブリンク更新
+    const sections = document.querySelectorAll('.section[id]');
+    const navLinks = document.querySelectorAll('.manual-nav-link');
+
+    window.addEventListener('scroll', function() {
+        // トップに戻るボタン
+        if (window.scrollY > 300) {
+            backToTop.classList.add('show');
+        } else {
+            backToTop.classList.remove('show');
+        }
+
+        // 現在表示中のセクションをハイライト
+        let current = '';
+        sections.forEach(function(section) {
+            const sectionTop = section.offsetTop;
+            if (window.scrollY >= sectionTop - 100) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        navLinks.forEach(function(link) {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + current) {
+                link.classList.add('active');
+            }
+        });
+    });
+});
+
+// 目次リンクのスムーススクロール
+document.querySelectorAll('.manual-nav-link').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+        const targetId = this.getAttribute('href').substring(1);
+        const target = document.getElementById(targetId);
+        if (target) {
+            e.preventDefault();
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // モバイルでは目次を閉じる
+            if (window.innerWidth <= 900) {
+                document.getElementById('manualNav').classList.remove('show');
+                document.getElementById('manualNavOverlay').classList.remove('show');
+            }
+        }
+    });
 });
 JS;
 

@@ -32,6 +32,59 @@
     transition: transform var(--duration-normal) var(--ease-out);
 }
 
+/* サイドバー非表示時 */
+.sidebar.collapsed {
+    transform: translateX(-260px);
+}
+
+/* サイドバートグルボタン */
+.sidebar-toggle {
+    position: fixed;
+    top: 20px;
+    left: 260px;
+    width: 28px;
+    height: 40px;
+    background: #ffffff;
+    border: 1px solid #d1d1d6;
+    border-left: none;
+    border-radius: 0 8px 8px 0;
+    cursor: pointer;
+    z-index: 9999;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-size: 14px;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.15);
+}
+
+.sidebar-toggle:hover {
+    background: var(--apple-blue);
+    color: white;
+    border-color: var(--apple-blue);
+}
+
+.sidebar-toggle-icon {
+    transition: transform var(--duration-fast);
+}
+
+/* サイドバー非表示時のトグルボタン位置 */
+.sidebar.collapsed ~ .sidebar-toggle,
+.sidebar-toggle.sidebar-hidden {
+    left: 0;
+    border-left: 1px solid var(--apple-gray-5);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.sidebar-toggle.sidebar-hidden .sidebar-toggle-icon {
+    transform: rotate(180deg);
+}
+
+/* サイドバー非表示時のメインコンテンツ */
+.main-content.sidebar-collapsed {
+    margin-left: 0;
+}
+
 /* ロール別アクセントカラー */
 .sidebar--purple { border-left: 4px solid var(--apple-purple); }
 .sidebar--blue { border-left: 4px solid var(--apple-blue); }
@@ -528,6 +581,11 @@
         display: none;
     }
 
+    /* サイドバートグルも非表示 */
+    .sidebar-toggle {
+        display: none;
+    }
+
     /* メインコンテンツのマージンを削除 */
     .main-content {
         margin-left: 0;
@@ -671,6 +729,7 @@
 
 @media print {
     .sidebar,
+    .sidebar-toggle,
     .mobile-header,
     .logout-btn,
     .menu-dropdown {

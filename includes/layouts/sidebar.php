@@ -22,8 +22,8 @@ $menuConfig = [
     'admin' => [
         ['page' => 'index', 'icon' => '🏠', 'label' => 'ダッシュボード', 'url' => '/admin/index.php'],
         // 施設管理者専用（マスターには非表示）
-        ['page' => 'students', 'icon' => '👥', 'label' => '生徒管理', 'url' => '/admin/students.php', 'non_master' => true],
-        ['page' => 'guardians', 'icon' => '👤', 'label' => '保護者管理', 'url' => '/admin/guardians.php', 'non_master' => true],
+        ['page' => 'students', 'icon' => '👥', 'label' => '生徒登録・変更', 'url' => '/admin/students.php', 'non_master' => true],
+        ['page' => 'guardians', 'icon' => '👤', 'label' => '保護者登録・変更', 'url' => '/admin/guardians.php', 'non_master' => true],
         ['page' => 'waiting_list', 'icon' => '⏳', 'label' => '待機児童管理', 'url' => '/admin/waiting_list.php', 'non_master' => true],
         ['page' => 'staff_management', 'icon' => '👨‍💼', 'label' => 'スタッフ管理', 'url' => '/admin/staff_management.php', 'non_master' => true],
         ['page' => 'tablet_accounts', 'icon' => '📱', 'label' => 'タブレットユーザー', 'url' => '/admin/tablet_accounts.php', 'non_master' => true],
@@ -37,6 +37,7 @@ $menuConfig = [
     'staff' => [
         // 日常業務
         ['page' => 'renrakucho_activities', 'icon' => '🏠', 'label' => '活動管理', 'url' => '/staff/renrakucho_activities.php'],
+        ['page' => 'makeup_requests', 'icon' => '🔄', 'label' => '振替管理', 'url' => '/staff/makeup_requests.php'],
         // チャット
         ['type' => 'divider', 'label' => 'チャット'],
         ['page' => 'chat', 'icon' => '👨‍👩‍👧', 'label' => '保護者チャット', 'url' => '/staff/chat.php'],
@@ -62,13 +63,12 @@ $menuConfig = [
         ['page' => 'events', 'icon' => '📅', 'label' => 'イベント', 'url' => '/staff/events.php'],
         // 管理・設定
         ['type' => 'divider', 'label' => '管理・設定'],
-        ['page' => 'additional_usage', 'icon' => '📅', 'label' => '利用日変更', 'url' => '/staff/additional_usage.php'],
-        ['page' => 'makeup_requests', 'icon' => '🔄', 'label' => '振替管理', 'url' => '/staff/makeup_requests.php'],
-        ['page' => 'students', 'icon' => '👥', 'label' => '生徒管理', 'url' => '/staff/students.php'],
-        ['page' => 'guardians', 'icon' => '👤', 'label' => '保護者管理', 'url' => '/staff/guardians.php'],
+        ['page' => 'students', 'icon' => '👥', 'label' => '生徒登録・変更', 'url' => '/staff/students.php'],
+        ['page' => 'guardians', 'icon' => '👤', 'label' => '保護者登録・変更', 'url' => '/staff/guardians.php'],
         ['page' => 'waiting_list', 'icon' => '⏳', 'label' => '待機児童管理', 'url' => '/admin/waiting_list.php'],
+        ['page' => 'additional_usage', 'icon' => '📅', 'label' => '利用日一括変更', 'url' => '/staff/additional_usage.php'],
+        ['page' => 'school_holiday_activities', 'icon' => '🏫', 'label' => '学校休業日設定', 'url' => '/staff/school_holiday_activities.php'],
         ['page' => 'holidays', 'icon' => '🗓️', 'label' => '休日設定', 'url' => '/staff/holidays.php'],
-        ['page' => 'school_holiday_activities', 'icon' => '🏫', 'label' => '学校休業日活動', 'url' => '/staff/school_holiday_activities.php'],
         ['page' => 'manual', 'icon' => '📖', 'label' => 'マニュアル', 'url' => '/staff/manual.php'],
         ['page' => 'profile', 'icon' => '⚙️', 'label' => 'プロフィール', 'url' => '/staff/profile.php'],
     ],
@@ -124,7 +124,7 @@ $userTypeLabel = match($role) {
 };
 ?>
 <!-- PC用サイドバー -->
-<nav class="sidebar sidebar--<?= $config['color'] ?>">
+<nav class="sidebar sidebar--<?= $config['color'] ?>" id="mainSidebar">
     <div class="sidebar-header">
         <?php if (isset($classroom) && $classroom && !empty($classroom['logo_path'])): ?>
             <img src="/<?= htmlspecialchars($classroom['logo_path']) ?>" alt="教室ロゴ" class="sidebar-logo">
@@ -178,3 +178,49 @@ $userTypeLabel = match($role) {
         <a href="/logout.php" class="sidebar-logout">ログアウト</a>
     </div>
 </nav>
+
+<!-- サイドバートグルボタン -->
+<button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="メニューを表示/非表示">
+    <span class="sidebar-toggle-icon" id="sidebarToggleIcon">◀</span>
+</button>
+
+<script>
+// サイドバートグル機能
+function toggleSidebar() {
+    const sidebar = document.getElementById('mainSidebar');
+    const toggleBtn = document.getElementById('sidebarToggle');
+    const toggleIcon = document.getElementById('sidebarToggleIcon');
+    const mainContent = document.querySelector('.main-content');
+
+    sidebar.classList.toggle('collapsed');
+    toggleBtn.classList.toggle('sidebar-hidden');
+
+    if (sidebar.classList.contains('collapsed')) {
+        toggleIcon.textContent = '▶';
+        if (mainContent) mainContent.classList.add('sidebar-collapsed');
+        localStorage.setItem('sidebarCollapsed', 'true');
+    } else {
+        toggleIcon.textContent = '◀';
+        if (mainContent) mainContent.classList.remove('sidebar-collapsed');
+        localStorage.setItem('sidebarCollapsed', 'false');
+    }
+}
+
+// 初期状態を復元
+document.addEventListener('DOMContentLoaded', function() {
+    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    if (isCollapsed && window.innerWidth > 768) {
+        const sidebar = document.getElementById('mainSidebar');
+        const toggleBtn = document.getElementById('sidebarToggle');
+        const toggleIcon = document.getElementById('sidebarToggleIcon');
+        const mainContent = document.querySelector('.main-content');
+
+        if (sidebar && toggleBtn && toggleIcon) {
+            sidebar.classList.add('collapsed');
+            toggleBtn.classList.add('sidebar-hidden');
+            toggleIcon.textContent = '▶';
+            if (mainContent) mainContent.classList.add('sidebar-collapsed');
+        }
+    }
+});
+</script>
