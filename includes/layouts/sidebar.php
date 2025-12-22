@@ -179,7 +179,12 @@ $userTypeLabel = match($role) {
     </div>
 </nav>
 
-<!-- サイドバートグルボタン -->
+<!-- サイドバートグルボタン（モバイルでは非表示） -->
+<style>
+@media (max-width: 768px) {
+    #sidebarToggle { display: none !important; }
+}
+</style>
 <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="メニューを表示/非表示">
     <span class="sidebar-toggle-icon" id="sidebarToggleIcon">◀</span>
 </button>

@@ -55,15 +55,18 @@ if ($selectedPlanId) {
 
 // 選択された生徒の情報
 $selectedStudent = null;
+$selectedStudentSupportPlanStartType = 'current';
 if ($selectedStudentId) {
     $stmt = $pdo->prepare("SELECT * FROM students WHERE id = ?");
     $stmt->execute([$selectedStudentId]);
     $selectedStudent = $stmt->fetch();
+    $selectedStudentSupportPlanStartType = $selectedStudent['support_plan_start_type'] ?? 'current';
 }
 
 // 選択された生徒の計画一覧
 $studentPlans = [];
-if ($selectedStudentId) {
+if ($selectedStudentId && $selectedStudentSupportPlanStartType === 'current') {
+    // 「次回の期間から作成する」設定の場合は、既存の計画も非表示
     $stmt = $pdo->prepare("SELECT * FROM individual_support_plans WHERE student_id = ? ORDER BY created_date DESC");
     $stmt->execute([$selectedStudentId]);
     $studentPlans = $stmt->fetchAll();
@@ -118,12 +121,15 @@ if ($selectedStudentId) {
 // 未作成のかけはし期間をチェック
 $uncreatedPeriods = [];
 if ($selectedStudentId) {
-    // 生徒情報を取得
-    $stmt = $pdo->prepare("SELECT support_start_date FROM students WHERE id = ?");
+    // 生徒情報を取得（support_plan_start_typeも含める）
+    $stmt = $pdo->prepare("SELECT support_start_date, support_plan_start_type FROM students WHERE id = ?");
     $stmt->execute([$selectedStudentId]);
     $student = $stmt->fetch();
 
-    if ($student && $student['support_start_date']) {
+    // support_plan_start_type が 'next' の場合は警告をスキップ（次回の期間まで待機中）
+    $supportPlanStartType = $student['support_plan_start_type'] ?? 'current';
+
+    if ($student && $student['support_start_date'] && $supportPlanStartType === 'current') {
         // 作成可能なかけはし期間を計算
         $supportStartDate = new DateTime($student['support_start_date']);
         $today = new DateTime();

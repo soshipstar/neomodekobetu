@@ -81,11 +81,14 @@ if ($selectedStudentId) {
 
     // かけはし期間が存在しない場合は初回から自動生成
     if (empty($activePeriods)) {
-        $stmt = $pdo->prepare("SELECT student_name, support_start_date FROM students WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT student_name, support_start_date, support_plan_start_type FROM students WHERE id = ?");
         $stmt->execute([$selectedStudentId]);
         $student = $stmt->fetch();
 
-        if ($student && $student['support_start_date']) {
+        // support_plan_start_type が 'next' の場合は自動生成しない（次回の期間まで待機）
+        $supportPlanStartType = $student['support_plan_start_type'] ?? 'current';
+
+        if ($student && $student['support_start_date'] && $supportPlanStartType === 'current') {
             try {
                 $generatedPeriods = generateKakehashiPeriodsForStudent($pdo, $selectedStudentId, $student['support_start_date']);
                 error_log("Auto-generated " . count($generatedPeriods) . " kakehashi periods for student {$selectedStudentId}");
@@ -103,6 +106,20 @@ if ($selectedStudentId) {
                 error_log("Error auto-generating kakehashi periods: " . $e->getMessage());
             }
         }
+    }
+}
+
+// 選択された生徒のsupport_plan_start_typeを取得（メッセージ表示用）
+$selectedStudentSupportPlanStartType = 'current';
+if ($selectedStudentId) {
+    $stmt = $pdo->prepare("SELECT support_plan_start_type FROM students WHERE id = ?");
+    $stmt->execute([$selectedStudentId]);
+    $typeResult = $stmt->fetch();
+    $selectedStudentSupportPlanStartType = $typeResult['support_plan_start_type'] ?? 'current';
+
+    // 「次回の期間から作成する」設定の場合は、既存のかけはし期間も非表示にする
+    if ($selectedStudentSupportPlanStartType === 'next') {
+        $activePeriods = [];
     }
 }
 
@@ -375,10 +392,17 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
     </div>
 
     <?php if ($selectedStudentId && empty($activePeriods)): ?>
+        <?php if ($selectedStudentSupportPlanStartType === 'next'): ?>
+        <div class="alert alert-info">
+            この生徒は「次回の期間から個別支援計画を作成する」設定になっています。<br>
+            現在は連絡帳のみ利用可能です。次回の期間が近づくと自動的にかけはしが作成されます。
+        </div>
+        <?php else: ?>
         <div class="alert alert-info">
             この生徒の支援開始日が設定されていないため、かけはし期間を自動生成できませんでした。<br>
             生徒登録ページで支援開始日を設定してください。
         </div>
+        <?php endif; ?>
     <?php elseif ($selectedStudentId && !empty($activePeriods)): ?>
         <!-- 期間選択エリア -->
         <div class="selection-area">

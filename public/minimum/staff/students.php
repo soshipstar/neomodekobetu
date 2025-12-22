@@ -73,6 +73,16 @@ switch ($sortBy) {
     case 'created': $orderBy = "ORDER BY s.created_at DESC"; break;
 }
 
+// support_plan_start_type カラムの存在チェック
+$hasSupportPlanStartType = false;
+try {
+    $checkCol = $pdo->query("SHOW COLUMNS FROM students LIKE 'support_plan_start_type'");
+    $hasSupportPlanStartType = $checkCol->rowCount() > 0;
+} catch (Exception $e) {
+    $hasSupportPlanStartType = false;
+}
+$supportPlanStartTypeCol = $hasSupportPlanStartType ? "s.support_plan_start_type," : "'current' as support_plan_start_type,";
+
 // 生徒を取得
 if ($classroomId) {
     $sql = "
@@ -81,6 +91,7 @@ if ($classroomId) {
             s.guardian_id, s.status, s.withdrawal_date, s.is_active, s.created_at,
             s.scheduled_monday, s.scheduled_tuesday, s.scheduled_wednesday,
             s.scheduled_thursday, s.scheduled_friday, s.scheduled_saturday, s.scheduled_sunday,
+            {$supportPlanStartTypeCol}
             s.username, u.full_name as guardian_name
         FROM students s
         INNER JOIN users u ON s.guardian_id = u.id
@@ -95,6 +106,7 @@ if ($classroomId) {
             s.guardian_id, s.status, s.withdrawal_date, s.is_active, s.created_at,
             s.scheduled_monday, s.scheduled_tuesday, s.scheduled_wednesday,
             s.scheduled_thursday, s.scheduled_friday, s.scheduled_saturday, s.scheduled_sunday,
+            {$supportPlanStartTypeCol}
             s.username, u.full_name as guardian_name
         FROM students s
         {$joinType} users u ON s.guardian_id = u.id
@@ -276,6 +288,19 @@ renderPageStart('staff', $currentPage, '生徒管理');
                 <label class="form-label">支援開始日 *</label>
                 <input type="date" name="support_start_date" class="form-control" required>
                 <small style="color: var(--text-secondary);">※かけはしの提出期限が自動で設定されます</small>
+            </div>
+            <div class="form-group">
+                <label class="form-label">個別支援計画の開始タイミング</label>
+                <select name="support_plan_start_type" class="form-control">
+                    <option value="current" selected>現在の期間から作成する</option>
+                    <option value="next">次回の期間から作成する</option>
+                </select>
+                <small style="color: var(--text-secondary);">
+                    <strong>【新規入所の児童】</strong>「現在の期間から作成する」を選択してください。<br>
+                    <strong>【既に入所中の児童】</strong><br>
+                    ・既存の個別支援計画をきづりに移行する場合 →「現在の期間から」<br>
+                    ・既存の計画は従来通り進め、次回から開始する場合 →「次回の期間から」（連絡帳のみ先に利用）
+                </small>
             </div>
             <div class="form-group">
                 <label class="form-label">保護者（任意）</label>
@@ -476,6 +501,19 @@ renderPageStart('staff', $currentPage, '生徒管理');
                 <input type="date" name="support_start_date" id="edit_support_start_date" class="form-control" required>
             </div>
             <div class="form-group">
+                <label class="form-label">個別支援計画の開始タイミング</label>
+                <select name="support_plan_start_type" id="edit_support_plan_start_type" class="form-control">
+                    <option value="current">現在の期間から作成する</option>
+                    <option value="next">次回の期間から作成する</option>
+                </select>
+                <small style="color: var(--text-secondary);">
+                    <strong>【新規入所の児童】</strong>「現在の期間から作成する」を選択してください。<br>
+                    <strong>【既に入所中の児童】</strong><br>
+                    ・既存の個別支援計画をきづりに移行する場合 →「現在の期間から」<br>
+                    ・既存の計画は従来通り進め、次回から開始する場合 →「次回の期間から」（連絡帳のみ先に利用）
+                </small>
+            </div>
+            <div class="form-group">
                 <label class="form-label">保護者（任意）</label>
                 <select name="guardian_id" id="edit_guardian_id" class="form-control">
                     <option value="">保護者なし</option>
@@ -574,6 +612,9 @@ function editStudent(student) {
     // 生徒用ログイン情報の設定
     document.getElementById('edit_student_username').value = student.username || '';
     document.getElementById('edit_student_password').value = '';
+
+    // 個別支援計画開始タイミングの設定
+    document.getElementById('edit_support_plan_start_type').value = student.support_plan_start_type || 'current';
 
     toggleEditWithdrawalDate();
     document.getElementById('editModal').classList.add('active');

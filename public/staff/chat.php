@@ -1,6 +1,9 @@
 <?php
 /**
  * スタッフ用 チャットページ
+ * - スタッフごとの既読管理
+ * - ピン留め機能
+ * - 未読を上部に表示
  */
 
 require_once __DIR__ . '/../../config/database.php';
@@ -14,8 +17,52 @@ $pdo = getDbConnection();
 $staffId = $_SESSION['user_id'];
 $classroomId = $_SESSION['classroom_id'] ?? null;
 
+// テーブル存在チェック（マイグレーション前の互換性）
+$hasStaffReadsTable = false;
+$hasPinsTable = false;
+try {
+    $pdo->query("SELECT 1 FROM chat_message_staff_reads LIMIT 1");
+    $hasStaffReadsTable = true;
+} catch (PDOException $e) {
+    $hasStaffReadsTable = false;
+}
+try {
+    $pdo->query("SELECT 1 FROM chat_room_pins LIMIT 1");
+    $hasPinsTable = true;
+} catch (PDOException $e) {
+    $hasPinsTable = false;
+}
+
 // 部門フィルター
 $departmentFilter = $_GET['department'] ?? '';
+
+// スタッフごとの未読カウント計算
+if ($hasStaffReadsTable) {
+    $unreadSubquery = "(
+        SELECT COUNT(*)
+        FROM chat_messages cm
+        WHERE cm.room_id = cr.id
+        AND cm.sender_type = 'guardian'
+        AND NOT EXISTS (
+            SELECT 1 FROM chat_message_staff_reads csr
+            WHERE csr.message_id = cm.id AND csr.staff_id = ?
+        )
+    )";
+    $unreadParams = [$staffId];
+} else {
+    // 従来の方式（後方互換）
+    $unreadSubquery = "(SELECT COUNT(*) FROM chat_messages WHERE room_id = cr.id AND sender_type = 'guardian' AND is_read = 0)";
+    $unreadParams = [];
+}
+
+// ピン留め状態
+if ($hasPinsTable) {
+    $pinSubquery = "(SELECT 1 FROM chat_room_pins WHERE room_id = cr.id AND staff_id = ?)";
+    $pinParams = [$staffId];
+} else {
+    $pinSubquery = "0";
+    $pinParams = [];
+}
 
 // 自分の教室の生徒を取得
 $sql = "
@@ -28,7 +75,8 @@ $sql = "
         cl.classroom_name,
         cr.id as room_id,
         cr.last_message_at,
-        (SELECT COUNT(*) FROM chat_messages WHERE room_id = cr.id AND sender_type = 'guardian' AND is_read = 0) as unread_count
+        {$unreadSubquery} as unread_count,
+        {$pinSubquery} as is_pinned
     FROM students s
     LEFT JOIN users u ON s.guardian_id = u.id
     LEFT JOIN classrooms cl ON u.classroom_id = cl.id
@@ -36,7 +84,7 @@ $sql = "
     WHERE s.is_active = 1
 ";
 
-$params = [];
+$params = array_merge($unreadParams, $pinParams);
 
 if ($classroomId) {
     $sql .= " AND u.classroom_id = ?";
@@ -55,19 +103,41 @@ if ($departmentFilter) {
     }
 }
 
-$sql .= " ORDER BY CASE WHEN cr.last_message_at IS NULL THEN 1 ELSE 0 END, cr.last_message_at DESC, s.student_name ASC";
+// ソート: ピン留め → 未読あり → 最新メッセージ順
+$sql .= " ORDER BY
+    CASE WHEN {$pinSubquery} THEN 0 ELSE 1 END,
+    CASE WHEN {$unreadSubquery} > 0 THEN 0 ELSE 1 END,
+    CASE WHEN cr.last_message_at IS NULL THEN 1 ELSE 0 END,
+    cr.last_message_at DESC,
+    s.student_name ASC";
+
+// ピン留めとunreadの追加パラメータ
+$params = array_merge($params, $pinParams, $unreadParams);
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $allStudents = $stmt->fetchAll();
 
-// 学部別に分類
+// カテゴリ分類
+$pinnedStudents = [];
+$unreadStudents = [];
 $elementary = [];
 $junior = [];
 $senior = [];
 
 foreach ($allStudents as $student) {
     $grade = $student['grade_level'];
+
+    // ピン留め
+    if ($student['is_pinned']) {
+        $pinnedStudents[] = $student;
+    }
+    // 未読あり（ピン留めでない）
+    elseif ($student['unread_count'] > 0) {
+        $unreadStudents[] = $student;
+    }
+
+    // 学年別（全員）
     if ($grade === 'elementary') {
         $elementary[] = $student;
     } elseif ($grade === 'junior_high') {
@@ -104,14 +174,32 @@ if ($selectedStudent && !$selectedRoomId && $selectedStudent['guardian_id']) {
     $selectedRoomId = $pdo->lastInsertId();
 }
 
-// メッセージを既読にする
-if ($selectedRoomId) {
+// メッセージを既読にする（スタッフごと）
+if ($selectedRoomId && $hasStaffReadsTable) {
+    // このスタッフの既読を記録
+    $stmt = $pdo->prepare("
+        INSERT IGNORE INTO chat_message_staff_reads (message_id, staff_id)
+        SELECT cm.id, ?
+        FROM chat_messages cm
+        WHERE cm.room_id = ? AND cm.sender_type = 'guardian'
+    ");
+    $stmt->execute([$staffId, $selectedRoomId]);
+} elseif ($selectedRoomId) {
+    // 従来方式（後方互換）
     $stmt = $pdo->prepare("
         UPDATE chat_messages
         SET is_read = 1
         WHERE room_id = ? AND sender_type = 'guardian' AND is_read = 0
     ");
     $stmt->execute([$selectedRoomId]);
+}
+
+// 選択中の生徒のピン状態を取得
+$selectedStudentPinned = false;
+if ($selectedRoomId && $hasPinsTable) {
+    $stmt = $pdo->prepare("SELECT 1 FROM chat_room_pins WHERE room_id = ? AND staff_id = ?");
+    $stmt->execute([$selectedRoomId, $staffId]);
+    $selectedStudentPinned = $stmt->fetch() ? true : false;
 }
 
 // 保護者の重複を除去（一斉送信用）
@@ -192,6 +280,29 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
     color: var(--text-primary);
 }
 
+/* セクションヘッダー（ピン留め・未読） */
+.section-header {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--apple-gray-4);
+    font-weight: 600;
+    font-size: var(--text-footnote);
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--apple-gray-5);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.section-header.pinned {
+    background: rgba(255, 204, 0, 0.2);
+    color: #b8860b;
+}
+
+.section-header.unread {
+    background: rgba(255, 59, 48, 0.1);
+    color: var(--apple-red);
+}
+
 .accordion-header {
     padding: var(--spacing-md);
     background: var(--apple-gray-4);
@@ -259,6 +370,10 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
     border-left: 4px solid var(--apple-blue);
 }
 
+.student-item.has-unread {
+    background: rgba(255, 59, 48, 0.05);
+}
+
 .student-item-header {
     display: flex;
     justify-content: space-between;
@@ -268,6 +383,14 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
 .student-item-name {
     font-weight: 600;
     color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.pin-icon {
+    color: #ffc107;
+    font-size: 12px;
 }
 
 .unread-badge {
@@ -310,6 +433,13 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
     padding: var(--spacing-md) var(--spacing-lg);
     background: var(--apple-bg-tertiary);
     border-bottom: 1px solid var(--apple-gray-5);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-header-info {
+    flex: 1;
 }
 
 .chat-title {
@@ -322,6 +452,32 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
     font-size: var(--text-footnote);
     color: var(--text-secondary);
     margin-top: 2px;
+}
+
+.chat-header-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.pin-btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--apple-bg-secondary);
+    color: var(--text-secondary);
+    border: 2px solid var(--apple-gray-4);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-footnote);
+    cursor: pointer;
+    transition: all var(--duration-fast);
+}
+
+.pin-btn:hover {
+    background: var(--apple-gray-4);
+}
+
+.pin-btn.pinned {
+    background: rgba(255, 204, 0, 0.2);
+    border-color: #ffc107;
+    color: #b8860b;
 }
 
 .submission-btn {
@@ -441,6 +597,16 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
     .chat-main {
         min-height: 50vh;
     }
+
+    .chat-header-bar {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+
+    .chat-header-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
 }
 </style>
 
@@ -457,6 +623,49 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
                 生徒がいません
             </div>
         <?php else: ?>
+            <!-- ピン留め -->
+            <?php if (!empty($pinnedStudents)): ?>
+            <div class="section-header pinned">📌 ピン留め</div>
+            <?php foreach ($pinnedStudents as $student): ?>
+                <div class="student-item <?= $selectedStudentId == $student['student_id'] ? 'active' : '' ?> <?= $student['unread_count'] > 0 ? 'has-unread' : '' ?>"
+                     data-student-name="<?= htmlspecialchars($student['student_name']) ?>"
+                     data-guardian-name="<?= htmlspecialchars($student['guardian_name'] ?? '') ?>"
+                     onclick="location.href='chat.php?student_id=<?= $student['student_id'] ?>'">
+                    <div class="student-item-header">
+                        <div class="student-item-name">
+                            <span class="pin-icon">📌</span>
+                            <?= htmlspecialchars($student['student_name']) ?>さん
+                        </div>
+                        <?php if ($student['unread_count'] > 0): ?>
+                            <div class="unread-badge"><?= $student['unread_count'] ?></div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="guardian-name-label">
+                        保護者: <?= $student['guardian_name'] ? htmlspecialchars($student['guardian_name']) : '未登録' ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+            <?php endif; ?>
+
+            <!-- 未読あり -->
+            <?php if (!empty($unreadStudents)): ?>
+            <div class="section-header unread">🔴 未読メッセージあり</div>
+            <?php foreach ($unreadStudents as $student): ?>
+                <div class="student-item <?= $selectedStudentId == $student['student_id'] ? 'active' : '' ?> has-unread"
+                     data-student-name="<?= htmlspecialchars($student['student_name']) ?>"
+                     data-guardian-name="<?= htmlspecialchars($student['guardian_name'] ?? '') ?>"
+                     onclick="location.href='chat.php?student_id=<?= $student['student_id'] ?>'">
+                    <div class="student-item-header">
+                        <div class="student-item-name"><?= htmlspecialchars($student['student_name']) ?>さん</div>
+                        <div class="unread-badge"><?= $student['unread_count'] ?></div>
+                    </div>
+                    <div class="guardian-name-label">
+                        保護者: <?= $student['guardian_name'] ? htmlspecialchars($student['guardian_name']) : '未登録' ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+            <?php endif; ?>
+
             <!-- 小学生 -->
             <?php if (!empty($elementary)): ?>
             <div class="accordion">
@@ -469,13 +678,16 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
                 </div>
                 <div class="accordion-content">
                     <?php foreach ($elementary as $student): ?>
-                        <div class="student-item <?= $selectedStudentId == $student['student_id'] ? 'active' : '' ?>"
+                        <div class="student-item <?= $selectedStudentId == $student['student_id'] ? 'active' : '' ?> <?= $student['unread_count'] > 0 ? 'has-unread' : '' ?>"
                              data-student-name="<?= htmlspecialchars($student['student_name']) ?>"
                              data-guardian-name="<?= htmlspecialchars($student['guardian_name'] ?? '') ?>"
                              onclick="location.href='chat.php?student_id=<?= $student['student_id'] ?>'">
                             <div class="student-item-header">
-                                <div class="student-item-name"><?= htmlspecialchars($student['student_name']) ?>さん</div>
-                                <?php if (isset($student['unread_count']) && $student['unread_count'] > 0): ?>
+                                <div class="student-item-name">
+                                    <?php if ($student['is_pinned']): ?><span class="pin-icon">📌</span><?php endif; ?>
+                                    <?= htmlspecialchars($student['student_name']) ?>さん
+                                </div>
+                                <?php if ($student['unread_count'] > 0): ?>
                                     <div class="unread-badge"><?= $student['unread_count'] ?></div>
                                 <?php endif; ?>
                             </div>
@@ -500,13 +712,16 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
                 </div>
                 <div class="accordion-content">
                     <?php foreach ($junior as $student): ?>
-                        <div class="student-item <?= $selectedStudentId == $student['student_id'] ? 'active' : '' ?>"
+                        <div class="student-item <?= $selectedStudentId == $student['student_id'] ? 'active' : '' ?> <?= $student['unread_count'] > 0 ? 'has-unread' : '' ?>"
                              data-student-name="<?= htmlspecialchars($student['student_name']) ?>"
                              data-guardian-name="<?= htmlspecialchars($student['guardian_name'] ?? '') ?>"
                              onclick="location.href='chat.php?student_id=<?= $student['student_id'] ?>'">
                             <div class="student-item-header">
-                                <div class="student-item-name"><?= htmlspecialchars($student['student_name']) ?>さん</div>
-                                <?php if (isset($student['unread_count']) && $student['unread_count'] > 0): ?>
+                                <div class="student-item-name">
+                                    <?php if ($student['is_pinned']): ?><span class="pin-icon">📌</span><?php endif; ?>
+                                    <?= htmlspecialchars($student['student_name']) ?>さん
+                                </div>
+                                <?php if ($student['unread_count'] > 0): ?>
                                     <div class="unread-badge"><?= $student['unread_count'] ?></div>
                                 <?php endif; ?>
                             </div>
@@ -531,13 +746,16 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
                 </div>
                 <div class="accordion-content">
                     <?php foreach ($senior as $student): ?>
-                        <div class="student-item <?= $selectedStudentId == $student['student_id'] ? 'active' : '' ?>"
+                        <div class="student-item <?= $selectedStudentId == $student['student_id'] ? 'active' : '' ?> <?= $student['unread_count'] > 0 ? 'has-unread' : '' ?>"
                              data-student-name="<?= htmlspecialchars($student['student_name']) ?>"
                              data-guardian-name="<?= htmlspecialchars($student['guardian_name'] ?? '') ?>"
                              onclick="location.href='chat.php?student_id=<?= $student['student_id'] ?>'">
                             <div class="student-item-header">
-                                <div class="student-item-name"><?= htmlspecialchars($student['student_name']) ?>さん</div>
-                                <?php if (isset($student['unread_count']) && $student['unread_count'] > 0): ?>
+                                <div class="student-item-name">
+                                    <?php if ($student['is_pinned']): ?><span class="pin-icon">📌</span><?php endif; ?>
+                                    <?= htmlspecialchars($student['student_name']) ?>さん
+                                </div>
+                                <?php if ($student['unread_count'] > 0): ?>
                                     <div class="unread-badge"><?= $student['unread_count'] ?></div>
                                 <?php endif; ?>
                             </div>
@@ -556,8 +774,16 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
     <div class="chat-main">
         <?php if ($selectedStudent): ?>
             <div class="chat-header-bar">
-                <div class="chat-title"><?= htmlspecialchars($selectedStudent['student_name']) ?>さん</div>
-                <div class="chat-subtitle">保護者: <?= $selectedStudent['guardian_name'] ? htmlspecialchars($selectedStudent['guardian_name']) : '未登録' ?></div>
+                <div class="chat-header-info">
+                    <div class="chat-title"><?= htmlspecialchars($selectedStudent['student_name']) ?>さん</div>
+                    <div class="chat-subtitle">保護者: <?= $selectedStudent['guardian_name'] ? htmlspecialchars($selectedStudent['guardian_name']) : '未登録' ?></div>
+                </div>
+                <div class="chat-header-actions">
+                    <button class="pin-btn <?= $selectedStudentPinned ? 'pinned' : '' ?>" onclick="togglePin()" id="pinBtn">
+                        <?= $selectedStudentPinned ? '📌 ピン解除' : '📌 ピン留め' ?>
+                    </button>
+                    <button class="submission-btn" onclick="openSubmissionModal()">📋 提出期限</button>
+                </div>
             </div>
 
             <div class="chat-wrapper role-staff" style="border-radius: 0; box-shadow: none;">
@@ -572,7 +798,6 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
                     <form class="chat-input-form" onsubmit="sendMessage(event)" id="chatForm">
                         <label for="fileInput" class="file-attach-btn" title="ファイルを添付">📎</label>
                         <input type="file" id="fileInput" class="file-attach-input" onchange="handleFileSelect(event)" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt">
-                        <button type="button" class="submission-btn" onclick="openSubmissionModal()">📋 提出期限</button>
                         <textarea id="messageInput" class="chat-textarea" placeholder="メッセージを入力..." onkeydown="handleKeyDown(event)"></textarea>
                         <button type="submit" class="chat-send-btn" id="sendBtn">➤</button>
                     </form>
@@ -670,8 +895,15 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
 </div>
 
 <?php
+$selectedRoomIdJs = $selectedRoomId ?: 'null';
+$selectedStudentIdJs = $selectedStudentId ?: 'null';
+$isPinnedJs = $selectedStudentPinned ? 'true' : 'false';
+
 $inlineJs = <<<JS
-const roomId = {$selectedRoomId};
+const roomId = {$selectedRoomIdJs};
+const studentId = {$selectedStudentIdJs};
+const currentStaffId = {$staffId};
+let isPinned = {$isPinnedJs};
 let isLoading = false;
 let lastMessageId = 0;
 let selectedFile = null;
@@ -728,12 +960,13 @@ function loadMessages() {
 
 function appendMessage(msg) {
     const messagesArea = document.getElementById('messagesArea');
-    const isOwn = msg.sender_type === 'staff' || msg.sender_type === 'admin';
+    const isStaffOrAdmin = msg.sender_type === 'staff' || msg.sender_type === 'admin';
+    const isOwnMessage = isStaffOrAdmin && msg.sender_id == currentStaffId;
     const isAbsence = msg.message_type === 'absence_notification';
     const isEvent = msg.message_type === 'event_registration';
 
     const messageDiv = document.createElement('div');
-    messageDiv.className = 'message ' + (isOwn ? 'sent' : 'received');
+    messageDiv.className = 'message ' + (isStaffOrAdmin ? 'sent' : 'received');
     messageDiv.dataset.messageId = msg.id;
 
     let bubbleClass = 'message-bubble';
@@ -741,8 +974,11 @@ function appendMessage(msg) {
     if (isEvent) bubbleClass += ' event';
 
     let html = '<div class="message-content">';
-    if (!isOwn) {
+    // 保護者からのメッセージ、または他のスタッフからのメッセージには送信者名を表示
+    if (!isStaffOrAdmin) {
         html += '<div class="message-sender">' + escapeHtml(msg.sender_name || '保護者') + '</div>';
+    } else if (!isOwnMessage) {
+        html += '<div class="message-sender staff-sender">' + escapeHtml(msg.sender_name || 'スタッフ') + '</div>';
     }
 
     html += '<div class="' + bubbleClass + '">';
@@ -755,7 +991,7 @@ function appendMessage(msg) {
     html += '</div>';
     html += '<div class="message-time">';
     html += formatDateTime(msg.created_at);
-    if (isOwn) {
+    if (isOwnMessage) {
         html += ' <button class="delete-message-btn" onclick="deleteMessage(' + msg.id + ')">取消</button>';
     }
     html += '</div></div>';
@@ -861,6 +1097,41 @@ async function deleteMessage(messageId) {
             if (messageDiv) messageDiv.remove();
         } else {
             alert('削除に失敗しました: ' + (result.error || '不明なエラー'));
+        }
+    } catch (error) {
+        alert('通信エラーが発生しました');
+    }
+}
+
+// ピン留め機能
+async function togglePin() {
+    if (!roomId) return;
+
+    const formData = new FormData();
+    formData.append('action', isPinned ? 'unpin' : 'pin');
+    formData.append('room_id', roomId);
+
+    try {
+        const response = await fetch('chat_pin_api.php', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            isPinned = !isPinned;
+            const pinBtn = document.getElementById('pinBtn');
+            if (isPinned) {
+                pinBtn.textContent = '📌 ピン解除';
+                pinBtn.classList.add('pinned');
+            } else {
+                pinBtn.textContent = '📌 ピン留め';
+                pinBtn.classList.remove('pinned');
+            }
+            // ページをリロードしてサイドバーを更新
+            location.reload();
+        } else {
+            alert('エラー: ' + (result.error || '操作に失敗しました'));
         }
     } catch (error) {
         alert('通信エラーが発生しました');

@@ -142,6 +142,13 @@ renderPageStart('guardian', $currentPage, 'チャット', [
     margin-top: 4px;
 }
 
+.message-sender {
+    font-size: 12px;
+    color: var(--apple-blue);
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
 .chat-input-area {
     padding: 16px;
     background: var(--apple-bg-primary);
@@ -256,11 +263,18 @@ async function loadMessages() {
 
             data.messages.forEach(msg => {
                 const div = document.createElement('div');
-                div.className = `message ${msg.sender_type === 'guardian' ? 'sent' : 'received'}`;
-                div.innerHTML = `
-                    <div class="message-content">${escapeHtml(msg.message).replace(/\n/g, '<br>')}</div>
-                    <div class="message-time">${msg.created_at}</div>
-                `;
+                const isOwn = msg.sender_type === 'guardian';
+                div.className = `message ${isOwn ? 'sent' : 'received'}`;
+
+                let html = '';
+                // スタッフからのメッセージには送信者名を表示
+                if (!isOwn) {
+                    html += `<div class="message-sender">${escapeHtml(msg.sender_name || 'スタッフ')}</div>`;
+                }
+                html += `<div class="message-content">${escapeHtml(msg.message).replace(/\n/g, '<br>')}</div>`;
+                html += `<div class="message-time">${formatTime(msg.created_at)}</div>`;
+                div.innerHTML = html;
+
                 messagesArea.appendChild(div);
                 lastMessageId = Math.max(lastMessageId, msg.id);
             });
@@ -333,6 +347,21 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// 日時フォーマット
+function formatTime(dateTimeStr) {
+    const date = new Date(dateTimeStr);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const time = date.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+
+    if (msgDate.getTime() === today.getTime()) {
+        return time;
+    } else {
+        return date.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) + ' ' + time;
+    }
 }
 
 // 初期読み込みとポーリング

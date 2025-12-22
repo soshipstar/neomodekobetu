@@ -39,62 +39,66 @@ $selectedStudentId = $_GET['student_id'] ?? null;
 $activePeriods = [];
 $generationMessage = null;
 if ($selectedStudentId) {
-    // 次のかけはし期間を自動生成
-    try {
-        $stmt = $pdo->prepare("SELECT student_name FROM students WHERE id = ?");
-        $stmt->execute([$selectedStudentId]);
-        $studentInfo = $stmt->fetch();
-        if ($studentInfo && shouldGenerateNextKakehashi($pdo, $selectedStudentId)) {
-            generateNextKakehashiPeriod($pdo, $selectedStudentId, $studentInfo['student_name']);
-        }
-    } catch (Exception $e) {
-        error_log("Error auto-generating next kakehashi period: " . $e->getMessage());
-    }
-
-    // 提出期限が今日から1ヶ月以内の期間のみ表示
-    $stmt = $pdo->prepare("
-        SELECT kp.*, kg.is_hidden
-        FROM kakehashi_periods kp
-        LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = kp.student_id
-        WHERE kp.student_id = ?
-        AND kp.is_active = 1
-        AND (kg.is_hidden = 0 OR kg.is_hidden IS NULL)
-        AND kp.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
-        ORDER BY kp.submission_deadline DESC
-    ");
+    // まず生徒のsupport_plan_start_typeを確認
+    $stmt = $pdo->prepare("SELECT student_name, support_start_date, support_plan_start_type FROM students WHERE id = ?");
     $stmt->execute([$selectedStudentId]);
-    $activePeriods = $stmt->fetchAll();
+    $student = $stmt->fetch();
+    $supportPlanStartType = $student['support_plan_start_type'] ?? 'current';
 
-    // かけはし期間が存在しない場合は自動生成
-    if (empty($activePeriods)) {
-        $stmt = $pdo->prepare("SELECT student_name, support_start_date FROM students WHERE id = ?");
-        $stmt->execute([$selectedStudentId]);
-        $student = $stmt->fetch();
-
-        if ($student && $student['support_start_date']) {
-            $supportStartDate = new DateTime($student['support_start_date']);
-            $today = new DateTime();
-            $generationLimit = clone $today;
-            $generationLimit->modify('+1 month');
-            $firstDeadline = clone $supportStartDate;
-            $firstDeadline->modify('-1 day');
-
-            if ($firstDeadline > $generationLimit) {
-                $generationMessage = '支援開始日（' . $supportStartDate->format('Y年n月j日') . '）が' . $generationLimit->format('Y年n月j日') . 'より先のため、かけはし期間はまだ作成されていません。';
-            } else {
-                try {
-                    generateKakehashiPeriodsForStudent($pdo, $selectedStudentId, $student['support_start_date']);
-                    $stmt->execute([$selectedStudentId]);
-                    $activePeriods = $stmt->fetchAll();
-                    if (empty($activePeriods)) {
-                        $generationMessage = 'かけはし期間の自動生成に失敗しました。スタッフにお問い合わせください。';
-                    }
-                } catch (Exception $e) {
-                    $generationMessage = 'かけはし期間の自動生成でエラーが発生しました。スタッフにお問い合わせください。';
-                }
+    // 「次回の期間から作成する」設定の場合は、既存のかけはしも非表示
+    if ($supportPlanStartType === 'next') {
+        $generationMessage = 'お子様は「次回の期間から個別支援計画を作成する」設定になっています。現在は連絡帳のみご利用いただけます。';
+    } else {
+        // 次のかけはし期間を自動生成
+        try {
+            if ($student && shouldGenerateNextKakehashi($pdo, $selectedStudentId)) {
+                generateNextKakehashiPeriod($pdo, $selectedStudentId, $student['student_name']);
             }
-        } else {
-            $generationMessage = 'お子様の支援開始日が設定されていないため、かけはし期間を自動生成できませんでした。スタッフに支援開始日の設定をご依頼ください。';
+        } catch (Exception $e) {
+            error_log("Error auto-generating next kakehashi period: " . $e->getMessage());
+        }
+
+        // 提出期限が今日から1ヶ月以内の期間のみ表示
+        $stmt = $pdo->prepare("
+            SELECT kp.*, kg.is_hidden
+            FROM kakehashi_periods kp
+            LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = kp.student_id
+            WHERE kp.student_id = ?
+            AND kp.is_active = 1
+            AND (kg.is_hidden = 0 OR kg.is_hidden IS NULL)
+            AND kp.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
+            ORDER BY kp.submission_deadline DESC
+        ");
+        $stmt->execute([$selectedStudentId]);
+        $activePeriods = $stmt->fetchAll();
+
+        // かけはし期間が存在しない場合は自動生成
+        if (empty($activePeriods)) {
+            if ($student && $student['support_start_date']) {
+                $supportStartDate = new DateTime($student['support_start_date']);
+                $today = new DateTime();
+                $generationLimit = clone $today;
+                $generationLimit->modify('+1 month');
+                $firstDeadline = clone $supportStartDate;
+                $firstDeadline->modify('-1 day');
+
+                if ($firstDeadline > $generationLimit) {
+                    $generationMessage = '支援開始日（' . $supportStartDate->format('Y年n月j日') . '）が' . $generationLimit->format('Y年n月j日') . 'より先のため、かけはし期間はまだ作成されていません。';
+                } else {
+                    try {
+                        generateKakehashiPeriodsForStudent($pdo, $selectedStudentId, $student['support_start_date']);
+                        $stmt->execute([$selectedStudentId]);
+                        $activePeriods = $stmt->fetchAll();
+                        if (empty($activePeriods)) {
+                            $generationMessage = 'かけはし期間の自動生成に失敗しました。スタッフにお問い合わせください。';
+                        }
+                    } catch (Exception $e) {
+                        $generationMessage = 'かけはし期間の自動生成でエラーが発生しました。スタッフにお問い合わせください。';
+                    }
+                }
+            } else {
+                $generationMessage = 'お子様の支援開始日が設定されていないため、かけはし期間を自動生成できませんでした。スタッフに支援開始日の設定をご依頼ください。';
+            }
         }
     }
 }

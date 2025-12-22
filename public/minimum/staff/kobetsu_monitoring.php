@@ -64,12 +64,22 @@ $students = $stmt->fetchAll();
 $selectedStudentId = $_GET['student_id'] ?? null;
 $selectedPlanId = $_GET['plan_id'] ?? null;
 $selectedMonitoringId = $_GET['monitoring_id'] ?? null;
+$selectedStudentSupportPlanStartType = 'current';
+
+// 選択された生徒のsupport_plan_start_typeを取得
+if ($selectedStudentId) {
+    $stmt = $pdo->prepare("SELECT support_plan_start_type FROM students WHERE id = ?");
+    $stmt->execute([$selectedStudentId]);
+    $studentTypeInfo = $stmt->fetch();
+    $selectedStudentSupportPlanStartType = $studentTypeInfo['support_plan_start_type'] ?? 'current';
+}
 
 // 選択された生徒の個別支援計画一覧（モニタリング期限が今日から1ヶ月以内のもの、または既存モニタリングがあるもの）
 // モニタリング期限 = 個別支援計画書のcreated_date + 5ヶ月
 // つまり、created_date + 5ヶ月 <= 今日 + 1ヶ月 → created_date <= 今日 - 4ヶ月
 $studentPlans = [];
-if ($selectedStudentId) {
+if ($selectedStudentId && $selectedStudentSupportPlanStartType === 'current') {
+    // 「次回の期間から作成する」設定の場合は、既存の計画も非表示
     $stmt = $pdo->prepare("
         SELECT DISTINCT isp.*
         FROM individual_support_plans isp
@@ -683,7 +693,15 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成');
                 </form>
             <?php else: ?>
                 <div class="alert alert-info">
-                    生徒を選択し、個別支援計画書を選択してください。
+                    <?php if ($selectedStudentId && $selectedStudentSupportPlanStartType === 'next'): ?>
+                        この生徒は「次回の期間から個別支援計画を作成する」設定になっています。<br>
+                        現在は連絡帳のみ利用可能です。次回の期間が近づくと自動的に個別支援計画が作成されます。
+                    <?php elseif ($selectedStudentId && empty($studentPlans)): ?>
+                        この生徒にはまだモニタリング対象の個別支援計画書がありません。<br>
+                        個別支援計画書を作成してから5ヶ月後にモニタリングが可能になります。
+                    <?php else: ?>
+                        生徒を選択し、個別支援計画書を選択してください。
+                    <?php endif; ?>
                 </div>
             <?php endif; ?>
 

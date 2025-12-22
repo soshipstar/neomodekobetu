@@ -41,12 +41,14 @@ $showFilter = $_GET['show'] ?? 'all';
 
 // 選択された生徒の有効な期間を取得
 $activePeriods = [];
+$selectedStudentSupportPlanStartType = 'current';
 if ($selectedStudentId) {
     // まず、次のかけはし期間を自動生成（期限1ヶ月前になったら生成）
     try {
-        $stmt = $pdo->prepare("SELECT student_name FROM students WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT student_name, support_start_date, support_plan_start_type FROM students WHERE id = ?");
         $stmt->execute([$selectedStudentId]);
         $studentInfo = $stmt->fetch();
+        $selectedStudentSupportPlanStartType = $studentInfo['support_plan_start_type'] ?? 'current';
         if ($studentInfo && shouldGenerateNextKakehashi($pdo, $selectedStudentId)) {
             $newPeriod = generateNextKakehashiPeriod($pdo, $selectedStudentId, $studentInfo['student_name']);
             if ($newPeriod) {
@@ -64,6 +66,11 @@ if ($selectedStudentId) {
     ");
     $stmt->execute([$selectedStudentId]);
     $activePeriods = $stmt->fetchAll();
+
+    // 「次回の期間から作成する」設定の場合は、既存のかけはし期間も非表示にする
+    if ($selectedStudentSupportPlanStartType === 'next') {
+        $activePeriods = [];
+    }
 }
 
 // 選択された期間（URLパラメータから取得のみ、デフォルト値なし）
@@ -276,7 +283,12 @@ renderPageStart('staff', $currentPage, '保護者入力かけはし確認');
 
             <?php if ($selectedStudentId && empty($activePeriods)): ?>
                 <div style="background: #d1ecf1; color: #0c5460; padding: 15px; border-radius: var(--radius-sm); margin-bottom: var(--spacing-lg); border: 1px solid #bee5eb;">
-                    この生徒のかけはし期間がまだ設定されていません。生徒登録ページで初回かけはし提出期限を設定してください。
+                    <?php if ($selectedStudentSupportPlanStartType === 'next'): ?>
+                        この生徒は「次回の期間から個別支援計画を作成する」設定になっています。<br>
+                        現在は連絡帳のみ利用可能です。次回の期間が近づくと自動的にかけはしが作成されます。
+                    <?php else: ?>
+                        この生徒のかけはし期間がまだ設定されていません。生徒登録ページで支援開始日を設定してください。
+                    <?php endif; ?>
                 </div>
             <?php elseif ($selectedStudentId && !empty($activePeriods)): ?>
                 <!-- 期間選択エリア（生徒選択後に表示） -->

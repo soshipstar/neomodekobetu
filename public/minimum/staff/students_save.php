@@ -19,6 +19,15 @@ requireUserType(['staff', 'admin']);
 $pdo = getDbConnection();
 $action = $_POST['action'] ?? '';
 
+// support_plan_start_type カラムの存在チェック
+$hasSupportPlanStartType = false;
+try {
+    $checkCol = $pdo->query("SHOW COLUMNS FROM students LIKE 'support_plan_start_type'");
+    $hasSupportPlanStartType = $checkCol->rowCount() > 0;
+} catch (Exception $e) {
+    $hasSupportPlanStartType = false;
+}
+
 try {
     switch ($action) {
         case 'create':
@@ -39,6 +48,7 @@ try {
             $scheduledFriday = isset($_POST['scheduled_friday']) ? 1 : 0;
             $scheduledSaturday = isset($_POST['scheduled_saturday']) ? 1 : 0;
             $scheduledSunday = isset($_POST['scheduled_sunday']) ? 1 : 0;
+            $supportPlanStartType = $_POST['support_plan_start_type'] ?? 'current';
 
             if (empty($studentName) || empty($birthDate) || empty($supportStartDate)) {
                 throw new Exception('生徒名、生年月日、支援開始日は必須です。');
@@ -50,24 +60,41 @@ try {
             // スタッフの教室IDを取得
             $classroomId = $_SESSION['classroom_id'] ?? null;
 
-            $stmt = $pdo->prepare("
-                INSERT INTO students (
-                    student_name, birth_date, support_start_date, grade_level, grade_adjustment, guardian_id, status, withdrawal_date, classroom_id, is_active, created_at,
-                    scheduled_monday, scheduled_tuesday, scheduled_wednesday, scheduled_thursday,
-                    scheduled_friday, scheduled_saturday, scheduled_sunday
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), ?, ?, ?, ?, ?, ?, ?)
-            ");
-            $stmt->execute([
-                $studentName, $birthDate, $supportStartDate, $gradeLevel, $gradeAdjustment, $guardianId, $status, $withdrawalDate, $classroomId,
-                $scheduledMonday, $scheduledTuesday, $scheduledWednesday, $scheduledThursday,
-                $scheduledFriday, $scheduledSaturday, $scheduledSunday
-            ]);
+            // support_plan_start_type カラムの有無に応じてSQL文を構築
+            if ($hasSupportPlanStartType) {
+                $stmt = $pdo->prepare("
+                    INSERT INTO students (
+                        student_name, birth_date, support_start_date, grade_level, grade_adjustment, guardian_id, status, withdrawal_date, classroom_id, is_active, created_at,
+                        scheduled_monday, scheduled_tuesday, scheduled_wednesday, scheduled_thursday,
+                        scheduled_friday, scheduled_saturday, scheduled_sunday, support_plan_start_type
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), ?, ?, ?, ?, ?, ?, ?, ?)
+                ");
+                $stmt->execute([
+                    $studentName, $birthDate, $supportStartDate, $gradeLevel, $gradeAdjustment, $guardianId, $status, $withdrawalDate, $classroomId,
+                    $scheduledMonday, $scheduledTuesday, $scheduledWednesday, $scheduledThursday,
+                    $scheduledFriday, $scheduledSaturday, $scheduledSunday, $supportPlanStartType
+                ]);
+            } else {
+                $stmt = $pdo->prepare("
+                    INSERT INTO students (
+                        student_name, birth_date, support_start_date, grade_level, grade_adjustment, guardian_id, status, withdrawal_date, classroom_id, is_active, created_at,
+                        scheduled_monday, scheduled_tuesday, scheduled_wednesday, scheduled_thursday,
+                        scheduled_friday, scheduled_saturday, scheduled_sunday
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), ?, ?, ?, ?, ?, ?, ?)
+                ");
+                $stmt->execute([
+                    $studentName, $birthDate, $supportStartDate, $gradeLevel, $gradeAdjustment, $guardianId, $status, $withdrawalDate, $classroomId,
+                    $scheduledMonday, $scheduledTuesday, $scheduledWednesday, $scheduledThursday,
+                    $scheduledFriday, $scheduledSaturday, $scheduledSunday
+                ]);
+            }
 
             $studentId = $pdo->lastInsertId();
 
-            // かけはし期間の自動生成
-            if (!empty($supportStartDate)) {
+            // かけはし期間の自動生成（「現在の期間から作成する」の場合のみ）
+            if (!empty($supportStartDate) && $supportPlanStartType === 'current') {
                 try {
                     $generatedPeriods = generateKakehashiPeriodsForStudent($pdo, $studentId, $supportStartDate);
                     error_log("Generated " . count($generatedPeriods) . " kakehashi periods for student {$studentId}");
@@ -76,6 +103,8 @@ try {
                     error_log("かけはし期間生成エラー: " . $e->getMessage());
                     $_SESSION['warning'] = 'かけはし期間の自動生成でエラーが発生しました: ' . $e->getMessage();
                 }
+            } elseif ($supportPlanStartType === 'next') {
+                error_log("Student {$studentId} has support_plan_start_type='next'. Skipping initial kakehashi generation.");
             }
 
             header('Location: students.php?success=created');
@@ -102,6 +131,7 @@ try {
             $scheduledFriday = isset($_POST['scheduled_friday']) ? 1 : 0;
             $scheduledSaturday = isset($_POST['scheduled_saturday']) ? 1 : 0;
             $scheduledSunday = isset($_POST['scheduled_sunday']) ? 1 : 0;
+            $supportPlanStartType = $_POST['support_plan_start_type'] ?? 'current';
 
             if (empty($studentId) || empty($studentName) || empty($birthDate) || empty($supportStartDate)) {
                 throw new Exception('必須項目が入力されていません。');
@@ -119,6 +149,17 @@ try {
             if (!empty($studentPassword)) {
                 $passwordHash = password_hash($studentPassword, PASSWORD_DEFAULT);
             }
+
+            // support_plan_start_type カラムのSQL部分
+            $supportPlanSql = $hasSupportPlanStartType ? "support_plan_start_type = ?," : "";
+            $supportPlanParams = $hasSupportPlanStartType ? [$supportPlanStartType] : [];
+
+            // 共通の更新パラメータを準備
+            $baseParams = [
+                $studentName, $birthDate, $supportStartDate, $gradeLevel, $gradeAdjustment, $guardianId, $status, $withdrawalDate,
+                $scheduledMonday, $scheduledTuesday, $scheduledWednesday, $scheduledThursday,
+                $scheduledFriday, $scheduledSaturday, $scheduledSunday
+            ];
 
             // ユーザー名が空の場合はログイン情報をクリア
             if (empty($studentUsername)) {
@@ -139,17 +180,13 @@ try {
                         scheduled_friday = ?,
                         scheduled_saturday = ?,
                         scheduled_sunday = ?,
+                        {$supportPlanSql}
                         username = NULL,
                         password_hash = NULL,
                         password_plain = NULL
                     WHERE id = ?
                 ");
-                $stmt->execute([
-                    $studentName, $birthDate, $supportStartDate, $gradeLevel, $gradeAdjustment, $guardianId, $status, $withdrawalDate,
-                    $scheduledMonday, $scheduledTuesday, $scheduledWednesday, $scheduledThursday,
-                    $scheduledFriday, $scheduledSaturday, $scheduledSunday,
-                    $studentId
-                ]);
+                $stmt->execute(array_merge($baseParams, $supportPlanParams, [$studentId]));
             } elseif ($passwordHash) {
                 // ユーザー名とパスワードの両方を更新（平文パスワードも保存）
                 $stmt = $pdo->prepare("
@@ -169,18 +206,13 @@ try {
                         scheduled_friday = ?,
                         scheduled_saturday = ?,
                         scheduled_sunday = ?,
+                        {$supportPlanSql}
                         username = ?,
                         password_hash = ?,
                         password_plain = ?
                     WHERE id = ?
                 ");
-                $stmt->execute([
-                    $studentName, $birthDate, $supportStartDate, $gradeLevel, $gradeAdjustment, $guardianId, $status, $withdrawalDate,
-                    $scheduledMonday, $scheduledTuesday, $scheduledWednesday, $scheduledThursday,
-                    $scheduledFriday, $scheduledSaturday, $scheduledSunday,
-                    $studentUsername, $passwordHash, $studentPassword,
-                    $studentId
-                ]);
+                $stmt->execute(array_merge($baseParams, $supportPlanParams, [$studentUsername, $passwordHash, $studentPassword, $studentId]));
             } else {
                 // ユーザー名のみ更新（パスワードは変更しない）
                 $stmt = $pdo->prepare("
@@ -200,16 +232,11 @@ try {
                         scheduled_friday = ?,
                         scheduled_saturday = ?,
                         scheduled_sunday = ?,
+                        {$supportPlanSql}
                         username = ?
                     WHERE id = ?
                 ");
-                $stmt->execute([
-                    $studentName, $birthDate, $supportStartDate, $gradeLevel, $gradeAdjustment, $guardianId, $status, $withdrawalDate,
-                    $scheduledMonday, $scheduledTuesday, $scheduledWednesday, $scheduledThursday,
-                    $scheduledFriday, $scheduledSaturday, $scheduledSunday,
-                    $studentUsername,
-                    $studentId
-                ]);
+                $stmt->execute(array_merge($baseParams, $supportPlanParams, [$studentUsername, $studentId]));
             }
 
             header('Location: students.php?success=updated');

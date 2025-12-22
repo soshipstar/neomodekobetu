@@ -583,7 +583,7 @@
 
     /* サイドバートグルも非表示 */
     .sidebar-toggle {
-        display: none;
+        display: none !important;
     }
 
     /* メインコンテンツのマージンを削除 */
