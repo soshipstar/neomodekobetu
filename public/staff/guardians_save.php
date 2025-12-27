@@ -17,6 +17,7 @@ if ($_SESSION['user_type'] !== 'staff' && $_SESSION['user_type'] !== 'admin') {
 
 $pdo = getDbConnection();
 $action = $_POST['action'] ?? '';
+$classroomId = $_SESSION['classroom_id'] ?? null;
 
 try {
     switch ($action) {
@@ -56,10 +57,10 @@ try {
 
             // 保護者を登録（スタッフと同じ教室に所属）
             $stmt = $pdo->prepare("
-                INSERT INTO users (username, password, full_name, email, user_type, classroom_id, is_active, created_at)
-                VALUES (?, ?, ?, ?, 'guardian', ?, 1, NOW())
+                INSERT INTO users (username, password, password_plain, full_name, email, user_type, classroom_id, is_active, created_at)
+                VALUES (?, ?, ?, ?, ?, 'guardian', ?, 1, NOW())
             ");
-            $stmt->execute([$username, $hashedPassword, $fullName, $email, $classroomId]);
+            $stmt->execute([$username, $hashedPassword, $password, $fullName, $email, $classroomId]);
 
             header('Location: guardians.php?success=created');
             exit;
@@ -95,10 +96,11 @@ try {
                     SET full_name = ?,
                         username = ?,
                         email = ?,
-                        password = ?
+                        password = ?,
+                        password_plain = ?
                     WHERE id = ? AND user_type = 'guardian'
                 ");
-                $stmt->execute([$fullName, $username, $email, $hashedPassword, $guardianId]);
+                $stmt->execute([$fullName, $username, $email, $hashedPassword, $password, $guardianId]);
             } else {
                 // パスワード変更なし
                 $stmt = $pdo->prepare("
@@ -115,20 +117,30 @@ try {
             exit;
 
         case 'delete':
-            // 保護者削除
+            // 保護者削除（自分の教室のみ）
             $guardianId = (int)$_POST['guardian_id'];
 
             if (empty($guardianId)) {
                 throw new Exception('保護者IDが指定されていません。');
             }
 
-            // 生徒との紐付けを解除
-            $stmt = $pdo->prepare("UPDATE students SET guardian_id = NULL WHERE guardian_id = ?");
-            $stmt->execute([$guardianId]);
+            // 生徒との紐付けを解除（自分の教室の生徒のみ）
+            if ($classroomId) {
+                $stmt = $pdo->prepare("UPDATE students SET guardian_id = NULL WHERE guardian_id = ? AND classroom_id = ?");
+                $stmt->execute([$guardianId, $classroomId]);
+            } else {
+                $stmt = $pdo->prepare("UPDATE students SET guardian_id = NULL WHERE guardian_id = ?");
+                $stmt->execute([$guardianId]);
+            }
 
-            // 保護者を削除
-            $stmt = $pdo->prepare("DELETE FROM users WHERE id = ? AND user_type = 'guardian'");
-            $stmt->execute([$guardianId]);
+            // 保護者を削除（自分の教室のみ）
+            if ($classroomId) {
+                $stmt = $pdo->prepare("DELETE FROM users WHERE id = ? AND user_type = 'guardian' AND classroom_id = ?");
+                $stmt->execute([$guardianId, $classroomId]);
+            } else {
+                $stmt = $pdo->prepare("DELETE FROM users WHERE id = ? AND user_type = 'guardian'");
+                $stmt->execute([$guardianId]);
+            }
 
             header('Location: guardians.php?success=deleted');
             exit;

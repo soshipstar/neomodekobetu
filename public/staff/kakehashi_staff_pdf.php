@@ -24,14 +24,20 @@ if (!$studentId || !$periodId) {
 }
 
 $pdo = getDbConnection();
+$classroomId = $_SESSION['classroom_id'] ?? null;
 
-// 生徒情報を取得
-$stmt = $pdo->prepare("SELECT * FROM students WHERE id = ?");
-$stmt->execute([$studentId]);
+// 生徒情報を取得（自分の教室のみ）
+if ($classroomId) {
+    $stmt = $pdo->prepare("SELECT * FROM students WHERE id = ? AND classroom_id = ?");
+    $stmt->execute([$studentId, $classroomId]);
+} else {
+    $stmt = $pdo->prepare("SELECT * FROM students WHERE id = ?");
+    $stmt->execute([$studentId]);
+}
 $student = $stmt->fetch();
 
 if (!$student) {
-    $_SESSION['error'] = '指定された生徒が見つかりません。';
+    $_SESSION['error'] = '指定された生徒が見つかりません、またはアクセス権限がありません。';
     header('Location: kakehashi_staff.php');
     exit;
 }

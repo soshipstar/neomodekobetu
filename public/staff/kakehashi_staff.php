@@ -16,12 +16,21 @@ $staffId = $_SESSION['user_id'];
 // スタッフの教室IDを取得
 $classroomId = $_SESSION['classroom_id'] ?? null;
 
-// 削除処理
+// 削除処理（自分の教室の生徒のみ）
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_staff_kakehashi'])) {
     $deleteStudentId = $_POST['student_id'];
     $deletePeriodId = $_POST['period_id'];
 
     try {
+        // 生徒が自分の教室に所属しているか確認
+        if ($classroomId) {
+            $stmt = $pdo->prepare("SELECT id FROM students WHERE id = ? AND classroom_id = ?");
+            $stmt->execute([$deleteStudentId, $classroomId]);
+            if (!$stmt->fetch()) {
+                throw new Exception('アクセス権限がありません。');
+            }
+        }
+
         $stmt = $pdo->prepare("DELETE FROM kakehashi_staff WHERE student_id = ? AND period_id = ?");
         $stmt->execute([$deleteStudentId, $deletePeriodId]);
 
@@ -56,8 +65,14 @@ $activePeriods = [];
 if ($selectedStudentId) {
     // まず、次のかけはし期間を自動生成（期限1ヶ月前になったら生成）
     try {
-        $stmt = $pdo->prepare("SELECT student_name FROM students WHERE id = ?");
-        $stmt->execute([$selectedStudentId]);
+        // 自分の教室の生徒のみ
+        if ($classroomId) {
+            $stmt = $pdo->prepare("SELECT student_name FROM students WHERE id = ? AND classroom_id = ?");
+            $stmt->execute([$selectedStudentId, $classroomId]);
+        } else {
+            $stmt = $pdo->prepare("SELECT student_name FROM students WHERE id = ?");
+            $stmt->execute([$selectedStudentId]);
+        }
         $studentInfo = $stmt->fetch();
         if ($studentInfo && shouldGenerateNextKakehashi($pdo, $selectedStudentId)) {
             $newPeriod = generateNextKakehashiPeriod($pdo, $selectedStudentId, $studentInfo['student_name']);
@@ -81,8 +96,13 @@ if ($selectedStudentId) {
 
     // かけはし期間が存在しない場合は初回から自動生成
     if (empty($activePeriods)) {
-        $stmt = $pdo->prepare("SELECT student_name, support_start_date, support_plan_start_type FROM students WHERE id = ?");
-        $stmt->execute([$selectedStudentId]);
+        if ($classroomId) {
+            $stmt = $pdo->prepare("SELECT student_name, support_start_date, support_plan_start_type FROM students WHERE id = ? AND classroom_id = ?");
+            $stmt->execute([$selectedStudentId, $classroomId]);
+        } else {
+            $stmt = $pdo->prepare("SELECT student_name, support_start_date, support_plan_start_type FROM students WHERE id = ?");
+            $stmt->execute([$selectedStudentId]);
+        }
         $student = $stmt->fetch();
 
         // support_plan_start_type が 'next' の場合は自動生成しない（次回の期間まで待機）
@@ -112,8 +132,13 @@ if ($selectedStudentId) {
 // 選択された生徒のsupport_plan_start_typeを取得（メッセージ表示用）
 $selectedStudentSupportPlanStartType = 'current';
 if ($selectedStudentId) {
-    $stmt = $pdo->prepare("SELECT support_plan_start_type FROM students WHERE id = ?");
-    $stmt->execute([$selectedStudentId]);
+    if ($classroomId) {
+        $stmt = $pdo->prepare("SELECT support_plan_start_type FROM students WHERE id = ? AND classroom_id = ?");
+        $stmt->execute([$selectedStudentId, $classroomId]);
+    } else {
+        $stmt = $pdo->prepare("SELECT support_plan_start_type FROM students WHERE id = ?");
+        $stmt->execute([$selectedStudentId]);
+    }
     $typeResult = $stmt->fetch();
     $selectedStudentSupportPlanStartType = $typeResult['support_plan_start_type'] ?? 'current';
 
@@ -163,8 +188,13 @@ if ($selectedPeriodId) {
 // 選択された生徒の情報
 $selectedStudent = null;
 if ($selectedStudentId) {
-    $stmt = $pdo->prepare("SELECT * FROM students WHERE id = ?");
-    $stmt->execute([$selectedStudentId]);
+    if ($classroomId) {
+        $stmt = $pdo->prepare("SELECT * FROM students WHERE id = ? AND classroom_id = ?");
+        $stmt->execute([$selectedStudentId, $classroomId]);
+    } else {
+        $stmt = $pdo->prepare("SELECT * FROM students WHERE id = ?");
+        $stmt->execute([$selectedStudentId]);
+    }
     $selectedStudent = $stmt->fetch();
 }
 

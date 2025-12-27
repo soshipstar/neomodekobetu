@@ -24,14 +24,24 @@ if (!isset($input['student_id']) || !isset($input['changes'])) {
 
 $studentId = (int)$input['student_id'];
 $changes = $input['changes'];
+$classroomId = $_SESSION['classroom_id'] ?? null;
 
-// 生徒情報を取得
-$stmt = $pdo->prepare("
-    SELECT s.id, s.student_name, s.guardian_id
-    FROM students s
-    WHERE s.id = ? AND s.is_active = 1
-");
-$stmt->execute([$studentId]);
+// 生徒情報を取得（classroom_idフィルタ付き）
+if ($classroomId) {
+    $stmt = $pdo->prepare("
+        SELECT s.id, s.student_name, s.guardian_id
+        FROM students s
+        WHERE s.id = ? AND s.is_active = 1 AND s.classroom_id = ?
+    ");
+    $stmt->execute([$studentId, $classroomId]);
+} else {
+    $stmt = $pdo->prepare("
+        SELECT s.id, s.student_name, s.guardian_id
+        FROM students s
+        WHERE s.id = ? AND s.is_active = 1
+    ");
+    $stmt->execute([$studentId]);
+}
 $student = $stmt->fetch();
 
 if (!$student) {
@@ -61,12 +71,31 @@ try {
         switch ($action) {
             case 'add':
                 // 追加利用を登録
+                // 既存レコードを確認
                 $stmt = $pdo->prepare("
-                    INSERT INTO additional_usages (student_id, usage_date, created_by)
-                    VALUES (?, ?, ?)
-                    ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP
+                    SELECT id FROM additional_usages
+                    WHERE student_id = ? AND usage_date = ?
+                    LIMIT 1
                 ");
-                $stmt->execute([$studentId, $date, $currentUser['id']]);
+                $stmt->execute([$studentId, $date]);
+                $existingUsage = $stmt->fetch();
+
+                if ($existingUsage) {
+                    // 既存レコードを更新
+                    $stmt = $pdo->prepare("
+                        UPDATE additional_usages
+                        SET updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                    ");
+                    $stmt->execute([$existingUsage['id']]);
+                } else {
+                    // 新規レコードを挿入
+                    $stmt = $pdo->prepare("
+                        INSERT INTO additional_usages (student_id, usage_date, created_by)
+                        VALUES (?, ?, ?)
+                    ");
+                    $stmt->execute([$studentId, $date, $currentUser['id']]);
+                }
                 break;
 
             case 'remove':
@@ -80,12 +109,31 @@ try {
 
             case 'cancel':
                 // 通常利用日をキャンセル（absence_notificationsに追加）
+                // 既存レコードを確認
                 $stmt = $pdo->prepare("
-                    INSERT INTO absence_notifications (student_id, absence_date, reason, message_id, created_at)
-                    VALUES (?, ?, 'スタッフによるキャンセル', NULL, NOW())
-                    ON DUPLICATE KEY UPDATE reason = 'スタッフによるキャンセル', created_at = NOW()
+                    SELECT id FROM absence_notifications
+                    WHERE student_id = ? AND absence_date = ?
+                    LIMIT 1
                 ");
                 $stmt->execute([$studentId, $date]);
+                $existing = $stmt->fetch();
+
+                if ($existing) {
+                    // 既存レコードを更新
+                    $stmt = $pdo->prepare("
+                        UPDATE absence_notifications
+                        SET reason = 'スタッフによるキャンセル', created_at = NOW()
+                        WHERE id = ?
+                    ");
+                    $stmt->execute([$existing['id']]);
+                } else {
+                    // 新規レコードを挿入（message_idはNULL許可されていない場合があるので省略）
+                    $stmt = $pdo->prepare("
+                        INSERT INTO absence_notifications (student_id, absence_date, reason, created_at)
+                        VALUES (?, ?, 'スタッフによるキャンセル', NOW())
+                    ");
+                    $stmt->execute([$studentId, $date]);
+                }
 
                 // 通知用に記録
                 $notifications[] = ['date' => $date, 'action' => 'cancel'];
@@ -127,6 +175,8 @@ try {
     echo json_encode(['success' => true, 'message' => '保存しました']);
 } catch (Exception $e) {
     $pdo->rollBack();
-    error_log("Additional usage API error: " . $e->getMessage());
-    echo json_encode(['success' => false, 'message' => 'データベースエラーが発生しました']);
+    error_log("Additional usage API error: " . $e->getMessage() . " | " . $e->getTraceAsString());
+    // エラー詳細を表示（デバッグ用）
+    $errorMessage = 'データベースエラー: ' . $e->getMessage();
+    echo json_encode(['success' => false, 'message' => $errorMessage]);
 }

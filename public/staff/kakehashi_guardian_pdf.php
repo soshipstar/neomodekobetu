@@ -22,19 +22,30 @@ if (!$studentId || !$periodId) {
 }
 
 $pdo = getDbConnection();
+$classroomId = $_SESSION['classroom_id'] ?? null;
 
-// 生徒情報を取得
-$stmt = $pdo->prepare("
-    SELECT s.*, u.full_name as guardian_name
-    FROM students s
-    LEFT JOIN users u ON s.guardian_id = u.id
-    WHERE s.id = ?
-");
-$stmt->execute([$studentId]);
+// 生徒情報を取得（自分の教室のみ）
+if ($classroomId) {
+    $stmt = $pdo->prepare("
+        SELECT s.*, u.full_name as guardian_name
+        FROM students s
+        LEFT JOIN users u ON s.guardian_id = u.id
+        WHERE s.id = ? AND s.classroom_id = ?
+    ");
+    $stmt->execute([$studentId, $classroomId]);
+} else {
+    $stmt = $pdo->prepare("
+        SELECT s.*, u.full_name as guardian_name
+        FROM students s
+        LEFT JOIN users u ON s.guardian_id = u.id
+        WHERE s.id = ?
+    ");
+    $stmt->execute([$studentId]);
+}
 $student = $stmt->fetch();
 
 if (!$student) {
-    $_SESSION['error'] = '指定された生徒が見つかりません。';
+    $_SESSION['error'] = '指定された生徒が見つかりません、またはアクセス権限がありません。';
     header('Location: kakehashi_guardian_view.php');
     exit;
 }

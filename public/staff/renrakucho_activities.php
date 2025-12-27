@@ -40,6 +40,73 @@ $stmt = $pdo->prepare("
 $stmt->execute([$currentUser['id']]);
 $classroom = $stmt->fetch();
 
+// 未読チャットメッセージを取得（スタッフ用：保護者からの未読メッセージ）
+// スタッフごとの既読管理テーブル（chat_message_staff_reads）を使用
+$unreadChatMessages = [];
+$staffId = $currentUser['id'];
+
+// chat_message_staff_reads テーブルの存在確認（グローバルスコープで定義）
+$hasStaffReadsTable = false;
+try {
+    $pdo->query("SELECT 1 FROM chat_message_staff_reads LIMIT 1");
+    $hasStaffReadsTable = true;
+} catch (PDOException $e) {
+    $hasStaffReadsTable = false;
+}
+
+try {
+    if ($classroomId) {
+        if ($hasStaffReadsTable) {
+            // 新方式：スタッフごとの既読管理
+            $stmt = $pdo->prepare("
+                SELECT
+                    cr.id as room_id,
+                    s.student_name,
+                    u.full_name as guardian_name,
+                    COUNT(cm.id) as unread_count,
+                    MAX(cm.created_at) as last_message_at
+                FROM chat_rooms cr
+                INNER JOIN students s ON cr.student_id = s.id
+                INNER JOIN users u ON cr.guardian_id = u.id
+                INNER JOIN chat_messages cm ON cr.id = cm.room_id
+                WHERE s.classroom_id = ?
+                AND cm.sender_type = 'guardian'
+                AND NOT EXISTS (
+                    SELECT 1 FROM chat_message_staff_reads csr
+                    WHERE csr.message_id = cm.id AND csr.staff_id = ?
+                )
+                GROUP BY cr.id, s.student_name, u.full_name
+                ORDER BY last_message_at DESC
+            ");
+            $stmt->execute([$classroomId, $staffId]);
+        } else {
+            // 旧方式：is_readカラムで判定（後方互換）
+            $stmt = $pdo->prepare("
+                SELECT
+                    cr.id as room_id,
+                    s.student_name,
+                    u.full_name as guardian_name,
+                    COUNT(cm.id) as unread_count,
+                    MAX(cm.created_at) as last_message_at
+                FROM chat_rooms cr
+                INNER JOIN students s ON cr.student_id = s.id
+                INNER JOIN users u ON cr.guardian_id = u.id
+                INNER JOIN chat_messages cm ON cr.id = cm.room_id
+                WHERE s.classroom_id = ?
+                AND cm.sender_type = 'guardian'
+                AND cm.is_read = 0
+                GROUP BY cr.id, s.student_name, u.full_name
+                ORDER BY last_message_at DESC
+            ");
+            $stmt->execute([$classroomId]);
+        }
+        $unreadChatMessages = $stmt->fetchAll();
+    }
+} catch (Exception $e) {
+    error_log("Error fetching unread chat messages: " . $e->getMessage());
+}
+$totalUnreadMessages = array_sum(array_column($unreadChatMessages, 'unread_count'));
+
 // 選択された年月を取得（デフォルトは今月）
 $year = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
 $month = isset($_GET['month']) ? (int)$_GET['month'] : (int)date('n');
@@ -216,34 +283,73 @@ if ($classroomId) {
 $pendingMakeupRequests = $stmt->fetchAll();
 $pendingMakeupCount = count($pendingMakeupRequests);
 
-// 1. 保護者からの新しいメッセージ（未読）
+// 1. 保護者からの新しいメッセージ（未読）- スタッフごとの既読管理対応
 if ($classroomId) {
-    $stmt = $pdo->prepare("
-        SELECT cm.id, cm.created_at, cm.message, s.student_name, u.full_name as guardian_name, cr.id as room_id
-        FROM chat_messages cm
-        INNER JOIN chat_rooms cr ON cm.room_id = cr.id
-        INNER JOIN students s ON cr.student_id = s.id
-        INNER JOIN users u ON s.guardian_id = u.id
-        WHERE cm.sender_type = 'guardian'
-        AND cm.is_read = 0
-        AND cm.created_at >= ?
-        AND u.classroom_id = ?
-        ORDER BY cm.created_at DESC
-    ");
-    $stmt->execute([$threeDaysAgo, $classroomId]);
+    if ($hasStaffReadsTable) {
+        // 新方式：スタッフごとの既読管理
+        $stmt = $pdo->prepare("
+            SELECT cm.id, cm.created_at, cm.message, s.student_name, u.full_name as guardian_name, cr.id as room_id
+            FROM chat_messages cm
+            INNER JOIN chat_rooms cr ON cm.room_id = cr.id
+            INNER JOIN students s ON cr.student_id = s.id
+            INNER JOIN users u ON s.guardian_id = u.id
+            WHERE cm.sender_type = 'guardian'
+            AND NOT EXISTS (
+                SELECT 1 FROM chat_message_staff_reads csr
+                WHERE csr.message_id = cm.id AND csr.staff_id = ?
+            )
+            AND cm.created_at >= ?
+            AND s.classroom_id = ?
+            ORDER BY cm.created_at DESC
+        ");
+        $stmt->execute([$staffId, $threeDaysAgo, $classroomId]);
+    } else {
+        // 旧方式：is_readカラムで判定
+        $stmt = $pdo->prepare("
+            SELECT cm.id, cm.created_at, cm.message, s.student_name, u.full_name as guardian_name, cr.id as room_id
+            FROM chat_messages cm
+            INNER JOIN chat_rooms cr ON cm.room_id = cr.id
+            INNER JOIN students s ON cr.student_id = s.id
+            INNER JOIN users u ON s.guardian_id = u.id
+            WHERE cm.sender_type = 'guardian'
+            AND cm.is_read = 0
+            AND cm.created_at >= ?
+            AND s.classroom_id = ?
+            ORDER BY cm.created_at DESC
+        ");
+        $stmt->execute([$threeDaysAgo, $classroomId]);
+    }
 } else {
-    $stmt = $pdo->prepare("
-        SELECT cm.id, cm.created_at, cm.message, s.student_name, u.full_name as guardian_name, cr.id as room_id
-        FROM chat_messages cm
-        INNER JOIN chat_rooms cr ON cm.room_id = cr.id
-        INNER JOIN students s ON cr.student_id = s.id
-        INNER JOIN users u ON s.guardian_id = u.id
-        WHERE cm.sender_type = 'guardian'
-        AND cm.is_read = 0
-        AND cm.created_at >= ?
-        ORDER BY cm.created_at DESC
-    ");
-    $stmt->execute([$threeDaysAgo]);
+    if ($hasStaffReadsTable) {
+        $stmt = $pdo->prepare("
+            SELECT cm.id, cm.created_at, cm.message, s.student_name, u.full_name as guardian_name, cr.id as room_id
+            FROM chat_messages cm
+            INNER JOIN chat_rooms cr ON cm.room_id = cr.id
+            INNER JOIN students s ON cr.student_id = s.id
+            INNER JOIN users u ON s.guardian_id = u.id
+            WHERE cm.sender_type = 'guardian'
+            AND NOT EXISTS (
+                SELECT 1 FROM chat_message_staff_reads csr
+                WHERE csr.message_id = cm.id AND csr.staff_id = ?
+            )
+            AND cm.created_at >= ?
+            ORDER BY cm.created_at DESC
+        ");
+        $stmt->execute([$staffId, $threeDaysAgo]);
+    } else {
+        $stmt = $pdo->prepare("
+            SELECT cm.id, cm.created_at, cm.message, s.student_name, u.full_name as guardian_name, cr.id as room_id
+            FROM chat_messages cm
+            INNER JOIN chat_rooms cr ON cm.room_id = cr.id
+            INNER JOIN students s ON cr.student_id = s.id
+            INNER JOIN users u ON s.guardian_id = u.id
+            WHERE cm.sender_type = 'guardian'
+            AND cm.is_read = 0
+            AND cm.created_at >= ?
+            ORDER BY cm.created_at DESC
+        ");
+        $stmt->execute([$threeDaysAgo]);
+    }
 }
 $newMessages = $stmt->fetchAll();
 
@@ -2925,6 +3031,31 @@ renderPageStart('staff', $currentPage, '活動管理');
             </div>
         </div>
 
+        <!-- 新着チャットメッセージ通知 -->
+        <?php if ($totalUnreadMessages > 0): ?>
+            <div class="unread-notification" style="background: rgba(0, 122, 255, 0.1); border-left: 5px solid var(--apple-blue); border-radius: var(--radius-md); padding: 20px; margin-bottom: var(--spacing-lg);">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; font-size: var(--text-headline); font-weight: bold; color: var(--apple-blue);">
+                    💬 新着メッセージがあります！（<?= $totalUnreadMessages ?>件）
+                </div>
+                <?php foreach ($unreadChatMessages as $chatRoom): ?>
+                    <div style="background: var(--apple-bg-primary); padding: 15px; border-radius: var(--radius-sm); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: bold; color: var(--text-primary); margin-bottom: 5px;">
+                                <?= htmlspecialchars($chatRoom['student_name']) ?>さん（<?= htmlspecialchars($chatRoom['guardian_name']) ?>様）
+                            </div>
+                            <div style="font-size: var(--text-subhead); color: var(--text-secondary); margin-bottom: 3px;">
+                                未読メッセージ: <?= $chatRoom['unread_count'] ?>件
+                            </div>
+                            <div style="font-size: var(--text-subhead); font-weight: bold; color: var(--apple-blue);">
+                                最新: <?= date('Y年n月j日 H:i', strtotime($chatRoom['last_message_at'])) ?>
+                            </div>
+                        </div>
+                        <a href="chat.php?room_id=<?= $chatRoom['room_id'] ?>" class="btn btn-primary btn-sm">チャットを開く</a>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+
         <?php if (isset($_SESSION['success'])): ?>
             <div class="success-message">
                 <?php
@@ -3319,12 +3450,18 @@ renderPageStart('staff', $currentPage, '活動管理');
                             'high_school' => ['label' => '高校生', 'icon' => '🎓']
                         ];
 
+                        // 教室の対象学年設定を取得
+                        $targetGrades = isset($classroom['target_grades']) && !empty($classroom['target_grades'])
+                            ? explode(',', $classroom['target_grades'])
+                            : ['preschool', 'elementary', 'junior_high', 'high_school'];
+
                         foreach ($gradeInfo as $gradeKey => $info):
+                            // 教室の対象学年に含まれていない場合はスキップ
+                            if (!in_array($gradeKey, $targetGrades)) continue;
+
                             $students = $studentsByGrade[$gradeKey];
                             $events = $eventsByGrade[$gradeKey];
                             $totalCount = count($students) + count($events);
-
-                            if ($totalCount === 0) continue;
                         ?>
                             <div class="accordion-section">
                                 <div class="accordion-header <?= $gradeKey ?>" onclick="toggleAccordion(this)">

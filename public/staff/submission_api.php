@@ -17,6 +17,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'staff') {
 
 $pdo = getDbConnection();
 $userId = $_SESSION['user_id'];
+$classroomId = $_SESSION['classroom_id'] ?? null;
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -34,6 +35,21 @@ if (!$id) {
 }
 
 try {
+    // アクセス権限チェック: 提出リクエストが自教室の生徒に関連しているか確認
+    if ($classroomId) {
+        $stmt = $pdo->prepare("
+            SELECT sr.id FROM submission_requests sr
+            INNER JOIN students s ON sr.student_id = s.id
+            WHERE sr.id = ? AND s.classroom_id = ?
+        ");
+        $stmt->execute([$id, $classroomId]);
+        if (!$stmt->fetch()) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'アクセス権限がありません']);
+            exit;
+        }
+    }
+
     // 提出完了にする
     if ($action === 'complete') {
         $note = trim($_POST['note'] ?? '');

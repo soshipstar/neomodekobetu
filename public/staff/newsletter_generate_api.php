@@ -18,6 +18,7 @@ header('Content-Type: application/json');
 
 $pdo = getDbConnection();
 $currentUser = getCurrentUser();
+$classroomId = $_SESSION['classroom_id'] ?? null;
 
 try {
     $input = json_decode(file_get_contents('php://input'), true);
@@ -27,38 +28,63 @@ try {
         throw new Exception('通信IDが指定されていません');
     }
 
-    // 通信情報を取得
-    $stmt = $pdo->prepare("SELECT * FROM newsletters WHERE id = ?");
-    $stmt->execute([$newsletterId]);
+    // 通信情報を取得（自分の教室のみ）
+    if ($classroomId) {
+        $stmt = $pdo->prepare("SELECT * FROM newsletters WHERE id = ? AND classroom_id = ?");
+        $stmt->execute([$newsletterId, $classroomId]);
+    } else {
+        $stmt = $pdo->prepare("SELECT * FROM newsletters WHERE id = ?");
+        $stmt->execute([$newsletterId]);
+    }
     $newsletter = $stmt->fetch();
 
     if (!$newsletter) {
-        throw new Exception('通信が見つかりません');
+        throw new Exception('通信が見つかりません、またはアクセス権限がありません');
     }
 
-    // 指定期間の連絡帳データを取得
-    $stmt = $pdo->prepare("
-        SELECT
-            dr.id,
-            dr.activity_name,
-            dr.common_activity,
-            dr.record_date,
-            u.full_name as staff_name,
-            GROUP_CONCAT(DISTINCT s.student_name SEPARATOR ', ') as participants
-        FROM daily_records dr
-        INNER JOIN users u ON dr.staff_id = u.id
-        LEFT JOIN student_records sr ON dr.id = sr.daily_record_id
-        LEFT JOIN students s ON sr.student_id = s.id
-        WHERE dr.record_date BETWEEN ? AND ?
-        GROUP BY dr.id
-        ORDER BY dr.record_date, dr.created_at
-    ");
-    $stmt->execute([$newsletter['report_start_date'], $newsletter['report_end_date']]);
+    // 指定期間の連絡帳データを取得（自分の教室のみ）
+    if ($classroomId) {
+        $stmt = $pdo->prepare("
+            SELECT
+                dr.id,
+                dr.activity_name,
+                dr.common_activity,
+                dr.record_date,
+                u.full_name as staff_name,
+                GROUP_CONCAT(DISTINCT s.student_name SEPARATOR ', ') as participants
+            FROM daily_records dr
+            INNER JOIN users u ON dr.staff_id = u.id
+            LEFT JOIN student_records sr ON dr.id = sr.daily_record_id
+            LEFT JOIN students s ON sr.student_id = s.id
+            WHERE dr.record_date BETWEEN ? AND ?
+            AND dr.classroom_id = ?
+            GROUP BY dr.id
+            ORDER BY dr.record_date, dr.created_at
+        ");
+        $stmt->execute([$newsletter['report_start_date'], $newsletter['report_end_date'], $classroomId]);
+    } else {
+        $stmt = $pdo->prepare("
+            SELECT
+                dr.id,
+                dr.activity_name,
+                dr.common_activity,
+                dr.record_date,
+                u.full_name as staff_name,
+                GROUP_CONCAT(DISTINCT s.student_name SEPARATOR ', ') as participants
+            FROM daily_records dr
+            INNER JOIN users u ON dr.staff_id = u.id
+            LEFT JOIN student_records sr ON dr.id = sr.daily_record_id
+            LEFT JOIN students s ON sr.student_id = s.id
+            WHERE dr.record_date BETWEEN ? AND ?
+            GROUP BY dr.id
+            ORDER BY dr.record_date, dr.created_at
+        ");
+        $stmt->execute([$newsletter['report_start_date'], $newsletter['report_end_date']]);
+    }
     $activities = $stmt->fetchAll();
 
     // 教室名を取得
     $classroomName = "教室";
-    $classroomId = $_SESSION['classroom_id'] ?? null;
 
     // 予定イベント情報を取得（スケジュール期間、自分の教室のみ）
     $stmt = $pdo->prepare("

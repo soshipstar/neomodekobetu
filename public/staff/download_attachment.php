@@ -1,6 +1,7 @@
 <?php
 /**
  * チャット添付ファイルダウンロード（スタッフ用）
+ * きづり（通常版）専用
  */
 session_start();
 require_once __DIR__ . '/../../config/database.php';
@@ -14,6 +15,20 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'staff') {
 
 $pdo = getDbConnection();
 $messageId = $_GET['id'] ?? null;
+$classroomId = $_SESSION['classroom_id'] ?? null;
+
+// 教室のservice_typeを確認（minimum版ユーザーはアクセス不可）
+if ($classroomId) {
+    $stmt = $pdo->prepare("SELECT service_type FROM classrooms WHERE id = ?");
+    $stmt->execute([$classroomId]);
+    $classroom = $stmt->fetch();
+
+    if ($classroom && $classroom['service_type'] === 'minimum') {
+        header('HTTP/1.0 403 Forbidden');
+        echo 'この機能は「きづり」専用です。「かけはし」版からアクセスしてください。';
+        exit;
+    }
+}
 
 if (!$messageId) {
     header('HTTP/1.0 400 Bad Request');
@@ -22,14 +37,24 @@ if (!$messageId) {
 }
 
 try {
-    // メッセージを取得（スタッフは全ファイルにアクセス可能）
-    $stmt = $pdo->prepare("SELECT * FROM chat_messages WHERE id = ?");
-    $stmt->execute([$messageId]);
+    // メッセージを取得（自分の教室の生徒に関連するメッセージのみ）
+    if ($classroomId) {
+        $stmt = $pdo->prepare("
+            SELECT cm.* FROM chat_messages cm
+            INNER JOIN chat_rooms cr ON cm.room_id = cr.id
+            INNER JOIN students s ON cr.student_id = s.id
+            WHERE cm.id = ? AND s.classroom_id = ?
+        ");
+        $stmt->execute([$messageId, $classroomId]);
+    } else {
+        $stmt = $pdo->prepare("SELECT * FROM chat_messages WHERE id = ?");
+        $stmt->execute([$messageId]);
+    }
     $message = $stmt->fetch();
 
     if (!$message) {
         header('HTTP/1.0 404 Not Found');
-        echo 'ファイルが見つかりません';
+        echo 'ファイルが見つかりません、またはアクセス権限がありません';
         exit;
     }
 

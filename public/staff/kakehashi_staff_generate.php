@@ -26,6 +26,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'staff') {
 
 $pdo = getDbConnection();
 $staffId = $_SESSION['user_id'];
+$classroomId = $_SESSION['classroom_id'] ?? null;
 
 // POSTデータ取得
 $studentId = $_POST['student_id'] ?? null;
@@ -38,18 +39,23 @@ if (!$studentId || !$periodId) {
 }
 
 try {
-    // 生徒情報を取得
-    $stmt = $pdo->prepare("SELECT * FROM students WHERE id = ?");
-    $stmt->execute([$studentId]);
+    // 生徒情報を取得（自分の教室のみ）
+    if ($classroomId) {
+        $stmt = $pdo->prepare("SELECT * FROM students WHERE id = ? AND classroom_id = ?");
+        $stmt->execute([$studentId, $classroomId]);
+    } else {
+        $stmt = $pdo->prepare("SELECT * FROM students WHERE id = ?");
+        $stmt->execute([$studentId]);
+    }
     $student = $stmt->fetch();
 
     if (!$student) {
-        throw new Exception('生徒が見つかりません。');
+        throw new Exception('生徒が見つかりません、またはアクセス権限がありません。');
     }
 
-    // 選択された期間情報を取得
-    $stmt = $pdo->prepare("SELECT * FROM kakehashi_periods WHERE id = ?");
-    $stmt->execute([$periodId]);
+    // 選択された期間情報を取得（生徒IDで紐づけ確認）
+    $stmt = $pdo->prepare("SELECT * FROM kakehashi_periods WHERE id = ? AND student_id = ?");
+    $stmt->execute([$periodId, $studentId]);
     $currentPeriod = $stmt->fetch();
 
     if (!$currentPeriod) {

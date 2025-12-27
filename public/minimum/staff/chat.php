@@ -87,7 +87,8 @@ $sql = "
 $params = array_merge($unreadParams, $pinParams);
 
 if ($classroomId) {
-    $sql .= " AND u.classroom_id = ?";
+    // 生徒のclassroom_idでフィルタリング（保護者のclassroom_idではなく）
+    $sql .= " AND s.classroom_id = ?";
     $params[] = $classroomId;
 }
 
@@ -137,12 +138,12 @@ foreach ($allStudents as $student) {
         $unreadStudents[] = $student;
     }
 
-    // 学年別（全員）
-    if ($grade === 'elementary') {
+    // 学年別（全員）- 前方一致で判定（junior_high_1, junior_high_2等に対応）
+    if (strpos($grade, 'elementary') === 0) {
         $elementary[] = $student;
-    } elseif ($grade === 'junior_high') {
+    } elseif (strpos($grade, 'junior_high') === 0) {
         $junior[] = $student;
-    } elseif ($grade === 'high_school') {
+    } elseif (strpos($grade, 'high_school') === 0) {
         $senior[] = $student;
     }
 }

@@ -15,11 +15,22 @@ $staffId = $_SESSION['user_id'];
 // スタッフの教室IDを取得
 $classroomId = $_SESSION['classroom_id'] ?? null;
 
-// 削除処理
+// 削除処理（自分の教室の生徒のみ）
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_monitoring_id'])) {
     $deleteId = $_POST['delete_monitoring_id'];
+    $studentId = $_POST['student_id'] ?? null;
+    $planId = $_POST['plan_id'] ?? null;
 
     try {
+        // 生徒が自分の教室に所属しているか確認
+        if ($classroomId && $studentId) {
+            $stmt = $pdo->prepare("SELECT id FROM students WHERE id = ? AND classroom_id = ?");
+            $stmt->execute([$studentId, $classroomId]);
+            if (!$stmt->fetch()) {
+                throw new Exception('アクセス権限がありません。');
+            }
+        }
+
         // モニタリング明細も削除
         $stmt = $pdo->prepare("DELETE FROM monitoring_details WHERE monitoring_id = ?");
         $stmt->execute([$deleteId]);
@@ -29,10 +40,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_monitoring_id'
         $stmt->execute([$deleteId]);
 
         $_SESSION['success'] = 'モニタリング表を削除しました。';
-
-        // リダイレクト先を決定
-        $studentId = $_POST['student_id'] ?? null;
-        $planId = $_POST['plan_id'] ?? null;
 
         if ($studentId && $planId) {
             header("Location: kobetsu_monitoring.php?student_id=$studentId&plan_id=$planId");

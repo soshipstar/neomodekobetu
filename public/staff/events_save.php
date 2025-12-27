@@ -17,6 +17,7 @@ if ($_SESSION['user_type'] !== 'staff' && $_SESSION['user_type'] !== 'admin') {
 
 $pdo = getDbConnection();
 $action = $_POST['action'] ?? '';
+$classroomId = $_SESSION['classroom_id'] ?? null;
 
 try {
     switch ($action) {
@@ -107,42 +108,72 @@ try {
                 $targetAudience = 'all';
             }
 
-            // イベントを更新
-            $stmt = $pdo->prepare("
-                UPDATE events
-                SET event_date = ?,
-                    event_name = ?,
-                    event_description = ?,
-                    staff_comment = ?,
-                    guardian_message = ?,
-                    event_color = ?,
-                    target_audience = ?
-                WHERE id = ?
-            ");
-            $stmt->execute([
-                $eventDate,
-                $eventName,
-                $eventDescription,
-                $staffComment,
-                $guardianMessage,
-                $eventColor,
-                $targetAudience,
-                $eventId
-            ]);
+            // イベントを更新（自分の教室のみ）
+            if ($classroomId) {
+                $stmt = $pdo->prepare("
+                    UPDATE events
+                    SET event_date = ?,
+                        event_name = ?,
+                        event_description = ?,
+                        staff_comment = ?,
+                        guardian_message = ?,
+                        event_color = ?,
+                        target_audience = ?
+                    WHERE id = ? AND classroom_id = ?
+                ");
+                $stmt->execute([
+                    $eventDate,
+                    $eventName,
+                    $eventDescription,
+                    $staffComment,
+                    $guardianMessage,
+                    $eventColor,
+                    $targetAudience,
+                    $eventId,
+                    $classroomId
+                ]);
+            } else {
+                $stmt = $pdo->prepare("
+                    UPDATE events
+                    SET event_date = ?,
+                        event_name = ?,
+                        event_description = ?,
+                        staff_comment = ?,
+                        guardian_message = ?,
+                        event_color = ?,
+                        target_audience = ?
+                    WHERE id = ?
+                ");
+                $stmt->execute([
+                    $eventDate,
+                    $eventName,
+                    $eventDescription,
+                    $staffComment,
+                    $guardianMessage,
+                    $eventColor,
+                    $targetAudience,
+                    $eventId
+                ]);
+            }
 
             header('Location: events.php?success=updated');
             exit;
 
         case 'delete':
-            // イベント削除
+            // イベント削除（自分の教室のみ）
             $eventId = (int)$_POST['event_id'];
 
             if (empty($eventId)) {
                 throw new Exception('イベントIDが指定されていません。');
             }
 
-            $stmt = $pdo->prepare("DELETE FROM events WHERE id = ?");
-            $stmt->execute([$eventId]);
+            if ($classroomId) {
+                $stmt = $pdo->prepare("DELETE FROM events WHERE id = ? AND classroom_id = ?");
+                $stmt->execute([$eventId, $classroomId]);
+            } else {
+                $stmt = $pdo->prepare("DELETE FROM events WHERE id = ?");
+                $stmt->execute([$eventId]);
+            }
 
             header('Location: events.php?success=deleted');
             exit;

@@ -17,6 +17,7 @@ if ($_SESSION['user_type'] !== 'staff' && $_SESSION['user_type'] !== 'admin') {
 
 $pdo = getDbConnection();
 $action = $_POST['action'] ?? '';
+$classroomId = $_SESSION['classroom_id'] ?? null;
 
 try {
     switch ($action) {
@@ -26,7 +27,6 @@ try {
             $daysOfWeek = $_POST['days_of_week'] ?? [];
             $startDateStr = $_POST['start_date'] ?? date('Y-m-d');
             $createdBy = $_SESSION['user_id'];
-            $classroomId = $_SESSION['classroom_id'] ?? null;
 
             if (empty($holidayName)) {
                 throw new Exception('休日名を入力してください。');
@@ -183,15 +183,20 @@ try {
             exit;
 
         case 'delete':
-            // 休日削除
+            // 休日削除（自分の教室のみ）
             $holidayId = (int)$_POST['holiday_id'];
 
             if (empty($holidayId)) {
                 throw new Exception('休日IDが指定されていません。');
             }
 
-            $stmt = $pdo->prepare("DELETE FROM holidays WHERE id = ?");
-            $stmt->execute([$holidayId]);
+            if ($classroomId) {
+                $stmt = $pdo->prepare("DELETE FROM holidays WHERE id = ? AND classroom_id = ?");
+                $stmt->execute([$holidayId, $classroomId]);
+            } else {
+                $stmt = $pdo->prepare("DELETE FROM holidays WHERE id = ?");
+                $stmt->execute([$holidayId]);
+            }
 
             header('Location: holidays.php?success=deleted');
             exit;

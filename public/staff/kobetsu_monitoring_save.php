@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $pdo = getDbConnection();
 $staffId = $_SESSION['user_id'];
+$classroomId = $_SESSION['classroom_id'] ?? null;
 
 $planId = $_POST['plan_id'] ?? null;
 $studentId = $_POST['student_id'] ?? null;
@@ -38,9 +39,20 @@ if (!$planId || !$studentId || !$monitoringDate) {
     exit;
 }
 
-// 計画書から生徒名を取得
-$stmt = $pdo->prepare("SELECT student_name FROM individual_support_plans WHERE id = ?");
-$stmt->execute([$planId]);
+// 生徒が自分の教室に所属しているか確認（最初にチェック）
+if ($classroomId) {
+    $stmt = $pdo->prepare("SELECT id FROM students WHERE id = ? AND classroom_id = ?");
+    $stmt->execute([$studentId, $classroomId]);
+    if (!$stmt->fetch()) {
+        $_SESSION['error'] = 'アクセス権限がありません。';
+        header("Location: kobetsu_monitoring.php");
+        exit;
+    }
+}
+
+// 計画書から生徒名を取得（生徒IDとの整合性確認）
+$stmt = $pdo->prepare("SELECT student_name FROM individual_support_plans WHERE id = ? AND student_id = ?");
+$stmt->execute([$planId, $studentId]);
 $plan = $stmt->fetch();
 
 if (!$plan) {
@@ -50,8 +62,13 @@ if (!$plan) {
 }
 
 // 退所日チェック：退所済みの生徒の場合、退所日以降のモニタリングは作成できない
-$stmt = $pdo->prepare("SELECT withdrawal_date FROM students WHERE id = ?");
-$stmt->execute([$studentId]);
+if ($classroomId) {
+    $stmt = $pdo->prepare("SELECT withdrawal_date FROM students WHERE id = ? AND classroom_id = ?");
+    $stmt->execute([$studentId, $classroomId]);
+} else {
+    $stmt = $pdo->prepare("SELECT withdrawal_date FROM students WHERE id = ?");
+    $stmt->execute([$studentId]);
+}
 $student = $stmt->fetch();
 if ($student && $student['withdrawal_date']) {
     $withdrawalDate = new DateTime($student['withdrawal_date']);

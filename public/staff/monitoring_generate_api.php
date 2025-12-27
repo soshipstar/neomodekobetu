@@ -18,6 +18,7 @@ requireUserType(['staff', 'admin']);
 header('Content-Type: application/json; charset=utf-8');
 
 $pdo = getDbConnection();
+$classroomId = $_SESSION['classroom_id'] ?? null;
 
 try {
     $input = json_decode(file_get_contents('php://input'), true);
@@ -29,9 +30,23 @@ try {
         throw new Exception('必要なパラメータが不足しています');
     }
 
-    // 計画情報を取得
-    $stmt = $pdo->prepare("SELECT * FROM individual_support_plans WHERE id = ?");
-    $stmt->execute([$planId]);
+    // 生徒情報を取得（自分の教室のみ）- 最初に確認
+    if ($classroomId) {
+        $stmt = $pdo->prepare("SELECT * FROM students WHERE id = ? AND classroom_id = ?");
+        $stmt->execute([$studentId, $classroomId]);
+    } else {
+        $stmt = $pdo->prepare("SELECT * FROM students WHERE id = ?");
+        $stmt->execute([$studentId]);
+    }
+    $student = $stmt->fetch();
+
+    if (!$student) {
+        throw new Exception('生徒が見つかりません、またはアクセス権限がありません');
+    }
+
+    // 計画情報を取得（生徒と紐づいているか確認）
+    $stmt = $pdo->prepare("SELECT * FROM individual_support_plans WHERE id = ? AND student_id = ?");
+    $stmt->execute([$planId, $studentId]);
     $plan = $stmt->fetch();
 
     if (!$plan) {
@@ -45,15 +60,6 @@ try {
 
     if (empty($planDetails)) {
         throw new Exception('計画の明細が見つかりません');
-    }
-
-    // 生徒情報を取得
-    $stmt = $pdo->prepare("SELECT * FROM students WHERE id = ?");
-    $stmt->execute([$studentId]);
-    $student = $stmt->fetch();
-
-    if (!$student) {
-        throw new Exception('生徒が見つかりません');
     }
 
     // 過去6ヶ月の連絡帳データを取得

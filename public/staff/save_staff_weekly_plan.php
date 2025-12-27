@@ -20,13 +20,12 @@ if (!$studentId || !$weekStartDate) {
     exit;
 }
 
-// アクセス権限チェック
+// アクセス権限チェック（生徒のclassroom_idでフィルタ）
 if ($classroomId) {
     $stmt = $pdo->prepare("
         SELECT s.id
         FROM students s
-        INNER JOIN users g ON s.guardian_id = g.id
-        WHERE s.id = ? AND g.classroom_id = ?
+        WHERE s.id = ? AND s.classroom_id = ?
     ");
     $stmt->execute([$studentId, $classroomId]);
 } else {

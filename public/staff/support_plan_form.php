@@ -167,11 +167,19 @@ renderPageStart('staff', $currentPage, $pageTitle);
 ?>
 
 <style>
+        /* ページ全体のオーバーフロー防止 */
+        body {
+            overflow-x: hidden;
+        }
+
         .form-container {
             background: var(--apple-bg-primary);
             padding: var(--spacing-2xl);
             border-radius: var(--radius-md);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            max-width: 100%;
+            box-sizing: border-box;
         }
 
         .form-group {
@@ -324,6 +332,8 @@ renderPageStart('staff', $currentPage, $pageTitle);
             border-radius: var(--radius-sm);
             margin-bottom: 8px;
             transition: all var(--duration-fast) var(--ease-out);
+            max-width: 100%;
+            box-sizing: border-box;
         }
 
         .schedule-item:hover {
@@ -361,22 +371,45 @@ renderPageStart('staff', $currentPage, $pageTitle);
             background: var(--apple-blue);
         }
 
+        /* 活動スケジュールセクション全体 */
+        .schedule-section {
+            overflow: hidden;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        #scheduleList {
+            overflow: hidden;
+            max-width: 100%;
+        }
+
         .schedule-info {
             flex: 1;
             min-width: 0;
+            max-width: calc(100% - 200px);
+            overflow: hidden;
         }
 
         .schedule-name {
             font-weight: 500;
+            word-break: break-word;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
         }
 
         .schedule-content-preview {
             font-size: var(--text-caption-1);
             color: var(--text-secondary);
             margin-top: 4px;
-            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            word-break: break-word;
         }
 
         .schedule-type {
@@ -424,6 +457,40 @@ renderPageStart('staff', $currentPage, $pageTitle);
             color: white;
         }
 
+        /* スケジュールのレスポンシブ対応 */
+        @media (max-width: 900px) {
+            .schedule-info {
+                max-width: calc(100% - 150px);
+            }
+
+            .schedule-type {
+                display: none;
+            }
+
+            .schedule-duration input {
+                width: 50px;
+            }
+
+            .schedule-actions button {
+                padding: 3px 6px;
+                font-size: 11px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .schedule-info {
+                max-width: calc(100% - 120px);
+            }
+
+            .schedule-name {
+                -webkit-line-clamp: 1;
+            }
+
+            .schedule-content-preview {
+                display: none;
+            }
+        }
+
         .routine-selector-btn {
             padding: 8px 16px;
             background: #fff3e0;
@@ -433,6 +500,9 @@ renderPageStart('staff', $currentPage, $pageTitle);
             font-weight: 600;
             cursor: pointer;
             transition: all var(--duration-fast) var(--ease-out);
+            max-width: 100%;
+            box-sizing: border-box;
+            word-break: break-word;
         }
 
         .routine-selector-btn:hover {
@@ -490,8 +560,8 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 </div>
 
                 <!-- 過去の支援案選択モーダル -->
-                <div id="copyModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
-                    <div style="background: var(--apple-bg-primary); max-width: 900px; margin: 50px auto; border-radius: var(--radius-md); padding: var(--spacing-2xl);">
+                <div id="copyModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; overflow-y: auto; padding: 20px; box-sizing: border-box;">
+                    <div style="background: var(--apple-bg-primary); max-width: 900px; margin: 0 auto; border-radius: var(--radius-md); padding: var(--spacing-2xl); max-height: calc(100vh - 40px); overflow-y: auto; box-sizing: border-box;">
                         <h2 style="margin-bottom: var(--spacing-lg);">過去の支援案を選択</h2>
 
                         <!-- 検索ボックス -->
@@ -641,7 +711,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 </div>
 
                 <!-- 活動スケジュール設定 -->
-                <div class="form-group" style="background: #f5f5f5; padding: 20px; border-radius: var(--radius-md); border: 2px solid var(--apple-gray-5);">
+                <div class="form-group schedule-section" style="background: #f5f5f5; padding: 20px; border-radius: var(--radius-md); border: 2px solid var(--apple-gray-5); overflow: hidden; max-width: 100%; box-sizing: border-box;">
                     <label style="color: var(--text-primary); margin-bottom: 15px; font-size: var(--text-callout);">活動スケジュール</label>
                     <p style="font-size: var(--text-footnote); color: var(--text-secondary); margin-bottom: 15px;">
                         毎日の支援と主活動を追加し、順番と所要時間を設定してください。<br>
@@ -649,29 +719,29 @@ renderPageStart('staff', $currentPage, $pageTitle);
                     </p>
 
                     <!-- 毎日の支援選択 -->
-                    <div style="margin-bottom: 15px;">
+                    <div style="margin-bottom: 15px; overflow: hidden;">
                         <label style="font-size: var(--text-footnote); color: var(--text-secondary); margin-bottom: 8px; display: block;">毎日の支援を追加</label>
-                        <div id="dailyRoutinesSelector" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        <div id="dailyRoutinesSelector" style="display: flex; flex-wrap: wrap; gap: 8px; max-width: 100%;">
                             <p style="color: var(--text-secondary); font-size: var(--text-footnote);">読み込み中...</p>
                         </div>
                     </div>
 
                     <!-- 主活動追加 -->
-                    <div style="margin-bottom: 15px; background: #e3f2fd; padding: 15px; border-radius: var(--radius-sm);">
+                    <div style="margin-bottom: 15px; background: #e3f2fd; padding: 15px; border-radius: var(--radius-sm); overflow: hidden; box-sizing: border-box;">
                         <label style="font-size: var(--text-footnote); color: var(--apple-blue); font-weight: 600; margin-bottom: 10px; display: block;">主活動を追加</label>
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
-                            <input type="text" id="newMainActivity" placeholder="主活動名を入力" style="flex: 1; min-width: 200px;">
-                            <input type="number" id="newMainActivityDuration" placeholder="時間" min="5" max="240" style="width: 80px;">
+                            <input type="text" id="newMainActivity" placeholder="主活動名を入力" style="flex: 1; min-width: 150px; max-width: 100%; box-sizing: border-box;">
+                            <input type="number" id="newMainActivityDuration" placeholder="時間" min="5" max="240" style="width: 70px;">
                             <span style="align-self: center;">分</span>
                         </div>
                         <div style="margin-bottom: 10px;">
-                            <textarea id="newMainActivityContent" placeholder="主活動の内容を入力（この内容がAI生成時に参照されます）" style="width: 100%; min-height: 80px; resize: vertical;"></textarea>
+                            <textarea id="newMainActivityContent" placeholder="主活動の内容を入力（この内容がAI生成時に参照されます）" style="width: 100%; min-height: 80px; resize: vertical; box-sizing: border-box;"></textarea>
                         </div>
                         <button type="button" id="addMainActivityBtn" class="cancel-btn" style="background: var(--apple-blue); color: white; padding: 8px 16px;">主活動を追加</button>
                     </div>
 
                     <!-- スケジュールリスト -->
-                    <div id="scheduleList" style="background: white; border-radius: var(--radius-sm); padding: 10px; min-height: 100px; border: 1px dashed var(--apple-gray-4);">
+                    <div id="scheduleList" style="background: white; border-radius: var(--radius-sm); padding: 10px; min-height: 100px; border: 1px dashed var(--apple-gray-4); overflow: hidden; max-width: 100%; box-sizing: border-box;">
                         <p id="scheduleEmpty" style="color: var(--text-secondary); font-size: var(--text-footnote); text-align: center; padding: 20px;">
                             活動を追加してください
                         </p>

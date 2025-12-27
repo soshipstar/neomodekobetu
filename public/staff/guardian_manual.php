@@ -11,33 +11,59 @@ require_once __DIR__ . '/../../includes/layouts/page_wrapper.php';
 requireUserType(['staff', 'admin']);
 
 $pdo = getDbConnection();
+$classroomId = $_SESSION['classroom_id'] ?? null;
 
-// 保護者一覧を取得
-$stmt = $pdo->query("
-    SELECT u.*,
-           GROUP_CONCAT(s.student_name SEPARATOR '、') as student_names
-    FROM users u
-    LEFT JOIN students s ON u.id = s.guardian_id AND s.is_active = 1
-    WHERE u.user_type = 'guardian' AND u.is_active = 1
-    GROUP BY u.id
-    ORDER BY u.full_name
-");
-$guardians = $stmt->fetchAll();
-
-// 選択された保護者
-$selectedGuardianId = $_GET['guardian_id'] ?? null;
-$guardianData = null;
-
-if ($selectedGuardianId) {
+// 保護者一覧を取得（自分の教室のみ）
+if ($classroomId) {
     $stmt = $pdo->prepare("
         SELECT u.*,
                GROUP_CONCAT(s.student_name SEPARATOR '、') as student_names
         FROM users u
         LEFT JOIN students s ON u.id = s.guardian_id AND s.is_active = 1
-        WHERE u.id = ? AND u.user_type = 'guardian'
+        WHERE u.user_type = 'guardian' AND u.is_active = 1 AND u.classroom_id = ?
         GROUP BY u.id
+        ORDER BY u.full_name
     ");
-    $stmt->execute([$selectedGuardianId]);
+    $stmt->execute([$classroomId]);
+} else {
+    $stmt = $pdo->query("
+        SELECT u.*,
+               GROUP_CONCAT(s.student_name SEPARATOR '、') as student_names
+        FROM users u
+        LEFT JOIN students s ON u.id = s.guardian_id AND s.is_active = 1
+        WHERE u.user_type = 'guardian' AND u.is_active = 1
+        GROUP BY u.id
+        ORDER BY u.full_name
+    ");
+}
+$guardians = $stmt->fetchAll();
+
+// 選択された保護者（自分の教室のみ）
+$selectedGuardianId = $_GET['guardian_id'] ?? null;
+$guardianData = null;
+
+if ($selectedGuardianId) {
+    if ($classroomId) {
+        $stmt = $pdo->prepare("
+            SELECT u.*,
+                   GROUP_CONCAT(s.student_name SEPARATOR '、') as student_names
+            FROM users u
+            LEFT JOIN students s ON u.id = s.guardian_id AND s.is_active = 1
+            WHERE u.id = ? AND u.user_type = 'guardian' AND u.classroom_id = ?
+            GROUP BY u.id
+        ");
+        $stmt->execute([$selectedGuardianId, $classroomId]);
+    } else {
+        $stmt = $pdo->prepare("
+            SELECT u.*,
+                   GROUP_CONCAT(s.student_name SEPARATOR '、') as student_names
+            FROM users u
+            LEFT JOIN students s ON u.id = s.guardian_id AND s.is_active = 1
+            WHERE u.id = ? AND u.user_type = 'guardian'
+            GROUP BY u.id
+        ");
+        $stmt->execute([$selectedGuardianId]);
+    }
     $guardianData = $stmt->fetch();
 }
 
@@ -297,7 +323,7 @@ renderPageStart('staff', $currentPage, '保護者向けマニュアル生成');
                             </div>
                             <div class="info-row">
                                 <div class="info-label">初期パスワード：</div>
-                                <div class="info-value">（初回ログイン時にお伝えします）</div>
+                                <div class="info-value"><?= $guardianData['password_plain'] ? htmlspecialchars($guardianData['password_plain']) : '（未設定 - スタッフにお問い合わせください）' ?></div>
                             </div>
                         </div>
                         <p style="color: var(--apple-red); font-weight: 600; margin-top: 10px;">

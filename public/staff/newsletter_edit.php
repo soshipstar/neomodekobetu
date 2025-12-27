@@ -29,15 +29,20 @@ $isNewNewsletter = false;
 $newsletter = null;
 $needsGeneration = false;
 
-// 既存の通信を編集
+// 既存の通信を編集（自分の教室のみ）
 if (isset($_GET['id'])) {
     $newsletterId = $_GET['id'];
-    $stmt = $pdo->prepare("SELECT * FROM newsletters WHERE id = ?");
-    $stmt->execute([$newsletterId]);
+    if ($classroomId) {
+        $stmt = $pdo->prepare("SELECT * FROM newsletters WHERE id = ? AND classroom_id = ?");
+        $stmt->execute([$newsletterId, $classroomId]);
+    } else {
+        $stmt = $pdo->prepare("SELECT * FROM newsletters WHERE id = ?");
+        $stmt->execute([$newsletterId]);
+    }
     $newsletter = $stmt->fetch();
 
     if (!$newsletter) {
-        $_SESSION['error'] = '通信が見つかりません';
+        $_SESSION['error'] = '通信が見つかりません、またはアクセス権限がありません';
         header('Location: newsletter_create.php');
         exit;
     }
@@ -51,12 +56,12 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $scheduleStartDate = $_POST['schedule_start_date'];
     $scheduleEndDate = $_POST['schedule_end_date'];
 
-    // 新規通信レコードを作成（下書き状態）
+    // 新規通信レコードを作成（下書き状態）- classroom_idを設定
     $stmt = $pdo->prepare("
         INSERT INTO newsletters
         (year, month, title, report_start_date, report_end_date,
-         schedule_start_date, schedule_end_date, status, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?)
+         schedule_start_date, schedule_end_date, status, created_by, classroom_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?)
     ");
 
     $title = sprintf("%d年%d月「%s」通信", $year, $month, $classroomName);
@@ -65,7 +70,8 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $year, $month, $title,
         $reportStartDate, $reportEndDate,
         $scheduleStartDate, $scheduleEndDate,
-        $currentUser['id']
+        $currentUser['id'],
+        $classroomId
     ]);
 
     $newsletterId = $pdo->lastInsertId();

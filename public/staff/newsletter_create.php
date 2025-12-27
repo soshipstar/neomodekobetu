@@ -12,14 +12,21 @@ requireUserType(['staff', 'admin']);
 
 $pdo = getDbConnection();
 $currentUser = getCurrentUser();
+$classroomId = $_SESSION['classroom_id'] ?? null;
 
 // 削除処理
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete') {
     $deleteId = $_POST['newsletter_id'] ?? null;
     if ($deleteId) {
         try {
-            $stmt = $pdo->prepare("DELETE FROM newsletters WHERE id = ?");
-            $stmt->execute([$deleteId]);
+            // 自分の教室の通信のみ削除可能
+            if ($classroomId) {
+                $stmt = $pdo->prepare("DELETE FROM newsletters WHERE id = ? AND classroom_id = ?");
+                $stmt->execute([$deleteId, $classroomId]);
+            } else {
+                $stmt = $pdo->prepare("DELETE FROM newsletters WHERE id = ?");
+                $stmt->execute([$deleteId]);
+            }
             $_SESSION['success_message'] = '通信を削除しました。';
         } catch (Exception $e) {
             $_SESSION['error_message'] = '削除に失敗しました: ' . $e->getMessage();
@@ -33,13 +40,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 $currentYear = date('Y');
 $currentMonth = date('m');
 
-// 既存の通信を取得
-$stmt = $pdo->prepare("
-    SELECT * FROM newsletters
-    ORDER BY year DESC, month DESC
-    LIMIT 10
-");
-$stmt->execute();
+// 既存の通信を取得（自分の教室のみ）
+if ($classroomId) {
+    $stmt = $pdo->prepare("
+        SELECT * FROM newsletters
+        WHERE classroom_id = ?
+        ORDER BY year DESC, month DESC
+        LIMIT 10
+    ");
+    $stmt->execute([$classroomId]);
+} else {
+    $stmt = $pdo->prepare("
+        SELECT * FROM newsletters
+        ORDER BY year DESC, month DESC
+        LIMIT 10
+    ");
+    $stmt->execute();
+}
 $existingNewsletters = $stmt->fetchAll();
 
 // ページ開始

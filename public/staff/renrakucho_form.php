@@ -23,13 +23,20 @@ $recordDate = $_POST['record_date'] ?? date('Y-m-d');
 $activityId = $_GET['activity_id'] ?? null;
 $supportPlanId = $_POST['support_plan_id'] ?? null;
 
-// 支援案情報を取得（新規作成時に支援案が選択されている場合）
+// 支援案情報を取得（新規作成時に支援案が選択されている場合、自分の教室のみ）
 $supportPlan = null;
 if ($supportPlanId && !$activityId) {
-    $stmt = $pdo->prepare("
-        SELECT * FROM support_plans WHERE id = ?
-    ");
-    $stmt->execute([$supportPlanId]);
+    if ($classroomId) {
+        $stmt = $pdo->prepare("
+            SELECT * FROM support_plans WHERE id = ? AND classroom_id = ?
+        ");
+        $stmt->execute([$supportPlanId, $classroomId]);
+    } else {
+        $stmt = $pdo->prepare("
+            SELECT * FROM support_plans WHERE id = ?
+        ");
+        $stmt->execute([$supportPlanId]);
+    }
     $supportPlan = $stmt->fetch();
 }
 

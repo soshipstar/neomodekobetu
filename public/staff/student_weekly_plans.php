@@ -13,13 +13,12 @@ $pdo = getDbConnection();
 $currentUser = getCurrentUser();
 $classroomId = $_SESSION['classroom_id'] ?? null;
 
-// 生徒一覧を取得
+// 生徒一覧を取得（生徒のclassroom_idでフィルタ）
 if ($classroomId) {
     $stmt = $pdo->prepare("
         SELECT s.id, s.student_name
         FROM students s
-        INNER JOIN users g ON s.guardian_id = g.id
-        WHERE g.classroom_id = ?
+        WHERE s.classroom_id = ?
         ORDER BY s.student_name
     ");
     $stmt->execute([$classroomId]);

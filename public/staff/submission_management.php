@@ -35,7 +35,7 @@ try {
 // フィルター
 $filterStatus = $_GET['status'] ?? 'pending'; // pending, completed, all
 
-// 提出期限リクエストを取得
+// 提出期限リクエストを取得（生徒のclassroom_idでフィルタ）
 if ($classroomId) {
     $sql = "
         SELECT
@@ -57,9 +57,8 @@ if ($classroomId) {
         FROM submission_requests sr
         INNER JOIN students s ON sr.student_id = s.id
         INNER JOIN users u ON sr.guardian_id = u.id
-        INNER JOIN users guardian_user ON sr.guardian_id = guardian_user.id
         INNER JOIN users creator ON sr.created_by = creator.id
-        WHERE guardian_user.classroom_id = ?
+        WHERE s.classroom_id = ?
     ";
 
     // ステータスフィルター
@@ -75,7 +74,7 @@ if ($classroomId) {
     $stmt->execute([$classroomId]);
     $submissions = $stmt->fetchAll();
 
-    // 統計（完了件数は最近1か月のみ）
+    // 統計（完了件数は最近1か月のみ、生徒のclassroom_idでフィルタ）
     $stmt = $pdo->prepare("
         SELECT
             COUNT(*) as total,
@@ -84,8 +83,7 @@ if ($classroomId) {
             SUM(CASE WHEN is_completed = 0 AND due_date < CURDATE() THEN 1 ELSE 0 END) as overdue
         FROM submission_requests sr
         INNER JOIN students s ON sr.student_id = s.id
-        INNER JOIN users u ON s.guardian_id = u.id
-        WHERE u.classroom_id = ?
+        WHERE s.classroom_id = ?
     ");
     $stmt->execute([$classroomId]);
     $stats = $stmt->fetch();

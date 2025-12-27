@@ -18,6 +18,26 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'staff') {
 $pdo = getDbConnection();
 $userId = $_SESSION['user_id'];
 $userType = $_SESSION['user_type'];
+$classroomId = $_SESSION['classroom_id'] ?? null;
+
+/**
+ * チャットルームへのアクセス権限を確認
+ * スタッフは自教室の生徒のルームのみアクセス可能
+ */
+function verifyRoomAccess($pdo, $roomId, $classroomId) {
+    if ($classroomId) {
+        $stmt = $pdo->prepare("
+            SELECT cr.id FROM chat_rooms cr
+            INNER JOIN students s ON cr.student_id = s.id
+            WHERE cr.id = ? AND s.classroom_id = ?
+        ");
+        $stmt->execute([$roomId, $classroomId]);
+    } else {
+        $stmt = $pdo->prepare("SELECT id FROM chat_rooms WHERE id = ?");
+        $stmt->execute([$roomId]);
+    }
+    return $stmt->fetch() ? true : false;
+}
 
 // GETリクエスト: メッセージ取得
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -27,7 +47,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     if ($action === 'get_messages' && $roomId) {
         try {
-            // スタッフは全てのルームにアクセス可能
+            // ルームへのアクセス権限を確認
+            if (!verifyRoomAccess($pdo, $roomId, $classroomId)) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'アクセス権限がありません']);
+                exit;
+            }
 
             // メッセージを取得（削除されていないもののみ）
             $stmt = $pdo->prepare("
@@ -78,7 +103,12 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         try {
-            // スタッフは全てのルームにアクセス可能
+            // ルームへのアクセス権限を確認
+            if (!verifyRoomAccess($pdo, $roomId, $classroomId)) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'アクセス権限がありません']);
+                exit;
+            }
 
             // ファイルアップロード処理
             $attachmentPath = null;
@@ -201,6 +231,13 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         try {
+            // ルームへのアクセス権限を確認
+            if (!verifyRoomAccess($pdo, $roomId, $classroomId)) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'error' => 'アクセス権限がありません']);
+                exit;
+            }
+
             // ルーム情報を取得して生徒IDと保護者IDを取得
             $stmt = $pdo->prepare("
                 SELECT student_id, guardian_id
@@ -313,12 +350,24 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         try {
             // メッセージの送信者を確認（自分が送信したメッセージのみ削除可能）
-            $stmt = $pdo->prepare("
-                SELECT sender_id, sender_type
-                FROM chat_messages
-                WHERE id = ?
-            ");
-            $stmt->execute([$messageId]);
+            // classroom_idフィルタも追加
+            if ($classroomId) {
+                $stmt = $pdo->prepare("
+                    SELECT cm.sender_id, cm.sender_type
+                    FROM chat_messages cm
+                    INNER JOIN chat_rooms cr ON cm.room_id = cr.id
+                    INNER JOIN students s ON cr.student_id = s.id
+                    WHERE cm.id = ? AND s.classroom_id = ?
+                ");
+                $stmt->execute([$messageId, $classroomId]);
+            } else {
+                $stmt = $pdo->prepare("
+                    SELECT sender_id, sender_type
+                    FROM chat_messages
+                    WHERE id = ?
+                ");
+                $stmt->execute([$messageId]);
+            }
             $message = $stmt->fetch();
 
             if (!$message) {
