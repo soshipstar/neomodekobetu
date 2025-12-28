@@ -199,16 +199,117 @@ renderPageStart('staff', $currentPage, '支援案一覧');
     .search-grid { grid-template-columns: 1fr; }
     .plan-actions { flex-direction: column; }
 }
+
+/* ヘルプアイコン */
+.help-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: var(--apple-gray-4);
+    color: white;
+    border-radius: 50%;
+    font-size: 13px;
+    font-weight: bold;
+    margin-left: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    vertical-align: middle;
+}
+.help-icon:hover {
+    background: var(--apple-blue);
+    transform: scale(1.1);
+}
+.help-tooltip {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 10px;
+    padding: 16px 18px;
+    background: var(--apple-bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    font-size: 13px;
+    font-weight: normal;
+    color: var(--text-secondary);
+    white-space: normal;
+    width: 360px;
+    z-index: 1000;
+    line-height: 1.6;
+}
+.help-tooltip::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    right: 20px;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 6px solid var(--border-color);
+}
+.help-tooltip::after {
+    content: '';
+    position: absolute;
+    top: -5px;
+    right: 20px;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 5px solid var(--apple-bg-primary);
+}
+.help-icon.active .help-tooltip {
+    display: block;
+}
+.help-tooltip h4 {
+    font-size: 14px;
+    color: var(--text-primary);
+    margin: 0 0 8px 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border-color);
+}
+.help-tooltip .help-item {
+    margin-bottom: 12px;
+}
+.help-tooltip .help-item:last-child {
+    margin-bottom: 0;
+}
+.help-tooltip .help-item-title {
+    font-weight: 600;
+    color: var(--apple-purple);
+    margin-bottom: 2px;
+}
+.help-tooltip .help-item-desc {
+    color: var(--text-secondary);
+}
 </style>
 
 <!-- ページヘッダー -->
 <div class="page-header">
     <div class="page-header-content">
         <h1 class="page-title">支援案一覧</h1>
-        <div style="display: flex; gap: 10px; margin-top: var(--spacing-md); flex-wrap: wrap;">
+        <div style="display: flex; gap: 10px; margin-top: var(--spacing-md); flex-wrap: wrap; align-items: center;">
             <a href="support_plan_form.php" class="btn btn-success">+ 新しい支援案を作成</a>
             <a href="daily_routines_settings.php" class="btn btn-primary" style="background: var(--primary-purple);">毎日の支援を設定</a>
             <a href="tag_settings.php" class="btn btn-secondary" style="background: var(--apple-orange);">タグを設定</a>
+            <span class="help-icon" onclick="toggleHelp(this, event)">?
+                <div class="help-tooltip">
+                    <h4>支援案管理の使い方</h4>
+                    <div class="help-item">
+                        <div class="help-item-title">+ 新しい支援案を作成</div>
+                        <div class="help-item-desc">活動内容・目的・五領域への配慮などを含む支援案を新規作成します。作成した支援案は活動登録時に選択して使用できます。同じ活動を繰り返し行う場合に便利です。</div>
+                    </div>
+                    <div class="help-item">
+                        <div class="help-item-title">毎日の支援を設定</div>
+                        <div class="help-item-desc">「朝の会」「帰りの会」など、毎日定例で行う活動を設定します。ここで設定した活動は、活動登録画面で自動的に表示され、簡単に登録できます。</div>
+                    </div>
+                    <div class="help-item">
+                        <div class="help-item-title">タグを設定</div>
+                        <div class="help-item-desc">支援案を分類するためのタグ（例：動画、食、学習など）を管理します。タグを使うと支援案の検索や整理が容易になります。</div>
+                    </div>
+                </div>
+            </span>
         </div>
     </div>
 </div>
@@ -235,7 +336,7 @@ renderPageStart('staff', $currentPage, '支援案一覧');
                 <select name="tag" class="form-control">
                     <option value="">すべて</option>
                     <?php
-                    $tags = ['プログラミング', 'テキスタイル', 'CAD', '動画', 'イラスト', '企業支援', '農業', '音楽', '食', '学習', '自分取扱説明書', '心理', '言語', '教育', 'イベント', 'その他'];
+                    $tags = ['動画', '食', '学習', 'イベント', 'その他'];
                     foreach ($tags as $tag):
                     ?>
                         <option value="<?= htmlspecialchars($tag) ?>" <?= $searchTag === $tag ? 'selected' : '' ?>>
@@ -351,4 +452,23 @@ renderPageStart('staff', $currentPage, '支援案一覧');
     <?php endforeach; ?>
 <?php endif; ?>
 
-<?php renderPageEnd(); ?>
+<?php
+$inlineJs = <<<JS
+function toggleHelp(element, event) {
+    event.stopPropagation();
+    const wasActive = element.classList.contains('active');
+    document.querySelectorAll('.help-icon').forEach(icon => icon.classList.remove('active'));
+    if (!wasActive) {
+        element.classList.add('active');
+    }
+}
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.help-icon')) {
+        document.querySelectorAll('.help-icon').forEach(icon => icon.classList.remove('active'));
+    }
+});
+JS;
+
+renderPageEnd(['inlineJs' => $inlineJs]);
+?>

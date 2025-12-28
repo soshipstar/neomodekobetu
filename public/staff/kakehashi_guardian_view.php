@@ -225,6 +225,71 @@ renderPageStart('staff', $currentPage, '保護者入力かけはし確認');
 @media (max-width: 768px) {
     .filter-area { flex-direction: column; }
 }
+
+/* ヘルプアイコン */
+.help-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background: var(--apple-gray-4);
+    color: white;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+.help-icon:hover {
+    background: var(--apple-blue);
+    transform: scale(1.1);
+}
+.help-tooltip {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 8px;
+    padding: 12px 16px;
+    background: var(--apple-bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    font-size: 13px;
+    font-weight: normal;
+    color: var(--text-secondary);
+    white-space: normal;
+    width: 280px;
+    z-index: 1000;
+    line-height: 1.5;
+}
+.help-tooltip::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 6px solid var(--border-color);
+}
+.help-tooltip::after {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 5px solid var(--apple-bg-primary);
+}
+.help-icon.active .help-tooltip {
+    display: block;
+}
 </style>
 
 <!-- ページヘッダー -->
@@ -271,7 +336,11 @@ renderPageStart('staff', $currentPage, '保護者入力かけはし確認');
                 </div>
                 <?php if ($selectedStudentId): ?>
                 <div class="form-group">
-                    <label>表示フィルター</label>
+                    <label>表示フィルター
+                        <span class="help-icon" onclick="toggleHelp(this, event)">?
+                            <div class="help-tooltip">かけはしの表示状態でフィルターします。「非表示」に設定したかけはしは、未作成・未提出タスクに表示されなくなります。</div>
+                        </span>
+                    </label>
                     <select id="showFilter" onchange="changeFilter()">
                         <option value="visible" <?= $showFilter === 'visible' ? 'selected' : '' ?>>表示中のみ</option>
                         <option value="hidden" <?= $showFilter === 'hidden' ? 'selected' : '' ?>>非表示のみ</option>
@@ -294,7 +363,11 @@ renderPageStart('staff', $currentPage, '保護者入力かけはし確認');
                 <!-- 期間選択エリア（生徒選択後に表示） -->
                 <div class="filter-area">
                     <div class="form-group">
-                        <label>かけはし提出期限を選択 *</label>
+                        <label>かけはし提出期限を選択 *
+                            <span class="help-icon" onclick="toggleHelp(this, event)">?
+                                <div class="help-tooltip">個別支援計画書の期間に対応したかけはしの提出期限です。保護者が記入したかけはしを確認できます。</div>
+                            </span>
+                        </label>
                         <select id="periodSelect" onchange="changePeriod()">
                             <option value="">-- 提出期限を選択してください --</option>
                             <?php foreach ($activePeriods as $period): ?>
@@ -424,6 +497,21 @@ renderPageStart('staff', $currentPage, '保護者入力かけはし確認');
 
 <?php
 $inlineJs = <<<JS
+function toggleHelp(element, event) {
+    event.stopPropagation();
+    const wasActive = element.classList.contains('active');
+    document.querySelectorAll('.help-icon').forEach(icon => icon.classList.remove('active'));
+    if (!wasActive) {
+        element.classList.add('active');
+    }
+}
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.help-icon')) {
+        document.querySelectorAll('.help-icon').forEach(icon => icon.classList.remove('active'));
+    }
+});
+
 function changeStudent() {
     const studentId = document.getElementById('studentSelect').value;
     if (studentId) {

@@ -83,6 +83,7 @@ $sql = "
     SELECT
         u.id,
         u.username,
+        u.password_plain,
         u.full_name,
         u.email,
         u.is_active,
@@ -203,25 +204,14 @@ renderPageStart('staff', $currentPage, '保護者管理');
                     <input type="text" name="full_name" class="form-control" required placeholder="例: 山田 花子">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">ユーザー名（ログインID） *</label>
-                    <input type="text" name="username" class="form-control" required placeholder="例: yamada_h">
-                    <small style="color: var(--text-secondary);">半角英数字とアンダースコアのみ使用可能</small>
+                    <label class="form-label">メールアドレス（任意）</label>
+                    <input type="email" name="email" class="form-control" placeholder="例: yamada@example.com">
                 </div>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <div class="form-group">
-                    <label class="form-label">パスワード *</label>
-                    <input type="password" name="password" class="form-control" required placeholder="8文字以上">
-                    <small style="color: var(--text-secondary);">8文字以上で設定してください</small>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">パスワード（確認） *</label>
-                    <input type="password" name="password_confirm" class="form-control" required placeholder="もう一度入力">
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">メールアドレス（任意）</label>
-                <input type="email" name="email" class="form-control" placeholder="例: yamada@example.com">
+            <div class="info-box" style="background: var(--apple-bg-tertiary); padding: var(--spacing-md); border-radius: var(--radius-md); margin-bottom: var(--spacing-md);">
+                <p style="margin: 0; color: var(--text-secondary); font-size: var(--text-footnote);">
+                    ログインID・パスワードは自動生成されます。登録後に編集画面で変更できます。
+                </p>
             </div>
             <div style="text-align: right;">
                 <button type="submit" class="btn btn-success">登録する</button>
@@ -342,16 +332,31 @@ renderPageStart('staff', $currentPage, '保護者管理');
                 <input type="text" name="full_name" id="edit_full_name" class="form-control" required>
             </div>
             <div class="form-group">
-                <label class="form-label">ユーザー名 *</label>
-                <input type="text" name="username" id="edit_username" class="form-control" required>
-            </div>
-            <div class="form-group">
                 <label class="form-label">メールアドレス</label>
                 <input type="email" name="email" id="edit_email" class="form-control">
             </div>
+
+            <div style="background: var(--apple-bg-tertiary); padding: var(--spacing-md); border-radius: var(--radius-md); margin: var(--spacing-lg) 0;">
+                <h4 style="margin: 0 0 var(--spacing-sm) 0; font-size: var(--text-body); color: var(--apple-blue);">ログイン情報</h4>
+                <div class="form-group" style="margin-bottom: var(--spacing-sm);">
+                    <label class="form-label">ログインID</label>
+                    <input type="text" name="username" id="edit_username" class="form-control" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">現在のパスワード</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="text" id="edit_password_plain" class="form-control" readonly style="background: var(--apple-bg-secondary); flex: 1;">
+                        <button type="button" onclick="copyPassword()" class="btn btn-secondary btn-sm" title="コピー">コピー</button>
+                    </div>
+                </div>
+            </div>
+
             <div class="form-group">
                 <label class="form-label">新しいパスワード（変更する場合のみ）</label>
-                <input type="password" name="password" class="form-control" placeholder="変更しない場合は空欄">
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" name="password" id="edit_new_password" class="form-control" placeholder="変更しない場合は空欄" style="flex: 1;">
+                    <button type="button" onclick="generateNewPassword()" class="btn btn-secondary btn-sm">自動生成</button>
+                </div>
                 <small style="color: var(--text-secondary);">8文字以上で設定してください</small>
             </div>
             <div class="modal-footer">
@@ -370,7 +375,27 @@ function editGuardian(guardian) {
     document.getElementById('edit_full_name').value = guardian.full_name;
     document.getElementById('edit_username').value = guardian.username;
     document.getElementById('edit_email').value = guardian.email || '';
+    document.getElementById('edit_password_plain').value = guardian.password_plain || '（未設定）';
+    document.getElementById('edit_new_password').value = '';
     document.getElementById('editModal').classList.add('active');
+}
+
+function copyPassword() {
+    const password = document.getElementById('edit_password_plain').value;
+    if (password && password !== '（未設定）') {
+        navigator.clipboard.writeText(password).then(() => {
+            alert('パスワードをコピーしました');
+        });
+    }
+}
+
+function generateNewPassword() {
+    const chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let password = '';
+    for (let i = 0; i < 8; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    document.getElementById('edit_new_password').value = password;
 }
 
 function closeModal() {

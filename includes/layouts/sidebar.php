@@ -69,6 +69,7 @@ $menuConfig = [
         ['page' => 'additional_usage', 'icon' => '📅', 'label' => '利用日一括変更', 'url' => '/staff/additional_usage.php'],
         ['page' => 'school_holiday_activities', 'icon' => '🏫', 'label' => '学校休業日設定', 'url' => '/staff/school_holiday_activities.php'],
         ['page' => 'holidays', 'icon' => '🗓️', 'label' => '休日設定', 'url' => '/staff/holidays.php'],
+        ['page' => 'bulk_register', 'icon' => '📥', 'label' => '利用者一括登録', 'url' => '/staff/bulk_register.php'],
         ['page' => 'manual', 'icon' => '📖', 'label' => 'マニュアル', 'url' => '/staff/manual.php'],
         ['page' => 'profile', 'icon' => '⚙️', 'label' => 'プロフィール', 'url' => '/staff/profile.php'],
     ],

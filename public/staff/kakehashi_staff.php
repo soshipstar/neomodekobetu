@@ -430,6 +430,71 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
         justify-content: center;
     }
 }
+
+/* ヘルプアイコン */
+.help-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background: var(--apple-gray-4);
+    color: white;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+.help-icon:hover {
+    background: var(--apple-blue);
+    transform: scale(1.1);
+}
+.help-tooltip {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 8px;
+    padding: 12px 16px;
+    background: var(--apple-bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    font-size: 13px;
+    font-weight: normal;
+    color: var(--text-secondary);
+    white-space: normal;
+    width: 300px;
+    z-index: 1000;
+    line-height: 1.5;
+}
+.help-tooltip::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 6px solid var(--border-color);
+}
+.help-tooltip::after {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 5px solid var(--apple-bg-primary);
+}
+.help-icon.active .help-tooltip {
+    display: block;
+}
 </style>
 
 <!-- ページヘッダー -->
@@ -490,7 +555,11 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
         <!-- 期間選択エリア -->
         <div class="selection-area">
             <div class="form-group" style="flex: 1;">
-                <label class="form-label">かけはし提出期限を選択 *</label>
+                <label class="form-label">かけはし提出期限を選択 *
+                    <span class="help-icon" onclick="toggleHelp(this, event)">?
+                        <div class="help-tooltip">個別支援計画書の期間に対応したかけはしの提出期限です。保護者とスタッフそれぞれが、この期限までにかけはしを記入・提出します。</div>
+                    </span>
+                </label>
                 <select id="periodSelect" onchange="changePeriod()" class="form-control">
                     <option value="">-- 期間を選択してください --</option>
                     <?php foreach ($activePeriods as $period): ?>
@@ -675,6 +744,26 @@ function confirmSubmit() {
 function confirmGenerate() {
     return confirm('直近5か月の連絡帳データからAIが自動生成します。\\n現在入力されている内容は上書きされます。\\nよろしいですか？');
 }
+
+// ヘルプアイコンのツールチップ切り替え
+function toggleHelp(element, event) {
+    event.stopPropagation();
+    document.querySelectorAll('.help-icon.active').forEach(icon => {
+        if (icon !== element) {
+            icon.classList.remove('active');
+        }
+    });
+    element.classList.toggle('active');
+}
+
+// ページ全体クリックでヘルプを閉じる
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.help-icon')) {
+        document.querySelectorAll('.help-icon.active').forEach(icon => {
+            icon.classList.remove('active');
+        });
+    }
+});
 JS;
 
 renderPageEnd(['inlineJs' => $inlineJs]);

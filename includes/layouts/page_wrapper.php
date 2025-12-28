@@ -114,12 +114,19 @@ function renderPageStart(string $role, string $currentPage, string $pageTitle, a
  *   - 'additionalJs' => 追加JSファイルパス配列
  *   - 'inlineJs' => インラインJavaScript
  *   - 'noContainer' => true でcontainer閉じタグを出力しない
+ *   - 'noChatbot' => true でチャットボットを非表示
  */
 function renderPageEnd(array $options = []): void
 {
     $additionalJs = $options['additionalJs'] ?? [];
     $inlineJs = $options['inlineJs'] ?? '';
     $noContainer = $options['noContainer'] ?? false;
+    $noChatbot = $options['noChatbot'] ?? false;
+
+    // スタッフ・管理者向けにチャットボットを表示
+    $showChatbot = !$noChatbot &&
+                   isset($_SESSION['user_type']) &&
+                   in_array($_SESSION['user_type'], ['staff', 'admin']);
 
     if (!$noContainer):
 ?>
@@ -127,6 +134,10 @@ function renderPageEnd(array $options = []): void
             <?php endif; ?>
         </main>
     </div><!-- /.page-wrapper -->
+
+    <?php if ($showChatbot): ?>
+    <?php include __DIR__ . '/../components/chatbot.php'; ?>
+    <?php endif; ?>
 
     <!-- 追加JS -->
     <?php foreach ($additionalJs as $js): ?>

@@ -5,6 +5,7 @@
 
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../includes/student_helper.php';
 require_once __DIR__ . '/../../includes/layouts/page_wrapper.php';
 
 // スタッフまたは管理者のみアクセス可能
@@ -15,6 +16,9 @@ $currentUser = getCurrentUser();
 
 // スタッフの教室IDを取得
 $classroomId = $_SESSION['classroom_id'] ?? null;
+
+// 教室の対象学年設定を取得
+$targetGrades = getClassroomTargetGrades($pdo, $classroomId);
 
 // 学年フィルター取得
 $gradeFilter = $_GET['grade'] ?? 'all';
@@ -65,14 +69,14 @@ if (!$isTodayHoliday) {
 // 生徒を取得（学年フィルターと本日の予定参加者フィルター対応、教室フィルタリング）
 if ($classroomId) {
     $sql = "
-        SELECT s.id, s.student_name, s.grade_level
+        SELECT s.id, s.student_name, s.grade_level, s.birth_date, s.grade_adjustment
         FROM students s
         INNER JOIN users u ON s.guardian_id = u.id
         WHERE s.is_active = 1 AND u.classroom_id = :classroom_id
     ";
 } else {
     $sql = "
-        SELECT id, student_name, grade_level
+        SELECT id, student_name, grade_level, birth_date, grade_adjustment
         FROM students
         WHERE is_active = 1
     ";
@@ -195,53 +199,6 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($planParams);
 $supportPlans = $stmt->fetchAll();
 
-// 未読チャットメッセージを取得（スタッフ用：保護者からの未読メッセージ）
-$unreadChatMessages = [];
-try {
-    if ($classroomId) {
-        $stmt = $pdo->prepare("
-            SELECT
-                cr.id as room_id,
-                s.student_name,
-                u.full_name as guardian_name,
-                COUNT(cm.id) as unread_count,
-                MAX(cm.created_at) as last_message_at
-            FROM chat_rooms cr
-            INNER JOIN students s ON cr.student_id = s.id
-            INNER JOIN users u ON cr.guardian_id = u.id
-            INNER JOIN chat_messages cm ON cr.id = cm.room_id
-            WHERE u.classroom_id = ?
-            AND cm.sender_type = 'guardian'
-            AND cm.is_read = 0
-            GROUP BY cr.id, s.student_name, u.full_name
-            ORDER BY last_message_at DESC
-        ");
-        $stmt->execute([$classroomId]);
-    } else {
-        $stmt = $pdo->prepare("
-            SELECT
-                cr.id as room_id,
-                s.student_name,
-                u.full_name as guardian_name,
-                COUNT(cm.id) as unread_count,
-                MAX(cm.created_at) as last_message_at
-            FROM chat_rooms cr
-            INNER JOIN students s ON cr.student_id = s.id
-            INNER JOIN users u ON cr.guardian_id = u.id
-            INNER JOIN chat_messages cm ON cr.id = cm.room_id
-            WHERE cm.sender_type = 'guardian'
-            AND cm.is_read = 0
-            GROUP BY cr.id, s.student_name, u.full_name
-            ORDER BY last_message_at DESC
-        ");
-        $stmt->execute();
-    }
-    $unreadChatMessages = $stmt->fetchAll();
-} catch (Exception $e) {
-    error_log("Error fetching unread chat messages: " . $e->getMessage());
-}
-$totalUnreadMessages = array_sum(array_column($unreadChatMessages, 'unread_count'));
-
 // ページ開始
 $currentPage = 'renrakucho';
 renderPageStart('staff', $currentPage, '連絡帳入力');
@@ -283,6 +240,7 @@ renderPageStart('staff', $currentPage, '連絡帳入力');
     margin-left: 5px;
 }
 
+.badge-preschool { background: rgba(255, 149, 0, 0.15); color: var(--apple-orange); }
 .badge-elementary { background: rgba(255, 59, 48, 0.15); color: var(--apple-red); }
 .badge-junior-high { background: rgba(0, 122, 255, 0.15); color: var(--apple-blue); }
 .badge-high-school { background: rgba(175, 82, 222, 0.15); color: var(--apple-purple); }
@@ -335,35 +293,6 @@ renderPageStart('staff', $currentPage, '連絡帳入力');
     transition: all var(--duration-fast);
 }
 .quick-link:hover { background: var(--apple-gray-5); }
-
-.unread-notification {
-    background: rgba(0, 122, 255, 0.1);
-    border-left: 5px solid var(--apple-blue);
-    padding: 15px 20px;
-    border-radius: var(--radius-md);
-    margin-bottom: var(--spacing-lg);
-}
-
-.unread-notification-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 15px;
-    font-size: 18px;
-    font-weight: bold;
-    color: var(--apple-blue);
-}
-
-.unread-chat-item {
-    background: var(--apple-bg-primary);
-    padding: 15px;
-    border-radius: var(--radius-sm);
-    margin-bottom: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border: 1px solid var(--apple-gray-5);
-}
 
 .plan-search-box {
     background: var(--apple-gray-6);
@@ -420,31 +349,6 @@ renderPageStart('staff', $currentPage, '連絡帳入力');
     <a href="renrakucho_activities.php" class="quick-link">📝 活動一覧</a>
 </div>
 
-<!-- 新着チャットメッセージ通知 -->
-<?php if ($totalUnreadMessages > 0): ?>
-    <div class="unread-notification">
-        <div class="unread-notification-header">
-            💬 新着メッセージがあります！（<?= $totalUnreadMessages ?>件）
-        </div>
-        <?php foreach ($unreadChatMessages as $chatRoom): ?>
-            <div class="unread-chat-item">
-                <div>
-                    <div style="font-weight: bold; color: var(--text-primary); margin-bottom: 5px;">
-                        <?= htmlspecialchars($chatRoom['student_name']) ?>さん（<?= htmlspecialchars($chatRoom['guardian_name']) ?>様）
-                    </div>
-                    <div style="font-size: var(--text-subhead); color: var(--text-secondary); margin-bottom: 3px;">
-                        未読メッセージ: <?= $chatRoom['unread_count'] ?>件
-                    </div>
-                    <div style="font-size: var(--text-subhead); font-weight: bold; color: var(--apple-blue);">
-                        最新: <?= date('Y年n月j日 H:i', strtotime($chatRoom['last_message_at'])) ?>
-                    </div>
-                </div>
-                <a href="chat.php?room_id=<?= $chatRoom['room_id'] ?>" class="btn btn-primary btn-sm">チャットを開く</a>
-            </div>
-        <?php endforeach; ?>
-    </div>
-<?php endif; ?>
-
 <?php if (isset($_SESSION['success'])): ?>
     <div class="alert alert-success"><?= htmlspecialchars($_SESSION['success'], ENT_QUOTES, 'UTF-8') ?></div>
     <?php unset($_SESSION['success']); ?>
@@ -470,9 +374,18 @@ renderPageStart('staff', $currentPage, '連絡帳入力');
     <a href="?date=<?= urlencode($today) ?>&grade=scheduled" class="grade-btn grade-btn-scheduled <?= $gradeFilter === 'scheduled' ? 'active' : '' ?>">
         本日の予定参加者<?php if (!$isTodayHoliday && !empty($scheduledStudentIds)): ?> (<?= count($scheduledStudentIds) ?>名)<?php endif; ?>
     </a>
+    <?php if (in_array('preschool', $targetGrades)): ?>
+    <a href="?date=<?= urlencode($today) ?>&grade=preschool" class="grade-btn <?= $gradeFilter === 'preschool' ? 'active' : '' ?>">未就学児</a>
+    <?php endif; ?>
+    <?php if (in_array('elementary', $targetGrades)): ?>
     <a href="?date=<?= urlencode($today) ?>&grade=elementary" class="grade-btn <?= $gradeFilter === 'elementary' ? 'active' : '' ?>">小学生</a>
+    <?php endif; ?>
+    <?php if (in_array('junior_high', $targetGrades)): ?>
     <a href="?date=<?= urlencode($today) ?>&grade=junior_high" class="grade-btn <?= $gradeFilter === 'junior_high' ? 'active' : '' ?>">中学生</a>
+    <?php endif; ?>
+    <?php if (in_array('high_school', $targetGrades)): ?>
     <a href="?date=<?= urlencode($today) ?>&grade=high_school" class="grade-btn <?= $gradeFilter === 'high_school' ? 'active' : '' ?>">高校生</a>
+    <?php endif; ?>
 </div>
 
 <div class="card">
@@ -491,7 +404,7 @@ renderPageStart('staff', $currentPage, '連絡帳入力');
                     <select name="plan_tag" class="form-control">
                         <option value="">すべて</option>
                         <?php
-                        $tags = ['プログラミング', 'テキスタイル', 'CAD', '動画', 'イラスト', '企業支援', '農業', '音楽', '食', '学習', '自分取扱説明書', '心理', '言語', '教育', 'イベント', 'その他'];
+                        $tags = ['動画', '食', '学習', 'イベント', 'その他'];
                         foreach ($tags as $tag):
                         ?>
                             <option value="<?= htmlspecialchars($tag) ?>" <?= $searchTag === $tag ? 'selected' : '' ?>><?= htmlspecialchars($tag) ?></option>
@@ -566,13 +479,20 @@ renderPageStart('staff', $currentPage, '連絡帳入力');
         <div class="student-selection">
             <?php
             $gradeLabelMap = [
+                'preschool' => ['未', 'badge-preschool'],
                 'elementary' => ['小', 'badge-elementary'],
                 'junior_high' => ['中', 'badge-junior-high'],
                 'high_school' => ['高', 'badge-high-school']
             ];
 
             foreach ($allStudents as $student):
-                $gradeInfo = $gradeLabelMap[$student['grade_level']] ?? ['?', ''];
+                // 生年月日から学年を再計算
+                $calculatedGrade = $student['birth_date']
+                    ? calculateGradeLevel($student['birth_date'], null, $student['grade_adjustment'] ?? 0)
+                    : $student['grade_level'];
+                // カテゴリを取得
+                $gradeCategory = getGradeCategory($calculatedGrade);
+                $gradeInfo = $gradeLabelMap[$gradeCategory] ?? ['?', ''];
             ?>
                 <label class="student-checkbox">
                     <input type="checkbox" name="students[]" value="<?= $student['id'] ?>"

@@ -2071,6 +2071,71 @@ renderPageStart('staff', $currentPage, '活動管理');
             transform: translateY(-1px);
         }
 
+        /* ヘルプアイコン */
+        .help-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            background: var(--apple-gray-4);
+            color: white;
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .help-icon:hover {
+            background: var(--apple-blue);
+            transform: scale(1.1);
+        }
+        .help-tooltip {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-top: 8px;
+            padding: 12px 16px;
+            background: var(--apple-bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            font-size: 13px;
+            font-weight: normal;
+            color: var(--text-secondary);
+            white-space: normal;
+            width: 280px;
+            z-index: 1000;
+            line-height: 1.5;
+        }
+        .help-tooltip::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 6px solid var(--border-color);
+        }
+        .help-tooltip::after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-bottom: 5px solid var(--apple-bg-primary);
+        }
+        .help-icon.active .help-tooltip {
+            display: block;
+        }
+
         .calendar-container {
             background: var(--apple-bg-secondary);
             padding: var(--spacing-md);
@@ -2389,24 +2454,30 @@ renderPageStart('staff', $currentPage, '活動管理');
             transform: translateY(-2px);
         }
 
-        .btn-edit {
+        .btn-edit,
+        .btn-integrate,
+        .btn-integrate-edit,
+        .btn-view {
+            background: var(--apple-bg-primary);
+            color: var(--apple-blue);
+            border: 1px solid var(--apple-blue);
+        }
+        .btn-edit:hover,
+        .btn-integrate:hover,
+        .btn-integrate-edit:hover,
+        .btn-view:hover {
             background: var(--apple-blue);
-            color: var(--text-primary);
+            color: white;
         }
 
         .btn-delete {
+            background: var(--apple-bg-primary);
+            color: var(--apple-red);
+            border: 1px solid var(--apple-red);
+        }
+        .btn-delete:hover {
             background: var(--apple-red);
-            color: var(--text-primary);
-        }
-
-        .btn-integrate {
-            background: var(--apple-bg-secondary);
-            color: var(--text-primary);
-        }
-
-        .btn-view {
-            background: var(--apple-green);
-            color: var(--text-primary);
+            color: white;
         }
 
         .add-activity-btn {
@@ -3157,7 +3228,11 @@ renderPageStart('staff', $currentPage, '活動管理');
             <?php if ($totalPlanNeeding > 0): ?>
                 <div class="task-summary-item">
                     <div class="task-summary-header">
-                        <span class="task-summary-title">📄 個別支援計画書</span>
+                        <span class="task-summary-title">📄 個別支援計画書
+                            <span class="help-icon" onclick="toggleHelp(this, event)">?
+                                <div class="help-tooltip">生徒ごとに作成が必要な個別支援計画書の状況です。未作成・下書き中・更新期限が近いものが表示されます。計画書は6ヶ月ごとに更新が必要です。</div>
+                            </span>
+                        </span>
                         <span class="task-summary-total"><?php echo $totalPlanNeeding; ?>件</span>
                     </div>
                     <div class="task-summary-details">
@@ -3182,7 +3257,11 @@ renderPageStart('staff', $currentPage, '活動管理');
             <?php if ($totalMonitoringNeeding > 0): ?>
                 <div class="task-summary-item">
                     <div class="task-summary-header">
-                        <span class="task-summary-title">📊 モニタリング表</span>
+                        <span class="task-summary-title">📊 モニタリング表
+                            <span class="help-icon" onclick="toggleHelp(this, event)">?
+                                <div class="help-tooltip">個別支援計画書の進捗を確認するモニタリング表の状況です。次の個別支援計画書作成の1ヶ月前までに作成する必要があります。</div>
+                            </span>
+                        </span>
                         <span class="task-summary-total"><?php echo $totalMonitoringNeeding; ?>件</span>
                     </div>
                     <div class="task-summary-details">
@@ -3207,7 +3286,11 @@ renderPageStart('staff', $currentPage, '活動管理');
             <?php if ($totalGuardianKakehashi > 0): ?>
                 <div class="task-summary-item">
                     <div class="task-summary-header">
-                        <span class="task-summary-title">📝 保護者かけはし未提出</span>
+                        <span class="task-summary-title">📝 保護者かけはし未提出
+                            <span class="help-icon" onclick="toggleHelp(this, event)">?
+                                <div class="help-tooltip">保護者がまだ記入していない「かけはし」の件数です。期間終了前に保護者へ記入を依頼してください。</div>
+                            </span>
+                        </span>
                         <span class="task-summary-total"><?php echo $totalGuardianKakehashi; ?>件</span>
                     </div>
                     <div class="task-summary-details">
@@ -3229,7 +3312,11 @@ renderPageStart('staff', $currentPage, '活動管理');
             <?php if ($totalStaffKakehashi > 0): ?>
                 <div class="task-summary-item">
                     <div class="task-summary-header">
-                        <span class="task-summary-title">📝 スタッフかけはし未作成</span>
+                        <span class="task-summary-title">📝 スタッフかけはし未作成
+                            <span class="help-icon" onclick="toggleHelp(this, event)">?
+                                <div class="help-tooltip">スタッフがまだ作成していない「かけはし」の件数です。期間終了前にスタッフ側の記入を完了してください。</div>
+                            </span>
+                        </span>
                         <span class="task-summary-total"><?php echo $totalStaffKakehashi; ?>件</span>
                     </div>
                     <div class="task-summary-details">
@@ -3251,7 +3338,11 @@ renderPageStart('staff', $currentPage, '活動管理');
             <?php if ($totalSubmissionRequests > 0): ?>
                 <div class="task-summary-item">
                     <div class="task-summary-header">
-                        <span class="task-summary-title">📤 提出期限未提出</span>
+                        <span class="task-summary-title">📤 提出期限未提出
+                            <span class="help-icon" onclick="toggleHelp(this, event)">?
+                                <div class="help-tooltip">保護者へ依頼した書類（サービス提供実績記録票など）の提出状況です。期限までに保護者から提出してもらうよう確認してください。</div>
+                            </span>
+                        </span>
                         <span class="task-summary-total"><?php echo $totalSubmissionRequests; ?>件</span>
                     </div>
                     <div class="task-summary-details">
@@ -3578,7 +3669,7 @@ renderPageStart('staff', $currentPage, '活動管理');
                                 <div class="activity-actions">
                                     <a href="renrakucho_form.php?activity_id=<?php echo $activity['id']; ?>" class="btn btn-edit">編集</a>
                                     <a href="regenerate_integration.php?activity_id=<?php echo $activity['id']; ?>" class="btn btn-integrate" onclick="return confirm('既存の統合内容（未送信）を削除して、1から統合し直しますか？');">🔄 統合する</a>
-                                    <a href="integrate_activity.php?activity_id=<?php echo $activity['id']; ?>" class="btn" style="background: var(--primary-purple); color: white;">✏️ 統合内容を編集</a>
+                                    <a href="integrate_activity.php?activity_id=<?php echo $activity['id']; ?>" class="btn btn-integrate-edit">✏️ 統合内容を編集</a>
                                     <?php if ((int)$activity['sent_count'] > 0): ?>
                                         <a href="view_integrated.php?activity_id=<?php echo $activity['id']; ?>" class="btn btn-view">📤 送信済み内容を閲覧</a>
                                     <?php endif; ?>
@@ -3586,6 +3677,16 @@ renderPageStart('staff', $currentPage, '活動管理');
                                         <input type="hidden" name="activity_id" value="<?php echo $activity['id']; ?>">
                                         <button type="submit" class="btn btn-delete">削除</button>
                                     </form>
+                                    <span class="help-icon" onclick="toggleHelp(this, event)" style="flex-shrink: 0;">?
+                                        <div class="help-tooltip" style="left: auto; right: 0; transform: none; width: 320px;">
+                                            <strong>ボタンの説明</strong><br><br>
+                                            <strong>編集</strong>：活動内容や参加者を編集します。<br><br>
+                                            <strong>🔄 統合する</strong>：新しい活動を登録すると、その内容に従って、AIが参加者ごとの連絡帳を自動生成します。統合にはしばらく時間がかかりますので完了までお待ちください。<br><br>
+                                            <strong>✏️ 統合内容を編集</strong>：統合するボタンで生成された連絡帳の内容を確認できます。確認後、途中保存もしくは連絡帳を送信ボタンを押してください。<br><br>
+                                            <strong>📤 送信済み内容を閲覧</strong>：保護者へ送信済みの内容を確認します。<br><br>
+                                            <strong>削除</strong>：この活動を削除します。
+                                        </div>
+                                    </span>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -3597,12 +3698,22 @@ renderPageStart('staff', $currentPage, '活動管理');
 
                 <!-- ボタン -->
                 <div class="activity-buttons">
-                    <button type="button" class="add-activity-btn" onclick="location.href='renrakucho.php?date=<?php echo urlencode($selectedDate); ?>'">
-                        新しい活動を追加
-                    </button>
-                    <button type="button" class="add-activity-btn" style="background: var(--primary-purple);" onclick="location.href='support_plans.php'">
-                        📝 支援案を管理
-                    </button>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <button type="button" class="add-activity-btn" onclick="location.href='renrakucho.php?date=<?php echo urlencode($selectedDate); ?>'">
+                            新しい活動を追加
+                        </button>
+                        <span class="help-icon" onclick="toggleHelp(this, event)" style="flex-shrink: 0;">?
+                            <div class="help-tooltip" style="left: auto; right: 0; transform: none;">選択した日付の連絡帳を新規作成します。活動内容や生徒の様子を記録できます。</div>
+                        </span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <button type="button" class="add-activity-btn" style="background: var(--primary-purple);" onclick="location.href='support_plans.php'">
+                            📝 支援案を管理
+                        </button>
+                        <span class="help-icon" onclick="toggleHelp(this, event)" style="flex-shrink: 0;">?
+                            <div class="help-tooltip" style="left: auto; right: 0; transform: none;">よく使う活動内容のテンプレートを管理します。支援案を登録しておくと、連絡帳作成時に素早く入力できます。</div>
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -3666,6 +3777,30 @@ renderPageStart('staff', $currentPage, '活動管理');
                 toggle.classList.add('collapsed');
             }
         }
+
+        // ヘルプアイコンのツールチップ切り替え
+        function toggleHelp(element, event) {
+            event.stopPropagation();
+
+            // 他のヘルプアイコンを閉じる
+            document.querySelectorAll('.help-icon.active').forEach(icon => {
+                if (icon !== element) {
+                    icon.classList.remove('active');
+                }
+            });
+
+            // クリックされたアイコンをトグル
+            element.classList.toggle('active');
+        }
+
+        // ページ全体クリックでヘルプを閉じる
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.help-icon')) {
+                document.querySelectorAll('.help-icon.active').forEach(icon => {
+                    icon.classList.remove('active');
+                });
+            }
+        });
 
         // ハンバーガーメニュー
         const hamburger = document.getElementById('hamburger');
