@@ -563,29 +563,24 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
                             </td>
                         </tr>
                     <?php endforeach; ?>
-                    <!-- 新規作成行 -->
-                    <tr class="<?= !$selectedPlanId ? 'active-row' : '' ?>">
+                    <?php if ($selectedPlanId): ?>
+                    <!-- 新規作成リンク（既存の計画を表示中の場合のみ） -->
+                    <tr>
                         <td>-</td>
                         <td>
-                            <?php if ($selectedPlanId): ?>
-                                <a href="kobetsu_plan.php?student_id=<?= $selectedStudentId ?>" class="plan-link">
-                                    ➕ 新規作成
-                                </a>
-                            <?php else: ?>
-                                <span class="plan-link" style="background: var(--apple-blue); color: white;">
-                                    ➕ 新規作成中
-                                </span>
-                            <?php endif; ?>
+                            <a href="kobetsu_plan.php?student_id=<?= $selectedStudentId ?>" class="plan-link">
+                                ➕ 新規作成
+                            </a>
                         </td>
                         <td><span style="color: var(--text-secondary);">-</span></td>
                         <td><span style="color: var(--text-secondary);">-</span></td>
                     </tr>
+                    <?php endif; ?>
                 </tbody>
             </table>
         <?php else: ?>
             <div style="background: var(--apple-bg-secondary); padding: var(--spacing-lg); border-radius: var(--radius-md); text-align: center;">
-                <span class="plan-item active" style="margin-bottom: 10px;">📝 新規作成</span>
-                <p style="color: var(--text-secondary); font-size: var(--text-subhead); margin-top: 10px;">この生徒の初めての個別支援計画書です</p>
+                <p style="color: var(--text-secondary); font-size: var(--text-subhead);">📝 この生徒の初めての個別支援計画書です。下記フォームに入力してください。</p>
             </div>
         <?php endif; ?>
     </div>
@@ -622,6 +617,13 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
                 下のフォームに直接入力するか、先にかけはしを作成してください。
             </div>
         <?php endif; ?>
+    <?php endif; ?>
+
+    <!-- 新規作成モード表示（既存計画がある場合） -->
+    <?php if (!$selectedPlanId && !empty($studentPlans)): ?>
+        <div style="background: linear-gradient(135deg, rgba(0, 122, 255, 0.1), rgba(88, 86, 214, 0.1)); padding: var(--spacing-md) var(--spacing-lg); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); border-left: 4px solid var(--apple-blue);">
+            <p style="margin: 0; color: var(--apple-blue); font-weight: 500;">📝 新しい個別支援計画書を作成中です</p>
+        </div>
     <?php endif; ?>
 
     <!-- 計画書入力フォーム -->
