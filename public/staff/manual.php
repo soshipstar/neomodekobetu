@@ -437,6 +437,7 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
     <nav class="manual-nav" id="manualNav">
         <div class="manual-nav-title">📖 目次</div>
         <div class="manual-nav-list">
+            <a href="#about" class="manual-nav-link"><span class="nav-icon">📖</span>きづりとは</a>
             <a href="#overview" class="manual-nav-link"><span class="nav-icon">🏠</span>システム概要</a>
             <a href="#menu" class="manual-nav-link"><span class="nav-icon">📋</span>メニュー構成</a>
             <a href="#daily" class="manual-nav-link"><span class="nav-icon">📅</span>毎日行うこと</a>
@@ -457,6 +458,32 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
     <!-- メインコンテンツ -->
     <div class="manual-main">
         <div class="manual-container">
+            <!-- きづりとは -->
+            <div class="section" id="about" style="border-left-color: var(--apple-purple); background: linear-gradient(135deg, rgba(175, 82, 222, 0.08), rgba(0, 122, 255, 0.08));">
+                <h2 style="color: var(--apple-purple);">📖 「きづり（軌綴）」とは</h2>
+                <p>
+                    「きづり」は、放課後等デイサービス・児童発達支援向けの個別支援連絡帳システムです。
+                    「<strong>軌</strong>」は子どもたちの成長の軌跡、「<strong>綴</strong>」はそれを記録し紡いでいくという意味を込めています。
+                </p>
+                <p>
+                    日々の活動記録から個別支援計画の作成まで、AIを活用して業務を効率化し、より質の高い支援に集中できる環境を提供します。
+                </p>
+
+                <h3 style="border-left-color: var(--apple-purple); color: var(--apple-purple);">🌉 「かけはし」とは</h3>
+                <p>
+                    「かけはし」は、施設と家庭をつなぐ情報共有機能です。
+                </p>
+                <div class="feature-box">
+                    <ul>
+                        <li><strong>スタッフ</strong>：施設での様子や成長の記録を保護者に共有</li>
+                        <li><strong>保護者</strong>：家庭での様子や願いをスタッフに共有</li>
+                    </ul>
+                </div>
+                <p>
+                    双方からの情報を元に、個別支援計画書をAIが分析・提案。お子様一人ひとりに最適な支援計画の作成をサポートします。
+                </p>
+            </div>
+
             <!-- システム概要 -->
             <div class="section" id="overview">
                 <h2>🏠 システム概要</h2>
