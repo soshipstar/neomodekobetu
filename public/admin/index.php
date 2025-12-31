@@ -155,37 +155,37 @@ renderPageStart('admin', $currentPage, '管理者ダッシュボード', [
     </a>
 
     <a href="guardians.php" class="menu-card">
-        <div class="menu-card-icon">👤</div>
+        <div class="menu-card-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">person</span></div>
         <h3>保護者管理</h3>
         <p>保護者アカウントの登録・編集を行います。生徒との紐付け管理も可能です。</p>
     </a>
 
     <a href="staff_management.php" class="menu-card">
-        <div class="menu-card-icon">👨‍💼</div>
+        <div class="menu-card-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">badge</span></div>
         <h3>スタッフ管理</h3>
         <p>スタッフアカウントの登録・編集・削除を行います。</p>
     </a>
 
     <a href="tablet_accounts.php" class="menu-card">
-        <div class="menu-card-icon">📱</div>
+        <div class="menu-card-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">smartphone</span></div>
         <h3>タブレットユーザー管理</h3>
         <p>タブレットユーザーアカウントの登録・編集を行います。</p>
     </a>
 
     <a href="events.php" class="menu-card">
-        <div class="menu-card-icon">📅</div>
+        <div class="menu-card-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event</span></div>
         <h3>イベント管理</h3>
         <p>施設のイベントや予定を管理します。</p>
     </a>
 
     <a href="holidays.php" class="menu-card">
-        <div class="menu-card-icon">🗓️</div>
+        <div class="menu-card-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">calendar_month</span></div>
         <h3>休日管理</h3>
         <p>休日・祝日の設定を管理します。</p>
     </a>
 
     <a href="classroom_settings.php" class="menu-card">
-        <div class="menu-card-icon">⚙️</div>
+        <div class="menu-card-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">settings</span></div>
         <h3>教室基本設定</h3>
         <p>教室の基本情報や対象学年の設定を行います。</p>
     </a>

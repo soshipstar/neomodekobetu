@@ -178,12 +178,12 @@ $kakehashiData = $stmt->fetch();
         }
 
         .status-submitted {
-            background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+            background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
             color: white;
         }
 
         .status-draft {
-            background: linear-gradient(135deg, #ff9500 0%, #ff9f0a 100%);
+            background: linear-gradient(135deg, #FF9800 0%, #ff9f0a 100%);
             color: white;
         }
 
@@ -368,8 +368,9 @@ $kakehashiData = $stmt->fetch();
     </style>
 </head>
 <body>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <div class="print-buttons no-print">
-        <button class="print-button" onclick="window.print()">印刷 / PDF保存</button>
+        <button class="print-button" onclick="window.print()"><span class="material-symbols-outlined">print</span> 印刷 / PDF保存</button>
         <a href="kakehashi_guardian_view.php?student_id=<?= $studentId ?>&period_id=<?= $periodId ?>" class="print-button secondary">戻る</a>
     </div>
 
@@ -420,7 +421,7 @@ $kakehashiData = $stmt->fetch();
             <!-- 本人の願い -->
             <div class="section">
                 <div class="section-header">
-                    <div class="section-icon icon-wish">✨</div>
+                    <div class="section-icon icon-wish"><span class="material-symbols-outlined">auto_awesome</span></div>
                     <div class="section-title">本人の願い</div>
                 </div>
                 <div class="section-content"><?= $kakehashiData && $kakehashiData['student_wish'] ? htmlspecialchars($kakehashiData['student_wish']) : '<span class="empty-content">（未入力）</span>' ?></div>
@@ -429,7 +430,7 @@ $kakehashiData = $stmt->fetch();
             <!-- 家庭での願い -->
             <div class="section">
                 <div class="section-header">
-                    <div class="section-icon icon-home">🏠</div>
+                    <div class="section-icon icon-home"><span class="material-symbols-outlined">home</span></div>
                     <div class="section-title">家庭での願い</div>
                 </div>
                 <div class="section-content"><?= $kakehashiData && $kakehashiData['home_challenges'] ? htmlspecialchars($kakehashiData['home_challenges']) : '<span class="empty-content">（未入力）</span>' ?></div>
@@ -438,16 +439,16 @@ $kakehashiData = $stmt->fetch();
             <!-- 目標設定 -->
             <div class="section">
                 <div class="section-header">
-                    <div class="section-icon icon-goal">🎯</div>
+                    <div class="section-icon icon-goal"><span class="material-symbols-outlined">flag</span></div>
                     <div class="section-title">目標設定</div>
                 </div>
                 <div class="goals-container">
                     <div class="goal-card">
-                        <div class="goal-label">📌 短期目標（6か月）</div>
+                        <div class="goal-label"><span class="material-symbols-outlined">push_pin</span> 短期目標（6か月）</div>
                         <div class="goal-content"><?= $kakehashiData && $kakehashiData['short_term_goal'] ? htmlspecialchars($kakehashiData['short_term_goal']) : '<span class="empty-content">（未入力）</span>' ?></div>
                     </div>
                     <div class="goal-card">
-                        <div class="goal-label">🚀 長期目標（1年以上）</div>
+                        <div class="goal-label"><span class="material-symbols-outlined">rocket_launch</span> 長期目標（1年以上）</div>
                         <div class="goal-content"><?= $kakehashiData && $kakehashiData['long_term_goal'] ? htmlspecialchars($kakehashiData['long_term_goal']) : '<span class="empty-content">（未入力）</span>' ?></div>
                     </div>
                 </div>
@@ -457,7 +458,7 @@ $kakehashiData = $stmt->fetch();
             <div class="section">
                 <div class="domains-section">
                     <div class="domains-header">
-                        <div class="section-icon icon-domain">🌟</div>
+                        <div class="section-icon icon-domain"><span class="material-symbols-outlined">star</span></div>
                         <div class="section-title">五領域の課題</div>
                     </div>
                     <div class="domains-grid">
@@ -488,7 +489,7 @@ $kakehashiData = $stmt->fetch();
             <!-- その他の課題 -->
             <div class="section">
                 <div class="section-header">
-                    <div class="section-icon icon-other">📝</div>
+                    <div class="section-icon icon-other"><span class="material-symbols-outlined">edit_note</span></div>
                     <div class="section-title">その他の課題</div>
                 </div>
                 <div class="section-content"><?= $kakehashiData && $kakehashiData['other_challenges'] ? htmlspecialchars($kakehashiData['other_challenges']) : '<span class="empty-content">（未入力）</span>' ?></div>

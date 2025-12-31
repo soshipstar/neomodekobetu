@@ -71,7 +71,7 @@ renderPageStart('staff', $currentPage, '生徒週間計画表');
 
 <style>
         .week-nav {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: 15px 20px;
             border-radius: var(--radius-md);
             margin-bottom: var(--spacing-lg);
@@ -87,7 +87,7 @@ renderPageStart('staff', $currentPage, '生徒週間計画表');
             align-items: center;
             gap: 5px;
             padding: 10px 16px;
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             color: var(--text-primary);
             border: none;
             border-radius: var(--radius-sm);
@@ -99,7 +99,7 @@ renderPageStart('staff', $currentPage, '生徒週間計画表');
         }
 
         .week-nav-btn:hover {
-            background: var(--apple-gray-5);
+            background: var(--md-gray-5);
         }
 
         .week-nav-btn.disabled {
@@ -128,7 +128,7 @@ renderPageStart('staff', $currentPage, '生徒週間計画表');
             display: inline-block;
             margin-top: 6px;
             padding: 3px 10px;
-            background: var(--apple-blue);
+            background: var(--md-blue);
             color: white;
             border-radius: var(--radius-sm);
             font-size: 12px;
@@ -136,7 +136,7 @@ renderPageStart('staff', $currentPage, '生徒週間計画表');
         }
 
         .week-info .week-label.past {
-            background: var(--apple-gray);
+            background: var(--md-gray);
         }
 
         .student-list {
@@ -146,7 +146,7 @@ renderPageStart('staff', $currentPage, '生徒週間計画表');
         }
 
         .student-card {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             border-radius: var(--radius-md);
             padding: var(--spacing-lg);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -207,7 +207,7 @@ renderPageStart('staff', $currentPage, '生徒週間計画表');
         }
 
         .status-badge.inactive {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             color: #721c24;
         }
 
@@ -221,7 +221,7 @@ renderPageStart('staff', $currentPage, '生徒週間計画表');
             text-align: center;
             padding: 60px 20px;
             color: var(--text-secondary);
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             border-radius: var(--radius-md);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
@@ -272,8 +272,8 @@ renderPageStart('staff', $currentPage, '生徒週間計画表');
 
         <?php if (!$isCurrentWeek): ?>
         <div style="text-align: center; margin-bottom: 15px;">
-            <a href="?week=0" class="week-nav-btn" style="background: var(--apple-blue); color: white;">
-                📅 今週に戻る
+            <a href="?week=0" class="week-nav-btn" style="background: var(--md-blue); color: white;">
+                <span class="material-symbols-outlined">calendar_month</span> 今週に戻る
             </a>
         </div>
         <?php endif; ?>
@@ -292,7 +292,7 @@ renderPageStart('staff', $currentPage, '生徒週間計画表');
                     ?>
                     <a href="student_weekly_plan_detail.php?student_id=<?php echo $student['id']; ?>&date=<?php echo $thisWeekStart; ?>" class="student-card">
                         <div class="student-card-header">
-                            <div class="student-avatar">🎓</div>
+                            <div class="student-avatar"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">school</span></div>
                             <div class="student-name">
                                 <?php echo htmlspecialchars($student['student_name'], ENT_QUOTES, 'UTF-8'); ?>
                             </div>

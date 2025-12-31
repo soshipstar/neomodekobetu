@@ -137,8 +137,8 @@ function getGradeLabel($gradeLevel) {
 }
 
 function getGradeBadgeColor($gradeLevel) {
-    if ($gradeLevel === 'preschool') return '#ff9500';
-    if (strpos($gradeLevel, 'elementary') === 0) return '#28a745';
+    if ($gradeLevel === 'preschool') return '#FF9800';
+    if (strpos($gradeLevel, 'elementary') === 0) return '#388E3C';
     if (strpos($gradeLevel, 'junior_high') === 0) return '#007bff';
     if (strpos($gradeLevel, 'high_school') === 0) return '#dc3545';
     return '#6c757d';
@@ -165,8 +165,8 @@ renderPageStart('staff', $currentPage, '生徒管理');
     font-size: var(--text-caption-1);
     font-weight: bold;
 }
-.status-active { background: rgba(52, 199, 89, 0.15); color: var(--apple-green); }
-.status-inactive { background: rgba(255, 59, 48, 0.15); color: var(--apple-red); }
+.status-active { background: rgba(52, 199, 89, 0.15); color: var(--md-green); }
+.status-inactive { background: rgba(255, 59, 48, 0.15); color: var(--md-red); }
 .modal {
     display: none;
     position: fixed;
@@ -181,7 +181,7 @@ renderPageStart('staff', $currentPage, '生徒管理');
 }
 .modal.active { display: flex; }
 .modal-content {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-2xl);
     border-radius: var(--radius-md);
     max-width: 700px;
@@ -194,9 +194,9 @@ renderPageStart('staff', $currentPage, '生徒管理');
     font-size: var(--text-title-3);
     font-weight: bold;
     margin-bottom: var(--spacing-lg);
-    color: var(--apple-blue);
+    color: var(--md-blue);
     padding-bottom: 15px;
-    border-bottom: 2px solid var(--apple-blue);
+    border-bottom: 2px solid var(--md-blue);
 }
 .modal-footer {
     display: flex;
@@ -204,13 +204,13 @@ renderPageStart('staff', $currentPage, '生徒管理');
     gap: 10px;
     margin-top: var(--spacing-lg);
     padding-top: 20px;
-    border-top: 1px solid var(--apple-gray-5);
+    border-top: 1px solid var(--md-gray-5);
 }
 .login-settings {
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     padding: 15px;
     border-radius: var(--radius-sm);
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
 }
 </style>
 
@@ -247,7 +247,7 @@ renderPageStart('staff', $currentPage, '生徒管理');
 <!-- 新規登録フォーム -->
 <div class="card" style="margin-bottom: var(--spacing-lg);">
     <div class="card-body">
-        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-blue);">新規生徒登録</h2>
+        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--md-blue);">新規生徒登録</h2>
         <form action="students_save.php" method="POST">
             <input type="hidden" name="action" value="create">
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
@@ -317,8 +317,8 @@ renderPageStart('staff', $currentPage, '生徒管理');
             </div>
             <!-- 待機児童フィールド -->
             <div id="waiting_fields_group" style="display: none;">
-                <div style="background: var(--apple-gray-6); padding: 15px; border-radius: var(--radius-sm); border: 2px solid var(--apple-orange); margin-bottom: var(--spacing-md);">
-                    <h4 style="color: var(--apple-orange); margin-bottom: 15px; font-size: var(--text-subhead);">待機児童情報</h4>
+                <div style="background: var(--md-gray-6); padding: 15px; border-radius: var(--radius-sm); border: 2px solid var(--md-orange); margin-bottom: var(--spacing-md);">
+                    <h4 style="color: var(--md-orange); margin-bottom: 15px; font-size: var(--text-subhead);">待機児童情報</h4>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div class="form-group">
                             <label class="form-label">入所希望日</label>
@@ -404,7 +404,7 @@ renderPageStart('staff', $currentPage, '生徒管理');
 <!-- 検索・絞り込みフォーム -->
 <div class="card" style="margin-bottom: var(--spacing-lg);">
     <div class="card-body">
-        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-blue);">検索・絞り込み</h2>
+        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--md-blue);">検索・絞り込み</h2>
         <form method="GET" action="">
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
                 <div class="form-group">
@@ -456,7 +456,7 @@ renderPageStart('staff', $currentPage, '生徒管理');
 <!-- 生徒一覧 -->
 <div class="card">
     <div class="card-body">
-        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-blue);">生徒一覧（<?= count($students) ?>名）</h2>
+        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--md-blue);">生徒一覧（<?= count($students) ?>名）</h2>
         <table class="table">
             <thead>
                 <tr>
@@ -581,8 +581,8 @@ renderPageStart('staff', $currentPage, '生徒管理');
             </div>
             <!-- 待機児童フィールド（編集用） -->
             <div id="edit_waiting_fields_group" style="display: none;">
-                <div style="background: var(--apple-gray-6); padding: 15px; border-radius: var(--radius-sm); border: 2px solid var(--apple-orange); margin-bottom: var(--spacing-md);">
-                    <h4 style="color: var(--apple-orange); margin-bottom: 15px; font-size: var(--text-subhead);">待機児童情報</h4>
+                <div style="background: var(--md-gray-6); padding: 15px; border-radius: var(--radius-sm); border: 2px solid var(--md-orange); margin-bottom: var(--spacing-md);">
+                    <h4 style="color: var(--md-orange); margin-bottom: 15px; font-size: var(--text-subhead);">待機児童情報</h4>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div class="form-group">
                             <label class="form-label">入所希望日</label>

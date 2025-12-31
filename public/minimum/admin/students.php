@@ -148,7 +148,7 @@ function getGradeLabel($gradeLevel) {
 // 学年バッジの色
 function getGradeBadgeColor($gradeLevel) {
     $colors = [
-        'elementary' => '#28a745',
+        'elementary' => '#388E3C',
         'junior_high' => '#007bff',
         'high_school' => '#dc3545'
     ];
@@ -207,7 +207,7 @@ renderPageStart('admin', $currentPage, '生徒管理');
 <!-- 新規登録フォーム -->
 <div class="card" style="margin-bottom: var(--spacing-lg);">
     <div class="card-body">
-        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-purple);">新規生徒登録</h2>
+        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--md-purple);">新規生徒登録</h2>
         <form action="students_save.php" method="POST">
             <input type="hidden" name="action" value="create">
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
@@ -298,7 +298,7 @@ renderPageStart('admin', $currentPage, '生徒管理');
 <!-- 検索・絞り込みフォーム -->
 <div class="card" style="margin-bottom: var(--spacing-lg);">
     <div class="card-body">
-        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-purple);">検索・絞り込み</h2>
+        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--md-purple);">検索・絞り込み</h2>
         <form method="GET" action="">
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
                 <div class="form-group">
@@ -349,7 +349,7 @@ renderPageStart('admin', $currentPage, '生徒管理');
 <!-- 生徒一覧 -->
 <div class="card">
     <div class="card-body">
-        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-purple);">生徒一覧（<?= count($students) ?>名）</h2>
+        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--md-purple);">生徒一覧（<?= count($students) ?>名）</h2>
         <table class="table">
             <thead>
                 <tr>

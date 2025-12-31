@@ -132,7 +132,7 @@ renderPageStart('admin', $currentPage, 'イベント管理');
 <!-- 新規登録フォーム -->
 <div class="card" style="margin-bottom: var(--spacing-lg);">
     <div class="card-body">
-        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-purple);">新規イベント登録</h2>
+        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--md-purple);">新規イベント登録</h2>
         <form action="events_save.php" method="POST">
             <input type="hidden" name="action" value="create">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
@@ -164,14 +164,14 @@ renderPageStart('admin', $currentPage, 'イベント管理');
             <div class="form-group">
                 <label class="form-label">カレンダー表示色</label>
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <input type="color" name="event_color" id="event_color" value="#28a745" style="width: 60px; height: 40px; border: none; cursor: pointer;">
+                    <input type="color" name="event_color" id="event_color" value="#388E3C" style="width: 60px; height: 40px; border: none; cursor: pointer;">
                     <span style="color: var(--text-secondary);">選択した色でカレンダーに表示されます</span>
                 </div>
                 <div class="color-preview">
-                    <div class="color-option" style="background: var(--apple-green);" onclick="document.getElementById('event_color').value='#28a745'"></div>
-                    <div class="color-option" style="background: var(--apple-blue);" onclick="document.getElementById('event_color').value='#007bff'"></div>
-                    <div class="color-option" style="background: var(--apple-orange);" onclick="document.getElementById('event_color').value='#ffc107'"></div>
-                    <div class="color-option" style="background: var(--apple-red);" onclick="document.getElementById('event_color').value='#dc3545'"></div>
+                    <div class="color-option" style="background: var(--md-green);" onclick="document.getElementById('event_color').value='#388E3C'"></div>
+                    <div class="color-option" style="background: var(--md-blue);" onclick="document.getElementById('event_color').value='#007bff'"></div>
+                    <div class="color-option" style="background: var(--md-orange);" onclick="document.getElementById('event_color').value='#ffc107'"></div>
+                    <div class="color-option" style="background: var(--md-red);" onclick="document.getElementById('event_color').value='#dc3545'"></div>
                     <div class="color-option" style="background: #17a2b8;" onclick="document.getElementById('event_color').value='#17a2b8'"></div>
                     <div class="color-option" style="background: #6f42c1;" onclick="document.getElementById('event_color').value='#6f42c1'"></div>
                 </div>
@@ -186,7 +186,7 @@ renderPageStart('admin', $currentPage, 'イベント管理');
 <!-- 検索フォーム -->
 <div class="card" style="margin-bottom: var(--spacing-lg);">
     <div class="card-body">
-        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-purple);">イベント検索</h2>
+        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--md-purple);">イベント検索</h2>
         <form method="GET" action="events.php">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div class="form-group">
@@ -224,7 +224,7 @@ renderPageStart('admin', $currentPage, 'イベント管理');
 <!-- イベント一覧 -->
 <div class="card">
     <div class="card-body">
-        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-purple);">登録済みイベント一覧</h2>
+        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--md-purple);">登録済みイベント一覧</h2>
 
         <?php if (!empty($searchKeyword) || !empty($searchStartDate) || !empty($searchEndDate) || !empty($searchTargetAudience)): ?>
             <div class="alert alert-info">

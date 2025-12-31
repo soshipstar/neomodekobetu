@@ -68,9 +68,11 @@ $activeDates = array_column($stmt->fetchAll(), 'date');
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <link rel="stylesheet" href="/assets/css/apple-design.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <style>@media(prefers-color-scheme:dark){html,body{background:#1E1E1E;color:rgba(255,255,255,0.87)}}</style>
+    <link rel="stylesheet" href="/assets/css/google-design.css">
     <title>本日の記録 - タブレット</title>
     <style>
         * {
@@ -81,13 +83,13 @@ $activeDates = array_column($stmt->fetchAll(), 'date');
 
         body {
             font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             padding: var(--spacing-lg);
             font-size: var(--text-title-2); /* 大きめのフォントサイズ */
         }
 
         .header {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: var(--spacing-2xl);
             border-radius: var(--radius-lg);
             margin-bottom: var(--spacing-2xl);
@@ -114,7 +116,7 @@ $activeDates = array_column($stmt->fetchAll(), 'date');
         }
 
         .logout-btn {
-            background: var(--apple-red);
+            background: var(--md-red);
             color: var(--text-primary);
             border: none;
             padding: var(--spacing-lg) 40px;
@@ -126,11 +128,11 @@ $activeDates = array_column($stmt->fetchAll(), 'date');
         }
 
         .logout-btn:hover {
-            background: var(--apple-red);
+            background: var(--md-red);
         }
 
         .calendar-section {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: var(--spacing-2xl);
             border-radius: var(--radius-lg);
             margin-bottom: var(--spacing-2xl);
@@ -151,7 +153,7 @@ $activeDates = array_column($stmt->fetchAll(), 'date');
         }
 
         .calendar-nav button {
-            background: var(--apple-blue);
+            background: var(--md-blue);
             color: white;
             border: none;
             padding: var(--spacing-lg) 30px;
@@ -162,7 +164,7 @@ $activeDates = array_column($stmt->fetchAll(), 'date');
         }
 
         .calendar-nav button:hover {
-            background: #0056b3;
+            background: #1565C0;
         }
 
         .calendar-title {
@@ -181,14 +183,14 @@ $activeDates = array_column($stmt->fetchAll(), 'date');
             padding: 15px;
             font-weight: bold;
             font-size: var(--text-title-2);
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             border-radius: var(--radius-sm);
         }
 
         .calendar-day {
             aspect-ratio: 1;
             padding: 15px;
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             border-radius: var(--radius-sm);
             cursor: pointer;
             text-align: center;
@@ -210,12 +212,12 @@ $activeDates = array_column($stmt->fetchAll(), 'date');
         }
 
         .calendar-day.selected {
-            background: var(--apple-blue);
+            background: var(--md-blue);
             color: white;
         }
 
         .calendar-day.today {
-            border: 3px solid var(--apple-blue);
+            border: 3px solid var(--md-blue);
         }
 
         .calendar-day.empty {
@@ -224,7 +226,7 @@ $activeDates = array_column($stmt->fetchAll(), 'date');
         }
 
         .activities-section {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: var(--spacing-2xl);
             border-radius: var(--radius-lg);
             margin-bottom: var(--spacing-2xl);
@@ -241,7 +243,7 @@ $activeDates = array_column($stmt->fetchAll(), 'date');
         }
 
         .add-activity-btn {
-            background: var(--apple-green);
+            background: var(--md-green);
             color: white;
             border: none;
             padding: var(--spacing-lg) 40px;
@@ -253,7 +255,7 @@ $activeDates = array_column($stmt->fetchAll(), 'date');
         }
 
         .add-activity-btn:hover {
-            background: var(--apple-green);
+            background: var(--md-green);
         }
 
         .activity-list {
@@ -263,7 +265,7 @@ $activeDates = array_column($stmt->fetchAll(), 'date');
         }
 
         .activity-card {
-            border: 2px solid var(--apple-gray-5);
+            border: 2px solid var(--md-gray-5);
             border-radius: var(--radius-md);
             padding: 25px;
             display: flex;
@@ -303,39 +305,39 @@ $activeDates = array_column($stmt->fetchAll(), 'date');
         }
 
         .btn-edit {
-            background: var(--apple-blue);
+            background: var(--md-blue);
             color: white;
         }
 
         .btn-edit:hover {
-            background: #0056b3;
+            background: #1565C0;
         }
 
         .btn-renrakucho {
-            background: var(--apple-green);
+            background: var(--md-green);
             color: white;
         }
 
         .btn-renrakucho:hover {
-            background: var(--apple-green);
+            background: var(--md-green);
         }
 
         .btn-integrate {
-            background: var(--apple-gray);
+            background: var(--md-gray);
             color: white;
         }
 
         .btn-integrate:hover {
-            background: var(--apple-gray);
+            background: var(--md-gray);
         }
 
         .btn-delete {
-            background: var(--apple-red);
+            background: var(--md-red);
             color: white;
         }
 
         .btn-delete:hover {
-            background: var(--apple-red);
+            background: var(--md-red);
         }
 
         .no-activities {
@@ -373,13 +375,13 @@ $activeDates = array_column($stmt->fetchAll(), 'date');
 </head>
 <body>
     <div class="header">
-        <h1>📱 本日の記録</h1>
+        <h1><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">smartphone</span> 本日の記録</h1>
         <div class="header-info">
             <div class="classroom-name">
                 <?php if ($classroom): ?>
-                    🏫 <?php echo htmlspecialchars($classroom['classroom_name']); ?>
+                    <?php echo htmlspecialchars($classroom['classroom_name']); ?>
                 <?php endif; ?>
-                | 👤 <?php echo htmlspecialchars($currentUser['full_name']); ?>
+                | <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">person</span> <?php echo htmlspecialchars($currentUser['full_name']); ?>
             </div>
             <a href="/logout.php" class="logout-btn">ログアウト</a>
         </div>
@@ -393,7 +395,7 @@ $activeDates = array_column($stmt->fetchAll(), 'date');
                 <button onclick="location.href='?date=<?php echo date('Y-m-d', strtotime("$year-$nextMonth-1")); ?>'">▶</button>
             </div>
             <button class="add-activity-btn" onclick="location.href='activity_edit.php?date=<?php echo $selectedDate; ?>'">
-                ➕ 新しい活動を追加
+                <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">add</span> 新しい活動を追加
             </button>
         </div>
 
@@ -440,7 +442,7 @@ $activeDates = array_column($stmt->fetchAll(), 'date');
 
     <div class="activities-section">
         <div class="section-title">
-            📅 <?php echo date('Y年n月j日', strtotime($selectedDate)); ?>の活動
+            <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event</span> <?php echo date('Y年n月j日', strtotime($selectedDate)); ?>の活動
         </div>
 
         <?php if (count($activities) > 0): ?>
@@ -452,22 +454,22 @@ $activeDates = array_column($stmt->fetchAll(), 'date');
                                 <?php echo htmlspecialchars($activity['activity_name'] ?? $activity['common_activity']); ?>
                             </div>
                             <div class="activity-meta">
-                                👤 <?php echo htmlspecialchars($activity['staff_name']); ?> |
-                                👥 <?php echo $activity['participant_count']; ?>名参加
+                                <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">person</span> <?php echo htmlspecialchars($activity['staff_name']); ?> |
+                                <?php echo $activity['participant_count']; ?>名参加
                             </div>
                         </div>
                         <div class="activity-actions">
                             <a href="activity_edit.php?id=<?php echo $activity['id']; ?>&date=<?php echo $selectedDate; ?>" class="action-btn btn-edit">
-                                ✏️ 編集
+                                <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit</span> 編集
                             </a>
                             <a href="renrakucho_form.php?activity_id=<?php echo $activity['id']; ?>" class="action-btn btn-renrakucho">
-                                📋 連絡帳入力
+                                <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">assignment</span> 連絡帳入力
                             </a>
                             <a href="activity_integrate.php?id=<?php echo $activity['id']; ?>&date=<?php echo $selectedDate; ?>" class="action-btn btn-integrate">
-                                📝 統合
+                                <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit_note</span> 統合
                             </a>
                             <button onclick="deleteActivity(<?php echo $activity['id']; ?>)" class="action-btn btn-delete">
-                                🗑️ 削除
+                                <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">delete</span> 削除
                             </button>
                         </div>
                     </div>

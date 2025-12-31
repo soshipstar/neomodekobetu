@@ -1798,7 +1798,7 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         .notifications-container {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             padding: var(--spacing-lg);
             border-radius: var(--radius-md);
             margin-bottom: var(--spacing-lg);
@@ -1808,7 +1808,7 @@ renderPageStart('staff', $currentPage, '活動管理');
         .notification-item {
             padding: 15px;
             border-left: 4px solid var(--primary-purple);
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             margin-bottom: 12px;
             border-radius: var(--radius-sm);
             display: flex;
@@ -1821,15 +1821,15 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         .notification-item.message {
-            border-left-color: var(--apple-green);
+            border-left-color: var(--md-green);
         }
 
         .notification-item.kakehashi {
-            border-left-color: var(--apple-orange);
+            border-left-color: var(--md-orange);
         }
 
         .notification-item.monitoring {
-            border-left-color: var(--apple-teal);
+            border-left-color: var(--md-teal);
         }
 
         .notification-item.plan {
@@ -1837,13 +1837,13 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         .notification-item.note-confirmed {
-            border-left-color: var(--apple-blue);
+            border-left-color: var(--md-blue);
         }
 
         /* 未確認連絡帳アラート */
         .unconfirmed-alert {
             background: linear-gradient(135deg, rgba(255, 149, 0, 0.15) 0%, rgba(255, 204, 0, 0.1) 100%);
-            border: 1px solid var(--apple-orange);
+            border: 1px solid var(--md-orange);
             border-radius: var(--radius-md);
             padding: var(--spacing-lg);
             margin-bottom: var(--spacing-lg);
@@ -1855,7 +1855,7 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
         .unconfirmed-alert.urgent {
             background: linear-gradient(135deg, rgba(255, 59, 48, 0.15) 0%, rgba(255, 69, 58, 0.1) 100%);
-            border-color: var(--apple-red);
+            border-color: var(--md-red);
         }
         .alert-content {
             display: flex;
@@ -1878,7 +1878,7 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
         .urgent-badge {
             display: inline-block;
-            background: var(--apple-red);
+            background: var(--md-red);
             color: white;
             padding: 2px 8px;
             border-radius: var(--radius-full);
@@ -1888,7 +1888,7 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
         .alert-btn {
             padding: 12px 20px;
-            background: var(--apple-orange);
+            background: var(--md-orange);
             color: white;
             text-decoration: none;
             border-radius: var(--radius-sm);
@@ -1897,7 +1897,7 @@ renderPageStart('staff', $currentPage, '活動管理');
             white-space: nowrap;
         }
         .unconfirmed-alert.urgent .alert-btn {
-            background: var(--apple-red);
+            background: var(--md-red);
         }
         .alert-btn:hover {
             opacity: 0.9;
@@ -1944,14 +1944,14 @@ renderPageStart('staff', $currentPage, '活動管理');
             justify-content: space-between;
             align-items: center;
             padding: 12px 15px;
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             border-radius: var(--radius-sm);
             cursor: pointer;
             user-select: none;
             transition: background 0.2s ease;
         }
         .notification-section-header:hover {
-            background: var(--apple-gray-5);
+            background: var(--md-gray-5);
         }
         .notification-section-title {
             font-weight: bold;
@@ -1970,10 +1970,10 @@ renderPageStart('staff', $currentPage, '活動管理');
             font-weight: bold;
         }
         .notification-section-count.unread {
-            background: var(--apple-red);
+            background: var(--md-red);
         }
         .notification-section-count.confirmed {
-            background: var(--apple-green);
+            background: var(--md-green);
         }
         .notification-section-toggle {
             font-size: 16px;
@@ -1998,7 +1998,7 @@ renderPageStart('staff', $currentPage, '活動管理');
 
         /* タスクサマリー用スタイル */
         .task-summary-item {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: var(--spacing-md);
             border-radius: var(--radius-md);
             margin-bottom: var(--spacing-md);
@@ -2021,7 +2021,7 @@ renderPageStart('staff', $currentPage, '活動管理');
         .task-summary-total {
             font-size: var(--text-title-3);
             font-weight: 700;
-            color: var(--apple-blue);
+            color: var(--md-blue);
         }
 
         .task-summary-details {
@@ -2040,23 +2040,23 @@ renderPageStart('staff', $currentPage, '活動管理');
 
         .task-count.overdue {
             background: rgba(255, 59, 48, 0.15);
-            color: var(--apple-red);
+            color: var(--md-red);
         }
 
         .task-count.urgent {
             background: rgba(255, 149, 0, 0.15);
-            color: var(--apple-orange);
+            color: var(--md-orange);
         }
 
         .task-count.warning {
             background: rgba(255, 204, 0, 0.15);
-            color: var(--apple-yellow);
+            color: var(--md-yellow);
         }
 
         .task-summary-link {
             margin-left: auto;
             padding: 6px 16px;
-            background: var(--apple-blue);
+            background: var(--md-blue);
             color: white;
             text-decoration: none;
             border-radius: var(--radius-sm);
@@ -2066,7 +2066,7 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         .task-summary-link:hover {
-            background: var(--apple-blue);
+            background: var(--md-blue);
             opacity: 0.8;
             transform: translateY(-1px);
         }
@@ -2078,7 +2078,7 @@ renderPageStart('staff', $currentPage, '活動管理');
             justify-content: center;
             width: 18px;
             height: 18px;
-            background: var(--apple-gray-4);
+            background: var(--md-gray-4);
             color: white;
             border-radius: 50%;
             font-size: 12px;
@@ -2089,7 +2089,7 @@ renderPageStart('staff', $currentPage, '活動管理');
             position: relative;
         }
         .help-icon:hover {
-            background: var(--apple-blue);
+            background: var(--md-blue);
             transform: scale(1.1);
         }
         .help-tooltip {
@@ -2100,7 +2100,7 @@ renderPageStart('staff', $currentPage, '活動管理');
             transform: translateX(-50%);
             margin-top: 8px;
             padding: 12px 16px;
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
             box-shadow: var(--shadow-lg);
@@ -2130,14 +2130,14 @@ renderPageStart('staff', $currentPage, '活動管理');
             transform: translateX(-50%);
             border-left: 5px solid transparent;
             border-right: 5px solid transparent;
-            border-bottom: 5px solid var(--apple-bg-primary);
+            border-bottom: 5px solid var(--md-bg-primary);
         }
         .help-icon.active .help-tooltip {
             display: block;
         }
 
         .calendar-container {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             padding: var(--spacing-md);
             border-radius: var(--radius-sm);
             margin-bottom: 15px;
@@ -2192,11 +2192,11 @@ renderPageStart('staff', $currentPage, '活動管理');
 
         .calendar-day {
             aspect-ratio: 1;
-            border: 1px solid var(--apple-gray-5);
+            border: 1px solid var(--md-gray-5);
             border-radius: 3px;
             padding: 3px;
             cursor: pointer;
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             position: relative;
             transition: all 0.15s;
             display: flex;
@@ -2206,12 +2206,12 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         .calendar-day:hover {
-            background: var(--apple-bg-tertiary);
+            background: var(--md-bg-tertiary);
             transform: scale(1.05);
         }
 
         .calendar-day.empty {
-            background: var(--apple-gray-6); opacity: 0.5;
+            background: var(--md-gray-6); opacity: 0.5;
             cursor: default;
         }
 
@@ -2263,7 +2263,7 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         .holiday-label {
-            color: #ff3b30;
+            color: #F44336;
             font-weight: bold;
             margin-bottom: 1px;
         }
@@ -2299,7 +2299,7 @@ renderPageStart('staff', $currentPage, '活動管理');
             right: 2px;
             width: 4px;
             height: 4px;
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             border-radius: 50%;
         }
 
@@ -2337,7 +2337,7 @@ renderPageStart('staff', $currentPage, '活動管理');
 
         .activity-section {
             grid-column: 1 / -1;
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             padding: var(--spacing-lg);
             border-radius: var(--radius-md);
             box-shadow: var(--shadow-md);
@@ -2354,7 +2354,8 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         .date-info::before {
-            content: '📅';
+            content: 'event';
+            font-family: 'Material Symbols Outlined';
             font-size: 1.1em;
         }
 
@@ -2392,7 +2393,7 @@ renderPageStart('staff', $currentPage, '活動管理');
             padding: 15px;
             margin-bottom: 15px;
             transition: all 0.3s;
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
         }
 
         .activity-card:hover {
@@ -2428,7 +2429,7 @@ renderPageStart('staff', $currentPage, '活動管理');
             color: var(--text-primary);
             margin-bottom: var(--spacing-md);
             padding: var(--spacing-md);
-            background: var(--apple-bg-tertiary);
+            background: var(--md-bg-tertiary);
             border-radius: var(--radius-sm);
             line-height: 1.6;
         }
@@ -2458,31 +2459,31 @@ renderPageStart('staff', $currentPage, '活動管理');
         .btn-integrate,
         .btn-integrate-edit,
         .btn-view {
-            background: var(--apple-bg-primary);
-            color: var(--apple-blue);
-            border: 1px solid var(--apple-blue);
+            background: var(--md-bg-primary);
+            color: var(--md-blue);
+            border: 1px solid var(--md-blue);
         }
         .btn-edit:hover,
         .btn-integrate:hover,
         .btn-integrate-edit:hover,
         .btn-view:hover {
-            background: var(--apple-blue);
+            background: var(--md-blue);
             color: white;
         }
 
         .btn-delete {
-            background: var(--apple-bg-primary);
-            color: var(--apple-red);
-            border: 1px solid var(--apple-red);
+            background: var(--md-bg-primary);
+            color: var(--md-red);
+            border: 1px solid var(--md-red);
         }
         .btn-delete:hover {
-            background: var(--apple-red);
+            background: var(--md-red);
             color: white;
         }
 
         .add-activity-btn {
             padding: 15px 30px;
-            background: var(--apple-green);
+            background: var(--md-green);
             color: var(--text-primary);
             border: none;
             border-radius: var(--radius-sm);
@@ -2493,7 +2494,7 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         .add-activity-btn:hover {
-            background: var(--apple-green);
+            background: var(--md-green);
         }
 
         .empty-message {
@@ -2508,28 +2509,28 @@ renderPageStart('staff', $currentPage, '活動管理');
             padding: var(--spacing-md);
             border-radius: var(--radius-sm);
             margin-bottom: var(--spacing-lg);
-            border-left: 4px solid var(--apple-green);
+            border-left: 4px solid var(--md-green);
         }
 
         .error-message {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             color: #721c24;
             padding: var(--spacing-md);
             border-radius: var(--radius-sm);
             margin-bottom: var(--spacing-lg);
-            border-left: 4px solid var(--apple-red);
+            border-left: 4px solid var(--md-red);
         }
 
         .sunday {
-            color: var(--apple-red);
+            color: var(--md-red);
         }
 
         .saturday {
-            color: var(--apple-blue);
+            color: var(--md-blue);
         }
 
         .scheduled-students-box {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             padding: 15px;
             border-radius: var(--radius-md);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -2548,7 +2549,7 @@ renderPageStart('staff', $currentPage, '活動管理');
         .student-item {
             padding: var(--spacing-md);
             margin-bottom: 8px;
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             border-radius: var(--radius-sm);
             border-left: 3px solid var(--primary-purple);
         }
@@ -2567,7 +2568,7 @@ renderPageStart('staff', $currentPage, '活動管理');
         .holiday-notice {
             text-align: center;
             padding: var(--spacing-2xl) 20px;
-            color: var(--apple-red);
+            color: var(--md-red);
             font-weight: bold;
         }
 
@@ -2583,7 +2584,7 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         .accordion-header {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             color: var(--text-primary);
             padding: var(--spacing-md) 15px;
             cursor: pointer;
@@ -2620,7 +2621,7 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         .accordion-count {
-            background: var(--apple-gray-5);
+            background: var(--md-gray-5);
             padding: 2px 8px;
             border-radius: var(--radius-md);
             font-size: var(--text-caption-1);
@@ -2640,7 +2641,7 @@ renderPageStart('staff', $currentPage, '活動管理');
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.3s ease-out;
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             border-radius: 0 0 6px 6px;
         }
 
@@ -2654,7 +2655,7 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         .notification-banner {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             padding: var(--spacing-lg) 25px;
             border-radius: var(--radius-md);
             margin-bottom: var(--spacing-lg);
@@ -2662,23 +2663,23 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         .notification-banner.urgent {
-            border-left: 5px solid var(--apple-red);
+            border-left: 5px solid var(--md-red);
             background: #3a2020;
         }
 
         .notification-banner.warning {
-            border-left: 5px solid var(--apple-orange);
+            border-left: 5px solid var(--md-orange);
             background: #3a3820;
         }
 
         .notification-banner.info {
             border-left: 5px solid #17a2b8;
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
         }
 
         .notification-banner.overdue {
-            border-left: 5px solid var(--apple-gray);
-            background: var(--apple-gray-6);
+            border-left: 5px solid var(--md-gray);
+            background: var(--md-gray-6);
         }
 
         .notification-header {
@@ -2691,7 +2692,7 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         .notification-header.urgent {
-            color: var(--apple-red);
+            color: var(--md-red);
         }
 
         .notification-header.warning {
@@ -2699,22 +2700,22 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         .notification-header.overdue {
-            color: var(--apple-gray);
+            color: var(--md-gray);
         }
 
         .notification-header.info {
-            color: var(--apple-teal);
+            color: var(--md-teal);
         }
 
         .notification-item {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             padding: 15px;
             border-radius: var(--radius-sm);
             margin-bottom: var(--spacing-md);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border: 1px solid var(--apple-gray-5);
+            border: 1px solid var(--md-gray-5);
         }
 
         .notification-item:last-child {
@@ -2743,7 +2744,7 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         .notification-deadline.urgent {
-            color: var(--apple-red);
+            color: var(--md-red);
         }
 
         .notification-deadline.warning {
@@ -2751,15 +2752,15 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         .notification-deadline.overdue {
-            color: var(--apple-gray);
+            color: var(--md-gray);
         }
 
         .notification-deadline.info {
-            color: var(--apple-teal);
+            color: var(--md-teal);
         }
 
         .task-summary-box {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             padding: var(--spacing-lg);
             border-radius: var(--radius-md);
             margin-bottom: var(--spacing-lg);
@@ -2773,7 +2774,7 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         .task-card {
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             padding: var(--spacing-lg);
             border-radius: var(--radius-md);
             border-left: 4px solid var(--primary-purple);
@@ -2783,12 +2784,12 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         .task-card.has-tasks {
-            border-left-color: var(--apple-red);
+            border-left-color: var(--md-red);
             background: rgba(255, 69, 58, 0.1);
         }
 
         .task-card.has-warnings {
-            border-left-color: var(--apple-orange);
+            border-left-color: var(--md-orange);
             background: rgba(255, 159, 10, 0.1);
         }
 
@@ -2805,7 +2806,7 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         .task-card-count.urgent {
-            color: var(--apple-red);
+            color: var(--md-red);
         }
 
         .task-card-count.warning {
@@ -2813,7 +2814,7 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         .task-card-count.success {
-            color: var(--apple-green);
+            color: var(--md-green);
         }
 
         .task-card-link {
@@ -2996,7 +2997,7 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         .modal-content {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             padding: var(--spacing-2xl);
             border-radius: var(--radius-md);
             max-width: 600px;
@@ -3104,12 +3105,12 @@ renderPageStart('staff', $currentPage, '活動管理');
 
         <!-- 新着チャットメッセージ通知 -->
         <?php if ($totalUnreadMessages > 0): ?>
-            <div class="unread-notification" style="background: rgba(0, 122, 255, 0.1); border-left: 5px solid var(--apple-blue); border-radius: var(--radius-md); padding: 20px; margin-bottom: var(--spacing-lg);">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; font-size: var(--text-headline); font-weight: bold; color: var(--apple-blue);">
-                    💬 新着メッセージがあります！（<?= $totalUnreadMessages ?>件）
+            <div class="unread-notification" style="background: rgba(0, 122, 255, 0.1); border-left: 5px solid var(--md-blue); border-radius: var(--radius-md); padding: 20px; margin-bottom: var(--spacing-lg);">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; font-size: var(--text-headline); font-weight: bold; color: var(--md-blue);">
+                    <span class="material-symbols-outlined">chat</span> 新着メッセージがあります！（<?= $totalUnreadMessages ?>件）
                 </div>
                 <?php foreach ($unreadChatMessages as $chatRoom): ?>
-                    <div style="background: var(--apple-bg-primary); padding: 15px; border-radius: var(--radius-sm); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="background: var(--md-bg-primary); padding: 15px; border-radius: var(--radius-sm); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
                         <div>
                             <div style="font-weight: bold; color: var(--text-primary); margin-bottom: 5px;">
                                 <?= htmlspecialchars($chatRoom['student_name']) ?>さん（<?= htmlspecialchars($chatRoom['guardian_name']) ?>様）
@@ -3117,7 +3118,7 @@ renderPageStart('staff', $currentPage, '活動管理');
                             <div style="font-size: var(--text-subhead); color: var(--text-secondary); margin-bottom: 3px;">
                                 未読メッセージ: <?= $chatRoom['unread_count'] ?>件
                             </div>
-                            <div style="font-size: var(--text-subhead); font-weight: bold; color: var(--apple-blue);">
+                            <div style="font-size: var(--text-subhead); font-weight: bold; color: var(--md-blue);">
                                 最新: <?= date('Y年n月j日 H:i', strtotime($chatRoom['last_message_at'])) ?>
                             </div>
                         </div>
@@ -3149,7 +3150,7 @@ renderPageStart('staff', $currentPage, '活動管理');
         <?php if ($pendingMakeupCount > 0): ?>
             <div class="notification-banner urgent" style="margin-bottom: 20px;">
                 <div class="notification-header urgent">
-                    🔄 振替希望があります（<?= $pendingMakeupCount ?>件）
+                    <span class="material-symbols-outlined">sync</span> 振替希望があります（<?= $pendingMakeupCount ?>件）
                 </div>
                 <?php foreach ($pendingMakeupRequests as $request):
                     $makeupDate = new DateTime($request['makeup_request_date']);
@@ -3184,7 +3185,7 @@ renderPageStart('staff', $currentPage, '活動管理');
         <?php if (false && !empty($studentsWithoutPlan)): ?>
             <div class="notification-banner urgent">
                 <div class="notification-header urgent">
-                    ⚠️ 【重要】個別支援計画書が未作成の生徒がいます
+                    <span class="material-symbols-outlined">warning</span> 【重要】個別支援計画書が未作成の生徒がいます
                 </div>
                 <?php foreach ($studentsWithoutPlan as $student): ?>
                     <div class="notification-item">
@@ -3222,13 +3223,13 @@ renderPageStart('staff', $currentPage, '活動管理');
         if ($totalPlanNeeding > 0 || $totalMonitoringNeeding > 0 || $totalUncreatedKakehashi > 0 || $totalGuardianKakehashi > 0 || $totalStaffKakehashi > 0 || $totalSubmissionRequests > 0):
         ?>
         <div class="notifications-container">
-            <h2 style="margin-bottom: 20px; color: var(--text-primary); font-size: var(--text-title-3); font-weight: 600;">📋 未作成・未提出タスク</h2>
+            <h2 style="margin-bottom: 20px; color: var(--text-primary); font-size: var(--text-title-3); font-weight: 600; display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined" style="font-size: 1.2em;">assignment</span> 未作成・未提出タスク</h2>
 
             <!-- 個別支援計画書 -->
             <?php if ($totalPlanNeeding > 0): ?>
                 <div class="task-summary-item">
                     <div class="task-summary-header">
-                        <span class="task-summary-title">📄 個別支援計画書
+                        <span class="task-summary-title"><span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">description</span> 個別支援計画書
                             <span class="help-icon" onclick="toggleHelp(this, event)">?
                                 <div class="help-tooltip">生徒ごとに作成が必要な個別支援計画書の状況です。未作成・下書き中・更新期限が近いものが表示されます。計画書は6ヶ月ごとに更新が必要です。</div>
                             </span>
@@ -3257,7 +3258,7 @@ renderPageStart('staff', $currentPage, '活動管理');
             <?php if ($totalMonitoringNeeding > 0): ?>
                 <div class="task-summary-item">
                     <div class="task-summary-header">
-                        <span class="task-summary-title">📊 モニタリング表
+                        <span class="task-summary-title"><span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">monitoring</span> モニタリング表
                             <span class="help-icon" onclick="toggleHelp(this, event)">?
                                 <div class="help-tooltip">個別支援計画書の進捗を確認するモニタリング表の状況です。次の個別支援計画書作成の1ヶ月前までに作成する必要があります。</div>
                             </span>
@@ -3286,7 +3287,7 @@ renderPageStart('staff', $currentPage, '活動管理');
             <?php if ($totalGuardianKakehashi > 0): ?>
                 <div class="task-summary-item">
                     <div class="task-summary-header">
-                        <span class="task-summary-title">📝 保護者かけはし未提出
+                        <span class="task-summary-title"><span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">edit_note</span> 保護者かけはし未提出
                             <span class="help-icon" onclick="toggleHelp(this, event)">?
                                 <div class="help-tooltip">保護者がまだ記入していない「かけはし」の件数です。期間終了前に保護者へ記入を依頼してください。</div>
                             </span>
@@ -3312,7 +3313,7 @@ renderPageStart('staff', $currentPage, '活動管理');
             <?php if ($totalStaffKakehashi > 0): ?>
                 <div class="task-summary-item">
                     <div class="task-summary-header">
-                        <span class="task-summary-title">📝 スタッフかけはし未作成
+                        <span class="task-summary-title"><span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">edit_note</span> スタッフかけはし未作成
                             <span class="help-icon" onclick="toggleHelp(this, event)">?
                                 <div class="help-tooltip">スタッフがまだ作成していない「かけはし」の件数です。期間終了前にスタッフ側の記入を完了してください。</div>
                             </span>
@@ -3338,7 +3339,7 @@ renderPageStart('staff', $currentPage, '活動管理');
             <?php if ($totalSubmissionRequests > 0): ?>
                 <div class="task-summary-item">
                     <div class="task-summary-header">
-                        <span class="task-summary-title">📤 提出期限未提出
+                        <span class="task-summary-title"><span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">upload_file</span> 提出期限未提出
                             <span class="help-icon" onclick="toggleHelp(this, event)">?
                                 <div class="help-tooltip">保護者へ依頼した書類（サービス提供実績記録票など）の提出状況です。期限までに保護者から提出してもらうよう確認してください。</div>
                             </span>
@@ -3366,7 +3367,7 @@ renderPageStart('staff', $currentPage, '活動管理');
         <?php if ($unconfirmedCount > 0): ?>
         <div class="unconfirmed-alert <?php echo $urgentUnconfirmedCount > 0 ? 'urgent' : ''; ?>">
             <div class="alert-content">
-                <div class="alert-icon"><?php echo $urgentUnconfirmedCount > 0 ? '🚨' : '⚠️'; ?></div>
+                <div class="alert-icon"><span class="material-symbols-outlined"><?php echo $urgentUnconfirmedCount > 0 ? 'warning' : 'warning'; ?></span></div>
                 <div class="alert-text">
                     <div class="alert-title">未確認の連絡帳があります</div>
                     <div class="alert-detail">
@@ -3384,13 +3385,13 @@ renderPageStart('staff', $currentPage, '活動管理');
         <!-- 連絡帳確認済み一覧 -->
         <?php if (!empty($confirmedNotes)): ?>
         <div class="notifications-container">
-            <h2 style="margin-bottom: 15px; color: var(--text-primary); font-size: 18px;">📋 連絡帳確認済み一覧（過去3日以内）</h2>
+            <h2 style="margin-bottom: 15px; color: var(--text-primary); font-size: 18px; display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined" style="font-size: 1.2em;">assignment</span> 連絡帳確認済み一覧（過去3日以内）</h2>
 
             <!-- 確認済み連絡帳（アコーディオン・初期で閉じている） -->
             <div class="notification-section">
                 <div class="notification-section-header" onclick="toggleNotificationSection(this)">
                     <div class="notification-section-title">
-                        ✅ 保護者確認済み
+                        <span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">check_circle</span> 保護者確認済み
                         <span class="notification-section-count confirmed"><?php echo count($confirmedNotes); ?>件</span>
                     </div>
                     <span class="notification-section-toggle collapsed">▼</span>
@@ -3399,7 +3400,7 @@ renderPageStart('staff', $currentPage, '活動管理');
                     <?php foreach ($confirmedNotes as $note): ?>
                     <div class="notification-item note-confirmed">
                         <div class="notification-content">
-                            <div class="notification-title">✅ 連絡帳が保護者に確認されました</div>
+                            <div class="notification-title"><span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">check_circle</span> 連絡帳が保護者に確認されました</div>
                             <div class="notification-meta">
                                 <?php echo htmlspecialchars($note['student_name'], ENT_QUOTES, 'UTF-8'); ?> - <?php echo htmlspecialchars($note['activity_name'], ENT_QUOTES, 'UTF-8'); ?>（<?php echo date('Y年m月d日', strtotime($note['record_date'])); ?>）
                                 - 確認日時: <?php echo date('Y年m月d日 H:i', strtotime($note['guardian_confirmed_at'])); ?>
@@ -3512,7 +3513,7 @@ renderPageStart('staff', $currentPage, '活動管理');
                 <div class="work-diary-box" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: var(--radius-md); margin-bottom: 15px; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div style="color: white;">
-                            <div style="font-weight: bold; font-size: var(--text-callout); margin-bottom: 4px;">📓 業務日誌</div>
+                            <div style="font-weight: bold; font-size: var(--text-callout); margin-bottom: 4px; display: flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1em;">menu_book</span> 業務日誌</div>
                             <div style="font-size: var(--text-footnote); opacity: 0.9;"><?php echo date('n月j日'); ?>の業務記録</div>
                         </div>
                         <div style="display: flex; gap: 8px;">
@@ -3523,7 +3524,7 @@ renderPageStart('staff', $currentPage, '活動管理');
                 </div>
 
                 <div class="scheduled-students-box">
-                    <h3>📋 本日の参加予定者</h3>
+                    <h3 style="display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined" style="font-size: 1.2em;">assignment</span> 本日の参加予定者</h3>
                     <?php if ($isHoliday): ?>
                         <div class="holiday-notice">
                             本日は休日です
@@ -3535,10 +3536,10 @@ renderPageStart('staff', $currentPage, '活動管理');
                     <?php else: ?>
                         <?php
                         $gradeInfo = [
-                            'preschool' => ['label' => '未就学児', 'icon' => '👶'],
-                            'elementary' => ['label' => '小学生', 'icon' => '🎒'],
-                            'junior_high' => ['label' => '中学生', 'icon' => '📚'],
-                            'high_school' => ['label' => '高校生', 'icon' => '🎓']
+                            'preschool' => ['label' => '未就学児', 'icon' => '<span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">child_care</span>'],
+                            'elementary' => ['label' => '小学生', 'icon' => '<span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">school</span>'],
+                            'junior_high' => ['label' => '中学生', 'icon' => '<span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">menu_book</span>'],
+                            'high_school' => ['label' => '高校生', 'icon' => '<span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">school</span>']
                         ];
 
                         // 教室の対象学年設定を取得
@@ -3569,7 +3570,7 @@ renderPageStart('staff', $currentPage, '活動管理');
                                                 <div class="student-item-name">
                                                     <?php echo htmlspecialchars($student['student_name']); ?>
                                                     <?php if ($student['absence_id']): ?>
-                                                        <span style="color: var(--apple-red); font-weight: bold; margin-left: 8px;">🚫 欠席</span>
+                                                        <span style="color: var(--md-red); font-weight: bold; margin-left: 8px;"><span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">close</span> 欠席</span>
                                                     <?php endif; ?>
                                                 </div>
                                                 <?php if ($student['guardian_name']): ?>
@@ -3578,7 +3579,7 @@ renderPageStart('staff', $currentPage, '活動管理');
                                                     </div>
                                                 <?php endif; ?>
                                                 <?php if ($student['absence_id'] && $student['absence_reason']): ?>
-                                                    <div class="student-item-meta" style="color: var(--apple-red);">
+                                                    <div class="student-item-meta" style="color: var(--md-red);">
                                                         理由: <?php echo htmlspecialchars($student['absence_reason']); ?>
                                                     </div>
                                                 <?php endif; ?>
@@ -3592,7 +3593,7 @@ renderPageStart('staff', $currentPage, '活動管理');
                                                     <div class="student-item-name">
                                                         <?php echo htmlspecialchars($participant['student_name']); ?>
                                                         <span style="color: #2563eb; font-weight: bold; margin-left: 8px;">
-                                                            🎉 <?= htmlspecialchars($participant['event_name']) ?>
+                                                            <span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">event</span> <?= htmlspecialchars($participant['event_name']) ?>
                                                         </span>
                                                     </div>
                                                     <?php if ($participant['guardian_name']): ?>
@@ -3620,11 +3621,11 @@ renderPageStart('staff', $currentPage, '活動管理');
             <?php if (!$hasMakeupColumn && $_SESSION['user_type'] === 'admin'): ?>
                 <div class="main-content" style="margin-bottom: 20px;">
                     <div style="background: #4a4020; padding: 20px; border-radius: 12px; border-left: 4px solid #ffc107;">
-                        <h3 style="color: #856404; margin-bottom: 10px;">⚠️ データベースマイグレーションが必要です</h3>
+                        <h3 style="color: #856404; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined" style="font-size: 1.2em;">warning</span> データベースマイグレーションが必要です</h3>
                         <p style="color: #856404; margin-bottom: 15px;">
                             振替依頼機能を使用するには、データベースのマイグレーションが必要です。
                         </p>
-                        <a href="/admin/run_migration_v44.php" style="display: inline-block; background: #007aff; color: var(--text-primary); padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                        <a href="/admin/run_migration_v44.php" style="display: inline-block; background: #1976D2; color: var(--text-primary); padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
                             マイグレーションを実行する →
                         </a>
                     </div>
@@ -3656,7 +3657,7 @@ renderPageStart('staff', $currentPage, '活動管理');
                                     <?php endif; ?>
                                     <?php if (!empty($activity['support_plan_name'])): ?>
                                         <br>
-                                        <span style="color: var(--primary-purple);">📝 支援案: <?php echo htmlspecialchars($activity['support_plan_name'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                        <span style="color: var(--primary-purple);"><span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">edit_note</span> 支援案: <?php echo htmlspecialchars($activity['support_plan_name'], ENT_QUOTES, 'UTF-8'); ?></span>
                                     <?php endif; ?>
                                 </div>
 
@@ -3668,10 +3669,10 @@ renderPageStart('staff', $currentPage, '活動管理');
 
                                 <div class="activity-actions">
                                     <a href="renrakucho_form.php?activity_id=<?php echo $activity['id']; ?>" class="btn btn-edit">編集</a>
-                                    <a href="regenerate_integration.php?activity_id=<?php echo $activity['id']; ?>" class="btn btn-integrate" onclick="return confirm('既存の統合内容（未送信）を削除して、1から統合し直しますか？');">🔄 統合する</a>
-                                    <a href="integrate_activity.php?activity_id=<?php echo $activity['id']; ?>" class="btn btn-integrate-edit">✏️ 統合内容を編集</a>
+                                    <a href="regenerate_integration.php?activity_id=<?php echo $activity['id']; ?>" class="btn btn-integrate" onclick="return confirm('既存の統合内容（未送信）を削除して、1から統合し直しますか？');"><span class="material-symbols-outlined">sync</span> 統合する</a>
+                                    <a href="integrate_activity.php?activity_id=<?php echo $activity['id']; ?>" class="btn btn-integrate-edit"><span class="material-symbols-outlined">edit</span> 統合内容を編集</a>
                                     <?php if ((int)$activity['sent_count'] > 0): ?>
-                                        <a href="view_integrated.php?activity_id=<?php echo $activity['id']; ?>" class="btn btn-view">📤 送信済み内容を閲覧</a>
+                                        <a href="view_integrated.php?activity_id=<?php echo $activity['id']; ?>" class="btn btn-view"><span class="material-symbols-outlined">upload_file</span> 送信済み内容を閲覧</a>
                                     <?php endif; ?>
                                     <form method="POST" action="delete_activity.php" style="display: inline;" onsubmit="return confirm('この活動を削除しますか？');">
                                         <input type="hidden" name="activity_id" value="<?php echo $activity['id']; ?>">
@@ -3681,9 +3682,9 @@ renderPageStart('staff', $currentPage, '活動管理');
                                         <div class="help-tooltip" style="left: auto; right: 0; transform: none; width: 320px;">
                                             <strong>ボタンの説明</strong><br><br>
                                             <strong>編集</strong>：活動内容や参加者を編集します。<br><br>
-                                            <strong>🔄 統合する</strong>：新しい活動を登録すると、その内容に従って、AIが参加者ごとの連絡帳を自動生成します。統合にはしばらく時間がかかりますので完了までお待ちください。<br><br>
-                                            <strong>✏️ 統合内容を編集</strong>：統合するボタンで生成された連絡帳の内容を確認できます。確認後、途中保存もしくは連絡帳を送信ボタンを押してください。<br><br>
-                                            <strong>📤 送信済み内容を閲覧</strong>：保護者へ送信済みの内容を確認します。<br><br>
+                                            <strong><span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">sync</span> 統合する</strong>：新しい活動を登録すると、その内容に従って、AIが参加者ごとの連絡帳を自動生成します。統合にはしばらく時間がかかりますので完了までお待ちください。<br><br>
+                                            <strong><span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">edit</span> 統合内容を編集</strong>：統合するボタンで生成された連絡帳の内容を確認できます。確認後、途中保存もしくは連絡帳を送信ボタンを押してください。<br><br>
+                                            <strong><span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">upload_file</span> 送信済み内容を閲覧</strong>：保護者へ送信済みの内容を確認します。<br><br>
                                             <strong>削除</strong>：この活動を削除します。
                                         </div>
                                     </span>
@@ -3708,7 +3709,7 @@ renderPageStart('staff', $currentPage, '活動管理');
                     </div>
                     <div style="display: flex; align-items: center; gap: 4px;">
                         <button type="button" class="add-activity-btn" style="background: var(--primary-purple);" onclick="location.href='support_plans.php'">
-                            📝 支援案を管理
+                            <span class="material-symbols-outlined">edit_note</span> 支援案を管理
                         </button>
                         <span class="help-icon" onclick="toggleHelp(this, event)" style="flex-shrink: 0;">?
                             <div class="help-tooltip" style="left: auto; right: 0; transform: none;">よく使う活動内容のテンプレートを管理します。支援案を登録しておくと、連絡帳作成時に素早く入力できます。</div>
@@ -3852,7 +3853,7 @@ renderPageStart('staff', $currentPage, '活動管理');
             // スタッフ向けコメント（スタッフのみ表示）
             if (eventData.staff_comment) {
                 html += '<div class="event-detail-section staff-only">';
-                html += '<h4>📝 スタッフ向けコメント</h4>';
+                html += '<h4><span class=\"material-symbols-outlined\" style=\"font-size: 1em; vertical-align: middle;\">edit_note</span> スタッフ向けコメント</h4>';
                 html += '<p>' + escapeHtml(eventData.staff_comment) + '</p>';
                 html += '</div>';
             }

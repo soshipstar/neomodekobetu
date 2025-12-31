@@ -53,7 +53,7 @@ renderPageStart('admin', $currentPage, '教室管理');
     vertical-align: middle;
 }
 .table-responsive .table th {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     font-weight: 600;
 }
 .service-badge {
@@ -65,7 +65,7 @@ renderPageStart('admin', $currentPage, '教室管理');
     color: white;
 }
 .service-badge.normal {
-    background: var(--apple-blue);
+    background: var(--md-blue);
 }
 .service-badge.minimum {
     background: linear-gradient(135deg, #f093fb, #f5576c);
@@ -100,7 +100,7 @@ renderPageStart('admin', $currentPage, '教室管理');
 <div class="card" style="margin-bottom: var(--spacing-lg);">
     <div class="card-body">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h2 style="font-size: var(--text-headline); color: var(--apple-purple);">登録教室一覧</h2>
+            <h2 style="font-size: var(--text-headline); color: var(--md-purple);">登録教室一覧</h2>
             <button class="btn btn-primary" onclick="openAddModal()">新規教室登録</button>
         </div>
 

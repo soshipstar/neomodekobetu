@@ -106,7 +106,7 @@ renderPageStart('staff', $currentPage, '毎日の支援設定');
 
 <style>
 .settings-container {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-2xl);
     border-radius: var(--radius-md);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -123,11 +123,11 @@ renderPageStart('staff', $currentPage, '毎日の支援設定');
 }
 
 .routine-card {
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
     margin-bottom: 15px;
-    border: 2px solid var(--apple-gray-5);
+    border: 2px solid var(--md-gray-5);
     transition: all var(--duration-normal) var(--ease-out);
 }
 
@@ -136,7 +136,7 @@ renderPageStart('staff', $currentPage, '毎日の支援設定');
 }
 
 .routine-card.filled {
-    border-color: var(--apple-green);
+    border-color: var(--md-green);
     background: #f0fff0;
 }
 
@@ -161,7 +161,7 @@ renderPageStart('staff', $currentPage, '毎日の支援設定');
 }
 
 .routine-card.filled .routine-number {
-    background: var(--apple-green);
+    background: var(--md-green);
 }
 
 .form-row {
@@ -187,7 +187,7 @@ renderPageStart('staff', $currentPage, '毎日の支援設定');
 .form-group textarea {
     width: 100%;
     padding: var(--spacing-md);
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
     border-radius: var(--radius-sm);
     font-size: var(--text-subhead);
     font-family: inherit;
@@ -214,7 +214,7 @@ renderPageStart('staff', $currentPage, '毎日の支援設定');
 .submit-btn {
     flex: 1;
     padding: 15px 30px;
-    background: var(--apple-green);
+    background: var(--md-green);
     color: white;
     border: none;
     border-radius: var(--radius-sm);
@@ -226,7 +226,7 @@ renderPageStart('staff', $currentPage, '毎日の支援設定');
 .cancel-btn {
     flex: 1;
     padding: 15px 30px;
-    background: var(--apple-gray);
+    background: var(--md-gray);
     color: white;
     border: none;
     border-radius: var(--radius-sm);
@@ -239,7 +239,7 @@ renderPageStart('staff', $currentPage, '毎日の支援設定');
 
 .clear-btn {
     padding: var(--spacing-sm) 16px;
-    background: var(--apple-red);
+    background: var(--md-red);
     color: white;
     border: none;
     border-radius: var(--radius-sm);
@@ -250,7 +250,7 @@ renderPageStart('staff', $currentPage, '毎日の支援設定');
 .add-routine-btn {
     width: 100%;
     padding: 15px;
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
     border: none;
     border-radius: var(--radius-sm);
@@ -262,11 +262,11 @@ renderPageStart('staff', $currentPage, '毎日の支援設定');
 }
 
 .add-routine-btn:hover {
-    background: #0056b3;
+    background: #1565C0;
 }
 
 .add-routine-btn:disabled {
-    background: var(--apple-gray-4);
+    background: var(--md-gray-4);
     cursor: not-allowed;
 }
 

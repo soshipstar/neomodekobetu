@@ -129,13 +129,13 @@ renderPageStart('staff', $currentPage, 'スタッフダッシュボード', [
 <!-- クイックメニュー -->
 <div class="menu-grid">
     <a href="chat.php" class="menu-card">
-        <div class="menu-card-icon">💬</div>
+        <div class="menu-card-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">chat</span></div>
         <h3>保護者チャット</h3>
         <p>保護者とのメッセージのやり取りを行います。</p>
     </a>
 
     <a href="kakehashi_staff.php" class="menu-card">
-        <div class="menu-card-icon">🌉</div>
+        <div class="menu-card-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">handshake</span></div>
         <h3>かけはし（職員）</h3>
         <p>職員用のかけはし情報を入力・管理します。</p>
     </a>
@@ -147,13 +147,13 @@ renderPageStart('staff', $currentPage, 'スタッフダッシュボード', [
     </a>
 
     <a href="kobetsu_plan.php" class="menu-card">
-        <div class="menu-card-icon">📋</div>
+        <div class="menu-card-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">assignment</span></div>
         <h3>個別支援計画</h3>
         <p>個別支援計画書の作成・管理を行います。</p>
     </a>
 
     <a href="kobetsu_monitoring.php" class="menu-card">
-        <div class="menu-card-icon">📊</div>
+        <div class="menu-card-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">monitoring</span></div>
         <h3>モニタリング</h3>
         <p>モニタリング表の作成・評価を行います。</p>
     </a>

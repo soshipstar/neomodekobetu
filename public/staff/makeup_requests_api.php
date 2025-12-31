@@ -14,6 +14,11 @@ header('Content-Type: application/json');
 $pdo = getDbConnection();
 $staffId = $_SESSION['user_id'];
 
+// スタッフの所属教室を取得
+$stmt = $pdo->prepare("SELECT classroom_id FROM users WHERE id = ?");
+$stmt->execute([$staffId]);
+$staffClassroomId = $stmt->fetchColumn();
+
 // JSONデータを取得
 $input = json_decode(file_get_contents('php://input'), true);
 $action = $input['action'] ?? '';
@@ -25,7 +30,7 @@ if (!$requestId) {
 }
 
 try {
-    // 振替依頼を取得
+    // 振替依頼を取得（教室IDでフィルタリング）
     $stmt = $pdo->prepare("
         SELECT
             an.*,
@@ -33,9 +38,9 @@ try {
             s.classroom_id
         FROM absence_notifications an
         INNER JOIN students s ON an.student_id = s.id
-        WHERE an.id = ?
+        WHERE an.id = ? AND s.classroom_id = ?
     ");
-    $stmt->execute([$requestId]);
+    $stmt->execute([$requestId, $staffClassroomId]);
     $request = $stmt->fetch();
 
     if (!$request) {

@@ -157,39 +157,39 @@ if (!empty($newsletter['greeting'])) {
 // カレンダーセクション
 $hasCalendarContent = ($calendarFormat === 'table' && (!empty($calendarEvents) || !empty($calendarHolidays))) || !empty($newsletter['event_calendar']);
 if ($hasCalendarContent) {
-    $sections[] = ['title' => '今月の予定', 'icon' => '📅', 'content' => $newsletter['event_calendar'] ?? '', 'type' => 'calendar', 'format' => $calendarFormat];
+    $sections[] = ['title' => '今月の予定', 'icon' => '[予定]', 'content' => $newsletter['event_calendar'] ?? '', 'type' => 'calendar', 'format' => $calendarFormat];
 }
 
 if (!empty($newsletter['event_details'])) {
-    $sections[] = ['title' => 'イベント詳細', 'icon' => '📝', 'content' => $newsletter['event_details']];
+    $sections[] = ['title' => 'イベント詳細', 'icon' => '[詳細]', 'content' => $newsletter['event_details']];
 }
 
 if (!empty($newsletter['weekly_reports'])) {
-    $sections[] = ['title' => '活動紹介まとめ', 'icon' => '📖', 'content' => $newsletter['weekly_reports']];
+    $sections[] = ['title' => '活動紹介まとめ', 'icon' => '[活動]', 'content' => $newsletter['weekly_reports']];
 }
 
 if (!empty($newsletter['weekly_intro'])) {
-    $sections[] = ['title' => '曜日別活動紹介', 'icon' => '🗓', 'content' => $newsletter['weekly_intro']];
+    $sections[] = ['title' => '曜日別活動紹介', 'icon' => '[曜日]', 'content' => $newsletter['weekly_intro']];
 }
 
 if (!empty($newsletter['event_results'])) {
-    $sections[] = ['title' => 'イベント結果報告', 'icon' => '🎉', 'content' => $newsletter['event_results']];
+    $sections[] = ['title' => 'イベント結果報告', 'icon' => '[結果]', 'content' => $newsletter['event_results']];
 }
 
 if (!empty($newsletter['elementary_report'])) {
-    $sections[] = ['title' => '小学生の活動', 'icon' => '🎒', 'content' => $newsletter['elementary_report']];
+    $sections[] = ['title' => '小学生の活動', 'icon' => '[小学]', 'content' => $newsletter['elementary_report']];
 }
 
 if (!empty($newsletter['junior_report'])) {
-    $sections[] = ['title' => '中高生の活動', 'icon' => '📚', 'content' => $newsletter['junior_report']];
+    $sections[] = ['title' => '中高生の活動', 'icon' => '[中高]', 'content' => $newsletter['junior_report']];
 }
 
 if (!empty($newsletter['requests'])) {
-    $sections[] = ['title' => '施設からのお願い', 'icon' => '🙏', 'content' => $newsletter['requests']];
+    $sections[] = ['title' => '施設からのお願い', 'icon' => '[お願い]', 'content' => $newsletter['requests']];
 }
 
 if (!empty($newsletter['others'])) {
-    $sections[] = ['title' => 'その他のお知らせ', 'icon' => '📌', 'content' => $newsletter['others']];
+    $sections[] = ['title' => 'その他のお知らせ', 'icon' => '[他]', 'content' => $newsletter['others']];
 }
 
 $hasContent = count($sections) > 0;

@@ -10,7 +10,7 @@ const STATIC_CACHE_URLS = [
     '/',
     '/login.php',
     '/offline.html',
-    '/assets/css/apple-design.css',
+    '/assets/css/google-design.css',
     '/assets/icons/icon-192x192.svg',
     '/assets/icons/icon-512x512.svg',
     '/manifest.json'

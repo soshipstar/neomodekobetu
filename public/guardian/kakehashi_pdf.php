@@ -62,7 +62,8 @@ if ($kakehashiData && $kakehashiData['is_hidden']) {
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <link rel="stylesheet" href="/assets/css/apple-design.css">
+    <link rel="stylesheet" href="/assets/css/google-design.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <meta charset="UTF-8">
     <title>かけはし（保護者） - <?= htmlspecialchars($student['student_name']) ?></title>
     <style>
@@ -196,10 +197,10 @@ if ($kakehashiData && $kakehashiData['is_hidden']) {
     </style>
 </head>
 <body>
-    <button class="print-button no-print" onclick="window.print()">🖨️ PDF印刷</button>
+    <button class="print-button no-print" onclick="window.print()"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">print</span> PDF印刷</button>
 
     <div class="header">
-        <h1>🌉 かけはし（保護者入力）</h1>
+        <h1><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">handshake</span> かけはし（保護者入力）</h1>
     </div>
 
     <div class="meta-info">
@@ -208,7 +209,7 @@ if ($kakehashiData && $kakehashiData['is_hidden']) {
             <span><?= htmlspecialchars($student['student_name']) ?></span>
         </div>
         <div class="meta-item">
-            <span class="meta-label">📋 個別支援計画：</span>
+            <span class="meta-label"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">assignment</span> 個別支援計画：</span>
             <span><?= getIndividualSupportPlanStartMonth($period) ?>開始分</span>
         </div>
     </div>
@@ -222,19 +223,19 @@ if ($kakehashiData && $kakehashiData['is_hidden']) {
 
     <!-- 本人の願い -->
     <div class="section">
-        <div class="section-title">💫 本人の願い</div>
+        <div class="section-title"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">auto_awesome</span> 本人の願い</div>
         <div class="section-content"><?= $kakehashiData ? htmlspecialchars($kakehashiData['student_wish']) : '（未入力）' ?></div>
     </div>
 
     <!-- 家庭での願い -->
     <div class="section">
-        <div class="section-title">🏠 家庭での願い</div>
+        <div class="section-title"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">home</span> 家庭での願い</div>
         <div class="section-content"><?= $kakehashiData ? htmlspecialchars($kakehashiData['home_challenges']) : '（未入力）' ?></div>
     </div>
 
     <!-- 目標設定 -->
     <div class="section">
-        <div class="section-title">🎯 目標設定</div>
+        <div class="section-title"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">target</span> 目標設定</div>
         <div class="domain-item">
             <div class="domain-label">短期目標（6か月）</div>
             <div class="section-content"><?= $kakehashiData ? htmlspecialchars($kakehashiData['short_term_goal']) : '（未入力）' ?></div>
@@ -248,7 +249,7 @@ if ($kakehashiData && $kakehashiData['is_hidden']) {
 
     <!-- 五領域の課題 -->
     <div class="section">
-        <div class="section-title">🌟 五領域の課題</div>
+        <div class="section-title"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">star</span> 五領域の課題</div>
         <div class="domains-grid">
             <div class="domain-item">
                 <div class="domain-label">健康・生活</div>
@@ -275,7 +276,7 @@ if ($kakehashiData && $kakehashiData['is_hidden']) {
 
     <!-- その他の課題 -->
     <div class="section">
-        <div class="section-title">📌 その他の課題</div>
+        <div class="section-title"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">push_pin</span> その他の課題</div>
         <div class="section-content"><?= $kakehashiData ? htmlspecialchars($kakehashiData['other_challenges']) : '（未入力）' ?></div>
     </div>
 

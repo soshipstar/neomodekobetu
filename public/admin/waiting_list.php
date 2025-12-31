@@ -163,7 +163,7 @@ renderPageStart($userType, $currentPage, '待機児童管理');
 
 <style>
 .content-box {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-2xl);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-md);
@@ -175,7 +175,7 @@ renderPageStart($userType, $currentPage, '待機児童管理');
     color: var(--text-primary);
     margin-bottom: var(--spacing-lg);
     padding-bottom: 10px;
-    border-bottom: 2px solid var(--apple-purple);
+    border-bottom: 2px solid var(--md-purple);
 }
 
 .capacity-grid {
@@ -198,7 +198,7 @@ renderPageStart($userType, $currentPage, '待機児童管理');
 }
 
 .capacity-card {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-md);
     padding: var(--spacing-lg);
     text-align: center;
@@ -212,16 +212,16 @@ renderPageStart($userType, $currentPage, '待機児童管理');
 }
 
 .capacity-card.closed {
-    background: var(--apple-gray-5);
+    background: var(--md-gray-5);
     opacity: 0.7;
 }
 
 .capacity-card.available {
-    border: 2px solid var(--apple-green);
+    border: 2px solid var(--md-green);
 }
 
 .capacity-card.full {
-    border: 2px solid var(--apple-red);
+    border: 2px solid var(--md-red);
 }
 
 .capacity-card .day-name {
@@ -230,8 +230,8 @@ renderPageStart($userType, $currentPage, '待機児童管理');
     margin-bottom: var(--spacing-sm);
 }
 
-.capacity-card .day-name.sunday { color: var(--apple-red); }
-.capacity-card .day-name.saturday { color: var(--apple-blue); }
+.capacity-card .day-name.sunday { color: var(--md-red); }
+.capacity-card .day-name.saturday { color: var(--md-blue); }
 
 .capacity-card .stats {
     font-size: var(--text-footnote);
@@ -248,23 +248,23 @@ renderPageStart($userType, $currentPage, '待機児童管理');
 }
 
 .capacity-card .availability.available {
-    background: var(--apple-green);
+    background: var(--md-green);
     color: white;
 }
 
 .capacity-card .availability.full {
-    background: var(--apple-red);
+    background: var(--md-red);
     color: white;
 }
 
 .capacity-card .availability.closed {
-    background: var(--apple-gray-4);
+    background: var(--md-gray-4);
     color: white;
 }
 
 .capacity-card .waiting-badge {
     font-size: var(--text-caption-1);
-    color: var(--apple-orange);
+    color: var(--md-orange);
     margin-top: var(--spacing-xs);
 }
 
@@ -277,18 +277,18 @@ renderPageStart($userType, $currentPage, '待機児童管理');
 .data-table td {
     padding: var(--spacing-md);
     text-align: left;
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
 }
 
 .data-table th {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     font-weight: 600;
     font-size: var(--text-footnote);
     color: var(--text-secondary);
 }
 
 .data-table tr:hover {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
 }
 
 .desired-days {
@@ -301,12 +301,12 @@ renderPageStart($userType, $currentPage, '待機児童管理');
     padding: 2px 8px;
     border-radius: var(--radius-xs);
     font-size: var(--text-caption-1);
-    background: var(--apple-purple);
+    background: var(--md-purple);
     color: white;
 }
 
 .btn-admit {
-    background: var(--apple-green);
+    background: var(--md-green);
     color: white;
     padding: var(--spacing-xs) var(--spacing-md);
     border-radius: var(--radius-sm);
@@ -341,7 +341,7 @@ renderPageStart($userType, $currentPage, '待機児童管理');
 }
 
 .settings-card {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-md);
     padding: var(--spacing-md);
     text-align: center;
@@ -352,14 +352,14 @@ renderPageStart($userType, $currentPage, '待機児童管理');
     margin-bottom: var(--spacing-sm);
 }
 
-.settings-card .day-label.sunday { color: var(--apple-red); }
-.settings-card .day-label.saturday { color: var(--apple-blue); }
+.settings-card .day-label.sunday { color: var(--md-red); }
+.settings-card .day-label.saturday { color: var(--md-blue); }
 
 .settings-card input[type="number"] {
     width: 60px;
     padding: var(--spacing-xs);
     text-align: center;
-    border: 1px solid var(--apple-gray-4);
+    border: 1px solid var(--md-gray-4);
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-sm);
 }
@@ -375,7 +375,7 @@ renderPageStart($userType, $currentPage, '待機児童管理');
 
 .quick-link {
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-sm);
     text-decoration: none;
     color: var(--text-primary);
@@ -385,7 +385,7 @@ renderPageStart($userType, $currentPage, '待機児童管理');
     display: inline-block;
     margin-bottom: var(--spacing-lg);
 }
-.quick-link:hover { background: var(--apple-gray-5); }
+.quick-link:hover { background: var(--md-gray-5); }
 
 .empty-message {
     text-align: center;
@@ -401,21 +401,21 @@ renderPageStart($userType, $currentPage, '待機児童管理');
 
 .alert-success {
     background: rgba(52, 199, 89, 0.15);
-    color: var(--apple-green);
-    border: 1px solid var(--apple-green);
+    color: var(--md-green);
+    border: 1px solid var(--md-green);
 }
 
 .alert-error {
     background: rgba(255, 59, 48, 0.15);
-    color: var(--apple-red);
-    border: 1px solid var(--apple-red);
+    color: var(--md-red);
+    border: 1px solid var(--md-red);
 }
 
 /* 曜日詳細モーダル */
 .day-detail-section {
     margin-top: var(--spacing-xl);
     padding-top: var(--spacing-xl);
-    border-top: 1px solid var(--apple-gray-5);
+    border-top: 1px solid var(--md-gray-5);
 }
 
 .day-tabs {
@@ -427,26 +427,26 @@ renderPageStart($userType, $currentPage, '待機児童管理');
 
 .day-tab {
     padding: var(--spacing-sm) var(--spacing-lg);
-    border: 2px solid var(--apple-gray-4);
+    border: 2px solid var(--md-gray-4);
     border-radius: var(--radius-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     cursor: pointer;
     font-weight: 600;
     transition: all var(--duration-fast);
 }
 
 .day-tab:hover {
-    border-color: var(--apple-purple);
+    border-color: var(--md-purple);
 }
 
 .day-tab.active {
-    background: var(--apple-purple);
+    background: var(--md-purple);
     color: white;
-    border-color: var(--apple-purple);
+    border-color: var(--md-purple);
 }
 
-.day-tab.sunday { color: var(--apple-red); }
-.day-tab.saturday { color: var(--apple-blue); }
+.day-tab.sunday { color: var(--md-red); }
+.day-tab.saturday { color: var(--md-blue); }
 .day-tab.sunday.active, .day-tab.saturday.active { color: white; }
 
 .day-content {
@@ -464,7 +464,7 @@ renderPageStart($userType, $currentPage, '待機児童管理');
 }
 
 .student-item {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--radius-sm);
     font-size: var(--text-footnote);
@@ -489,22 +489,22 @@ renderPageStart($userType, $currentPage, '待機児童管理');
 
 .status-badge.trial {
     background: rgba(255, 149, 0, 0.2);
-    color: var(--apple-orange);
+    color: var(--md-orange);
 }
 
 .status-badge.short_term {
     background: rgba(0, 122, 255, 0.2);
-    color: var(--apple-blue);
+    color: var(--md-blue);
 }
 
 .waiting-list-mini {
     margin-top: var(--spacing-md);
     padding-top: var(--spacing-md);
-    border-top: 1px dashed var(--apple-gray-4);
+    border-top: 1px dashed var(--md-gray-4);
 }
 
 .waiting-list-mini h4 {
-    color: var(--apple-orange);
+    color: var(--md-orange);
     font-size: var(--text-footnote);
     margin-bottom: var(--spacing-sm);
 }
@@ -650,7 +650,7 @@ renderPageStart($userType, $currentPage, '待機児童管理');
                             <h4>待機中 (<?= count($waitingList) ?>名)</h4>
                             <div class="student-list">
                                 <?php foreach ($waitingList as $student): ?>
-                                    <div class="student-item" style="border-left: 3px solid var(--apple-orange);">
+                                    <div class="student-item" style="border-left: 3px solid var(--md-orange);">
                                         <span class="name"><?= htmlspecialchars($student['student_name']) ?></span>
                                         <div class="grade">
                                             <?= getGradeLevelLabel($student['grade_level']) ?>
@@ -687,11 +687,11 @@ renderPageStart($userType, $currentPage, '待機児童管理');
                     $isOpen = $cap['is_open'];
                     $dayClass = ($day == 0) ? 'sunday' : (($day == 6) ? 'saturday' : '');
                 ?>
-                    <div class="waiting-summary-card" style="background: var(--apple-bg-secondary); border-radius: var(--radius-md); padding: var(--spacing-md); text-align: center; <?= !$isOpen ? 'opacity: 0.5;' : '' ?>">
+                    <div class="waiting-summary-card" style="background: var(--md-bg-secondary); border-radius: var(--radius-md); padding: var(--spacing-md); text-align: center; <?= !$isOpen ? 'opacity: 0.5;' : '' ?>">
                         <div class="day-name <?= $dayClass ?>" style="font-weight: 700; margin-bottom: var(--spacing-xs);"><?= $dayNames[$day] ?></div>
                         <?php if ($isOpen): ?>
                             <?php if ($waiting > 0): ?>
-                                <div style="font-size: var(--text-title-2); font-weight: 700; color: var(--apple-orange);"><?= $waiting ?>名</div>
+                                <div style="font-size: var(--text-title-2); font-weight: 700; color: var(--md-orange);"><?= $waiting ?>名</div>
                             <?php else: ?>
                                 <div style="font-size: var(--text-footnote); color: var(--text-secondary);">待機なし</div>
                             <?php endif; ?>
@@ -720,8 +720,8 @@ renderPageStart($userType, $currentPage, '待機児童管理');
         <h3 style="font-size: var(--text-subheadline); color: var(--text-secondary); margin-bottom: var(--spacing-md);">入所希望日別一覧</h3>
 
         <?php foreach ($groupedByDate as $dateKey => $students): ?>
-            <div class="waiting-date-group" style="margin-bottom: var(--spacing-lg); background: var(--apple-bg-secondary); border-radius: var(--radius-md); overflow: hidden;">
-                <div style="background: var(--apple-orange); color: white; padding: var(--spacing-sm) var(--spacing-md); font-weight: 600;">
+            <div class="waiting-date-group" style="margin-bottom: var(--spacing-lg); background: var(--md-bg-secondary); border-radius: var(--radius-md); overflow: hidden;">
+                <div style="background: var(--md-orange); color: white; padding: var(--spacing-sm) var(--spacing-md); font-weight: 600;">
                     <?php if ($dateKey === '9999-99-99'): ?>
                         入所希望日 未定
                     <?php else: ?>
@@ -731,14 +731,14 @@ renderPageStart($userType, $currentPage, '待機児童管理');
                 </div>
                 <div style="padding: var(--spacing-md);">
                     <?php foreach ($students as $student): ?>
-                        <div class="waiting-student-row" style="display: flex; align-items: center; gap: var(--spacing-md); padding: var(--spacing-sm) 0; border-bottom: 1px solid var(--apple-gray-5); flex-wrap: wrap;">
+                        <div class="waiting-student-row" style="display: flex; align-items: center; gap: var(--spacing-md); padding: var(--spacing-sm) 0; border-bottom: 1px solid var(--md-gray-5); flex-wrap: wrap;">
                             <div style="min-width: 120px;">
                                 <strong><?= htmlspecialchars($student['student_name']) ?></strong>
                                 <div style="font-size: var(--text-caption-1); color: var(--text-secondary);"><?= getGradeLevelLabel($student['grade_level']) ?></div>
                             </div>
                             <div style="min-width: 80px;">
                                 <?php if ($student['desired_weekly_count']): ?>
-                                    <span style="background: var(--apple-blue); color: white; padding: 2px 8px; border-radius: var(--radius-sm); font-size: var(--text-caption-1); font-weight: 600;">週<?= $student['desired_weekly_count'] ?>回</span>
+                                    <span style="background: var(--md-blue); color: white; padding: 2px 8px; border-radius: var(--radius-sm); font-size: var(--text-caption-1); font-weight: 600;">週<?= $student['desired_weekly_count'] ?>回</span>
                                 <?php else: ?>
                                     <span style="color: var(--text-secondary); font-size: var(--text-caption-1);">回数未定</span>
                                 <?php endif; ?>

@@ -130,7 +130,7 @@ renderPageStart('staff', $currentPage, '業務日誌');
     align-items: center;
     margin-bottom: var(--spacing-lg);
     padding: var(--spacing-lg);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-md);
 }
 
@@ -148,7 +148,7 @@ renderPageStart('staff', $currentPage, '業務日誌');
 
 .nav-btn {
     padding: 8px 16px;
-    background: var(--apple-gray-5);
+    background: var(--md-gray-5);
     color: var(--text-primary);
     text-decoration: none;
     border-radius: var(--radius-sm);
@@ -157,7 +157,7 @@ renderPageStart('staff', $currentPage, '業務日誌');
 }
 
 .nav-btn:hover {
-    background: var(--apple-gray-4);
+    background: var(--md-gray-4);
 }
 
 .diary-actions {
@@ -166,7 +166,7 @@ renderPageStart('staff', $currentPage, '業務日誌');
 }
 
 .diary-section {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border-radius: var(--radius-md);
     padding: var(--spacing-lg);
     margin-bottom: var(--spacing-lg);
@@ -174,7 +174,7 @@ renderPageStart('staff', $currentPage, '業務日誌');
 }
 
 .diary-section h3 {
-    color: var(--apple-blue);
+    color: var(--md-blue);
     font-size: var(--text-body);
     margin-bottom: var(--spacing-md);
     display: flex;
@@ -186,7 +186,7 @@ renderPageStart('staff', $currentPage, '業務日誌');
     width: 100%;
     min-height: 120px;
     padding: var(--spacing-md);
-    border: 2px solid var(--apple-gray-5);
+    border: 2px solid var(--md-gray-5);
     border-radius: var(--radius-sm);
     font-size: var(--text-subhead);
     font-family: inherit;
@@ -196,28 +196,28 @@ renderPageStart('staff', $currentPage, '業務日誌');
 
 .diary-section textarea:focus {
     outline: none;
-    border-color: var(--apple-blue);
+    border-color: var(--md-blue);
 }
 
 .prev-diary-reference {
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     padding: var(--spacing-md);
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-md);
     font-size: var(--text-footnote);
     color: var(--text-secondary);
-    border-left: 3px solid var(--apple-orange);
+    border-left: 3px solid var(--md-orange);
 }
 
 .prev-diary-reference h4 {
     font-size: var(--text-footnote);
-    color: var(--apple-orange);
+    color: var(--md-orange);
     margin-bottom: 5px;
 }
 
 .submit-btn {
     padding: 12px 30px;
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
     border: none;
     border-radius: var(--radius-sm);
@@ -228,12 +228,12 @@ renderPageStart('staff', $currentPage, '業務日誌');
 }
 
 .submit-btn:hover {
-    background: var(--apple-blue-dark);
+    background: var(--md-blue-dark);
 }
 
 .btn-calendar {
     padding: 10px 20px;
-    background: var(--apple-green);
+    background: var(--md-green);
     color: white;
     text-decoration: none;
     border-radius: var(--radius-sm);
@@ -250,7 +250,7 @@ renderPageStart('staff', $currentPage, '業務日誌');
     color: var(--text-tertiary);
     margin-top: var(--spacing-lg);
     padding-top: var(--spacing-md);
-    border-top: 1px solid var(--apple-gray-5);
+    border-top: 1px solid var(--md-gray-5);
 }
 
 .success-message {
@@ -292,7 +292,7 @@ renderPageStart('staff', $currentPage, '業務日誌');
     <form method="POST">
         <!-- 前日の振り返り -->
         <div class="diary-section">
-            <h3><span>📝</span> 前日の振り返り</h3>
+            <h3><span class="material-symbols-outlined">edit_note</span> 前日の振り返り</h3>
             <?php if ($prevDiary && !empty($prevDiary['children_special_notes'])): ?>
                 <div class="prev-diary-reference">
                     <h4>参考：前日の児童の状況</h4>
@@ -304,19 +304,19 @@ renderPageStart('staff', $currentPage, '業務日誌');
 
         <!-- 本日の伝達事項 -->
         <div class="diary-section">
-            <h3><span>📢</span> 本日の伝達事項</h3>
+            <h3><span class="material-symbols-outlined">campaign</span> 本日の伝達事項</h3>
             <textarea name="daily_communication" placeholder="スタッフ間で共有すべき情報、保護者からの連絡、注意事項などを記入してください"><?php echo htmlspecialchars($diary['daily_communication'] ?? ''); ?></textarea>
         </div>
 
         <!-- 本日の役割分担 -->
         <div class="diary-section">
-            <h3><span>👥</span> 本日の役割分担</h3>
+            <h3><span class="material-symbols-outlined">group</span> 本日の役割分担</h3>
             <textarea name="daily_roles" placeholder="各スタッフの担当業務、配置、送迎担当などを記入してください"><?php echo htmlspecialchars($diary['daily_roles'] ?? ''); ?></textarea>
         </div>
 
         <!-- 前日の児童の状況 -->
         <div class="diary-section">
-            <h3><span>👧</span> 前日の児童の状況</h3>
+            <h3><span class="material-symbols-outlined">face</span> 前日の児童の状況</h3>
             <?php if ($prevDiary && !empty($prevDiary['children_special_notes'])): ?>
                 <div class="prev-diary-reference">
                     <h4>参考：前日の特記事項</h4>
@@ -328,13 +328,13 @@ renderPageStart('staff', $currentPage, '業務日誌');
 
         <!-- 児童に関する特記事項 -->
         <div class="diary-section">
-            <h3><span>📌</span> 児童に関する特記事項</h3>
+            <h3><span class="material-symbols-outlined">push_pin</span> 児童に関する特記事項</h3>
             <textarea name="children_special_notes" placeholder="本日注意すべき児童の情報、トラブル、成長の記録、保護者からの連絡などを記入してください"><?php echo htmlspecialchars($diary['children_special_notes'] ?? ''); ?></textarea>
         </div>
 
         <!-- その他メモ -->
         <div class="diary-section">
-            <h3><span>📋</span> その他メモ</h3>
+            <h3><span class="material-symbols-outlined">description</span> その他メモ</h3>
             <textarea name="other_notes" placeholder="備品の補充、施設の修繕、その他共有事項などを記入してください"><?php echo htmlspecialchars($diary['other_notes'] ?? ''); ?></textarea>
         </div>
 

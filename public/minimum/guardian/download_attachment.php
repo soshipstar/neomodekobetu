@@ -1,10 +1,10 @@
 <?php
 /**
  * チャット添付ファイルダウンロード（保護者用）
- * きづり（通常版）専用
+ * かけはし（minimum版）専用
  */
 session_start();
-require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../config/database.php';
 
 // 認証チェック
 if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'guardian') {
@@ -18,19 +18,6 @@ $userId = $_SESSION['user_id'];
 $messageId = $_GET['id'] ?? null;
 $classroomId = $_SESSION['classroom_id'] ?? null;
 
-// 教室のservice_typeを確認（minimum版ユーザーはアクセス不可）
-if ($classroomId) {
-    $stmt = $pdo->prepare("SELECT service_type FROM classrooms WHERE id = ?");
-    $stmt->execute([$classroomId]);
-    $classroom = $stmt->fetch();
-
-    if ($classroom && $classroom['service_type'] === 'minimum') {
-        header('HTTP/1.0 403 Forbidden');
-        echo 'この機能は「きづり」専用です。「かけはし」版からアクセスしてください。';
-        exit;
-    }
-}
-
 if (!$messageId) {
     header('HTTP/1.0 400 Bad Request');
     echo 'メッセージIDが指定されていません';
@@ -38,6 +25,19 @@ if (!$messageId) {
 }
 
 try {
+    // 教室のservice_typeを確認（minimum版のみアクセス可能）
+    if ($classroomId) {
+        $stmt = $pdo->prepare("SELECT service_type FROM classrooms WHERE id = ?");
+        $stmt->execute([$classroomId]);
+        $classroom = $stmt->fetch();
+
+        if (!$classroom || $classroom['service_type'] !== 'minimum') {
+            header('HTTP/1.0 403 Forbidden');
+            echo 'この機能は「かけはし」専用です';
+            exit;
+        }
+    }
+
     // メッセージを取得し、保護者のアクセス権限を確認
     $stmt = $pdo->prepare("
         SELECT cm.*, cr.guardian_id
@@ -60,7 +60,7 @@ try {
         exit;
     }
 
-    $filePath = __DIR__ . '/../' . $message['attachment_path'];
+    $filePath = __DIR__ . '/../../' . $message['attachment_path'];
 
     if (!file_exists($filePath)) {
         header('HTTP/1.0 404 Not Found');
@@ -68,9 +68,16 @@ try {
         exit;
     }
 
-    // ファイルを送信
-    header('Content-Type: ' . ($message['attachment_type'] ?: 'application/octet-stream'));
-    header('Content-Disposition: attachment; filename="' . $message['attachment_original_name'] . '"');
+    // 画像の場合はインラインで表示、それ以外はダウンロード
+    $mimeType = $message['attachment_type'] ?: 'application/octet-stream';
+    $isImage = strpos($mimeType, 'image/') === 0;
+
+    header('Content-Type: ' . $mimeType);
+    if ($isImage) {
+        header('Content-Disposition: inline; filename="' . $message['attachment_original_name'] . '"');
+    } else {
+        header('Content-Disposition: attachment; filename="' . $message['attachment_original_name'] . '"');
+    }
     header('Content-Length: ' . filesize($filePath));
     readfile($filePath);
 

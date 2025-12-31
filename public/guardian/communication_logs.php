@@ -175,17 +175,17 @@ renderPageStart('guardian', $currentPage, '連絡帳一覧', ['classroom' => $cl
 }
 
 .stat-card {
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     padding: var(--spacing-md);
     border-radius: var(--radius-sm);
     text-align: center;
-    border-left: 4px solid var(--apple-purple);
+    border-left: 4px solid var(--md-purple);
 }
 
 .stat-value {
     font-size: var(--text-title-2);
     font-weight: bold;
-    color: var(--apple-purple);
+    color: var(--md-purple);
     margin-bottom: 5px;
 }
 
@@ -206,14 +206,14 @@ renderPageStart('guardian', $currentPage, '連絡帳一覧', ['classroom' => $cl
 }
 
 .domain-bar-bg {
-    background: var(--apple-gray-5);
+    background: var(--md-gray-5);
     height: 24px;
     border-radius: var(--radius-md);
     overflow: hidden;
 }
 
 .domain-bar-fill {
-    background: linear-gradient(90deg, var(--apple-purple), #764ba2);
+    background: linear-gradient(90deg, var(--md-purple), #764ba2);
     height: 100%;
     border-radius: var(--radius-md);
     transition: width 0.3s;
@@ -227,11 +227,11 @@ renderPageStart('guardian', $currentPage, '連絡帳一覧', ['classroom' => $cl
 }
 
 .note-item {
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     padding: var(--spacing-lg);
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-md);
-    border-left: 4px solid var(--apple-purple);
+    border-left: 4px solid var(--md-purple);
 }
 
 .note-header {
@@ -245,7 +245,7 @@ renderPageStart('guardian', $currentPage, '連絡帳一覧', ['classroom' => $cl
 
 .activity-name {
     font-weight: bold;
-    color: var(--apple-purple);
+    color: var(--md-purple);
     font-size: var(--text-callout);
     margin-bottom: 5px;
 }
@@ -276,7 +276,7 @@ renderPageStart('guardian', $currentPage, '連絡帳一覧', ['classroom' => $cl
 
 .domain-badge {
     background: rgba(0, 122, 255, 0.1);
-    color: var(--apple-blue);
+    color: var(--md-blue);
     padding: 3px 10px;
     border-radius: var(--radius-md);
     font-size: 11px;
@@ -292,11 +292,11 @@ renderPageStart('guardian', $currentPage, '連絡帳一覧', ['classroom' => $cl
 
 .search-info {
     background: rgba(0, 122, 255, 0.1);
-    border-left: 4px solid var(--apple-blue);
+    border-left: 4px solid var(--md-blue);
     padding: var(--spacing-md);
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-lg);
-    color: var(--apple-blue);
+    color: var(--md-blue);
 }
 
 @media (max-width: 768px) {
@@ -314,7 +314,7 @@ renderPageStart('guardian', $currentPage, '連絡帳一覧', ['classroom' => $cl
     gap: var(--spacing-sm);
     margin-top: var(--spacing-md);
     padding-top: var(--spacing-md);
-    border-top: 1px solid var(--apple-gray-5);
+    border-top: 1px solid var(--md-gray-5);
 }
 
 .confirmation-checkbox {
@@ -336,20 +336,20 @@ renderPageStart('guardian', $currentPage, '連絡帳一覧', ['classroom' => $cl
 }
 
 .confirmation-checkbox.confirmed label {
-    color: var(--apple-green);
+    color: var(--md-green);
 }
 
 .confirmation-date {
     font-size: var(--text-footnote);
-    color: var(--apple-green);
+    color: var(--md-green);
 }
 
 .note-item.unconfirmed {
-    border-left-color: var(--apple-orange);
+    border-left-color: var(--md-orange);
 }
 
 .note-item.confirmed {
-    border-left-color: var(--apple-green);
+    border-left-color: var(--md-green);
 }
 
 @media print {
@@ -364,13 +364,13 @@ renderPageStart('guardian', $currentPage, '連絡帳一覧', ['classroom' => $cl
         <h1 class="page-title">連絡帳一覧・検索</h1>
         <p class="page-subtitle">過去の活動記録を検索・確認できます</p>
     </div>
-    <button onclick="window.print()" class="btn btn-secondary">🖨️ 印刷</button>
+    <button onclick="window.print()" class="btn btn-secondary"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">print</span> 印刷</button>
 </div>
 
 <!-- 検索フォーム -->
 <div class="card search-section" style="margin-bottom: var(--spacing-lg);">
     <div class="card-body">
-        <h2 style="font-size: var(--text-body); margin-bottom: var(--spacing-lg); color: var(--apple-purple);">🔍 検索・フィルター</h2>
+        <h2 style="font-size: var(--text-body); margin-bottom: var(--spacing-lg); color: var(--md-purple);"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">search</span> 検索・フィルター</h2>
         <form method="GET" action="communication_logs.php">
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md);">
                 <div class="form-group">
@@ -420,7 +420,7 @@ renderPageStart('guardian', $currentPage, '連絡帳一覧', ['classroom' => $cl
 <?php if ($stats['total_count'] > 0): ?>
 <div class="card" style="margin-bottom: var(--spacing-lg);">
     <div class="card-body">
-        <h2 style="font-size: var(--text-body); margin-bottom: var(--spacing-lg); color: var(--apple-purple);">📊 統計情報</h2>
+        <h2 style="font-size: var(--text-body); margin-bottom: var(--spacing-lg); color: var(--md-purple);"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">monitoring</span> 統計情報</h2>
 
         <div class="stats-grid">
             <div class="stat-card">
@@ -468,15 +468,15 @@ renderPageStart('guardian', $currentPage, '連絡帳一覧', ['classroom' => $cl
 <!-- 検索結果 -->
 <div class="card">
     <div class="card-body">
-        <h2 style="font-size: var(--text-body); margin-bottom: var(--spacing-lg); color: var(--apple-purple);">📝 連絡帳一覧</h2>
+        <h2 style="font-size: var(--text-body); margin-bottom: var(--spacing-lg); color: var(--md-purple);"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit_note</span> 連絡帳一覧</h2>
 
         <?php if (!empty($searchKeyword) || !empty($searchStartDate) || !empty($searchEndDate) || !empty($selectedStudentId) || !empty($searchDomain)): ?>
             <div class="search-info">
                 <strong>検索結果:</strong> <?= count($notes) ?>件の連絡帳が見つかりました
             </div>
         <?php else: ?>
-            <div class="search-info" style="background: rgba(88, 86, 214, 0.1); border-left-color: var(--apple-purple);">
-                <strong>📅 直近1か月分を表示中</strong>（<?= date('Y年n月j日', strtotime($defaultStartDate)) ?>以降）<br>
+            <div class="search-info" style="background: rgba(88, 86, 214, 0.1); border-left-color: var(--md-purple);">
+                <strong><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event</span> 直近1か月分を表示中</strong>（<?= date('Y年n月j日', strtotime($defaultStartDate)) ?>以降）<br>
                 <span style="font-size: var(--text-caption-1);">過去の連絡帳を見るには、上の検索フォームで期間を指定してください</span>
             </div>
         <?php endif; ?>

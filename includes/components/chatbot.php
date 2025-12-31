@@ -54,7 +54,7 @@ $helpData = [
     'categories' => [
         [
             'id' => 'activity',
-            'icon' => '📝',
+            'icon' => '<span class="material-symbols-outlined">edit_note</span>',
             'title' => '活動管理・連絡帳',
             'items' => [
                 [
@@ -77,7 +77,7 @@ $helpData = [
         ],
         [
             'id' => 'support_plan',
-            'icon' => '📋',
+            'icon' => '<span class="material-symbols-outlined">assignment</span>',
             'title' => '支援案',
             'items' => [
                 [
@@ -96,7 +96,7 @@ $helpData = [
         ],
         [
             'id' => 'kakehashi',
-            'icon' => '🌉',
+            'icon' => '<span class="material-symbols-outlined">handshake</span>',
             'title' => 'かけはし',
             'items' => [
                 [
@@ -115,7 +115,7 @@ $helpData = [
         ],
         [
             'id' => 'plan',
-            'icon' => '📊',
+            'icon' => '<span class="material-symbols-outlined">monitoring</span>',
             'title' => '個別支援計画・モニタリング',
             'items' => [
                 [
@@ -134,7 +134,7 @@ $helpData = [
         ],
         [
             'id' => 'user',
-            'icon' => '👥',
+            'icon' => '<span class="material-symbols-outlined">group</span>',
             'title' => '生徒・保護者管理',
             'items' => [
                 [
@@ -157,7 +157,7 @@ $helpData = [
         ],
         [
             'id' => 'chat',
-            'icon' => '💬',
+            'icon' => '<span class="material-symbols-outlined">chat</span>',
             'title' => 'チャット',
             'items' => [
                 [
@@ -172,7 +172,7 @@ $helpData = [
         ],
         [
             'id' => 'other',
-            'icon' => '⚙️',
+            'icon' => '<span class="material-symbols-outlined">settings</span>',
             'title' => 'その他',
             'items' => [
                 [
@@ -201,7 +201,7 @@ $helpData = [
 <div id="help-container">
     <!-- ヘルプ開始ボタン -->
     <button id="help-toggle" onclick="toggleHelp()">
-        <span class="help-icon-btn">❓</span>
+        <span class="help-icon-btn"><span class="material-symbols-outlined" style="font-size: 20px;">help</span></span>
         <span class="help-label">ヘルプ</span>
     </button>
 
@@ -209,7 +209,7 @@ $helpData = [
     <div id="help-window" class="help-hidden">
         <div class="help-header">
             <div class="help-header-title">
-                <span>📖</span>
+                <span class="material-symbols-outlined" style="font-size: 20px;">menu_book</span>
                 <span>操作ヘルプ</span>
             </div>
             <button class="help-close" onclick="toggleHelp()">×</button>
@@ -262,6 +262,13 @@ $helpData = [
     right: 20px;
     z-index: 9999;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    cursor: move;
+    touch-action: none;
+    user-select: none;
+}
+
+#help-container.dragging {
+    opacity: 0.8;
 }
 
 #help-toggle {
@@ -269,19 +276,18 @@ $helpData = [
     align-items: center;
     gap: 8px;
     padding: 12px 20px;
-    background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+    background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
     color: white;
     border: none;
     border-radius: 50px;
     cursor: pointer;
     box-shadow: 0 4px 15px rgba(52, 199, 89, 0.4);
-    transition: all 0.3s ease;
+    transition: box-shadow 0.3s ease, transform 0.1s ease;
     font-size: 14px;
     font-weight: 600;
 }
 
 #help-toggle:hover {
-    transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(52, 199, 89, 0.5);
 }
 
@@ -297,7 +303,7 @@ $helpData = [
     max-width: calc(100vw - 40px);
     height: 500px;
     max-height: calc(100vh - 120px);
-    background: var(--apple-bg-primary, #ffffff);
+    background: var(--md-bg-primary, #ffffff);
     border-radius: 16px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
     display: flex;
@@ -317,7 +323,7 @@ $helpData = [
     justify-content: space-between;
     align-items: center;
     padding: 16px 20px;
-    background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+    background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
     color: white;
 }
 
@@ -352,7 +358,7 @@ $helpData = [
     flex: 1;
     overflow-y: auto;
     padding: 16px;
-    background: var(--apple-bg-secondary, #f5f5f7);
+    background: var(--md-bg-secondary, #f5f5f7);
 }
 
 .help-intro {
@@ -368,7 +374,7 @@ $helpData = [
     width: 100%;
     padding: 14px 16px;
     margin-bottom: 8px;
-    background: var(--apple-bg-primary, #ffffff);
+    background: var(--md-bg-primary, #ffffff);
     border: none;
     border-radius: 12px;
     cursor: pointer;
@@ -377,13 +383,19 @@ $helpData = [
 }
 
 .help-category-btn:hover {
-    background: var(--apple-gray-5, #e5e5ea);
+    background: var(--md-gray-5, #e5e5ea);
     transform: translateX(4px);
 }
 
 .category-icon {
     font-size: 24px;
     margin-right: 12px;
+    display: flex;
+    align-items: center;
+}
+
+.category-icon .material-symbols-outlined {
+    font-size: 24px;
 }
 
 .category-title {
@@ -404,7 +416,7 @@ $helpData = [
     margin-bottom: 16px;
     background: transparent;
     border: none;
-    color: #34c759;
+    color: #4CAF50;
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
@@ -421,7 +433,14 @@ $helpData = [
     color: var(--text-primary, #1d1d1f);
     margin-bottom: 16px;
     padding-bottom: 8px;
-    border-bottom: 2px solid #34c759;
+    border-bottom: 2px solid #4CAF50;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.help-category-title .material-symbols-outlined {
+    font-size: 22px;
 }
 
 .help-item-btn {
@@ -430,7 +449,7 @@ $helpData = [
     width: 100%;
     padding: 14px 16px;
     margin-bottom: 8px;
-    background: var(--apple-bg-primary, #ffffff);
+    background: var(--md-bg-primary, #ffffff);
     border: none;
     border-radius: 12px;
     cursor: pointer;
@@ -439,7 +458,7 @@ $helpData = [
 }
 
 .help-item-btn:hover {
-    background: var(--apple-gray-5, #e5e5ea);
+    background: var(--md-gray-5, #e5e5ea);
     transform: translateX(4px);
 }
 
@@ -455,7 +474,7 @@ $helpData = [
 }
 
 .help-answer-content {
-    background: var(--apple-bg-primary, #ffffff);
+    background: var(--md-bg-primary, #ffffff);
     padding: 20px;
     border-radius: 12px;
     font-size: 14px;
@@ -490,30 +509,7 @@ $helpData = [
     }
 }
 
-/* ダークモード対応 */
-@media (prefers-color-scheme: dark) {
-    .help-content {
-        background: #1c1c1e;
-    }
-
-    .help-category-btn,
-    .help-item-btn,
-    .help-answer-content {
-        background: #2c2c2e;
-    }
-
-    .help-category-btn:hover,
-    .help-item-btn:hover {
-        background: #3a3a3c;
-    }
-
-    .category-title,
-    .item-question,
-    .help-answer-content,
-    .help-category-title {
-        color: #f5f5f7;
-    }
-}
+/* Light Mode Only */
 </style>
 
 <script>
@@ -598,4 +594,132 @@ function backToItems() {
         showCategories();
     }
 }
+
+// ドラッグ機能
+(function() {
+    const container = document.getElementById('help-container');
+    let isDragging = false;
+    let hasMoved = false;
+    let startX, startY, startRight, startBottom;
+
+    // 保存された位置を復元
+    function restorePosition() {
+        const saved = localStorage.getItem('helpButtonPosition');
+        if (saved) {
+            try {
+                const pos = JSON.parse(saved);
+                container.style.right = pos.right + 'px';
+                container.style.bottom = pos.bottom + 'px';
+            } catch(e) {}
+        }
+    }
+
+    // 位置を保存
+    function savePosition() {
+        const rect = container.getBoundingClientRect();
+        const pos = {
+            right: window.innerWidth - rect.right,
+            bottom: window.innerHeight - rect.bottom
+        };
+        localStorage.setItem('helpButtonPosition', JSON.stringify(pos));
+    }
+
+    // 位置を画面内に収める
+    function clampPosition() {
+        const rect = container.getBoundingClientRect();
+        let right = window.innerWidth - rect.right;
+        let bottom = window.innerHeight - rect.bottom;
+
+        // 画面外に出ないように制限
+        right = Math.max(10, Math.min(right, window.innerWidth - rect.width - 10));
+        bottom = Math.max(10, Math.min(bottom, window.innerHeight - rect.height - 10));
+
+        container.style.right = right + 'px';
+        container.style.bottom = bottom + 'px';
+    }
+
+    // マウス/タッチ開始
+    function onStart(e) {
+        // ヘルプウィンドウ内のクリックは無視
+        if (e.target.closest('#help-window')) return;
+
+        isDragging = true;
+        hasMoved = false;
+        container.classList.add('dragging');
+
+        const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+
+        startX = clientX;
+        startY = clientY;
+
+        const rect = container.getBoundingClientRect();
+        startRight = window.innerWidth - rect.right;
+        startBottom = window.innerHeight - rect.bottom;
+
+        e.preventDefault();
+    }
+
+    // マウス/タッチ移動
+    function onMove(e) {
+        if (!isDragging) return;
+
+        const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+
+        const deltaX = startX - clientX;
+        const deltaY = startY - clientY;
+
+        // 5px以上動いたら移動とみなす
+        if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+            hasMoved = true;
+        }
+
+        if (hasMoved) {
+            container.style.right = (startRight + deltaX) + 'px';
+            container.style.bottom = (startBottom + deltaY) + 'px';
+            clampPosition();
+        }
+    }
+
+    // マウス/タッチ終了
+    function onEnd(e) {
+        if (!isDragging) return;
+
+        isDragging = false;
+        container.classList.remove('dragging');
+
+        if (hasMoved) {
+            savePosition();
+            // ドラッグ終了時はクリックイベントをキャンセル
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }
+
+    // イベントリスナー登録
+    container.addEventListener('mousedown', onStart);
+    container.addEventListener('touchstart', onStart, { passive: false });
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('touchmove', onMove, { passive: false });
+
+    document.addEventListener('mouseup', onEnd);
+    document.addEventListener('touchend', onEnd);
+
+    // ヘルプボタンのクリックハンドラを修正
+    const originalToggle = window.toggleHelp;
+    window.toggleHelp = function() {
+        if (!hasMoved) {
+            originalToggle();
+        }
+        hasMoved = false;
+    };
+
+    // ウィンドウリサイズ時に位置を調整
+    window.addEventListener('resize', clampPosition);
+
+    // 初期化
+    restorePosition();
+})();
 </script>

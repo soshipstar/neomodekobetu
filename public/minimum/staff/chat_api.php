@@ -274,7 +274,7 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $submissionId = $pdo->lastInsertId();
 
             // チャットメッセージとして通知も送信
-            $notificationMessage = "📋 【提出期限のお知らせ】\n\n件名: {$title}\n";
+            $notificationMessage = "<span class=\"material-symbols-outlined\" style=\"font-size: 18px; vertical-align: middle;\">assignment</span> 【提出期限のお知らせ】\n\n件名: {$title}\n";
             if ($description) {
                 $notificationMessage .= "詳細: {$description}\n";
             }

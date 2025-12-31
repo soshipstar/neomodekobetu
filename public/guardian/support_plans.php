@@ -72,14 +72,14 @@ renderPageStart('guardian', $currentPage, $pageTitle);
 
 <style>
         .content-box {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             border-radius: var(--radius-xl);
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             overflow: hidden;
         }
 
         .page-header {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             color: var(--text-primary);
             padding: var(--spacing-2xl);
             display: flex;
@@ -102,12 +102,12 @@ renderPageStart('guardian', $currentPage, $pageTitle);
             text-decoration: none;
             padding: var(--spacing-md) 20px;
             border-radius: var(--radius-sm);
-            background: var(--apple-gray-5);
+            background: var(--md-gray-5);
             transition: all var(--duration-normal) var(--ease-out);
         }
 
         .nav-links a:hover {
-            background: var(--apple-gray-5);
+            background: var(--md-gray-5);
         }
 
         .content {
@@ -115,7 +115,7 @@ renderPageStart('guardian', $currentPage, $pageTitle);
         }
 
         .selector-section {
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             padding: var(--spacing-lg);
             border-radius: var(--radius-md);
             margin-bottom: var(--spacing-lg);
@@ -143,7 +143,7 @@ renderPageStart('guardian', $currentPage, $pageTitle);
             border: 2px solid #e1e8ed;
             border-radius: var(--radius-sm);
             font-size: 15px;
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             cursor: pointer;
             transition: all var(--duration-normal) var(--ease-out);
         }
@@ -154,7 +154,7 @@ renderPageStart('guardian', $currentPage, $pageTitle);
         }
 
         .plan-card {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             border: 2px solid #e1e8ed;
             border-radius: var(--radius-md);
             padding: var(--spacing-lg);
@@ -208,7 +208,7 @@ renderPageStart('guardian', $currentPage, $pageTitle);
         }
 
         .info-item {
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             padding: 15px;
             border-radius: var(--radius-sm);
         }
@@ -236,11 +236,11 @@ renderPageStart('guardian', $currentPage, $pageTitle);
         table {
             width: 100%;
             border-collapse: collapse;
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
         }
 
         th {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             color: var(--text-primary);
             padding: 15px 12px;
             text-align: left;
@@ -259,7 +259,7 @@ renderPageStart('guardian', $currentPage, $pageTitle);
         }
 
         tr:hover {
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
         }
 
         .empty-state {
@@ -286,7 +286,7 @@ renderPageStart('guardian', $currentPage, $pageTitle);
         }
 
         .btn-primary {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             color: var(--text-primary);
         }
 
@@ -296,7 +296,7 @@ renderPageStart('guardian', $currentPage, $pageTitle);
         }
 
         .confirmation-box {
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             padding: 25px;
             border-radius: var(--radius-md);
             text-align: center;
@@ -310,7 +310,7 @@ renderPageStart('guardian', $currentPage, $pageTitle);
 
         .confirmation-box.confirmed {
             background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-            border: 2px solid var(--apple-green);
+            border: 2px solid var(--md-green);
             display: flex;
             align-items: center;
             gap: 20px;
@@ -320,7 +320,7 @@ renderPageStart('guardian', $currentPage, $pageTitle);
         .confirmation-icon {
             width: 60px;
             height: 60px;
-            background: var(--apple-green);
+            background: var(--md-green);
             color: white;
             border-radius: 50%;
             display: flex;
@@ -360,7 +360,7 @@ renderPageStart('guardian', $currentPage, $pageTitle);
         }
 
         .alert-error {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
@@ -435,7 +435,7 @@ renderPageStart('guardian', $currentPage, $pageTitle);
             <div class="selector-section">
                 <div class="selector-group">
                     <div class="form-group">
-                        <label>👤 お子様を選択</label>
+                        <label><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">person</span> お子様を選択</label>
                         <select onchange="location.href='support_plans.php?student_id=' + this.value">
                             <option value="">-- 選択してください --</option>
                             <?php foreach ($students as $student): ?>
@@ -617,13 +617,13 @@ renderPageStart('guardian', $currentPage, $pageTitle);
                     <?php endif; ?>
                 <?php else: ?>
                     <div class="empty-state">
-                        <h3>📋 提出済みの個別支援計画書はまだありません</h3>
+                        <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">assignment</span> 提出済みの個別支援計画書はまだありません</h3>
                         <p>スタッフが計画書を作成・提出すると、ここに表示されます。</p>
                     </div>
                 <?php endif; ?>
             <?php else: ?>
                 <div class="empty-state">
-                    <h3>👤 お子様を選択してください</h3>
+                    <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">person</span> お子様を選択してください</h3>
                 </div>
             <?php endif; ?>
                     </div><!-- /.content -->

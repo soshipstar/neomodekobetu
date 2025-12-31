@@ -159,22 +159,22 @@ renderPageStart('guardian', $currentPage, 'チャット', [
     margin-top: var(--spacing-lg);
     padding: var(--spacing-lg);
     background: linear-gradient(135deg, rgba(52, 199, 89, 0.1) 0%, rgba(48, 209, 88, 0.05) 100%);
-    border: 2px solid var(--apple-green);
+    border: 2px solid var(--md-green);
     border-radius: var(--radius-md);
 }
 
 .makeup-section-inner {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-md);
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-md);
 }
 
 .makeup-info-box {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-md);
     border-radius: var(--radius-sm);
-    border-left: 3px solid var(--apple-blue);
+    border-left: 3px solid var(--md-blue);
     font-size: var(--text-caption-1);
     color: var(--text-secondary);
     line-height: 1.5;
@@ -203,7 +203,7 @@ renderPageStart('guardian', $currentPage, 'チャット', [
     <!-- メッセージエリア -->
     <div class="messages-area" id="messagesArea">
         <div class="chat-empty-state">
-            <div class="chat-empty-state-icon">💬</div>
+            <div class="chat-empty-state-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">chat</span></div>
             <h3>メッセージを読み込み中...</h3>
         </div>
     </div>
@@ -211,7 +211,7 @@ renderPageStart('guardian', $currentPage, 'チャット', [
     <!-- 欠席連絡フォーム -->
     <div class="special-form-area" id="absenceFormArea">
         <div class="special-form-header">
-            <div class="special-form-title absence">🚫 欠席連絡</div>
+            <div class="special-form-title absence"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event_busy</span> 欠席連絡</div>
             <button type="button" class="special-form-close" onclick="closeAbsenceForm()">閉じる</button>
         </div>
         <select class="special-form-select absence" id="absenceDate">
@@ -225,7 +225,7 @@ renderPageStart('guardian', $currentPage, 'チャット', [
         <!-- 振替日選択 -->
         <div class="makeup-section">
             <div class="makeup-section-header">
-                <span class="makeup-section-icon">🔄</span>
+                <span class="makeup-section-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">sync</span></span>
                 <div>
                     <div class="makeup-section-title">
                         振替日を選択してください <span class="makeup-required">*</span>
@@ -238,7 +238,7 @@ renderPageStart('guardian', $currentPage, 'チャット', [
                 <label style="display: block; margin-bottom: 8px; font-weight: 600;">振替希望日</label>
                 <select class="special-form-select absence" id="makeupOption" onchange="handleMakeupOptionChange()" style="margin-bottom: 10px;">
                     <option value="">選択してください</option>
-                    <option value="decide_later">📅 後日決める（イベント等で振替予定）</option>
+                    <option value="decide_later"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event</span> 後日決める（イベント等で振替予定）</option>
                     <option value="choose_date">📆 今すぐ日にちを決める</option>
                 </select>
 
@@ -258,7 +258,7 @@ renderPageStart('guardian', $currentPage, 'チャット', [
             </div>
 
             <div class="makeup-info-box">
-                <div style="font-weight: 600; margin-bottom: 5px;">💡 振替のメリット</div>
+                <div style="font-weight: 600; margin-bottom: 5px;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">lightbulb</span> 振替のメリット</div>
                 <div style="padding-left: 20px;">
                     • 欠席分の授業を無駄にしません<br>
                     • お子様の学習ペースを保てます<br>
@@ -266,7 +266,7 @@ renderPageStart('guardian', $currentPage, 'チャット', [
                 </div>
             </div>
 
-            <div class="makeup-warning" id="makeupWarning">⚠️ 振替日の選択は必須です</div>
+            <div class="makeup-warning" id="makeupWarning"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">warning</span> 振替日の選択は必須です</div>
         </div>
 
         <button type="button" class="special-form-submit absence" onclick="sendAbsenceNotification()" id="sendAbsenceBtn">
@@ -277,7 +277,7 @@ renderPageStart('guardian', $currentPage, 'チャット', [
     <!-- イベント参加フォーム -->
     <div class="special-form-area" id="eventFormArea">
         <div class="special-form-header">
-            <div class="special-form-title event">🎉 イベント参加申込</div>
+            <div class="special-form-title event"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">celebration</span> イベント参加申込</div>
             <button type="button" class="special-form-close" onclick="closeEventForm()">閉じる</button>
         </div>
         <select class="special-form-select event" id="eventSelect" onchange="showEventDetails()">
@@ -303,22 +303,22 @@ renderPageStart('guardian', $currentPage, 'チャット', [
     <div class="chat-input-area">
         <div class="message-type-selector">
             <select onchange="selectMessageType(this.value)">
-                <option value="normal">💬 通常メッセージ</option>
-                <option value="absence">🚫 欠席連絡</option>
-                <option value="event">🎉 イベント参加申込</option>
+                <option value="normal"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">chat</span> 通常メッセージ</option>
+                <option value="absence"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event_busy</span> 欠席連絡</option>
+                <option value="event"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">celebration</span> イベント参加申込</option>
             </select>
         </div>
 
         <div class="file-preview" id="filePreview">
-            <div class="file-preview-info">📎 <span id="fileName"></span> (<span id="fileSize"></span>)</div>
+            <div class="file-preview-info"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">attach_file</span> <span id="fileName"></span> (<span id="fileSize"></span>)</div>
             <button type="button" class="file-preview-remove" onclick="removeFile()">削除</button>
         </div>
 
         <form class="chat-input-form" onsubmit="sendMessage(event)" id="chatForm">
-            <label for="fileInput" class="file-attach-btn" title="ファイルを添付">📎</label>
+            <label for="fileInput" class="file-attach-btn" title="ファイルを添付"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">attach_file</span></label>
             <input type="file" id="fileInput" class="file-attach-input" onchange="handleFileSelect(event)" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt">
             <textarea id="messageInput" class="chat-textarea" placeholder="メッセージを入力..." onkeydown="handleKeyDown(event)"></textarea>
-            <button type="submit" class="chat-send-btn" id="sendBtn">➤</button>
+            <button type="submit" class="chat-send-btn" id="sendBtn"><span class="material-symbols-outlined">send</span></button>
         </form>
     </div>
 </div>
@@ -395,16 +395,16 @@ function loadMessages() {
                 if (shouldScroll) scrollToBottom();
             } else if (data.success && data.messages.length === 0 && lastMessageId === 0) {
                 // メッセージが0件の場合
-                messagesArea.innerHTML = '<div class="chat-empty-state"><div class="chat-empty-state-icon">💬</div><h3>まだメッセージがありません</h3><p>下の入力欄からメッセージを送信してください</p></div>';
+                messagesArea.innerHTML = '<div class="chat-empty-state"><div class="chat-empty-state-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">chat</span></div><h3>まだメッセージがありません</h3><p>下の入力欄からメッセージを送信してください</p></div>';
             } else if (!data.success) {
                 console.error('API error:', data.message);
-                messagesArea.innerHTML = '<div class="chat-empty-state"><div class="chat-empty-state-icon">⚠️</div><h3>エラーが発生しました</h3><p>' + (data.message || '再読み込みしてください') + '</p></div>';
+                messagesArea.innerHTML = '<div class="chat-empty-state"><div class="chat-empty-state-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">warning</span></div><h3>エラーが発生しました</h3><p>' + (data.message || '再読み込みしてください') + '</p></div>';
             }
         })
         .catch(error => {
             console.error('メッセージの読み込みエラー:', error);
             const messagesArea = document.getElementById('messagesArea');
-            messagesArea.innerHTML = '<div class="chat-empty-state"><div class="chat-empty-state-icon">⚠️</div><h3>接続エラー</h3><p>ページを再読み込みしてください</p></div>';
+            messagesArea.innerHTML = '<div class="chat-empty-state"><div class="chat-empty-state-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">warning</span></div><h3>接続エラー</h3><p>ページを再読み込みしてください</p></div>';
         });
 }
 
@@ -432,7 +432,7 @@ function appendMessage(msg) {
         html += escapeHtml(msg.message).replace(/\\n/g, '<br>');
     }
     if (msg.attachment_path) {
-        html += '<div class="message-attachment"><a href="download_attachment.php?id=' + msg.id + '" target="_blank">📎 ' + escapeHtml(msg.attachment_original_name || 'ファイル') + '</a></div>';
+        html += '<div class="message-attachment"><a href="download_attachment.php?id=' + msg.id + '" target="_blank"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">attach_file</span> ' + escapeHtml(msg.attachment_original_name || 'ファイル') + '</a></div>';
     }
     html += '</div>';
     html += '<div class="message-time">' + formatDateTime(msg.created_at) + '</div>';

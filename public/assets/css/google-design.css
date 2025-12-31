@@ -1,7 +1,7 @@
 /**
- * Apple Design System for Kobetu Project
- * Complete CSS utility library for Apple-inspired design
- * Based on Apple's Human Interface Guidelines
+ * Google Material Design System for Kobetu Project
+ * Complete CSS utility library for Material Design
+ * Based on Google's Material Design Guidelines
  */
 
 /* ========================================
@@ -10,54 +10,54 @@
 
 :root {
     /* Primary Colors - Light Mode */
-    --apple-blue: #007AFF;
-    --apple-green: #34C759;
-    --apple-indigo: #5856D6;
-    --apple-orange: #FF9500;
-    --apple-pink: #FF2D55;
-    --apple-purple: #AF52DE;
-    --apple-red: #FF3B30;
-    --apple-teal: #5AC8FA;
-    --apple-yellow: #FFCC00;
+    --md-blue: #1976D2;
+    --md-green: #4CAF50;
+    --md-indigo: #3F51B5;
+    --md-orange: #FF9800;
+    --md-pink: #E91E63;
+    --md-purple: #9C27B0;
+    --md-red: #F44336;
+    --md-teal: #009688;
+    --md-yellow: #FFEB3B;
 
-    /* Legacy Project Colors Mapped to Apple Colors */
+    /* Legacy Project Colors Mapped to Material Design Colors */
     --primary-purple: #667eea;        /* Primary brand color */
     --primary-purple-dark: #764ba2;   /* Gradient end */
-    --success-green: #34C759;         /* Success states */
-    --danger-red: #FF3B30;            /* Danger/Delete */
-    --info-blue: #007AFF;             /* Info/Links */
-    --secondary-gray: #8E8E93;        /* Secondary elements */
+    --success-green: #4CAF50;         /* Success states */
+    --danger-red: #F44336;            /* Danger/Delete */
+    --info-blue: #1976D2;             /* Info/Links */
+    --secondary-gray: #757575;        /* Secondary elements */
 
     /* Grays - Light Mode */
-    --apple-gray: #8E8E93;
-    --apple-gray-2: #AEAEB2;
-    --apple-gray-3: #C7C7CC;
-    --apple-gray-4: #D1D1D6;
-    --apple-gray-5: #E5E5EA;
-    --apple-gray-6: #F2F2F7;
+    --md-gray: #757575;
+    --md-gray-2: #9E9E9E;
+    --md-gray-3: #BDBDBD;
+    --md-gray-4: #E0E0E0;
+    --md-gray-5: #EEEEEE;
+    --md-gray-6: #FAFAFA;
 
     /* Text Colors */
-    --text-primary: #1d1d1f;
-    --text-secondary: #86868b;
-    --text-tertiary: #6e6e73;
+    --text-primary: rgba(0, 0, 0, 0.87);
+    --text-secondary: rgba(0, 0, 0, 0.60);
+    --text-tertiary: rgba(0, 0, 0, 0.38);
 
     /* Backgrounds - Light Mode */
-    --apple-bg-primary: #FFFFFF;
-    --apple-bg-secondary: #F2F2F7;
-    --apple-bg-tertiary: #FFFFFF;
-    --apple-bg-elevated: #FFFFFF;
+    --md-bg-primary: #FFFFFF;
+    --md-bg-secondary: #FAFAFA;
+    --md-bg-tertiary: #FFFFFF;
+    --md-bg-elevated: #FFFFFF;
 
     /* Semantic Colors for Grades */
-    --grade-elementary: #34C759;      /* 小学生: 緑 */
-    --grade-junior-high: #007AFF;     /* 中学生: 青 */
-    --grade-high-school: #FF3B30;     /* 高校生: 赤 */
+    --grade-elementary: #4CAF50;      /* 小学生: 緑 */
+    --grade-junior-high: #1976D2;     /* 中学生: 青 */
+    --grade-high-school: #F44336;     /* 高校生: 赤 */
 
     /* Status Colors */
-    --status-active: #34C759;
-    --status-pending: #FF9500;
-    --status-inactive: #8E8E93;
-    --status-error: #FF3B30;
-    --status-info: #007AFF;
+    --status-active: #4CAF50;
+    --status-pending: #FF9800;
+    --status-inactive: #757575;
+    --status-error: #F44336;
+    --status-info: #1976D2;
 
     /* Typography */
     --font-thin: 100;
@@ -122,60 +122,61 @@
     --duration-slower: 700ms;
 }
 
-/* Dark Mode Variables */
+/* ========================================
+   Dark Mode Support
+   ======================================== */
+
 @media (prefers-color-scheme: dark) {
     :root {
-        --apple-blue: #0A84FF;
-        --apple-green: #30D158;
-        --apple-indigo: #5E5CE6;
-        --apple-orange: #FF9F0A;
-        --apple-pink: #FF375F;
-        --apple-purple: #BF5AF2;
-        --apple-red: #FF453A;
-        --apple-teal: #64D2FF;
-        --apple-yellow: #FFD60A;
+        /* Material Design Dark Theme Colors */
+        --md-blue: #90CAF9;
+        --md-green: #81C784;
+        --md-indigo: #9FA8DA;
+        --md-orange: #FFB74D;
+        --md-pink: #F48FB1;
+        --md-purple: #CE93D8;
+        --md-red: #EF9A9A;
+        --md-teal: #80CBC4;
+        --md-yellow: #FFF59D;
 
-        /* Legacy Project Colors for Dark Mode */
-        --primary-purple: #8B7FE8;        /* Brighter purple for dark mode */
-        --primary-purple-dark: #A99AF2;   /* Lighter gradient end for dark mode */
-        --success-green: #30D158;         /* Success states */
-        --danger-red: #FF453A;            /* Danger/Delete */
-        --info-blue: #0A84FF;             /* Info/Links */
-        --secondary-gray: #8E8E93;        /* Secondary elements */
+        --primary-purple: #9fa8da;
+        --primary-purple-dark: #b39ddb;
+        --success-green: #81C784;
+        --danger-red: #EF9A9A;
+        --info-blue: #90CAF9;
+        --secondary-gray: #BDBDBD;
 
-        /* Semantic Colors for Grades - Dark Mode */
-        --grade-elementary: #30D158;      /* 小学生: 明るい緑 */
-        --grade-junior-high: #0A84FF;     /* 中学生: 明るい青 */
-        --grade-high-school: #FF453A;     /* 高校生: 明るい赤 */
+        --md-gray: #BDBDBD;
+        --md-gray-2: #9E9E9E;
+        --md-gray-3: #757575;
+        --md-gray-4: #424242;
+        --md-gray-5: #303030;
+        --md-gray-6: #212121;
 
-        /* Status Colors - Dark Mode */
-        --status-active: #30D158;
-        --status-pending: #FF9F0A;
-        --status-inactive: #8E8E93;
-        --status-error: #FF453A;
-        --status-info: #0A84FF;
+        --text-primary: rgba(255, 255, 255, 0.87);
+        --text-secondary: rgba(255, 255, 255, 0.60);
+        --text-tertiary: rgba(255, 255, 255, 0.38);
 
-        --apple-gray: #8E8E93;
-        --apple-gray-2: #636366;
-        --apple-gray-3: #48484A;
-        --apple-gray-4: #3A3A3C;
-        --apple-gray-5: #2C2C2E;
-        --apple-gray-6: #1C1C1E;
+        --md-bg-primary: #121212;
+        --md-bg-secondary: #1E1E1E;
+        --md-bg-tertiary: #2C2C2C;
+        --md-bg-elevated: #2C2C2C;
 
-        --text-primary: #f5f5f7;
-        --text-secondary: #86868b;
-        --text-tertiary: #6e6e73;
+        --grade-elementary: #81C784;
+        --grade-junior-high: #90CAF9;
+        --grade-high-school: #EF9A9A;
 
-        --apple-bg-primary: #000000;
-        --apple-bg-secondary: #1C1C1E;
-        --apple-bg-tertiary: #2C2C2E;
-        --apple-bg-elevated: #1C1C1E;
+        --status-active: #81C784;
+        --status-pending: #FFB74D;
+        --status-inactive: #9E9E9E;
+        --status-error: #EF9A9A;
+        --status-info: #90CAF9;
 
         --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-        --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
-        --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4);
-        --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.5);
-        --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.6);
+        --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.25);
+        --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
+        --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.35);
+        --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.4);
     }
 }
 
@@ -193,13 +194,14 @@ html {
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    color-scheme: light dark;
 }
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
     line-height: 1.6;
     color: var(--text-primary);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     margin: 0;
     padding: 0;
 }
@@ -286,23 +288,23 @@ p {
    Color Utilities
    ======================================== */
 
-.text-blue { color: var(--apple-blue); }
-.text-green { color: var(--apple-green); }
-.text-red { color: var(--apple-red); }
-.text-orange { color: var(--apple-orange); }
-.text-purple { color: var(--apple-purple); }
-.text-gray { color: var(--apple-gray); }
+.text-blue { color: var(--md-blue); }
+.text-green { color: var(--md-green); }
+.text-red { color: var(--md-red); }
+.text-orange { color: var(--md-orange); }
+.text-purple { color: var(--md-purple); }
+.text-gray { color: var(--md-gray); }
 .text-primary { color: var(--text-primary); }
 .text-secondary { color: var(--text-secondary); }
 
-.bg-blue { background-color: var(--apple-blue); }
-.bg-green { background-color: var(--apple-green); }
-.bg-red { background-color: var(--apple-red); }
-.bg-orange { background-color: var(--apple-orange); }
-.bg-purple { background-color: var(--apple-purple); }
-.bg-gray { background-color: var(--apple-gray-6); }
-.bg-primary { background-color: var(--apple-bg-primary); }
-.bg-secondary { background-color: var(--apple-bg-secondary); }
+.bg-blue { background-color: var(--md-blue); }
+.bg-green { background-color: var(--md-green); }
+.bg-red { background-color: var(--md-red); }
+.bg-orange { background-color: var(--md-orange); }
+.bg-purple { background-color: var(--md-purple); }
+.bg-gray { background-color: var(--md-gray-6); }
+.bg-primary { background-color: var(--md-bg-primary); }
+.bg-secondary { background-color: var(--md-bg-secondary); }
 
 /* ========================================
    Layout Utilities
@@ -446,7 +448,7 @@ p {
 }
 
 .btn:focus {
-    outline: 2px solid var(--apple-blue);
+    outline: 2px solid var(--md-blue);
     outline-offset: 2px;
 }
 
@@ -466,7 +468,7 @@ p {
 }
 
 .btn-success {
-    background: var(--apple-green);
+    background: var(--md-green);
     color: white;
 }
 
@@ -477,7 +479,7 @@ p {
 }
 
 .btn-danger {
-    background: var(--apple-red);
+    background: var(--md-red);
     color: white;
 }
 
@@ -488,7 +490,7 @@ p {
 }
 
 .btn-info {
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
 }
 
@@ -499,7 +501,7 @@ p {
 }
 
 .btn-secondary {
-    background: var(--apple-gray);
+    background: var(--md-gray);
     color: white;
 }
 
@@ -549,7 +551,7 @@ p {
    ======================================== */
 
 .card {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border-radius: var(--radius-xl);
     padding: var(--spacing-xl);
     box-shadow: var(--shadow-md);
@@ -563,12 +565,12 @@ p {
 
 .card-flat {
     box-shadow: none;
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
 }
 
 .card-header {
     padding: var(--spacing-lg);
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
     font-weight: var(--font-semibold);
 }
 
@@ -578,7 +580,7 @@ p {
 
 .card-footer {
     padding: var(--spacing-lg);
-    border-top: 1px solid var(--apple-gray-5);
+    border-top: 1px solid var(--md-gray-5);
 }
 
 /* ========================================
@@ -608,10 +610,10 @@ p {
 }
 
 .navbar {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
     padding: var(--spacing-md) var(--spacing-lg);
     position: sticky;
     top: 0;
@@ -619,7 +621,7 @@ p {
 }
 
 .nav-menu {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border-radius: var(--radius-lg);
     padding: var(--spacing-md);
     box-shadow: var(--shadow-md);
@@ -636,7 +638,7 @@ p {
 }
 
 .nav-item:hover {
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
 }
 
 .nav-item.active {
@@ -652,14 +654,14 @@ p {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border-radius: var(--radius-lg);
     overflow: hidden;
     box-shadow: var(--shadow-sm);
 }
 
 .table thead {
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
 }
 
 .table th {
@@ -668,12 +670,12 @@ p {
     font-weight: var(--font-semibold);
     font-size: var(--text-subhead);
     color: var(--text-primary);
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
 }
 
 .table td {
     padding: var(--spacing-md) var(--spacing-lg);
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
     color: var(--text-primary);
 }
 
@@ -682,7 +684,7 @@ p {
 }
 
 .table tbody tr:hover {
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
 }
 
 .table tbody tr:last-child td {
@@ -717,12 +719,12 @@ textarea,
 select {
     width: 100%;
     padding: 12px 16px;
-    border: 1px solid var(--apple-gray-4);
+    border: 1px solid var(--md-gray-4);
     border-radius: var(--radius-md);
     font-size: var(--text-body);
     font-family: inherit;
     transition: all var(--duration-fast) var(--ease-out);
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     color: var(--text-primary);
 }
 
@@ -731,7 +733,7 @@ input:focus,
 textarea:focus,
 select:focus {
     outline: none;
-    border-color: var(--apple-blue);
+    border-color: var(--md-blue);
     box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
 }
 
@@ -750,7 +752,7 @@ select {
 }
 
 option {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     color: var(--text-primary);
 }
 
@@ -781,27 +783,27 @@ input[type="radio"] {
 }
 
 .badge-success {
-    background: var(--apple-green);
+    background: var(--md-green);
     color: white;
 }
 
 .badge-danger {
-    background: var(--apple-red);
+    background: var(--md-red);
     color: white;
 }
 
 .badge-info {
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
 }
 
 .badge-warning {
-    background: var(--apple-orange);
+    background: var(--md-orange);
     color: white;
 }
 
 .badge-secondary {
-    background: var(--apple-gray);
+    background: var(--md-gray);
     color: white;
 }
 
@@ -834,26 +836,26 @@ input[type="radio"] {
 
 .alert-success {
     background: rgba(52, 199, 89, 0.1);
-    border-color: var(--apple-green);
-    color: var(--apple-green);
+    border-color: var(--md-green);
+    color: var(--md-green);
 }
 
 .alert-danger {
     background: rgba(255, 59, 48, 0.1);
-    border-color: var(--apple-red);
-    color: var(--apple-red);
+    border-color: var(--md-red);
+    color: var(--md-red);
 }
 
 .alert-info {
     background: rgba(0, 122, 255, 0.1);
-    border-color: var(--apple-blue);
-    color: var(--apple-blue);
+    border-color: var(--md-blue);
+    color: var(--md-blue);
 }
 
 .alert-warning {
     background: rgba(255, 149, 0, 0.1);
-    border-color: var(--apple-orange);
-    color: var(--apple-orange);
+    border-color: var(--md-orange);
+    color: var(--md-orange);
 }
 
 /* ========================================
@@ -951,7 +953,7 @@ input[type="radio"] {
 }
 
 .modal-content {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border-radius: var(--radius-2xl);
     padding: var(--spacing-2xl);
     max-width: 600px;

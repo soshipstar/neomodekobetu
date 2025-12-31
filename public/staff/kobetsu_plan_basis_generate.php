@@ -4,6 +4,7 @@
  */
 session_start();
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../includes/openai_helper.php';
 
 // 認証チェック
 if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'staff') {
@@ -165,25 +166,11 @@ if ($monitoring) {
 $prompt .= "上記のデータを踏まえて、この個別支援計画がどのような根拠に基づいて作成されたかを説明する文書を作成してください。\n";
 $prompt .= "見出しをつけず、自然な文章で記述してください。";
 
-// ChatGPT API呼び出し
-$apiKey = getenv('CHATGPT_API_KEY') ?: ($_ENV['CHATGPT_API_KEY'] ?? '');
+// OpenAI API呼び出し
+$apiKey = OPENAI_API_KEY;
 
-// .envファイルから読み込み（開発環境用）
-if (empty($apiKey)) {
-    $envPath = __DIR__ . '/../../.env';
-    if (file_exists($envPath)) {
-        $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        foreach ($lines as $line) {
-            if (strpos($line, 'CHATGPT_API_KEY=') === 0) {
-                $apiKey = substr($line, strlen('CHATGPT_API_KEY='));
-                break;
-            }
-        }
-    }
-}
-
-if (empty($apiKey)) {
-    $_SESSION['error'] = 'ChatGPT APIキーが設定されていません。';
+if (empty($apiKey) || $apiKey === 'YOUR_OPENAI_API_KEY_HERE') {
+    $_SESSION['error'] = 'OpenAI APIキーが設定されていません。';
     header("Location: kobetsu_plan_basis.php?plan_id=$planId");
     exit;
 }
@@ -198,26 +185,35 @@ try {
             'Authorization: Bearer ' . $apiKey
         ],
         CURLOPT_POSTFIELDS => json_encode([
-            'model' => 'gpt-4o-mini',
+            'model' => 'gpt-5.2',
             'messages' => [
                 ['role' => 'system', 'content' => 'あなたは児童発達支援・放課後等デイサービスの専門家です。保護者に対して丁寧で分かりやすい説明を行います。'],
                 ['role' => 'user', 'content' => $prompt]
             ],
             'max_completion_tokens' => 2000,
             'temperature' => 0.7
-        ])
+        ]),
+        CURLOPT_TIMEOUT => 120
     ]);
 
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
     curl_close($ch);
 
+    if ($curlError) {
+        throw new Exception('通信エラー: ' . $curlError);
+    }
+
     if ($httpCode !== 200) {
-        throw new Exception('API呼び出しに失敗しました（HTTP ' . $httpCode . '）');
+        $errorData = json_decode($response, true);
+        $errorMessage = $errorData['error']['message'] ?? '不明なエラー';
+        throw new Exception('API呼び出しに失敗しました（HTTP ' . $httpCode . '）: ' . $errorMessage);
     }
 
     $result = json_decode($response, true);
     if (!isset($result['choices'][0]['message']['content'])) {
+        error_log('API Response: ' . $response);
         throw new Exception('APIからの応答が不正です');
     }
 

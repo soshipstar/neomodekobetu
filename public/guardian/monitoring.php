@@ -97,8 +97,8 @@ renderPageStart('guardian', $currentPage, 'モニタリング表', [
 
 <style>
 .monitoring-card {
-    background: var(--apple-bg-primary);
-    border: 2px solid var(--apple-gray-5);
+    background: var(--md-bg-primary);
+    border: 2px solid var(--md-gray-5);
     border-radius: var(--radius-md);
     padding: var(--spacing-lg);
     margin-bottom: var(--spacing-md);
@@ -107,12 +107,12 @@ renderPageStart('guardian', $currentPage, 'モニタリング表', [
 }
 
 .monitoring-card:hover {
-    border-color: var(--apple-green);
+    border-color: var(--md-green);
     box-shadow: var(--shadow-sm);
 }
 
 .monitoring-card.selected {
-    border-color: var(--apple-green);
+    border-color: var(--md-green);
     background: rgba(52, 199, 89, 0.05);
 }
 
@@ -136,10 +136,10 @@ renderPageStart('guardian', $currentPage, 'モニタリング表', [
 .section-title {
     font-size: var(--text-title-3);
     font-weight: 700;
-    color: var(--apple-green);
+    color: var(--md-green);
     margin: var(--spacing-xl) 0 var(--spacing-md);
     padding-bottom: var(--spacing-sm);
-    border-bottom: 3px solid var(--apple-green);
+    border-bottom: 3px solid var(--md-green);
 }
 
 .info-grid {
@@ -150,7 +150,7 @@ renderPageStart('guardian', $currentPage, 'モニタリング表', [
 }
 
 .info-item {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     padding: var(--spacing-md);
     border-radius: var(--radius-sm);
 }
@@ -178,47 +178,47 @@ renderPageStart('guardian', $currentPage, 'モニタリング表', [
 
 .achievement-achieved {
     background: rgba(52, 199, 89, 0.15);
-    color: var(--apple-green);
+    color: var(--md-green);
 }
 
 .achievement-progressing {
     background: rgba(255, 149, 0, 0.15);
-    color: var(--apple-orange);
+    color: var(--md-orange);
 }
 
 .achievement-not-achieved {
     background: rgba(255, 59, 48, 0.15);
-    color: var(--apple-red);
+    color: var(--md-red);
 }
 
 .goal-section {
     margin-bottom: var(--spacing-xl);
     padding: var(--spacing-lg);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-sm);
 }
 
 .goal-section.long-term {
-    border-left: 4px solid var(--apple-purple);
+    border-left: 4px solid var(--md-purple);
 }
 
 .goal-section.short-term {
-    border-left: 4px solid var(--apple-green);
+    border-left: 4px solid var(--md-green);
 }
 
 .goal-section h4 {
-    color: var(--apple-purple);
+    color: var(--md-purple);
     margin-bottom: var(--spacing-md);
     font-size: var(--text-callout);
 }
 
 .goal-section.short-term h4 {
-    color: var(--apple-green);
+    color: var(--md-green);
 }
 
 .goal-text {
     padding: var(--spacing-md);
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-md);
     line-height: 1.6;
@@ -245,15 +245,15 @@ renderPageStart('guardian', $currentPage, 'モニタリング表', [
 }
 
 .goal-status-badge.purple {
-    background: var(--apple-purple);
+    background: var(--md-purple);
 }
 
 .goal-status-badge.green {
-    background: var(--apple-green);
+    background: var(--md-green);
 }
 
 .confirmation-section {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     padding: var(--spacing-xl);
     border-radius: var(--radius-md);
     text-align: center;
@@ -261,7 +261,7 @@ renderPageStart('guardian', $currentPage, 'モニタリング表', [
 
 .confirmation-section.confirmed {
     background: rgba(52, 199, 89, 0.1);
-    border: 2px solid var(--apple-green);
+    border: 2px solid var(--md-green);
     display: flex;
     align-items: center;
     gap: var(--spacing-lg);
@@ -271,7 +271,7 @@ renderPageStart('guardian', $currentPage, 'モニタリング表', [
 .confirmation-icon {
     width: 60px;
     height: 60px;
-    background: var(--apple-green);
+    background: var(--md-green);
     color: white;
     border-radius: 50%;
     display: flex;
@@ -289,13 +289,13 @@ renderPageStart('guardian', $currentPage, 'モニタリング表', [
 .confirmation-title {
     font-size: var(--text-title-3);
     font-weight: bold;
-    color: var(--apple-green);
+    color: var(--md-green);
     margin-bottom: 4px;
 }
 
 .confirmation-date {
     font-size: var(--text-subhead);
-    color: var(--apple-green);
+    color: var(--md-green);
 }
 
 @media (max-width: 768px) {
@@ -453,7 +453,7 @@ renderPageStart('guardian', $currentPage, 'モニタリング表', [
                 <!-- 長期目標 -->
                 <?php if (!empty($monitoringData['long_term_goal_achievement']) || !empty($monitoringData['long_term_goal_comment'])): ?>
                     <div class="goal-section long-term">
-                        <h4>🎯 長期目標</h4>
+                        <h4><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">target</span> 長期目標</h4>
 
                         <?php if (!empty($planData['long_term_goal_text'])): ?>
                             <div class="goal-text">
@@ -484,7 +484,7 @@ renderPageStart('guardian', $currentPage, 'モニタリング表', [
                 <!-- 短期目標 -->
                 <?php if (!empty($monitoringData['short_term_goal_achievement']) || !empty($monitoringData['short_term_goal_comment'])): ?>
                     <div class="goal-section short-term">
-                        <h4>📌 短期目標</h4>
+                        <h4><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">push_pin</span> 短期目標</h4>
 
                         <?php if (!empty($planData['short_term_goal_text'])): ?>
                             <div class="goal-text">
@@ -551,7 +551,7 @@ renderPageStart('guardian', $currentPage, 'モニタリング表', [
     <?php else: ?>
         <div class="card">
             <div class="card-body" style="text-align: center; padding: var(--spacing-2xl);">
-                <h3 style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">📊 提出済みのモニタリング表はまだありません</h3>
+                <h3 style="color: var(--text-secondary); margin-bottom: var(--spacing-md);"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">monitoring</span> 提出済みのモニタリング表はまだありません</h3>
                 <p style="color: var(--text-secondary);">スタッフがモニタリング表を作成・提出すると、ここに表示されます。</p>
             </div>
         </div>
@@ -559,7 +559,7 @@ renderPageStart('guardian', $currentPage, 'モニタリング表', [
 <?php else: ?>
     <div class="card">
         <div class="card-body" style="text-align: center; padding: var(--spacing-2xl);">
-            <h3 style="color: var(--text-secondary);">👤 お子様を選択してください</h3>
+            <h3 style="color: var(--text-secondary);"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">person</span> お子様を選択してください</h3>
         </div>
     </div>
 <?php endif; ?>

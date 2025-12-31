@@ -290,7 +290,7 @@ renderPageStart('student', $currentPage, 'スケジュール');
 
 <style>
 .calendar-section {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-md);
@@ -321,15 +321,15 @@ renderPageStart('student', $currentPage, 'スケジュール');
 
 .calendar th {
     padding: var(--spacing-md);
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     font-weight: 600;
     color: var(--text-secondary);
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
 }
 
 .calendar td {
     padding: var(--spacing-sm);
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
     vertical-align: top;
     height: 120px;
     cursor: pointer;
@@ -337,12 +337,12 @@ renderPageStart('student', $currentPage, 'スケジュール');
 }
 
 .calendar td:hover {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
 }
 
 .calendar td.other-month {
-    background: var(--apple-gray-6);
-    color: var(--apple-gray-4);
+    background: var(--md-gray-6);
+    color: var(--md-gray-4);
     cursor: default;
 }
 
@@ -363,21 +363,21 @@ renderPageStart('student', $currentPage, 'スケジュール');
     display: block;
 }
 
-.calendar .indicator.event { background: var(--apple-purple); color: white; }
-.calendar .indicator.holiday { background: var(--apple-red); color: white; }
-.calendar .indicator.submission { background: var(--apple-orange); color: white; }
-.calendar .indicator.submission-done { background: var(--apple-gray-4); color: white; text-decoration: line-through; }
-.calendar .indicator.plan { background: var(--apple-green); color: white; }
-.calendar .indicator.activity { background: var(--apple-blue); color: white; font-weight: 600; }
+.calendar .indicator.event { background: var(--md-purple); color: white; }
+.calendar .indicator.holiday { background: var(--md-red); color: white; }
+.calendar .indicator.submission { background: var(--md-orange); color: white; }
+.calendar .indicator.submission-done { background: var(--md-gray-4); color: white; text-decoration: line-through; }
+.calendar .indicator.plan { background: var(--md-green); color: white; }
+.calendar .indicator.activity { background: var(--md-blue); color: white; font-weight: 600; }
 .calendar .indicator.activity-type { font-size: 9px; padding: 1px 4px; }
-.calendar .indicator.weekday-activity { background: rgba(52, 199, 89, 0.2); color: var(--apple-green); }
-.calendar .indicator.school-holiday-activity { background: rgba(0, 122, 255, 0.2); color: var(--apple-blue); }
-.calendar .indicator.makeup { background: var(--apple-teal); color: white; font-weight: 600; }
-.calendar .indicator.absence { background: var(--apple-red); color: white; font-weight: 600; }
-.calendar .indicator.additional { background: var(--apple-green); color: white; font-weight: 600; }
+.calendar .indicator.weekday-activity { background: rgba(52, 199, 89, 0.2); color: var(--md-green); }
+.calendar .indicator.school-holiday-activity { background: rgba(0, 122, 255, 0.2); color: var(--md-blue); }
+.calendar .indicator.makeup { background: var(--md-teal); color: white; font-weight: 600; }
+.calendar .indicator.absence { background: var(--md-red); color: white; font-weight: 600; }
+.calendar .indicator.additional { background: var(--md-green); color: white; font-weight: 600; }
 
-.calendar .sunday { color: var(--apple-red); }
-.calendar .saturday { color: var(--apple-blue); }
+.calendar .sunday { color: var(--md-red); }
+.calendar .saturday { color: var(--md-blue); }
 .calendar .today { background: rgba(0, 122, 255, 0.1); }
 
 /* モーダル */
@@ -400,7 +400,7 @@ renderPageStart('student', $currentPage, 'スケジュール');
 }
 
 .modal-content {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-xl);
     border-radius: var(--radius-md);
     max-width: 600px;
@@ -416,11 +416,11 @@ renderPageStart('student', $currentPage, 'スケジュール');
     align-items: center;
     margin-bottom: var(--spacing-lg);
     padding-bottom: var(--spacing-md);
-    border-bottom: 2px solid var(--apple-purple);
+    border-bottom: 2px solid var(--md-purple);
 }
 
 .modal-header h2 {
-    color: var(--apple-purple);
+    color: var(--md-purple);
     font-size: var(--text-title-3);
     margin: 0;
 }
@@ -430,29 +430,29 @@ renderPageStart('student', $currentPage, 'スケジュール');
 }
 
 .modal-section h3 {
-    color: var(--apple-purple);
+    color: var(--md-purple);
     font-size: var(--text-body);
     margin-bottom: var(--spacing-sm);
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     border-radius: var(--radius-sm);
 }
 
-.modal-section.holiday h3 { color: var(--apple-red); }
-.modal-section.submission h3 { color: var(--apple-orange); }
-.modal-section.plan h3 { color: var(--apple-green); }
+.modal-section.holiday h3 { color: var(--md-red); }
+.modal-section.submission h3 { color: var(--md-orange); }
+.modal-section.plan h3 { color: var(--md-green); }
 
 .modal-item {
     padding: var(--spacing-md);
     margin-bottom: var(--spacing-sm);
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     border-radius: var(--radius-sm);
-    border-left: 4px solid var(--apple-purple);
+    border-left: 4px solid var(--md-purple);
 }
 
-.modal-item.holiday { border-left-color: var(--apple-red); }
-.modal-item.submission { border-left-color: var(--apple-orange); }
-.modal-item.plan { border-left-color: var(--apple-green); }
+.modal-item.holiday { border-left-color: var(--md-red); }
+.modal-item.submission { border-left-color: var(--md-orange); }
+.modal-item.plan { border-left-color: var(--md-green); }
 
 .completion-badge {
     display: inline-block;
@@ -462,8 +462,8 @@ renderPageStart('student', $currentPage, 'スケジュール');
     margin-left: 8px;
 }
 
-.completion-badge.done { background: var(--apple-green); color: white; }
-.completion-badge.pending { background: var(--apple-orange); color: white; }
+.completion-badge.done { background: var(--md-green); color: white; }
+.completion-badge.pending { background: var(--md-orange); color: white; }
 
 .no-data {
     text-align: center;
@@ -555,37 +555,37 @@ renderPageStart('student', $currentPage, 'スケジュール');
                     }
 
                     if (!empty($data['activity']) && $count < $maxDisplay) {
-                        echo "<span class='indicator activity'>👤 活動予定日</span>";
+                        echo "<span class='indicator activity'><span class='material-symbols-outlined' style='font-size: 18px; vertical-align: middle;'>person</span> 活動予定日</span>";
                         $count++;
                     }
 
                     // 振替活動日を表示
                     if (!empty($data['makeup']) && $count < $maxDisplay) {
-                        echo "<span class='indicator makeup'>🔄 振替活動日</span>";
+                        echo "<span class='indicator makeup'><span class='material-symbols-outlined' style='font-size: 18px; vertical-align: middle;'>sync</span> 振替活動日</span>";
                         $count++;
                     }
 
                     // 欠席日を表示
                     if (!empty($data['absence']) && $count < $maxDisplay) {
-                        echo "<span class='indicator absence'>❌ 欠席</span>";
+                        echo "<span class='indicator absence'><span class='material-symbols-outlined' style='font-size: 18px; vertical-align: middle;'>event_busy</span> 欠席</span>";
                         $count++;
                     }
 
                     // 追加利用日を表示
                     if (!empty($data['additional']) && $count < $maxDisplay) {
-                        echo "<span class='indicator additional'>➕ 追加利用</span>";
+                        echo "<span class='indicator additional'><span class='material-symbols-outlined' style='font-size: 18px; vertical-align: middle;'>add</span> 追加利用</span>";
                         $count++;
                     }
 
                     foreach ($data['submissions'] as $sub) {
                         if ($count >= $maxDisplay) break;
                         $subClass = $sub['is_completed'] ? 'submission-done' : 'submission';
-                        echo "<span class='indicator $subClass'>📤 " . htmlspecialchars($sub['item'], ENT_QUOTES, 'UTF-8') . "</span>";
+                        echo "<span class='indicator $subClass'><span class='material-symbols-outlined' style='font-size: 18px; vertical-align: middle;'>upload_file</span> " . htmlspecialchars($sub['item'], ENT_QUOTES, 'UTF-8') . "</span>";
                         $count++;
                     }
 
                     if (!empty($data['plans']) && $count < $maxDisplay) {
-                        echo "<span class='indicator plan'>📝 計画</span>";
+                        echo "<span class='indicator plan'><span class='material-symbols-outlined' style='font-size: 18px; vertical-align: middle;'>edit_note</span> 計画</span>";
                         $count++;
                     }
 
@@ -634,16 +634,16 @@ function showDetail(dateStr, data) {
     } else if (data.activityType) {
         // 休日でない場合は活動種別を表示
         if (data.activityType === 'school_holiday') {
-            html += '<div class="modal-section"><h3>🏫 学校休業日活動</h3>';
+            html += '<div class="modal-section"><h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">school</span> 学校休業日活動</h3>';
             html += '<div class="modal-item"><div class="modal-item-value">この日は学校休業日活動日です（夏休み・春休み等）</div></div></div>';
         } else {
-            html += '<div class="modal-section plan"><h3>📚 平日活動</h3>';
+            html += '<div class="modal-section plan"><h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">menu_book</span> 平日活動</h3>';
             html += '<div class="modal-item plan"><div class="modal-item-value">この日は通常の平日活動日です</div></div></div>';
         }
     }
 
     if (data.events && data.events.length > 0) {
-        html += '<div class="modal-section"><h3>📅 イベント</h3>';
+        html += '<div class="modal-section"><h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event</span> イベント</h3>';
         data.events.forEach(e => {
             html += '<div class="modal-item"><div class="modal-item-value">' + escapeHtml(e.name) + '</div></div>';
         });
@@ -651,31 +651,31 @@ function showDetail(dateStr, data) {
     }
 
     if (data.activity) {
-        html += '<div class="modal-section"><h3>👤 活動予定日</h3>';
+        html += '<div class="modal-section"><h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">person</span> 活動予定日</h3>';
         html += '<div class="modal-item"><div class="modal-item-value">この日はあなたの活動予定日です</div></div></div>';
     }
 
     // 振替活動日
     if (data.makeup) {
-        html += '<div class="modal-section"><h3>🔄 振替活動日</h3>';
+        html += '<div class="modal-section"><h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">sync</span> 振替活動日</h3>';
         html += '<div class="modal-item"><div class="modal-item-value">この日は振替で活動する日です</div></div></div>';
     }
 
     // 欠席日
     if (data.absence) {
-        html += '<div class="modal-section absence"><h3>❌ 欠席</h3>';
+        html += '<div class="modal-section absence"><h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event_busy</span> 欠席</h3>';
         let reasonText = data.absence.reason ? '理由: ' + escapeHtml(data.absence.reason) : 'この日は欠席予定です';
         html += '<div class="modal-item"><div class="modal-item-value">' + reasonText + '</div></div></div>';
     }
 
     // 追加利用日
     if (data.additional) {
-        html += '<div class="modal-section"><h3>➕ 追加利用</h3>';
+        html += '<div class="modal-section"><h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">add</span> 追加利用</h3>';
         html += '<div class="modal-item"><div class="modal-item-value">この日は追加利用で活動する日です</div></div></div>';
     }
 
     if (data.submissions && data.submissions.length > 0) {
-        html += '<div class="modal-section submission"><h3>📤 提出物</h3>';
+        html += '<div class="modal-section submission"><h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">upload_file</span> 提出物</h3>';
         data.submissions.forEach(s => {
             const itemClass = s.is_completed ? 'submission-done' : 'submission';
             const badgeClass = s.is_completed ? 'done' : 'pending';
@@ -686,7 +686,7 @@ function showDetail(dateStr, data) {
     }
 
     if (data.plans && data.plans.length > 0) {
-        html += '<div class="modal-section plan"><h3>📝 週間計画</h3>';
+        html += '<div class="modal-section plan"><h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit_note</span> 週間計画</h3>';
         data.plans.forEach(p => {
             html += '<div class="modal-item plan"><div class="modal-item-value">' + escapeHtml(p.value) + '</div></div>';
         });

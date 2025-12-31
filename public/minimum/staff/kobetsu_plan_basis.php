@@ -127,7 +127,7 @@ renderPageStart('staff', $currentPage, '個別支援計画の根拠');
 }
 
 .basis-section {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border-radius: var(--radius-md);
     padding: var(--spacing-xl);
     margin-bottom: var(--spacing-lg);
@@ -136,10 +136,10 @@ renderPageStart('staff', $currentPage, '個別支援計画の根拠');
 
 .basis-section h2 {
     font-size: 18px;
-    color: var(--apple-blue);
+    color: var(--md-blue);
     margin-bottom: var(--spacing-lg);
     padding-bottom: 10px;
-    border-bottom: 2px solid var(--apple-blue);
+    border-bottom: 2px solid var(--md-blue);
     display: flex;
     align-items: center;
     gap: 10px;
@@ -152,22 +152,22 @@ renderPageStart('staff', $currentPage, '個別支援計画の根拠');
 }
 
 .data-item {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     padding: var(--spacing-md);
     border-radius: var(--radius-sm);
-    border-left: 4px solid var(--apple-blue);
+    border-left: 4px solid var(--md-blue);
 }
 
 .data-item.guardian {
-    border-left-color: var(--apple-pink);
+    border-left-color: var(--md-pink);
 }
 
 .data-item.staff {
-    border-left-color: var(--apple-green);
+    border-left-color: var(--md-green);
 }
 
 .data-item.monitoring {
-    border-left-color: var(--apple-orange);
+    border-left-color: var(--md-orange);
 }
 
 .data-label {
@@ -197,7 +197,7 @@ renderPageStart('staff', $currentPage, '個別支援計画の根拠');
 }
 
 .goal-column {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
 }
@@ -206,12 +206,12 @@ renderPageStart('staff', $currentPage, '個別支援計画の根拠');
     font-size: var(--text-body);
     margin-bottom: var(--spacing-md);
     padding-bottom: 8px;
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
 }
 
-.goal-column.guardian h3 { color: var(--apple-pink); }
-.goal-column.staff h3 { color: var(--apple-green); }
-.goal-column.plan h3 { color: var(--apple-blue); }
+.goal-column.guardian h3 { color: var(--md-pink); }
+.goal-column.staff h3 { color: var(--md-green); }
+.goal-column.plan h3 { color: var(--md-blue); }
 
 .overall-impression {
     background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
@@ -234,7 +234,7 @@ renderPageStart('staff', $currentPage, '個別支援計画の根拠');
 }
 
 .no-data-message {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     padding: var(--spacing-xl);
     border-radius: var(--radius-md);
     text-align: center;
@@ -257,16 +257,16 @@ renderPageStart('staff', $currentPage, '個別支援計画の根拠');
 }
 </style>
 
-<a href="kobetsu_plan.php?student_id=<?= $studentId ?>&plan_id=<?= $planId ?>" class="quick-link" style="display: inline-block; margin-bottom: var(--spacing-lg); padding: 8px 16px; background: var(--apple-bg-secondary); border-radius: 6px; text-decoration: none; color: var(--text-primary);">← 個別支援計画に戻る</a>
+<a href="kobetsu_plan.php?student_id=<?= $studentId ?>&plan_id=<?= $planId ?>" class="quick-link" style="display: inline-block; margin-bottom: var(--spacing-lg); padding: 8px 16px; background: var(--md-bg-secondary); border-radius: 6px; text-decoration: none; color: var(--text-primary);">← 個別支援計画に戻る</a>
 
 <!-- ヘッダー -->
 <div class="basis-header">
-    <h1>📊 個別支援計画の根拠</h1>
+    <h1><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">monitoring</span> 個別支援計画の根拠</h1>
     <div class="basis-meta">
-        <span>👤 <?= htmlspecialchars($studentName) ?></span>
-        <span>📅 計画作成日: <?= date('Y年m月d日', strtotime($plan['created_date'])) ?></span>
+        <span><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">person</span> <?= htmlspecialchars($studentName) ?></span>
+        <span><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event</span> 計画作成日: <?= date('Y年m月d日', strtotime($plan['created_date'])) ?></span>
         <?php if ($period): ?>
-            <span>📋 根拠期間: <?= date('Y/m/d', strtotime($period['submission_deadline'])) ?> 期限のかけはし</span>
+            <span><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">assignment</span> 根拠期間: <?= date('Y/m/d', strtotime($period['submission_deadline'])) ?> 期限のかけはし</span>
         <?php endif; ?>
     </div>
 </div>
@@ -281,7 +281,7 @@ renderPageStart('staff', $currentPage, '個別支援計画の根拠');
 
     <!-- 目標の比較 -->
     <div class="basis-section">
-        <h2>🎯 目標の比較と整合性</h2>
+        <h2><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">target</span> 目標の比較と整合性</h2>
         <p style="color: var(--text-secondary); margin-bottom: var(--spacing-lg);">
             保護者・スタッフのかけはしで設定された目標と、個別支援計画で設定された目標を比較します。
         </p>
@@ -289,15 +289,15 @@ renderPageStart('staff', $currentPage, '個別支援計画の根拠');
         <h4 style="margin-bottom: 10px; color: var(--text-primary);">【短期目標】</h4>
         <div class="goal-comparison">
             <div class="goal-column guardian">
-                <h3>👨‍👩‍👧 保護者の目標</h3>
+                <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">family_restroom</span> 保護者の目標</h3>
                 <div class="data-value <?= empty($guardianKakehashi['short_term_goal']) ? 'empty' : '' ?>"><?= htmlspecialchars(trim($guardianKakehashi['short_term_goal'] ?? '（データなし）')) ?></div>
             </div>
             <div class="goal-column staff">
-                <h3>👩‍🏫 スタッフの目標</h3>
+                <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">school</span> スタッフの目標</h3>
                 <div class="data-value <?= empty($staffKakehashi['short_term_goal']) ? 'empty' : '' ?>"><?= htmlspecialchars(trim($staffKakehashi['short_term_goal'] ?? '（データなし）')) ?></div>
             </div>
             <div class="goal-column plan">
-                <h3>📋 計画書の目標</h3>
+                <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">assignment</span> 計画書の目標</h3>
                 <div class="data-value <?= empty($plan['short_term_goal_text']) ? 'empty' : '' ?>"><?= htmlspecialchars(trim($plan['short_term_goal_text'] ?? '（未設定）')) ?></div>
             </div>
         </div>
@@ -305,15 +305,15 @@ renderPageStart('staff', $currentPage, '個別支援計画の根拠');
         <h4 style="margin: 30px 0 10px 0; color: var(--text-primary);">【長期目標】</h4>
         <div class="goal-comparison">
             <div class="goal-column guardian">
-                <h3>👨‍👩‍👧 保護者の目標</h3>
+                <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">family_restroom</span> 保護者の目標</h3>
                 <div class="data-value <?= empty($guardianKakehashi['long_term_goal']) ? 'empty' : '' ?>"><?= htmlspecialchars(trim($guardianKakehashi['long_term_goal'] ?? '（データなし）')) ?></div>
             </div>
             <div class="goal-column staff">
-                <h3>👩‍🏫 スタッフの目標</h3>
+                <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">school</span> スタッフの目標</h3>
                 <div class="data-value <?= empty($staffKakehashi['long_term_goal']) ? 'empty' : '' ?>"><?= htmlspecialchars(trim($staffKakehashi['long_term_goal'] ?? '（データなし）')) ?></div>
             </div>
             <div class="goal-column plan">
-                <h3>📋 計画書の目標</h3>
+                <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">assignment</span> 計画書の目標</h3>
                 <div class="data-value <?= empty($plan['long_term_goal_text']) ? 'empty' : '' ?>"><?= htmlspecialchars(trim($plan['long_term_goal_text'] ?? '（未設定）')) ?></div>
             </div>
         </div>
@@ -322,7 +322,7 @@ renderPageStart('staff', $currentPage, '個別支援計画の根拠');
     <!-- 保護者かけはし -->
     <?php if ($guardianKakehashi): ?>
     <div class="basis-section">
-        <h2>👨‍👩‍👧 保護者からのかけはし</h2>
+        <h2><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">family_restroom</span> 保護者からのかけはし</h2>
         <p style="color: var(--text-secondary); margin-bottom: var(--spacing-lg);">
             提出日: <?= $guardianKakehashi['submitted_at'] ? date('Y年m月d日', strtotime($guardianKakehashi['submitted_at'])) : '未提出' ?>
         </p>
@@ -366,7 +366,7 @@ renderPageStart('staff', $currentPage, '個別支援計画の根拠');
     <!-- スタッフかけはし -->
     <?php if ($staffKakehashi): ?>
     <div class="basis-section">
-        <h2>👩‍🏫 スタッフからのかけはし</h2>
+        <h2><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">school</span> スタッフからのかけはし</h2>
         <p style="color: var(--text-secondary); margin-bottom: var(--spacing-lg);">
             提出日: <?= $staffKakehashi['submitted_at'] ? date('Y年m月d日', strtotime($staffKakehashi['submitted_at'])) : '未提出' ?>
         </p>
@@ -406,7 +406,7 @@ renderPageStart('staff', $currentPage, '個別支援計画の根拠');
     <!-- モニタリング情報 -->
     <?php if ($monitoring): ?>
     <div class="basis-section">
-        <h2>📈 直近のモニタリング情報</h2>
+        <h2><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">trending_up</span> 直近のモニタリング情報</h2>
         <p style="color: var(--text-secondary); margin-bottom: var(--spacing-lg);">
             実施日: <?= date('Y年m月d日', strtotime($monitoring['monitoring_date'])) ?>
         </p>
@@ -427,9 +427,9 @@ renderPageStart('staff', $currentPage, '個別支援計画の根拠');
                         $comment = trim($parts[3]);
 
                         $statusLabel = match($status) {
-                            '達成' => '✅ 達成',
-                            '継続' => '🔄 継続',
-                            '未達成' => '❌ 未達成',
+                            '達成' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">check_circle</span> 達成',
+                            '継続' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">sync</span> 継続',
+                            '未達成' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">cancel</span> 未達成',
                             default => $status ?: '（未評価）'
                         };
             ?>
@@ -450,7 +450,7 @@ renderPageStart('staff', $currentPage, '個別支援計画の根拠');
     <!-- 全体所感 -->
     <?php if (!empty($plan['basis_content'])): ?>
     <div class="overall-impression">
-        <h2>📝 全体所感</h2>
+        <h2><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit_note</span> 全体所感</h2>
         <div class="data-value" style="background: white; padding: var(--spacing-lg); border-radius: var(--radius-sm);"><?= nl2br(htmlspecialchars(trim($plan['basis_content']))) ?></div>
     </div>
     <?php endif; ?>
@@ -461,18 +461,18 @@ renderPageStart('staff', $currentPage, '個別支援計画の根拠');
 <div class="button-group">
     <?php if (empty($plan['basis_content'])): ?>
         <a href="kobetsu_plan_basis_generate.php?plan_id=<?= $planId ?>" class="btn btn-primary" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-            📝 AIで全体所感を生成
+            <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit_note</span> AIで全体所感を生成
         </a>
     <?php else: ?>
         <a href="kobetsu_plan_basis_generate.php?plan_id=<?= $planId ?>&regenerate=1" class="btn btn-secondary">
-            🔄 全体所感を再生成
+            <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">sync</span> 全体所感を再生成
         </a>
     <?php endif; ?>
     <a href="kobetsu_plan_basis_pdf.php?plan_id=<?= $planId ?>" class="btn btn-info" target="_blank">
-        📄 PDFで出力
+        <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">description</span> PDFで出力
     </a>
     <button onclick="window.print()" class="btn btn-secondary">
-        🖨️ 印刷
+        <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">print</span> 印刷
     </button>
 </div>
 

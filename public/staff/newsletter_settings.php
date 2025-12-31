@@ -208,7 +208,7 @@ renderPageStart('staff', $currentPage, '施設通信設定');
 
 <style>
 .settings-section {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-2xl);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-lg);
@@ -216,11 +216,11 @@ renderPageStart('staff', $currentPage, '施設通信設定');
 }
 
 .settings-section h2 {
-    color: var(--apple-blue);
+    color: var(--md-blue);
     font-size: 18px;
     margin-bottom: var(--spacing-lg);
     padding-bottom: 10px;
-    border-bottom: 2px solid var(--apple-blue);
+    border-bottom: 2px solid var(--md-blue);
     display: flex;
     align-items: center;
     gap: 10px;
@@ -231,7 +231,7 @@ renderPageStart('staff', $currentPage, '施設通信設定');
     align-items: center;
     justify-content: space-between;
     padding: var(--spacing-md) 0;
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
 }
 
 .toggle-item:last-child {
@@ -273,7 +273,7 @@ renderPageStart('staff', $currentPage, '施設通信設定');
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: var(--apple-gray-4);
+    background-color: var(--md-gray-4);
     transition: .3s;
     border-radius: 28px;
 }
@@ -292,7 +292,7 @@ renderPageStart('staff', $currentPage, '施設通信設定');
 }
 
 .toggle-switch input:checked + .toggle-slider {
-    background-color: var(--apple-green);
+    background-color: var(--md-green);
 }
 
 .toggle-switch input:checked + .toggle-slider:before {
@@ -313,18 +313,18 @@ renderPageStart('staff', $currentPage, '施設通信設定');
 .instruction-group textarea {
     width: 100%;
     padding: var(--spacing-md);
-    border: 2px solid var(--apple-gray-5);
+    border: 2px solid var(--md-gray-5);
     border-radius: var(--radius-sm);
     font-size: var(--text-subhead);
     resize: vertical;
     min-height: 80px;
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     color: var(--text-primary);
 }
 
 .instruction-group textarea:focus {
     outline: none;
-    border-color: var(--apple-blue);
+    border-color: var(--md-blue);
 }
 
 .instruction-group small {
@@ -337,7 +337,7 @@ renderPageStart('staff', $currentPage, '施設通信設定');
 .custom-section-group {
     margin-top: var(--spacing-lg);
     padding-top: var(--spacing-lg);
-    border-top: 1px dashed var(--apple-gray-4);
+    border-top: 1px dashed var(--md-gray-4);
 }
 
 .submit-section {
@@ -347,7 +347,7 @@ renderPageStart('staff', $currentPage, '施設通信設定');
 
 .submit-btn {
     padding: 15px 60px;
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
     border: none;
     border-radius: var(--radius-sm);
@@ -364,25 +364,25 @@ renderPageStart('staff', $currentPage, '施設通信設定');
 
 .success-message {
     background: rgba(52, 199, 89, 0.15);
-    color: var(--apple-green);
+    color: var(--md-green);
     padding: 15px;
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-lg);
-    border-left: 4px solid var(--apple-green);
+    border-left: 4px solid var(--md-green);
 }
 
 .error-message {
     background: rgba(255, 59, 48, 0.15);
-    color: var(--apple-red);
+    color: var(--md-red);
     padding: 15px;
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-lg);
-    border-left: 4px solid var(--apple-red);
+    border-left: 4px solid var(--md-red);
 }
 
 .info-box {
     background: rgba(0,122,255,0.1);
-    border-left: 4px solid var(--apple-blue);
+    border-left: 4px solid var(--md-blue);
     padding: 15px;
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-lg);
@@ -392,7 +392,7 @@ renderPageStart('staff', $currentPage, '施設通信設定');
 }
 
 .preview-section {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     padding: var(--spacing-lg);
     border-radius: var(--radius-sm);
     margin-top: var(--spacing-lg);
@@ -412,7 +412,7 @@ renderPageStart('staff', $currentPage, '施設通信設定');
 
 .preview-item {
     padding: 6px 12px;
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
     border-radius: var(--radius-sm);
     font-size: var(--text-caption-1);
@@ -420,7 +420,7 @@ renderPageStart('staff', $currentPage, '施設通信設定');
 }
 
 .preview-item.disabled {
-    background: var(--apple-gray-4);
+    background: var(--md-gray-4);
     color: var(--text-secondary);
     text-decoration: line-through;
 }

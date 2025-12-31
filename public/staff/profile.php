@@ -113,7 +113,7 @@ renderPageStart('staff', $currentPage, 'プロフィール編集');
 }
 
 .info-box {
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-xl);
@@ -123,7 +123,7 @@ renderPageStart('staff', $currentPage, 'プロフィール編集');
     display: flex;
     justify-content: space-between;
     padding: var(--spacing-md) 0;
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
 }
 
 .info-item:last-child {
@@ -147,23 +147,23 @@ renderPageStart('staff', $currentPage, 'プロフィール編集');
 
 .form-section-title {
     font-size: var(--text-headline);
-    color: var(--apple-blue);
+    color: var(--md-blue);
     margin-bottom: var(--spacing-lg);
     padding-bottom: var(--spacing-md);
-    border-bottom: 2px solid var(--apple-blue);
+    border-bottom: 2px solid var(--md-blue);
 }
 
 .divider {
     height: 1px;
-    background: var(--apple-gray-5);
+    background: var(--md-gray-5);
     margin: var(--spacing-xl) 0;
 }
 
 .password-section {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
-    border-left: 4px solid var(--apple-purple);
+    border-left: 4px solid var(--md-purple);
 }
 
 .button-group {
@@ -178,7 +178,7 @@ renderPageStart('staff', $currentPage, 'プロフィール編集');
 
 .quick-link {
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-sm);
     text-decoration: none;
     color: var(--text-primary);
@@ -188,7 +188,7 @@ renderPageStart('staff', $currentPage, 'プロフィール編集');
     display: inline-block;
     margin-bottom: var(--spacing-lg);
 }
-.quick-link:hover { background: var(--apple-gray-5); }
+.quick-link:hover { background: var(--md-gray-5); }
 </style>
 
 <!-- ページヘッダー -->
@@ -230,7 +230,7 @@ renderPageStart('staff', $currentPage, 'プロフィール編集');
                     <h2 class="form-section-title">基本情報</h2>
 
                     <div class="form-group">
-                        <label class="form-label" for="full_name">氏名 <span style="color: var(--apple-red);">*</span></label>
+                        <label class="form-label" for="full_name">氏名 <span style="color: var(--md-red);">*</span></label>
                         <input
                             type="text"
                             id="full_name"

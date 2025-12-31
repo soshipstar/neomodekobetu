@@ -86,7 +86,7 @@ renderPageStart('guardian', $currentPage, 'かけはし履歴', ['classroom' => 
     gap: var(--spacing-lg);
     margin-bottom: var(--spacing-xl);
     padding: var(--spacing-lg);
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     border-radius: var(--radius-md);
 }
 
@@ -97,10 +97,10 @@ renderPageStart('guardian', $currentPage, 'かけはし履歴', ['classroom' => 
 }
 
 .history-item {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-md);
     padding: var(--spacing-lg);
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
     transition: all var(--duration-normal) var(--ease-out);
 }
 
@@ -144,10 +144,10 @@ renderPageStart('guardian', $currentPage, 'かけはし履歴', ['classroom' => 
 }
 
 .document-card {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border-radius: var(--radius-sm);
     padding: var(--spacing-lg);
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
 }
 
 .document-card.disabled {
@@ -168,11 +168,11 @@ renderPageStart('guardian', $currentPage, 'かけはし履歴', ['classroom' => 
 }
 
 .document-card-title.guardian {
-    color: var(--apple-purple);
+    color: var(--md-purple);
 }
 
 .document-card-title.staff {
-    color: var(--apple-blue);
+    color: var(--md-blue);
 }
 
 .status-badge {
@@ -184,12 +184,12 @@ renderPageStart('guardian', $currentPage, 'かけはし履歴', ['classroom' => 
 }
 
 .status-submitted {
-    background: var(--apple-green);
+    background: var(--md-green);
     color: white;
 }
 
 .status-not-submitted {
-    background: var(--apple-gray-4);
+    background: var(--md-gray-4);
     color: var(--text-secondary);
 }
 
@@ -245,7 +245,7 @@ renderPageStart('guardian', $currentPage, 'かけはし履歴', ['classroom' => 
     <?php if (empty($kakehashiHistory)): ?>
         <div class="card">
             <div class="card-body" style="text-align: center; padding: var(--spacing-3xl);">
-                <div style="font-size: 64px; margin-bottom: var(--spacing-lg);">📋</div>
+                <div style="font-size: 64px; margin-bottom: var(--spacing-lg);"><span class="material-symbols-outlined" style="font-size: 64px;">assignment</span></div>
                 <p style="color: var(--text-secondary);">
                     <?= htmlspecialchars($selectedStudentName) ?>さんの提出済みかけはしはまだありません
                 </p>
@@ -263,7 +263,7 @@ renderPageStart('guardian', $currentPage, 'かけはし履歴', ['classroom' => 
 
                     <div class="history-meta">
                         <div class="history-meta-item">
-                            <span>📅</span>
+                            <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event</span>
                             <span>対象期間: <?= date('Y/m/d', strtotime($item['start_date'])) ?> ～ <?= date('Y/m/d', strtotime($item['end_date'])) ?></span>
                         </div>
                         <div class="history-meta-item">
@@ -290,12 +290,12 @@ renderPageStart('guardian', $currentPage, 'かけはし履歴', ['classroom' => 
                                 <div class="document-card-actions">
                                     <a href="kakehashi_history_view.php?student_id=<?= $selectedStudentId ?>&period_id=<?= $item['period_id'] ?>&type=guardian"
                                        class="btn btn-secondary btn-sm">
-                                        👁️ 表示
+                                        <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">visibility</span> 表示
                                     </a>
                                     <a href="kakehashi_history_view.php?student_id=<?= $selectedStudentId ?>&period_id=<?= $item['period_id'] ?>&type=guardian"
                                        class="btn btn-primary btn-sm"
                                        target="_blank">
-                                        🖨️ 印刷
+                                        <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">print</span> 印刷
                                     </a>
                                 </div>
                             <?php else: ?>
@@ -322,12 +322,12 @@ renderPageStart('guardian', $currentPage, 'かけはし履歴', ['classroom' => 
                                 <div class="document-card-actions">
                                     <a href="kakehashi_history_view.php?student_id=<?= $selectedStudentId ?>&period_id=<?= $item['period_id'] ?>&type=staff"
                                        class="btn btn-secondary btn-sm">
-                                        👁️ 表示
+                                        <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">visibility</span> 表示
                                     </a>
                                     <a href="kakehashi_history_view.php?student_id=<?= $selectedStudentId ?>&period_id=<?= $item['period_id'] ?>&type=staff"
                                        class="btn btn-info btn-sm"
                                        target="_blank">
-                                        🖨️ 印刷
+                                        <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">print</span> 印刷
                                     </a>
                                 </div>
                             <?php else: ?>

@@ -94,7 +94,7 @@ renderPageStart('student', $currentPage, 'チャット', ['additionalCss' => ['/
     <div class="messages-area" id="messagesArea">
         <?php if (empty($messages)): ?>
             <div class="chat-empty-state">
-                <div class="chat-empty-state-icon">💬</div>
+                <div class="chat-empty-state-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">chat</span></div>
                 <h3>まだメッセージがありません</h3>
                 <p>スタッフにメッセージを送ってみましょう</p>
             </div>
@@ -102,7 +102,7 @@ renderPageStart('student', $currentPage, 'チャット', ['additionalCss' => ['/
             <?php foreach ($messages as $msg): ?>
                 <div class="message <?= $msg['sender_type'] === 'student' ? 'sent' : 'received' ?>">
                     <div class="message-avatar">
-                        <?= $msg['sender_type'] === 'student' ? '👤' : '👨‍🏫' ?>
+                        <?= $msg['sender_type'] === 'student' ? '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">person</span>' : '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">school</span>' ?>
                     </div>
                     <div class="message-content">
                         <div class="message-sender">
@@ -114,7 +114,7 @@ renderPageStart('student', $currentPage, 'チャット', ['additionalCss' => ['/
                             <?php if ($msg['attachment_path']): ?>
                                 <div class="message-attachment">
                                     <a href="download_attachment.php?id=<?= $msg['id'] ?>" target="_blank">
-                                        📎 <?= htmlspecialchars($msg['attachment_original_name'], ENT_QUOTES, 'UTF-8') ?>
+                                        <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">attach_file</span> <?= htmlspecialchars($msg['attachment_original_name'], ENT_QUOTES, 'UTF-8') ?>
                                         (<?= number_format($msg['attachment_size'] / 1024, 1) ?>KB)
                                     </a>
                                 </div>
@@ -132,7 +132,7 @@ renderPageStart('student', $currentPage, 'チャット', ['additionalCss' => ['/
     <div class="chat-input-area">
         <div class="file-preview" id="filePreview">
             <div class="file-preview-info">
-                📎 <span id="fileName"></span> (<span id="fileSize"></span>)
+                <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">attach_file</span> <span id="fileName"></span> (<span id="fileSize"></span>)
             </div>
             <button type="button" class="file-preview-remove" onclick="clearAttachment()">削除</button>
         </div>
@@ -141,7 +141,7 @@ renderPageStart('student', $currentPage, 'チャット', ['additionalCss' => ['/
             <input type="hidden" name="room_id" value="<?= $roomId ?>">
 
             <label for="fileInput" class="file-attach-btn" title="ファイルを添付">
-                📎
+                <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">attach_file</span>
             </label>
             <input type="file" id="fileInput" name="attachment" class="file-attach-input" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
 
@@ -152,7 +152,7 @@ renderPageStart('student', $currentPage, 'チャット', ['additionalCss' => ['/
                 placeholder="メッセージを入力..."
             ></textarea>
 
-            <button type="submit" class="chat-send-btn" id="sendBtn">➤</button>
+            <button type="submit" class="chat-send-btn" id="sendBtn"><span class="material-symbols-outlined">send</span></button>
         </form>
     </div>
 </div>
@@ -204,11 +204,11 @@ function addMessageToDOM(msg) {
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message ' + (msg.sender_type === 'student' ? 'sent' : 'received');
 
-    const avatarIcon = msg.sender_type === 'student' ? '👤' : '👨‍🏫';
+    const avatarIcon = msg.sender_type === 'student' ? '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">person</span>' : '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">school</span>';
 
     let attachmentHTML = '';
     if (msg.attachment_path) {
-        attachmentHTML = '<div class="message-attachment"><a href="download_attachment.php?id=' + msg.id + '" target="_blank">📎 ' + escapeHtml(msg.attachment_original_name || 'ファイル') + ' (' + (msg.attachment_size / 1024).toFixed(1) + 'KB)</a></div>';
+        attachmentHTML = '<div class="message-attachment"><a href="download_attachment.php?id=' + msg.id + '" target="_blank"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">attach_file</span> ' + escapeHtml(msg.attachment_original_name || 'ファイル') + ' (' + (msg.attachment_size / 1024).toFixed(1) + 'KB)</a></div>';
     }
 
     const messageDate = new Date(msg.created_at);

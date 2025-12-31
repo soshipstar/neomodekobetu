@@ -99,7 +99,7 @@ renderPageStart('staff', $currentPage, '送信済み内容の閲覧');
 
 <style>
 .note-card {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: 25px;
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-lg);
@@ -147,7 +147,7 @@ renderPageStart('staff', $currentPage, '送信済み内容の閲覧');
 
 .status-sent {
     background: rgba(52,199,89,0.15);
-    color: var(--apple-green);
+    color: var(--md-green);
 }
 
 .note-content {
@@ -162,11 +162,11 @@ renderPageStart('staff', $currentPage, '送信済み内容の閲覧');
     color: var(--text-secondary);
     font-size: var(--text-footnote);
     padding-top: 10px;
-    border-top: 1px solid var(--apple-gray-5);
+    border-top: 1px solid var(--md-gray-5);
 }
 
 .confirmation-summary {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: 20px;
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-lg);
@@ -186,24 +186,24 @@ renderPageStart('staff', $currentPage, '送信済み内容の閲覧');
 .summary-icon { font-size: 24px; }
 .summary-label { color: var(--text-secondary); font-size: var(--text-subhead); }
 .summary-count { font-size: 24px; font-weight: bold; }
-.summary-count.confirmed { color: var(--apple-green); }
-.summary-count.unconfirmed { color: var(--apple-red); }
+.summary-count.confirmed { color: var(--md-green); }
+.summary-count.unconfirmed { color: var(--md-red); }
 .summary-count.total { color: var(--text-primary); }
 
 .status-confirmed {
     background: rgba(52,199,89,0.15);
-    color: var(--apple-green);
-    border: 1px solid var(--apple-green);
+    color: var(--md-green);
+    border: 1px solid var(--md-green);
 }
 
 .status-unconfirmed {
     background: rgba(255,59,48,0.15);
-    color: var(--apple-red);
-    border: 1px solid var(--apple-red);
+    color: var(--md-red);
+    border: 1px solid var(--md-red);
 }
 
-.note-card.unconfirmed { border-left: 4px solid var(--apple-red); }
-.note-card.confirmed { border-left: 4px solid var(--apple-green); }
+.note-card.unconfirmed { border-left: 4px solid var(--md-red); }
+.note-card.confirmed { border-left: 4px solid var(--md-green); }
 
 .confirmation-info {
     margin-top: 10px;
@@ -211,17 +211,17 @@ renderPageStart('staff', $currentPage, '送信済み内容の閲覧');
     background: rgba(52,199,89,0.1);
     border-radius: var(--radius-sm);
     font-size: var(--text-footnote);
-    color: var(--apple-green);
+    color: var(--md-green);
 }
 
 .confirmation-info.pending {
     background: rgba(255,59,48,0.1);
-    color: var(--apple-red);
+    color: var(--md-red);
 }
 
 .quick-link {
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-sm);
     text-decoration: none;
     color: var(--text-primary);
@@ -231,10 +231,10 @@ renderPageStart('staff', $currentPage, '送信済み内容の閲覧');
     display: inline-block;
     margin-bottom: var(--spacing-lg);
 }
-.quick-link:hover { background: var(--apple-gray-5); }
+.quick-link:hover { background: var(--md-gray-5); }
 
 .activity-info-box {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-lg);
@@ -277,7 +277,7 @@ renderPageStart('staff', $currentPage, '送信済み内容の閲覧');
             <!-- 確認状況サマリー -->
             <div class="confirmation-summary">
                 <div class="summary-item">
-                    <span class="summary-icon">📊</span>
+                    <span class="summary-icon"><span class="material-symbols-outlined">monitoring</span></span>
                     <span class="summary-label">保護者確認状況</span>
                 </div>
                 <div class="summary-item">
@@ -326,11 +326,11 @@ renderPageStart('staff', $currentPage, '送信済み内容の閲覧');
 
                     <?php if ($note['guardian_confirmed']): ?>
                         <div class="confirmation-info">
-                            ✅ 保護者確認日時: <?php echo date('Y年n月j日 H:i', strtotime($note['guardian_confirmed_at'])); ?>
+                            <span class="material-symbols-outlined">check_circle</span> 保護者確認日時: <?php echo date('Y年n月j日 H:i', strtotime($note['guardian_confirmed_at'])); ?>
                         </div>
                     <?php else: ?>
                         <div class="confirmation-info pending">
-                            ⚠️ まだ保護者が確認していません
+                            <span class="material-symbols-outlined">warning</span> まだ保護者が確認していません
                         </div>
                     <?php endif; ?>
                 </div>

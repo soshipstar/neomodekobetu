@@ -66,7 +66,7 @@ renderPageStart('staff', $currentPage, '施設通信作成');
 
 <style>
 .form-section {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-2xl);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-lg);
@@ -74,11 +74,11 @@ renderPageStart('staff', $currentPage, '施設通信作成');
 }
 
 .form-section h2 {
-    color: var(--apple-blue);
+    color: var(--md-blue);
     font-size: 20px;
     margin-bottom: var(--spacing-lg);
     padding-bottom: 10px;
-    border-bottom: 2px solid var(--apple-blue);
+    border-bottom: 2px solid var(--md-blue);
 }
 
 .date-range {
@@ -96,7 +96,7 @@ renderPageStart('staff', $currentPage, '施設通信作成');
 .submit-btn {
     width: 100%;
     padding: 15px;
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
     border: none;
     border-radius: var(--radius-sm);
@@ -112,23 +112,23 @@ renderPageStart('staff', $currentPage, '施設通信作成');
 }
 
 .existing-newsletters {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-2xl);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-md);
 }
 
 .existing-newsletters h2 {
-    color: var(--apple-blue);
+    color: var(--md-blue);
     font-size: 20px;
     margin-bottom: var(--spacing-lg);
     padding-bottom: 10px;
-    border-bottom: 2px solid var(--apple-blue);
+    border-bottom: 2px solid var(--md-blue);
 }
 
 .newsletter-item {
     padding: 15px;
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-md);
     display: flex;
@@ -138,8 +138,8 @@ renderPageStart('staff', $currentPage, '施設通信作成');
 }
 
 .newsletter-item:hover {
-    border-color: var(--apple-blue);
-    background: var(--apple-gray-6);
+    border-color: var(--md-blue);
+    background: var(--md-gray-6);
 }
 
 .newsletter-info { flex: 1; }
@@ -162,8 +162,8 @@ renderPageStart('staff', $currentPage, '施設通信作成');
     font-weight: 600;
 }
 
-.status-draft { background: rgba(255,149,0,0.15); color: var(--apple-orange); }
-.status-published { background: rgba(52,199,89,0.15); color: var(--apple-green); }
+.status-draft { background: rgba(255,149,0,0.15); color: var(--md-orange); }
+.status-published { background: rgba(52,199,89,0.15); color: var(--md-green); }
 
 .newsletter-actions {
     display: flex;
@@ -181,34 +181,34 @@ renderPageStart('staff', $currentPage, '施設通信作成');
     transition: all var(--duration-normal) var(--ease-out);
 }
 
-.btn-edit { background: var(--apple-blue); color: white; }
+.btn-edit { background: var(--md-blue); color: white; }
 .btn-edit:hover { background: #1d4ed8; }
-.btn-view { background: var(--apple-green); color: white; }
+.btn-view { background: var(--md-green); color: white; }
 .btn-view:hover { background: #28b463; }
-.btn-delete { background: var(--apple-red); color: white; }
+.btn-delete { background: var(--md-red); color: white; }
 .btn-delete:hover { background: #c9302c; }
 
 .success-message {
     background: rgba(52, 199, 89, 0.15);
-    color: var(--apple-green);
+    color: var(--md-green);
     padding: 15px;
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-lg);
-    border-left: 4px solid var(--apple-green);
+    border-left: 4px solid var(--md-green);
 }
 
 .error-message {
     background: rgba(255, 59, 48, 0.15);
-    color: var(--apple-red);
+    color: var(--md-red);
     padding: 15px;
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-lg);
-    border-left: 4px solid var(--apple-red);
+    border-left: 4px solid var(--md-red);
 }
 
 .info-box {
     background: rgba(0,122,255,0.1);
-    border-left: 4px solid var(--apple-blue);
+    border-left: 4px solid var(--md-blue);
     padding: 15px;
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-lg);
@@ -219,7 +219,7 @@ renderPageStart('staff', $currentPage, '施設通信作成');
 
 .quick-link {
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-sm);
     text-decoration: none;
     color: var(--text-primary);
@@ -229,7 +229,7 @@ renderPageStart('staff', $currentPage, '施設通信作成');
     display: inline-block;
     margin-bottom: var(--spacing-lg);
 }
-.quick-link:hover { background: var(--apple-gray-5); }
+.quick-link:hover { background: var(--md-gray-5); }
 
 @media (max-width: 768px) {
     .date-range { grid-template-columns: 1fr; }
@@ -268,7 +268,7 @@ renderPageStart('staff', $currentPage, '施設通信作成');
             <h2>新しい通信を作成</h2>
 
             <div class="info-box">
-                💡 通信を作成すると、AIが該当期間の連絡帳データを参照して通信の下書きを自動生成します。生成後、内容を確認・編集してから発行してください。
+                <span class="material-symbols-outlined">lightbulb</span> 通信を作成すると、AIが該当期間の連絡帳データを参照して通信の下書きを自動生成します。生成後、内容を確認・編集してから発行してください。
             </div>
 
             <form method="POST" action="newsletter_edit.php" id="createForm">
@@ -314,7 +314,7 @@ renderPageStart('staff', $currentPage, '施設通信作成');
                     </small>
                 </div>
 
-                <button type="submit" class="submit-btn">📝 通信を制作する</button>
+                <button type="submit" class="submit-btn"><span class="material-symbols-outlined">edit_note</span> 通信を制作する</button>
             </form>
         </div>
 

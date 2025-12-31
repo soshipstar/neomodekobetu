@@ -1,6 +1,6 @@
 /**
  * タブレット用CSS
- * アクセントカラー: ティール (--apple-teal)
+ * アクセントカラー: ティール (--md-teal)
  * 特徴: 大きなタッチターゲット、シンプルなUI
  */
 
@@ -10,13 +10,13 @@
 
 .role-tablet .sidebar-menu a:hover {
     background: rgba(90, 200, 250, 0.1);
-    border-left-color: var(--apple-teal);
+    border-left-color: var(--md-teal);
 }
 
 .role-tablet .sidebar-menu a.active {
     background: rgba(90, 200, 250, 0.15);
-    border-left-color: var(--apple-teal);
-    color: var(--apple-teal);
+    border-left-color: var(--md-teal);
+    color: var(--md-teal);
 }
 
 .role-tablet .sidebar-user-info {
@@ -25,15 +25,15 @@
 
 .role-tablet .user-info-box {
     background: rgba(90, 200, 250, 0.1);
-    color: var(--apple-teal);
+    color: var(--md-teal);
 }
 
 .role-tablet .stat-card .number {
-    color: var(--apple-teal);
+    color: var(--md-teal);
 }
 
 .role-tablet .menu-card h3 {
-    color: var(--apple-teal);
+    color: var(--md-teal);
 }
 
 /* ========================================
@@ -87,8 +87,8 @@
 }
 
 .student-select-btn {
-    background: var(--apple-bg-primary);
-    border: 2px solid var(--apple-gray-5);
+    background: var(--md-bg-primary);
+    border: 2px solid var(--md-gray-5);
     border-radius: var(--radius-md);
     padding: var(--spacing-xl);
     text-align: center;
@@ -97,12 +97,12 @@
 }
 
 .student-select-btn:hover {
-    border-color: var(--apple-teal);
+    border-color: var(--md-teal);
     transform: scale(1.02);
 }
 
 .student-select-btn.selected {
-    border-color: var(--apple-teal);
+    border-color: var(--md-teal);
     background: rgba(90, 200, 250, 0.1);
 }
 
@@ -110,7 +110,7 @@
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--apple-teal) 0%, var(--apple-blue) 100%);
+    background: linear-gradient(135deg, var(--md-teal) 0%, var(--md-blue) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -132,7 +132,7 @@
 
 /* 大型記録フォーム */
 .record-form-section {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border-radius: var(--radius-md);
     padding: var(--spacing-xl);
     margin-bottom: var(--spacing-lg);
@@ -142,7 +142,7 @@
 .record-form-title {
     font-size: var(--text-title-3);
     font-weight: 600;
-    color: var(--apple-teal);
+    color: var(--md-teal);
     margin-bottom: var(--spacing-lg);
     display: flex;
     align-items: center;
@@ -159,7 +159,7 @@
     align-items: center;
     gap: var(--spacing-md);
     padding: var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-sm);
     cursor: pointer;
     margin-bottom: var(--spacing-sm);
@@ -168,7 +168,7 @@
 .tablet-checkbox input[type="checkbox"] {
     width: 28px;
     height: 28px;
-    accent-color: var(--apple-teal);
+    accent-color: var(--md-teal);
 }
 
 .tablet-checkbox label {
@@ -196,8 +196,8 @@
 .tablet-radio label {
     display: block;
     padding: var(--spacing-lg);
-    background: var(--apple-bg-secondary);
-    border: 2px solid var(--apple-gray-5);
+    background: var(--md-bg-secondary);
+    border: 2px solid var(--md-gray-5);
     border-radius: var(--radius-sm);
     text-align: center;
     font-size: var(--text-headline);
@@ -206,16 +206,16 @@
 }
 
 .tablet-radio input[type="radio"]:checked + label {
-    border-color: var(--apple-teal);
+    border-color: var(--md-teal);
     background: rgba(90, 200, 250, 0.1);
-    color: var(--apple-teal);
+    color: var(--md-teal);
 }
 
 /* 送信ボタン */
 .tablet-submit-btn {
     width: 100%;
     min-height: 72px;
-    background: linear-gradient(135deg, var(--apple-teal) 0%, var(--apple-blue) 100%);
+    background: linear-gradient(135deg, var(--md-teal) 0%, var(--md-blue) 100%);
     color: white;
     border: none;
     border-radius: var(--radius-md);

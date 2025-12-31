@@ -95,7 +95,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
 <style>
         .toolbar {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: var(--spacing-lg) 30px;
             border-radius: var(--radius-md);
             margin-bottom: var(--spacing-lg);
@@ -144,25 +144,25 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .btn-back {
-            background: var(--apple-gray);
+            background: var(--md-gray);
             color: white;
         }
 
         .btn-back:hover {
-            background: var(--apple-gray);
+            background: var(--md-gray);
         }
 
         .btn-save {
-            background: var(--apple-green);
+            background: var(--md-green);
             color: white;
         }
 
         .btn-save:hover {
-            background: var(--apple-green);
+            background: var(--md-green);
         }
 
         .btn-publish {
-            background: var(--apple-blue);
+            background: var(--md-blue);
             color: white;
         }
 
@@ -189,7 +189,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .btn-generate {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             color: var(--text-primary);
         }
 
@@ -198,7 +198,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .content-section {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: var(--spacing-2xl);
             border-radius: var(--radius-md);
             margin-bottom: var(--spacing-lg);
@@ -234,7 +234,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         .form-control {
             width: 100%;
             padding: var(--spacing-md);
-            border: 1px solid var(--apple-gray-5);
+            border: 1px solid var(--md-gray-5);
             border-radius: var(--radius-sm);
             font-size: var(--text-subhead);
             font-family: inherit;
@@ -269,7 +269,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .loading-content {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: var(--spacing-2xl);
             border-radius: var(--radius-md);
             text-align: center;
@@ -300,7 +300,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .status-draft {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             color: #856404;
         }
 
@@ -314,12 +314,12 @@ renderPageStart('staff', $currentPage, $pageTitle);
             color: var(--text-secondary);
             padding: 5px 10px;
             border-radius: 3px;
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
         }
 
         .auto-save-indicator.saving {
             color: #856404;
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
         }
 
         .auto-save-indicator.saved {
@@ -383,29 +383,29 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 <a href="newsletter_create.php" class="btn btn-back">← 一覧へ戻る</a>
                 <?php if ($needsGeneration): ?>
                 <button type="button" class="btn btn-generate" id="generateBtn">
-                    🤖 AIで通信を生成
+                    <span class="material-symbols-outlined">smart_toy</span> AIで通信を生成
                 </button>
                 <?php endif; ?>
                 <button type="button" class="btn btn-save" id="saveBtn">
-                    💾 下書き保存
+                    <span class="material-symbols-outlined">save</span> 下書き保存
                 </button>
                 <?php if ($newsletter['status'] === 'draft'): ?>
                 <button type="button" class="btn btn-publish" id="publishBtn">
-                    📤 発行する
+                    <span class="material-symbols-outlined">upload_file</span> 発行する
                 </button>
                 <?php endif; ?>
                 <button type="button" class="btn btn-download" id="downloadBtn">
-                    📥 Word
+                    <span class="material-symbols-outlined">download</span> Word
                 </button>
                 <button type="button" class="btn btn-pdf" id="pdfBtn">
-                    📄 PDF出力
+                    <span class="material-symbols-outlined">description</span> PDF出力
                 </button>
             </div>
         </div>
 
         <?php if ($isNewNewsletter): ?>
         <div class="info-box">
-            💡 新しい通信を作成しました。「AIで通信を生成」ボタンをクリックすると、指定期間の連絡帳データを基に通信の下書きが自動生成されます。生成後、内容を確認・編集してください。
+            <span class="material-symbols-outlined">lightbulb</span> 新しい通信を作成しました。「AIで通信を生成」ボタンをクリックすると、指定期間の連絡帳データを基に通信の下書きが自動生成されます。生成後、内容を確認・編集してください。
         </div>
         <?php endif; ?>
 
@@ -415,7 +415,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             <!-- タイトル -->
             <div class="content-section">
                 <div class="section-header">
-                    <h2>📋 タイトル</h2>
+                    <h2><span class="material-symbols-outlined">assignment</span> タイトル</h2>
                 </div>
                 <div class="form-group">
                     <input type="text" name="title" class="form-control"
@@ -427,7 +427,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             <!-- あいさつ文 -->
             <div class="content-section">
                 <div class="section-header">
-                    <h2>👋 あいさつ文</h2>
+                    <h2><span class="material-symbols-outlined">waving_hand</span> あいさつ文</h2>
                 </div>
                 <div class="form-group">
                     <textarea name="greeting" class="form-control" rows="6"><?php echo htmlspecialchars($newsletter['greeting'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
@@ -437,7 +437,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             <!-- イベントカレンダー -->
             <div class="content-section">
                 <div class="section-header">
-                    <h2>📅 予定イベントカレンダー</h2>
+                    <h2><span class="material-symbols-outlined">event</span> 予定イベントカレンダー</h2>
                 </div>
                 <div class="form-group">
                     <label>カレンダー形式で表示する予定</label>
@@ -448,7 +448,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             <!-- イベント詳細 -->
             <div class="content-section">
                 <div class="section-header">
-                    <h2>📝 イベント詳細</h2>
+                    <h2><span class="material-symbols-outlined">edit_note</span> イベント詳細</h2>
                 </div>
                 <div class="form-group">
                     <label>各イベントの詳細説明（各100字程度）</label>
@@ -459,7 +459,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             <!-- 活動紹介まとめ -->
             <div class="content-section">
                 <div class="section-header">
-                    <h2>📖 活動紹介まとめ</h2>
+                    <h2><span class="material-symbols-outlined">auto_stories</span> 活動紹介まとめ</h2>
                 </div>
                 <div class="form-group">
                     <label>期間内の活動を時系列でまとめた紹介文</label>
@@ -470,7 +470,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             <!-- 曜日別活動紹介 -->
             <div class="content-section">
                 <div class="section-header">
-                    <h2>📅 曜日別活動紹介</h2>
+                    <h2><span class="material-symbols-outlined">calendar_month</span> 曜日別活動紹介</h2>
                 </div>
                 <div class="form-group">
                     <label>各曜日の活動を紹介し参加を促す内容</label>
@@ -481,7 +481,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             <!-- イベント結果報告 -->
             <div class="content-section">
                 <div class="section-header">
-                    <h2>🎉 イベント結果報告</h2>
+                    <h2><span class="material-symbols-outlined">celebration</span> イベント結果報告</h2>
                 </div>
                 <div class="form-group">
                     <label>実施したイベントの結果と様子</label>
@@ -492,7 +492,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             <!-- 小学生の活動報告 -->
             <div class="content-section">
                 <div class="section-header">
-                    <h2>🎒 小学生の活動報告</h2>
+                    <h2><span class="material-symbols-outlined">backpack</span> 小学生の活動報告</h2>
                 </div>
                 <div class="form-group">
                     <label>小学生の活動内容と様子</label>
@@ -503,7 +503,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             <!-- 中学生・高校生の活動報告 -->
             <div class="content-section">
                 <div class="section-header">
-                    <h2>📚 中学生・高校生の活動報告</h2>
+                    <h2><span class="material-symbols-outlined">menu_book</span> 中学生・高校生の活動報告</h2>
                 </div>
                 <div class="form-group">
                     <label>中学生・高校生の活動内容と様子</label>
@@ -514,7 +514,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             <!-- 施設からのお願い -->
             <div class="content-section">
                 <div class="section-header">
-                    <h2>🙏 施設からのお願い</h2>
+                    <h2><span class="material-symbols-outlined">volunteer_activism</span> 施設からのお願い</h2>
                 </div>
                 <div class="form-group">
                     <textarea name="requests" class="form-control" rows="8"><?php echo htmlspecialchars($newsletter['requests'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
@@ -524,7 +524,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             <!-- その他 -->
             <div class="content-section">
                 <div class="section-header">
-                    <h2>📌 その他</h2>
+                    <h2><span class="material-symbols-outlined">push_pin</span> その他</h2>
                 </div>
                 <div class="form-group">
                     <textarea name="others" class="form-control" rows="6"><?php echo htmlspecialchars($newsletter['others'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>

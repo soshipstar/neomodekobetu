@@ -218,12 +218,12 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
 <style>
         .common-activity-section {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             padding: var(--spacing-lg);
             border-radius: var(--radius-md);
             margin-bottom: var(--spacing-lg);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            border-left: 5px solid var(--apple-orange);
+            border-left: 5px solid var(--md-orange);
         }
 
         .common-activity-section h2 {
@@ -235,7 +235,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         .common-activity-section textarea {
             width: 100%;
             padding: var(--spacing-md);
-            border: 1px solid var(--apple-gray-5);
+            border: 1px solid var(--md-gray-5);
             border-radius: var(--radius-sm);
             font-size: var(--text-subhead);
             font-family: inherit;
@@ -244,7 +244,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .student-card {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: var(--spacing-lg);
             border-radius: var(--radius-md);
             margin-bottom: var(--spacing-lg);
@@ -276,17 +276,17 @@ renderPageStart('staff', $currentPage, $pageTitle);
         .domain-select {
             width: 100%;
             padding: var(--spacing-md);
-            border: 1px solid var(--apple-gray-5);
+            border: 1px solid var(--md-gray-5);
             border-radius: var(--radius-sm);
             font-size: var(--text-subhead);
             margin-bottom: var(--spacing-md);
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
         }
 
         .domain-textarea {
             width: 100%;
             padding: var(--spacing-md);
-            border: 1px solid var(--apple-gray-5);
+            border: 1px solid var(--md-gray-5);
             border-radius: var(--radius-sm);
             font-size: var(--text-subhead);
             font-family: inherit;
@@ -295,7 +295,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .form-actions {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: var(--spacing-lg);
             border-radius: var(--radius-md);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -319,12 +319,12 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .btn-primary {
-            background: var(--apple-green);
+            background: var(--md-green);
             color: white;
         }
 
         .btn-secondary {
-            background: var(--apple-blue);
+            background: var(--md-blue);
             color: white;
         }
 
@@ -371,7 +371,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .modal-content {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: var(--spacing-2xl);
             border-radius: var(--radius-md);
             max-width: 600px;
@@ -392,7 +392,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
         /* 検索フィルタ */
         .search-filters {
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             padding: 15px;
             border-radius: var(--radius-sm);
             margin-bottom: var(--spacing-lg);
@@ -418,7 +418,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         .filter-group input {
             width: 100%;
             padding: var(--spacing-md);
-            border: 2px solid var(--apple-gray-5);
+            border: 2px solid var(--md-gray-5);
             border-radius: 6px;
             font-size: var(--text-subhead);
             transition: border-color 0.3s;
@@ -433,7 +433,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         .btn-scheduled {
             width: 100%;
             padding: var(--spacing-md);
-            background: var(--apple-green);
+            background: var(--md-green);
             color: white;
             border: none;
             border-radius: 6px;
@@ -444,7 +444,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .btn-scheduled:hover {
-            background: var(--apple-green);
+            background: var(--md-green);
         }
 
         .student-list {
@@ -458,7 +458,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
         .student-item {
             padding: 15px;
-            border: 2px solid var(--apple-gray-5);
+            border: 2px solid var(--md-gray-5);
             border-radius: var(--radius-sm);
             cursor: pointer;
             transition: all var(--duration-normal) var(--ease-out);
@@ -469,7 +469,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
         .student-item:hover {
             border-color: var(--primary-purple);
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
         }
 
         .student-item.selected {
@@ -501,7 +501,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
         .student-item-badge {
             font-size: 11px;
-            background: var(--apple-green);
+            background: var(--md-green);
             color: white;
             padding: 3px 6px;
             border-radius: 4px;
@@ -511,7 +511,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         .student-item-check {
             width: 24px;
             height: 24px;
-            border: 2px solid var(--apple-gray-5);
+            border: 2px solid var(--md-gray-5);
             border-radius: 4px;
             display: flex;
             align-items: center;
@@ -538,16 +538,16 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .btn-cancel {
-            background: var(--apple-gray);
+            background: var(--md-gray);
             color: white;
         }
 
         .btn-cancel:hover {
-            background: var(--apple-gray);
+            background: var(--md-gray);
         }
 
         .add-student-section {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: var(--spacing-lg);
             border-radius: var(--radius-md);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -571,7 +571,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .remove-student-btn {
-            background: var(--apple-red);
+            background: var(--md-red);
             color: white;
             border: none;
             padding: var(--spacing-sm) 16px;
@@ -583,11 +583,11 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .remove-student-btn:hover {
-            background: var(--apple-red);
+            background: var(--md-red);
         }
 
         .save-student-btn {
-            background: var(--apple-green);
+            background: var(--md-green);
             color: white;
             border: none;
             padding: var(--spacing-md) 24px;
@@ -601,7 +601,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .save-student-btn:hover {
-            background: var(--apple-green);
+            background: var(--md-green);
         }
 
         .save-student-btn.visible {
@@ -609,12 +609,12 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .save-student-btn.saved {
-            background: var(--apple-gray);
+            background: var(--md-gray);
             cursor: default;
         }
 
         .save-student-btn.saved:hover {
-            background: var(--apple-gray);
+            background: var(--md-gray);
             transform: none;
         }
     </style>
@@ -630,7 +630,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
     </div>
 </div>
 
-        <div style="background: var(--apple-bg-primary); padding: 15px 20px; border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);">
+        <div style="background: var(--md-bg-primary); padding: 15px 20px; border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);">
             <div style="margin-bottom: var(--spacing-md);">
                 <strong style="color: var(--primary-purple); font-size: 18px;">活動名:</strong>
                 <span style="font-size: 18px; margin-left: 10px;"><?php echo htmlspecialchars($activityName, ENT_QUOTES, 'UTF-8'); ?></span>
@@ -649,8 +649,8 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
         <?php if ($supportPlan): ?>
             <!-- 支援案情報の表示 -->
-            <div style="background: var(--apple-bg-primary); padding: var(--spacing-lg); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); border-left: 4px solid var(--primary-purple);">
-                <h2 style="color: var(--primary-purple); font-size: 18px; margin-bottom: 15px;">📝 選択された支援案</h2>
+            <div style="background: var(--md-bg-primary); padding: var(--spacing-lg); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); border-left: 4px solid var(--primary-purple);">
+                <h2 style="color: var(--primary-purple); font-size: 18px; margin-bottom: 15px;"><span class="material-symbols-outlined">edit_note</span> 選択された支援案</h2>
                 <div style="font-size: var(--text-subhead); line-height: 1.8;">
                     <div style="margin-bottom: 12px;">
                         <strong style="color: var(--primary-purple);">活動名:</strong>
@@ -694,7 +694,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 <p class="info-text">全ての参加者に反映される共通の活動内容を記入してください</p>
                 <?php if ($supportPlan): ?>
                     <p class="info-text" style="background: #e7f3ff; padding: var(--spacing-md); border-radius: var(--radius-sm); border-left: 4px solid var(--primary-purple); margin-bottom: var(--spacing-md);">
-                        💡 支援案「<?php echo htmlspecialchars($supportPlan['activity_name'], ENT_QUOTES, 'UTF-8'); ?>」の活動内容が反映されています。必要に応じて編集してください。
+                        <span class="material-symbols-outlined">tips_and_updates</span> 支援案「<?php echo htmlspecialchars($supportPlan['activity_name'], ENT_QUOTES, 'UTF-8'); ?>」の活動内容が反映されています。必要に応じて編集してください。
                     </p>
                 <?php endif; ?>
                 <textarea
@@ -732,7 +732,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                             name="students[<?php echo $studentId; ?>][daily_note]"
                             class="domain-textarea"
                             placeholder="本日の全体的な様子を自由に記入してください"
-                            style="background: var(--apple-bg-primary);"
+                            style="background: var(--md-bg-primary);"
                         ><?php echo htmlspecialchars($existingData['daily_note'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
                     </div>
 
@@ -794,7 +794,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             <?php if (!empty($availableStudents)): ?>
             <div class="add-student-section">
                 <button type="button" class="btn-add-student" onclick="openAddStudentModal()">
-                    ➕ 参加生徒を追加
+                    <span class="material-symbols-outlined">add</span> 参加生徒を追加
                 </button>
                 <p class="info-text">追加可能な生徒: <?php echo count($availableStudents); ?>名</p>
             </div>
@@ -839,7 +839,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                     <input type="text" id="nameFilter" placeholder="氏名の一部を入力" oninput="filterStudents()">
                 </div>
                 <div class="filter-group">
-                    <button type="button" class="btn btn-scheduled" onclick="showScheduledOnly()">📅 本日参加予定の生徒から選択</button>
+                    <button type="button" class="btn btn-scheduled" onclick="showScheduledOnly()"><span class="material-symbols-outlined">event</span> 本日参加予定の生徒から選択</button>
                 </div>
             </div>
 
@@ -1011,7 +1011,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             ).join('');
 
             card.innerHTML = `
-                <button type="button" class="remove-student-btn" onclick="removeStudentCard(${studentId})">✕ この生徒を削除</button>
+                <button type="button" class="remove-student-btn" onclick="removeStudentCard(${studentId})"><span class="material-symbols-outlined">close</span> この生徒を削除</button>
                 <h3>${escapeHtml(studentName)}</h3>
 
                 <input type="hidden" name="students[${studentId}][id]" value="${studentId}">
@@ -1023,7 +1023,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                         name="students[${studentId}][daily_note]"
                         class="domain-textarea"
                         placeholder="本日の全体的な様子を自由に記入してください"
-                        style="background: var(--apple-bg-primary);"
+                        style="background: var(--md-bg-primary);"
                     ></textarea>
                 </div>
 

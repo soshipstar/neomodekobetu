@@ -50,7 +50,7 @@ renderPageStart('admin', $currentPage, 'スタッフアカウント管理');
 <div class="card">
     <div class="card-body">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
-            <h2 style="font-size: var(--text-headline); color: var(--apple-purple);">スタッフアカウント一覧</h2>
+            <h2 style="font-size: var(--text-headline); color: var(--md-purple);">スタッフアカウント一覧</h2>
             <button class="btn btn-primary" onclick="openAddModal()">新規スタッフ登録</button>
         </div>
 
@@ -144,7 +144,7 @@ renderPageStart('admin', $currentPage, 'スタッフアカウント管理');
             <input type="hidden" name="user_id" id="edit_user_id">
             <div class="form-group">
                 <label class="form-label">ユーザー名</label>
-                <input type="text" id="edit_username" class="form-control" disabled style="background: var(--apple-gray-6);">
+                <input type="text" id="edit_username" class="form-control" disabled style="background: var(--md-gray-6);">
                 <small style="color: var(--text-secondary);">ユーザー名は変更できません</small>
             </div>
             <div class="form-group">

@@ -13,8 +13,8 @@
 /* 左サイドメニュー（PC用） */
 .sidebar {
     width: 260px;
-    background: var(--apple-bg-primary);
-    border-right: 1px solid var(--apple-gray-5);
+    background: var(--md-bg-primary);
+    border-right: 1px solid var(--md-gray-5);
     position: fixed;
     top: 0;
     left: 0;
@@ -27,7 +27,7 @@
 
 .sidebar-header {
     padding: 20px;
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
     display: flex;
     align-items: center;
     gap: 12px;
@@ -90,7 +90,7 @@
 
 .sidebar-footer {
     padding: 15px 20px;
-    border-top: 1px solid var(--apple-gray-5);
+    border-top: 1px solid var(--md-gray-5);
 }
 
 .sidebar-user-info {
@@ -106,7 +106,7 @@
     display: block;
     width: 100%;
     padding: 10px;
-    background: var(--apple-red);
+    background: var(--md-red);
     color: white;
     text-align: center;
     text-decoration: none;
@@ -136,7 +136,7 @@
 /* モバイル用ヘッダー（PC非表示） */
 .mobile-header {
     display: none;
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-md) 15px;
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-lg);
@@ -150,7 +150,7 @@
 }
 
 .menu-btn {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     color: var(--text-primary);
     border: none;
     padding: var(--spacing-md) 20px;
@@ -171,7 +171,7 @@
 .menu-content {
     display: none;
     position: absolute;
-    background-color: var(--apple-bg-tertiary);
+    background-color: var(--md-bg-tertiary);
     min-width: 220px;
     box-shadow: 0 8px 24px rgba(0,0,0,0.15);
     z-index: 1000;
@@ -192,7 +192,7 @@
     display: block;
     transition: all var(--duration-fast) var(--ease-out);
     font-size: 15px;
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
     white-space: nowrap;
 }
 
@@ -215,7 +215,7 @@
 }
 
 .logout-btn {
-    background: var(--apple-red);
+    background: var(--md-red);
     color: white;
     border: none;
     padding: var(--spacing-sm) 16px;
@@ -254,7 +254,7 @@
         align-items: center;
         gap: 12px;
         padding-bottom: 12px;
-        border-bottom: 1px solid var(--apple-gray-5);
+        border-bottom: 1px solid var(--md-gray-5);
     }
 
     .mobile-header-top img {

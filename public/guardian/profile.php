@@ -75,7 +75,7 @@ renderPageStart('guardian', $currentPage, 'プロフィール編集', ['classroo
 }
 
 .info-box {
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-xl);
@@ -85,7 +85,7 @@ renderPageStart('guardian', $currentPage, 'プロフィール編集', ['classroo
     display: flex;
     justify-content: space-between;
     padding: var(--spacing-md) 0;
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
 }
 
 .info-item:last-child {
@@ -108,7 +108,7 @@ renderPageStart('guardian', $currentPage, 'プロフィール編集', ['classroo
     color: var(--text-primary);
     margin-bottom: var(--spacing-lg);
     padding-bottom: var(--spacing-md);
-    border-bottom: 2px solid var(--apple-purple);
+    border-bottom: 2px solid var(--md-purple);
 }
 
 .help-text {
@@ -118,7 +118,7 @@ renderPageStart('guardian', $currentPage, 'プロフィール編集', ['classroo
 }
 
 .required {
-    color: var(--apple-red);
+    color: var(--md-red);
     margin-left: 4px;
 }
 
@@ -135,16 +135,16 @@ renderPageStart('guardian', $currentPage, 'プロフィール編集', ['classroo
 .links-section {
     margin-top: var(--spacing-xl);
     padding-top: var(--spacing-lg);
-    border-top: 1px solid var(--apple-gray-5);
+    border-top: 1px solid var(--md-gray-5);
 }
 
 .link-item {
     display: block;
     padding: var(--spacing-md);
     margin-bottom: var(--spacing-sm);
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     border-radius: var(--radius-md);
-    color: var(--apple-purple);
+    color: var(--md-purple);
     text-decoration: none;
     transition: all var(--duration-fast) var(--ease-out);
     text-align: center;
@@ -152,7 +152,7 @@ renderPageStart('guardian', $currentPage, 'プロフィール編集', ['classroo
 }
 
 .link-item:hover {
-    background: var(--apple-purple);
+    background: var(--md-purple);
     color: white;
     transform: translateY(-2px);
 }

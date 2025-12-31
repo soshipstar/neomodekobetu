@@ -144,13 +144,13 @@ renderPageStart('admin', $currentPage, '管理者ダッシュボード', [
     </a>
 
     <a href="guardians.php" class="menu-card">
-        <div class="menu-card-icon">👤</div>
+        <div class="menu-card-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">person</span></div>
         <h3>保護者管理</h3>
         <p>保護者アカウントの登録・編集を行います。</p>
     </a>
 
     <a href="staff_management.php" class="menu-card">
-        <div class="menu-card-icon">👨‍💼</div>
+        <div class="menu-card-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">badge</span></div>
         <h3>スタッフ管理</h3>
         <p>スタッフアカウントの登録・編集・削除を行います。</p>
     </a>

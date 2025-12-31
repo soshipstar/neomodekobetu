@@ -103,9 +103,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <link rel="stylesheet" href="/assets/css/apple-design.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <style>@media(prefers-color-scheme:dark){html,body{background:#1E1E1E;color:rgba(255,255,255,0.87)}}</style>
+    <link rel="stylesheet" href="/assets/css/google-design.css">
     <title>統合連絡帳作成 - タブレット</title>
     <style>
         * {
@@ -116,13 +118,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         body {
             font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             padding: var(--spacing-lg);
             font-size: var(--text-title-2);
         }
 
         .header {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: var(--spacing-2xl);
             border-radius: var(--radius-lg);
             margin-bottom: var(--spacing-2xl);
@@ -143,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .back-link {
             display: inline-block;
-            color: var(--apple-blue);
+            color: var(--md-blue);
             text-decoration: none;
             font-size: var(--text-title-2);
         }
@@ -153,7 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .student-card {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: var(--spacing-2xl);
             border-radius: var(--radius-lg);
             margin-bottom: var(--spacing-2xl);
@@ -168,11 +170,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .daily-note {
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             padding: var(--spacing-lg);
             border-radius: var(--radius-md);
             margin-bottom: 25px;
-            border-left: 5px solid var(--apple-blue);
+            border-left: 5px solid var(--md-blue);
         }
 
         .daily-note-label {
@@ -206,7 +208,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             min-height: 200px;
             padding: var(--spacing-lg);
             font-size: 26px;
-            border: 3px solid var(--apple-gray-5);
+            border: 3px solid var(--md-gray-5);
             border-radius: var(--radius-md);
             resize: vertical;
             font-family: inherit;
@@ -214,11 +216,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         textarea:focus {
             outline: none;
-            border-color: var(--apple-blue);
+            border-color: var(--md-blue);
         }
 
         .voice-btn {
-            background: var(--apple-blue);
+            background: var(--md-blue);
             color: white;
             border: none;
             padding: 25px 40px;
@@ -229,11 +231,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .voice-btn:hover {
-            background: #0056b3;
+            background: #1565C0;
         }
 
         .voice-btn.listening {
-            background: var(--apple-red);
+            background: var(--md-red);
             animation: pulse 1s infinite;
         }
 
@@ -259,21 +261,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .btn-save {
-            background: var(--apple-green);
+            background: var(--md-green);
             color: white;
         }
 
         .btn-save:hover {
-            background: var(--apple-green);
+            background: var(--md-green);
         }
 
         .btn-cancel {
-            background: var(--apple-gray);
+            background: var(--md-gray);
             color: white;
         }
 
         .btn-cancel:hover {
-            background: var(--apple-gray);
+            background: var(--md-gray);
         }
 
         @media (max-width: 768px) {
@@ -285,7 +287,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <div class="header">
-        <h1>📝 統合連絡帳作成</h1>
+        <h1><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit_note</span> 統合連絡帳作成</h1>
         <div class="activity-info">
             活動: <?php echo htmlspecialchars($activity['activity_name']); ?><br>
             日付: <?php echo date('Y年n月j日', strtotime($activity['record_date'])); ?>
@@ -297,12 +299,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php foreach ($participants as $participant): ?>
             <div class="student-card">
                 <div class="student-name">
-                    👤 <?php echo htmlspecialchars($participant['student_name']); ?>
+                    <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">person</span> <?php echo htmlspecialchars($participant['student_name']); ?>
                 </div>
 
                 <?php if (!empty($participant['daily_note'])): ?>
                     <div class="daily-note">
-                        <div class="daily-note-label">📄 活動記録:</div>
+                        <div class="daily-note-label"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">description</span> 活動記録:</div>
                         <div class="daily-note-content">
                             <?php echo nl2br(htmlspecialchars($participant['daily_note'])); ?>
                         </div>
@@ -330,9 +332,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endforeach; ?>
 
         <div class="button-group">
-            <button type="submit" class="submit-btn btn-save">💾 保存する</button>
+            <button type="submit" class="submit-btn btn-save"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">save</span> 保存する</button>
             <button type="button" class="submit-btn btn-cancel" onclick="location.href='index.php?date=<?php echo $recordDate; ?>'">
-                ❌ キャンセル
+                <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">cancel</span> キャンセル
             </button>
         </div>
     </form>

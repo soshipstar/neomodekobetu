@@ -104,7 +104,7 @@ renderPageStart('guardian', $currentPage, '週間計画表', ['classroom' => $cl
 
 <style>
 .student-selector {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-md) var(--spacing-lg);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-lg);
@@ -114,14 +114,14 @@ renderPageStart('guardian', $currentPage, '週間計画表', ['classroom' => $cl
 .student-selector select {
     width: 100%;
     padding: var(--spacing-md);
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
     border-radius: var(--radius-sm);
     font-size: var(--text-callout);
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
 }
 
 .week-nav {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-md) var(--spacing-lg);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-lg);
@@ -148,23 +148,23 @@ renderPageStart('guardian', $currentPage, '週間計画表', ['classroom' => $cl
 }
 
 .plan-table th {
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     padding: var(--spacing-md);
     text-align: left;
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
     font-weight: 600;
     color: var(--text-primary);
 }
 
 .plan-table td {
     padding: var(--spacing-md);
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
     vertical-align: top;
 }
 
 .day-header {
     font-weight: 600;
-    color: var(--apple-purple);
+    color: var(--md-purple);
     margin-bottom: 5px;
 }
 
@@ -185,15 +185,15 @@ renderPageStart('guardian', $currentPage, '週間計画表', ['classroom' => $cl
 
 .comment {
     padding: var(--spacing-md);
-    background: var(--apple-gray-6);
-    border-left: 4px solid var(--apple-purple);
+    background: var(--md-gray-6);
+    border-left: 4px solid var(--md-purple);
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-md);
 }
 
-.comment.staff { border-left-color: var(--apple-green); }
-.comment.student { border-left-color: var(--apple-purple); }
-.comment.guardian { border-left-color: var(--apple-orange); }
+.comment.staff { border-left-color: var(--md-green); }
+.comment.student { border-left-color: var(--md-purple); }
+.comment.guardian { border-left-color: var(--md-orange); }
 
 .comment-header {
     display: flex;
@@ -203,7 +203,7 @@ renderPageStart('guardian', $currentPage, '週間計画表', ['classroom' => $cl
 
 .comment-author {
     font-weight: 600;
-    color: var(--apple-purple);
+    color: var(--md-purple);
 }
 
 .comment-date {
@@ -220,7 +220,7 @@ renderPageStart('guardian', $currentPage, '週間計画表', ['classroom' => $cl
     width: 100%;
     min-height: 100px;
     padding: var(--spacing-md);
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
     border-radius: var(--radius-sm);
     font-family: inherit;
     font-size: var(--text-subhead);
@@ -334,7 +334,7 @@ renderPageStart('guardian', $currentPage, '週間計画表', ['classroom' => $cl
 
         <div class="card comments-section">
             <div class="card-body">
-                <h3 style="margin-bottom: var(--spacing-lg);">💬 コメント</h3>
+                <h3 style="margin-bottom: var(--spacing-lg);"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">chat</span> コメント</h3>
 
                 <?php if (empty($comments)): ?>
                     <p style="color: var(--text-secondary); text-align: center; padding: var(--spacing-lg);">まだコメントはありません</p>
@@ -344,8 +344,8 @@ renderPageStart('guardian', $currentPage, '週間計画表', ['classroom' => $cl
                             <div class="comment-header">
                                 <span class="comment-author">
                                     <?php
-                                    $icon = $comment['commenter_type'] === 'staff' ? '👨‍🏫' :
-                                            ($comment['commenter_type'] === 'guardian' ? '👪' : '🎓');
+                                    $icon = $comment['commenter_type'] === 'staff' ? '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">school</span>' :
+                                            ($comment['commenter_type'] === 'guardian' ? '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">family_restroom</span>' : '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">school</span>');
                                     echo $icon . ' ' . htmlspecialchars($comment['commenter_name'], ENT_QUOTES, 'UTF-8');
                                     ?>
                                 </span>

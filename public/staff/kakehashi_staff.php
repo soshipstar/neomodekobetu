@@ -209,7 +209,7 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
     gap: 20px;
     margin-bottom: var(--spacing-xl);
     padding: var(--spacing-lg);
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     border-radius: var(--radius-md);
 }
 
@@ -218,13 +218,13 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
     padding: 15px;
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-lg);
-    border-left: 4px solid var(--apple-blue);
+    border-left: 4px solid var(--md-blue);
 }
 
 .period-info p { margin: 5px 0; }
 
 .student-info {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     padding: 15px;
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-lg);
@@ -233,10 +233,10 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
 .section-title {
     font-size: 20px;
     font-weight: 600;
-    color: var(--apple-blue);
+    color: var(--md-blue);
     margin: var(--spacing-xl) 0 15px 0;
     padding-bottom: 10px;
-    border-bottom: 2px solid var(--apple-blue);
+    border-bottom: 2px solid var(--md-blue);
 }
 
 .domains-grid {
@@ -262,8 +262,8 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
     font-weight: 600;
 }
 
-.status-draft { background: var(--apple-orange); color: white; }
-.status-submitted { background: var(--apple-green); color: white; }
+.status-draft { background: var(--md-orange); color: white; }
+.status-submitted { background: var(--md-green); color: white; }
 
 .button-group {
     display: flex;
@@ -273,13 +273,13 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
 }
 
 .generate-info {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     padding: 15px;
     border-radius: var(--radius-sm);
     margin-top: var(--spacing-lg);
     font-size: var(--text-subhead);
     color: var(--text-secondary);
-    border-left: 4px solid var(--apple-purple);
+    border-left: 4px solid var(--md-purple);
 }
 
 .btn-generate {
@@ -304,7 +304,7 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
 
 .quick-link {
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-sm);
     text-decoration: none;
     color: var(--text-primary);
@@ -312,7 +312,7 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
     font-weight: 500;
     transition: all var(--duration-fast);
 }
-.quick-link:hover { background: var(--apple-gray-5); }
+.quick-link:hover { background: var(--md-gray-5); }
 
 @media (max-width: 768px) {
     .selection-area {
@@ -349,46 +349,46 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
 }
 
 .btn-primary {
-    background: linear-gradient(180deg, #007AFF 0%, #0066D6 100%);
+    background: linear-gradient(180deg, #1976D2 0%, #1565C0 100%);
     color: white;
     box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
 }
 
 .btn-primary:hover {
-    background: linear-gradient(180deg, #0088FF 0%, #007AFF 100%);
+    background: linear-gradient(180deg, #42A5F5 0%, #1976D2 100%);
     box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
 }
 
 .btn-secondary {
-    background: linear-gradient(180deg, #8E8E93 0%, #636366 100%);
+    background: linear-gradient(180deg, #757575 0%, #636366 100%);
     color: white;
     box-shadow: 0 2px 8px rgba(142, 142, 147, 0.3);
 }
 
 .btn-secondary:hover {
-    background: linear-gradient(180deg, #9E9EA3 0%, #8E8E93 100%);
+    background: linear-gradient(180deg, #9E9EA3 0%, #757575 100%);
     box-shadow: 0 4px 12px rgba(142, 142, 147, 0.4);
 }
 
 .btn-success {
-    background: linear-gradient(180deg, #34C759 0%, #28A745 100%);
+    background: linear-gradient(180deg, #4CAF50 0%, #388E3C 100%);
     color: white;
     box-shadow: 0 2px 8px rgba(52, 199, 89, 0.3);
 }
 
 .btn-success:hover {
-    background: linear-gradient(180deg, #40D865 0%, #34C759 100%);
+    background: linear-gradient(180deg, #66BB6A 0%, #4CAF50 100%);
     box-shadow: 0 4px 12px rgba(52, 199, 89, 0.4);
 }
 
 .btn-danger {
-    background: linear-gradient(180deg, #FF3B30 0%, #D63027 100%);
+    background: linear-gradient(180deg, #F44336 0%, #D32F2F 100%);
     color: white;
     box-shadow: 0 2px 8px rgba(255, 59, 48, 0.3);
 }
 
 .btn-danger:hover {
-    background: linear-gradient(180deg, #FF4D44 0%, #FF3B30 100%);
+    background: linear-gradient(180deg, #EF5350 0%, #F44336 100%);
     box-shadow: 0 4px 12px rgba(255, 59, 48, 0.4);
 }
 
@@ -412,7 +412,7 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
     gap: 15px;
     margin-top: var(--spacing-xl);
     padding: var(--spacing-lg);
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     border-radius: var(--radius-md);
 }
 
@@ -438,7 +438,7 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
     justify-content: center;
     width: 18px;
     height: 18px;
-    background: var(--apple-gray-4);
+    background: var(--md-gray-4);
     color: white;
     border-radius: 50%;
     font-size: 12px;
@@ -449,7 +449,7 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
     position: relative;
 }
 .help-icon:hover {
-    background: var(--apple-blue);
+    background: var(--md-blue);
     transform: scale(1.1);
 }
 .help-tooltip {
@@ -460,7 +460,7 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
     transform: translateX(-50%);
     margin-top: 8px;
     padding: 12px 16px;
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg);
@@ -490,7 +490,7 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
     transform: translateX(-50%);
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-bottom: 5px solid var(--apple-bg-primary);
+    border-bottom: 5px solid var(--md-bg-primary);
 }
 .help-icon.active .help-tooltip {
     display: block;
@@ -500,14 +500,14 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
 <!-- ページヘッダー -->
 <div class="page-header">
     <div class="page-header-content">
-        <h1 class="page-title">🌉 スタッフかけはし入力</h1>
+        <h1 class="page-title"><span class="material-symbols-outlined">handshake</span> スタッフかけはし入力</h1>
         <p class="page-subtitle">生徒の五領域の課題と目標を記録します</p>
     </div>
 </div>
 
 <!-- クイックリンク -->
 <div class="quick-links">
-    <a href="kakehashi_guardian_view.php" class="quick-link">📋 保護者入力確認</a>
+    <a href="kakehashi_guardian_view.php" class="quick-link"><span class="material-symbols-outlined">assignment</span> 保護者入力確認</a>
     <a href="renrakucho_activities.php" class="quick-link">← 戻る</a>
 </div>
 
@@ -584,7 +584,7 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
 
         <!-- 期間情報 -->
         <div class="period-info">
-            <p><strong>📋 個別支援計画:</strong> <?= getIndividualSupportPlanStartMonth($selectedPeriod) ?>開始分</p>
+            <p><strong><span class="material-symbols-outlined">assignment</span> 個別支援計画:</strong> <?= getIndividualSupportPlanStartMonth($selectedPeriod) ?>開始分</p>
             <p><strong>対象期間:</strong> <?= date('Y年m月d日', strtotime($selectedPeriod['start_date'])) ?> ～ <?= date('Y年m月d日', strtotime($selectedPeriod['end_date'])) ?></p>
             <p><strong>提出期限:</strong> <?= date('Y年m月d日', strtotime($selectedPeriod['submission_deadline'])) ?></p>
             <p>
@@ -607,14 +607,14 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
             <div class="card">
                 <div class="card-body">
                     <!-- 本人の願い -->
-                    <div class="section-title">💫 本人の願い</div>
+                    <div class="section-title"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">auto_awesome</span> 本人の願い</div>
                     <div class="form-group">
                         <label class="form-label">本人が望んでいること、なりたい姿</label>
                         <textarea name="student_wish" class="form-control" rows="6"><?= $kakehashiData['student_wish'] ?? '' ?></textarea>
                     </div>
 
                     <!-- 目標設定 -->
-                    <div class="section-title">🎯 目標設定</div>
+                    <div class="section-title"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">target</span> 目標設定</div>
                     <div class="form-group">
                         <label class="form-label">短期目標（6か月）</label>
                         <textarea name="short_term_goal" class="form-control" rows="6"><?= $kakehashiData['short_term_goal'] ?? '' ?></textarea>
@@ -625,33 +625,33 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
                     </div>
 
                     <!-- 五領域の課題 -->
-                    <div class="section-title">🌟 五領域の課題</div>
+                    <div class="section-title"><span class="material-symbols-outlined">star</span> 五領域の課題</div>
                     <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md); font-size: var(--text-subhead);">各領域300文字程度を目安に、活動記録を基に課題と支援方針を記述してください。</p>
                     <div class="domains-grid">
                         <div class="form-group">
-                            <label class="form-label">❤️ 健康・生活</label>
+                            <label class="form-label"><span class="material-symbols-outlined">favorite</span> 健康・生活</label>
                             <textarea name="domain_health_life" class="form-control" rows="6"><?= $kakehashiData['domain_health_life'] ?? '' ?></textarea>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">🏃 運動・感覚</label>
+                            <label class="form-label"><span class="material-symbols-outlined">directions_run</span> 運動・感覚</label>
                             <textarea name="domain_motor_sensory" class="form-control" rows="6"><?= $kakehashiData['domain_motor_sensory'] ?? '' ?></textarea>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">🧠 認知・行動</label>
+                            <label class="form-label"><span class="material-symbols-outlined">psychology</span> 認知・行動</label>
                             <textarea name="domain_cognitive_behavior" class="form-control" rows="6"><?= $kakehashiData['domain_cognitive_behavior'] ?? '' ?></textarea>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">💬 言語・コミュニケーション</label>
+                            <label class="form-label"><span class="material-symbols-outlined">chat</span> 言語・コミュニケーション</label>
                             <textarea name="domain_language_communication" class="form-control" rows="6"><?= $kakehashiData['domain_language_communication'] ?? '' ?></textarea>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">👥 人間関係・社会性</label>
+                            <label class="form-label"><span class="material-symbols-outlined">group</span> 人間関係・社会性</label>
                             <textarea name="domain_social_relations" class="form-control" rows="6"><?= $kakehashiData['domain_social_relations'] ?? '' ?></textarea>
                         </div>
                     </div>
 
                     <!-- その他の課題 -->
-                    <div class="section-title">📌 その他の課題</div>
+                    <div class="section-title"><span class="material-symbols-outlined">push_pin</span> その他の課題</div>
                     <div class="form-group">
                         <label class="form-label">その他、記載事項</label>
                         <textarea name="other_challenges" class="form-control" rows="6"><?= $kakehashiData['other_challenges'] ?? '' ?></textarea>
@@ -660,16 +660,16 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
                     <!-- ボタン -->
                     <?php if (!$kakehashiData || !$kakehashiData['is_submitted']): ?>
                         <div class="button-group">
-                            <button type="submit" class="btn btn-success" onclick="setAction('save')">💾 下書き保存</button>
-                            <button type="submit" class="btn btn-primary" onclick="return confirmSubmit()">📤 提出する</button>
+                            <button type="submit" class="btn btn-success" onclick="setAction('save')"><span class="material-symbols-outlined">save</span> 下書き保存</button>
+                            <button type="submit" class="btn btn-primary" onclick="return confirmSubmit()"><span class="material-symbols-outlined">upload_file</span> 提出する</button>
                         </div>
                     <?php else: ?>
                         <div class="alert alert-info" style="margin-top: var(--spacing-lg);">
-                            ✅ このかけはしは提出済みです。<br>
+                            <span class="material-symbols-outlined">check_circle</span> このかけはしは提出済みです。<br>
                             <small>※スタッフは提出後も内容を修正できます。</small>
                         </div>
                         <div class="button-group">
-                            <button type="submit" class="btn btn-success" onclick="setAction('update')">📝 内容を修正</button>
+                            <button type="submit" class="btn btn-success" onclick="setAction('update')"><span class="material-symbols-outlined">edit_note</span> 内容を修正</button>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -679,7 +679,7 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
         <!-- AI分析機能説明 -->
         <?php if (!$kakehashiData || !$kakehashiData['is_submitted']): ?>
             <div class="generate-info">
-                <strong>📊 AI分析機能</strong><br>
+                <strong><span class="material-symbols-outlined">monitoring</span> AI分析機能</strong><br>
                 直近5か月の連絡帳データから、AIが五領域の課題と目標を自動生成します。<br>
                 生成された内容は確認・編集できます。
             </div>
@@ -691,7 +691,7 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
                 <form method="POST" action="kakehashi_staff_generate.php" onsubmit="return confirmGenerate()" class="action-button-form">
                     <input type="hidden" name="student_id" value="<?= $selectedStudentId ?>">
                     <input type="hidden" name="period_id" value="<?= $selectedPeriodId ?>">
-                    <button type="submit" class="btn btn-generate">📊 分析してかけはしを生成</button>
+                    <button type="submit" class="btn btn-generate"><span class="material-symbols-outlined">monitoring</span> 分析してかけはしを生成</button>
                 </form>
             <?php endif; ?>
 
@@ -699,7 +699,7 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
                 <a href="kakehashi_staff_pdf.php?student_id=<?= $selectedStudentId ?>&period_id=<?= $selectedPeriodId ?>&staff_only=1"
                    target="_blank"
                    class="btn btn-secondary">
-                    🖨️ スタッフかけはしをPDF出力
+                    <span class="material-symbols-outlined">print</span> スタッフかけはしをPDF出力
                 </a>
             <?php endif; ?>
 
@@ -708,7 +708,7 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
                     <input type="hidden" name="delete_staff_kakehashi" value="1">
                     <input type="hidden" name="student_id" value="<?= $selectedStudentId ?>">
                     <input type="hidden" name="period_id" value="<?= $selectedPeriodId ?>">
-                    <button type="submit" class="btn btn-danger">🗑️ このスタッフ用かけはしを削除</button>
+                    <button type="submit" class="btn btn-danger"><span class="material-symbols-outlined">delete</span> このスタッフ用かけはしを削除</button>
                 </form>
             <?php endif; ?>
         </div>

@@ -164,7 +164,7 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
 <!-- 通知セクション -->
 <?php if ($totalUnreadMessages > 0): ?>
 <div class="alert alert-info">
-    <strong>💬 未読メッセージがあります</strong>
+    <strong><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">chat</span> 未読メッセージがあります</strong>
     <p><?= $totalUnreadMessages ?>件の新しいメッセージがあります。</p>
     <a href="chat.php" class="btn btn-primary btn-sm">チャットを開く</a>
 </div>
@@ -172,7 +172,7 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
 
 <?php if (count($pendingKakehashi) > 0): ?>
 <div class="alert alert-warning">
-    <strong>🌉 かけはしの提出をお願いします</strong>
+    <strong><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">handshake</span> かけはしの提出をお願いします</strong>
     <p><?= count($pendingKakehashi) ?>件の未提出かけはしがあります。</p>
     <a href="kakehashi.php" class="btn btn-warning btn-sm">かけはし入力へ</a>
 </div>
@@ -180,7 +180,7 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
 
 <?php if (count($pendingPlans) > 0): ?>
 <div class="alert alert-info">
-    <strong>📋 個別支援計画の確認をお願いします</strong>
+    <strong><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">assignment</span> 個別支援計画の確認をお願いします</strong>
     <p><?= count($pendingPlans) ?>件の未確認計画があります。</p>
     <a href="support_plans.php" class="btn btn-primary btn-sm">計画を確認</a>
 </div>
@@ -188,7 +188,7 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
 
 <?php if (count($pendingMonitoring) > 0): ?>
 <div class="alert alert-info">
-    <strong>📊 モニタリング表の確認をお願いします</strong>
+    <strong><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">monitoring</span> モニタリング表の確認をお願いします</strong>
     <p><?= count($pendingMonitoring) ?>件の未確認モニタリングがあります。</p>
     <a href="monitoring.php" class="btn btn-primary btn-sm">モニタリングを確認</a>
 </div>
@@ -227,7 +227,7 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
 <!-- クイックメニュー -->
 <div class="menu-grid">
     <a href="chat.php" class="menu-card">
-        <div class="menu-card-icon">💬</div>
+        <div class="menu-card-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">chat</span></div>
         <h3>チャット</h3>
         <p>スタッフとメッセージのやり取りができます。</p>
         <?php if ($totalUnreadMessages > 0): ?>
@@ -236,7 +236,7 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
     </a>
 
     <a href="kakehashi.php" class="menu-card">
-        <div class="menu-card-icon">🌉</div>
+        <div class="menu-card-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">handshake</span></div>
         <h3>かけはし入力</h3>
         <p>かけはし情報を入力します。</p>
         <?php if (count($pendingKakehashi) > 0): ?>
@@ -245,19 +245,19 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
     </a>
 
     <a href="kakehashi_history.php" class="menu-card">
-        <div class="menu-card-icon">📚</div>
+        <div class="menu-card-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">assignment</span></div>
         <h3>かけはし履歴</h3>
         <p>過去のかけはし情報を確認できます。</p>
     </a>
 
     <a href="support_plans.php" class="menu-card">
-        <div class="menu-card-icon">📋</div>
+        <div class="menu-card-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">assignment</span></div>
         <h3>個別支援計画書</h3>
         <p>お子様の個別支援計画を確認できます。</p>
     </a>
 
     <a href="monitoring.php" class="menu-card">
-        <div class="menu-card-icon">📊</div>
+        <div class="menu-card-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">monitoring</span></div>
         <h3>モニタリング表</h3>
         <p>支援の進捗状況を確認できます。</p>
     </a>
@@ -271,7 +271,7 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
 }
 .card-header {
     padding: 16px 20px;
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
 }
 .card-header h2 {
     margin: 0;
@@ -289,7 +289,7 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
     gap: 16px;
 }
 .student-card {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     padding: 16px;
     border-radius: 12px;
 }

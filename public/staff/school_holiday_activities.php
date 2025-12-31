@@ -84,7 +84,7 @@ renderPageStart('staff', $currentPage, '学校休業日活動設定');
 
 <style>
 .calendar-container {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-xl);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-md);
@@ -112,7 +112,7 @@ renderPageStart('staff', $currentPage, '学校休業日活動設定');
 
 .calendar-nav a {
     padding: 8px 16px;
-    background: var(--apple-purple);
+    background: var(--md-purple);
     color: white;
     text-decoration: none;
     border-radius: var(--radius-sm);
@@ -121,7 +121,7 @@ renderPageStart('staff', $currentPage, '学校休業日活動設定');
 }
 
 .calendar-nav a:hover {
-    background: var(--apple-blue);
+    background: var(--md-blue);
     transform: translateY(-1px);
 }
 
@@ -137,7 +137,7 @@ renderPageStart('staff', $currentPage, '学校休業日活動設定');
     font-weight: bold;
     font-size: var(--text-subhead);
     color: var(--text-secondary);
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     border-radius: var(--radius-sm);
 }
 
@@ -146,21 +146,21 @@ renderPageStart('staff', $currentPage, '学校休業日活動設定');
 
 .calendar-day {
     min-height: 80px;
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
     border-radius: var(--radius-sm);
     padding: 8px;
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     cursor: pointer;
     transition: all var(--duration-normal) var(--ease-out);
 }
 
 .calendar-day:hover:not(.empty):not(.holiday) {
-    background: var(--apple-bg-tertiary);
+    background: var(--md-bg-tertiary);
     transform: scale(1.02);
 }
 
 .calendar-day.empty {
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     opacity: 0.5;
     cursor: default;
 }
@@ -229,7 +229,7 @@ renderPageStart('staff', $currentPage, '学校休業日活動設定');
 
 .info-box {
     background: rgba(0,122,255,0.1);
-    border-left: 4px solid var(--apple-blue);
+    border-left: 4px solid var(--md-blue);
     padding: 15px;
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-lg);
@@ -244,7 +244,7 @@ renderPageStart('staff', $currentPage, '学校休業日活動設定');
     flex-wrap: wrap;
     margin-bottom: var(--spacing-lg);
     padding: var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-sm);
 }
 
@@ -272,7 +272,7 @@ renderPageStart('staff', $currentPage, '学校休業日活動設定');
 
 .submit-btn {
     padding: 12px 40px;
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
     border: none;
     border-radius: var(--radius-sm);
@@ -289,20 +289,20 @@ renderPageStart('staff', $currentPage, '学校休業日活動設定');
 
 .success-message {
     background: rgba(52, 199, 89, 0.15);
-    color: var(--apple-green);
+    color: var(--md-green);
     padding: 15px;
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-lg);
-    border-left: 4px solid var(--apple-green);
+    border-left: 4px solid var(--md-green);
 }
 
 .error-message {
     background: rgba(255, 59, 48, 0.15);
-    color: var(--apple-red);
+    color: var(--md-red);
     padding: 15px;
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-lg);
-    border-left: 4px solid var(--apple-red);
+    border-left: 4px solid var(--md-red);
 }
 
 @media (max-width: 768px) {
@@ -441,7 +441,7 @@ renderPageStart('staff', $currentPage, '学校休業日活動設定');
         </div>
 
         <div class="submit-section">
-            <button type="submit" class="submit-btn">💾 この月の設定を保存</button>
+            <button type="submit" class="submit-btn"><span class="material-symbols-outlined">save</span> この月の設定を保存</button>
         </div>
     </div>
 </form>

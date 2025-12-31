@@ -17,97 +17,97 @@ $currentPage = $currentPage ?? '';
 $classroom = $classroom ?? null;
 $isMaster = function_exists('isMasterAdmin') ? isMasterAdmin() : false;
 
-// ロール別メニュー定義
+// ロール別メニュー定義（Material Symbols アイコン名）
 $menuConfig = [
     'admin' => [
-        ['page' => 'index', 'icon' => '🏠', 'label' => 'ダッシュボード', 'url' => '/admin/index.php'],
+        ['page' => 'index', 'icon' => 'home', 'label' => 'ダッシュボード', 'url' => '/admin/index.php'],
         // 施設管理者専用（マスターには非表示）
-        ['page' => 'students', 'icon' => '👥', 'label' => '生徒登録・変更', 'url' => '/admin/students.php', 'non_master' => true],
-        ['page' => 'guardians', 'icon' => '👤', 'label' => '保護者登録・変更', 'url' => '/admin/guardians.php', 'non_master' => true],
-        ['page' => 'waiting_list', 'icon' => '⏳', 'label' => '待機児童管理', 'url' => '/admin/waiting_list.php', 'non_master' => true],
-        ['page' => 'staff_management', 'icon' => '👨‍💼', 'label' => 'スタッフ管理', 'url' => '/admin/staff_management.php', 'non_master' => true],
-        ['page' => 'tablet_accounts', 'icon' => '📱', 'label' => 'タブレットユーザー', 'url' => '/admin/tablet_accounts.php', 'non_master' => true],
-        ['page' => 'events', 'icon' => '📅', 'label' => 'イベント管理', 'url' => '/admin/events.php', 'non_master' => true],
-        ['page' => 'holidays', 'icon' => '🗓️', 'label' => '休日管理', 'url' => '/admin/holidays.php', 'non_master' => true],
+        ['page' => 'students', 'icon' => 'group', 'label' => '生徒登録・変更', 'url' => '/admin/students.php', 'non_master' => true],
+        ['page' => 'guardians', 'icon' => 'person', 'label' => '保護者登録・変更', 'url' => '/admin/guardians.php', 'non_master' => true],
+        ['page' => 'waiting_list', 'icon' => 'hourglass_empty', 'label' => '待機児童管理', 'url' => '/admin/waiting_list.php', 'non_master' => true],
+        ['page' => 'staff_management', 'icon' => 'manage_accounts', 'label' => 'スタッフ管理', 'url' => '/admin/staff_management.php', 'non_master' => true],
+        ['page' => 'tablet_accounts', 'icon' => 'tablet', 'label' => 'タブレットユーザー', 'url' => '/admin/tablet_accounts.php', 'non_master' => true],
+        ['page' => 'events', 'icon' => 'event', 'label' => 'イベント管理', 'url' => '/admin/events.php', 'non_master' => true],
+        ['page' => 'holidays', 'icon' => 'calendar_today', 'label' => '休日管理', 'url' => '/admin/holidays.php', 'non_master' => true],
         // マスター専用
-        ['page' => 'classrooms', 'icon' => '🏢', 'label' => '教室管理', 'url' => '/admin/classrooms.php', 'master_only' => true],
-        ['page' => 'admin_accounts', 'icon' => '👑', 'label' => '管理者アカウント', 'url' => '/admin/admin_accounts.php', 'master_only' => true],
-        ['page' => 'staff_accounts', 'icon' => '👔', 'label' => 'スタッフアカウント', 'url' => '/admin/staff_accounts.php', 'master_only' => true],
+        ['page' => 'classrooms', 'icon' => 'apartment', 'label' => '教室管理', 'url' => '/admin/classrooms.php', 'master_only' => true],
+        ['page' => 'admin_accounts', 'icon' => 'shield_person', 'label' => '管理者アカウント', 'url' => '/admin/admin_accounts.php', 'master_only' => true],
+        ['page' => 'staff_accounts', 'icon' => 'badge', 'label' => 'スタッフアカウント', 'url' => '/admin/staff_accounts.php', 'master_only' => true],
     ],
     'staff' => [
         // 日常業務
-        ['page' => 'renrakucho_activities', 'icon' => '🏠', 'label' => '活動管理', 'url' => '/staff/renrakucho_activities.php'],
-        ['page' => 'makeup_requests', 'icon' => '🔄', 'label' => '振替管理', 'url' => '/staff/makeup_requests.php'],
+        ['page' => 'renrakucho_activities', 'icon' => 'home', 'label' => '活動管理', 'url' => '/staff/renrakucho_activities.php'],
+        ['page' => 'makeup_requests', 'icon' => 'sync', 'label' => '振替管理', 'url' => '/staff/makeup_requests.php'],
         // チャット
         ['type' => 'divider', 'label' => 'チャット'],
-        ['page' => 'chat', 'icon' => '👨‍👩‍👧', 'label' => '保護者チャット', 'url' => '/staff/chat.php'],
-        ['page' => 'student_chats', 'icon' => '🧒', 'label' => '生徒チャット', 'url' => '/staff/student_chats.php'],
+        ['page' => 'chat', 'icon' => 'family_restroom', 'label' => '保護者チャット', 'url' => '/staff/chat.php'],
+        ['page' => 'student_chats', 'icon' => 'child_care', 'label' => '生徒チャット', 'url' => '/staff/student_chats.php'],
         // かけはし
         ['type' => 'divider', 'label' => 'かけはし'],
-        ['page' => 'kakehashi_staff', 'icon' => '🌉', 'label' => 'かけはし（職員）', 'url' => '/staff/kakehashi_staff.php'],
-        ['page' => 'kakehashi_guardian_view', 'icon' => '📖', 'label' => 'かけはし（保護者）', 'url' => '/staff/kakehashi_guardian_view.php'],
+        ['page' => 'kakehashi_staff', 'icon' => 'handshake', 'label' => 'かけはし（職員）', 'url' => '/staff/kakehashi_staff.php'],
+        ['page' => 'kakehashi_guardian_view', 'icon' => 'menu_book', 'label' => 'かけはし（保護者）', 'url' => '/staff/kakehashi_guardian_view.php'],
         // 計画・支援
         ['type' => 'divider', 'label' => '計画・支援'],
-        ['page' => 'support_plans', 'icon' => '📄', 'label' => '支援案', 'url' => '/staff/support_plans.php'],
-        ['page' => 'student_weekly_plans', 'icon' => '📝', 'label' => '週間計画', 'url' => '/staff/student_weekly_plans.php'],
-        ['page' => 'kobetsu_plan', 'icon' => '📋', 'label' => '個別支援計画', 'url' => '/staff/kobetsu_plan.php'],
-        ['page' => 'kobetsu_monitoring', 'icon' => '📊', 'label' => 'モニタリング', 'url' => '/staff/kobetsu_monitoring.php'],
+        ['page' => 'support_plans', 'icon' => 'description', 'label' => '支援案', 'url' => '/staff/support_plans.php'],
+        ['page' => 'student_weekly_plans', 'icon' => 'edit_note', 'label' => '週間計画', 'url' => '/staff/student_weekly_plans.php'],
+        ['page' => 'kobetsu_plan', 'icon' => 'assignment', 'label' => '個別支援計画', 'url' => '/staff/kobetsu_plan.php'],
+        ['page' => 'kobetsu_monitoring', 'icon' => 'monitoring', 'label' => 'モニタリング', 'url' => '/staff/kobetsu_monitoring.php'],
         // 提出物
         ['type' => 'divider', 'label' => '提出物'],
-        ['page' => 'student_submissions', 'icon' => '📤', 'label' => '生徒提出物', 'url' => '/staff/student_submissions.php'],
-        ['page' => 'submission_management', 'icon' => '📥', 'label' => '提出物管理', 'url' => '/staff/submission_management.php'],
+        ['page' => 'student_submissions', 'icon' => 'upload_file', 'label' => '生徒提出物', 'url' => '/staff/student_submissions.php'],
+        ['page' => 'submission_management', 'icon' => 'folder_open', 'label' => '提出物管理', 'url' => '/staff/submission_management.php'],
         // 情報発信
         ['type' => 'divider', 'label' => '情報発信'],
-        ['page' => 'newsletter_create', 'icon' => '📰', 'label' => '施設通信', 'url' => '/staff/newsletter_create.php'],
-        ['page' => 'newsletter_settings', 'icon' => '🔧', 'label' => '施設通信設定', 'url' => '/staff/newsletter_settings.php'],
-        ['page' => 'events', 'icon' => '📅', 'label' => 'イベント', 'url' => '/staff/events.php'],
+        ['page' => 'newsletter_create', 'icon' => 'newspaper', 'label' => '施設通信', 'url' => '/staff/newsletter_create.php'],
+        ['page' => 'newsletter_settings', 'icon' => 'tune', 'label' => '施設通信設定', 'url' => '/staff/newsletter_settings.php'],
+        ['page' => 'events', 'icon' => 'event', 'label' => 'イベント', 'url' => '/staff/events.php'],
         // 管理・設定
         ['type' => 'divider', 'label' => '管理・設定'],
-        ['page' => 'students', 'icon' => '👥', 'label' => '生徒登録・変更', 'url' => '/staff/students.php'],
-        ['page' => 'guardians', 'icon' => '👤', 'label' => '保護者登録・変更', 'url' => '/staff/guardians.php'],
-        ['page' => 'waiting_list', 'icon' => '⏳', 'label' => '待機児童管理', 'url' => '/admin/waiting_list.php'],
-        ['page' => 'additional_usage', 'icon' => '📅', 'label' => '利用日一括変更', 'url' => '/staff/additional_usage.php'],
-        ['page' => 'school_holiday_activities', 'icon' => '🏫', 'label' => '学校休業日設定', 'url' => '/staff/school_holiday_activities.php'],
-        ['page' => 'holidays', 'icon' => '🗓️', 'label' => '休日設定', 'url' => '/staff/holidays.php'],
-        ['page' => 'bulk_register', 'icon' => '📥', 'label' => '利用者一括登録', 'url' => '/staff/bulk_register.php'],
-        ['page' => 'manual', 'icon' => '📖', 'label' => 'マニュアル', 'url' => '/staff/manual.php'],
-        ['page' => 'profile', 'icon' => '⚙️', 'label' => 'プロフィール', 'url' => '/staff/profile.php'],
+        ['page' => 'students', 'icon' => 'group', 'label' => '生徒登録・変更', 'url' => '/staff/students.php'],
+        ['page' => 'guardians', 'icon' => 'person', 'label' => '保護者登録・変更', 'url' => '/staff/guardians.php'],
+        ['page' => 'waiting_list', 'icon' => 'hourglass_empty', 'label' => '待機児童管理', 'url' => '/admin/waiting_list.php'],
+        ['page' => 'additional_usage', 'icon' => 'edit_calendar', 'label' => '利用日一括変更', 'url' => '/staff/additional_usage.php'],
+        ['page' => 'school_holiday_activities', 'icon' => 'school', 'label' => '学校休業日設定', 'url' => '/staff/school_holiday_activities.php'],
+        ['page' => 'holidays', 'icon' => 'calendar_today', 'label' => '休日設定', 'url' => '/staff/holidays.php'],
+        ['page' => 'bulk_register', 'icon' => 'upload', 'label' => '利用者一括登録', 'url' => '/staff/bulk_register.php'],
+        ['page' => 'manual', 'icon' => 'help', 'label' => 'マニュアル', 'url' => '/staff/manual.php'],
+        ['page' => 'profile', 'icon' => 'settings', 'label' => 'プロフィール', 'url' => '/staff/profile.php'],
     ],
     'guardian' => [
-        ['page' => 'dashboard', 'icon' => '🏠', 'label' => 'ダッシュボード', 'url' => '/guardian/dashboard.php'],
-        ['page' => 'communication_logs', 'icon' => '📚', 'label' => '連絡帳一覧', 'url' => '/guardian/communication_logs.php'],
-        ['page' => 'chat', 'icon' => '💬', 'label' => 'チャット', 'url' => '/guardian/chat.php'],
-        ['page' => 'weekly_plan', 'icon' => '📝', 'label' => '週間計画表', 'url' => '/guardian/weekly_plan.php'],
-        ['page' => 'kakehashi', 'icon' => '🌉', 'label' => 'かけはし入力', 'url' => '/guardian/kakehashi.php'],
-        ['page' => 'kakehashi_history', 'icon' => '📚', 'label' => 'かけはし履歴', 'url' => '/guardian/kakehashi_history.php'],
-        ['page' => 'newsletters', 'icon' => '📰', 'label' => '施設通信', 'url' => '/guardian/newsletters.php'],
-        ['page' => 'support_plans', 'icon' => '📋', 'label' => '個別支援計画書', 'url' => '/guardian/support_plans.php'],
-        ['page' => 'monitoring', 'icon' => '📊', 'label' => 'モニタリング表', 'url' => '/guardian/monitoring.php'],
-        ['page' => 'manual', 'icon' => '📖', 'label' => 'ご利用ガイド', 'url' => '/guardian/manual.php'],
-        ['page' => 'profile', 'icon' => '👤', 'label' => 'プロフィール', 'url' => '/guardian/profile.php'],
-        ['page' => 'change_password', 'icon' => '🔐', 'label' => 'パスワード変更', 'url' => '/guardian/change_password.php'],
+        ['page' => 'dashboard', 'icon' => 'home', 'label' => 'ダッシュボード', 'url' => '/guardian/dashboard.php'],
+        ['page' => 'communication_logs', 'icon' => 'library_books', 'label' => '連絡帳一覧', 'url' => '/guardian/communication_logs.php'],
+        ['page' => 'chat', 'icon' => 'chat', 'label' => 'チャット', 'url' => '/guardian/chat.php'],
+        ['page' => 'weekly_plan', 'icon' => 'edit_note', 'label' => '週間計画表', 'url' => '/guardian/weekly_plan.php'],
+        ['page' => 'kakehashi', 'icon' => 'handshake', 'label' => 'かけはし入力', 'url' => '/guardian/kakehashi.php'],
+        ['page' => 'kakehashi_history', 'icon' => 'history', 'label' => 'かけはし履歴', 'url' => '/guardian/kakehashi_history.php'],
+        ['page' => 'newsletters', 'icon' => 'newspaper', 'label' => '施設通信', 'url' => '/guardian/newsletters.php'],
+        ['page' => 'support_plans', 'icon' => 'assignment', 'label' => '個別支援計画書', 'url' => '/guardian/support_plans.php'],
+        ['page' => 'monitoring', 'icon' => 'monitoring', 'label' => 'モニタリング表', 'url' => '/guardian/monitoring.php'],
+        ['page' => 'manual', 'icon' => 'help', 'label' => 'ご利用ガイド', 'url' => '/guardian/manual.php'],
+        ['page' => 'profile', 'icon' => 'person', 'label' => 'プロフィール', 'url' => '/guardian/profile.php'],
+        ['page' => 'change_password', 'icon' => 'lock', 'label' => 'パスワード変更', 'url' => '/guardian/change_password.php'],
     ],
     'student' => [
-        ['page' => 'dashboard', 'icon' => '🏠', 'label' => 'マイページ', 'url' => '/student/dashboard.php'],
-        ['page' => 'chat', 'icon' => '💬', 'label' => 'チャット', 'url' => '/student/chat.php'],
-        ['page' => 'weekly_plan', 'icon' => '📝', 'label' => '週間計画', 'url' => '/student/weekly_plan.php'],
-        ['page' => 'submissions', 'icon' => '📋', 'label' => '提出物', 'url' => '/student/submissions.php'],
-        ['page' => 'schedule', 'icon' => '📅', 'label' => 'スケジュール', 'url' => '/student/schedule.php'],
-        ['page' => 'change_password', 'icon' => '🔐', 'label' => 'パスワード変更', 'url' => '/student/change_password.php'],
+        ['page' => 'dashboard', 'icon' => 'home', 'label' => 'マイページ', 'url' => '/student/dashboard.php'],
+        ['page' => 'chat', 'icon' => 'chat', 'label' => 'チャット', 'url' => '/student/chat.php'],
+        ['page' => 'weekly_plan', 'icon' => 'edit_note', 'label' => '週間計画', 'url' => '/student/weekly_plan.php'],
+        ['page' => 'submissions', 'icon' => 'assignment', 'label' => '提出物', 'url' => '/student/submissions.php'],
+        ['page' => 'schedule', 'icon' => 'event', 'label' => 'スケジュール', 'url' => '/student/schedule.php'],
+        ['page' => 'change_password', 'icon' => 'lock', 'label' => 'パスワード変更', 'url' => '/student/change_password.php'],
     ],
     'tablet_user' => [
-        ['page' => 'renrakucho_form', 'icon' => '📝', 'label' => '本日の記録', 'url' => '/tablet/renrakucho_form.php'],
-        ['page' => 'renrakucho_activities', 'icon' => '📊', 'label' => '活動記録', 'url' => '/tablet/renrakucho_activities.php'],
+        ['page' => 'renrakucho_form', 'icon' => 'edit_note', 'label' => '本日の記録', 'url' => '/tablet/renrakucho_form.php'],
+        ['page' => 'renrakucho_activities', 'icon' => 'monitoring', 'label' => '活動記録', 'url' => '/tablet/renrakucho_activities.php'],
     ],
 ];
 
-// ロール別タイトルとカラー
+// ロール別タイトルとカラー（Material Symbols アイコン名）
 $roleConfig = [
-    'admin' => ['title' => '管理者メニュー', 'color' => 'purple', 'icon' => '⚙️'],
-    'staff' => ['title' => 'スタッフメニュー', 'color' => 'blue', 'icon' => '👨‍💼'],
-    'guardian' => ['title' => '連絡帳', 'color' => 'green', 'icon' => '📖'],
-    'student' => ['title' => '生徒メニュー', 'color' => 'orange', 'icon' => '🎒'],
-    'tablet_user' => ['title' => 'タブレット', 'color' => 'teal', 'icon' => '📱'],
+    'admin' => ['title' => '管理者メニュー', 'color' => 'purple', 'icon' => 'settings'],
+    'staff' => ['title' => 'スタッフメニュー', 'color' => 'blue', 'icon' => 'badge'],
+    'guardian' => ['title' => '連絡帳', 'color' => 'green', 'icon' => 'menu_book'],
+    'student' => ['title' => '生徒メニュー', 'color' => 'orange', 'icon' => 'backpack'],
+    'tablet_user' => ['title' => 'タブレット', 'color' => 'teal', 'icon' => 'tablet'],
 ];
 
 $config = $roleConfig[$role] ?? $roleConfig['staff'];
@@ -161,7 +161,7 @@ $userTypeLabel = match($role) {
                 $masterClass = !empty($item['master_only']) ? 'master-only' : '';
             ?>
                 <a href="<?= htmlspecialchars($item['url']) ?>" class="<?= $activeClass ?> <?= $masterClass ?>">
-                    <span class="menu-icon"><?= $item['icon'] ?></span>
+                    <span class="material-symbols-outlined menu-icon"><?= $item['icon'] ?></span>
                     <?= htmlspecialchars($item['label']) ?>
                     <?php if (!empty($item['master_only'])): ?>
                         <span class="master-badge">★</span>

@@ -212,12 +212,12 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
     gap: 20px;
     margin-bottom: var(--spacing-xl);
     padding: var(--spacing-lg);
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     border-radius: var(--radius-md);
 }
 
 .plan-meta {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-xl);
@@ -233,7 +233,7 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
 
 .meta-label {
     font-weight: 600;
-    color: var(--apple-blue);
+    color: var(--md-blue);
     margin-bottom: 5px;
     font-size: var(--text-subhead);
 }
@@ -241,10 +241,10 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
 .section-title {
     font-size: 20px;
     font-weight: 600;
-    color: var(--apple-blue);
+    color: var(--md-blue);
     margin: var(--spacing-xl) 0 15px 0;
     padding-bottom: 10px;
-    border-bottom: 2px solid var(--apple-blue);
+    border-bottom: 2px solid var(--md-blue);
 }
 
 .goal-header {
@@ -262,7 +262,7 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
 
 .goal-date {
     padding: var(--spacing-md);
-    border: 2px solid var(--apple-gray-5);
+    border: 2px solid var(--md-gray-5);
     border-radius: var(--radius-sm);
     font-size: var(--text-callout);
 }
@@ -275,23 +275,23 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
 .support-table {
     width: 100%;
     border-collapse: collapse;
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .support-table th {
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
     padding: var(--spacing-md) 8px;
     text-align: left;
     font-size: var(--text-footnote);
     font-weight: 600;
-    border: 1px solid var(--apple-blue);
+    border: 1px solid var(--md-blue);
 }
 
 .support-table td {
     padding: var(--spacing-md) 8px;
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
     vertical-align: top;
 }
 
@@ -299,7 +299,7 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
 .support-table textarea {
     width: 100%;
     padding: var(--spacing-sm);
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
     border-radius: 4px;
     font-size: var(--text-subhead);
     font-family: inherit;
@@ -323,11 +323,11 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
 }
 
 .note-box {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     padding: 15px;
     border-radius: var(--radius-sm);
     margin-top: var(--spacing-lg);
-    border-left: 4px solid var(--apple-orange);
+    border-left: 4px solid var(--md-orange);
     font-size: var(--text-subhead);
 }
 
@@ -338,7 +338,7 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
 .plans-table {
     width: 100%;
     border-collapse: collapse;
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border-radius: var(--radius-md);
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -346,7 +346,7 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
 }
 
 .plans-table th {
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
     padding: var(--spacing-md) var(--spacing-lg);
     text-align: left;
@@ -356,12 +356,12 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
 
 .plans-table td {
     padding: var(--spacing-md) var(--spacing-lg);
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
     vertical-align: middle;
 }
 
 .plans-table tr:hover {
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
 }
 
 .plans-table tr.active-row {
@@ -369,7 +369,7 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
 }
 
 .plan-link {
-    color: var(--apple-blue);
+    color: var(--md-blue);
     text-decoration: none;
     font-weight: 500;
     display: inline-flex;
@@ -381,7 +381,7 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
 }
 
 .plan-link:hover {
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
 }
 
@@ -405,7 +405,7 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
 }
 
 .basis-link.disabled {
-    background: var(--apple-gray-4);
+    background: var(--md-gray-4);
     cursor: not-allowed;
     opacity: 0.6;
 }
@@ -417,23 +417,23 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
     background: rgba(0, 122, 255, 0.1);
     border-radius: 6px;
     text-decoration: none;
-    color: var(--apple-blue);
+    color: var(--md-blue);
     transition: all var(--duration-normal) var(--ease-out);
 }
 
 .plan-item:hover {
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
 }
 
 .plan-item.active {
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
 }
 
 .guardian-confirmed-badge {
     display: inline-block;
-    background: linear-gradient(135deg, var(--apple-green) 0%, #20c997 100%);
+    background: linear-gradient(135deg, var(--md-green) 0%, #20c997 100%);
     color: white;
     padding: 6px 15px;
     border-radius: var(--radius-xl);
@@ -443,16 +443,16 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
 }
 
 .analyze-section {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-lg);
-    border-left: 4px solid var(--apple-purple);
+    border-left: 4px solid var(--md-purple);
 }
 
 .quick-link {
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-sm);
     text-decoration: none;
     color: var(--text-primary);
@@ -462,7 +462,7 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
     display: inline-block;
     margin-bottom: var(--spacing-lg);
 }
-.quick-link:hover { background: var(--apple-gray-5); }
+.quick-link:hover { background: var(--md-gray-5); }
 
 @media (max-width: 768px) {
     .selection-area { flex-direction: column; }
@@ -474,7 +474,7 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
 <!-- ページヘッダー -->
 <div class="page-header">
     <div class="page-header-content">
-        <h1 class="page-title">📋 個別支援計画書作成</h1>
+        <h1 class="page-title"><span class="material-symbols-outlined">assignment</span> 個別支援計画書作成</h1>
         <?php if ($planData && ($planData['guardian_confirmed'] ?? 0)): ?>
             <div class="guardian-confirmed-badge">
                 ✓ 保護者確認済み（<?= date('Y/m/d H:i', strtotime($planData['guardian_confirmed_at'])) ?>）
@@ -514,7 +514,7 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
     <!-- 未作成のかけはし期間がある場合の警告 -->
     <?php if (!empty($uncreatedPeriods)): ?>
         <div class="alert alert-warning">
-            <strong>⚠️ Caution: 作成可能なかけはしで未作成のものがあります</strong>
+            <strong><span class="material-symbols-outlined">warning</span> Caution: 作成可能なかけはしで未作成のものがあります</strong>
             <p>以下のかけはし期間が未作成です。生徒管理ページから自動生成してください：</p>
             <ul>
                 <?php foreach ($uncreatedPeriods as $period): ?>
@@ -526,7 +526,7 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
 
     <!-- 既存の計画一覧と新規作成ボタン -->
     <div class="plans-list">
-        <h3 style="margin-bottom: 15px; color: var(--text-primary);">📋 個別支援計画書一覧</h3>
+        <h3 style="margin-bottom: 15px; color: var(--text-primary);"><span class="material-symbols-outlined">assignment</span> 個別支援計画書一覧</h3>
         <?php if (!empty($studentPlans)): ?>
             <table class="plans-table">
                 <thead>
@@ -544,21 +544,21 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
                             <td>
                                 <a href="kobetsu_plan.php?student_id=<?= $selectedStudentId ?>&plan_id=<?= $plan['id'] ?>"
                                    class="plan-link">
-                                    📄 計画書を見る
+                                    <span class="material-symbols-outlined">description</span> 計画書を見る
                                 </a>
                             </td>
                             <td>
                                 <a href="kobetsu_plan_basis.php?plan_id=<?= $plan['id'] ?>" class="basis-link">
-                                    📊 根拠を見る
+                                    <span class="material-symbols-outlined">monitoring</span> 根拠を見る
                                 </a>
                             </td>
                             <td>
                                 <?php if ($plan['is_draft'] ?? true): ?>
-                                    <span style="color: var(--apple-orange); font-weight: 500;">📝 下書き</span>
+                                    <span style="color: var(--md-orange); font-weight: 500;"><span class="material-symbols-outlined">edit_note</span> 下書き</span>
                                 <?php elseif ($plan['guardian_confirmed'] ?? false): ?>
-                                    <span style="color: var(--apple-green); font-weight: 500;">✅ 確認済</span>
+                                    <span style="color: var(--md-green); font-weight: 500;"><span class="material-symbols-outlined">check_circle</span> 確認済</span>
                                 <?php else: ?>
-                                    <span style="color: var(--apple-blue); font-weight: 500;">📤 提出済</span>
+                                    <span style="color: var(--md-blue); font-weight: 500;"><span class="material-symbols-outlined">check_circle</span> 提出済</span>
                                 <?php endif; ?>
                             </td>
                         </tr>
@@ -569,7 +569,7 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
                         <td>-</td>
                         <td>
                             <a href="kobetsu_plan.php?student_id=<?= $selectedStudentId ?>" class="plan-link">
-                                ➕ 新規作成
+                                <span class="material-symbols-outlined">add</span> 新規作成
                             </a>
                         </td>
                         <td><span style="color: var(--text-secondary);">-</span></td>
@@ -579,8 +579,8 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
                 </tbody>
             </table>
         <?php else: ?>
-            <div style="background: var(--apple-bg-secondary); padding: var(--spacing-lg); border-radius: var(--radius-md); text-align: center;">
-                <p style="color: var(--text-secondary); font-size: var(--text-subhead);">📝 この生徒の初めての個別支援計画書です。下記フォームに入力してください。</p>
+            <div style="background: var(--md-bg-secondary); padding: var(--spacing-lg); border-radius: var(--radius-md); text-align: center;">
+                <p style="color: var(--text-secondary); font-size: var(--text-subhead);"><span class="material-symbols-outlined">edit_note</span> この生徒の初めての個別支援計画書です。下記フォームに入力してください。</p>
             </div>
         <?php endif; ?>
     </div>
@@ -589,7 +589,7 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
     <?php if (!$selectedPlanId): ?>
         <?php if (!empty($studentPeriods)): ?>
             <div class="analyze-section">
-                <h3 style="margin-bottom: 15px; color: var(--apple-purple);">📊 AIでかけはしを分析して計画書案を生成</h3>
+                <h3 style="margin-bottom: 15px; color: var(--md-purple);"><span class="material-symbols-outlined">monitoring</span> AIでかけはしを分析して計画書案を生成</h3>
                 <p style="margin-bottom: 15px; color: var(--text-secondary);">かけはしデータとモニタリング情報を分析し、個別支援計画書案を自動生成します。</p>
                 <form method="POST" action="kobetsu_plan_generate.php" onsubmit="return confirmGenerate()" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
                     <input type="hidden" name="student_id" value="<?= $selectedStudentId ?>">
@@ -607,13 +607,13 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
                         </select>
                     </div>
                     <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                        📊 AI分析開始
+                        <span class="material-symbols-outlined">monitoring</span> AI分析開始
                     </button>
                 </form>
             </div>
         <?php else: ?>
             <div class="alert alert-info" style="margin-bottom: var(--spacing-lg);">
-                <strong>💡 ヒント:</strong> かけはしデータがあれば、AIで計画書案を自動生成できます。
+                <strong><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">lightbulb</span> ヒント:</strong> かけはしデータがあれば、AIで計画書案を自動生成できます。
                 下のフォームに直接入力するか、先にかけはしを作成してください。
             </div>
         <?php endif; ?>
@@ -621,8 +621,8 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
 
     <!-- 新規作成モード表示（既存計画がある場合） -->
     <?php if (!$selectedPlanId && !empty($studentPlans)): ?>
-        <div style="background: linear-gradient(135deg, rgba(0, 122, 255, 0.1), rgba(88, 86, 214, 0.1)); padding: var(--spacing-md) var(--spacing-lg); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); border-left: 4px solid var(--apple-blue);">
-            <p style="margin: 0; color: var(--apple-blue); font-weight: 500;">📝 新しい個別支援計画書を作成中です</p>
+        <div style="background: linear-gradient(135deg, rgba(0, 122, 255, 0.1), rgba(88, 86, 214, 0.1)); padding: var(--spacing-md) var(--spacing-lg); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); border-left: 4px solid var(--md-blue);">
+            <p style="margin: 0; color: var(--md-blue); font-weight: 500;"><span class="material-symbols-outlined">edit_note</span> 新しい個別支援計画書を作成中です</p>
         </div>
     <?php endif; ?>
 
@@ -750,11 +750,11 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
 
                 <!-- ボタン -->
                 <div class="button-group">
-                    <button type="submit" name="save_draft" class="btn btn-secondary">📝 下書き保存（保護者非公開）</button>
-                    <button type="submit" name="action" value="save" class="btn btn-success">✅ 作成・提出（保護者に公開）</button>
+                    <button type="submit" name="save_draft" class="btn btn-secondary"><span class="material-symbols-outlined">edit_note</span> 下書き保存（保護者非公開）</button>
+                    <button type="submit" name="action" value="save" class="btn btn-success"><span class="material-symbols-outlined">check_circle</span> 作成・提出（保護者に公開）</button>
                     <?php if ($selectedPlanId): ?>
-                        <a href="kobetsu_plan_export.php?plan_id=<?= $selectedPlanId ?>" class="btn btn-info">📥 CSV出力</a>
-                        <a href="kobetsu_plan_pdf.php?plan_id=<?= $selectedPlanId ?>" class="btn btn-primary" target="_blank" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">📄 PDF出力</a>
+                        <a href="kobetsu_plan_export.php?plan_id=<?= $selectedPlanId ?>" class="btn btn-info"><span class="material-symbols-outlined">save</span> CSV出力</a>
+                        <a href="kobetsu_plan_pdf.php?plan_id=<?= $selectedPlanId ?>" class="btn btn-primary" target="_blank" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"><span class="material-symbols-outlined">description</span> PDF出力</a>
                     <?php endif; ?>
                 </div>
             </div>

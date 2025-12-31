@@ -41,7 +41,7 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
 }
 
 .intro-section h2 {
-    color: var(--apple-purple);
+    color: var(--md-purple);
     font-size: var(--text-body);
     margin-bottom: var(--spacing-md);
 }
@@ -55,24 +55,24 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
 .section {
     margin-bottom: var(--spacing-xl);
     padding: var(--spacing-lg);
-    background: var(--apple-bg-tertiary);
+    background: var(--md-bg-tertiary);
     border-radius: var(--radius-md);
-    border-left: 4px solid var(--apple-purple);
+    border-left: 4px solid var(--md-purple);
 }
 
 .section.important {
-    border-left-color: var(--apple-orange);
+    border-left-color: var(--md-orange);
     background: rgba(255, 149, 0, 0.05);
 }
 
 .section h2 {
-    color: var(--apple-purple);
+    color: var(--md-purple);
     font-size: var(--text-body);
     margin-bottom: var(--spacing-md);
 }
 
 .section.important h2 {
-    color: var(--apple-orange);
+    color: var(--md-orange);
 }
 
 .section h3 {
@@ -80,7 +80,7 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
     font-size: var(--text-callout);
     margin: var(--spacing-lg) 0 var(--spacing-sm) 0;
     padding-left: var(--spacing-sm);
-    border-left: 3px solid var(--apple-purple);
+    border-left: 3px solid var(--md-purple);
 }
 
 .section p, .section li {
@@ -99,24 +99,24 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
 }
 
 .highlight-box {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-sm);
     padding: var(--spacing-md);
     margin: var(--spacing-md) 0;
 }
 
 .highlight-box.purple {
-    border: 1px solid var(--apple-purple);
+    border: 1px solid var(--md-purple);
     background: rgba(102, 126, 234, 0.1);
 }
 
 .highlight-box.orange {
-    border: 1px solid var(--apple-orange);
+    border: 1px solid var(--md-orange);
     background: rgba(255, 149, 0, 0.1);
 }
 
 .highlight-box.green {
-    border: 1px solid var(--apple-green);
+    border: 1px solid var(--md-green);
     background: rgba(52, 199, 89, 0.1);
 }
 
@@ -132,14 +132,14 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
     align-items: center;
     gap: var(--spacing-md);
     padding: var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-sm);
 }
 
 .flow-number {
     width: 36px;
     height: 36px;
-    background: linear-gradient(135deg, var(--apple-purple), #764ba2);
+    background: linear-gradient(135deg, var(--md-purple), #764ba2);
     color: white;
     border-radius: 50%;
     display: flex;
@@ -163,12 +163,12 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
 
 .flow-arrow {
     text-align: center;
-    color: var(--apple-purple);
+    color: var(--md-purple);
     font-size: var(--text-body);
 }
 
 .document-card {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-md);
     padding: var(--spacing-lg);
     margin: var(--spacing-md) 0;
@@ -176,7 +176,7 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
 }
 
 .document-card h4 {
-    color: var(--apple-purple);
+    color: var(--md-purple);
     font-size: var(--text-callout);
     margin-bottom: var(--spacing-sm);
 }
@@ -207,13 +207,13 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
     content: "✓";
     position: absolute;
     left: 0;
-    color: var(--apple-green);
+    color: var(--md-green);
     font-weight: bold;
     font-size: var(--text-callout);
 }
 
 .toc {
-    background: var(--apple-bg-tertiary);
+    background: var(--md-bg-tertiary);
     border-radius: var(--radius-md);
     padding: var(--spacing-lg);
     margin-bottom: var(--spacing-xl);
@@ -235,7 +235,7 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
 }
 
 .toc a {
-    color: var(--apple-blue);
+    color: var(--md-blue);
     text-decoration: none;
     font-size: var(--text-subhead);
 }
@@ -248,7 +248,23 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
     .section { padding: var(--spacing-md); }
     .flow-step { flex-direction: column; text-align: center; }
 }
+
+.manual-logo-header {
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+.manual-logo {
+    width: 100px;
+    height: auto;
+    margin-bottom: var(--spacing-md);
+}
 </style>
+
+<!-- ロゴ -->
+<div class="manual-logo-header">
+    <img src="/uploads/kiduri.png" alt="きづり" class="manual-logo">
+</div>
 
 <!-- ページヘッダー -->
 <div class="page-header">
@@ -260,7 +276,7 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
 
 <!-- イントロダクション -->
 <div class="intro-section">
-    <h2>📚 このシステムについて</h2>
+    <h2><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">menu_book</span> このシステムについて</h2>
     <p>
         この連絡帳システムは、お子様の日々の活動記録と成長を、保護者の皆様とスタッフが一緒に見守り、
         <strong>根拠に基づいた支援目標</strong>を設定するために開発されました。<br><br>
@@ -271,7 +287,7 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
 
 <!-- 目次 -->
 <div class="toc">
-    <h3>📋 目次</h3>
+    <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">assignment</span> 目次</h3>
     <ul>
         <li><a href="#daily-records">1. 日々の活動記録について</a></li>
         <li><a href="#kakehashi">2. かけはしについて</a></li>
@@ -283,7 +299,7 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
 
 <!-- 日々の活動記録 -->
 <div class="section" id="daily-records">
-    <h2>📝 1. 日々の活動記録について</h2>
+    <h2><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit_note</span> 1. 日々の活動記録について</h2>
     <p>お子様が教室で活動した日には、スタッフが活動内容を記録し、保護者の皆様にお届けしています。</p>
 
     <h3>活動記録に含まれる内容</h3>
@@ -294,7 +310,7 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
     </ul>
 
     <div class="highlight-box green">
-        <strong>💡 なぜ日々の記録が大切なのか</strong><br><br>
+        <strong><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">lightbulb</span> なぜ日々の記録が大切なのか</strong><br><br>
         日々の小さな変化や成長を記録することで、お子様の<strong>得意なこと・苦手なこと・興味のあること</strong>が見えてきます。
         この積み重ねが、次の支援目標を決める際の<strong>大切な根拠</strong>となります。
     </div>
@@ -302,14 +318,14 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
 
 <!-- かけはし -->
 <div class="section" id="kakehashi">
-    <h2>🌉 2. かけはしについて</h2>
+    <h2><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">handshake</span> 2. かけはしについて</h2>
     <p>
         「かけはし」は、<strong>保護者とスタッフの情報共有</strong>のための大切な書類です。
         お子様の家庭での様子と教室での様子を共有し、一貫した支援を行うために作成します。
     </p>
 
     <div class="document-card">
-        <h4>📋 保護者かけはし（保護者の皆様が記入）</h4>
+        <h4><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">assignment</span> 保護者かけはし（保護者の皆様が記入）</h4>
         <p>
             家庭でのお子様の様子、最近の変化、気になること、教室への要望などを記入していただきます。
             お子様のことを一番よく知っている保護者の皆様からの情報は、支援を行う上でとても重要です。
@@ -317,7 +333,7 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
     </div>
 
     <div class="document-card">
-        <h4>📝 スタッフかけはし（スタッフが作成）</h4>
+        <h4><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit_note</span> スタッフかけはし（スタッフが作成）</h4>
         <p>
             日々の活動記録をもとに、教室でのお子様の様子、成長したポイント、
             今後の支援の方向性などをまとめます。
@@ -325,7 +341,7 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
     </div>
 
     <div class="highlight-box purple">
-        <strong>🔄 かけはしの作成サイクル</strong><br><br>
+        <strong><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">sync</span> かけはしの作成サイクル</strong><br><br>
         かけはしは<strong>6か月ごと</strong>に作成します。<br>
         期限が近づくと、システムから入力のお願いが届きますので、ご協力をお願いいたします。
     </div>
@@ -333,7 +349,7 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
 
 <!-- 個別支援計画書 -->
 <div class="section" id="support-plan">
-    <h2>📊 3. 個別支援計画書について</h2>
+    <h2><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">monitoring</span> 3. 個別支援計画書について</h2>
     <p>
         個別支援計画書は、お子様一人ひとりに合わせた<strong>支援の目標と具体的な内容</strong>を定めた書類です。
         法律で定められた重要な書類であり、6か月ごとに見直しを行います。
@@ -347,7 +363,7 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
     </ul>
 
     <div class="highlight-box orange">
-        <strong>⚠️ 根拠に基づいた目標設定</strong><br><br>
+        <strong><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">warning</span> 根拠に基づいた目標設定</strong><br><br>
         個別支援計画の目標は、<strong>日々の活動記録</strong>と<strong>かけはし</strong>の内容を分析して設定します。<br>
         「なんとなく」ではなく、<strong>実際の様子や変化を根拠</strong>として、
         お子様に合った現実的で達成可能な目標を立てています。
@@ -362,7 +378,7 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
 
 <!-- 書類作成の流れ -->
 <div class="section" id="flow">
-    <h2>🔄 4. 書類作成の流れ</h2>
+    <h2><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">sync</span> 4. 書類作成の流れ</h2>
     <p>以下の流れで、日々の記録から支援計画が作成されます。</p>
 
     <div class="flow-diagram">
@@ -451,7 +467,7 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
     </ul>
 
     <div class="highlight-box purple" style="margin-top: var(--spacing-lg);">
-        <strong>💬 コミュニケーションを大切に</strong><br><br>
+        <strong><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">chat</span> コミュニケーションを大切に</strong><br><br>
         このシステムを通じて、保護者の皆様とスタッフが情報を共有し、
         <strong>お子様を中心とした支援チーム</strong>として一緒に歩んでいければと思います。<br><br>
         ご不明な点がございましたら、お気軽にお問い合わせください。

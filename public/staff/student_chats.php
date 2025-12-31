@@ -138,7 +138,7 @@ renderPageStart('staff', $currentPage, '生徒チャット', [
 .staff-chat-layout {
     display: flex;
     height: calc(100vh - 60px);
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
 }
 
 @media (min-width: 769px) {
@@ -149,22 +149,22 @@ renderPageStart('staff', $currentPage, '生徒チャット', [
 
 .student-sidebar {
     width: 300px;
-    background: var(--apple-bg-tertiary);
-    border-right: 1px solid var(--apple-gray-5);
+    background: var(--md-bg-tertiary);
+    border-right: 1px solid var(--md-gray-5);
     overflow-y: auto;
     flex-shrink: 0;
 }
 
 .student-sidebar-header {
     padding: var(--spacing-md);
-    background: var(--apple-bg-secondary);
-    border-bottom: 1px solid var(--apple-gray-5);
+    background: var(--md-bg-secondary);
+    border-bottom: 1px solid var(--md-gray-5);
 }
 
 .broadcast-btn {
     width: 100%;
     padding: var(--spacing-md);
-    background: var(--apple-green);
+    background: var(--md-green);
     color: white;
     border: none;
     border-radius: var(--radius-sm);
@@ -181,30 +181,30 @@ renderPageStart('staff', $currentPage, '生徒チャット', [
 .search-input {
     width: 100%;
     padding: var(--spacing-md);
-    border: 2px solid var(--apple-gray-5);
+    border: 2px solid var(--md-gray-5);
     border-radius: var(--radius-sm);
     font-size: var(--text-subhead);
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     color: var(--text-primary);
 }
 
 .accordion-header {
     padding: var(--spacing-md);
-    background: var(--apple-gray-4);
+    background: var(--md-gray-4);
     cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
     transition: background var(--duration-fast);
 }
 
 .accordion-header:hover {
-    background: var(--apple-gray-3);
+    background: var(--md-gray-3);
 }
 
 .accordion-header.active {
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
 }
 
@@ -240,19 +240,19 @@ renderPageStart('staff', $currentPage, '生徒チャット', [
 
 .student-item {
     padding: var(--spacing-md);
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
     cursor: pointer;
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     transition: background var(--duration-fast);
 }
 
 .student-item:hover {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
 }
 
 .student-item.active {
     background: rgba(0, 122, 255, 0.2);
-    border-left: 4px solid var(--apple-blue);
+    border-left: 4px solid var(--md-blue);
 }
 
 .student-item-header {
@@ -267,7 +267,7 @@ renderPageStart('staff', $currentPage, '生徒チャット', [
 }
 
 .unread-badge {
-    background: var(--apple-red);
+    background: var(--md-red);
     color: white;
     padding: 2px 8px;
     border-radius: var(--radius-md);
@@ -304,8 +304,8 @@ renderPageStart('staff', $currentPage, '生徒チャット', [
 
 .chat-header-bar {
     padding: var(--spacing-md) var(--spacing-lg);
-    background: var(--apple-bg-tertiary);
-    border-bottom: 1px solid var(--apple-gray-5);
+    background: var(--md-bg-tertiary);
+    border-bottom: 1px solid var(--md-gray-5);
 }
 
 .chat-title {
@@ -321,7 +321,7 @@ renderPageStart('staff', $currentPage, '生徒チャット', [
 }
 
 .delete-message-btn {
-    background: var(--apple-red);
+    background: var(--md-red);
     color: white;
     border: none;
     padding: 3px 8px;
@@ -349,7 +349,7 @@ renderPageStart('staff', $currentPage, '生徒チャット', [
 }
 
 .modal-content {
-    background: var(--apple-bg-tertiary);
+    background: var(--md-bg-tertiary);
     padding: var(--spacing-2xl);
     border-radius: var(--radius-lg);
     max-width: 600px;
@@ -389,17 +389,17 @@ renderPageStart('staff', $currentPage, '生徒チャット', [
 .student-list {
     max-height: 300px;
     overflow-y: auto;
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
     border-radius: var(--radius-sm);
     padding: var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
 }
 
 .student-list label {
     display: block;
     padding: var(--spacing-sm);
     cursor: pointer;
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
 }
 
 .student-list label:last-child {
@@ -428,8 +428,8 @@ renderPageStart('staff', $currentPage, '生徒チャット', [
     <!-- 生徒サイドバー -->
     <div class="student-sidebar">
         <div class="student-sidebar-header">
-            <button class="broadcast-btn" onclick="openBroadcastModal()">📢 一斉送信</button>
-            <input type="text" id="searchInput" class="search-input" placeholder="🔍 生徒名で検索..." onkeyup="filterStudents()">
+            <button class="broadcast-btn" onclick="openBroadcastModal()"><span class="material-symbols-outlined">campaign</span> 一斉送信</button>
+            <input type="text" id="searchInput" class="search-input" placeholder="生徒名で検索..." onkeyup="filterStudents()">
         </div>
 
         <?php if (empty($allStudents)): ?>
@@ -442,7 +442,7 @@ renderPageStart('staff', $currentPage, '生徒チャット', [
             <div class="accordion">
                 <div class="accordion-header" onclick="toggleAccordion(this)">
                     <div class="accordion-title">
-                        <span>🎒 小学生</span>
+                        <span><span class="material-symbols-outlined">child_care</span> 小学生</span>
                         <span class="accordion-count">(<?= count($elementary) ?>名)</span>
                     </div>
                     <span class="accordion-icon">▼</span>
@@ -477,7 +477,7 @@ renderPageStart('staff', $currentPage, '生徒チャット', [
             <div class="accordion">
                 <div class="accordion-header" onclick="toggleAccordion(this)">
                     <div class="accordion-title">
-                        <span>📚 中学生</span>
+                        <span><span class="material-symbols-outlined">school</span> 中学生</span>
                         <span class="accordion-count">(<?= count($junior) ?>名)</span>
                     </div>
                     <span class="accordion-icon">▼</span>
@@ -512,7 +512,7 @@ renderPageStart('staff', $currentPage, '生徒チャット', [
             <div class="accordion">
                 <div class="accordion-header" onclick="toggleAccordion(this)">
                     <div class="accordion-title">
-                        <span>🎓 高校生</span>
+                        <span><span class="material-symbols-outlined">school</span> 高校生</span>
                         <span class="accordion-count">(<?= count($senior) ?>名)</span>
                     </div>
                     <span class="accordion-icon">▼</span>
@@ -557,12 +557,12 @@ renderPageStart('staff', $currentPage, '生徒チャット', [
 
                 <div class="chat-input-area">
                     <div class="file-preview" id="filePreview">
-                        <div class="file-preview-info">📎 <span id="fileName"></span> (<span id="fileSize"></span>)</div>
+                        <div class="file-preview-info"><span class="material-symbols-outlined">attach_file</span> <span id="fileName"></span> (<span id="fileSize"></span>)</div>
                         <button type="button" class="file-preview-remove" onclick="removeFile()">削除</button>
                     </div>
 
                     <form class="chat-input-form" onsubmit="sendMessage(event)" id="chatForm">
-                        <label for="fileInput" class="file-attach-btn" title="ファイルを添付">📎</label>
+                        <label for="fileInput" class="file-attach-btn" title="ファイルを添付"><span class="material-symbols-outlined">attach_file</span></label>
                         <input type="file" id="fileInput" class="file-attach-input" onchange="handleFileSelect(event)" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt">
                         <textarea id="messageInput" class="chat-textarea" placeholder="メッセージを入力..." onkeydown="handleKeyDown(event)"></textarea>
                         <button type="submit" class="chat-send-btn" id="sendBtn">➤</button>
@@ -571,7 +571,7 @@ renderPageStart('staff', $currentPage, '生徒チャット', [
             </div>
         <?php else: ?>
             <div class="chat-empty-state">
-                <div class="chat-empty-state-icon">💬</div>
+                <div class="chat-empty-state-icon"><span class="material-symbols-outlined">chat</span></div>
                 <h3>チャットを選択してください</h3>
             </div>
         <?php endif; ?>
@@ -582,7 +582,7 @@ renderPageStart('staff', $currentPage, '生徒チャット', [
 <div id="broadcastModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <div class="modal-title">📢 一斉送信</div>
+            <div class="modal-title"><span class="material-symbols-outlined">campaign</span> 一斉送信</div>
             <button class="modal-close" onclick="closeBroadcastModal()">×</button>
         </div>
 
@@ -712,7 +712,7 @@ function appendMessage(msg) {
         html += escapeHtml(msg.message).replace(/\\n/g, '<br>');
     }
     if (msg.attachment_path) {
-        html += '<div class="message-attachment"><a href="download_student_chat_attachment.php?id=' + msg.id + '" target="_blank">📎 ' + escapeHtml(msg.attachment_original_name || 'ファイル') + '</a></div>';
+        html += '<div class="message-attachment"><a href="download_student_chat_attachment.php?id=' + msg.id + '" target="_blank"><span class="material-symbols-outlined">attach_file</span> ' + escapeHtml(msg.attachment_original_name || 'ファイル') + '</a></div>';
     }
     html += '</div>';
     html += '<div class="message-time">';

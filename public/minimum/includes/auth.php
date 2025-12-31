@@ -99,19 +99,19 @@ function isLoggedIn() {
 }
 
 /**
- * ログイン必須チェック（未ログインの場合はログインページへリダイレクト）
+ * ログイン必須チェック（未ログインの場合はかけはしログインページへリダイレクト）
  */
 function requireLogin() {
     if (!isLoggedIn()) {
         $currentPath = $_SERVER['REQUEST_URI'] ?? '';
 
         // 無限リダイレクトを防ぐため、ログインページへのリダイレクトをチェック
-        if (strpos($currentPath, '/login.php') !== false) {
+        if (strpos($currentPath, '/minimum/login.php') !== false) {
             http_response_code(500);
             die('セッションエラー: ログイン状態を保持できません。ブラウザのCookieとキャッシュをクリアして再度お試しください。');
         }
 
-        header('Location: /login.php');
+        header('Location: /minimum/login.php');
         exit;
     }
 }
@@ -158,7 +158,7 @@ function requireUserType($allowedTypes) {
                 $redirectPath = '/minimum/guardian/dashboard.php';
                 break;
             default:
-                $redirectPath = '/login.php';
+                $redirectPath = '/minimum/login.php';
                 break;
         }
 
@@ -245,7 +245,7 @@ function requireMasterAdmin() {
                     $redirectPath = '/minimum/guardian/dashboard.php';
                     break;
                 default:
-                    $redirectPath = '/login.php';
+                    $redirectPath = '/minimum/login.php';
                     break;
             }
         }

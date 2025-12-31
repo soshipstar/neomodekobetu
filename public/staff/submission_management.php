@@ -166,30 +166,30 @@ renderPageStart('staff', $currentPage, '提出期限管理');
         }
 
         .btn-secondary {
-            background: var(--apple-gray);
+            background: var(--md-gray);
             color: white;
         }
 
         .btn-secondary:hover {
-            background: var(--apple-gray);
+            background: var(--md-gray);
         }
 
         .btn-success {
-            background: var(--apple-green);
+            background: var(--md-green);
             color: white;
         }
 
         .btn-success:hover {
-            background: var(--apple-green);
+            background: var(--md-green);
         }
 
         .btn-danger {
-            background: var(--apple-red);
+            background: var(--md-red);
             color: white;
         }
 
         .btn-danger:hover {
-            background: var(--apple-red);
+            background: var(--md-red);
         }
 
         .btn-sm {
@@ -205,7 +205,7 @@ renderPageStart('staff', $currentPage, '提出期限管理');
         }
 
         .stat-card {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: var(--spacing-lg);
             border-radius: var(--radius-md);
             box-shadow: var(--shadow-md);
@@ -224,7 +224,7 @@ renderPageStart('staff', $currentPage, '提出期限管理');
         }
 
         .stat-card.overdue .stat-value {
-            color: var(--apple-red);
+            color: var(--md-red);
         }
 
         .stat-card.pending .stat-value {
@@ -232,11 +232,11 @@ renderPageStart('staff', $currentPage, '提出期限管理');
         }
 
         .stat-card.completed .stat-value {
-            color: var(--apple-green);
+            color: var(--md-green);
         }
 
         .content-box {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: var(--spacing-2xl);
             border-radius: var(--radius-md);
             box-shadow: var(--shadow-md);
@@ -290,12 +290,12 @@ renderPageStart('staff', $currentPage, '提出期限管理');
         }
 
         .submission-card.overdue {
-            border-left: 4px solid var(--apple-red);
+            border-left: 4px solid var(--md-red);
         }
 
         .submission-card.completed {
-            background: var(--apple-gray-6);
-            border-color: var(--apple-green);
+            background: var(--md-gray-6);
+            border-color: var(--md-green);
         }
 
         .submission-header {
@@ -362,11 +362,11 @@ renderPageStart('staff', $currentPage, '提出期限管理');
 
         .due-date.overdue {
             background: rgba(255, 59, 48, 0.1);
-            color: var(--apple-red);
+            color: var(--md-red);
         }
 
         .due-date.soon {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             color: #856404;
         }
 
@@ -394,8 +394,8 @@ renderPageStart('staff', $currentPage, '提出期限管理');
         .completed-note {
             margin-top: 10px;
             padding: var(--spacing-md);
-            background: var(--apple-gray-6);
-            border-left: 3px solid var(--apple-green);
+            background: var(--md-gray-6);
+            border-left: 3px solid var(--md-green);
             font-size: var(--text-footnote);
             color: var(--text-secondary);
         }
@@ -430,7 +430,7 @@ renderPageStart('staff', $currentPage, '提出期限管理');
         }
 
         .modal-content {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: var(--spacing-2xl);
             border-radius: var(--radius-md);
             max-width: 500px;
@@ -556,13 +556,13 @@ renderPageStart('staff', $currentPage, '提出期限管理');
                                     <div class="submission-title"><?= htmlspecialchars($sub['title']) ?></div>
                                     <div class="submission-meta">
                                         <div class="submission-meta-item">
-                                            👤 <?= htmlspecialchars($sub['student_name']) ?>
+                                            <span class="material-symbols-outlined">person</span> <?= htmlspecialchars($sub['student_name']) ?>
                                         </div>
                                         <div class="submission-meta-item">
-                                            👨‍👩‍👧 <?= htmlspecialchars($sub['guardian_name']) ?>
+                                            <span class="material-symbols-outlined">group</span> <?= htmlspecialchars($sub['guardian_name']) ?>
                                         </div>
                                         <div class="submission-meta-item">
-                                            📅 作成: <?= date('Y/m/d', strtotime($sub['created_at'])) ?>
+                                            <span class="material-symbols-outlined">event</span> 作成: <?= date('Y/m/d', strtotime($sub['created_at'])) ?>
                                         </div>
                                     </div>
                                 </div>
@@ -590,7 +590,7 @@ renderPageStart('staff', $currentPage, '提出期限管理');
 
                             <?php if ($sub['attachment_path']): ?>
                                 <a href="../<?= htmlspecialchars($sub['attachment_path']) ?>" class="attachment-link" download="<?= htmlspecialchars($sub['attachment_original_name']) ?>">
-                                    📎 <?= htmlspecialchars($sub['attachment_original_name']) ?>
+                                    <span class="material-symbols-outlined">attach_file</span> <?= htmlspecialchars($sub['attachment_original_name']) ?>
                                     (<?= number_format($sub['attachment_size'] / 1024, 1) ?> KB)
                                 </a>
                             <?php endif; ?>
@@ -615,7 +615,7 @@ renderPageStart('staff', $currentPage, '提出期限管理');
                                     </button>
                                 <?php endif; ?>
                                 <a href="chat.php?room_id=<?= $sub['student_id'] ?>" class="btn btn-primary btn-sm">
-                                    💬 チャットを開く
+                                    <span class="material-symbols-outlined">chat</span> チャットを開く
                                 </a>
                             </div>
                         </div>

@@ -126,7 +126,7 @@ renderPageStart('staff', $currentPage, '保護者入力かけはし確認');
     gap: 20px;
     margin-bottom: var(--spacing-2xl);
     padding: var(--spacing-lg);
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     border-radius: var(--radius-md);
     align-items: flex-end;
     flex-wrap: wrap;
@@ -135,10 +135,10 @@ renderPageStart('staff', $currentPage, '保護者入力かけはし確認');
 .section-title {
     font-size: 20px;
     font-weight: 600;
-    color: var(--apple-blue);
+    color: var(--md-blue);
     margin: var(--spacing-2xl) 0 15px 0;
     padding-bottom: 10px;
-    border-bottom: 2px solid var(--apple-blue);
+    border-bottom: 2px solid var(--md-blue);
 }
 
 .domains-grid {
@@ -153,7 +153,7 @@ renderPageStart('staff', $currentPage, '保護者入力かけはし確認');
     padding: 15px;
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-lg);
-    border-left: 4px solid var(--apple-blue);
+    border-left: 4px solid var(--md-blue);
 }
 
 .period-info p { margin: 5px 0; }
@@ -166,8 +166,8 @@ renderPageStart('staff', $currentPage, '保護者入力かけはし確認');
     font-weight: 600;
 }
 
-.status-submitted { background: var(--apple-green); color: white; }
-.status-draft { background: rgba(255,149,0,0.15); color: var(--apple-orange); }
+.status-submitted { background: var(--md-green); color: white; }
+.status-draft { background: rgba(255,149,0,0.15); color: var(--md-orange); }
 
 .button-group {
     display: flex;
@@ -184,7 +184,7 @@ renderPageStart('staff', $currentPage, '保護者入力かけはし確認');
 }
 
 .view-box {
-    background: var(--apple-bg-tertiary);
+    background: var(--md-bg-tertiary);
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-sm);
     padding: 15px;
@@ -203,7 +203,7 @@ renderPageStart('staff', $currentPage, '保護者入力かけはし確認');
 
 .quick-link {
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-sm);
     text-decoration: none;
     color: var(--text-primary);
@@ -211,7 +211,7 @@ renderPageStart('staff', $currentPage, '保護者入力かけはし確認');
     font-weight: 500;
     transition: all var(--duration-fast);
 }
-.quick-link:hover { background: var(--apple-gray-5); }
+.quick-link:hover { background: var(--md-gray-5); }
 
 @media print {
     .sidebar, .mobile-header, .filter-area, .quick-links { display: none !important; }
@@ -233,7 +233,7 @@ renderPageStart('staff', $currentPage, '保護者入力かけはし確認');
     justify-content: center;
     width: 18px;
     height: 18px;
-    background: var(--apple-gray-4);
+    background: var(--md-gray-4);
     color: white;
     border-radius: 50%;
     font-size: 12px;
@@ -244,7 +244,7 @@ renderPageStart('staff', $currentPage, '保護者入力かけはし確認');
     position: relative;
 }
 .help-icon:hover {
-    background: var(--apple-blue);
+    background: var(--md-blue);
     transform: scale(1.1);
 }
 .help-tooltip {
@@ -255,7 +255,7 @@ renderPageStart('staff', $currentPage, '保護者入力かけはし確認');
     transform: translateX(-50%);
     margin-top: 8px;
     padding: 12px 16px;
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg);
@@ -285,7 +285,7 @@ renderPageStart('staff', $currentPage, '保護者入力かけはし確認');
     transform: translateX(-50%);
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-bottom: 5px solid var(--apple-bg-primary);
+    border-bottom: 5px solid var(--md-bg-primary);
 }
 .help-icon.active .help-tooltip {
     display: block;
@@ -302,7 +302,7 @@ renderPageStart('staff', $currentPage, '保護者入力かけはし確認');
 
 <!-- クイックリンク -->
 <div class="quick-links">
-    <a href="kakehashi_staff.php" class="quick-link">✏️ スタッフ入力</a>
+    <a href="kakehashi_staff.php" class="quick-link"><span class="material-symbols-outlined">edit</span> スタッフ入力</a>
     <a href="renrakucho_activities.php" class="quick-link">← 戻る</a>
 </div>
 
@@ -392,7 +392,7 @@ renderPageStart('staff', $currentPage, '保護者入力かけはし確認');
                     <div class="period-info">
                         <p><strong>生徒:</strong> <?= htmlspecialchars($kakehashiData['student_name']) ?></p>
                         <p><strong>保護者:</strong> <?= htmlspecialchars($kakehashiData['guardian_name'] ?? '未設定') ?></p>
-                        <p><strong>📋 個別支援計画:</strong> <?= getIndividualSupportPlanStartMonth($selectedPeriod) ?>開始分</p>
+                        <p><strong><span class="material-symbols-outlined">assignment</span> 個別支援計画:</strong> <?= getIndividualSupportPlanStartMonth($selectedPeriod) ?>開始分</p>
                         <p><strong>対象期間:</strong> <?= date('Y年m月d日', strtotime($selectedPeriod['start_date'])) ?> ～ <?= date('Y年m月d日', strtotime($selectedPeriod['end_date'])) ?></p>
                         <p><strong>提出期限:</strong> <?= date('Y年m月d日', strtotime($selectedPeriod['submission_deadline'])) ?></p>
                         <p>
@@ -412,31 +412,31 @@ renderPageStart('staff', $currentPage, '保護者入力かけはし確認');
                            target="_blank"
                            class="btn"
                            style="background: var(--primary-purple); color: white; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
-                            🖨️ PDF印刷
+                            <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">print</span> PDF印刷
                         </a>
-                        <button onclick="window.print();" class="btn" style="background: var(--apple-blue); color: white;">
-                            🖨️ このページを印刷
+                        <button onclick="window.print();" class="btn" style="background: var(--md-blue); color: white;">
+                            <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">print</span> このページを印刷
                         </button>
                     </div>
 
                     <!-- 閲覧表示（読み取り専用） -->
                     <div class="view-content">
                         <!-- 本人の願い -->
-                        <div class="section-title">💫 本人の願い</div>
+                        <div class="section-title"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">auto_awesome</span> 本人の願い</div>
                         <div class="form-group">
                             <label>お子様が望んでいること、なりたい姿</label>
                             <div class="view-box"><?= nl2br(htmlspecialchars($kakehashiData['student_wish'] ?? '（未入力）')) ?></div>
                         </div>
 
                         <!-- 家庭での願い -->
-                        <div class="section-title">🏠 家庭での願い</div>
+                        <div class="section-title"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">home</span> 家庭での願い</div>
                         <div class="form-group">
                             <label>家庭で気になっていること、取り組みたいこと</label>
                             <div class="view-box"><?= nl2br(htmlspecialchars($kakehashiData['home_challenges'] ?? '（未入力）')) ?></div>
                         </div>
 
                         <!-- 目標設定 -->
-                        <div class="section-title">🎯 目標設定</div>
+                        <div class="section-title"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">target</span> 目標設定</div>
                         <div class="form-group">
                             <label>短期目標（6か月）</label>
                             <div class="view-box"><?= nl2br(htmlspecialchars($kakehashiData['short_term_goal'] ?? '（未入力）')) ?></div>
@@ -447,7 +447,7 @@ renderPageStart('staff', $currentPage, '保護者入力かけはし確認');
                         </div>
 
                         <!-- 五領域の課題 -->
-                        <div class="section-title">🌟 五領域の課題</div>
+                        <div class="section-title"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">star</span> 五領域の課題</div>
                         <div class="domains-grid">
                             <div class="form-group">
                                 <label>健康・生活</label>
@@ -472,7 +472,7 @@ renderPageStart('staff', $currentPage, '保護者入力かけはし確認');
                         </div>
 
                         <!-- その他の課題 -->
-                        <div class="section-title">📌 その他の課題</div>
+                        <div class="section-title"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">push_pin</span> その他の課題</div>
                         <div class="form-group">
                             <label>その他、お伝えしたいこと</label>
                             <div class="view-box"><?= nl2br(htmlspecialchars($kakehashiData['other_challenges'] ?? '（未入力）')) ?></div>
@@ -486,10 +486,10 @@ renderPageStart('staff', $currentPage, '保護者入力かけはし確認');
                         <input type="hidden" name="redirect_show" value="<?= htmlspecialchars($showFilter) ?>">
                         <?php if ($kakehashiData['is_hidden']): ?>
                             <input type="hidden" name="unhide_guardian_kakehashi" value="1">
-                            <button type="submit" style="background: var(--apple-green); color: white; border: none; padding: var(--spacing-md) 20px; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600;">👁️ この保護者用かけはしを再表示</button>
+                            <button type="submit" style="background: var(--md-green); color: white; border: none; padding: var(--spacing-md) 20px; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">visibility</span> この保護者用かけはしを再表示</button>
                         <?php else: ?>
                             <input type="hidden" name="hide_guardian_kakehashi" value="1">
-                            <button type="submit" onclick="return confirm('この保護者用かけはしを非表示にしてもよろしいですか？\n再表示することもできます。');" style="background: var(--apple-orange); color: #856404; border: none; padding: var(--spacing-md) 20px; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600;">🙈 この保護者用かけはしを非表示</button>
+                            <button type="submit" onclick="return confirm('この保護者用かけはしを非表示にしてもよろしいですか？\n再表示することもできます。');" style="background: var(--md-orange); color: #856404; border: none; padding: var(--spacing-md) 20px; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">visibility_off</span> この保護者用かけはしを非表示</button>
                         <?php endif; ?>
                     </form>
                 <?php endif; ?>

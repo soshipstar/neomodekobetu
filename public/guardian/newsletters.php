@@ -123,7 +123,7 @@ renderPageStart('guardian', $currentPage, '施設通信', ['classroom' => $class
 }
 
 .newsletter-card {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-xl);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-md);
@@ -140,7 +140,7 @@ renderPageStart('guardian', $currentPage, '施設通信', ['classroom' => $class
 }
 
 .newsletter-card h3 {
-    color: var(--apple-purple);
+    color: var(--md-purple);
     font-size: var(--text-body);
     margin-bottom: var(--spacing-md);
 }
@@ -156,12 +156,12 @@ renderPageStart('guardian', $currentPage, '施設通信', ['classroom' => $class
     color: var(--text-secondary);
     margin-top: var(--spacing-sm);
     padding-top: var(--spacing-sm);
-    border-top: 1px solid var(--apple-gray-5);
+    border-top: 1px solid var(--md-gray-5);
 }
 
 /* 詳細表示用スタイル（PDF出力と同じ） */
 .newsletter-detail {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: 20px;
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-md);
@@ -460,7 +460,7 @@ renderPageStart('guardian', $currentPage, '施設通信', ['classroom' => $class
     <!-- 操作ボタン -->
     <div class="action-buttons">
         <a href="newsletters.php" class="btn btn-secondary">← 一覧に戻る</a>
-        <button onclick="window.print()" class="btn btn-primary">🖨️ 印刷</button>
+        <button onclick="window.print()" class="btn btn-primary"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">print</span> 印刷</button>
     </div>
 
     <!-- 通信詳細表示（PDF出力と同じレイアウト） -->
@@ -491,7 +491,7 @@ renderPageStart('guardian', $currentPage, '施設通信', ['classroom' => $class
         <!-- 今月の予定 -->
         <div class="detail-section">
             <div class="section-header">
-                <span class="section-icon">📅</span>
+                <span class="section-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event</span></span>
                 今月の予定
             </div>
             <?php if ($calendarFormat === 'table'): ?>
@@ -567,7 +567,7 @@ renderPageStart('guardian', $currentPage, '施設通信', ['classroom' => $class
         <!-- イベント詳細 -->
         <div class="detail-section">
             <div class="section-header">
-                <span class="section-icon">📝</span>
+                <span class="section-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit_note</span></span>
                 イベント詳細
             </div>
             <div class="section-content"><?= htmlspecialchars($selectedNewsletter['event_details'], ENT_QUOTES, 'UTF-8') ?></div>
@@ -589,7 +589,7 @@ renderPageStart('guardian', $currentPage, '施設通信', ['classroom' => $class
         <!-- 曜日別活動紹介 -->
         <div class="detail-section">
             <div class="section-header">
-                <span class="section-icon">🗓</span>
+                <span class="section-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">calendar_month</span></span>
                 曜日別活動紹介
             </div>
             <div class="section-content"><?= htmlspecialchars($selectedNewsletter['weekly_intro'], ENT_QUOTES, 'UTF-8') ?></div>
@@ -600,7 +600,7 @@ renderPageStart('guardian', $currentPage, '施設通信', ['classroom' => $class
         <!-- イベント結果報告 -->
         <div class="detail-section">
             <div class="section-header">
-                <span class="section-icon">🎉</span>
+                <span class="section-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">celebration</span></span>
                 イベント結果報告
             </div>
             <div class="section-content"><?= htmlspecialchars($selectedNewsletter['event_results'], ENT_QUOTES, 'UTF-8') ?></div>
@@ -627,7 +627,7 @@ renderPageStart('guardian', $currentPage, '施設通信', ['classroom' => $class
             <?php if ($hasJunior): ?>
             <div class="grade-section">
                 <div class="grade-header">
-                    <span>📚</span>
+                    <span><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">menu_book</span></span>
                     中高生の活動
                 </div>
                 <div class="grade-content"><?= htmlspecialchars($selectedNewsletter['junior_report'], ENT_QUOTES, 'UTF-8') ?></div>
@@ -653,7 +653,7 @@ renderPageStart('guardian', $currentPage, '施設通信', ['classroom' => $class
         <!-- その他のお知らせ -->
         <div class="detail-section">
             <div class="section-header">
-                <span class="section-icon">📌</span>
+                <span class="section-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">push_pin</span></span>
                 その他のお知らせ
             </div>
             <div class="notice-box">

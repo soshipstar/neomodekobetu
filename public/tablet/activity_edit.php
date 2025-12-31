@@ -136,9 +136,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <link rel="stylesheet" href="/assets/css/apple-design.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <style>@media(prefers-color-scheme:dark){html,body{background:#1E1E1E;color:rgba(255,255,255,0.87)}}</style>
+    <link rel="stylesheet" href="/assets/css/google-design.css">
     <title><?php echo $activityId ? '活動編集' : '新しい活動'; ?> - タブレット</title>
     <style>
         * {
@@ -149,13 +151,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         body {
             font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             padding: var(--spacing-lg);
             font-size: var(--text-title-2);
         }
 
         .header {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: var(--spacing-2xl);
             border-radius: var(--radius-lg);
             margin-bottom: var(--spacing-2xl);
@@ -170,7 +172,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .back-link {
             display: inline-block;
             margin-top: 15px;
-            color: var(--apple-blue);
+            color: var(--md-blue);
             text-decoration: none;
             font-size: var(--text-title-2);
         }
@@ -180,7 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .form-container {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: var(--spacing-2xl);
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-md);
@@ -194,7 +196,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .error {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             color: #721c24;
             border-left: 5px solid #f5c6cb;
         }
@@ -227,17 +229,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flex: 1;
             padding: 25px;
             font-size: 28px;
-            border: 3px solid var(--apple-gray-5);
+            border: 3px solid var(--md-gray-5);
             border-radius: var(--radius-md);
         }
 
         input[type="text"]:focus {
             outline: none;
-            border-color: var(--apple-blue);
+            border-color: var(--md-blue);
         }
 
         .voice-btn {
-            background: var(--apple-blue);
+            background: var(--md-blue);
             color: white;
             border: none;
             padding: 25px 40px;
@@ -249,11 +251,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .voice-btn:hover {
-            background: #0056b3;
+            background: #1565C0;
         }
 
         .voice-btn.listening {
-            background: var(--apple-red);
+            background: var(--md-red);
             animation: pulse 1s infinite;
         }
 
@@ -275,8 +277,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .student-label {
             display: block;
             padding: 25px;
-            background: var(--apple-gray-6);
-            border: 3px solid var(--apple-gray-5);
+            background: var(--md-gray-6);
+            border: 3px solid var(--md-gray-5);
             border-radius: var(--radius-md);
             cursor: pointer;
             text-align: center;
@@ -286,7 +288,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .student-checkbox:checked + .student-label {
             background: #d4edda;
-            border-color: var(--apple-green);
+            border-color: var(--md-green);
             font-weight: bold;
         }
 
@@ -311,21 +313,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .btn-save {
-            background: var(--apple-green);
+            background: var(--md-green);
             color: white;
         }
 
         .btn-save:hover {
-            background: var(--apple-green);
+            background: var(--md-green);
         }
 
         .btn-cancel {
-            background: var(--apple-gray);
+            background: var(--md-gray);
             color: white;
         }
 
         .btn-cancel:hover {
-            background: var(--apple-gray);
+            background: var(--md-gray);
         }
 
         @media (max-width: 768px) {
@@ -341,7 +343,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <div class="header">
-        <h1><?php echo $activityId ? '✏️ 活動編集' : '➕ 新しい活動'; ?></h1>
+        <h1><?php echo $activityId ? '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit</span> 活動編集' : '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">add</span> 新しい活動'; ?></h1>
         <a href="index.php?date=<?php echo $recordDate; ?>" class="back-link">← 戻る</a>
     </div>
 
@@ -358,8 +360,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <!-- 支援案選択 -->
             <?php if (!empty($supportPlans)): ?>
             <div class="form-group">
-                <label for="support_plan">📋 支援案を選択 (任意)</label>
-                <select id="support_plan" style="width: 100%; padding: 25px; font-size: 28px; border: 3px solid var(--apple-gray-5); border-radius: var(--radius-md);">
+                <label for="support_plan"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">assignment</span> 支援案を選択 (任意)</label>
+                <select id="support_plan" style="width: 100%; padding: 25px; font-size: 28px; border: 3px solid var(--md-gray-5); border-radius: var(--radius-md);">
                     <option value="">支援案を選択しない（手動入力）</option>
                     <?php foreach ($supportPlans as $plan): ?>
                         <option value="<?php echo $plan['id']; ?>"
@@ -376,21 +378,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <!-- 支援案の内容表示 -->
-            <div id="support_plan_details" style="display: none; background: var(--apple-gray-6); padding: var(--spacing-2xl); border-radius: var(--radius-md); margin-bottom: var(--spacing-2xl); border-left: 5px solid var(--primary-purple);">
-                <h3 style="color: var(--primary-purple); font-size: 28px; margin-bottom: var(--spacing-lg);">📝 選択した支援案の内容</h3>
+            <div id="support_plan_details" style="display: none; background: var(--md-gray-6); padding: var(--spacing-2xl); border-radius: var(--radius-md); margin-bottom: var(--spacing-2xl); border-left: 5px solid var(--primary-purple);">
+                <h3 style="color: var(--primary-purple); font-size: 28px; margin-bottom: var(--spacing-lg);"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit_note</span> 選択した支援案の内容</h3>
                 <div id="plan_purpose" style="margin-bottom: 15px; font-size: var(--text-title-2); line-height: 1.6;"></div>
                 <div id="plan_content" style="margin-bottom: 15px; font-size: var(--text-title-2); line-height: 1.6;"></div>
                 <div id="plan_domains" style="margin-bottom: 15px; font-size: var(--text-title-2); line-height: 1.6;"></div>
                 <div id="plan_other" style="font-size: var(--text-title-2); line-height: 1.6;"></div>
             </div>
             <?php else: ?>
-            <div style="background: var(--apple-bg-secondary); padding: 25px; border-radius: var(--radius-md); margin-bottom: var(--spacing-2xl); border-left: 5px solid var(--apple-orange); font-size: var(--text-title-2);">
-                💡 この日（<?php echo date('Y年m月d日', strtotime($recordDate)); ?>）の支援案がまだ作成されていません。
+            <div style="background: var(--md-bg-secondary); padding: 25px; border-radius: var(--radius-md); margin-bottom: var(--spacing-2xl); border-left: 5px solid var(--md-orange); font-size: var(--text-title-2);">
+                <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">lightbulb</span> この日（<?php echo date('Y年m月d日', strtotime($recordDate)); ?>）の支援案がまだ作成されていません。
             </div>
             <?php endif; ?>
 
             <div class="form-group">
-                <label for="activity_name">📝 活動名</label>
+                <label for="activity_name"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit_note</span> 活動名</label>
                 <div class="input-with-voice">
                     <input
                         type="text"
@@ -431,9 +433,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <div class="button-group">
-                <button type="submit" class="submit-btn btn-save">💾 保存する</button>
+                <button type="submit" class="submit-btn btn-save"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">save</span> 保存する</button>
                 <button type="button" class="submit-btn btn-cancel" onclick="location.href='index.php?date=<?php echo $recordDate; ?>'">
-                    ❌ キャンセル
+                    <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">cancel</span> キャンセル
                 </button>
             </div>
         </form>
@@ -534,7 +536,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 if (detailsHtml) {
-                    supportPlanDetails.innerHTML = '<h3 style="color: var(--primary-purple); font-size: 28px; margin-bottom: var(--spacing-lg);">📝 選択した支援案の内容</h3>' + detailsHtml;
+                    supportPlanDetails.innerHTML = '<h3 style="color: var(--primary-purple); font-size: 28px; margin-bottom: var(--spacing-lg);"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit_note</span> 選択した支援案の内容</h3>' + detailsHtml;
                     supportPlanDetails.style.display = 'block';
                 } else {
                     supportPlanDetails.style.display = 'none';

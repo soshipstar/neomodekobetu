@@ -84,17 +84,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['execute'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>達成時期一括同期 - 管理者ツール</title>
-    <link rel="stylesheet" href="/assets/css/apple-design.css">
+    <link rel="stylesheet" href="/assets/css/google-design.css">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             padding: 20px;
         }
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             border-radius: 16px;
             padding: 30px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
@@ -107,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['execute'])) {
             color: var(--text-secondary);
             margin-bottom: 20px;
             padding: 15px;
-            background: var(--apple-bg-tertiary);
+            background: var(--md-bg-tertiary);
             border-radius: 8px;
         }
         .message {
@@ -117,13 +117,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['execute'])) {
         }
         .message.success {
             background: rgba(52, 199, 89, 0.2);
-            color: #34c759;
-            border: 1px solid #34c759;
+            color: #4CAF50;
+            border: 1px solid #4CAF50;
         }
         .message.error {
             background: rgba(255, 59, 48, 0.2);
-            color: #ff3b30;
-            border: 1px solid #ff3b30;
+            color: #F44336;
+            border: 1px solid #F44336;
         }
         table {
             width: 100%;
@@ -136,7 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['execute'])) {
             border-bottom: 1px solid var(--border-primary);
         }
         th {
-            background: var(--apple-bg-tertiary);
+            background: var(--md-bg-tertiary);
             color: var(--text-primary);
             font-weight: 600;
         }
@@ -158,14 +158,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['execute'])) {
             font-weight: 600;
         }
         .btn-primary {
-            background: #007aff;
+            background: #1976D2;
             color: white;
         }
         .btn-primary:hover {
-            background: #0056b3;
+            background: #1565C0;
         }
         .btn-secondary {
-            background: var(--apple-bg-tertiary);
+            background: var(--md-bg-tertiary);
             color: var(--text-primary);
         }
         .actions {
@@ -174,11 +174,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['execute'])) {
             margin-top: 20px;
         }
         .warning {
-            color: #ff9500;
+            color: #FF9800;
             font-weight: bold;
         }
         .ok {
-            color: #34c759;
+            color: #4CAF50;
         }
     </style>
 </head>

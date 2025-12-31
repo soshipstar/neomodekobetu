@@ -110,7 +110,7 @@ renderPageStart('staff', $currentPage, '生徒別提出物一覧');
 
 <style>
         .filter-tabs {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: 15px 20px;
             border-radius: var(--radius-md);
             margin-bottom: var(--spacing-lg);
@@ -122,7 +122,7 @@ renderPageStart('staff', $currentPage, '生徒別提出物一覧');
 
         .filter-tab {
             padding: var(--spacing-md) 20px;
-            border: 2px solid var(--apple-gray-5);
+            border: 2px solid var(--md-gray-5);
             border-radius: var(--radius-sm);
             text-decoration: none;
             color: var(--text-secondary);
@@ -149,7 +149,7 @@ renderPageStart('staff', $currentPage, '生徒別提出物一覧');
         }
 
         .student-card {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: var(--spacing-lg);
             border-radius: var(--radius-md);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -166,11 +166,11 @@ renderPageStart('staff', $currentPage, '生徒別提出物一覧');
         }
 
         .student-card.has-overdue {
-            border-left: 4px solid var(--apple-red);
+            border-left: 4px solid var(--md-red);
         }
 
         .student-card.has-urgent {
-            border-left: 4px solid var(--apple-orange);
+            border-left: 4px solid var(--md-orange);
         }
 
         .student-name {
@@ -194,7 +194,7 @@ renderPageStart('staff', $currentPage, '生徒別提出物一覧');
 
         .stat-item {
             padding: var(--spacing-md);
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             border-radius: var(--radius-sm);
             text-align: center;
         }
@@ -206,15 +206,15 @@ renderPageStart('staff', $currentPage, '生徒別提出物一覧');
         }
 
         .stat-item.overdue .stat-number {
-            color: var(--apple-red);
+            color: var(--md-red);
         }
 
         .stat-item.urgent .stat-number {
-            color: var(--apple-orange);
+            color: var(--md-orange);
         }
 
         .stat-item.pending .stat-number {
-            color: var(--apple-blue);
+            color: var(--md-blue);
         }
 
         .stat-label {
@@ -226,7 +226,7 @@ renderPageStart('staff', $currentPage, '生徒別提出物一覧');
         .empty-state {
             text-align: center;
             padding: 60px 20px;
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             border-radius: var(--radius-md);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
@@ -266,22 +266,22 @@ renderPageStart('staff', $currentPage, '生徒別提出物一覧');
 
         <div class="filter-tabs">
             <a href="?filter=all" class="filter-tab <?php echo $filter === 'all' ? 'active' : ''; ?>">
-                📊 すべて (<?php echo count($students); ?>)
+                <span class="material-symbols-outlined">bar_chart</span> すべて (<?php echo count($students); ?>)
             </a>
             <a href="?filter=pending" class="filter-tab <?php echo $filter === 'pending' ? 'active' : ''; ?>">
-                📝 未提出あり
+                <span class="material-symbols-outlined">edit_note</span> 未提出あり
             </a>
             <a href="?filter=overdue" class="filter-tab <?php echo $filter === 'overdue' ? 'active' : ''; ?>">
-                🔴 期限切れあり
+                <span class="material-symbols-outlined">error</span> 期限切れあり
             </a>
             <a href="?filter=urgent" class="filter-tab <?php echo $filter === 'urgent' ? 'active' : ''; ?>">
-                ⚠️ 期限間近あり
+                <span class="material-symbols-outlined">warning</span> 期限間近あり
             </a>
         </div>
 
         <?php if (empty($filteredStudents)): ?>
             <div class="empty-state">
-                <div class="empty-state-icon">🎉</div>
+                <div class="empty-state-icon"><span class="material-symbols-outlined">celebration</span></div>
                 <p class="empty-state-text">
                     <?php if ($filter === 'pending'): ?>
                         未提出の提出物がある生徒はいません

@@ -201,7 +201,7 @@ renderPageStart('staff', $currentPage, '統合内容の編集');
 
 <style>
 .activity-info {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: 15px 20px;
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-lg);
@@ -215,7 +215,7 @@ renderPageStart('staff', $currentPage, '統合内容の編集');
 }
 
 .student-note {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-lg);
@@ -233,21 +233,21 @@ renderPageStart('staff', $currentPage, '統合内容の編集');
 .student-note textarea {
     width: 100%;
     padding: 15px;
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
     border-radius: var(--radius-sm);
     font-size: var(--text-subhead);
     font-family: inherit;
     resize: vertical;
     min-height: 200px;
     line-height: 1.8;
-    background: var(--apple-bg-tertiary);
+    background: var(--md-bg-tertiary);
     color: var(--text-primary);
 }
 
 .sent-badge {
     display: inline-block;
     padding: 4px 12px;
-    background: var(--apple-green);
+    background: var(--md-green);
     color: white;
     border-radius: var(--radius-lg);
     font-size: var(--text-caption-1);
@@ -274,7 +274,7 @@ renderPageStart('staff', $currentPage, '統合内容の編集');
 }
 
 .draft-save-btn:disabled {
-    background: var(--apple-gray-4);
+    background: var(--md-gray-4);
     cursor: not-allowed;
 }
 
@@ -288,14 +288,14 @@ renderPageStart('staff', $currentPage, '統合内容の編集');
 
 .message.success {
     background: rgba(52,199,89,0.15);
-    color: var(--apple-green);
-    border-left: 4px solid var(--apple-green);
+    color: var(--md-green);
+    border-left: 4px solid var(--md-green);
 }
 
 .message.error {
     background: rgba(255,59,48,0.15);
-    color: var(--apple-red);
-    border-left: 4px solid var(--apple-red);
+    color: var(--md-red);
+    border-left: 4px solid var(--md-red);
 }
 
 .last-saved {
@@ -307,7 +307,7 @@ renderPageStart('staff', $currentPage, '統合内容の編集');
 
 .quick-link {
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-sm);
     text-decoration: none;
     color: var(--text-primary);
@@ -317,7 +317,7 @@ renderPageStart('staff', $currentPage, '統合内容の編集');
     display: inline-block;
     margin-bottom: var(--spacing-lg);
 }
-.quick-link:hover { background: var(--apple-gray-5); }
+.quick-link:hover { background: var(--md-gray-5); }
 </style>
 
 <!-- ページヘッダー -->
@@ -341,11 +341,11 @@ renderPageStart('staff', $currentPage, '統合内容の編集');
             <p><?php echo nl2br(htmlspecialchars($activity['common_activity'], ENT_QUOTES, 'UTF-8')); ?></p>
         </div>
 
-        <p class="info-text" style="background: var(--apple-bg-secondary); padding: 15px; border-radius: var(--radius-sm); border-left: 4px solid var(--apple-orange);">
-            💡 AIが生成した統合内容を確認・編集できます。<br>
-            📝 途中保存した内容は、次回アクセス時に続きから編集できます。<br>
-            💾 「途中保存」ボタンで下書き保存（自動保存: 5分ごと / ショートカット: Ctrl+S）<br>
-            📤 「活動内容を送信」ボタンで保護者に配信されます。
+        <p class="info-text" style="background: var(--md-bg-secondary); padding: 15px; border-radius: var(--radius-sm); border-left: 4px solid var(--md-orange);">
+            <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">lightbulb</span> AIが生成した統合内容を確認・編集できます。<br>
+            <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">edit_note</span> 途中保存した内容は、次回アクセス時に続きから編集できます。<br>
+            <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">save</span> 「途中保存」ボタンで下書き保存（自動保存: 5分ごと / ショートカット: Ctrl+S）<br>
+            <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">upload_file</span> 「活動内容を送信」ボタンで保護者に配信されます。
         </p>
 
         <div id="messageArea"></div>
@@ -370,8 +370,8 @@ renderPageStart('staff', $currentPage, '統合内容の編集');
             <?php endforeach; ?>
 
             <div class="button-group">
-                <button type="button" id="draftSaveBtn" class="draft-save-btn">💾 途中保存</button>
-                <button type="submit" class="btn btn-primary" style="flex: 1;">📤 活動内容を送信</button>
+                <button type="button" id="draftSaveBtn" class="draft-save-btn"><span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">save</span> 途中保存</button>
+                <button type="submit" class="btn btn-primary" style="flex: 1;"><span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">upload_file</span> 活動内容を送信</button>
             </div>
         </form>
 
@@ -402,7 +402,7 @@ function updateLastSaved() {
 // 途中保存処理
 draftSaveBtn.addEventListener('click', async function() {
     draftSaveBtn.disabled = true;
-    draftSaveBtn.textContent = '💾 保存中...';
+    draftSaveBtn.innerHTML = '<span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">save</span> 保存中...';
 
     const formData = new FormData(form);
 
@@ -425,7 +425,7 @@ draftSaveBtn.addEventListener('click', async function() {
         showMessage('通信エラーが発生しました', 'error');
     } finally {
         draftSaveBtn.disabled = false;
-        draftSaveBtn.textContent = '💾 途中保存';
+        draftSaveBtn.innerHTML = '<span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">save</span> 途中保存';
     }
 });
 

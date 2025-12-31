@@ -113,7 +113,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             max-width: 900px;
             width: 100%;
             margin: 0 auto;
-            background: var(--apple-bg-tertiary);
+            background: var(--md-bg-tertiary);
             overflow: hidden;
         }
 
@@ -151,7 +151,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .message.sent .message-avatar {
-            background: var(--apple-green);
+            background: var(--md-green);
         }
 
         .message-content {
@@ -165,7 +165,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .message-bubble {
-            background: var(--apple-gray-4);
+            background: var(--md-gray-4);
             color: white;
             padding: var(--spacing-md) 15px;
             border-radius: var(--radius-lg);
@@ -192,7 +192,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .delete-message-btn {
-            background: var(--apple-red);
+            background: var(--md-red);
             color: white;
             border: none;
             padding: 3px 8px;
@@ -203,13 +203,13 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .delete-message-btn:hover {
-            background: var(--apple-red);
+            background: var(--md-red);
         }
 
         .message-attachment {
             margin-top: 8px;
             padding: var(--spacing-md);
-            background: var(--apple-gray-5);
+            background: var(--md-gray-5);
             border-radius: var(--radius-sm);
             display: inline-block;
         }
@@ -228,7 +228,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
         .input-area {
             padding: var(--spacing-lg);
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             border-top: 1px solid #4a4a4c;
         }
 
@@ -247,7 +247,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             font-size: var(--text-subhead);
             min-height: 50px;
             max-height: 120px;
-            background: var(--apple-gray-4);
+            background: var(--md-gray-4);
             color: white;
         }
 
@@ -273,14 +273,14 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .send-btn:disabled {
-            background: var(--apple-gray-4);
+            background: var(--md-gray-4);
             cursor: not-allowed;
         }
 
         .attachment-preview {
             margin-top: 10px;
             padding: var(--spacing-md);
-            background: var(--apple-gray-4);
+            background: var(--md-gray-4);
             border-radius: var(--radius-sm);
             display: none;
             color: white;
@@ -292,7 +292,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
         .file-input-btn {
             padding: var(--spacing-md);
-            background: var(--apple-gray-4);
+            background: var(--md-gray-4);
             border: 1px solid #4a4a4c;
             border-radius: 25px;
             cursor: pointer;
@@ -347,14 +347,14 @@ renderPageStart('staff', $currentPage, $pageTitle);
         <div class="messages-area" id="messagesArea">
             <?php if (empty($messages)): ?>
                 <div class="empty-state">
-                    <div class="empty-state-icon">💬</div>
+                    <div class="empty-state-icon"><span class="material-symbols-outlined">chat</span></div>
                     <p>まだメッセージがありません</p>
                 </div>
             <?php else: ?>
                 <?php foreach ($messages as $msg): ?>
                     <div class="message <?php echo $msg['sender_type'] === 'staff' ? 'sent' : 'received'; ?>" data-message-id="<?php echo $msg['id']; ?>">
                         <div class="message-avatar">
-                            <?php echo $msg['sender_type'] === 'staff' ? '👨‍🏫' : '🎓'; ?>
+                            <?php echo $msg['sender_type'] === 'staff' ? '<span class="material-symbols-outlined">school</span>' : '<span class="material-symbols-outlined">person</span>'; ?>
                         </div>
                         <div class="message-content">
                             <div class="message-sender">
@@ -366,7 +366,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                                 <?php if ($msg['attachment_path']): ?>
                                     <div class="message-attachment">
                                         <a href="download_student_chat_attachment.php?id=<?php echo $msg['id']; ?>" target="_blank">
-                                            📎 <?php echo htmlspecialchars($msg['attachment_original_name'], ENT_QUOTES, 'UTF-8'); ?>
+                                            <span class="material-symbols-outlined">attach_file</span> <?php echo htmlspecialchars($msg['attachment_original_name'], ENT_QUOTES, 'UTF-8'); ?>
                                             (<?php echo number_format($msg['attachment_size'] / 1024, 1); ?>KB)
                                         </a>
                                     </div>
@@ -387,14 +387,14 @@ renderPageStart('staff', $currentPage, $pageTitle);
         <div class="input-area">
             <div class="attachment-preview" id="attachmentPreview">
                 <span id="fileName"></span>
-                <button type="button" onclick="clearAttachment()" style="margin-left: 10px; background: var(--apple-red); color: white; border: none; padding: 5px 10px; border-radius: var(--radius-sm); cursor: pointer;">削除</button>
+                <button type="button" onclick="clearAttachment()" style="margin-left: 10px; background: var(--md-red); color: white; border: none; padding: 5px 10px; border-radius: var(--radius-sm); cursor: pointer;">削除</button>
             </div>
 
             <form id="messageForm" class="input-form" enctype="multipart/form-data">
                 <input type="hidden" name="student_id" value="<?php echo $studentId; ?>">
 
                 <label for="fileInput" class="file-input-btn" title="ファイルを添付">
-                    📎
+                    <span class="material-symbols-outlined">attach_file</span>
                 </label>
                 <input type="file" id="fileInput" name="attachment" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display: none;">
 
@@ -464,7 +464,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         messageDiv.className = 'message ' + (msg.sender_type === 'staff' ? 'sent' : 'received');
         messageDiv.dataset.messageId = msg.id;
 
-        const avatarIcon = msg.sender_type === 'staff' ? '👨‍🏫' : '🎓';
+        const avatarIcon = msg.sender_type === 'staff' ? '<span class="material-symbols-outlined">school</span>' : '<span class="material-symbols-outlined">person</span>';
         const isOwnMessage = msg.sender_type === 'staff' && msg.sender_id === <?php echo $currentUser['id']; ?>;
 
         let attachmentHTML = '';
@@ -472,7 +472,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             attachmentHTML = `
                 <div class="message-attachment">
                     <a href="download_student_chat_attachment.php?id=${msg.id}" target="_blank">
-                        📎 ${escapeHtml(msg.attachment_original_name || 'ファイル')}
+                        <span class="material-symbols-outlined">attach_file</span> ${escapeHtml(msg.attachment_original_name || 'ファイル')}
                         (${(msg.attachment_size / 1024).toFixed(1)}KB)
                     </a>
                 </div>

@@ -211,12 +211,12 @@ if ($type === 'staff') {
         }
 
         .status-submitted {
-            background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+            background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
             color: white;
         }
 
         .status-draft {
-            background: linear-gradient(135deg, #ff9500 0%, #ff9f0a 100%);
+            background: linear-gradient(135deg, #FF9800 0%, #ff9f0a 100%);
             color: white;
         }
 
@@ -447,7 +447,7 @@ if ($type === 'staff') {
             <!-- 本人の願い -->
             <div class="section">
                 <div class="section-header">
-                    <div class="section-icon icon-wish">✨</div>
+                    <div class="section-icon icon-wish"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">auto_awesome</span></div>
                     <div class="section-title">本人の願い</div>
                 </div>
                 <div class="section-content"><?= $displayData['student_wish'] ? htmlspecialchars($displayData['student_wish']) : '<span class="empty-content">（未入力）</span>' ?></div>
@@ -456,7 +456,7 @@ if ($type === 'staff') {
             <!-- 家庭での願い / 事業所での願い -->
             <div class="section">
                 <div class="section-header">
-                    <div class="section-icon icon-home"><?= $type === 'staff' ? '🏢' : '🏠' ?></div>
+                    <div class="section-icon icon-home"><?= $type === 'staff' ? '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">apartment</span>' : '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">home</span>' ?></div>
                     <div class="section-title"><?= $wishLabel ?></div>
                 </div>
                 <div class="section-content"><?= $displayData['home_challenges'] ? htmlspecialchars($displayData['home_challenges']) : '<span class="empty-content">（未入力）</span>' ?></div>
@@ -465,12 +465,12 @@ if ($type === 'staff') {
             <!-- 目標設定 -->
             <div class="section">
                 <div class="section-header">
-                    <div class="section-icon icon-goal">🎯</div>
+                    <div class="section-icon icon-goal"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">target</span></div>
                     <div class="section-title">目標設定</div>
                 </div>
                 <div class="goals-container">
                     <div class="goal-card">
-                        <div class="goal-label">📌 短期目標（6か月）</div>
+                        <div class="goal-label"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">push_pin</span> 短期目標（6か月）</div>
                         <div class="goal-content"><?= $displayData['short_term_goal'] ? htmlspecialchars($displayData['short_term_goal']) : '<span class="empty-content">（未入力）</span>' ?></div>
                     </div>
                     <div class="goal-card">
@@ -484,7 +484,7 @@ if ($type === 'staff') {
             <div class="section">
                 <div class="domains-section">
                     <div class="domains-header">
-                        <div class="section-icon icon-domain">🌟</div>
+                        <div class="section-icon icon-domain"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">star</span></div>
                         <div class="section-title">五領域の課題</div>
                     </div>
                     <div class="domains-grid">
@@ -515,7 +515,7 @@ if ($type === 'staff') {
             <!-- その他の課題 -->
             <div class="section">
                 <div class="section-header">
-                    <div class="section-icon icon-other">📝</div>
+                    <div class="section-icon icon-other"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit_note</span></div>
                     <div class="section-title">その他の課題</div>
                 </div>
                 <div class="section-content"><?= $displayData['other_challenges'] ? htmlspecialchars($displayData['other_challenges']) : '<span class="empty-content">（未入力）</span>' ?></div>

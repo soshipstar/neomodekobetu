@@ -138,12 +138,12 @@ renderPageStart('guardian', $currentPage, 'かけはし入力', ['classroom' => 
     gap: 20px;
     margin-bottom: var(--spacing-lg);
     padding: var(--spacing-lg);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-md);
 }
 
 .deadline-countdown {
-    background: linear-gradient(135deg, var(--apple-blue) 0%, var(--apple-purple) 100%);
+    background: linear-gradient(135deg, var(--md-blue) 0%, var(--md-purple) 100%);
     color: white;
     padding: var(--spacing-xl);
     border-radius: var(--radius-md);
@@ -152,11 +152,11 @@ renderPageStart('guardian', $currentPage, 'かけはし入力', ['classroom' => 
 }
 
 .deadline-countdown.urgent {
-    background: linear-gradient(135deg, var(--apple-red) 0%, #ff6b6b 100%);
+    background: linear-gradient(135deg, var(--md-red) 0%, #ff6b6b 100%);
 }
 
 .deadline-countdown.warning {
-    background: linear-gradient(135deg, var(--apple-orange) 0%, #ff9800 100%);
+    background: linear-gradient(135deg, var(--md-orange) 0%, #ff9800 100%);
 }
 
 .countdown-display {
@@ -186,16 +186,16 @@ renderPageStart('guardian', $currentPage, 'かけはし入力', ['classroom' => 
     padding: var(--spacing-md);
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-lg);
-    border-left: 4px solid var(--apple-blue);
+    border-left: 4px solid var(--md-blue);
 }
 
 .section-title {
     font-size: var(--text-headline);
     font-weight: 600;
-    color: var(--apple-purple);
+    color: var(--md-purple);
     margin: var(--spacing-xl) 0 var(--spacing-md) 0;
     padding-bottom: var(--spacing-sm);
-    border-bottom: 2px solid var(--apple-purple);
+    border-bottom: 2px solid var(--md-purple);
 }
 
 .domains-grid {
@@ -221,12 +221,12 @@ renderPageStart('guardian', $currentPage, 'かけはし入力', ['classroom' => 
 }
 
 .status-draft {
-    background: var(--apple-orange);
+    background: var(--md-orange);
     color: white;
 }
 
 .status-submitted {
-    background: var(--apple-green);
+    background: var(--md-green);
     color: white;
 }
 

@@ -135,7 +135,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
 <style>
         .section {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             border-radius: var(--radius-md);
             padding: 25px;
             margin-bottom: var(--spacing-lg);
@@ -151,7 +151,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .submission-card {
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             border-radius: var(--radius-sm);
             padding: var(--spacing-lg);
             margin-bottom: 15px;
@@ -160,17 +160,17 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
         .submission-card.urgent {
             border-left-color: #e74c3c;
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
         }
 
         .submission-card.overdue {
             border-left-color: #95a5a6;
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
         }
 
         .submission-card.completed {
-            border-left-color: var(--apple-green);
-            background: var(--apple-bg-secondary);
+            border-left-color: var(--md-green);
+            background: var(--md-bg-secondary);
         }
 
         .submission-header {
@@ -218,12 +218,12 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .submission-badge.completed {
-            background: var(--apple-green);
+            background: var(--md-green);
             color: white;
         }
 
         .submission-badge.source {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             color: var(--text-secondary);
         }
 
@@ -270,7 +270,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .summary-card {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: var(--spacing-lg);
             border-radius: var(--radius-md);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -298,7 +298,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .summary-card.completed .summary-number {
-            color: var(--apple-green);
+            color: var(--md-green);
         }
 
         @media (max-width: 768px) {
@@ -358,11 +358,11 @@ renderPageStart('staff', $currentPage, $pageTitle);
         </div>
 
         <div class="section">
-            <h2>📝 未提出の提出物</h2>
+            <h2><span class="material-symbols-outlined">edit_note</span> 未提出の提出物</h2>
 
             <?php if (empty($pending)): ?>
                 <div class="empty-state">
-                    <div class="empty-state-icon">🎉</div>
+                    <div class="empty-state-icon"><span class="material-symbols-outlined">celebration</span></div>
                     <p>未提出の提出物はありません</p>
                 </div>
             <?php else: ?>
@@ -404,7 +404,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                         </div>
 
                         <div class="submission-due">
-                            📅 提出期限: <?php echo date('Y年m月d日', strtotime($sub['due_date'])); ?>
+                            <span class="material-symbols-outlined">event</span> 提出期限: <?php echo date('Y年m月d日', strtotime($sub['due_date'])); ?>
                             <?php if ($daysLeft >= 0): ?>
                                 （あと<?php echo ceil($daysLeft); ?>日）
                             <?php else: ?>
@@ -434,7 +434,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
         <?php if (!empty($completed)): ?>
             <div class="section">
-                <h2>✅ 提出済みの提出物</h2>
+                <h2><span class="material-symbols-outlined">check_circle</span> 提出済みの提出物</h2>
 
                 <?php foreach ($completed as $sub): ?>
                     <div class="submission-card completed">
@@ -451,7 +451,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                         </div>
 
                         <div class="submission-due">
-                            📅 提出期限: <?php echo date('Y年m月d日', strtotime($sub['due_date'])); ?>
+                            <span class="material-symbols-outlined">event</span> 提出期限: <?php echo date('Y年m月d日', strtotime($sub['due_date'])); ?>
                         </div>
 
                         <?php if (!empty($sub['description'])): ?>

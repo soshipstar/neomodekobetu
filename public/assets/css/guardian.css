@@ -1,6 +1,6 @@
 /**
  * 保護者用CSS
- * アクセントカラー: 緑 (--apple-green)
+ * アクセントカラー: 緑 (--md-green)
  */
 
 /* ========================================
@@ -9,13 +9,13 @@
 
 .role-guardian .sidebar-menu a:hover {
     background: rgba(52, 199, 89, 0.1);
-    border-left-color: var(--apple-green);
+    border-left-color: var(--md-green);
 }
 
 .role-guardian .sidebar-menu a.active {
     background: rgba(52, 199, 89, 0.15);
-    border-left-color: var(--apple-green);
-    color: var(--apple-green);
+    border-left-color: var(--md-green);
+    color: var(--md-green);
 }
 
 .role-guardian .sidebar-user-info {
@@ -24,15 +24,15 @@
 
 .role-guardian .user-info-box {
     background: rgba(52, 199, 89, 0.1);
-    color: var(--apple-green);
+    color: var(--md-green);
 }
 
 .role-guardian .stat-card .number {
-    color: var(--apple-green);
+    color: var(--md-green);
 }
 
 .role-guardian .menu-card h3 {
-    color: var(--apple-green);
+    color: var(--md-green);
 }
 
 /* ========================================
@@ -41,11 +41,11 @@
 
 /* お子様カード */
 .child-card {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border-radius: var(--radius-md);
     padding: var(--spacing-lg);
     box-shadow: var(--shadow-sm);
-    border-left: 4px solid var(--apple-green);
+    border-left: 4px solid var(--md-green);
     margin-bottom: var(--spacing-md);
 }
 
@@ -60,7 +60,7 @@
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--apple-green) 0%, var(--apple-teal) 100%);
+    background: linear-gradient(135deg, var(--md-green) 0%, var(--md-teal) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -81,7 +81,7 @@
 
 /* 連絡帳エントリー */
 .communication-entry {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border-radius: var(--radius-md);
     padding: var(--spacing-lg);
     margin-bottom: var(--spacing-md);
@@ -98,7 +98,7 @@
 }
 
 .communication-date .day-label {
-    background: var(--apple-green);
+    background: var(--md-green);
     color: white;
     padding: 2px 8px;
     border-radius: var(--radius-sm);
@@ -113,7 +113,7 @@
 
 /* かけはし入力フォーム */
 .kakehashi-form {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border-radius: var(--radius-md);
     padding: var(--spacing-xl);
     box-shadow: var(--shadow-sm);
@@ -126,7 +126,7 @@
 .kakehashi-section-title {
     font-size: var(--text-headline);
     font-weight: 600;
-    color: var(--apple-green);
+    color: var(--md-green);
     margin-bottom: var(--spacing-md);
     display: flex;
     align-items: center;
@@ -137,7 +137,7 @@
     width: 100%;
     min-height: 120px;
     padding: var(--spacing-md);
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
     border-radius: var(--radius-sm);
     font-size: var(--text-body);
     line-height: 1.6;
@@ -147,20 +147,20 @@
 
 .kakehashi-textarea:focus {
     outline: none;
-    border-color: var(--apple-green);
+    border-color: var(--md-green);
     box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.1);
 }
 
 /* 週間計画表示 */
 .weekly-plan-card {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border-radius: var(--radius-md);
     overflow: hidden;
     box-shadow: var(--shadow-sm);
 }
 
 .weekly-plan-header {
-    background: linear-gradient(135deg, var(--apple-green) 0%, var(--apple-teal) 100%);
+    background: linear-gradient(135deg, var(--md-green) 0%, var(--md-teal) 100%);
     color: white;
     padding: var(--spacing-lg);
 }
@@ -183,7 +183,7 @@
 .weekly-plan-day {
     display: flex;
     padding: var(--spacing-md) 0;
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
 }
 
 .weekly-plan-day:last-child {
@@ -209,7 +209,7 @@
     gap: 4px;
     padding: 4px 10px;
     background: rgba(52, 199, 89, 0.15);
-    color: var(--apple-green);
+    color: var(--md-green);
     border-radius: var(--radius-full);
     font-size: 12px;
     font-weight: 500;
@@ -224,7 +224,7 @@
    ======================================== */
 
 .calendar-section {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-xl);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-lg);
@@ -237,7 +237,7 @@
     align-items: center;
     margin-bottom: var(--spacing-lg);
     padding-bottom: var(--spacing-md);
-    border-bottom: 2px solid var(--apple-green);
+    border-bottom: 2px solid var(--md-green);
 }
 
 .calendar-header h2 {
@@ -253,7 +253,7 @@
 
 .calendar-nav a {
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--apple-green);
+    background: var(--md-green);
     color: white;
     text-decoration: none;
     border-radius: var(--radius-sm);
@@ -281,10 +281,10 @@
 
 .calendar-day {
     aspect-ratio: 1;
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
     border-radius: var(--radius-sm);
     padding: var(--spacing-xs);
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     position: relative;
     min-height: 70px;
     display: flex;
@@ -293,12 +293,12 @@
 }
 
 .calendar-day.empty {
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     opacity: 0.5;
 }
 
 .calendar-day.today {
-    border: 2px solid var(--apple-green);
+    border: 2px solid var(--md-green);
     background: rgba(52, 199, 89, 0.1);
 }
 
@@ -314,11 +314,11 @@
 }
 
 .calendar-day-number.sunday {
-    color: var(--apple-red);
+    color: var(--md-red);
 }
 
 .calendar-day-number.saturday {
-    color: var(--apple-blue);
+    color: var(--md-blue);
 }
 
 .calendar-day-content {
@@ -336,7 +336,7 @@
 }
 
 .holiday-label {
-    color: var(--apple-red);
+    color: var(--md-red);
     font-weight: bold;
     font-size: 9px;
 }
@@ -353,12 +353,12 @@
 
 .activity-type-label.weekday-activity {
     background: rgba(52, 199, 89, 0.15);
-    color: var(--apple-green);
+    color: var(--md-green);
 }
 
 .activity-type-label.school-holiday-activity {
     background: rgba(0, 122, 255, 0.15);
-    color: var(--apple-blue);
+    color: var(--md-blue);
 }
 
 .event-label {
@@ -379,7 +379,7 @@
 }
 
 .schedule-label {
-    color: var(--apple-green);
+    color: var(--md-green);
     font-size: 9px;
     margin-bottom: 2px;
     display: flex;
@@ -402,7 +402,7 @@
 
 /* 振替活動日 */
 .makeup-label {
-    color: var(--apple-blue);
+    color: var(--md-blue);
     font-size: 9px;
     margin-bottom: 2px;
     display: flex;
@@ -412,7 +412,7 @@
 
 /* 欠席日 */
 .absence-label {
-    color: var(--apple-red);
+    color: var(--md-red);
     font-size: 9px;
     margin-bottom: 2px;
     display: flex;
@@ -422,7 +422,7 @@
 
 /* 追加利用 */
 .additional-label {
-    color: var(--apple-green);
+    color: var(--md-green);
     font-size: 9px;
     margin-bottom: 2px;
     display: flex;
@@ -445,19 +445,19 @@
 }
 
 .note-label.confirmed {
-    color: var(--apple-green);
+    color: var(--md-green);
 }
 
 .note-label.unconfirmed {
-    color: var(--apple-red);
+    color: var(--md-red);
 }
 
 .note-label.confirmed-past {
-    color: var(--apple-green);
+    color: var(--md-green);
 }
 
 .note-label.unconfirmed-past {
-    color: var(--apple-orange);
+    color: var(--md-orange);
 }
 
 .legend {
@@ -466,7 +466,7 @@
     gap: var(--spacing-lg);
     margin-top: var(--spacing-md);
     padding-top: var(--spacing-md);
-    border-top: 1px solid var(--apple-gray-5);
+    border-top: 1px solid var(--md-gray-5);
 }
 
 .legend-item {
@@ -488,7 +488,7 @@
    ======================================== */
 
 .notification-banner {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-lg);
@@ -496,18 +496,18 @@
 }
 
 .notification-banner.urgent {
-    border-left: 5px solid var(--apple-red);
+    border-left: 5px solid var(--md-red);
     background: rgba(255, 69, 58, 0.05);
 }
 
 .notification-banner.pending {
-    border-left: 5px solid var(--apple-teal);
+    border-left: 5px solid var(--md-teal);
     background: rgba(90, 200, 250, 0.05);
 }
 
 .notification-banner.overdue {
-    border-left: 5px solid var(--apple-gray);
-    background: var(--apple-bg-secondary);
+    border-left: 5px solid var(--md-gray);
+    background: var(--md-bg-secondary);
 }
 
 .notification-header {
@@ -520,19 +520,19 @@
 }
 
 .notification-header.urgent {
-    color: var(--apple-red);
+    color: var(--md-red);
 }
 
 .notification-header.pending {
-    color: var(--apple-teal);
+    color: var(--md-teal);
 }
 
 .notification-header.overdue {
-    color: var(--apple-gray);
+    color: var(--md-gray);
 }
 
 .notification-item {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     padding: var(--spacing-md);
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-sm);
@@ -567,15 +567,15 @@
 }
 
 .notification-deadline.urgent {
-    color: var(--apple-red);
+    color: var(--md-red);
 }
 
 .notification-deadline.pending {
-    color: var(--apple-teal);
+    color: var(--md-teal);
 }
 
 .notification-deadline.overdue {
-    color: var(--apple-gray);
+    color: var(--md-gray);
 }
 
 .notification-action {
@@ -584,7 +584,7 @@
 
 .notification-btn {
     padding: var(--spacing-sm) var(--spacing-lg);
-    background: var(--apple-green);
+    background: var(--md-green);
     color: white;
     text-decoration: none;
     border-radius: var(--radius-sm);
@@ -603,7 +603,7 @@
    ======================================== */
 
 .student-section {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-xl);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-lg);
@@ -615,7 +615,7 @@
     align-items: center;
     margin-bottom: var(--spacing-lg);
     padding-bottom: var(--spacing-md);
-    border-bottom: 2px solid var(--apple-green);
+    border-bottom: 2px solid var(--md-green);
 }
 
 .student-name {
@@ -626,7 +626,7 @@
 }
 
 .grade-badge {
-    background: var(--apple-green);
+    background: var(--md-green);
     color: white;
     padding: 4px 12px;
     border-radius: var(--radius-full);
@@ -634,11 +634,11 @@
 }
 
 .note-item {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     padding: var(--spacing-lg);
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-md);
-    border-left: 4px solid var(--apple-green);
+    border-left: 4px solid var(--md-green);
 }
 
 .note-header {
@@ -650,7 +650,7 @@
 
 .activity-name {
     font-weight: bold;
-    color: var(--apple-green);
+    color: var(--md-green);
     font-size: var(--text-callout);
 }
 
@@ -669,7 +669,7 @@
 .confirmation-box {
     margin-top: var(--spacing-md);
     padding-top: var(--spacing-md);
-    border-top: 1px solid var(--apple-gray-5);
+    border-top: 1px solid var(--md-gray-5);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -686,7 +686,7 @@
     width: 18px;
     height: 18px;
     cursor: pointer;
-    accent-color: var(--apple-green);
+    accent-color: var(--md-green);
 }
 
 .confirmation-checkbox label {
@@ -697,12 +697,12 @@
 }
 
 .confirmation-checkbox.confirmed label {
-    color: var(--apple-green);
+    color: var(--md-green);
 }
 
 .confirmation-date {
     font-size: var(--text-footnote);
-    color: var(--apple-green);
+    color: var(--md-green);
     font-weight: 500;
 }
 
@@ -741,7 +741,7 @@
 }
 
 .modal-content {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-2xl);
     border-radius: var(--radius-md);
     max-width: 700px;
@@ -773,7 +773,7 @@
 .modal-header {
     margin-bottom: var(--spacing-lg);
     padding-bottom: var(--spacing-md);
-    border-bottom: 2px solid var(--apple-green);
+    border-bottom: 2px solid var(--md-green);
 }
 
 .modal-header h2 {
@@ -793,7 +793,7 @@
 }
 
 .event-detail-section h4 {
-    color: var(--apple-green);
+    color: var(--md-green);
     font-size: var(--text-callout);
     margin-bottom: var(--spacing-sm);
     font-weight: 600;

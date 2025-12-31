@@ -75,7 +75,7 @@ renderPageStart($role, $currentPage, '利用者一括登録', [
 }
 .upload-method-tab {
     padding: 12px 24px;
-    background: var(--apple-bg-tertiary);
+    background: var(--md-bg-tertiary);
     border: none;
     cursor: pointer;
     font-size: 14px;
@@ -86,12 +86,12 @@ renderPageStart($role, $currentPage, '利用者一括登録', [
     margin-bottom: -2px;
 }
 .upload-method-tab.active {
-    background: var(--apple-bg-primary);
-    color: var(--apple-blue);
-    border-bottom: 2px solid var(--apple-blue);
+    background: var(--md-bg-primary);
+    color: var(--md-blue);
+    border-bottom: 2px solid var(--md-blue);
 }
 .upload-method-tab:hover:not(.active) {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
 }
 .upload-panel {
     display: none;
@@ -133,7 +133,7 @@ renderPageStart($role, $currentPage, '利用者一括登録', [
 
     <!-- 標準フォーマット -->
     <div id="panel-standard" class="upload-panel active">
-        <div class="info-box" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); background: var(--apple-bg-tertiary); border-radius: var(--radius-md);">
+        <div class="info-box" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); background: var(--md-bg-tertiary); border-radius: var(--radius-md);">
             <h3 style="margin-bottom: var(--spacing-sm); font-size: var(--text-body);">CSV形式について</h3>
             <p style="margin-bottom: var(--spacing-sm); color: var(--text-secondary); font-size: var(--text-footnote);">
                 以下の項目をCSV形式で準備してください。同じ保護者氏名の行は、同一保護者として複数の生徒を紐付けます。

@@ -65,6 +65,7 @@ $submitFormatted = date('n月j日', strtotime($submitDate));
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <title>週間計画表 - <?= htmlspecialchars($student['student_name']) ?></title>
     <style>
         @media print {
@@ -433,7 +434,7 @@ $submitFormatted = date('n月j日', strtotime($submitDate));
         <!-- 今週の目標 -->
         <div class="goal-section">
             <div class="goal-header">
-                <span>🎯 今週の目標</span>
+                <span><span class="material-symbols-outlined">flag</span> 今週の目標</span>
                 <span style="font-size: 7pt; font-weight: normal;">できたかな？</span>
             </div>
             <div class="goal-content">
@@ -456,7 +457,7 @@ $submitFormatted = date('n月j日', strtotime($submitDate));
         <!-- いっしょに決めた目標 -->
         <div class="goal-section">
             <div class="goal-header">
-                <span>🤝 いっしょに決めた目標</span>
+                <span><span class="material-symbols-outlined">handshake</span> いっしょに決めた目標</span>
                 <span style="font-size: 7pt; font-weight: normal;">できたかな？</span>
             </div>
             <div class="goal-content">
@@ -479,7 +480,7 @@ $submitFormatted = date('n月j日', strtotime($submitDate));
         <!-- やるべきこと・やったほうがいいこと・やりたいこと -->
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2mm; margin-bottom: 3mm;">
             <div class="goal-section" style="margin-bottom: 0;">
-                <div class="goal-header" style="font-size: 8pt;">✅ やるべきこと</div>
+                <div class="goal-header" style="font-size: 8pt;"><span class="material-symbols-outlined">check_circle</span> やるべきこと</div>
                 <div style="padding: 2mm; min-height: 12mm; font-size: 8pt; border-top: 1px solid #333;"><?= !empty($weeklyPlan['must_do']) ? nl2br(htmlspecialchars($weeklyPlan['must_do'])) : '' ?></div>
                 <div style="border-top: 1px solid #333; padding: 1mm; display: flex; justify-content: center; gap: 1mm;">
                     <div class="eval-box" style="width: 5mm; height: 5mm; font-size: 6pt;">1</div>
@@ -490,7 +491,7 @@ $submitFormatted = date('n月j日', strtotime($submitDate));
                 </div>
             </div>
             <div class="goal-section" style="margin-bottom: 0;">
-                <div class="goal-header" style="font-size: 8pt;">👍 やったほうがいいこと</div>
+                <div class="goal-header" style="font-size: 8pt;"><span class="material-symbols-outlined">thumb_up</span> やったほうがいいこと</div>
                 <div style="padding: 2mm; min-height: 12mm; font-size: 8pt; border-top: 1px solid #333;"><?= !empty($weeklyPlan['should_do']) ? nl2br(htmlspecialchars($weeklyPlan['should_do'])) : '' ?></div>
                 <div style="border-top: 1px solid #333; padding: 1mm; display: flex; justify-content: center; gap: 1mm;">
                     <div class="eval-box" style="width: 5mm; height: 5mm; font-size: 6pt;">1</div>
@@ -501,7 +502,7 @@ $submitFormatted = date('n月j日', strtotime($submitDate));
                 </div>
             </div>
             <div class="goal-section" style="margin-bottom: 0;">
-                <div class="goal-header" style="font-size: 8pt;">💡 やりたいこと</div>
+                <div class="goal-header" style="font-size: 8pt;"><span class="material-symbols-outlined">lightbulb</span> やりたいこと</div>
                 <div style="padding: 2mm; min-height: 12mm; font-size: 8pt; border-top: 1px solid #333;"><?= !empty($weeklyPlan['want_to_do']) ? nl2br(htmlspecialchars($weeklyPlan['want_to_do'])) : '' ?></div>
                 <div style="border-top: 1px solid #333; padding: 1mm; display: flex; justify-content: center; gap: 1mm;">
                     <div class="eval-box" style="width: 5mm; height: 5mm; font-size: 6pt;">1</div>
@@ -515,7 +516,7 @@ $submitFormatted = date('n月j日', strtotime($submitDate));
 
         <!-- 各曜日の計画（縦並び） -->
         <div class="daily-section">
-            <h3>📅 各曜日の計画・目標</h3>
+            <h3><span class="material-symbols-outlined">event</span> 各曜日の計画・目標</h3>
             <div class="daily-grid">
                 <?php
                 $days = ['月', '火', '水', '木', '金', '土', '日'];
@@ -553,7 +554,7 @@ $submitFormatted = date('n月j日', strtotime($submitDate));
 
         <!-- 保護者欄 -->
         <div class="parent-section">
-            <div class="parent-header">📝 おうちの方へ（一週間後にご記入ください）</div>
+            <div class="parent-header"><span class="material-symbols-outlined">edit_note</span> おうちの方へ（一週間後にご記入ください）</div>
             <div class="parent-content">
                 <div class="parent-comment">
                     <div class="parent-comment-label">お子様の様子やコメントをご記入ください</div>

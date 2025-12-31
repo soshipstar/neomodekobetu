@@ -207,7 +207,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
 <style>
         .week-nav {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: 15px 20px;
             border-radius: var(--radius-md);
             margin-bottom: var(--spacing-lg);
@@ -241,7 +241,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .plan-container {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             border-radius: var(--radius-md);
             padding: 25px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -265,7 +265,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             width: 100%;
             min-height: 60px;
             padding: var(--spacing-md);
-            border: 1px solid var(--apple-gray-5);
+            border: 1px solid var(--md-gray-5);
             border-radius: var(--radius-sm);
             font-size: var(--text-subhead);
             font-family: inherit;
@@ -274,7 +274,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
         .plan-section .view-content {
             padding: var(--spacing-md);
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             border-left: 4px solid var(--primary-purple);
             border-radius: 4px;
             line-height: 1.6;
@@ -318,11 +318,11 @@ renderPageStart('staff', $currentPage, $pageTitle);
         .submissions-section {
             margin-top: var(--spacing-2xl);
             padding-top: 30px;
-            border-top: 2px solid var(--apple-gray-5);
+            border-top: 2px solid var(--md-gray-5);
         }
 
         .submissions-section h3 {
-            color: var(--apple-red);
+            color: var(--md-red);
             font-size: 18px;
             margin-bottom: 15px;
         }
@@ -338,7 +338,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         .submission-item input[type="text"],
         .submission-item input[type="date"] {
             padding: var(--spacing-md);
-            border: 1px solid var(--apple-gray-5);
+            border: 1px solid var(--md-gray-5);
             border-radius: 4px;
             font-size: var(--text-subhead);
         }
@@ -356,7 +356,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .submission-item .remove-btn {
-            background: var(--apple-red);
+            background: var(--md-red);
             color: white;
             border: none;
             border-radius: 4px;
@@ -367,12 +367,12 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .submission-item .remove-btn:hover {
-            background: var(--apple-red);
+            background: var(--md-red);
         }
 
         .add-submission-btn {
             padding: var(--spacing-md) 20px;
-            background: var(--apple-green);
+            background: var(--md-green);
             color: white;
             border: none;
             border-radius: var(--radius-sm);
@@ -382,7 +382,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .add-submission-btn:hover {
-            background: var(--apple-green);
+            background: var(--md-green);
         }
 
         .submission-view-item {
@@ -390,15 +390,15 @@ renderPageStart('staff', $currentPage, $pageTitle);
             justify-content: space-between;
             align-items: center;
             padding: var(--spacing-md);
-            background: var(--apple-gray-6);
-            border-left: 4px solid var(--apple-red);
+            background: var(--md-gray-6);
+            border-left: 4px solid var(--md-red);
             border-radius: 4px;
             margin-bottom: var(--spacing-md);
         }
 
         .submission-view-item.completed {
             opacity: 0.6;
-            border-left-color: var(--apple-green);
+            border-left-color: var(--md-green);
             text-decoration: line-through;
         }
 
@@ -418,7 +418,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .submission-date.urgent {
-            color: var(--apple-red);
+            color: var(--md-red);
             font-weight: 600;
         }
 
@@ -445,21 +445,21 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .btn-primary {
-            background: var(--apple-green);
+            background: var(--md-green);
             color: white;
         }
 
         .btn-primary:hover {
-            background: var(--apple-green);
+            background: var(--md-green);
         }
 
         .btn-secondary {
-            background: var(--apple-gray);
+            background: var(--md-gray);
             color: white;
         }
 
         .btn-secondary:hover {
-            background: var(--apple-gray);
+            background: var(--md-gray);
         }
 
         .btn-edit {
@@ -472,7 +472,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .comments-section {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             border-radius: var(--radius-md);
             padding: var(--spacing-lg);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -486,14 +486,14 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
         .comment {
             padding: 15px;
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             border-left: 4px solid var(--primary-purple);
             border-radius: var(--radius-sm);
             margin-bottom: 15px;
         }
 
         .comment.staff {
-            border-left-color: var(--apple-green);
+            border-left-color: var(--md-green);
         }
 
         .comment.student {
@@ -501,7 +501,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .comment.guardian {
-            border-left-color: var(--apple-orange);
+            border-left-color: var(--md-orange);
         }
 
         .comment-header {
@@ -533,7 +533,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             width: 100%;
             min-height: 100px;
             padding: var(--spacing-md);
-            border: 1px solid var(--apple-gray-5);
+            border: 1px solid var(--md-gray-5);
             border-radius: var(--radius-sm);
             font-family: inherit;
             font-size: var(--text-subhead);
@@ -543,7 +543,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         .comment-form button {
             margin-top: 10px;
             padding: var(--spacing-md) 20px;
-            background: var(--apple-green);
+            background: var(--md-green);
             color: white;
             border: none;
             border-radius: var(--radius-sm);
@@ -553,7 +553,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .comment-form button:hover {
-            background: var(--apple-green);
+            background: var(--md-green);
         }
 
         .message {
@@ -566,13 +566,13 @@ renderPageStart('staff', $currentPage, $pageTitle);
         .message.success {
             background: #d4edda;
             color: #155724;
-            border-left: 4px solid var(--apple-green);
+            border-left: 4px solid var(--md-green);
         }
 
         .message.error {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             color: #721c24;
-            border-left: 4px solid var(--apple-red);
+            border-left: 4px solid var(--md-red);
         }
 
         .no-plan {
@@ -613,7 +613,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         .eval-item {
             margin-bottom: var(--spacing-lg);
             padding: var(--spacing-md);
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             border-radius: var(--radius-sm);
         }
 
@@ -629,7 +629,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         .eval-item-content {
             font-size: var(--text-subhead);
             padding: var(--spacing-sm);
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             border-radius: 4px;
             margin-bottom: 12px;
             line-height: 1.5;
@@ -667,14 +667,14 @@ renderPageStart('staff', $currentPage, $pageTitle);
         .eval-5-scale-boxes .eval-box {
             width: 36px;
             height: 36px;
-            border: 2px solid var(--apple-gray-4);
+            border: 2px solid var(--md-gray-4);
             border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 16px;
             font-weight: 600;
-            color: var(--apple-gray-3);
+            color: var(--md-gray-3);
             transition: all 0.2s ease;
             background: white;
         }
@@ -699,7 +699,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             width: 100%;
             min-height: 50px;
             padding: var(--spacing-sm);
-            border: 1px solid var(--apple-gray-5);
+            border: 1px solid var(--md-gray-5);
             border-radius: var(--radius-sm);
             font-size: var(--text-footnote);
             font-family: inherit;
@@ -710,7 +710,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             display: block;
             width: 100%;
             padding: 15px 30px;
-            background: var(--apple-green);
+            background: var(--md-green);
             color: white;
             border: none;
             border-radius: var(--radius-sm);
@@ -728,7 +728,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         .eval-overall-comment {
             margin-top: var(--spacing-lg);
             padding: var(--spacing-md);
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             border-radius: var(--radius-sm);
         }
 
@@ -742,7 +742,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             width: 100%;
             min-height: 80px;
             padding: var(--spacing-md);
-            border: 1px solid var(--apple-gray-5);
+            border: 1px solid var(--md-gray-5);
             border-radius: var(--radius-sm);
             font-size: var(--text-subhead);
             font-family: inherit;
@@ -767,7 +767,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .achievement-modal-content {
-            background-color: var(--apple-bg-primary);
+            background-color: var(--md-bg-primary);
             margin: 50px auto;
             padding: var(--spacing-2xl);
             border-radius: var(--radius-md);
@@ -781,13 +781,13 @@ renderPageStart('staff', $currentPage, $pageTitle);
             color: var(--text-primary);
             margin-bottom: 25px;
             padding-bottom: 15px;
-            border-bottom: 2px solid var(--apple-gray-5);
+            border-bottom: 2px solid var(--md-gray-5);
         }
 
         .achievement-section {
             margin-bottom: var(--spacing-2xl);
             padding: var(--spacing-lg);
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             border-radius: var(--radius-sm);
         }
 
@@ -799,7 +799,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
         .goal-content {
             padding: var(--spacing-md);
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             border-left: 4px solid var(--primary-purple);
             border-radius: 4px;
             margin-bottom: 15px;
@@ -836,7 +836,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             width: 100%;
             min-height: 60px;
             padding: var(--spacing-md);
-            border: 1px solid var(--apple-gray-5);
+            border: 1px solid var(--md-gray-5);
             border-radius: var(--radius-sm);
             font-size: var(--text-subhead);
             font-family: inherit;
@@ -849,7 +849,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             gap: 10px;
             margin-top: var(--spacing-2xl);
             padding-top: 20px;
-            border-top: 2px solid var(--apple-gray-5);
+            border-top: 2px solid var(--md-gray-5);
         }
 
         .achievement-btn {
@@ -862,21 +862,21 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .achievement-btn-cancel {
-            background: var(--apple-gray);
+            background: var(--md-gray);
             color: white;
         }
 
         .achievement-btn-cancel:hover {
-            background: var(--apple-gray);
+            background: var(--md-gray);
         }
 
         .achievement-btn-submit {
-            background: var(--apple-green);
+            background: var(--md-green);
             color: white;
         }
 
         .achievement-btn-submit:hover {
-            background: var(--apple-green);
+            background: var(--md-green);
         }
 
         @media (max-width: 768px) {
@@ -926,7 +926,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             <h2><?php echo date('Y年m月d日', strtotime($weekStartDate)); ?>の週</h2>
             <div style="display: flex; gap: 15px; align-items: center;">
                 <?php if ($prevWeekPlan && !$prevWeekPlan['evaluated_at']): ?>
-                    <button type="button" onclick="openAchievementModal()" style="padding: var(--spacing-sm) 16px; background: var(--apple-green); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-footnote); font-weight: 600;">
+                    <button type="button" onclick="openAchievementModal()" style="padding: var(--spacing-sm) 16px; background: var(--md-green); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-footnote); font-weight: 600;">
                         ⭐ 前週の達成度を入力
                     </button>
                 <?php endif; ?>
@@ -958,7 +958,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
                 <div class="plan-container">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                        <h2 style="color: var(--text-primary); font-size: 20px;">📝 週間計画を編集</h2>
+                        <h2 style="color: var(--text-primary); font-size: 20px;"><span class="material-symbols-outlined">edit_note</span> 週間計画を編集</h2>
                         <div style="display: flex; gap: 10px;">
                             <a href="?student_id=<?php echo $studentId; ?>&date=<?php echo $targetDate; ?>" class="btn btn-secondary">キャンセル</a>
                             <button type="submit" class="btn btn-primary">保存する</button>
@@ -967,13 +967,13 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
                     <!-- 今週の目標 -->
                     <div class="plan-section">
-                        <h3>🎯 今週の目標</h3>
+                        <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">target</span> 今週の目標</h3>
                         <textarea name="weekly_goal" placeholder="今週達成したい目標を記入してください"><?php echo htmlspecialchars($weeklyPlan['weekly_goal'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
                     </div>
 
                     <!-- いっしょに決めた目標 -->
                     <div class="plan-section">
-                        <h3>🤝 いっしょに決めた目標</h3>
+                        <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">handshake</span> いっしょに決めた目標</h3>
                         <textarea name="shared_goal" placeholder="生徒と一緒に決めた目標を記入してください"><?php echo htmlspecialchars($weeklyPlan['shared_goal'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
                     </div>
 
@@ -981,7 +981,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                     <!-- 個別支援計画の5領域目標（参考表示） -->
                     <div class="plan-section domain-goals-reference" style="background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); border: 1px dashed #4caf50; padding: 15px; border-radius: var(--radius-md);">
                         <h3 style="color: #2e7d32; font-size: var(--text-subhead); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                            <span>📋</span> 個別支援計画の目標（参考）
+                            <span class="material-symbols-outlined">assignment</span> 個別支援計画の目標（参考）
                         </h3>
                         <div style="display: flex; flex-direction: column; gap: 8px;">
                             <?php foreach ($domainGoals as $goal): ?>
@@ -1003,25 +1003,25 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
                     <!-- やるべきこと -->
                     <div class="plan-section">
-                        <h3>✅ やるべきこと</h3>
+                        <h3><span class="material-symbols-outlined">check_circle</span> やるべきこと</h3>
                         <textarea name="must_do" placeholder="必ずやるべきことを記入してください"><?php echo htmlspecialchars($weeklyPlan['must_do'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
                     </div>
 
                     <!-- やったほうがいいこと -->
                     <div class="plan-section">
-                        <h3>👍 やったほうがいいこと</h3>
+                        <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">thumb_up</span> やったほうがいいこと</h3>
                         <textarea name="should_do" placeholder="できればやったほうがいいことを記入してください"><?php echo htmlspecialchars($weeklyPlan['should_do'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
                     </div>
 
                     <!-- やりたいこと -->
                     <div class="plan-section">
-                        <h3>💡 やりたいこと</h3>
+                        <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">lightbulb</span> やりたいこと</h3>
                         <textarea name="want_to_do" placeholder="本人がやりたいと思っていることを記入してください"><?php echo htmlspecialchars($weeklyPlan['want_to_do'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
                     </div>
 
                     <!-- 各曜日の計画 -->
                     <div class="daily-plans">
-                        <h3>📅 各曜日の計画・目標</h3>
+                        <h3><span class="material-symbols-outlined">event</span> 各曜日の計画・目標</h3>
                         <?php
                         $days = ['月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日', '日曜日'];
                         foreach ($days as $index => $day):
@@ -1041,7 +1041,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
                     <!-- 提出物管理 -->
                     <div class="submissions-section">
-                        <h3>📋 提出物管理</h3>
+                        <h3><span class="material-symbols-outlined">assignment</span> 提出物管理</h3>
                         <div id="submissionsContainer">
                             <?php if (!empty($submissions)): ?>
                                 <?php foreach ($submissions as $index => $sub): ?>
@@ -1081,7 +1081,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             <!-- 表示モード -->
             <div class="plan-container">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                    <h2 style="color: var(--text-primary); font-size: 20px;">📝 週間計画</h2>
+                    <h2 style="color: var(--text-primary); font-size: 20px;"><span class="material-symbols-outlined">edit_note</span> 週間計画</h2>
                     <div style="display: flex; gap: 10px;">
                         <a href="student_weekly_plan_pdf.php?student_id=<?php echo $studentId; ?>&date=<?php echo $weekStartDate; ?>" class="btn btn-secondary" target="_blank">PDF出力</a>
                         <a href="?student_id=<?php echo $studentId; ?>&date=<?php echo $targetDate; ?>&edit=1" class="btn btn-edit">編集する</a>
@@ -1090,37 +1090,37 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
                 <!-- 今週の目標 -->
                 <div class="plan-section">
-                    <h3>🎯 今週の目標</h3>
+                    <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">target</span> 今週の目標</h3>
                     <div class="view-content <?php echo empty($weeklyPlan['weekly_goal']) ? 'empty' : ''; ?>"><?php echo !empty($weeklyPlan['weekly_goal']) ? nl2br(htmlspecialchars($weeklyPlan['weekly_goal'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?></div>
                 </div>
 
                 <!-- いっしょに決めた目標 -->
                 <div class="plan-section">
-                    <h3>🤝 いっしょに決めた目標</h3>
+                    <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">handshake</span> いっしょに決めた目標</h3>
                     <div class="view-content <?php echo empty($weeklyPlan['shared_goal']) ? 'empty' : ''; ?>"><?php echo !empty($weeklyPlan['shared_goal']) ? nl2br(htmlspecialchars($weeklyPlan['shared_goal'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?></div>
                 </div>
 
                 <!-- やるべきこと -->
                 <div class="plan-section">
-                    <h3>✅ やるべきこと</h3>
+                    <h3><span class="material-symbols-outlined">check_circle</span> やるべきこと</h3>
                     <div class="view-content <?php echo empty($weeklyPlan['must_do']) ? 'empty' : ''; ?>"><?php echo !empty($weeklyPlan['must_do']) ? nl2br(htmlspecialchars($weeklyPlan['must_do'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?></div>
                 </div>
 
                 <!-- やったほうがいいこと -->
                 <div class="plan-section">
-                    <h3>👍 やったほうがいいこと</h3>
+                    <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">thumb_up</span> やったほうがいいこと</h3>
                     <div class="view-content <?php echo empty($weeklyPlan['should_do']) ? 'empty' : ''; ?>"><?php echo !empty($weeklyPlan['should_do']) ? nl2br(htmlspecialchars($weeklyPlan['should_do'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?></div>
                 </div>
 
                 <!-- やりたいこと -->
                 <div class="plan-section">
-                    <h3>💡 やりたいこと</h3>
+                    <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">lightbulb</span> やりたいこと</h3>
                     <div class="view-content <?php echo empty($weeklyPlan['want_to_do']) ? 'empty' : ''; ?>"><?php echo !empty($weeklyPlan['want_to_do']) ? nl2br(htmlspecialchars($weeklyPlan['want_to_do'], ENT_QUOTES, 'UTF-8')) : '未記入'; ?></div>
                 </div>
 
                 <!-- 各曜日の計画 -->
                 <div class="daily-plans">
-                    <h3>📅 各曜日の計画・目標</h3>
+                    <h3><span class="material-symbols-outlined">event</span> 各曜日の計画・目標</h3>
                     <?php
                     $days = ['月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日', '日曜日'];
                     foreach ($days as $index => $day):
@@ -1141,7 +1141,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 <!-- 提出物一覧 -->
                 <?php if (!empty($submissions)): ?>
                     <div class="submissions-section">
-                        <h3>📋 提出物一覧</h3>
+                        <h3><span class="material-symbols-outlined">assignment</span> 提出物一覧</h3>
                         <?php foreach ($submissions as $sub):
                             $dueDate = new DateTime($sub['due_date']);
                             $today = new DateTime();
@@ -1158,7 +1158,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                             <div class="submission-view-item <?php echo $sub['is_completed'] ? 'completed' : ''; ?>">
                                 <div class="submission-info">
                                     <div class="submission-title">
-                                        <?php echo $sub['is_completed'] ? '✅ ' : ''; ?>
+                                        <?php echo $sub['is_completed'] ? '<span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">check_circle</span> ' : ''; ?>
                                         <?php echo htmlspecialchars($sub['submission_item'], ENT_QUOTES, 'UTF-8'); ?>
                                     </div>
                                     <div class="submission-date <?php echo $dateClass; ?>">
@@ -1198,7 +1198,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                             <!-- 今週の目標 -->
                             <?php if (!empty($weeklyPlan['weekly_goal'])): ?>
                                 <div class="eval-item">
-                                    <div class="eval-item-header">🎯 今週の目標</div>
+                                    <div class="eval-item-header"><span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">target</span> 今週の目標</div>
                                     <div class="eval-item-content"><?php echo nl2br(htmlspecialchars($weeklyPlan['weekly_goal'], ENT_QUOTES, 'UTF-8')); ?></div>
                                     <div class="eval-5-scale">
                                         <div class="eval-5-scale-boxes">
@@ -1217,7 +1217,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                             <!-- いっしょに決めた目標 -->
                             <?php if (!empty($weeklyPlan['shared_goal'])): ?>
                                 <div class="eval-item">
-                                    <div class="eval-item-header">🤝 いっしょに決めた目標</div>
+                                    <div class="eval-item-header"><span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">handshake</span> いっしょに決めた目標</div>
                                     <div class="eval-item-content"><?php echo nl2br(htmlspecialchars($weeklyPlan['shared_goal'], ENT_QUOTES, 'UTF-8')); ?></div>
                                     <div class="eval-5-scale">
                                         <div class="eval-5-scale-boxes">
@@ -1236,7 +1236,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                             <!-- やるべきこと -->
                             <?php if (!empty($weeklyPlan['must_do'])): ?>
                                 <div class="eval-item">
-                                    <div class="eval-item-header">✅ やるべきこと</div>
+                                    <div class="eval-item-header"><span class="material-symbols-outlined">check_circle</span> やるべきこと</div>
                                     <div class="eval-item-content"><?php echo nl2br(htmlspecialchars($weeklyPlan['must_do'], ENT_QUOTES, 'UTF-8')); ?></div>
                                     <div class="eval-5-scale">
                                         <div class="eval-5-scale-boxes">
@@ -1255,7 +1255,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                             <!-- やったほうがいいこと -->
                             <?php if (!empty($weeklyPlan['should_do'])): ?>
                                 <div class="eval-item">
-                                    <div class="eval-item-header">👍 やったほうがいいこと</div>
+                                    <div class="eval-item-header"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">thumb_up</span> やったほうがいいこと</div>
                                     <div class="eval-item-content"><?php echo nl2br(htmlspecialchars($weeklyPlan['should_do'], ENT_QUOTES, 'UTF-8')); ?></div>
                                     <div class="eval-5-scale">
                                         <div class="eval-5-scale-boxes">
@@ -1274,7 +1274,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                             <!-- やりたいこと -->
                             <?php if (!empty($weeklyPlan['want_to_do'])): ?>
                                 <div class="eval-item">
-                                    <div class="eval-item-header">💡 やりたいこと</div>
+                                    <div class="eval-item-header"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">lightbulb</span> やりたいこと</div>
                                     <div class="eval-item-content"><?php echo nl2br(htmlspecialchars($weeklyPlan['want_to_do'], ENT_QUOTES, 'UTF-8')); ?></div>
                                     <div class="eval-5-scale">
                                         <div class="eval-5-scale-boxes">
@@ -1302,14 +1302,14 @@ renderPageStart('staff', $currentPage, $pageTitle);
                             }
                             ?>
                             <?php if ($hasAnyCurrentDailyPlan): ?>
-                                <div class="eval-item" style="background: var(--apple-gray-6);">
-                                    <div class="eval-item-header" style="font-size: var(--text-callout);">📅 各曜日の計画達成度</div>
+                                <div class="eval-item" style="background: var(--md-gray-6);">
+                                    <div class="eval-item-header" style="font-size: var(--text-callout);"><span class="material-symbols-outlined">event</span> 各曜日の計画達成度</div>
                                     <?php foreach ($days as $index => $day):
                                         $dayKey = "day_$index";
                                         if (!empty($planData[$dayKey])):
                                             $date = date('m/d', strtotime("+$index days", strtotime($weekStartDate)));
                                     ?>
-                                        <div style="margin-bottom: var(--spacing-md); padding: var(--spacing-md); background: var(--apple-bg-primary); border-radius: var(--radius-sm);">
+                                        <div style="margin-bottom: var(--spacing-md); padding: var(--spacing-md); background: var(--md-bg-primary); border-radius: var(--radius-sm);">
                                             <div style="font-weight: 600; color: var(--primary-purple); margin-bottom: 8px;"><?php echo $day; ?> (<?php echo $date; ?>)</div>
                                             <div class="eval-item-content"><?php echo nl2br(htmlspecialchars($planData[$dayKey], ENT_QUOTES, 'UTF-8')); ?></div>
                                             <div class="eval-5-scale">
@@ -1329,7 +1329,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
                             <!-- 総合コメント -->
                             <div class="eval-overall-comment">
-                                <h4>📝 週全体の総合コメント</h4>
+                                <h4><span class="material-symbols-outlined">edit_note</span> 週全体の総合コメント</h4>
                                 <textarea name="overall_comment" placeholder="週全体を振り返っての総合コメントを入力してください"></textarea>
                             </div>
 
@@ -1340,7 +1340,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
                 <!-- 達成度評価表示（評価済みの場合） -->
                 <?php if ($weeklyPlan && $weeklyPlan['evaluated_at']): ?>
-                    <div class="achievement-display-section" style="margin-top: var(--spacing-2xl); padding: var(--spacing-lg); background: var(--apple-bg-secondary); border: 2px solid #4a90e2; border-radius: var(--radius-md);">
+                    <div class="achievement-display-section" style="margin-top: var(--spacing-2xl); padding: var(--spacing-lg); background: var(--md-bg-secondary); border: 2px solid #4a90e2; border-radius: var(--radius-md);">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
                             <h3 style="color: #4a90e2; margin: 0; font-size: 18px;">⭐ 達成度評価</h3>
                             <div style="font-size: var(--text-caption-1); color: var(--text-secondary);">
@@ -1369,9 +1369,9 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
                         <!-- 今週の目標の達成度 -->
                         <?php if (!empty($weeklyPlan['weekly_goal'])): ?>
-                            <div class="achievement-item" style="margin-bottom: 15px; padding: var(--spacing-md); background: var(--apple-bg-primary); border-radius: var(--radius-sm);">
-                                <div style="font-weight: 600; margin-bottom: 5px; color: var(--text-primary);">🎯 今週の目標</div>
-                                <div style="font-size: var(--text-subhead); margin-bottom: 8px; padding: var(--spacing-sm); background: var(--apple-gray-6); border-radius: 4px;">
+                            <div class="achievement-item" style="margin-bottom: 15px; padding: var(--spacing-md); background: var(--md-bg-primary); border-radius: var(--radius-sm);">
+                                <div style="font-weight: 600; margin-bottom: 5px; color: var(--text-primary);"><span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">target</span> 今週の目標</div>
+                                <div style="font-size: var(--text-subhead); margin-bottom: 8px; padding: var(--spacing-sm); background: var(--md-gray-6); border-radius: 4px;">
                                     <?php echo nl2br(htmlspecialchars($weeklyPlan['weekly_goal'], ENT_QUOTES, 'UTF-8')); ?>
                                 </div>
                                 <?php
@@ -1383,8 +1383,8 @@ renderPageStart('staff', $currentPage, $pageTitle);
                                     <?php echo $label; ?>
                                 </div>
                                 <?php if (!empty($weeklyPlan['weekly_goal_comment'])): ?>
-                                    <div style="font-size: var(--text-footnote); color: #555; margin-top: 8px; padding: var(--spacing-sm); background: var(--apple-bg-secondary); border-left: 3px solid #f39c12; border-radius: 4px;">
-                                        💬 <?php echo nl2br(htmlspecialchars($weeklyPlan['weekly_goal_comment'], ENT_QUOTES, 'UTF-8')); ?>
+                                    <div style="font-size: var(--text-footnote); color: #555; margin-top: 8px; padding: var(--spacing-sm); background: var(--md-bg-secondary); border-left: 3px solid #f39c12; border-radius: 4px;">
+                                        <span class="material-symbols-outlined">chat</span> <?php echo nl2br(htmlspecialchars($weeklyPlan['weekly_goal_comment'], ENT_QUOTES, 'UTF-8')); ?>
                                     </div>
                                 <?php endif; ?>
                             </div>
@@ -1392,9 +1392,9 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
                         <!-- いっしょに決めた目標の達成度 -->
                         <?php if (!empty($weeklyPlan['shared_goal'])): ?>
-                            <div class="achievement-item" style="margin-bottom: 15px; padding: var(--spacing-md); background: var(--apple-bg-primary); border-radius: var(--radius-sm);">
-                                <div style="font-weight: 600; margin-bottom: 5px; color: var(--text-primary);">🤝 いっしょに決めた目標</div>
-                                <div style="font-size: var(--text-subhead); margin-bottom: 8px; padding: var(--spacing-sm); background: var(--apple-gray-6); border-radius: 4px;">
+                            <div class="achievement-item" style="margin-bottom: 15px; padding: var(--spacing-md); background: var(--md-bg-primary); border-radius: var(--radius-sm);">
+                                <div style="font-weight: 600; margin-bottom: 5px; color: var(--text-primary);"><span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">handshake</span> いっしょに決めた目標</div>
+                                <div style="font-size: var(--text-subhead); margin-bottom: 8px; padding: var(--spacing-sm); background: var(--md-gray-6); border-radius: 4px;">
                                     <?php echo nl2br(htmlspecialchars($weeklyPlan['shared_goal'], ENT_QUOTES, 'UTF-8')); ?>
                                 </div>
                                 <?php
@@ -1406,8 +1406,8 @@ renderPageStart('staff', $currentPage, $pageTitle);
                                     <?php echo $label; ?>
                                 </div>
                                 <?php if (!empty($weeklyPlan['shared_goal_comment'])): ?>
-                                    <div style="font-size: var(--text-footnote); color: #555; margin-top: 8px; padding: var(--spacing-sm); background: var(--apple-bg-secondary); border-left: 3px solid #f39c12; border-radius: 4px;">
-                                        💬 <?php echo nl2br(htmlspecialchars($weeklyPlan['shared_goal_comment'], ENT_QUOTES, 'UTF-8')); ?>
+                                    <div style="font-size: var(--text-footnote); color: #555; margin-top: 8px; padding: var(--spacing-sm); background: var(--md-bg-secondary); border-left: 3px solid #f39c12; border-radius: 4px;">
+                                        <span class="material-symbols-outlined">chat</span> <?php echo nl2br(htmlspecialchars($weeklyPlan['shared_goal_comment'], ENT_QUOTES, 'UTF-8')); ?>
                                     </div>
                                 <?php endif; ?>
                             </div>
@@ -1415,9 +1415,9 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
                         <!-- やるべきことの達成度 -->
                         <?php if (!empty($weeklyPlan['must_do'])): ?>
-                            <div class="achievement-item" style="margin-bottom: 15px; padding: var(--spacing-md); background: var(--apple-bg-primary); border-radius: var(--radius-sm);">
-                                <div style="font-weight: 600; margin-bottom: 5px; color: var(--text-primary);">✅ やるべきこと</div>
-                                <div style="font-size: var(--text-subhead); margin-bottom: 8px; padding: var(--spacing-sm); background: var(--apple-gray-6); border-radius: 4px;">
+                            <div class="achievement-item" style="margin-bottom: 15px; padding: var(--spacing-md); background: var(--md-bg-primary); border-radius: var(--radius-sm);">
+                                <div style="font-weight: 600; margin-bottom: 5px; color: var(--text-primary);"><span class="material-symbols-outlined">check_circle</span> やるべきこと</div>
+                                <div style="font-size: var(--text-subhead); margin-bottom: 8px; padding: var(--spacing-sm); background: var(--md-gray-6); border-radius: 4px;">
                                     <?php echo nl2br(htmlspecialchars($weeklyPlan['must_do'], ENT_QUOTES, 'UTF-8')); ?>
                                 </div>
                                 <?php
@@ -1429,8 +1429,8 @@ renderPageStart('staff', $currentPage, $pageTitle);
                                     <?php echo $label; ?>
                                 </div>
                                 <?php if (!empty($weeklyPlan['must_do_comment'])): ?>
-                                    <div style="font-size: var(--text-footnote); color: #555; margin-top: 8px; padding: var(--spacing-sm); background: var(--apple-bg-secondary); border-left: 3px solid #f39c12; border-radius: 4px;">
-                                        💬 <?php echo nl2br(htmlspecialchars($weeklyPlan['must_do_comment'], ENT_QUOTES, 'UTF-8')); ?>
+                                    <div style="font-size: var(--text-footnote); color: #555; margin-top: 8px; padding: var(--spacing-sm); background: var(--md-bg-secondary); border-left: 3px solid #f39c12; border-radius: 4px;">
+                                        <span class="material-symbols-outlined">chat</span> <?php echo nl2br(htmlspecialchars($weeklyPlan['must_do_comment'], ENT_QUOTES, 'UTF-8')); ?>
                                     </div>
                                 <?php endif; ?>
                             </div>
@@ -1438,9 +1438,9 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
                         <!-- やったほうがいいことの達成度 -->
                         <?php if (!empty($weeklyPlan['should_do'])): ?>
-                            <div class="achievement-item" style="margin-bottom: 15px; padding: var(--spacing-md); background: var(--apple-bg-primary); border-radius: var(--radius-sm);">
-                                <div style="font-weight: 600; margin-bottom: 5px; color: var(--text-primary);">👍 やったほうがいいこと</div>
-                                <div style="font-size: var(--text-subhead); margin-bottom: 8px; padding: var(--spacing-sm); background: var(--apple-gray-6); border-radius: 4px;">
+                            <div class="achievement-item" style="margin-bottom: 15px; padding: var(--spacing-md); background: var(--md-bg-primary); border-radius: var(--radius-sm);">
+                                <div style="font-weight: 600; margin-bottom: 5px; color: var(--text-primary);"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">thumb_up</span> やったほうがいいこと</div>
+                                <div style="font-size: var(--text-subhead); margin-bottom: 8px; padding: var(--spacing-sm); background: var(--md-gray-6); border-radius: 4px;">
                                     <?php echo nl2br(htmlspecialchars($weeklyPlan['should_do'], ENT_QUOTES, 'UTF-8')); ?>
                                 </div>
                                 <?php
@@ -1452,8 +1452,8 @@ renderPageStart('staff', $currentPage, $pageTitle);
                                     <?php echo $label; ?>
                                 </div>
                                 <?php if (!empty($weeklyPlan['should_do_comment'])): ?>
-                                    <div style="font-size: var(--text-footnote); color: #555; margin-top: 8px; padding: var(--spacing-sm); background: var(--apple-bg-secondary); border-left: 3px solid #f39c12; border-radius: 4px;">
-                                        💬 <?php echo nl2br(htmlspecialchars($weeklyPlan['should_do_comment'], ENT_QUOTES, 'UTF-8')); ?>
+                                    <div style="font-size: var(--text-footnote); color: #555; margin-top: 8px; padding: var(--spacing-sm); background: var(--md-bg-secondary); border-left: 3px solid #f39c12; border-radius: 4px;">
+                                        <span class="material-symbols-outlined">chat</span> <?php echo nl2br(htmlspecialchars($weeklyPlan['should_do_comment'], ENT_QUOTES, 'UTF-8')); ?>
                                     </div>
                                 <?php endif; ?>
                             </div>
@@ -1461,9 +1461,9 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
                         <!-- やりたいことの達成度 -->
                         <?php if (!empty($weeklyPlan['want_to_do'])): ?>
-                            <div class="achievement-item" style="margin-bottom: 15px; padding: var(--spacing-md); background: var(--apple-bg-primary); border-radius: var(--radius-sm);">
-                                <div style="font-weight: 600; margin-bottom: 5px; color: var(--text-primary);">💡 やりたいこと</div>
-                                <div style="font-size: var(--text-subhead); margin-bottom: 8px; padding: var(--spacing-sm); background: var(--apple-gray-6); border-radius: 4px;">
+                            <div class="achievement-item" style="margin-bottom: 15px; padding: var(--spacing-md); background: var(--md-bg-primary); border-radius: var(--radius-sm);">
+                                <div style="font-weight: 600; margin-bottom: 5px; color: var(--text-primary);"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">lightbulb</span> やりたいこと</div>
+                                <div style="font-size: var(--text-subhead); margin-bottom: 8px; padding: var(--spacing-sm); background: var(--md-gray-6); border-radius: 4px;">
                                     <?php echo nl2br(htmlspecialchars($weeklyPlan['want_to_do'], ENT_QUOTES, 'UTF-8')); ?>
                                 </div>
                                 <?php
@@ -1475,8 +1475,8 @@ renderPageStart('staff', $currentPage, $pageTitle);
                                     <?php echo $label; ?>
                                 </div>
                                 <?php if (!empty($weeklyPlan['want_to_do_comment'])): ?>
-                                    <div style="font-size: var(--text-footnote); color: #555; margin-top: 8px; padding: var(--spacing-sm); background: var(--apple-bg-secondary); border-left: 3px solid #f39c12; border-radius: 4px;">
-                                        💬 <?php echo nl2br(htmlspecialchars($weeklyPlan['want_to_do_comment'], ENT_QUOTES, 'UTF-8')); ?>
+                                    <div style="font-size: var(--text-footnote); color: #555; margin-top: 8px; padding: var(--spacing-sm); background: var(--md-bg-secondary); border-left: 3px solid #f39c12; border-radius: 4px;">
+                                        <span class="material-symbols-outlined">chat</span> <?php echo nl2br(htmlspecialchars($weeklyPlan['want_to_do_comment'], ENT_QUOTES, 'UTF-8')); ?>
                                     </div>
                                 <?php endif; ?>
                             </div>
@@ -1485,7 +1485,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                         <!-- 各曜日の達成度 -->
                         <?php if (!empty($dailyAchievement)): ?>
                             <div class="daily-achievement-display" style="margin-top: var(--spacing-lg);">
-                                <h4 style="color: var(--text-primary); font-size: var(--text-callout); margin-bottom: 12px;">📅 各曜日の達成度</h4>
+                                <h4 style="color: var(--text-primary); font-size: var(--text-callout); margin-bottom: 12px;"><span class="material-symbols-outlined">event</span> 各曜日の達成度</h4>
                                 <?php
                                 $days = ['月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日', '日曜日'];
                                 $dayKeys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -1497,7 +1497,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                                         $color = $achievementColors[$achievement];
                                         $label = $achievementLabels[$achievement];
                                 ?>
-                                    <div style="margin-bottom: var(--spacing-md); padding: var(--spacing-md); background: var(--apple-bg-primary); border-radius: 6px;">
+                                    <div style="margin-bottom: var(--spacing-md); padding: var(--spacing-md); background: var(--md-bg-primary); border-radius: 6px;">
                                         <div style="display: flex; justify-content: space-between; align-items: center;">
                                             <span style="font-weight: 600; color: var(--text-primary);"><?php echo $days[$index]; ?></span>
                                             <span style="padding: 3px 10px; background: <?php echo $color; ?>; color: white; border-radius: 3px; font-size: var(--text-caption-1); font-weight: 600;">
@@ -1519,8 +1519,8 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
                         <!-- 総合コメント -->
                         <?php if (!empty($weeklyPlan['overall_comment'])): ?>
-                            <div style="margin-top: var(--spacing-lg); padding: 15px; background: var(--apple-bg-primary); border-radius: var(--radius-sm); border-left: 4px solid #4a90e2;">
-                                <div style="font-weight: 600; color: #4a90e2; margin-bottom: 8px;">📝 週全体の総合コメント</div>
+                            <div style="margin-top: var(--spacing-lg); padding: 15px; background: var(--md-bg-primary); border-radius: var(--radius-sm); border-left: 4px solid #4a90e2;">
+                                <div style="font-weight: 600; color: #4a90e2; margin-bottom: 8px;"><span class="material-symbols-outlined">edit_note</span> 週全体の総合コメント</div>
                                 <div style="font-size: var(--text-subhead); color: var(--text-primary); line-height: 1.6;">
                                     <?php echo nl2br(htmlspecialchars($weeklyPlan['overall_comment'], ENT_QUOTES, 'UTF-8')); ?>
                                 </div>
@@ -1534,7 +1534,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         <!-- コメントセクション -->
         <?php if ($weeklyPlan): ?>
             <div class="comments-section">
-                <h3>💬 コメント</h3>
+                <h3><span class="material-symbols-outlined">chat</span> コメント</h3>
 
                 <?php if (!empty($comments)): ?>
                     <?php foreach ($comments as $comment): ?>
@@ -1586,7 +1586,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                     <!-- 今週の目標 -->
                     <?php if (!empty($prevWeekPlan['weekly_goal'])): ?>
                         <div class="eval-item">
-                            <div class="eval-item-header">🎯 今週の目標</div>
+                            <div class="eval-item-header"><span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">target</span> 今週の目標</div>
                             <div class="eval-item-content"><?php echo nl2br(htmlspecialchars($prevWeekPlan['weekly_goal'], ENT_QUOTES, 'UTF-8')); ?></div>
                             <div class="eval-5-scale">
                                 <div class="eval-5-scale-boxes">
@@ -1605,7 +1605,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                     <!-- いっしょに決めた目標 -->
                     <?php if (!empty($prevWeekPlan['shared_goal'])): ?>
                         <div class="eval-item">
-                            <div class="eval-item-header">🤝 いっしょに決めた目標</div>
+                            <div class="eval-item-header"><span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">handshake</span> いっしょに決めた目標</div>
                             <div class="eval-item-content"><?php echo nl2br(htmlspecialchars($prevWeekPlan['shared_goal'], ENT_QUOTES, 'UTF-8')); ?></div>
                             <div class="eval-5-scale">
                                 <div class="eval-5-scale-boxes">
@@ -1624,7 +1624,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                     <!-- やるべきこと -->
                     <?php if (!empty($prevWeekPlan['must_do'])): ?>
                         <div class="eval-item">
-                            <div class="eval-item-header">✅ やるべきこと</div>
+                            <div class="eval-item-header"><span class="material-symbols-outlined">check_circle</span> やるべきこと</div>
                             <div class="eval-item-content"><?php echo nl2br(htmlspecialchars($prevWeekPlan['must_do'], ENT_QUOTES, 'UTF-8')); ?></div>
                             <div class="eval-5-scale">
                                 <div class="eval-5-scale-boxes">
@@ -1643,7 +1643,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                     <!-- やったほうがいいこと -->
                     <?php if (!empty($prevWeekPlan['should_do'])): ?>
                         <div class="eval-item">
-                            <div class="eval-item-header">👍 やったほうがいいこと</div>
+                            <div class="eval-item-header"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">thumb_up</span> やったほうがいいこと</div>
                             <div class="eval-item-content"><?php echo nl2br(htmlspecialchars($prevWeekPlan['should_do'], ENT_QUOTES, 'UTF-8')); ?></div>
                             <div class="eval-5-scale">
                                 <div class="eval-5-scale-boxes">
@@ -1662,7 +1662,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                     <!-- やりたいこと -->
                     <?php if (!empty($prevWeekPlan['want_to_do'])): ?>
                         <div class="eval-item">
-                            <div class="eval-item-header">💡 やりたいこと</div>
+                            <div class="eval-item-header"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">lightbulb</span> やりたいこと</div>
                             <div class="eval-item-content"><?php echo nl2br(htmlspecialchars($prevWeekPlan['want_to_do'], ENT_QUOTES, 'UTF-8')); ?></div>
                             <div class="eval-5-scale">
                                 <div class="eval-5-scale-boxes">
@@ -1692,13 +1692,13 @@ renderPageStart('staff', $currentPage, $pageTitle);
                     ?>
 
                     <?php if ($hasAnyDailyPlan): ?>
-                        <div class="eval-item" style="background: var(--apple-gray-6);">
-                            <div class="eval-item-header" style="font-size: var(--text-callout);">📅 各曜日の計画達成度</div>
+                        <div class="eval-item" style="background: var(--md-gray-6);">
+                            <div class="eval-item-header" style="font-size: var(--text-callout);"><span class="material-symbols-outlined">event</span> 各曜日の計画達成度</div>
                             <?php foreach ($days as $index => $day):
                                 $dayKey = "day_$index";
                                 if (!empty($prevPlanData[$dayKey])):
                             ?>
-                                <div style="margin-bottom: var(--spacing-md); padding: var(--spacing-md); background: var(--apple-bg-primary); border-radius: var(--radius-sm);">
+                                <div style="margin-bottom: var(--spacing-md); padding: var(--spacing-md); background: var(--md-bg-primary); border-radius: var(--radius-sm);">
                                     <div style="font-weight: 600; color: var(--primary-purple); margin-bottom: 8px;"><?php echo $day; ?></div>
                                     <div class="eval-item-content"><?php echo nl2br(htmlspecialchars($prevPlanData[$dayKey], ENT_QUOTES, 'UTF-8')); ?></div>
                                     <div class="eval-5-scale">
@@ -1718,7 +1718,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
                     <!-- 総合コメント -->
                     <div class="achievement-section">
-                        <h4>📝 週全体の総合コメント</h4>
+                        <h4><span class="material-symbols-outlined">edit_note</span> 週全体の総合コメント</h4>
                         <textarea name="overall_comment" class="achievement-comment" style="min-height: 100px;" placeholder="週全体を振り返っての総合コメントを入力してください"></textarea>
                     </div>
 

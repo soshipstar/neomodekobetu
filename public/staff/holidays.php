@@ -76,11 +76,11 @@ renderPageStart('staff', $currentPage, '休日管理');
 }
 .type-regular {
     background: rgba(0, 122, 255, 0.15);
-    color: var(--apple-blue);
+    color: var(--md-blue);
 }
 .type-special {
     background: rgba(255, 149, 0, 0.15);
-    color: var(--apple-orange);
+    color: var(--md-orange);
 }
 </style>
 
@@ -122,11 +122,11 @@ renderPageStart('staff', $currentPage, '休日管理');
 <!-- 新規登録フォーム -->
 <div class="card" style="margin-bottom: var(--spacing-lg);">
     <div class="card-body">
-        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-blue);">新規休日登録</h2>
+        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--md-blue);">新規休日登録</h2>
 
         <!-- タブ切り替え -->
         <div class="holiday-tabs" style="display: flex; gap: 10px; margin-bottom: 20px;">
-            <button type="button" class="tab-btn active" data-tab="regular" style="flex: 1; padding: 12px; border: 2px solid var(--apple-blue); background: var(--apple-blue); color: white; border-radius: 8px; cursor: pointer; font-weight: 600;">
+            <button type="button" class="tab-btn active" data-tab="regular" style="flex: 1; padding: 12px; border: 2px solid var(--md-blue); background: var(--md-blue); color: white; border-radius: 8px; cursor: pointer; font-weight: 600;">
                 定期休日（毎週の休み）
             </button>
             <button type="button" class="tab-btn" data-tab="special" style="flex: 1; padding: 12px; border: 2px solid #ddd; background: white; color: #333; border-radius: 8px; cursor: pointer; font-weight: 600;">
@@ -209,9 +209,9 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
             b.style.borderColor = '#ddd';
             b.classList.remove('active');
         });
-        btn.style.background = 'var(--apple-blue)';
+        btn.style.background = 'var(--md-blue)';
         btn.style.color = 'white';
-        btn.style.borderColor = 'var(--apple-blue)';
+        btn.style.borderColor = 'var(--md-blue)';
         btn.classList.add('active');
 
         // フォーム切り替え
@@ -229,7 +229,7 @@ document.querySelectorAll('input[name="days_of_week[]"]').forEach(checkbox => {
         const label = this.closest('label');
         if (this.checked) {
             label.style.background = '#e3f2fd';
-            label.style.borderColor = 'var(--apple-blue)';
+            label.style.borderColor = 'var(--md-blue)';
         } else {
             label.style.background = 'white';
             label.style.borderColor = '#ddd';
@@ -241,7 +241,7 @@ document.querySelectorAll('input[name="days_of_week[]"]').forEach(checkbox => {
 <!-- 検索フォーム -->
 <div class="card" style="margin-bottom: var(--spacing-lg);">
     <div class="card-body">
-        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-blue);">休日検索</h2>
+        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--md-blue);">休日検索</h2>
         <form method="GET" action="holidays.php">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div class="form-group">
@@ -268,7 +268,7 @@ document.querySelectorAll('input[name="days_of_week[]"]').forEach(checkbox => {
 <!-- 休日一覧 -->
 <div class="card">
     <div class="card-body">
-        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-blue);">登録済み休日一覧</h2>
+        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--md-blue);">登録済み休日一覧</h2>
 
         <?php if (!empty($searchKeyword) || !empty($searchStartDate) || !empty($searchEndDate)): ?>
             <div class="alert alert-info">

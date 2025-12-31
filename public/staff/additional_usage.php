@@ -38,8 +38,7 @@ if ($classroomId) {
                s.scheduled_sunday, s.scheduled_monday, s.scheduled_tuesday,
                s.scheduled_wednesday, s.scheduled_thursday, s.scheduled_friday, s.scheduled_saturday
         FROM students s
-        INNER JOIN users u ON s.guardian_id = u.id
-        WHERE s.is_active = 1 AND u.classroom_id = ?
+        WHERE s.is_active = 1 AND s.classroom_id = ?
         ORDER BY s.student_name
     ");
     $stmt->execute([$classroomId]);
@@ -130,7 +129,7 @@ renderPageStart('staff', $currentPage, '利用日変更');
 
 <style>
 .student-selector {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-lg);
@@ -140,14 +139,14 @@ renderPageStart('staff', $currentPage, '利用日変更');
 .student-selector select {
     width: 100%;
     padding: var(--spacing-md);
-    border: 1px solid var(--apple-gray-4);
+    border: 1px solid var(--md-gray-4);
     border-radius: var(--radius-sm);
     font-size: var(--text-body);
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
 }
 
 .calendar-section {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
@@ -174,7 +173,7 @@ renderPageStart('staff', $currentPage, '利用日変更');
 
 .calendar-nav a {
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-sm);
     text-decoration: none;
     color: var(--text-primary);
@@ -182,20 +181,20 @@ renderPageStart('staff', $currentPage, '利用日変更');
 }
 
 .calendar-nav a:hover {
-    background: var(--apple-gray-5);
+    background: var(--md-gray-5);
 }
 
 .calendar {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 2px;
-    background: var(--apple-gray-5);
+    background: var(--md-gray-5);
     border-radius: var(--radius-sm);
     overflow: hidden;
 }
 
 .calendar-day-header {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     padding: var(--spacing-md);
     text-align: center;
     font-weight: 600;
@@ -203,18 +202,18 @@ renderPageStart('staff', $currentPage, '利用日変更');
     color: var(--text-secondary);
 }
 
-.calendar-day-header.sunday { color: var(--apple-red); }
-.calendar-day-header.saturday { color: var(--apple-blue); }
+.calendar-day-header.sunday { color: var(--md-red); }
+.calendar-day-header.saturday { color: var(--md-blue); }
 
 .calendar-day {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     min-height: 100px;
     padding: var(--spacing-sm);
     position: relative;
 }
 
 .calendar-day.empty {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
 }
 
 .calendar-day.holiday {
@@ -226,7 +225,7 @@ renderPageStart('staff', $currentPage, '利用日変更');
 }
 
 .calendar-day.today {
-    border: 2px solid var(--apple-green);
+    border: 2px solid var(--md-green);
 }
 
 .day-number {
@@ -235,8 +234,8 @@ renderPageStart('staff', $currentPage, '利用日変更');
     margin-bottom: var(--spacing-sm);
 }
 
-.day-number.sunday { color: var(--apple-red); }
-.day-number.saturday { color: var(--apple-blue); }
+.day-number.sunday { color: var(--md-red); }
+.day-number.saturday { color: var(--md-blue); }
 
 .day-labels {
     display: flex;
@@ -253,22 +252,22 @@ renderPageStart('staff', $currentPage, '利用日変更');
 
 .day-label.regular {
     background: rgba(0, 122, 255, 0.15);
-    color: var(--apple-blue);
+    color: var(--md-blue);
 }
 
 .day-label.holiday {
     background: rgba(255, 59, 48, 0.15);
-    color: var(--apple-red);
+    color: var(--md-red);
 }
 
 .day-label.additional {
     background: rgba(52, 199, 89, 0.15);
-    color: var(--apple-green);
+    color: var(--md-green);
 }
 
 .day-label.cancelled {
     background: rgba(255, 59, 48, 0.15);
-    color: var(--apple-red);
+    color: var(--md-red);
 }
 
 .usage-checkbox {
@@ -282,7 +281,7 @@ renderPageStart('staff', $currentPage, '利用日変更');
     width: 20px;
     height: 20px;
     cursor: pointer;
-    accent-color: var(--apple-green);
+    accent-color: var(--md-green);
 }
 
 .usage-checkbox label {
@@ -292,7 +291,7 @@ renderPageStart('staff', $currentPage, '利用日変更');
 }
 
 .usage-checkbox.checked label {
-    color: var(--apple-green);
+    color: var(--md-green);
     font-weight: 600;
 }
 
@@ -322,7 +321,7 @@ renderPageStart('staff', $currentPage, '利用日変更');
     bottom: 20px;
     right: 20px;
     padding: var(--spacing-md) var(--spacing-xl);
-    background: var(--apple-green);
+    background: var(--md-green);
     color: white;
     border: none;
     border-radius: var(--radius-md);
@@ -346,7 +345,7 @@ renderPageStart('staff', $currentPage, '利用日変更');
     bottom: 80px;
     right: 20px;
     padding: var(--spacing-md) var(--spacing-lg);
-    background: var(--apple-gray-1);
+    background: var(--md-gray-1);
     color: white;
     border-radius: var(--radius-md);
     font-size: var(--text-subhead);
@@ -362,11 +361,11 @@ renderPageStart('staff', $currentPage, '利用日変更');
 }
 
 .toast.success {
-    background: var(--apple-green);
+    background: var(--md-green);
 }
 
 .toast.error {
-    background: var(--apple-red);
+    background: var(--md-red);
 }
 
 @media (max-width: 768px) {
@@ -505,15 +504,15 @@ renderPageStart('staff', $currentPage, '利用日変更');
 
     <div class="legend">
         <div class="legend-item">
-            <div class="legend-box" style="background: rgba(0, 122, 255, 0.15); border: 1px solid var(--apple-blue);"></div>
+            <div class="legend-box" style="background: rgba(0, 122, 255, 0.15); border: 1px solid var(--md-blue);"></div>
             <span>通常利用日</span>
         </div>
         <div class="legend-item">
-            <div class="legend-box" style="background: rgba(52, 199, 89, 0.15); border: 1px solid var(--apple-green);"></div>
+            <div class="legend-box" style="background: rgba(52, 199, 89, 0.15); border: 1px solid var(--md-green);"></div>
             <span>追加利用</span>
         </div>
         <div class="legend-item">
-            <div class="legend-box" style="background: rgba(255, 59, 48, 0.15); border: 1px solid var(--apple-red);"></div>
+            <div class="legend-box" style="background: rgba(255, 59, 48, 0.15); border: 1px solid var(--md-red);"></div>
             <span>キャンセル / 休日</span>
         </div>
     </div>

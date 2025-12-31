@@ -25,7 +25,7 @@ try {
             $eventDate = $_POST['event_date'];
             $eventName = trim($_POST['event_name']);
             $eventDescription = trim($_POST['event_description'] ?? '');
-            $eventColor = $_POST['event_color'] ?? '#28a745';
+            $eventColor = $_POST['event_color'] ?? '#388E3C';
             $targetAudience = $_POST['target_audience'] ?? 'all';
             $createdBy = $_SESSION['user_id'];
 
@@ -40,7 +40,7 @@ try {
 
             // 色コードの検証（#から始まる6桁の16進数）
             if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $eventColor)) {
-                $eventColor = '#28a745'; // デフォルト色
+                $eventColor = '#388E3C'; // デフォルト色
             }
 
             // 対象者の妥当性チェック

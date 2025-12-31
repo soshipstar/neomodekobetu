@@ -70,11 +70,11 @@ renderPageStart('admin', $currentPage, '休日管理');
 }
 .type-regular {
     background: rgba(0, 122, 255, 0.15);
-    color: var(--apple-blue);
+    color: var(--md-blue);
 }
 .type-special {
     background: rgba(255, 149, 0, 0.15);
-    color: var(--apple-orange);
+    color: var(--md-orange);
 }
 </style>
 
@@ -116,7 +116,7 @@ renderPageStart('admin', $currentPage, '休日管理');
 <!-- 新規登録フォーム -->
 <div class="card" style="margin-bottom: var(--spacing-lg);">
     <div class="card-body">
-        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-purple);">新規休日登録</h2>
+        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--md-purple);">新規休日登録</h2>
         <form action="holidays_save.php" method="POST">
             <input type="hidden" name="action" value="create">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
@@ -147,7 +147,7 @@ renderPageStart('admin', $currentPage, '休日管理');
 <!-- 検索フォーム -->
 <div class="card" style="margin-bottom: var(--spacing-lg);">
     <div class="card-body">
-        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-purple);">休日検索</h2>
+        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--md-purple);">休日検索</h2>
         <form method="GET" action="holidays.php">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div class="form-group">
@@ -174,7 +174,7 @@ renderPageStart('admin', $currentPage, '休日管理');
 <!-- 休日一覧 -->
 <div class="card">
     <div class="card-body">
-        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-purple);">登録済み休日一覧</h2>
+        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--md-purple);">登録済み休日一覧</h2>
 
         <?php if (!empty($searchKeyword) || !empty($searchStartDate) || !empty($searchEndDate)): ?>
             <div class="alert alert-info">

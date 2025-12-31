@@ -11,9 +11,9 @@ $isMaster = $isMaster ?? false;
 
 // ロール別カラーとアイコン（ミニマム版：3ロールのみ）
 $roleConfig = [
-    'admin' => ['color' => 'purple', 'icon' => '⚙️'],
-    'staff' => ['color' => 'blue', 'icon' => '👨‍💼'],
-    'guardian' => ['color' => 'green', 'icon' => '📖'],
+    'admin' => ['color' => 'purple', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">settings</span>'],
+    'staff' => ['color' => 'blue', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">person</span>'],
+    'guardian' => ['color' => 'green', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">person</span>'],
 ];
 
 $config = $roleConfig[$role] ?? $roleConfig['staff'];

@@ -85,22 +85,22 @@ renderPageStart('guardian', $currentPage, 'チャット', [
     flex-direction: column;
     height: calc(100vh - 200px);
     min-height: 400px;
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-lg);
     overflow: hidden;
 }
 
 .chat-student-selector {
     padding: 16px;
-    background: var(--apple-bg-primary);
-    border-bottom: 1px solid var(--apple-border);
+    background: var(--md-bg-primary);
+    border-bottom: 1px solid var(--md-border);
 }
 
 .chat-student-selector select {
     width: 100%;
     padding: 12px;
     border-radius: 8px;
-    border: 1px solid var(--apple-border);
+    border: 1px solid var(--md-border);
     font-size: 14px;
 }
 
@@ -123,14 +123,14 @@ renderPageStart('guardian', $currentPage, 'チャット', [
 
 .message.sent {
     align-self: flex-end;
-    background: linear-gradient(135deg, #34c759, #30d158);
+    background: linear-gradient(135deg, #4CAF50, #66BB6A);
     color: white;
     border-bottom-right-radius: 4px;
 }
 
 .message.received {
     align-self: flex-start;
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     color: var(--text-primary);
     border-bottom-left-radius: 4px;
     box-shadow: 0 1px 2px rgba(0,0,0,0.1);
@@ -144,15 +144,15 @@ renderPageStart('guardian', $currentPage, 'チャット', [
 
 .message-sender {
     font-size: 12px;
-    color: var(--apple-blue);
+    color: var(--md-blue);
     margin-bottom: 4px;
     font-weight: 500;
 }
 
 .chat-input-area {
     padding: 16px;
-    background: var(--apple-bg-primary);
-    border-top: 1px solid var(--apple-border);
+    background: var(--md-bg-primary);
+    border-top: 1px solid var(--md-border);
 }
 
 .chat-input-form {
@@ -165,7 +165,7 @@ renderPageStart('guardian', $currentPage, 'チャット', [
     flex: 1;
     padding: 12px;
     border-radius: 20px;
-    border: 1px solid var(--apple-border);
+    border: 1px solid var(--md-border);
     resize: none;
     font-size: 14px;
     max-height: 100px;
@@ -173,7 +173,7 @@ renderPageStart('guardian', $currentPage, 'チャット', [
 
 .chat-input-form button {
     padding: 12px 24px;
-    background: linear-gradient(135deg, #34c759, #30d158);
+    background: linear-gradient(135deg, #4CAF50, #66BB6A);
     color: white;
     border: none;
     border-radius: 20px;
@@ -219,7 +219,7 @@ renderPageStart('guardian', $currentPage, 'チャット', [
     <!-- メッセージエリア -->
     <div class="messages-area" id="messagesArea">
         <div class="chat-empty-state">
-            <div class="chat-empty-state-icon">💬</div>
+            <div class="chat-empty-state-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">chat</span></div>
             <h3>メッセージを読み込み中...</h3>
         </div>
     </div>
@@ -285,7 +285,7 @@ async function loadMessages() {
         } else if (lastMessageId === 0) {
             document.getElementById('messagesArea').innerHTML = `
                 <div class="chat-empty-state">
-                    <div class="chat-empty-state-icon">💬</div>
+                    <div class="chat-empty-state-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">chat</span></div>
                     <h3>メッセージはまだありません</h3>
                     <p>スタッフにメッセージを送信してみましょう</p>
                 </div>

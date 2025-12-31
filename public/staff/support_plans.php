@@ -97,7 +97,7 @@ renderPageStart('staff', $currentPage, '支援案一覧');
 
 <style>
 .plan-card {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
     margin-bottom: 15px;
@@ -135,7 +135,7 @@ renderPageStart('staff', $currentPage, '支援案一覧');
 .usage-badge {
     display: inline-block;
     padding: 4px 12px;
-    background: var(--apple-purple);
+    background: var(--md-purple);
     color: white;
     border-radius: var(--radius-lg);
     font-size: var(--text-caption-1);
@@ -148,7 +148,7 @@ renderPageStart('staff', $currentPage, '支援案一覧');
 
 .plan-section-title {
     font-weight: 600;
-    color: var(--apple-purple);
+    color: var(--md-purple);
     font-size: var(--text-footnote);
     margin-bottom: 4px;
 }
@@ -164,11 +164,11 @@ renderPageStart('staff', $currentPage, '支援案一覧');
     gap: 10px;
     margin-top: 15px;
     padding-top: 15px;
-    border-top: 1px solid var(--apple-gray-5);
+    border-top: 1px solid var(--md-gray-5);
 }
 
 .search-box {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-lg);
@@ -183,7 +183,7 @@ renderPageStart('staff', $currentPage, '支援案一覧');
 
 .quick-link {
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-sm);
     text-decoration: none;
     color: var(--text-primary);
@@ -193,7 +193,7 @@ renderPageStart('staff', $currentPage, '支援案一覧');
     display: inline-block;
     margin-bottom: var(--spacing-lg);
 }
-.quick-link:hover { background: var(--apple-gray-5); }
+.quick-link:hover { background: var(--md-gray-5); }
 
 @media (max-width: 768px) {
     .search-grid { grid-template-columns: 1fr; }
@@ -207,7 +207,7 @@ renderPageStart('staff', $currentPage, '支援案一覧');
     justify-content: center;
     width: 20px;
     height: 20px;
-    background: var(--apple-gray-4);
+    background: var(--md-gray-4);
     color: white;
     border-radius: 50%;
     font-size: 13px;
@@ -219,7 +219,7 @@ renderPageStart('staff', $currentPage, '支援案一覧');
     vertical-align: middle;
 }
 .help-icon:hover {
-    background: var(--apple-blue);
+    background: var(--md-blue);
     transform: scale(1.1);
 }
 .help-tooltip {
@@ -229,7 +229,7 @@ renderPageStart('staff', $currentPage, '支援案一覧');
     right: 0;
     margin-top: 10px;
     padding: 16px 18px;
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg);
@@ -257,7 +257,7 @@ renderPageStart('staff', $currentPage, '支援案一覧');
     right: 20px;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-bottom: 5px solid var(--apple-bg-primary);
+    border-bottom: 5px solid var(--md-bg-primary);
 }
 .help-icon.active .help-tooltip {
     display: block;
@@ -277,7 +277,7 @@ renderPageStart('staff', $currentPage, '支援案一覧');
 }
 .help-tooltip .help-item-title {
     font-weight: 600;
-    color: var(--apple-purple);
+    color: var(--md-purple);
     margin-bottom: 2px;
 }
 .help-tooltip .help-item-desc {
@@ -292,7 +292,7 @@ renderPageStart('staff', $currentPage, '支援案一覧');
         <div style="display: flex; gap: 10px; margin-top: var(--spacing-md); flex-wrap: wrap; align-items: center;">
             <a href="support_plan_form.php" class="btn btn-success">+ 新しい支援案を作成</a>
             <a href="daily_routines_settings.php" class="btn btn-primary" style="background: var(--primary-purple);">毎日の支援を設定</a>
-            <a href="tag_settings.php" class="btn btn-secondary" style="background: var(--apple-orange);">タグを設定</a>
+            <a href="tag_settings.php" class="btn btn-secondary" style="background: var(--md-orange);">タグを設定</a>
             <span class="help-icon" onclick="toggleHelp(this, event)">?
                 <div class="help-tooltip">
                     <h4>支援案管理の使い方</h4>
@@ -328,7 +328,7 @@ renderPageStart('staff', $currentPage, '支援案一覧');
 
 <!-- 検索フォーム -->
 <div class="search-box">
-    <h3 style="margin-bottom: 15px; color: var(--text-primary);">🔍 支援案を検索</h3>
+    <h3 style="margin-bottom: 15px; color: var(--text-primary);"><span class="material-symbols-outlined">search</span> 支援案を検索</h3>
     <form method="GET">
         <div class="search-grid">
             <div class="form-group">
@@ -397,8 +397,8 @@ renderPageStart('staff', $currentPage, '支援案一覧');
                 <div style="flex: 1;">
                     <div class="plan-title">
                         <?= htmlspecialchars($plan['activity_name']) ?>
-                        <span style="font-size: var(--text-callout); color: var(--apple-purple); font-weight: normal; margin-left: 10px;">
-                            📅 <?= date('Y年n月j日', strtotime($plan['activity_date'])) ?>
+                        <span style="font-size: var(--text-callout); color: var(--md-purple); font-weight: normal; margin-left: 10px;">
+                            <span class="material-symbols-outlined">event</span> <?= date('Y年n月j日', strtotime($plan['activity_date'])) ?>
                         </span>
                     </div>
                     <div class="plan-meta">

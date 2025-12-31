@@ -1,6 +1,6 @@
 /**
  * スタッフ用CSS
- * アクセントカラー: 青 (--apple-blue)
+ * アクセントカラー: 青 (--md-blue)
  */
 
 /* ========================================
@@ -9,13 +9,13 @@
 
 .role-staff .sidebar-menu a:hover {
     background: rgba(0, 122, 255, 0.1);
-    border-left-color: var(--apple-blue);
+    border-left-color: var(--md-blue);
 }
 
 .role-staff .sidebar-menu a.active {
     background: rgba(0, 122, 255, 0.15);
-    border-left-color: var(--apple-blue);
-    color: var(--apple-blue);
+    border-left-color: var(--md-blue);
+    color: var(--md-blue);
 }
 
 .role-staff .sidebar-user-info {
@@ -24,15 +24,15 @@
 
 .role-staff .user-info-box {
     background: rgba(0, 122, 255, 0.1);
-    color: var(--apple-blue);
+    color: var(--md-blue);
 }
 
 .role-staff .stat-card .number {
-    color: var(--apple-blue);
+    color: var(--md-blue);
 }
 
 .role-staff .menu-card h3 {
-    color: var(--apple-blue);
+    color: var(--md-blue);
 }
 
 /* ========================================
@@ -41,7 +41,7 @@
 
 /* 活動カレンダー */
 .activity-calendar {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border-radius: var(--radius-md);
     padding: var(--spacing-lg);
     box-shadow: var(--shadow-sm);
@@ -95,7 +95,7 @@
 }
 
 .calendar-day.today {
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
 }
 
@@ -109,21 +109,21 @@
     bottom: 4px;
     width: 6px;
     height: 6px;
-    background: var(--apple-green);
+    background: var(--md-green);
     border-radius: 50%;
 }
 
 .calendar-day.holiday {
-    color: var(--apple-red);
+    color: var(--md-red);
 }
 
 .calendar-day.other-month {
-    color: var(--apple-gray-3);
+    color: var(--md-gray-3);
 }
 
 /* 生徒選択リスト */
 .student-list {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border-radius: var(--radius-md);
     overflow: hidden;
 }
@@ -132,7 +132,7 @@
     display: flex;
     align-items: center;
     padding: var(--spacing-md) var(--spacing-lg);
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
     cursor: pointer;
     transition: background var(--duration-fast) var(--ease-out);
 }
@@ -147,14 +147,14 @@
 
 .student-item.selected {
     background: rgba(0, 122, 255, 0.1);
-    border-left: 3px solid var(--apple-blue);
+    border-left: 3px solid var(--md-blue);
 }
 
 .student-avatar {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: var(--apple-gray-5);
+    background: var(--md-gray-5);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -184,7 +184,7 @@
     min-width: 20px;
     height: 20px;
     padding: 0 6px;
-    background: var(--apple-red);
+    background: var(--md-red);
     color: white;
     border-radius: var(--radius-full);
     font-size: 11px;
@@ -193,7 +193,7 @@
 
 /* 未読メッセージバッジ */
 .unread-badge {
-    background: var(--apple-blue);
+    background: var(--md-blue);
 }
 
 /* かけはしステータス */
@@ -209,15 +209,15 @@
 
 .kakehashi-status.completed {
     background: rgba(52, 199, 89, 0.15);
-    color: var(--apple-green);
+    color: var(--md-green);
 }
 
 .kakehashi-status.pending {
     background: rgba(255, 149, 0, 0.15);
-    color: var(--apple-orange);
+    color: var(--md-orange);
 }
 
 .kakehashi-status.not-started {
     background: rgba(142, 142, 147, 0.15);
-    color: var(--apple-gray-2);
+    color: var(--md-gray-2);
 }

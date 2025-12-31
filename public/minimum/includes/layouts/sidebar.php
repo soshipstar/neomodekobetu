@@ -13,53 +13,53 @@ $isMaster = function_exists('isMasterAdmin') ? isMasterAdmin() : false;
 // ロール別メニュー定義（ミニマム版）
 $menuConfig = [
     'admin' => [
-        ['page' => 'index', 'icon' => '🏠', 'label' => 'ダッシュボード', 'url' => '/minimum/admin/index.php'],
+        ['page' => 'index', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">home</span>', 'label' => 'ダッシュボード', 'url' => '/minimum/admin/index.php'],
         // 施設管理者専用（マスターには非表示）
-        ['page' => 'students', 'icon' => '👥', 'label' => '生徒管理', 'url' => '/minimum/admin/students.php', 'non_master' => true],
-        ['page' => 'guardians', 'icon' => '👤', 'label' => '保護者管理', 'url' => '/minimum/admin/guardians.php', 'non_master' => true],
-        ['page' => 'staff_management', 'icon' => '👨‍💼', 'label' => 'スタッフ管理', 'url' => '/minimum/admin/staff_management.php', 'non_master' => true],
+        ['page' => 'students', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">group</span>', 'label' => '生徒管理', 'url' => '/minimum/admin/students.php', 'non_master' => true],
+        ['page' => 'guardians', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">person</span>', 'label' => '保護者管理', 'url' => '/minimum/admin/guardians.php', 'non_master' => true],
+        ['page' => 'staff_management', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">badge</span>', 'label' => 'スタッフ管理', 'url' => '/minimum/admin/staff_management.php', 'non_master' => true],
         // マスター専用
-        ['page' => 'classrooms', 'icon' => '🏢', 'label' => '教室管理', 'url' => '/minimum/admin/classrooms.php', 'master_only' => true],
-        ['page' => 'admin_accounts', 'icon' => '👑', 'label' => '管理者アカウント', 'url' => '/minimum/admin/admin_accounts.php', 'master_only' => true],
-        ['page' => 'staff_accounts', 'icon' => '👔', 'label' => 'スタッフアカウント', 'url' => '/minimum/admin/staff_accounts.php', 'master_only' => true],
+        ['page' => 'classrooms', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">apartment</span>', 'label' => '教室管理', 'url' => '/minimum/admin/classrooms.php', 'master_only' => true],
+        ['page' => 'admin_accounts', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">shield_person</span>', 'label' => '管理者アカウント', 'url' => '/minimum/admin/admin_accounts.php', 'master_only' => true],
+        ['page' => 'staff_accounts', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">work</span>', 'label' => 'スタッフアカウント', 'url' => '/minimum/admin/staff_accounts.php', 'master_only' => true],
     ],
     'staff' => [
         // ダッシュボード
-        ['page' => 'index', 'icon' => '🏠', 'label' => 'ダッシュボード', 'url' => '/minimum/staff/index.php'],
+        ['page' => 'index', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">home</span>', 'label' => 'ダッシュボード', 'url' => '/minimum/staff/index.php'],
         // チャット
         ['type' => 'divider', 'label' => 'チャット'],
-        ['page' => 'chat', 'icon' => '👨‍👩‍👧', 'label' => '保護者チャット', 'url' => '/minimum/staff/chat.php'],
+        ['page' => 'chat', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">chat</span>', 'label' => '保護者チャット', 'url' => '/minimum/staff/chat.php'],
         // かけはし
         ['type' => 'divider', 'label' => 'かけはし'],
-        ['page' => 'kakehashi_staff', 'icon' => '🌉', 'label' => 'かけはし（職員）', 'url' => '/minimum/staff/kakehashi_staff.php'],
-        ['page' => 'kakehashi_guardian_view', 'icon' => '📖', 'label' => 'かけはし（保護者）', 'url' => '/minimum/staff/kakehashi_guardian_view.php'],
+        ['page' => 'kakehashi_staff', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">handshake</span>', 'label' => 'かけはし（職員）', 'url' => '/minimum/staff/kakehashi_staff.php'],
+        ['page' => 'kakehashi_guardian_view', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">menu_book</span>', 'label' => 'かけはし（保護者）', 'url' => '/minimum/staff/kakehashi_guardian_view.php'],
         // 計画・支援
         ['type' => 'divider', 'label' => '計画・支援'],
-        ['page' => 'kobetsu_plan', 'icon' => '📋', 'label' => '個別支援計画', 'url' => '/minimum/staff/kobetsu_plan.php'],
-        ['page' => 'kobetsu_monitoring', 'icon' => '📊', 'label' => 'モニタリング', 'url' => '/minimum/staff/kobetsu_monitoring.php'],
+        ['page' => 'kobetsu_plan', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">assignment</span>', 'label' => '個別支援計画', 'url' => '/minimum/staff/kobetsu_plan.php'],
+        ['page' => 'kobetsu_monitoring', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">monitoring</span>', 'label' => 'モニタリング', 'url' => '/minimum/staff/kobetsu_monitoring.php'],
         // 管理
         ['type' => 'divider', 'label' => '管理'],
-        ['page' => 'students', 'icon' => '👥', 'label' => '生徒管理', 'url' => '/minimum/staff/students.php'],
-        ['page' => 'guardians', 'icon' => '👤', 'label' => '保護者管理', 'url' => '/minimum/staff/guardians.php'],
+        ['page' => 'students', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">group</span>', 'label' => '生徒管理', 'url' => '/minimum/staff/students.php'],
+        ['page' => 'guardians', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">person</span>', 'label' => '保護者管理', 'url' => '/minimum/staff/guardians.php'],
         // ヘルプ
         ['type' => 'divider', 'label' => 'ヘルプ'],
-        ['page' => 'guide', 'icon' => '📘', 'label' => '業務フローガイド', 'url' => '/minimum/staff/guide.php'],
+        ['page' => 'guide', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">auto_stories</span>', 'label' => '業務フローガイド', 'url' => '/minimum/staff/guide.php'],
     ],
     'guardian' => [
-        ['page' => 'dashboard', 'icon' => '🏠', 'label' => 'ダッシュボード', 'url' => '/minimum/guardian/dashboard.php'],
-        ['page' => 'chat', 'icon' => '💬', 'label' => 'チャット', 'url' => '/minimum/guardian/chat.php'],
-        ['page' => 'kakehashi', 'icon' => '🌉', 'label' => 'かけはし入力', 'url' => '/minimum/guardian/kakehashi.php'],
-        ['page' => 'kakehashi_history', 'icon' => '📚', 'label' => 'かけはし履歴', 'url' => '/minimum/guardian/kakehashi_history.php'],
-        ['page' => 'support_plans', 'icon' => '📋', 'label' => '個別支援計画書', 'url' => '/minimum/guardian/support_plans.php'],
-        ['page' => 'monitoring', 'icon' => '📊', 'label' => 'モニタリング表', 'url' => '/minimum/guardian/monitoring.php'],
+        ['page' => 'dashboard', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">home</span>', 'label' => 'ダッシュボード', 'url' => '/minimum/guardian/dashboard.php'],
+        ['page' => 'chat', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">chat</span>', 'label' => 'チャット', 'url' => '/minimum/guardian/chat.php'],
+        ['page' => 'kakehashi', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">handshake</span>', 'label' => 'かけはし入力', 'url' => '/minimum/guardian/kakehashi.php'],
+        ['page' => 'kakehashi_history', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">history</span>', 'label' => 'かけはし履歴', 'url' => '/minimum/guardian/kakehashi_history.php'],
+        ['page' => 'support_plans', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">assignment</span>', 'label' => '個別支援計画書', 'url' => '/minimum/guardian/support_plans.php'],
+        ['page' => 'monitoring', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">monitoring</span>', 'label' => 'モニタリング表', 'url' => '/minimum/guardian/monitoring.php'],
     ],
 ];
 
 // ロール別タイトルとカラー（ミニマム版：3ロールのみ）
 $roleConfig = [
-    'admin' => ['title' => '管理者メニュー', 'color' => 'purple', 'icon' => '⚙️'],
-    'staff' => ['title' => 'スタッフメニュー', 'color' => 'blue', 'icon' => '👨‍💼'],
-    'guardian' => ['title' => '保護者メニュー', 'color' => 'green', 'icon' => '📖'],
+    'admin' => ['title' => '管理者メニュー', 'color' => 'purple', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">settings</span>'],
+    'staff' => ['title' => 'スタッフメニュー', 'color' => 'blue', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">person</span>'],
+    'guardian' => ['title' => '保護者メニュー', 'color' => 'green', 'icon' => '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">person</span>'],
 ];
 
 $config = $roleConfig[$role] ?? $roleConfig['staff'];

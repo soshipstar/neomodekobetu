@@ -169,7 +169,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .form-container {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: var(--spacing-2xl);
             border-radius: var(--radius-md);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -191,7 +191,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .form-group label .required {
-            color: var(--apple-red);
+            color: var(--md-red);
             margin-left: 4px;
         }
 
@@ -199,7 +199,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         .form-group textarea {
             width: 100%;
             padding: var(--spacing-md);
-            border: 1px solid var(--apple-gray-5);
+            border: 1px solid var(--md-gray-5);
             border-radius: var(--radius-sm);
             font-size: var(--text-subhead);
             font-family: inherit;
@@ -233,7 +233,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         .submit-btn {
             flex: 1;
             padding: 15px 30px;
-            background: var(--apple-green);
+            background: var(--md-green);
             color: white;
             border: none;
             border-radius: var(--radius-sm);
@@ -243,13 +243,13 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .submit-btn:hover {
-            background: var(--apple-green);
+            background: var(--md-green);
         }
 
         .cancel-btn {
             flex: 1;
             padding: 15px 30px;
-            background: var(--apple-gray);
+            background: var(--md-gray);
             color: white;
             border: none;
             border-radius: var(--radius-sm);
@@ -262,7 +262,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .cancel-btn:hover {
-            background: var(--apple-gray);
+            background: var(--md-gray);
         }
 
         .info-box {
@@ -276,12 +276,12 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .error-message {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             color: #721c24;
             padding: var(--spacing-md);
             border-radius: var(--radius-sm);
             margin-bottom: var(--spacing-lg);
-            border-left: 4px solid var(--apple-red);
+            border-left: 4px solid var(--md-red);
         }
 
         @keyframes spin {
@@ -308,7 +308,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .routine-btn.added {
-            background: var(--apple-green);
+            background: var(--md-green);
         }
 
         .no-routines {
@@ -323,8 +323,8 @@ renderPageStart('staff', $currentPage, $pageTitle);
             align-items: center;
             gap: 10px;
             padding: 12px;
-            background: var(--apple-bg-primary);
-            border: 1px solid var(--apple-gray-5);
+            background: var(--md-bg-primary);
+            border: 1px solid var(--md-gray-5);
             border-radius: var(--radius-sm);
             margin-bottom: 8px;
             transition: all var(--duration-fast) var(--ease-out);
@@ -342,7 +342,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .schedule-item.main-activity {
-            border-left: 4px solid var(--apple-blue);
+            border-left: 4px solid var(--md-blue);
         }
 
         .schedule-order {
@@ -364,7 +364,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .schedule-item.main-activity .schedule-order {
-            background: var(--apple-blue);
+            background: var(--md-blue);
         }
 
         /* 活動スケジュールセクション全体 */
@@ -411,7 +411,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         .schedule-type {
             font-size: var(--text-caption-1);
             color: var(--text-secondary);
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             padding: 2px 8px;
             border-radius: 4px;
         }
@@ -425,7 +425,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         .schedule-duration input {
             width: 60px;
             padding: 4px 8px;
-            border: 1px solid var(--apple-gray-5);
+            border: 1px solid var(--md-gray-5);
             border-radius: 4px;
             text-align: center;
         }
@@ -444,12 +444,12 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .move-up-btn, .move-down-btn {
-            background: var(--apple-gray-5);
+            background: var(--md-gray-5);
             color: var(--text-primary);
         }
 
         .remove-btn {
-            background: var(--apple-red);
+            background: var(--md-red);
             color: white;
         }
 
@@ -513,12 +513,12 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .time-warning {
-            color: var(--apple-red);
+            color: var(--md-red);
             font-weight: 600;
         }
 
         .time-ok {
-            color: var(--apple-green);
+            color: var(--md-green);
             font-weight: 600;
         }
     </style>
@@ -557,7 +557,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
                 <!-- 過去の支援案選択モーダル -->
                 <div id="copyModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; overflow-y: auto; padding: 20px; box-sizing: border-box;">
-                    <div style="background: var(--apple-bg-primary); max-width: 900px; margin: 0 auto; border-radius: var(--radius-md); padding: var(--spacing-2xl); max-height: calc(100vh - 40px); overflow-y: auto; box-sizing: border-box;">
+                    <div style="background: var(--md-bg-primary); max-width: 900px; margin: 0 auto; border-radius: var(--radius-md); padding: var(--spacing-2xl); max-height: calc(100vh - 40px); overflow-y: auto; box-sizing: border-box;">
                         <h2 style="margin-bottom: var(--spacing-lg);">過去の支援案を選択</h2>
 
                         <!-- 検索ボックス -->
@@ -574,22 +574,22 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
                             <!-- クイック選択ボタン -->
                             <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
-                                <button type="button" class="period-btn" data-period="7" style="padding: var(--spacing-sm) 16px; border: 2px solid var(--primary-purple); background: var(--apple-bg-primary); color: var(--primary-purple); border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-subhead); font-weight: 600;">
+                                <button type="button" class="period-btn" data-period="7" style="padding: var(--spacing-sm) 16px; border: 2px solid var(--primary-purple); background: var(--md-bg-primary); color: var(--primary-purple); border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-subhead); font-weight: 600;">
                                     1週間
                                 </button>
                                 <button type="button" class="period-btn active" data-period="30" style="padding: var(--spacing-sm) 16px; border: 2px solid var(--primary-purple); background: var(--primary-purple); color: white; border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-subhead); font-weight: 600;">
                                     1ヶ月
                                 </button>
-                                <button type="button" class="period-btn" data-period="90" style="padding: var(--spacing-sm) 16px; border: 2px solid var(--primary-purple); background: var(--apple-bg-primary); color: var(--primary-purple); border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-subhead); font-weight: 600;">
+                                <button type="button" class="period-btn" data-period="90" style="padding: var(--spacing-sm) 16px; border: 2px solid var(--primary-purple); background: var(--md-bg-primary); color: var(--primary-purple); border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-subhead); font-weight: 600;">
                                     3ヶ月
                                 </button>
-                                <button type="button" class="period-btn" data-period="all" style="padding: var(--spacing-sm) 16px; border: 2px solid var(--primary-purple); background: var(--apple-bg-primary); color: var(--primary-purple); border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-subhead); font-weight: 600;">
+                                <button type="button" class="period-btn" data-period="all" style="padding: var(--spacing-sm) 16px; border: 2px solid var(--primary-purple); background: var(--md-bg-primary); color: var(--primary-purple); border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-subhead); font-weight: 600;">
                                     すべて
                                 </button>
                             </div>
 
                             <!-- 日付範囲指定 -->
-                            <div style="background: var(--apple-gray-6); padding: 15px; border-radius: var(--radius-sm); border: 2px solid #e9ecef;">
+                            <div style="background: var(--md-gray-6); padding: 15px; border-radius: var(--radius-sm); border: 2px solid #e9ecef;">
                                 <div style="font-size: var(--text-footnote); color: var(--text-secondary); margin-bottom: var(--spacing-md); font-weight: 600;">期間を指定</div>
                                 <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                                     <input type="date" id="startDate" style="padding: var(--spacing-sm); border: 2px solid var(--primary-purple); border-radius: var(--radius-sm); font-size: var(--text-subhead);">
@@ -598,7 +598,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                                     <button type="button" id="applyDateRange" style="padding: var(--spacing-sm) 20px; background: var(--primary-purple); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-subhead); font-weight: 600;">
                                         適用
                                     </button>
-                                    <button type="button" id="clearDateRange" style="padding: var(--spacing-sm) 16px; background: var(--apple-gray); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-subhead); font-weight: 600;">
+                                    <button type="button" id="clearDateRange" style="padding: var(--spacing-sm) 16px; background: var(--md-gray); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-subhead); font-weight: 600;">
                                         クリア
                                     </button>
                                 </div>
@@ -606,7 +606,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                         </div>
 
                         <!-- 表示切り替えタブ -->
-                        <div style="margin-bottom: var(--spacing-lg); border-bottom: 2px solid var(--apple-gray-5);">
+                        <div style="margin-bottom: var(--spacing-lg); border-bottom: 2px solid var(--md-gray-5);">
                             <button type="button" id="viewByDateTab" class="cancel-btn" style="padding: var(--spacing-md) 20px; border-radius: var(--radius-sm) 5px 0 0; background: var(--primary-purple); color: white; margin-right: 5px; border: none;">
                                 日付順
                             </button>
@@ -646,9 +646,9 @@ renderPageStart('staff', $currentPage, $pageTitle);
                         foreach ($planTypes as $value => $label):
                             $checked = ($selectedType === $value) ? 'checked' : '';
                             $typeColors = [
-                                'normal' => '#007aff',
-                                'event' => '#ff9500',
-                                'other' => '#8e8e93'
+                                'normal' => '#1976D2',
+                                'event' => '#FF9800',
+                                'other' => '#757575'
                             ];
                             $color = $typeColors[$value];
                         ?>
@@ -668,9 +668,9 @@ renderPageStart('staff', $currentPage, $pageTitle);
                         $selectedGrades = isset($plan['target_grade']) ? explode(',', $plan['target_grade']) : [];
                         $gradeColors = [
                             'preschool' => '#ff69b4',
-                            'elementary' => '#34c759',
-                            'junior_high' => '#007aff',
-                            'high_school' => '#ff9500'
+                            'elementary' => '#4CAF50',
+                            'junior_high' => '#1976D2',
+                            'high_school' => '#FF9800'
                         ];
                         foreach ($targetGrades as $value => $label):
                             $checked = in_array($value, $selectedGrades);
@@ -707,7 +707,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 </div>
 
                 <!-- 活動スケジュール設定 -->
-                <div class="form-group schedule-section" style="background: #f5f5f5; padding: 20px; border-radius: var(--radius-md); border: 2px solid var(--apple-gray-5); overflow: hidden; max-width: 100%; box-sizing: border-box;">
+                <div class="form-group schedule-section" style="background: #f5f5f5; padding: 20px; border-radius: var(--radius-md); border: 2px solid var(--md-gray-5); overflow: hidden; max-width: 100%; box-sizing: border-box;">
                     <label style="color: var(--text-primary); margin-bottom: 15px; font-size: var(--text-callout);">活動スケジュール</label>
                     <p style="font-size: var(--text-footnote); color: var(--text-secondary); margin-bottom: 15px;">
                         毎日の支援と主活動を追加し、順番と所要時間を設定してください。<br>
@@ -724,7 +724,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
                     <!-- 主活動追加 -->
                     <div style="margin-bottom: 15px; background: #e3f2fd; padding: 15px; border-radius: var(--radius-sm); overflow: hidden; box-sizing: border-box;">
-                        <label style="font-size: var(--text-footnote); color: var(--apple-blue); font-weight: 600; margin-bottom: 10px; display: block;">主活動を追加</label>
+                        <label style="font-size: var(--text-footnote); color: var(--md-blue); font-weight: 600; margin-bottom: 10px; display: block;">主活動を追加</label>
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
                             <input type="text" id="newMainActivity" placeholder="主活動名を入力" style="flex: 1; min-width: 150px; max-width: 100%; box-sizing: border-box;">
                             <input type="number" id="newMainActivityDuration" placeholder="時間" min="5" max="240" style="width: 70px;">
@@ -733,11 +733,11 @@ renderPageStart('staff', $currentPage, $pageTitle);
                         <div style="margin-bottom: 10px;">
                             <textarea id="newMainActivityContent" placeholder="主活動の内容を入力（この内容がAI生成時に参照されます）" style="width: 100%; min-height: 80px; resize: vertical; box-sizing: border-box;"></textarea>
                         </div>
-                        <button type="button" id="addMainActivityBtn" class="cancel-btn" style="background: var(--apple-blue); color: white; padding: 8px 16px;">主活動を追加</button>
+                        <button type="button" id="addMainActivityBtn" class="cancel-btn" style="background: var(--md-blue); color: white; padding: 8px 16px;">主活動を追加</button>
                     </div>
 
                     <!-- スケジュールリスト -->
-                    <div id="scheduleList" style="background: white; border-radius: var(--radius-sm); padding: 10px; min-height: 100px; border: 1px dashed var(--apple-gray-4); overflow: hidden; max-width: 100%; box-sizing: border-box;">
+                    <div id="scheduleList" style="background: white; border-radius: var(--radius-sm); padding: 10px; min-height: 100px; border: 1px dashed var(--md-gray-4); overflow: hidden; max-width: 100%; box-sizing: border-box;">
                         <p id="scheduleEmpty" style="color: var(--text-secondary); font-size: var(--text-footnote); text-align: center; padding: 20px;">
                             活動を追加してください
                         </p>
@@ -854,9 +854,9 @@ renderPageStart('staff', $currentPage, $pageTitle);
     // 種別選択のスタイル更新
     function updateTypeStyle(radio) {
         const typeColors = {
-            'normal': '#007aff',
-            'event': '#ff9500',
-            'other': '#8e8e93'
+            'normal': '#1976D2',
+            'event': '#FF9800',
+            'other': '#757575'
         };
 
         // すべてのラベルをリセット
@@ -1120,7 +1120,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         const dateStr = formatDate(plan.activity_date);
 
         return `
-            <div style="border: 1px solid var(--apple-gray-5); border-radius: var(--radius-sm); padding: 15px; margin-bottom: 15px; background: var(--apple-gray-6);">
+            <div style="border: 1px solid var(--md-gray-5); border-radius: var(--radius-sm); padding: 15px; margin-bottom: 15px; background: var(--md-gray-6);">
                 <div style="margin-bottom: var(--spacing-md);">
                     <strong style="font-size: var(--text-callout);">${escapeHtml(plan.activity_name)}</strong>
                     ${showDate ? `<span style="color: var(--primary-purple); font-size: var(--text-subhead); margin-left: 10px;">${dateStr}</span>` : ''}

@@ -50,7 +50,7 @@ $currentDate = date('Y年m月d日');
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <link rel="stylesheet" href="/assets/css/apple-design.css">
+    <link rel="stylesheet" href="/assets/css/google-design.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>生徒用ログイン情報 - <?php echo htmlspecialchars($student['student_name']); ?></title>
@@ -64,13 +64,13 @@ $currentDate = date('Y年m月d日');
         body {
             font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
             padding: var(--spacing-lg);
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
         }
 
         .container {
             max-width: 800px;
             margin: 0 auto;
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: var(--spacing-2xl);
             border-radius: var(--radius-md);
             box-shadow: var(--shadow-md);
@@ -100,7 +100,7 @@ $currentDate = date('Y年m月d日');
             color: var(--primary-purple);
             margin-bottom: var(--spacing-2xl);
             padding: 15px;
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             border-left: 5px solid var(--primary-purple);
             border-radius: var(--radius-sm);
         }
@@ -121,15 +121,15 @@ $currentDate = date('Y年m月d日');
             font-size: 20px;
             color: var(--text-primary);
             padding: 15px;
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             border-radius: var(--radius-sm);
-            border: 2px solid var(--apple-gray-5);
+            border: 2px solid var(--md-gray-5);
             font-family: 'Courier New', monospace;
             word-break: break-all;
         }
 
         .url-box {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             color: var(--text-primary);
             padding: var(--spacing-lg);
             border-radius: var(--radius-sm);
@@ -160,7 +160,7 @@ $currentDate = date('Y年m月d日');
             padding: var(--spacing-lg);
             border: 2px solid var(--primary-purple);
             border-radius: var(--radius-sm);
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
         }
 
         .credential-box .label {
@@ -179,8 +179,8 @@ $currentDate = date('Y年m月d日');
         }
 
         .instructions {
-            background: var(--apple-bg-secondary);
-            border-left: 4px solid var(--apple-orange);
+            background: var(--md-bg-secondary);
+            border-left: 4px solid var(--md-orange);
             padding: var(--spacing-lg);
             border-radius: var(--radius-sm);
             margin-bottom: var(--spacing-2xl);
@@ -205,7 +205,7 @@ $currentDate = date('Y年m月d日');
         .footer {
             text-align: center;
             padding-top: 30px;
-            border-top: 2px dashed var(--apple-gray-5);
+            border-top: 2px dashed var(--md-gray-5);
             color: var(--text-secondary);
             font-size: var(--text-subhead);
         }
@@ -217,7 +217,7 @@ $currentDate = date('Y年m月d日');
 
         .btn-print {
             padding: var(--spacing-md) 30px;
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             color: var(--text-primary);
             border: none;
             border-radius: var(--radius-sm);
@@ -233,7 +233,7 @@ $currentDate = date('Y年m月d日');
 
         .btn-close {
             padding: var(--spacing-md) 30px;
-            background: var(--apple-gray);
+            background: var(--md-gray);
             color: white;
             border: none;
             border-radius: var(--radius-sm);
@@ -243,13 +243,13 @@ $currentDate = date('Y年m月d日');
         }
 
         .btn-close:hover {
-            background: var(--apple-gray);
+            background: var(--md-gray);
         }
 
         /* 印刷用スタイル */
         @media print {
             body {
-                background: var(--apple-bg-primary);
+                background: var(--md-bg-primary);
                 padding: 0;
             }
 
@@ -303,13 +303,13 @@ $currentDate = date('Y年m月d日');
 <body>
     <div class="no-print">
         <div style="max-width: 800px; margin: 0 auto; padding: var(--spacing-lg);">
-            <button onclick="window.print()" class="btn-print">🖨️ この資料を印刷する</button>
+            <button onclick="window.print()" class="btn-print"><span class="material-symbols-outlined">print</span> この資料を印刷する</button>
             <button onclick="window.close()" class="btn-close">閉じる</button>
         </div>
     </div>
 
     <div class="container">
-        <div class="icon">🎓</div>
+        <div class="icon"><span class="material-symbols-outlined" style="font-size: inherit;">school</span></div>
 
         <div class="header">
             <h1>個別支援連絡帳システム</h1>
@@ -319,28 +319,28 @@ $currentDate = date('Y年m月d日');
         <div class="date">発行日: <?php echo $currentDate; ?></div>
 
         <div class="student-name">
-            👤 生徒名: <?php echo htmlspecialchars($student['student_name']); ?> さん
+            <span class="material-symbols-outlined">person</span> 生徒名: <?php echo htmlspecialchars($student['student_name']); ?> さん
         </div>
 
         <div class="url-box">
-            <div class="label">📱 ログインURL（このアドレスにアクセスしてください）</div>
+            <div class="label"><span class="material-symbols-outlined">smartphone</span> ログインURL（このアドレスにアクセスしてください）</div>
             <div class="url"><?php echo htmlspecialchars($loginUrl); ?></div>
         </div>
 
         <div class="credentials">
             <div class="credential-box">
-                <div class="label">👤 ユーザー名（ID）</div>
+                <div class="label"><span class="material-symbols-outlined">person</span> ユーザー名（ID）</div>
                 <div class="value"><?php echo htmlspecialchars($student['username']); ?></div>
             </div>
 
             <div class="credential-box">
-                <div class="label">🔑 パスワード</div>
+                <div class="label"><span class="material-symbols-outlined">key</span> パスワード</div>
                 <div class="value"><?php echo htmlspecialchars($student['password_plain']); ?></div>
             </div>
         </div>
 
         <div class="instructions">
-            <h3>📖 ログイン手順</h3>
+            <h3><span class="material-symbols-outlined">menu_book</span> ログイン手順</h3>
             <ol>
                 <li>スマートフォンまたはパソコンのブラウザを開きます</li>
                 <li>上記のログインURLをブラウザのアドレスバーに入力します</li>
@@ -351,11 +351,11 @@ $currentDate = date('Y年m月d日');
         </div>
 
         <div class="qr-notice">
-            💡 ヒント: このURLをブラウザのブックマーク（お気に入り）に保存しておくと、次回から簡単にアクセスできます。
+            <span class="material-symbols-outlined">lightbulb</span> ヒント: このURLをブラウザのブックマーク（お気に入り）に保存しておくと、次回から簡単にアクセスできます。
         </div>
 
         <div class="footer">
-            <p>⚠️ このログイン情報は他の人に教えないでください</p>
+            <p><span class="material-symbols-outlined">warning</span> このログイン情報は他の人に教えないでください</p>
             <p style="margin-top: 10px;">ログインできない場合や、パスワードを忘れた場合は、スタッフにお知らせください。</p>
         </div>
     </div>

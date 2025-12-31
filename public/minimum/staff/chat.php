@@ -231,7 +231,7 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
 .staff-chat-layout {
     display: flex;
     height: calc(100vh - 60px);
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
 }
 
 @media (min-width: 769px) {
@@ -242,22 +242,22 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
 
 .student-sidebar {
     width: 300px;
-    background: var(--apple-bg-tertiary);
-    border-right: 1px solid var(--apple-gray-5);
+    background: var(--md-bg-tertiary);
+    border-right: 1px solid var(--md-gray-5);
     overflow-y: auto;
     flex-shrink: 0;
 }
 
 .student-sidebar-header {
     padding: var(--spacing-md);
-    background: var(--apple-bg-secondary);
-    border-bottom: 1px solid var(--apple-gray-5);
+    background: var(--md-bg-secondary);
+    border-bottom: 1px solid var(--md-gray-5);
 }
 
 .broadcast-btn {
     width: 100%;
     padding: var(--spacing-md);
-    background: var(--apple-green);
+    background: var(--md-green);
     color: white;
     border: none;
     border-radius: var(--radius-sm);
@@ -274,21 +274,21 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
 .search-input {
     width: 100%;
     padding: var(--spacing-md);
-    border: 2px solid var(--apple-gray-5);
+    border: 2px solid var(--md-gray-5);
     border-radius: var(--radius-sm);
     font-size: var(--text-subhead);
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     color: var(--text-primary);
 }
 
 /* セクションヘッダー（ピン留め・未読） */
 .section-header {
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--apple-gray-4);
+    background: var(--md-gray-4);
     font-weight: 600;
     font-size: var(--text-footnote);
     color: var(--text-secondary);
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
@@ -301,26 +301,26 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
 
 .section-header.unread {
     background: rgba(255, 59, 48, 0.1);
-    color: var(--apple-red);
+    color: var(--md-red);
 }
 
 .accordion-header {
     padding: var(--spacing-md);
-    background: var(--apple-gray-4);
+    background: var(--md-gray-4);
     cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
     transition: background var(--duration-fast);
 }
 
 .accordion-header:hover {
-    background: var(--apple-gray-3);
+    background: var(--md-gray-3);
 }
 
 .accordion-header.active {
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
 }
 
@@ -356,19 +356,19 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
 
 .student-item {
     padding: var(--spacing-md);
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
     cursor: pointer;
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     transition: background var(--duration-fast);
 }
 
 .student-item:hover {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
 }
 
 .student-item.active {
     background: rgba(0, 122, 255, 0.2);
-    border-left: 4px solid var(--apple-blue);
+    border-left: 4px solid var(--md-blue);
 }
 
 .student-item.has-unread {
@@ -395,7 +395,7 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
 }
 
 .unread-badge {
-    background: var(--apple-red);
+    background: var(--md-red);
     color: white;
     padding: 2px 8px;
     border-radius: var(--radius-md);
@@ -432,8 +432,8 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
 
 .chat-header-bar {
     padding: var(--spacing-md) var(--spacing-lg);
-    background: var(--apple-bg-tertiary);
-    border-bottom: 1px solid var(--apple-gray-5);
+    background: var(--md-bg-tertiary);
+    border-bottom: 1px solid var(--md-gray-5);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -462,9 +462,9 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
 
 .pin-btn {
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     color: var(--text-secondary);
-    border: 2px solid var(--apple-gray-4);
+    border: 2px solid var(--md-gray-4);
     border-radius: var(--radius-sm);
     font-size: var(--text-footnote);
     cursor: pointer;
@@ -472,7 +472,7 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
 }
 
 .pin-btn:hover {
-    background: var(--apple-gray-4);
+    background: var(--md-gray-4);
 }
 
 .pin-btn.pinned {
@@ -483,9 +483,9 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
 
 .submission-btn {
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--apple-bg-secondary);
-    color: var(--apple-orange);
-    border: 2px solid var(--apple-orange);
+    background: var(--md-bg-secondary);
+    color: var(--md-orange);
+    border: 2px solid var(--md-orange);
     border-radius: var(--radius-sm);
     font-size: var(--text-footnote);
     font-weight: 600;
@@ -493,12 +493,12 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
 }
 
 .submission-btn:hover {
-    background: var(--apple-orange);
+    background: var(--md-orange);
     color: white;
 }
 
 .delete-message-btn {
-    background: var(--apple-red);
+    background: var(--md-red);
     color: white;
     border: none;
     padding: 3px 8px;
@@ -526,7 +526,7 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
 }
 
 .modal-content {
-    background: var(--apple-bg-tertiary);
+    background: var(--md-bg-tertiary);
     padding: var(--spacing-2xl);
     border-radius: var(--radius-lg);
     max-width: 600px;
@@ -566,17 +566,17 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
 .guardian-list {
     max-height: 300px;
     overflow-y: auto;
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
     border-radius: var(--radius-sm);
     padding: var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
 }
 
 .guardian-list label {
     display: block;
     padding: var(--spacing-sm);
     cursor: pointer;
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
 }
 
 .guardian-list label:last-child {

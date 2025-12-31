@@ -10,7 +10,7 @@
 .page-wrapper {
     display: flex;
     min-height: 100vh;
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
 }
 
 /* ========================================
@@ -19,8 +19,8 @@
 
 .sidebar {
     width: 260px;
-    background: var(--apple-bg-primary);
-    border-right: 1px solid var(--apple-gray-5);
+    background: var(--md-bg-primary);
+    border-right: 1px solid var(--md-gray-5);
     position: fixed;
     top: 0;
     left: 0;
@@ -59,9 +59,9 @@
 }
 
 .sidebar-toggle:hover {
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
-    border-color: var(--apple-blue);
+    border-color: var(--md-blue);
 }
 
 .sidebar-toggle-icon {
@@ -72,7 +72,7 @@
 .sidebar.collapsed ~ .sidebar-toggle,
 .sidebar-toggle.sidebar-hidden {
     left: 0;
-    border-left: 1px solid var(--apple-gray-5);
+    border-left: 1px solid var(--md-gray-5);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 
@@ -86,16 +86,16 @@
 }
 
 /* ロール別アクセントカラー */
-.sidebar--purple { border-left: 4px solid var(--apple-purple); }
-.sidebar--blue { border-left: 4px solid var(--apple-blue); }
-.sidebar--green { border-left: 4px solid var(--apple-green); }
-.sidebar--orange { border-left: 4px solid var(--apple-orange); }
-.sidebar--teal { border-left: 4px solid var(--apple-teal); }
+.sidebar--purple { border-left: 4px solid var(--md-purple); }
+.sidebar--blue { border-left: 4px solid var(--md-blue); }
+.sidebar--green { border-left: 4px solid var(--md-green); }
+.sidebar--orange { border-left: 4px solid var(--md-orange); }
+.sidebar--teal { border-left: 4px solid var(--md-teal); }
 
 /* サイドバーヘッダー */
 .sidebar-header {
     padding: 20px;
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
     display: flex;
     align-items: center;
     gap: 12px;
@@ -166,25 +166,25 @@
 
 /* マスター専用メニュー項目 */
 .sidebar-menu a.master-only {
-    border-left: 3px solid var(--apple-red);
+    border-left: 3px solid var(--md-red);
     background: rgba(255, 107, 107, 0.05);
 }
 
 .sidebar-menu a.master-only:hover {
     background: rgba(255, 107, 107, 0.1);
-    border-left-color: var(--apple-red);
+    border-left-color: var(--md-red);
 }
 
 .sidebar-menu a.master-only.active {
     background: rgba(255, 107, 107, 0.15);
-    border-left-color: var(--apple-red);
-    color: var(--apple-red);
+    border-left-color: var(--md-red);
+    color: var(--md-red);
 }
 
 .master-badge {
     margin-left: auto;
     font-size: 10px;
-    color: var(--apple-red);
+    color: var(--md-red);
 }
 
 /* メニュー区切り線 */
@@ -208,8 +208,8 @@
 /* サイドバーフッター */
 .sidebar-footer {
     padding: 15px 20px;
-    border-top: 1px solid var(--apple-gray-5);
-    background: var(--apple-bg-primary);
+    border-top: 1px solid var(--md-gray-5);
+    background: var(--md-bg-primary);
 }
 
 .sidebar-user-info {
@@ -237,7 +237,7 @@
     display: block;
     width: 100%;
     padding: 10px;
-    background: var(--apple-red);
+    background: var(--md-red);
     color: white !important;
     text-align: center;
     text-decoration: none;
@@ -276,7 +276,7 @@
     justify-content: space-between;
     align-items: center;
     padding: var(--spacing-lg) var(--spacing-xl);
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-lg);
     box-shadow: var(--shadow-md);
@@ -310,7 +310,7 @@
 
 .mobile-header {
     display: none;
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-md) 15px;
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-lg);
@@ -318,18 +318,18 @@
 }
 
 /* ロール別モバイルヘッダーアクセント */
-.mobile-header--purple { border-top: 3px solid var(--apple-purple); }
-.mobile-header--blue { border-top: 3px solid var(--apple-blue); }
-.mobile-header--green { border-top: 3px solid var(--apple-green); }
-.mobile-header--orange { border-top: 3px solid var(--apple-orange); }
-.mobile-header--teal { border-top: 3px solid var(--apple-teal); }
+.mobile-header--purple { border-top: 3px solid var(--md-purple); }
+.mobile-header--blue { border-top: 3px solid var(--md-blue); }
+.mobile-header--green { border-top: 3px solid var(--md-green); }
+.mobile-header--orange { border-top: 3px solid var(--md-orange); }
+.mobile-header--teal { border-top: 3px solid var(--md-teal); }
 
 .mobile-header-top {
     display: flex;
     align-items: center;
     gap: 12px;
     padding-bottom: 12px;
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
 }
 
 .mobile-header-top img {
@@ -380,7 +380,7 @@
 }
 
 .menu-btn {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     color: var(--text-primary);
     border: none;
     padding: var(--spacing-md) 20px;
@@ -401,7 +401,7 @@
 .menu-content {
     display: none;
     position: absolute;
-    background-color: var(--apple-bg-tertiary);
+    background-color: var(--md-bg-tertiary);
     min-width: 220px;
     box-shadow: 0 8px 24px rgba(0,0,0,0.15);
     z-index: 1000;
@@ -422,7 +422,7 @@
     display: block;
     transition: all var(--duration-fast) var(--ease-out);
     font-size: 15px;
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
     white-space: nowrap;
 }
 
@@ -439,7 +439,7 @@
 /* モバイルメニュー区切り線 */
 .mobile-menu-divider {
     padding: 10px 20px 5px;
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
     margin-top: 5px;
 }
 
@@ -469,7 +469,7 @@
 }
 
 .logout-btn {
-    background: var(--apple-red);
+    background: var(--md-red);
     color: white !important;
     border: none;
     padding: var(--spacing-sm) 16px;
@@ -497,7 +497,7 @@
 }
 
 .stat-card {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: 25px;
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-md);
@@ -529,7 +529,7 @@
 }
 
 .menu-card {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-xl);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-md);
@@ -564,11 +564,11 @@
 
 /* マスター専用カード */
 .menu-card.master-only {
-    border: 2px solid var(--apple-red);
+    border: 2px solid var(--md-red);
 }
 
 .menu-card.master-only h3 {
-    color: var(--apple-red);
+    color: var(--md-red);
 }
 
 /* ========================================
@@ -688,40 +688,7 @@
     }
 }
 
-/* ========================================
-   ダークモード対応
-   ======================================== */
-
-@media (prefers-color-scheme: dark) {
-    .sidebar {
-        background: var(--apple-bg-primary);
-        border-right-color: var(--apple-gray-4);
-    }
-
-    .sidebar-header {
-        border-bottom-color: var(--apple-gray-4);
-    }
-
-    .sidebar-footer {
-        border-top-color: var(--apple-gray-4);
-    }
-
-    .mobile-header {
-        background: var(--apple-bg-primary);
-    }
-
-    .mobile-header-top {
-        border-bottom-color: var(--apple-gray-4);
-    }
-
-    .menu-content {
-        background-color: var(--apple-bg-secondary);
-    }
-
-    .menu-content a {
-        border-bottom-color: var(--apple-gray-4);
-    }
-}
+/* Light Mode Only - Dark mode disabled */
 
 /* ========================================
    印刷用スタイル

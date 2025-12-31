@@ -216,14 +216,14 @@ renderPageStart('staff', $currentPage, '連絡帳入力');
     display: flex;
     align-items: center;
     padding: var(--spacing-md) 15px;
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     border-radius: var(--radius-sm);
     cursor: pointer;
     transition: background 0.3s;
 }
 
 .student-checkbox:hover {
-    background: var(--apple-gray-5);
+    background: var(--md-gray-5);
 }
 
 .student-checkbox input[type="checkbox"] {
@@ -240,10 +240,10 @@ renderPageStart('staff', $currentPage, '連絡帳入力');
     margin-left: 5px;
 }
 
-.badge-preschool { background: rgba(255, 149, 0, 0.15); color: var(--apple-orange); }
-.badge-elementary { background: rgba(255, 59, 48, 0.15); color: var(--apple-red); }
-.badge-junior-high { background: rgba(0, 122, 255, 0.15); color: var(--apple-blue); }
-.badge-high-school { background: rgba(175, 82, 222, 0.15); color: var(--apple-purple); }
+.badge-preschool { background: rgba(255, 149, 0, 0.15); color: var(--md-orange); }
+.badge-elementary { background: rgba(255, 59, 48, 0.15); color: var(--md-red); }
+.badge-junior-high { background: rgba(0, 122, 255, 0.15); color: var(--md-blue); }
+.badge-high-school { background: rgba(175, 82, 222, 0.15); color: var(--md-purple); }
 
 .grade-filter {
     display: flex;
@@ -255,9 +255,9 @@ renderPageStart('staff', $currentPage, '連絡帳入力');
 
 .grade-btn {
     padding: var(--spacing-sm) 16px;
-    border: 2px solid var(--apple-blue);
-    background: var(--apple-bg-primary);
-    color: var(--apple-blue);
+    border: 2px solid var(--md-blue);
+    background: var(--md-bg-primary);
+    color: var(--md-blue);
     border-radius: var(--radius-sm);
     cursor: pointer;
     transition: all var(--duration-normal) var(--ease-out);
@@ -265,15 +265,15 @@ renderPageStart('staff', $currentPage, '連絡帳入力');
     font-size: var(--text-subhead);
 }
 
-.grade-btn:hover { background: var(--apple-bg-secondary); }
-.grade-btn.active { background: var(--apple-blue); color: white; }
+.grade-btn:hover { background: var(--md-bg-secondary); }
+.grade-btn.active { background: var(--md-blue); color: white; }
 
 .grade-btn-scheduled {
-    border-color: var(--apple-green);
-    color: var(--apple-green);
+    border-color: var(--md-green);
+    color: var(--md-green);
 }
 .grade-btn-scheduled:hover { background: rgba(52, 199, 89, 0.15); }
-.grade-btn-scheduled.active { background: var(--apple-green); color: white; }
+.grade-btn-scheduled.active { background: var(--md-green); color: white; }
 
 .quick-links {
     display: flex;
@@ -284,7 +284,7 @@ renderPageStart('staff', $currentPage, '連絡帳入力');
 
 .quick-link {
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-sm);
     text-decoration: none;
     color: var(--text-primary);
@@ -292,14 +292,14 @@ renderPageStart('staff', $currentPage, '連絡帳入力');
     font-weight: 500;
     transition: all var(--duration-fast);
 }
-.quick-link:hover { background: var(--apple-gray-5); }
+.quick-link:hover { background: var(--md-gray-5); }
 
 .plan-search-box {
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     padding: 15px;
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-lg);
-    border-left: 4px solid var(--apple-green);
+    border-left: 4px solid var(--md-green);
 }
 
 .plan-search-form {
@@ -310,21 +310,21 @@ renderPageStart('staff', $currentPage, '連絡帳入力');
 }
 
 .plan-info-box {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     padding: var(--spacing-md);
     border-radius: var(--radius-sm);
-    border-left: 4px solid var(--apple-orange);
+    border-left: 4px solid var(--md-orange);
     font-size: var(--text-subhead);
     margin-bottom: var(--spacing-md);
 }
 
 .plan-details-box {
     display: none;
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     padding: 15px;
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-lg);
-    border-left: 4px solid var(--apple-blue);
+    border-left: 4px solid var(--md-blue);
 }
 
 @media (max-width: 768px) {
@@ -344,9 +344,9 @@ renderPageStart('staff', $currentPage, '連絡帳入力');
 
 <!-- クイックリンク -->
 <div class="quick-links">
-    <a href="kakehashi_staff.php" class="quick-link">🌉 スタッフかけはし</a>
-    <a href="kakehashi_guardian_view.php" class="quick-link">📋 保護者かけはし確認</a>
-    <a href="renrakucho_activities.php" class="quick-link">📝 活動一覧</a>
+    <a href="kakehashi_staff.php" class="quick-link"><span class="material-symbols-outlined">handshake</span> スタッフかけはし</a>
+    <a href="kakehashi_guardian_view.php" class="quick-link"><span class="material-symbols-outlined">assignment</span> 保護者かけはし確認</a>
+    <a href="renrakucho_activities.php" class="quick-link"><span class="material-symbols-outlined">edit_note</span> 活動一覧</a>
 </div>
 
 <?php if (isset($_SESSION['success'])): ?>
@@ -390,11 +390,11 @@ renderPageStart('staff', $currentPage, '連絡帳入力');
 
 <div class="card">
     <div class="card-body">
-        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-blue);">新しい活動の追加</h2>
+        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--md-blue);">新しい活動の追加</h2>
 
         <!-- 支援案検索 -->
         <div class="plan-search-box">
-            <h3 style="margin-bottom: var(--spacing-md); color: var(--text-primary); font-size: var(--text-callout);">🔍 支援案を検索</h3>
+            <h3 style="margin-bottom: var(--spacing-md); color: var(--text-primary); font-size: var(--text-callout);"><span class="material-symbols-outlined">search</span> 支援案を検索</h3>
             <form method="GET" class="plan-search-form">
                 <input type="hidden" name="date" value="<?= htmlspecialchars($today) ?>">
                 <input type="hidden" name="grade" value="<?= htmlspecialchars($gradeFilter) ?>">
@@ -437,12 +437,12 @@ renderPageStart('staff', $currentPage, '連絡帳入力');
             <label class="form-label">
                 支援案を選択
                 <span style="font-size: var(--text-caption-1); color: var(--text-secondary); font-weight: normal;">(任意)</span>
-                <a href="support_plan_form.php" style="font-size: var(--text-caption-1); margin-left: 10px;">📝 この日の支援案を作成</a>
+                <a href="support_plan_form.php" style="font-size: var(--text-caption-1); margin-left: 10px;"><span class="material-symbols-outlined">edit_note</span> この日の支援案を作成</a>
             </label>
             <?php if (empty($supportPlans)): ?>
                 <div class="plan-info-box">
-                    💡 この日（<?= date('Y年n月j日', strtotime($today)) ?>）の支援案がまだ作成されていません。
-                    <a href="support_plan_form.php" style="color: var(--apple-blue); text-decoration: underline;">支援案を作成</a>してから活動を追加すると、より効率的に記録できます。
+                    <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">lightbulb</span> この日（<?= date('Y年n月j日', strtotime($today)) ?>）の支援案がまだ作成されていません。
+                    <a href="support_plan_form.php" style="color: var(--md-blue); text-decoration: underline;">支援案を作成</a>してから活動を追加すると、より効率的に記録できます。
                 </div>
             <?php endif; ?>
             <select id="supportPlan" class="form-control">
@@ -463,7 +463,7 @@ renderPageStart('staff', $currentPage, '連絡帳入力');
 
         <!-- 支援案の内容表示 -->
         <div id="supportPlanDetails" class="plan-details-box">
-            <h3 style="color: var(--apple-blue); font-size: var(--text-callout); margin-bottom: var(--spacing-md);">選択した支援案の内容</h3>
+            <h3 style="color: var(--md-blue); font-size: var(--text-callout); margin-bottom: var(--spacing-md);">選択した支援案の内容</h3>
             <div id="planPurpose"></div>
             <div id="planContent"></div>
             <div id="planDomains"></div>
@@ -471,7 +471,7 @@ renderPageStart('staff', $currentPage, '連絡帳入力');
         </div>
 
         <div class="form-group">
-            <label class="form-label">活動名 <span style="color: var(--apple-red);">*</span></label>
+            <label class="form-label">活動名 <span style="color: var(--md-red);">*</span></label>
             <input type="text" id="activityName" class="form-control" placeholder="例: 午前の活動、外出活動、制作活動など" required>
         </div>
 
@@ -546,13 +546,13 @@ supportPlanSelect.addEventListener('change', function() {
     // 活動名を自動入力
     activityNameInput.value = activityName;
     activityNameInput.readOnly = true;
-    activityNameInput.style.backgroundColor = 'var(--apple-gray-6)';
+    activityNameInput.style.backgroundColor = 'var(--md-gray-6)';
 
     // 支援案の内容を表示
-    document.getElementById('planPurpose').innerHTML = purpose ? '<div style="margin-bottom: 8px;"><strong style="color: var(--apple-blue);">活動の目的:</strong><br>' + escapeHtml(purpose) + '</div>' : '';
-    document.getElementById('planContent').innerHTML = content ? '<div style="margin-bottom: 8px;"><strong style="color: var(--apple-blue);">活動の内容:</strong><br>' + escapeHtml(content) + '</div>' : '';
-    document.getElementById('planDomains').innerHTML = domains ? '<div style="margin-bottom: 8px;"><strong style="color: var(--apple-blue);">五領域への配慮:</strong><br>' + escapeHtml(domains) + '</div>' : '';
-    document.getElementById('planOther').innerHTML = other ? '<div><strong style="color: var(--apple-blue);">その他:</strong><br>' + escapeHtml(other) + '</div>' : '';
+    document.getElementById('planPurpose').innerHTML = purpose ? '<div style="margin-bottom: 8px;"><strong style="color: var(--md-blue);">活動の目的:</strong><br>' + escapeHtml(purpose) + '</div>' : '';
+    document.getElementById('planContent').innerHTML = content ? '<div style="margin-bottom: 8px;"><strong style="color: var(--md-blue);">活動の内容:</strong><br>' + escapeHtml(content) + '</div>' : '';
+    document.getElementById('planDomains').innerHTML = domains ? '<div style="margin-bottom: 8px;"><strong style="color: var(--md-blue);">五領域への配慮:</strong><br>' + escapeHtml(domains) + '</div>' : '';
+    document.getElementById('planOther').innerHTML = other ? '<div><strong style="color: var(--md-blue);">その他:</strong><br>' + escapeHtml(other) + '</div>' : '';
 
     supportPlanDetails.style.display = 'block';
 });

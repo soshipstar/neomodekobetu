@@ -512,9 +512,9 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
 
 <!-- 新着チャットメッセージ通知 -->
 <?php if ($totalUnreadMessages > 0): ?>
-    <div class="notification-banner" style="border-left-color: var(--apple-blue);">
-        <div class="notification-header" style="color: var(--apple-blue);">
-            💬 新着メッセージがあります（<?= $totalUnreadMessages ?>件）
+    <div class="notification-banner" style="border-left-color: var(--md-blue);">
+        <div class="notification-header" style="color: var(--md-blue);">
+            <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">chat</span> 新着メッセージがあります（<?= $totalUnreadMessages ?>件）
         </div>
         <?php foreach ($unreadChatMessages as $chatRoom): ?>
             <div class="notification-item">
@@ -525,12 +525,12 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
                     <div class="notification-period">
                         未読メッセージ: <?= $chatRoom['unread_count'] ?>件
                     </div>
-                    <div class="notification-deadline" style="color: var(--apple-blue);">
+                    <div class="notification-deadline" style="color: var(--md-blue);">
                         最新: <?= date('Y年n月j日 H:i', strtotime($chatRoom['last_message_at'])) ?>
                     </div>
                 </div>
                 <div class="notification-action">
-                    <a href="chat.php?room_id=<?= $chatRoom['room_id'] ?>" class="notification-btn" style="background: var(--apple-blue);">
+                    <a href="chat.php?room_id=<?= $chatRoom['room_id'] ?>" class="notification-btn" style="background: var(--md-blue);">
                         チャットを開く
                     </a>
                 </div>
@@ -573,7 +573,7 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
 <?php if (!empty($urgentKakehashi)): ?>
     <div class="notification-banner urgent">
         <div class="notification-header urgent">
-            ⚠️ 提出期限が近いかけはしがあります
+            <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">warning</span> 提出期限が近いかけはしがあります
         </div>
         <?php foreach ($urgentKakehashi as $kakehashi): ?>
             <div class="notification-item">
@@ -603,7 +603,7 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
 <?php if (!empty($pendingKakehashi)): ?>
     <div class="notification-banner pending">
         <div class="notification-header pending">
-            📝 未提出のかけはしがあります
+            <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit_note</span> 未提出のかけはしがあります
         </div>
         <?php foreach ($pendingKakehashi as $kakehashi): ?>
             <div class="notification-item">
@@ -633,7 +633,7 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
 <?php if (!empty($overdueSubmissions)): ?>
     <div class="notification-banner overdue">
         <div class="notification-header overdue">
-            ⚠️ 提出期限が過ぎた提出物があります
+            <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">warning</span> 提出期限が過ぎた提出物があります
         </div>
         <?php foreach ($overdueSubmissions as $submission): ?>
             <div class="notification-item">
@@ -656,9 +656,9 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
                     <?php if ($submission['attachment_path']): ?>
                         <div style="margin-top: 10px;">
                             <a href="../<?= htmlspecialchars($submission['attachment_path']) ?>"
-                               style="color: var(--apple-green); text-decoration: underline; font-size: var(--text-footnote);"
+                               style="color: var(--md-green); text-decoration: underline; font-size: var(--text-footnote);"
                                download="<?= htmlspecialchars($submission['attachment_original_name']) ?>">
-                                📎 <?= htmlspecialchars($submission['attachment_original_name']) ?>
+                                <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">attach_file</span> <?= htmlspecialchars($submission['attachment_original_name']) ?>
                                 (<?= number_format($submission['attachment_size'] / 1024, 1) ?> KB)
                             </a>
                         </div>
@@ -673,7 +673,7 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
 <?php if (!empty($urgentSubmissions)): ?>
     <div class="notification-banner urgent">
         <div class="notification-header urgent">
-            🔔 提出期限が近い提出物があります
+            <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">notifications</span> 提出期限が近い提出物があります
         </div>
         <?php foreach ($urgentSubmissions as $submission): ?>
             <div class="notification-item">
@@ -696,9 +696,9 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
                     <?php if ($submission['attachment_path']): ?>
                         <div style="margin-top: 10px;">
                             <a href="../<?= htmlspecialchars($submission['attachment_path']) ?>"
-                               style="color: var(--apple-green); text-decoration: underline; font-size: var(--text-footnote);"
+                               style="color: var(--md-green); text-decoration: underline; font-size: var(--text-footnote);"
                                download="<?= htmlspecialchars($submission['attachment_original_name']) ?>">
-                                📎 <?= htmlspecialchars($submission['attachment_original_name']) ?>
+                                <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">attach_file</span> <?= htmlspecialchars($submission['attachment_original_name']) ?>
                                 (<?= number_format($submission['attachment_size'] / 1024, 1) ?> KB)
                             </a>
                         </div>
@@ -713,7 +713,7 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
 <?php if (!empty($pendingSubmissions)): ?>
     <div class="notification-banner pending">
         <div class="notification-header pending">
-            📋 提出が必要な提出物があります
+            <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">assignment</span> 提出が必要な提出物があります
         </div>
         <?php foreach ($pendingSubmissions as $submission): ?>
             <div class="notification-item">
@@ -736,9 +736,9 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
                     <?php if ($submission['attachment_path']): ?>
                         <div style="margin-top: 10px;">
                             <a href="../<?= htmlspecialchars($submission['attachment_path']) ?>"
-                               style="color: var(--apple-green); text-decoration: underline; font-size: var(--text-footnote);"
+                               style="color: var(--md-green); text-decoration: underline; font-size: var(--text-footnote);"
                                download="<?= htmlspecialchars($submission['attachment_original_name']) ?>">
-                                📎 <?= htmlspecialchars($submission['attachment_original_name']) ?>
+                                <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">attach_file</span> <?= htmlspecialchars($submission['attachment_original_name']) ?>
                                 (<?= number_format($submission['attachment_size'] / 1024, 1) ?> KB)
                             </a>
                         </div>
@@ -752,7 +752,7 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
 <!-- カレンダーセクション -->
 <div class="calendar-section">
     <div class="calendar-header">
-        <h2>📅 <?= $year ?>年 <?= $month ?>月のカレンダー</h2>
+        <h2><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event</span> <?= $year ?>年 <?= $month ?>月のカレンダー</h2>
         <div class="calendar-nav">
             <a href="?year=<?= $prevYear ?>&month=<?= $prevMonth ?>">← 前月</a>
             <a href="?year=<?= date('Y') ?>&month=<?= date('n') ?>">今月</a>
@@ -824,12 +824,12 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
 
                     if ($isPast && !$hasNote) {
                         echo "<div class='schedule-label no-note' onclick='showNoteModal(\"$currentDate\")'>";
-                        echo "<span class='schedule-marker'>👤</span>";
+                        echo "<span class='schedule-marker'><span class='material-symbols-outlined' style='font-size: 18px; vertical-align: middle;'>person</span></span>";
                         echo htmlspecialchars($schedule['student_name']) . "さん活動日（連絡帳なし）";
                         echo "</div>";
                     } elseif (!$isPast) {
                         echo "<div class='schedule-label'>";
-                        echo "<span class='schedule-marker'>👤</span>";
+                        echo "<span class='schedule-marker'><span class='material-symbols-outlined' style='font-size: 18px; vertical-align: middle;'>person</span></span>";
                         echo htmlspecialchars($schedule['student_name']) . "さん活動予定日";
                         echo "</div>";
                     }
@@ -850,7 +850,7 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
                     }
 
                     echo "<div class='$class' onclick='showNoteModal(\"$currentDate\")'>";
-                    echo "<span class='note-marker'>📝</span>";
+                    echo "<span class='note-marker'><span class='material-symbols-outlined' style='font-size: 18px; vertical-align: middle;'>edit_note</span></span>";
                     echo htmlspecialchars($noteInfo['student_name']) . "さん" . htmlspecialchars($text);
                     echo "</div>";
                 }
@@ -860,7 +860,7 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
             if (isset($calendarMakeupDays[$currentDate]) && !empty($calendarMakeupDays[$currentDate])) {
                 foreach ($calendarMakeupDays[$currentDate] as $makeupInfo) {
                     echo "<div class='makeup-label'>";
-                    echo "<span class='makeup-marker'>🔄</span>";
+                    echo "<span class='makeup-marker'><span class='material-symbols-outlined' style='font-size: 18px; vertical-align: middle;'>sync</span></span>";
                     echo htmlspecialchars($makeupInfo['student_name']) . "さん振替活動日";
                     echo "</div>";
                 }
@@ -870,7 +870,7 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
             if (isset($calendarAbsenceDays[$currentDate]) && !empty($calendarAbsenceDays[$currentDate])) {
                 foreach ($calendarAbsenceDays[$currentDate] as $absenceInfo) {
                     echo "<div class='absence-label'>";
-                    echo "<span class='absence-marker'>❌</span>";
+                    echo "<span class='absence-marker'><span class='material-symbols-outlined' style='font-size: 18px; vertical-align: middle;'>event_busy</span></span>";
                     echo htmlspecialchars($absenceInfo['student_name']) . "さん欠席";
                     echo "</div>";
                 }
@@ -880,7 +880,7 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
             if (isset($calendarAdditionalDays[$currentDate]) && !empty($calendarAdditionalDays[$currentDate])) {
                 foreach ($calendarAdditionalDays[$currentDate] as $additionalInfo) {
                     echo "<div class='additional-label'>";
-                    echo "<span class='additional-marker'>➕</span>";
+                    echo "<span class='additional-marker'><span class='material-symbols-outlined' style='font-size: 18px; vertical-align: middle;'>add</span></span>";
                     echo htmlspecialchars($additionalInfo['student_name']) . "さん追加利用";
                     echo "</div>";
                 }
@@ -894,47 +894,47 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
 
     <div class="legend">
         <div class="legend-item">
-            <div class="legend-box" style="background: var(--apple-bg-secondary); border: 1px solid var(--apple-gray-5);"></div>
+            <div class="legend-box" style="background: var(--md-bg-secondary); border: 1px solid var(--md-gray-5);"></div>
             <span>休日</span>
         </div>
         <div class="legend-item">
-            <div class="legend-box" style="background: rgba(52, 199, 89, 0.1); border: 2px solid var(--apple-green);"></div>
+            <div class="legend-box" style="background: rgba(52, 199, 89, 0.1); border: 2px solid var(--md-green);"></div>
             <span>今日</span>
         </div>
         <div class="legend-item">
-            <span style="font-size: 12px;">📚</span>
+            <span style="font-size: 12px;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">menu_book</span></span>
             <span>平日活動</span>
         </div>
         <div class="legend-item">
-            <span style="font-size: 12px;">🏫</span>
+            <span style="font-size: 12px;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">school</span></span>
             <span>学校休業日活動</span>
         </div>
         <div class="legend-item">
-            <span class="event-marker" style="background: var(--apple-green);"></span>
+            <span class="event-marker" style="background: var(--md-green);"></span>
             <span>イベント</span>
         </div>
         <div class="legend-item">
-            <span style="color: var(--apple-green); font-weight: 600;">👤</span>
+            <span style="color: var(--md-green); font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">person</span></span>
             <span>活動予定日</span>
         </div>
         <div class="legend-item">
-            <span style="color: var(--apple-green); font-weight: 600;">📝</span>
+            <span style="color: var(--md-green); font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit_note</span></span>
             <span>連絡帳あり（確認済み）</span>
         </div>
         <div class="legend-item">
-            <span style="color: var(--apple-red); font-weight: 600;">📝</span>
+            <span style="color: var(--md-red); font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit_note</span></span>
             <span>連絡帳あり（未確認）</span>
         </div>
         <div class="legend-item">
-            <span style="color: var(--apple-blue); font-weight: 600;">🔄</span>
+            <span style="color: var(--md-blue); font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">sync</span></span>
             <span>振替活動日</span>
         </div>
         <div class="legend-item">
-            <span style="color: var(--apple-red); font-weight: 600;">❌</span>
+            <span style="color: var(--md-red); font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event_busy</span></span>
             <span>欠席日</span>
         </div>
         <div class="legend-item">
-            <span style="color: var(--apple-green); font-weight: 600;">➕</span>
+            <span style="color: var(--md-green); font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">add</span></span>
             <span>追加利用</span>
         </div>
     </div>
@@ -956,12 +956,12 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
             </div>
 
             <div style="text-align: right; margin-bottom: var(--spacing-md);">
-                <a href="communication_logs.php?student_id=<?= $student['id'] ?>" style="color: var(--apple-blue); text-decoration: none; font-size: var(--text-footnote);">
+                <a href="communication_logs.php?student_id=<?= $student['id'] ?>" style="color: var(--md-blue); text-decoration: none; font-size: var(--text-footnote);">
                     すべての連絡帳を見る →
                 </a>
             </div>
             <?php if (empty($notesData[$student['id']])): ?>
-                <div class="no-notes" style="color: var(--apple-green);">
+                <div class="no-notes" style="color: var(--md-green);">
                     ✓ 確認が必要な連絡帳はありません
                 </div>
             <?php else: ?>
@@ -1004,7 +1004,7 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
     <div class="modal-content">
         <button class="modal-close" onclick="closeNoteModal()">&times;</button>
         <div class="modal-header">
-            <h2>📝 連絡帳</h2>
+            <h2><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit_note</span> 連絡帳</h2>
             <div class="modal-date" id="modalDate"></div>
         </div>
         <div id="modalNoteContent"></div>

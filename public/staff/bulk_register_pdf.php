@@ -77,12 +77,12 @@ $pdfFilename = '利用者登録情報_' . date('Ymd_His');
         }
 
         .btn-primary {
-            background: #007AFF;
+            background: #1976D2;
             color: white;
         }
 
         .btn-primary:hover {
-            background: #0056b3;
+            background: #1565C0;
         }
 
         .btn-secondary {
@@ -95,12 +95,12 @@ $pdfFilename = '利用者登録情報_' . date('Ymd_His');
         }
 
         .btn-success {
-            background: #34C759;
+            background: #4CAF50;
             color: white;
         }
 
         .btn-success:hover {
-            background: #28a745;
+            background: #388E3C;
         }
 
         /* PDF用コンテンツ */
@@ -138,7 +138,7 @@ $pdfFilename = '利用者登録情報_' . date('Ymd_His');
             background: #f0f0f0;
             padding: 8px 12px;
             margin-bottom: 10px;
-            border-left: 4px solid #007AFF;
+            border-left: 4px solid #1976D2;
         }
 
         table {

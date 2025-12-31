@@ -113,7 +113,7 @@ renderPageStart('staff', $currentPage, 'タグ設定');
 
 <style>
 .settings-container {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-2xl);
     border-radius: var(--radius-md);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -141,15 +141,15 @@ renderPageStart('staff', $currentPage, 'タグ設定');
     align-items: center;
     gap: 10px;
     padding: 10px 15px;
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     border-radius: var(--radius-sm);
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
 }
 
 .tag-item input {
     flex: 1;
     padding: var(--spacing-sm) var(--spacing-md);
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
     border-radius: var(--radius-sm);
     font-size: var(--text-subhead);
 }
@@ -176,7 +176,7 @@ renderPageStart('staff', $currentPage, 'タグ設定');
 
 .remove-tag-btn {
     padding: 6px 12px;
-    background: var(--apple-red);
+    background: var(--md-red);
     color: white;
     border: none;
     border-radius: var(--radius-sm);
@@ -186,7 +186,7 @@ renderPageStart('staff', $currentPage, 'タグ設定');
 
 .add-tag-btn {
     padding: 10px 20px;
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
     border: none;
     border-radius: var(--radius-sm);
@@ -206,7 +206,7 @@ renderPageStart('staff', $currentPage, 'タグ設定');
 .submit-btn {
     flex: 1;
     padding: 15px 30px;
-    background: var(--apple-green);
+    background: var(--md-green);
     color: white;
     border: none;
     border-radius: var(--radius-sm);
@@ -219,7 +219,7 @@ renderPageStart('staff', $currentPage, 'タグ設定');
 .cancel-btn {
     flex: 1;
     padding: 15px 30px;
-    background: var(--apple-gray);
+    background: var(--md-gray);
     color: white;
     border: none;
     border-radius: var(--radius-sm);
@@ -233,7 +233,7 @@ renderPageStart('staff', $currentPage, 'タグ設定');
 
 .reset-btn {
     padding: 15px 30px;
-    background: var(--apple-orange);
+    background: var(--md-orange);
     color: white;
     border: none;
     border-radius: var(--radius-sm);

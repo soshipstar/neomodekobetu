@@ -118,11 +118,11 @@ renderPageStart('staff', $currentPage, '保護者管理');
 }
 .status-active {
     background: rgba(52, 199, 89, 0.15);
-    color: var(--apple-green);
+    color: var(--md-green);
 }
 .status-inactive {
     background: rgba(255, 59, 48, 0.15);
-    color: var(--apple-red);
+    color: var(--md-red);
 }
 .modal {
     display: none;
@@ -140,7 +140,7 @@ renderPageStart('staff', $currentPage, '保護者管理');
     display: flex;
 }
 .modal-content {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-2xl);
     border-radius: var(--radius-md);
     max-width: 600px;
@@ -153,9 +153,9 @@ renderPageStart('staff', $currentPage, '保護者管理');
     font-size: var(--text-title-3);
     font-weight: bold;
     margin-bottom: var(--spacing-lg);
-    color: var(--apple-blue);
+    color: var(--md-blue);
     padding-bottom: 15px;
-    border-bottom: 2px solid var(--apple-blue);
+    border-bottom: 2px solid var(--md-blue);
 }
 .modal-footer {
     display: flex;
@@ -163,7 +163,7 @@ renderPageStart('staff', $currentPage, '保護者管理');
     gap: 10px;
     margin-top: var(--spacing-lg);
     padding-top: 20px;
-    border-top: 1px solid var(--apple-gray-5);
+    border-top: 1px solid var(--md-gray-5);
 }
 </style>
 
@@ -195,7 +195,7 @@ renderPageStart('staff', $currentPage, '保護者管理');
 <!-- 新規登録フォーム -->
 <div class="card" style="margin-bottom: var(--spacing-lg);">
     <div class="card-body">
-        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-blue);">新規保護者登録</h2>
+        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--md-blue);">新規保護者登録</h2>
         <form action="guardians_save.php" method="POST">
             <input type="hidden" name="action" value="create">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
@@ -208,7 +208,7 @@ renderPageStart('staff', $currentPage, '保護者管理');
                     <input type="email" name="email" class="form-control" placeholder="例: yamada@example.com">
                 </div>
             </div>
-            <div class="info-box" style="background: var(--apple-bg-tertiary); padding: var(--spacing-md); border-radius: var(--radius-md); margin-bottom: var(--spacing-md);">
+            <div class="info-box" style="background: var(--md-bg-tertiary); padding: var(--spacing-md); border-radius: var(--radius-md); margin-bottom: var(--spacing-md);">
                 <p style="margin: 0; color: var(--text-secondary); font-size: var(--text-footnote);">
                     ログインID・パスワードは自動生成されます。登録後に編集画面で変更できます。
                 </p>
@@ -223,7 +223,7 @@ renderPageStart('staff', $currentPage, '保護者管理');
 <!-- 検索・絞り込みフォーム -->
 <div class="card" style="margin-bottom: var(--spacing-lg);">
     <div class="card-body">
-        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-blue);">検索・絞り込み</h2>
+        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--md-blue);">検索・絞り込み</h2>
         <form method="GET" action="">
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
                 <div class="form-group">
@@ -269,7 +269,7 @@ renderPageStart('staff', $currentPage, '保護者管理');
 <!-- 保護者一覧 -->
 <div class="card">
     <div class="card-body">
-        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-blue);">保護者一覧（<?= count($guardians) ?>名）</h2>
+        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--md-blue);">保護者一覧（<?= count($guardians) ?>名）</h2>
         <table class="table">
             <thead>
                 <tr>
@@ -336,8 +336,8 @@ renderPageStart('staff', $currentPage, '保護者管理');
                 <input type="email" name="email" id="edit_email" class="form-control">
             </div>
 
-            <div style="background: var(--apple-bg-tertiary); padding: var(--spacing-md); border-radius: var(--radius-md); margin: var(--spacing-lg) 0;">
-                <h4 style="margin: 0 0 var(--spacing-sm) 0; font-size: var(--text-body); color: var(--apple-blue);">ログイン情報</h4>
+            <div style="background: var(--md-bg-tertiary); padding: var(--spacing-md); border-radius: var(--radius-md); margin: var(--spacing-lg) 0;">
+                <h4 style="margin: 0 0 var(--spacing-sm) 0; font-size: var(--text-body); color: var(--md-blue);">ログイン情報</h4>
                 <div class="form-group" style="margin-bottom: var(--spacing-sm);">
                     <label class="form-label">ログインID</label>
                     <input type="text" name="username" id="edit_username" class="form-control" required>
@@ -345,7 +345,7 @@ renderPageStart('staff', $currentPage, '保護者管理');
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label">現在のパスワード</label>
                     <div style="display: flex; gap: 8px; align-items: center;">
-                        <input type="text" id="edit_password_plain" class="form-control" readonly style="background: var(--apple-bg-secondary); flex: 1;">
+                        <input type="text" id="edit_password_plain" class="form-control" readonly style="background: var(--md-bg-secondary); flex: 1;">
                         <button type="button" onclick="copyPassword()" class="btn btn-secondary btn-sm" title="コピー">コピー</button>
                     </div>
                 </div>

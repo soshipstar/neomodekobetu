@@ -15,6 +15,7 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['user_type'], ['staff', 
 
 $pdo = getDbConnection();
 $staffId = $_SESSION['user_id'];
+$classroomId = $_SESSION['classroom_id'] ?? null;
 
 // POSTデータを取得（FormData形式）
 $message = $_POST['message'] ?? '';
@@ -72,13 +73,22 @@ try {
     $failedCount = 0;
 
     foreach ($guardianIds as $guardianId) {
-        // 保護者に紐づく生徒を取得
-        $stmt = $pdo->prepare("
-            SELECT id FROM students
-            WHERE guardian_id = ? AND is_active = 1
-            LIMIT 1
-        ");
-        $stmt->execute([$guardianId]);
+        // 保護者に紐づく生徒を取得（自分の教室のみ）
+        if ($classroomId) {
+            $stmt = $pdo->prepare("
+                SELECT id FROM students
+                WHERE guardian_id = ? AND is_active = 1 AND classroom_id = ?
+                LIMIT 1
+            ");
+            $stmt->execute([$guardianId, $classroomId]);
+        } else {
+            $stmt = $pdo->prepare("
+                SELECT id FROM students
+                WHERE guardian_id = ? AND is_active = 1
+                LIMIT 1
+            ");
+            $stmt->execute([$guardianId]);
+        }
         $student = $stmt->fetch();
 
         if (!$student) {

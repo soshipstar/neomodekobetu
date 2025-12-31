@@ -59,7 +59,7 @@ renderPageStart('admin', $currentPage, '教室情報設定');
 
 <style>
 .content-box {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-2xl);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-md);
@@ -70,7 +70,7 @@ renderPageStart('admin', $currentPage, '教室情報設定');
     color: var(--text-primary);
     margin-bottom: var(--spacing-lg);
     padding-bottom: 10px;
-    border-bottom: 2px solid var(--apple-purple);
+    border-bottom: 2px solid var(--md-purple);
 }
 
 .form-help {
@@ -87,15 +87,15 @@ renderPageStart('admin', $currentPage, '教室情報設定');
 .logo-preview img {
     max-width: 100%;
     height: auto;
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
     border-radius: var(--radius-sm);
     padding: var(--spacing-md);
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
 }
 
 .quick-link {
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-sm);
     text-decoration: none;
     color: var(--text-primary);
@@ -105,7 +105,7 @@ renderPageStart('admin', $currentPage, '教室情報設定');
     display: inline-block;
     margin-bottom: var(--spacing-lg);
 }
-.quick-link:hover { background: var(--apple-gray-5); }
+.quick-link:hover { background: var(--md-gray-5); }
 
 .checkbox-group {
     display: flex;
@@ -119,20 +119,20 @@ renderPageStart('admin', $currentPage, '教室情報設定');
     align-items: center;
     gap: var(--spacing-sm);
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-sm);
     cursor: pointer;
     transition: all var(--duration-fast);
 }
 
 .checkbox-item:hover {
-    background: var(--apple-gray-5);
+    background: var(--md-gray-5);
 }
 
 .checkbox-item input[type="checkbox"] {
     width: 18px;
     height: 18px;
-    accent-color: var(--apple-purple);
+    accent-color: var(--md-purple);
 }
 
 .checkbox-item label {
@@ -142,7 +142,7 @@ renderPageStart('admin', $currentPage, '教室情報設定');
 
 .section-divider {
     margin: var(--spacing-2xl) 0;
-    border-top: 1px solid var(--apple-gray-5);
+    border-top: 1px solid var(--md-gray-5);
     padding-top: var(--spacing-2xl);
 }
 </style>
@@ -236,7 +236,7 @@ renderPageStart('admin', $currentPage, '教室情報設定');
                 </div>
 
                 <div style="text-align: right; margin-top: var(--spacing-2xl);">
-                    <button type="submit" class="btn btn-primary">💾 保存する</button>
+                    <button type="submit" class="btn btn-primary"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">save</span> 保存する</button>
                 </div>
             </form>
         </div>

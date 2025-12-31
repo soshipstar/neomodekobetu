@@ -62,7 +62,7 @@ renderPageStart('admin', $currentPage, 'タブレットユーザー管理');
 
 <style>
         .content {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: var(--spacing-2xl);
             border-radius: var(--radius-md);
             box-shadow: var(--shadow-md);
@@ -73,7 +73,7 @@ renderPageStart('admin', $currentPage, 'タブレットユーザー管理');
             padding: 15px;
             border-radius: var(--radius-sm);
             margin-bottom: var(--spacing-lg);
-            border-left: 4px solid var(--apple-green);
+            border-left: 4px solid var(--md-green);
         }
         .toolbar {
             display: flex;
@@ -91,7 +91,7 @@ renderPageStart('admin', $currentPage, 'タブレットユーザー管理');
             display: inline-block;
         }
         .btn-primary {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             color: var(--text-primary);
         }
         .btn-primary:hover {
@@ -99,11 +99,11 @@ renderPageStart('admin', $currentPage, 'タブレットユーザー管理');
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
         .btn-warning {
-            background: var(--apple-orange);
+            background: var(--md-orange);
             color: var(--text-primary);
         }
         .btn-danger {
-            background: var(--apple-red);
+            background: var(--md-red);
             color: white;
         }
         .users-table {
@@ -115,15 +115,15 @@ renderPageStart('admin', $currentPage, 'タブレットユーザー管理');
         .users-table td {
             padding: 15px;
             text-align: left;
-            border-bottom: 1px solid var(--apple-gray-5);
+            border-bottom: 1px solid var(--md-gray-5);
         }
         .users-table th {
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
             font-weight: 600;
             color: var(--text-primary);
         }
         .users-table tr:hover {
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
         }
         .badge {
             display: inline-block;
@@ -137,11 +137,11 @@ renderPageStart('admin', $currentPage, 'タブレットユーザー管理');
             color: white;
         }
         .badge-active {
-            background: var(--apple-green);
+            background: var(--md-green);
             color: white;
         }
         .badge-inactive {
-            background: var(--apple-red);
+            background: var(--md-red);
             color: white;
         }
         .action-buttons {
@@ -170,7 +170,7 @@ renderPageStart('admin', $currentPage, 'タブレットユーザー管理');
             background: rgba(0, 0, 0, 0.5);
         }
         .modal-content {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             margin: 5% auto;
             padding: var(--spacing-2xl);
             border-radius: var(--radius-md);
@@ -195,7 +195,7 @@ renderPageStart('admin', $currentPage, 'タブレットユーザー管理');
         .form-group select {
             width: 100%;
             padding: var(--spacing-md);
-            border: 1px solid var(--apple-gray-5);
+            border: 1px solid var(--md-gray-5);
             border-radius: var(--radius-sm);
             font-size: var(--text-subhead);
         }
@@ -231,7 +231,7 @@ renderPageStart('admin', $currentPage, 'タブレットユーザー管理');
 
             <div class="toolbar">
                 <h2>タブレットユーザー一覧</h2>
-                <button class="btn btn-primary" onclick="openCreateModal()">➕ 新規作成</button>
+                <button class="btn btn-primary" onclick="openCreateModal()"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">add</span> 新規作成</button>
             </div>
 
             <?php if (count($tabletUsers) > 0): ?>

@@ -31,7 +31,7 @@ $guardianName = $_SESSION['full_name'];
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <link rel="stylesheet" href="/assets/css/apple-design.css">
+    <link rel="stylesheet" href="/assets/css/google-design.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>保護者ページ（テスト版）</title>
@@ -41,10 +41,10 @@ $guardianName = $_SESSION['full_name'];
             max-width: 800px;
             margin: 50px auto;
             padding: var(--spacing-lg);
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
         }
         .box {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             padding: var(--spacing-lg);
             border-radius: var(--radius-sm);
             margin-bottom: var(--spacing-lg);
@@ -59,7 +59,7 @@ $guardianName = $_SESSION['full_name'];
         .logout-btn {
             display: inline-block;
             padding: var(--spacing-md) 20px;
-            background: var(--apple-red);
+            background: var(--md-red);
             color: white;
             text-decoration: none;
             border-radius: var(--radius-sm);
@@ -90,7 +90,7 @@ $guardianName = $_SESSION['full_name'];
                 if ($stmt->rowCount() > 0) {
                     echo "<p class='success'>✓ grade_levelカラム存在</p>";
                 } else {
-                    echo "<p style='color: orange;'>⚠ grade_levelカラムなし（migration_v2.sql未実行）</p>";
+                    echo "<p style='color: orange;'><span class=\"material-symbols-outlined\" style=\"font-size: 18px; vertical-align: middle;\">warning</span> grade_levelカラムなし（migration_v2.sql未実行）</p>";
                 }
             } else {
                 echo "<p style='color: red;'>✗ studentsテーブルなし</p>";
@@ -101,7 +101,7 @@ $guardianName = $_SESSION['full_name'];
             if ($stmt->rowCount() > 0) {
                 echo "<p class='success'>✓ integrated_notesテーブル存在</p>";
             } else {
-                echo "<p style='color: orange;'>⚠ integrated_notesテーブルなし（migration_v3.sql未実行）</p>";
+                echo "<p style='color: orange;'><span class=\"material-symbols-outlined\" style=\"font-size: 18px; vertical-align: middle;\">warning</span> integrated_notesテーブルなし（migration_v3.sql未実行）</p>";
             }
 
             // 保護者に紐づく生徒を取得
@@ -118,7 +118,7 @@ $guardianName = $_SESSION['full_name'];
 
     <div class="box">
         <a href="/logout.php" class="logout-btn">ログアウト</a>
-        <a href="/emergency_logout.php" class="logout-btn" style="background: var(--apple-bg-secondary); margin-left: 10px;">緊急ログアウト</a>
+        <a href="/emergency_logout.php" class="logout-btn" style="background: var(--md-bg-secondary); margin-left: 10px;">緊急ログアウト</a>
     </div>
 </body>
 </html>

@@ -83,7 +83,7 @@ foreach ($pending as $sub) {
 }
 
 .summary-card {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
@@ -93,12 +93,12 @@ foreach ($pending as $sub) {
 .summary-number {
     font-size: var(--text-title-1);
     font-weight: 700;
-    color: var(--apple-purple);
+    color: var(--md-purple);
     margin-bottom: 5px;
 }
 
-.summary-card.urgent .summary-number { color: var(--apple-red); }
-.summary-card.completed .summary-number { color: var(--apple-green); }
+.summary-card.urgent .summary-number { color: var(--md-red); }
+.summary-card.completed .summary-number { color: var(--md-green); }
 
 .summary-label {
     font-size: var(--text-subhead);
@@ -106,16 +106,16 @@ foreach ($pending as $sub) {
 }
 
 .submission-card {
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     border-radius: var(--radius-md);
     padding: var(--spacing-lg);
     margin-bottom: var(--spacing-md);
-    border-left: 4px solid var(--apple-purple);
+    border-left: 4px solid var(--md-purple);
 }
 
-.submission-card.urgent { border-left-color: var(--apple-red); background: rgba(255, 59, 48, 0.05); }
-.submission-card.overdue { border-left-color: var(--apple-gray-4); }
-.submission-card.completed { border-left-color: var(--apple-green); background: rgba(52, 199, 89, 0.05); }
+.submission-card.urgent { border-left-color: var(--md-red); background: rgba(255, 59, 48, 0.05); }
+.submission-card.overdue { border-left-color: var(--md-gray-4); }
+.submission-card.completed { border-left-color: var(--md-green); background: rgba(52, 199, 89, 0.05); }
 
 .submission-header {
     display: flex;
@@ -145,11 +145,11 @@ foreach ($pending as $sub) {
     font-weight: 600;
 }
 
-.submission-badge.urgent { background: var(--apple-red); color: white; }
-.submission-badge.overdue { background: var(--apple-gray-4); color: white; }
-.submission-badge.normal { background: var(--apple-purple); color: white; }
-.submission-badge.completed { background: var(--apple-green); color: white; }
-.submission-badge.source { background: var(--apple-gray-5); color: var(--text-secondary); }
+.submission-badge.urgent { background: var(--md-red); color: white; }
+.submission-badge.overdue { background: var(--md-gray-4); color: white; }
+.submission-badge.normal { background: var(--md-purple); color: white; }
+.submission-badge.completed { background: var(--md-green); color: white; }
+.submission-badge.source { background: var(--md-gray-5); color: var(--text-secondary); }
 
 .submission-due {
     font-size: var(--text-subhead);
@@ -192,7 +192,7 @@ foreach ($pending as $sub) {
 .modal.active { display: flex; }
 
 .modal-content {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-xl);
     border-radius: var(--radius-md);
     max-width: 500px;
@@ -246,11 +246,11 @@ foreach ($pending as $sub) {
 
 <div class="card">
     <div class="card-body">
-        <h2 style="font-size: var(--text-body); margin-bottom: var(--spacing-lg); color: var(--apple-purple);">未提出の提出物</h2>
+        <h2 style="font-size: var(--text-body); margin-bottom: var(--spacing-lg); color: var(--md-purple);">未提出の提出物</h2>
 
         <?php if (empty($pending)): ?>
             <div class="empty-state">
-                <div class="empty-state-icon">🎉</div>
+                <div class="empty-state-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">celebration</span></div>
                 <p>未提出の提出物はありません</p>
             </div>
         <?php else: ?>
@@ -271,7 +271,7 @@ foreach ($pending as $sub) {
                         </div>
                     </div>
                     <div class="submission-due">
-                        📅 提出期限: <?= date('Y年m月d日', strtotime($sub['due_date'])) ?>
+                        <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event</span> 提出期限: <?= date('Y年m月d日', strtotime($sub['due_date'])) ?>
                         <?php if ($daysLeft >= 0): ?>
                             （あと<?= ceil($daysLeft) ?>日）
                         <?php else: ?>
@@ -284,10 +284,10 @@ foreach ($pending as $sub) {
                         </div>
                     <?php endif; ?>
                     <div class="submission-actions">
-                        <button class="btn btn-success btn-sm" onclick="completeSubmission('<?= $sub['source'] ?>', <?= $sub['id'] ?>)">✅ 完了にする</button>
+                        <button class="btn btn-success btn-sm" onclick="completeSubmission('<?= $sub['source'] ?>', <?= $sub['id'] ?>)"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">check_circle</span> 完了にする</button>
                         <?php if ($sub['source'] === 'student'): ?>
-                            <button class="btn btn-primary btn-sm" onclick="editSubmission(<?= $sub['id'] ?>, '<?= htmlspecialchars($sub['title'], ENT_QUOTES, 'UTF-8') ?>', '<?= htmlspecialchars($sub['description'] ?? '', ENT_QUOTES, 'UTF-8') ?>', '<?= $sub['due_date'] ?>')">✏️ 編集</button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteSubmission(<?= $sub['id'] ?>)">🗑️ 削除</button>
+                            <button class="btn btn-primary btn-sm" onclick="editSubmission(<?= $sub['id'] ?>, '<?= htmlspecialchars($sub['title'], ENT_QUOTES, 'UTF-8') ?>', '<?= htmlspecialchars($sub['description'] ?? '', ENT_QUOTES, 'UTF-8') ?>', '<?= $sub['due_date'] ?>')"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit</span> 編集</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteSubmission(<?= $sub['id'] ?>)"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">delete</span> 削除</button>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -299,7 +299,7 @@ foreach ($pending as $sub) {
 <?php if (!empty($completed)): ?>
 <div class="card" style="margin-top: var(--spacing-lg);">
     <div class="card-body">
-        <h2 style="font-size: var(--text-body); margin-bottom: var(--spacing-lg); color: var(--apple-green);">提出済みの提出物</h2>
+        <h2 style="font-size: var(--text-body); margin-bottom: var(--spacing-lg); color: var(--md-green);">提出済みの提出物</h2>
         <?php foreach ($completed as $sub): ?>
             <div class="submission-card completed">
                 <div class="submission-header">
@@ -309,11 +309,11 @@ foreach ($pending as $sub) {
                         <span class="submission-badge source"><?= $sourceLabels[$sub['source']] ?></span>
                     </div>
                 </div>
-                <div class="submission-due">📅 提出期限: <?= date('Y年m月d日', strtotime($sub['due_date'])) ?></div>
+                <div class="submission-due"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event</span> 提出期限: <?= date('Y年m月d日', strtotime($sub['due_date'])) ?></div>
                 <div class="submission-actions">
-                    <button class="btn btn-warning btn-sm" onclick="uncompleteSubmission('<?= $sub['source'] ?>', <?= $sub['id'] ?>)">↩️ 未完了に戻す</button>
+                    <button class="btn btn-warning btn-sm" onclick="uncompleteSubmission('<?= $sub['source'] ?>', <?= $sub['id'] ?>)"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">undo</span> 未完了に戻す</button>
                     <?php if ($sub['source'] === 'student'): ?>
-                        <button class="btn btn-danger btn-sm" onclick="deleteSubmission(<?= $sub['id'] ?>)">🗑️ 削除</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteSubmission(<?= $sub['id'] ?>)"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">delete</span> 削除</button>
                     <?php endif; ?>
                 </div>
             </div>

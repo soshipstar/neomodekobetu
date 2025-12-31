@@ -79,17 +79,17 @@ renderPageStart('staff', $currentPage, '保護者向けマニュアル生成');
 
 <style>
 .selector-section {
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-lg);
 }
 
 .manual {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-2xl);
     margin-top: var(--spacing-lg);
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
     border-radius: var(--radius-md);
 }
 
@@ -97,7 +97,7 @@ renderPageStart('staff', $currentPage, '保護者向けマニュアル生成');
     text-align: center;
     margin-bottom: var(--spacing-2xl);
     padding-bottom: 20px;
-    border-bottom: 3px solid var(--apple-blue);
+    border-bottom: 3px solid var(--md-blue);
 }
 
 .manual-title {
@@ -119,15 +119,15 @@ renderPageStart('staff', $currentPage, '保護者向けマニュアル生成');
 .manual-section-title {
     font-size: 20px;
     font-weight: 700;
-    color: var(--apple-blue);
+    color: var(--md-blue);
     margin-bottom: 15px;
     padding-left: 10px;
-    border-left: 4px solid var(--apple-blue);
+    border-left: 4px solid var(--md-blue);
 }
 
 .info-box {
-    background: var(--apple-bg-secondary);
-    border: 2px solid var(--apple-blue);
+    background: var(--md-bg-secondary);
+    border: 2px solid var(--md-blue);
     border-radius: var(--radius-md);
     padding: var(--spacing-lg);
     margin-bottom: 15px;
@@ -168,7 +168,7 @@ renderPageStart('staff', $currentPage, '保護者向けマニュアル生成');
     position: absolute;
     left: 0;
     top: 0;
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
     width: 35px;
     height: 35px;
@@ -200,8 +200,8 @@ renderPageStart('staff', $currentPage, '保護者向けマニュアル生成');
 }
 
 .feature-card {
-    background: var(--apple-bg-primary);
-    border: 2px solid var(--apple-gray-5);
+    background: var(--md-bg-primary);
+    border: 2px solid var(--md-gray-5);
     border-radius: var(--radius-sm);
     padding: 15px;
     text-align: center;
@@ -225,7 +225,7 @@ renderPageStart('staff', $currentPage, '保護者向けマニュアル生成');
 
 .contact-info {
     background: rgba(255, 149, 0, 0.1);
-    border: 2px solid var(--apple-orange);
+    border: 2px solid var(--md-orange);
     border-radius: var(--radius-md);
     padding: var(--spacing-lg);
     margin-top: var(--spacing-2xl);
@@ -234,7 +234,7 @@ renderPageStart('staff', $currentPage, '保護者向けマニュアル生成');
 .contact-title {
     font-weight: 700;
     font-size: 18px;
-    color: var(--apple-orange);
+    color: var(--md-orange);
     margin-bottom: var(--spacing-md);
 }
 
@@ -245,7 +245,7 @@ renderPageStart('staff', $currentPage, '保護者向けマニュアル生成');
 
 .quick-link {
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-sm);
     text-decoration: none;
     color: var(--text-primary);
@@ -255,7 +255,7 @@ renderPageStart('staff', $currentPage, '保護者向けマニュアル生成');
     display: inline-block;
     margin-bottom: var(--spacing-lg);
 }
-.quick-link:hover { background: var(--apple-gray-5); }
+.quick-link:hover { background: var(--md-gray-5); }
 
 @media print {
     .sidebar, .mobile-header, .page-header, .selector-section, .quick-link { display: none !important; }
@@ -292,7 +292,7 @@ renderPageStart('staff', $currentPage, '保護者向けマニュアル生成');
                 </div>
 
                 <?php if ($guardianData): ?>
-                    <button onclick="window.print()" class="btn btn-primary">🖨️ 印刷する</button>
+                    <button onclick="window.print()" class="btn btn-primary"><span class="material-symbols-outlined">print</span> 印刷する</button>
                 <?php endif; ?>
             </div>
 
@@ -326,8 +326,8 @@ renderPageStart('staff', $currentPage, '保護者向けマニュアル生成');
                                 <div class="info-value"><?= $guardianData['password_plain'] ? htmlspecialchars($guardianData['password_plain']) : '（未設定 - スタッフにお問い合わせください）' ?></div>
                             </div>
                         </div>
-                        <p style="color: var(--apple-red); font-weight: 600; margin-top: 10px;">
-                            ⚠️ このアカウント情報は大切に保管してください。
+                        <p style="color: var(--md-red); font-weight: 600; margin-top: 10px;">
+                            <span class="material-symbols-outlined" style="vertical-align: middle;">warning</span> このアカウント情報は大切に保管してください。
                         </p>
                     </div>
 
@@ -342,8 +342,8 @@ renderPageStart('staff', $currentPage, '保護者向けマニュアル生成');
                                     <strong style="color: var(--primary-purple); font-size: 18px; display: block; margin-top: 10px;">
                                         <?= htmlspecialchars($loginUrl) ?>
                                     </strong>
-                                    <div style="margin-top: 10px; padding: var(--spacing-md); background: var(--apple-gray-6); border-radius: var(--radius-sm);">
-                                        💡 ヒント：このページをブックマーク（お気に入り）に登録すると便利です
+                                    <div style="margin-top: 10px; padding: var(--spacing-md); background: var(--md-gray-6); border-radius: var(--radius-sm);">
+                                        <span class="material-symbols-outlined" style="vertical-align: middle;">lightbulb</span> ヒント：このページをブックマーク（お気に入り）に登録すると便利です
                                     </div>
                                 </div>
                             </li>
@@ -368,22 +368,22 @@ renderPageStart('staff', $currentPage, '保護者向けマニュアル生成');
                         <div class="manual-section-title">3. 主な機能</div>
                         <div class="feature-grid">
                             <div class="feature-card">
-                                <div class="feature-icon">📋</div>
+                                <div class="feature-icon"><span class="material-symbols-outlined">assignment</span></div>
                                 <div class="feature-name">個別支援計画書</div>
                                 <div class="feature-desc">お子様の支援計画を確認できます</div>
                             </div>
                             <div class="feature-card">
-                                <div class="feature-icon">📊</div>
+                                <div class="feature-icon"><span class="material-symbols-outlined">monitoring</span></div>
                                 <div class="feature-name">モニタリング表</div>
                                 <div class="feature-desc">支援の達成状況を確認できます</div>
                             </div>
                             <div class="feature-card">
-                                <div class="feature-icon">🌉</div>
+                                <div class="feature-icon"><span class="material-symbols-outlined">handshake</span></div>
                                 <div class="feature-name">かけはし入力</div>
                                 <div class="feature-desc">5領域の成長記録を入力します</div>
                             </div>
                             <div class="feature-card">
-                                <div class="feature-icon">📚</div>
+                                <div class="feature-icon"><span class="material-symbols-outlined">menu_book</span></div>
                                 <div class="feature-name">連絡帳一覧</div>
                                 <div class="feature-desc">日々の連絡帳を確認できます</div>
                             </div>
@@ -394,11 +394,11 @@ renderPageStart('staff', $currentPage, '保護者向けマニュアル生成');
                     <div class="manual-section">
                         <div class="manual-section-title">4. 各機能の使い方</div>
 
-                        <h3 style="color: var(--text-primary); margin: var(--spacing-lg) 0 10px 0; font-size: 18px;">📋 個別支援計画書の確認</h3>
+                        <h3 style="color: var(--text-primary); margin: var(--spacing-lg) 0 10px 0; font-size: 18px;"><span class="material-symbols-outlined" style="vertical-align: middle;">assignment</span> 個別支援計画書の確認</h3>
                         <ol class="step-list">
                             <li>
                                 <div class="step-description">
-                                    ダッシュボード上部の「📋 個別支援計画書」ボタンをクリック
+                                    ダッシュボード上部の「個別支援計画書」ボタンをクリック
                                 </div>
                             </li>
                             <li>
@@ -413,11 +413,11 @@ renderPageStart('staff', $currentPage, '保護者向けマニュアル生成');
                             </li>
                         </ol>
 
-                        <h3 style="color: var(--text-primary); margin: var(--spacing-lg) 0 10px 0; font-size: 18px;">📊 モニタリング表の確認</h3>
+                        <h3 style="color: var(--text-primary); margin: var(--spacing-lg) 0 10px 0; font-size: 18px;"><span class="material-symbols-outlined" style="vertical-align: middle;">monitoring</span> モニタリング表の確認</h3>
                         <ol class="step-list">
                             <li>
                                 <div class="step-description">
-                                    ダッシュボード上部の「📊 モニタリング表」ボタンをクリック
+                                    ダッシュボード上部の「モニタリング表」ボタンをクリック
                                 </div>
                             </li>
                             <li>
@@ -432,11 +432,11 @@ renderPageStart('staff', $currentPage, '保護者向けマニュアル生成');
                             </li>
                         </ol>
 
-                        <h3 style="color: var(--text-primary); margin: var(--spacing-lg) 0 10px 0; font-size: 18px;">🌉 かけはしの入力</h3>
+                        <h3 style="color: var(--text-primary); margin: var(--spacing-lg) 0 10px 0; font-size: 18px;"><span class="material-symbols-outlined" style="vertical-align: middle;">handshake</span> かけはしの入力</h3>
                         <ol class="step-list">
                             <li>
                                 <div class="step-description">
-                                    ダッシュボード上部の「🌉 かけはし入力」ボタンをクリック
+                                    ダッシュボード上部の「かけはし入力」ボタンをクリック
                                 </div>
                             </li>
                             <li>
@@ -492,14 +492,14 @@ renderPageStart('staff', $currentPage, '保護者向けマニュアル生成');
 
                     <!-- お問い合わせ -->
                     <div class="contact-info">
-                        <div class="contact-title">📞 お問い合わせ</div>
+                        <div class="contact-title"><span class="material-symbols-outlined" style="vertical-align: middle;">call</span> お問い合わせ</div>
                         <div class="contact-text">
                             ご不明な点がございましたら、スタッフまでお気軽にお問い合わせください。<br>
                             ログインに関するトラブルやシステムの使い方について、サポートいたします。
                         </div>
                     </div>
 
-                    <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid var(--apple-gray-5); color: var(--text-secondary); font-size: var(--text-subhead);">
+                    <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid var(--md-gray-5); color: var(--text-secondary); font-size: var(--text-subhead);">
                         発行日：<?= date('Y年n月j日') ?>
                     </div>
                 </div>

@@ -76,7 +76,7 @@ renderPageStart('student', $currentPage, '週間計画表');
 
 <style>
 .week-nav {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-md) var(--spacing-lg);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-lg);
@@ -102,7 +102,7 @@ renderPageStart('student', $currentPage, '週間計画表');
 }
 
 .plan-section h3 {
-    color: var(--apple-purple);
+    color: var(--md-purple);
     font-size: var(--text-callout);
     margin-bottom: var(--spacing-md);
     display: flex;
@@ -114,7 +114,7 @@ renderPageStart('student', $currentPage, '週間計画表');
     width: 100%;
     min-height: 60px;
     padding: var(--spacing-md);
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
     border-radius: var(--radius-sm);
     font-size: var(--text-subhead);
     font-family: inherit;
@@ -123,8 +123,8 @@ renderPageStart('student', $currentPage, '週間計画表');
 
 .view-content {
     padding: var(--spacing-md);
-    background: var(--apple-gray-6);
-    border-left: 4px solid var(--apple-purple);
+    background: var(--md-gray-6);
+    border-left: 4px solid var(--md-purple);
     border-radius: var(--radius-sm);
     line-height: 1.6;
     white-space: pre-wrap;
@@ -153,7 +153,7 @@ renderPageStart('student', $currentPage, '週間計画表');
 
 .day-label {
     font-weight: 600;
-    color: var(--apple-purple);
+    color: var(--md-purple);
     padding-top: var(--spacing-md);
 }
 
@@ -165,11 +165,11 @@ renderPageStart('student', $currentPage, '週間計画表');
 .submissions-section {
     margin-top: var(--spacing-xl);
     padding-top: var(--spacing-lg);
-    border-top: 2px solid var(--apple-gray-5);
+    border-top: 2px solid var(--md-gray-5);
 }
 
 .submissions-section h3 {
-    color: var(--apple-red);
+    color: var(--md-red);
     font-size: var(--text-body);
     margin-bottom: var(--spacing-md);
 }
@@ -179,15 +179,15 @@ renderPageStart('student', $currentPage, '週間計画表');
     justify-content: space-between;
     align-items: center;
     padding: var(--spacing-md);
-    background: var(--apple-gray-6);
-    border-left: 4px solid var(--apple-orange);
+    background: var(--md-gray-6);
+    border-left: 4px solid var(--md-orange);
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-md);
 }
 
 .submission-view-item.completed {
     opacity: 0.6;
-    border-left-color: var(--apple-green);
+    border-left-color: var(--md-green);
     text-decoration: line-through;
 }
 
@@ -204,7 +204,7 @@ renderPageStart('student', $currentPage, '週間計画表');
     color: var(--text-secondary);
 }
 
-.submission-date.urgent { color: var(--apple-red); font-weight: 600; }
+.submission-date.urgent { color: var(--md-red); font-weight: 600; }
 .submission-date.overdue { color: #721c24; font-weight: 700; }
 
 .submission-checkbox {
@@ -223,14 +223,14 @@ renderPageStart('student', $currentPage, '週間計画表');
 
 .comment {
     padding: var(--spacing-md);
-    background: var(--apple-gray-6);
-    border-left: 4px solid var(--apple-purple);
+    background: var(--md-gray-6);
+    border-left: 4px solid var(--md-purple);
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-md);
 }
 
-.comment.staff { border-left-color: var(--apple-green); }
-.comment.guardian { border-left-color: var(--apple-orange); }
+.comment.staff { border-left-color: var(--md-green); }
+.comment.guardian { border-left-color: var(--md-orange); }
 
 .comment-header {
     display: flex;
@@ -240,7 +240,7 @@ renderPageStart('student', $currentPage, '週間計画表');
 
 .comment-author {
     font-weight: 600;
-    color: var(--apple-purple);
+    color: var(--md-purple);
 }
 
 .comment-date {
@@ -257,7 +257,7 @@ renderPageStart('student', $currentPage, '週間計画表');
     width: 100%;
     min-height: 100px;
     padding: var(--spacing-md);
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
     border-radius: var(--radius-sm);
     font-family: inherit;
     font-size: var(--text-subhead);
@@ -326,32 +326,32 @@ renderPageStart('student', $currentPage, '週間計画表');
                 </div>
 
                 <div class="plan-section">
-                    <h3>🎯 今週の目標</h3>
+                    <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">target</span> 今週の目標</h3>
                     <textarea name="weekly_goal" rows="3" placeholder="今週達成したい目標を書きましょう"><?= $weeklyPlan ? htmlspecialchars($weeklyPlan['weekly_goal'], ENT_QUOTES, 'UTF-8') : '' ?></textarea>
                 </div>
 
                 <div class="plan-section">
-                    <h3>🤝 いっしょに決めた目標</h3>
+                    <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">handshake</span> いっしょに決めた目標</h3>
                     <textarea name="shared_goal" rows="3" placeholder="先生や保護者と一緒に決めた目標を書きましょう"><?= $weeklyPlan ? htmlspecialchars($weeklyPlan['shared_goal'], ENT_QUOTES, 'UTF-8') : '' ?></textarea>
                 </div>
 
                 <div class="plan-section">
-                    <h3>✅ やるべきこと</h3>
+                    <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">check_circle</span> やるべきこと</h3>
                     <textarea name="must_do" rows="3" placeholder="必ずやらなければならないことを書きましょう"><?= $weeklyPlan ? htmlspecialchars($weeklyPlan['must_do'], ENT_QUOTES, 'UTF-8') : '' ?></textarea>
                 </div>
 
                 <div class="plan-section">
-                    <h3>👍 やったほうがいいこと</h3>
+                    <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">thumb_up</span> やったほうがいいこと</h3>
                     <textarea name="should_do" rows="3" placeholder="できればやった方がいいことを書きましょう"><?= $weeklyPlan ? htmlspecialchars($weeklyPlan['should_do'], ENT_QUOTES, 'UTF-8') : '' ?></textarea>
                 </div>
 
                 <div class="plan-section">
-                    <h3>💡 やりたいこと</h3>
+                    <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">lightbulb</span> やりたいこと</h3>
                     <textarea name="want_to_do" rows="3" placeholder="やってみたいことを書きましょう"><?= $weeklyPlan ? htmlspecialchars($weeklyPlan['want_to_do'], ENT_QUOTES, 'UTF-8') : '' ?></textarea>
                 </div>
 
                 <div class="daily-plans">
-                    <h3>📅 各曜日の計画・目標</h3>
+                    <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event</span> 各曜日の計画・目標</h3>
                     <?php
                     $days = ['月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日', '日曜日'];
                     foreach ($days as $index => $day):
@@ -381,42 +381,42 @@ renderPageStart('student', $currentPage, '週間計画表');
             </div>
 
             <div class="plan-section">
-                <h3>🎯 今週の目標</h3>
+                <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">target</span> 今週の目標</h3>
                 <div class="view-content <?= empty($weeklyPlan['weekly_goal']) ? 'empty' : '' ?>">
                     <?= !empty($weeklyPlan['weekly_goal']) ? nl2br(htmlspecialchars($weeklyPlan['weekly_goal'], ENT_QUOTES, 'UTF-8')) : '未記入' ?>
                 </div>
             </div>
 
             <div class="plan-section">
-                <h3>🤝 いっしょに決めた目標</h3>
+                <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">handshake</span> いっしょに決めた目標</h3>
                 <div class="view-content <?= empty($weeklyPlan['shared_goal']) ? 'empty' : '' ?>">
                     <?= !empty($weeklyPlan['shared_goal']) ? nl2br(htmlspecialchars($weeklyPlan['shared_goal'], ENT_QUOTES, 'UTF-8')) : '未記入' ?>
                 </div>
             </div>
 
             <div class="plan-section">
-                <h3>✅ やるべきこと</h3>
+                <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">check_circle</span> やるべきこと</h3>
                 <div class="view-content <?= empty($weeklyPlan['must_do']) ? 'empty' : '' ?>">
                     <?= !empty($weeklyPlan['must_do']) ? nl2br(htmlspecialchars($weeklyPlan['must_do'], ENT_QUOTES, 'UTF-8')) : '未記入' ?>
                 </div>
             </div>
 
             <div class="plan-section">
-                <h3>👍 やったほうがいいこと</h3>
+                <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">thumb_up</span> やったほうがいいこと</h3>
                 <div class="view-content <?= empty($weeklyPlan['should_do']) ? 'empty' : '' ?>">
                     <?= !empty($weeklyPlan['should_do']) ? nl2br(htmlspecialchars($weeklyPlan['should_do'], ENT_QUOTES, 'UTF-8')) : '未記入' ?>
                 </div>
             </div>
 
             <div class="plan-section">
-                <h3>💡 やりたいこと</h3>
+                <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">lightbulb</span> やりたいこと</h3>
                 <div class="view-content <?= empty($weeklyPlan['want_to_do']) ? 'empty' : '' ?>">
                     <?= !empty($weeklyPlan['want_to_do']) ? nl2br(htmlspecialchars($weeklyPlan['want_to_do'], ENT_QUOTES, 'UTF-8')) : '未記入' ?>
                 </div>
             </div>
 
             <div class="daily-plans">
-                <h3>📅 各曜日の計画・目標</h3>
+                <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event</span> 各曜日の計画・目標</h3>
                 <?php
                 $days = ['月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日', '日曜日'];
                 foreach ($days as $index => $day):
@@ -438,7 +438,7 @@ renderPageStart('student', $currentPage, '週間計画表');
 
             <?php if (!empty($submissions)): ?>
                 <div class="submissions-section">
-                    <h3>📋 提出物一覧</h3>
+                    <h3><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">assignment</span> 提出物一覧</h3>
                     <?php foreach ($submissions as $sub):
                         $dueDate = new DateTime($sub['due_date']);
                         $today = new DateTime();
@@ -449,7 +449,7 @@ renderPageStart('student', $currentPage, '週間計画表');
                         <div class="submission-view-item <?= $sub['is_completed'] ? 'completed' : '' ?>">
                             <div class="submission-info">
                                 <div class="submission-title">
-                                    <?= $sub['is_completed'] ? '✅ ' : '' ?><?= htmlspecialchars($sub['submission_item'], ENT_QUOTES, 'UTF-8') ?>
+                                    <?= $sub['is_completed'] ? '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">check_circle</span> ' : '' ?><?= htmlspecialchars($sub['submission_item'], ENT_QUOTES, 'UTF-8') ?>
                                 </div>
                                 <div class="submission-date <?= $dateClass ?>">
                                     期限: <?= date('Y年m月d日', strtotime($sub['due_date'])) ?>
@@ -473,7 +473,7 @@ renderPageStart('student', $currentPage, '週間計画表');
 <?php if ($weeklyPlan): ?>
     <div class="card comments-section">
         <div class="card-body">
-            <h3 style="margin-bottom: var(--spacing-lg);">💬 コメント</h3>
+            <h3 style="margin-bottom: var(--spacing-lg);"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">chat</span> コメント</h3>
 
             <?php if (!empty($comments)): ?>
                 <?php foreach ($comments as $comment): ?>

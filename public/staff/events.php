@@ -153,7 +153,7 @@ renderPageStart('staff', $currentPage, 'イベント管理');
     display: flex;
 }
 .modal-dialog {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-2xl);
     border-radius: var(--radius-md);
     max-width: 700px;
@@ -166,7 +166,7 @@ renderPageStart('staff', $currentPage, 'イベント管理');
 .modal-header {
     margin-bottom: var(--spacing-lg);
     padding-bottom: 15px;
-    border-bottom: 2px solid var(--apple-blue);
+    border-bottom: 2px solid var(--md-blue);
 }
 .modal-header h2 {
     color: var(--text-primary);
@@ -200,19 +200,19 @@ renderPageStart('staff', $currentPage, 'イベント管理');
     align-items: center;
     gap: 6px;
     padding: 8px 12px;
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-sm);
     cursor: pointer;
     transition: all var(--duration-fast);
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
 }
 .checkbox-item:hover {
-    background: var(--apple-gray-5);
+    background: var(--md-gray-5);
 }
 .checkbox-item input[type="checkbox"] {
     width: 16px;
     height: 16px;
-    accent-color: var(--apple-blue);
+    accent-color: var(--md-blue);
     cursor: pointer;
 }
 .checkbox-item label {
@@ -237,7 +237,7 @@ renderPageStart('staff', $currentPage, 'イベント管理');
 .modal-footer {
     margin-top: var(--spacing-lg);
     padding-top: 20px;
-    border-top: 1px solid var(--apple-gray-5);
+    border-top: 1px solid var(--md-gray-5);
     display: flex;
     gap: 10px;
     justify-content: flex-end;
@@ -272,7 +272,7 @@ renderPageStart('staff', $currentPage, 'イベント管理');
 <!-- 新規登録フォーム -->
 <div class="card" style="margin-bottom: var(--spacing-lg);">
     <div class="card-body">
-        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-blue);">新規イベント登録</h2>
+        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--md-blue);">新規イベント登録</h2>
         <form action="events_save.php" method="POST">
             <input type="hidden" name="action" value="create">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
@@ -329,14 +329,14 @@ renderPageStart('staff', $currentPage, 'イベント管理');
             <div class="form-group">
                 <label class="form-label">カレンダー表示色</label>
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <input type="color" name="event_color" id="event_color" value="#28a745" style="width: 60px; height: 40px; border: none; cursor: pointer;">
+                    <input type="color" name="event_color" id="event_color" value="#388E3C" style="width: 60px; height: 40px; border: none; cursor: pointer;">
                     <span style="color: var(--text-secondary);">選択した色でカレンダーに表示されます</span>
                 </div>
                 <div class="color-preview">
-                    <div class="color-option" style="background: var(--apple-green);" onclick="document.getElementById('event_color').value='#28a745'"></div>
-                    <div class="color-option" style="background: var(--apple-blue);" onclick="document.getElementById('event_color').value='#007bff'"></div>
-                    <div class="color-option" style="background: var(--apple-orange);" onclick="document.getElementById('event_color').value='#ffc107'"></div>
-                    <div class="color-option" style="background: var(--apple-red);" onclick="document.getElementById('event_color').value='#dc3545'"></div>
+                    <div class="color-option" style="background: var(--md-green);" onclick="document.getElementById('event_color').value='#388E3C'"></div>
+                    <div class="color-option" style="background: var(--md-blue);" onclick="document.getElementById('event_color').value='#007bff'"></div>
+                    <div class="color-option" style="background: var(--md-orange);" onclick="document.getElementById('event_color').value='#ffc107'"></div>
+                    <div class="color-option" style="background: var(--md-red);" onclick="document.getElementById('event_color').value='#dc3545'"></div>
                     <div class="color-option" style="background: #17a2b8;" onclick="document.getElementById('event_color').value='#17a2b8'"></div>
                     <div class="color-option" style="background: #6f42c1;" onclick="document.getElementById('event_color').value='#6f42c1'"></div>
                 </div>
@@ -351,7 +351,7 @@ renderPageStart('staff', $currentPage, 'イベント管理');
 <!-- 検索フォーム -->
 <div class="card" style="margin-bottom: var(--spacing-lg);">
     <div class="card-body">
-        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-blue);">イベント検索</h2>
+        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--md-blue);">イベント検索</h2>
         <form method="GET" action="events.php">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div class="form-group">
@@ -389,7 +389,7 @@ renderPageStart('staff', $currentPage, 'イベント管理');
 <!-- イベント一覧 -->
 <div class="card">
     <div class="card-body">
-        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--apple-blue);">登録済みイベント一覧</h2>
+        <h2 style="font-size: var(--text-headline); margin-bottom: var(--spacing-lg); color: var(--md-blue);">登録済みイベント一覧</h2>
 
         <?php if (!empty($searchKeyword) || !empty($searchStartDate) || !empty($searchEndDate) || !empty($searchTargetAudience)): ?>
             <div class="alert alert-info">

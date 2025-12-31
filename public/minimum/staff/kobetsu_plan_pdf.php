@@ -44,7 +44,7 @@ $planDetails = $stmt->fetchAll();
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <link rel="stylesheet" href="/assets/css/apple-design.css">
+    <link rel="stylesheet" href="/assets/css/google-design.css">
     <meta charset="UTF-8">
     <title>個別支援計画書 - <?= htmlspecialchars($planData['student_name']) ?></title>
     <style>
@@ -190,7 +190,7 @@ $planDetails = $stmt->fetchAll();
 
         .section-content {
             padding: var(--spacing-sm);
-            border: 1px solid var(--apple-gray-5);
+            border: 1px solid var(--md-gray-5);
             min-height: 50px;
             white-space: pre-wrap;
         }
@@ -239,7 +239,7 @@ $planDetails = $stmt->fetchAll();
         }
 
         .category-本人支援 {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
         }
 
         .category-家族支援 {
@@ -255,7 +255,7 @@ $planDetails = $stmt->fetchAll();
             justify-content: space-around;
             margin-top: var(--spacing-2xl);
             padding-top: 20px;
-            border-top: 1px solid var(--apple-gray-5);
+            border-top: 1px solid var(--md-gray-5);
         }
 
         .signature-item {
@@ -291,7 +291,7 @@ $planDetails = $stmt->fetchAll();
             <span class="size-display" id="heightDisplay">60px</span>
             <button class="control-btn" onclick="adjustHeight(10)">+</button>
         </div>
-        <button class="print-btn" onclick="window.print()">🖨️ PDF印刷</button>
+        <button class="print-btn" onclick="window.print()"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">print</span> PDF印刷</button>
     </div>
 
     <script>

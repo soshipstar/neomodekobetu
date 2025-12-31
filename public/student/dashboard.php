@@ -123,7 +123,7 @@ renderPageStart('student', $currentPage, 'マイページ');
 <!-- メニューグリッド -->
 <div class="menu-grid">
     <a href="schedule.php" class="menu-card">
-        <div class="menu-card-icon">📅</div>
+        <div class="menu-card-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event</span></div>
         <h3>スケジュール</h3>
         <p>出席日、イベント、休日を確認</p>
     </a>
@@ -132,13 +132,13 @@ renderPageStart('student', $currentPage, 'マイページ');
         <?php if ($newMessages > 0): ?>
             <span class="notification-badge" style="position: absolute; top: 15px; right: 15px;"><?= $newMessages ?></span>
         <?php endif; ?>
-        <div class="menu-card-icon">💬</div>
+        <div class="menu-card-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">chat</span></div>
         <h3>チャット</h3>
         <p>スタッフとメッセージをやり取り</p>
     </a>
 
     <a href="weekly_plan.php" class="menu-card">
-        <div class="menu-card-icon">📝</div>
+        <div class="menu-card-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit_note</span></div>
         <h3>週間計画表</h3>
         <p>今週の計画を立てる・確認する</p>
     </a>
@@ -147,7 +147,7 @@ renderPageStart('student', $currentPage, 'マイページ');
         <?php if ($pendingSubmissions > 0): ?>
             <span class="notification-badge" style="position: absolute; top: 15px; right: 15px;"><?= $pendingSubmissions ?></span>
         <?php endif; ?>
-        <div class="menu-card-icon">📤</div>
+        <div class="menu-card-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">upload_file</span></div>
         <h3>提出物</h3>
         <p>提出物の確認と管理</p>
     </a>
@@ -166,7 +166,7 @@ renderPageStart('student', $currentPage, 'マイページ');
     <?php foreach ($overdueSubmissions as $sub): ?>
         <div class="alert alert-danger" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
             <div>
-                <strong>⚠️ 【期限超過】<?= htmlspecialchars($sub['title'], ENT_QUOTES, 'UTF-8') ?></strong>
+                <strong><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">warning</span> 【期限超過】<?= htmlspecialchars($sub['title'], ENT_QUOTES, 'UTF-8') ?></strong>
                 <div style="font-size: var(--text-caption-1); color: var(--text-secondary); margin-top: 4px;">
                     期限: <?= date('Y年m月d日', strtotime($sub['due_date'])) ?>（<?= abs($sub['days_until_due']) ?>日超過）
                 </div>
@@ -197,7 +197,7 @@ renderPageStart('student', $currentPage, 'マイページ');
     <?php foreach ($normalSubmissions as $sub): ?>
         <div class="alert alert-info" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
             <div>
-                <strong>📋 <?= htmlspecialchars($sub['title'], ENT_QUOTES, 'UTF-8') ?></strong>
+                <strong><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">assignment</span> <?= htmlspecialchars($sub['title'], ENT_QUOTES, 'UTF-8') ?></strong>
                 <div style="font-size: var(--text-caption-1); color: var(--text-secondary); margin-top: 4px;">
                     提出期限まであと<?= $sub['days_until_due'] ?>日です（<?= date('Y年m月d日', strtotime($sub['due_date'])) ?>）
                 </div>

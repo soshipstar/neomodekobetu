@@ -1,11 +1,11 @@
 <?php
 /**
  * ログインページ
- * 教室のservice_typeに応じて通常版またはminimum版にリダイレクト
+ * かけはし（minimum版）専用
  */
 
-require_once __DIR__ . '/../includes/auth.php';
-require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/config/database.php';
 
 /**
  * 教室のservice_typeを取得
@@ -19,69 +19,36 @@ function getClassroomServiceType($pdo, $classroomId) {
 }
 
 /**
- * ユーザータイプとservice_typeに応じたリダイレクト先を取得
+ * ユーザータイプに応じたリダイレクト先を取得
  */
-function getRedirectUrl($userType, $serviceType, $isMaster = false) {
-    // マスター管理者は常に通常版の管理画面へ（両方にアクセス可能）
+function getRedirectUrl($userType, $isMaster = false) {
+    // マスター管理者は通常版の管理画面へ
     if ($isMaster) {
         return '/admin/index.php';
     }
 
-    // minimum版の場合
-    if ($serviceType === 'minimum') {
-        switch ($userType) {
-            case 'admin':
-                return '/minimum/admin/index.php';
-            case 'staff':
-                return '/minimum/staff/index.php';
-            case 'guardian':
-                return '/minimum/guardian/dashboard.php';
-            default:
-                return '/login.php';
-        }
-    }
-
-    // 通常版の場合
     switch ($userType) {
         case 'admin':
-            return '/admin/index.php';
+            return '/minimum/admin/index.php';
         case 'staff':
-            return '/staff/renrakucho_activities.php';
-        case 'tablet_user':
-            return '/tablet/index.php';
-        case 'student':
-            return '/student/dashboard.php';
+            return '/minimum/staff/index.php';
         case 'guardian':
-            return '/guardian/dashboard.php';
+            return '/minimum/guardian/dashboard.php';
         default:
-            return '/login.php';
+            return '/minimum/login.php';
     }
 }
 
 // すでにログイン済みの場合はダッシュボードへリダイレクト
-if (isLoggedIn() || isset($_SESSION['student_id'])) {
-    $pdo = getDbConnection();
+if (isLoggedIn()) {
     $userType = $_SESSION['user_type'] ?? '';
-    $classroomId = $_SESSION['classroom_id'] ?? null;
     $isMaster = $_SESSION['is_master'] ?? false;
-    $serviceType = getClassroomServiceType($pdo, $classroomId);
 
-    header('Location: ' . getRedirectUrl($userType, $serviceType, $isMaster));
+    header('Location: ' . getRedirectUrl($userType, $isMaster));
     exit;
 }
 
 $error = '';
-
-// デバッグモード（URLに?debug=1がある場合のみ）
-if (isset($_GET['debug']) && $_GET['debug'] === '1') {
-    echo '<pre>';
-    echo 'Session Status: ' . session_status() . "\n";
-    echo 'Session ID: ' . session_id() . "\n";
-    echo 'Session Save Path: ' . session_save_path() . "\n";
-    echo 'CSRF Token in Session: ' . (isset($_SESSION['csrf_token']) ? 'SET (' . substr($_SESSION['csrf_token'], 0, 10) . '...)' : 'NOT SET') . "\n";
-    echo 'POST csrf_token: ' . (isset($_POST['csrf_token']) ? substr($_POST['csrf_token'], 0, 10) . '...' : 'NOT SET') . "\n";
-    echo '</pre>';
-}
 
 // ログイン処理
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -97,20 +64,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = login($username, $password);
 
         if ($result['success']) {
-            // ログイン成功 - 教室のservice_typeを確認してリダイレクト
+            // ログイン成功 - 教室のservice_typeを確認
             $pdo = getDbConnection();
             $userType = $result['user']['user_type'];
             $classroomId = $result['user']['classroom_id'] ?? null;
             $isMaster = $result['user']['is_master'] ?? false;
             $serviceType = getClassroomServiceType($pdo, $classroomId);
 
-            // マスター管理者以外でminimum版教室のユーザーは通常版ログイン不可
-            if (!$isMaster && $serviceType === 'minimum') {
+            // マスター管理者以外で通常版教室のユーザーはログイン不可
+            if (!$isMaster && $serviceType !== 'minimum') {
                 // ログアウト処理
                 logout();
-                $error = 'このアカウントは「きづり」ではご利用いただけません。「かけはし」ログイン画面からログインしてください。';
+                $error = 'このアカウントは「かけはし」ではご利用いただけません。通常版ログイン画面からログインしてください。';
             } else {
-                header('Location: ' . getRedirectUrl($userType, $serviceType, $isMaster));
+                header('Location: ' . getRedirectUrl($userType, $isMaster));
                 exit;
             }
         } else {
@@ -126,9 +93,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light dark">
     <style>@media(prefers-color-scheme:dark){html,body{background:#1E1E1E;color:rgba(255,255,255,0.87)}}</style>
-    <title>ログイン - 個別支援連絡帳システム きづり</title>
+    <title>ログイン - かけはし</title>
     <link rel="stylesheet" href="/assets/css/google-design.css">
-    <?php include __DIR__ . '/../includes/pwa_header.php'; ?>
+    <?php include __DIR__ . '/../../includes/pwa_header.php'; ?>
     <style>
         body {
             background: var(--md-bg-secondary);
@@ -165,19 +132,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: var(--text-secondary);
             font-size: var(--text-subhead);
         }
-
-        .login-logo {
-            width: 120px;
-            height: auto;
-            margin-bottom: var(--spacing-md);
-        }
     </style>
 </head>
 <body>
     <div class="login-container">
         <div class="login-header">
-            <img src="/uploads/kiduri.png" alt="きづり" class="login-logo">
-            <h1>個別支援連絡帳システム<br>きづり</h1>
+            <h1>かけはし</h1>
             <p>ログインしてください</p>
         </div>
 

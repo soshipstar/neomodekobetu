@@ -233,7 +233,7 @@ renderPageStart($role, $currentPage, '利用者一括登録 - 確認', [
     vertical-align: middle;
 }
 .edit-table th {
-    background: var(--apple-bg-tertiary);
+    background: var(--md-bg-tertiary);
     font-weight: 600;
     white-space: nowrap;
 }
@@ -252,7 +252,7 @@ renderPageStart($role, $currentPage, '利用者一括登録 - 確認', [
 .edit-table input[type="email"]:focus,
 .edit-table select:focus {
     outline: none;
-    border-color: var(--apple-blue);
+    border-color: var(--md-blue);
     box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
 }
 .schedule-checkboxes {
@@ -265,7 +265,7 @@ renderPageStart($role, $currentPage, '利用者一括登録 - 確認', [
     align-items: center;
     gap: 2px;
     padding: 4px 6px;
-    background: var(--apple-bg-tertiary);
+    background: var(--md-bg-tertiary);
     border-radius: var(--radius-sm);
     cursor: pointer;
     font-size: 12px;
@@ -274,11 +274,11 @@ renderPageStart($role, $currentPage, '利用者一括登録 - 確認', [
     margin: 0;
 }
 .schedule-checkboxes label:has(input:checked) {
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
 }
 .required-mark {
-    color: var(--apple-red);
+    color: var(--md-red);
     margin-left: 2px;
 }
 .row-number {
@@ -286,7 +286,7 @@ renderPageStart($role, $currentPage, '利用者一括登録 - 確認', [
     font-size: 11px;
 }
 .optional-field {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
 }
 </style>
 
@@ -323,12 +323,12 @@ renderPageStart($role, $currentPage, '利用者一括登録 - 確認', [
     </div>
     <div class="card-body">
         <div style="display: flex; gap: var(--spacing-xl); flex-wrap: wrap;">
-            <div style="text-align: center; padding: var(--spacing-lg); background: var(--apple-bg-tertiary); border-radius: var(--radius-md); min-width: 150px;">
-                <div style="font-size: var(--text-title-1); font-weight: bold; color: var(--apple-blue);"><?= $guardianCount ?></div>
+            <div style="text-align: center; padding: var(--spacing-lg); background: var(--md-bg-tertiary); border-radius: var(--radius-md); min-width: 150px;">
+                <div style="font-size: var(--text-title-1); font-weight: bold; color: var(--md-blue);"><?= $guardianCount ?></div>
                 <div style="color: var(--text-secondary);">保護者</div>
             </div>
-            <div style="text-align: center; padding: var(--spacing-lg); background: var(--apple-bg-tertiary); border-radius: var(--radius-md); min-width: 150px;">
-                <div style="font-size: var(--text-title-1); font-weight: bold; color: var(--apple-green);"><?= $studentCount ?></div>
+            <div style="text-align: center; padding: var(--spacing-lg); background: var(--md-bg-tertiary); border-radius: var(--radius-md); min-width: 150px;">
+                <div style="font-size: var(--text-title-1); font-weight: bold; color: var(--md-green);"><?= $studentCount ?></div>
                 <div style="color: var(--text-secondary);">生徒</div>
             </div>
         </div>
@@ -437,7 +437,7 @@ renderPageStart($role, $currentPage, '利用者一括登録 - 確認', [
         </div>
     </div>
 
-    <div class="card" style="margin-top: var(--spacing-xl); background: var(--apple-yellow-light, #fffde7); border: 1px solid var(--apple-yellow, #ffc107);">
+    <div class="card" style="margin-top: var(--spacing-xl); background: var(--md-yellow-light, #fffde7); border: 1px solid var(--md-yellow, #ffc107);">
         <div class="card-body">
             <p style="margin: 0; text-align: center; font-size: var(--text-body);">
                 <strong>この保護者、生徒を登録しますがよろしいですか？</strong>

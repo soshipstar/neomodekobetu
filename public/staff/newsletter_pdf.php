@@ -60,18 +60,24 @@ if ($isPreviewMode) {
 } else {
     // GETパラメータからDBデータを取得（従来の方式）
     $id = $_GET['id'] ?? null;
+    $classroomId = $_SESSION['classroom_id'] ?? null;
 
     if (!$id) {
         die('通信IDが指定されていません');
     }
 
-    // 通信を取得
-    $stmt = $pdo->prepare("SELECT * FROM newsletters WHERE id = ?");
-    $stmt->execute([$id]);
+    // 通信を取得（自分の教室のみ）
+    if ($classroomId) {
+        $stmt = $pdo->prepare("SELECT * FROM newsletters WHERE id = ? AND classroom_id = ?");
+        $stmt->execute([$id, $classroomId]);
+    } else {
+        $stmt = $pdo->prepare("SELECT * FROM newsletters WHERE id = ?");
+        $stmt->execute([$id]);
+    }
     $newsletter = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$newsletter) {
-        die('通信が見つかりません');
+        die('通信が見つかりません、またはアクセス権限がありません');
     }
 }
 
@@ -160,39 +166,39 @@ if (!empty($newsletter['greeting'])) {
 // カレンダーセクション（表形式または一覧形式）
 $hasCalendarContent = ($calendarFormat === 'table' && (!empty($calendarEvents) || !empty($calendarHolidays))) || !empty($newsletter['event_calendar']);
 if ($hasCalendarContent) {
-    $sections[] = ['type' => 'calendar', 'title' => '今月の予定', 'icon' => '📅', 'content' => $newsletter['event_calendar'] ?? '', 'format' => $calendarFormat];
+    $sections[] = ['type' => 'calendar', 'title' => '今月の予定', 'icon' => '<span class="material-symbols-outlined">event</span>', 'content' => $newsletter['event_calendar'] ?? '', 'format' => $calendarFormat];
 }
 
 if (!empty($newsletter['event_details'])) {
-    $sections[] = ['type' => 'normal', 'title' => 'イベント詳細', 'icon' => '📝', 'content' => $newsletter['event_details']];
+    $sections[] = ['type' => 'normal', 'title' => 'イベント詳細', 'icon' => '<span class="material-symbols-outlined">edit_note</span>', 'content' => $newsletter['event_details']];
 }
 
 if (!empty($newsletter['weekly_reports'])) {
-    $sections[] = ['type' => 'normal', 'title' => '活動紹介まとめ', 'icon' => '📖', 'content' => $newsletter['weekly_reports']];
+    $sections[] = ['type' => 'normal', 'title' => '活動紹介まとめ', 'icon' => '<span class="material-symbols-outlined">menu_book</span>', 'content' => $newsletter['weekly_reports']];
 }
 
 if (!empty($newsletter['weekly_intro'])) {
-    $sections[] = ['type' => 'normal', 'title' => '曜日別活動紹介', 'icon' => '🗓', 'content' => $newsletter['weekly_intro']];
+    $sections[] = ['type' => 'normal', 'title' => '曜日別活動紹介', 'icon' => '<span class="material-symbols-outlined">calendar_month</span>', 'content' => $newsletter['weekly_intro']];
 }
 
 if (!empty($newsletter['event_results'])) {
-    $sections[] = ['type' => 'normal', 'title' => 'イベント結果報告', 'icon' => '🎉', 'content' => $newsletter['event_results']];
+    $sections[] = ['type' => 'normal', 'title' => 'イベント結果報告', 'icon' => '<span class="material-symbols-outlined">celebration</span>', 'content' => $newsletter['event_results']];
 }
 
 if (!empty($newsletter['elementary_report'])) {
-    $sections[] = ['type' => 'grade', 'title' => '小学生の活動', 'icon' => '🎒', 'content' => $newsletter['elementary_report']];
+    $sections[] = ['type' => 'grade', 'title' => '小学生の活動', 'icon' => '<span class="material-symbols-outlined">school</span>', 'content' => $newsletter['elementary_report']];
 }
 
 if (!empty($newsletter['junior_report'])) {
-    $sections[] = ['type' => 'grade', 'title' => '中高生の活動', 'icon' => '📚', 'content' => $newsletter['junior_report']];
+    $sections[] = ['type' => 'grade', 'title' => '中高生の活動', 'icon' => '<span class="material-symbols-outlined">import_contacts</span>', 'content' => $newsletter['junior_report']];
 }
 
 if (!empty($newsletter['requests'])) {
-    $sections[] = ['type' => 'notice', 'title' => '施設からのお願い', 'icon' => '🙏', 'content' => $newsletter['requests']];
+    $sections[] = ['type' => 'notice', 'title' => '施設からのお願い', 'icon' => '<span class="material-symbols-outlined">volunteer_activism</span>', 'content' => $newsletter['requests']];
 }
 
 if (!empty($newsletter['others'])) {
-    $sections[] = ['type' => 'notice', 'title' => 'その他のお知らせ', 'icon' => '📌', 'content' => $newsletter['others']];
+    $sections[] = ['type' => 'notice', 'title' => 'その他のお知らせ', 'icon' => '<span class="material-symbols-outlined">push_pin</span>', 'content' => $newsletter['others']];
 }
 
 $hasContent = count($sections) > 0;
@@ -203,6 +209,7 @@ $hasContent = count($sections) > 0;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($newsletter['title'], ENT_QUOTES, 'UTF-8') ?> - PDF</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         @page {
@@ -649,7 +656,7 @@ $hasContent = count($sections) > 0;
         <h1><?= htmlspecialchars($newsletter['title'], ENT_QUOTES, 'UTF-8') ?></h1>
         <div class="toolbar-buttons">
             <button class="btn-back" onclick="window.close()">閉じる</button>
-            <button class="btn-pdf" onclick="generatePDF()">📄 PDFをダウンロード</button>
+            <button class="btn-pdf" onclick="generatePDF()"><span class="material-symbols-outlined">description</span> PDFをダウンロード</button>
         </div>
     </div>
 
@@ -680,7 +687,7 @@ $hasContent = count($sections) > 0;
             <?php if (!$hasContent): ?>
             <!-- コンテンツがない場合の警告 -->
             <div class="empty-warning">
-                <h3>⚠️ コンテンツがありません</h3>
+                <h3><span class="material-symbols-outlined">warning</span> コンテンツがありません</h3>
                 <p>この通信にはまだ内容が入力されていません。<br>編集画面で内容を入力するか、AIで生成してください。</p>
             </div>
             <?php else: ?>
@@ -708,7 +715,7 @@ $hasContent = count($sections) > 0;
             ?>
             <div class="section">
                 <div class="section-header">
-                    <span class="section-icon"><?= $section['icon'] ?></span>
+                    <span class="section-icon"><?= $section['icon'] ?? '' ?></span>
                     <?= htmlspecialchars($section['title'], ENT_QUOTES, 'UTF-8') ?>
                 </div>
                 <?php if ($format === 'table'): ?>

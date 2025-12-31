@@ -172,7 +172,7 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成');
     gap: 20px;
     margin-bottom: var(--spacing-2xl);
     padding: var(--spacing-lg);
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     border-radius: var(--radius-md);
     flex-wrap: wrap;
 }
@@ -182,7 +182,7 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成');
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-2xl);
-    border-left: 4px solid var(--apple-blue);
+    border-left: 4px solid var(--md-blue);
 }
 
 .info-row {
@@ -196,7 +196,7 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成');
 
 .info-label {
     font-weight: 600;
-    color: var(--apple-blue);
+    color: var(--md-blue);
     font-size: var(--text-subhead);
 }
 
@@ -208,10 +208,10 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成');
 .section-title {
     font-size: 20px;
     font-weight: 600;
-    color: var(--apple-blue);
+    color: var(--md-blue);
     margin: var(--spacing-2xl) 0 15px 0;
     padding-bottom: 10px;
-    border-bottom: 2px solid var(--apple-blue);
+    border-bottom: 2px solid var(--md-blue);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -227,29 +227,29 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成');
 .monitoring-table {
     width: 100%;
     border-collapse: collapse;
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .monitoring-table th {
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
     padding: var(--spacing-md) 8px;
     text-align: left;
     font-size: var(--text-footnote);
     font-weight: 600;
-    border: 1px solid var(--apple-blue);
+    border: 1px solid var(--md-blue);
 }
 
 .monitoring-table td {
     padding: var(--spacing-md) 8px;
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
     vertical-align: top;
     text-align: left;
 }
 
 .monitoring-table .plan-content {
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     padding: var(--spacing-sm);
     border-radius: 4px;
     font-size: var(--text-subhead);
@@ -263,7 +263,7 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成');
 .monitoring-table select {
     width: 100%;
     padding: var(--spacing-sm);
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
     border-radius: 4px;
     font-size: var(--text-subhead);
     font-family: inherit;
@@ -289,13 +289,13 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成');
     background: rgba(255,149,0,0.15);
     border-radius: 6px;
     text-decoration: none;
-    color: var(--apple-orange);
+    color: var(--md-orange);
     transition: all var(--duration-normal) var(--ease-out);
 }
 
 .monitoring-item:hover,
 .monitoring-item.active {
-    background: var(--apple-orange);
+    background: var(--md-orange);
     color: white;
 }
 
@@ -318,14 +318,14 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成');
 }
 
 .btn-ai-generate:disabled {
-    background: var(--apple-gray);
+    background: var(--md-gray);
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
 }
 
 .generate-progress {
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     padding: 15px 20px;
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-lg);
@@ -334,7 +334,7 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成');
 .progress-bar {
     width: 100%;
     height: 8px;
-    background: var(--apple-gray-5);
+    background: var(--md-gray-5);
     border-radius: 4px;
     overflow: hidden;
     margin-bottom: 8px;
@@ -355,9 +355,9 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成');
 }
 
 .btn-ai-single {
-    background: var(--apple-bg-secondary);
-    color: var(--apple-blue);
-    border: 1px solid var(--apple-blue);
+    background: var(--md-bg-secondary);
+    color: var(--md-blue);
+    border: 1px solid var(--md-blue);
     padding: 4px 8px;
     border-radius: 4px;
     font-size: var(--text-caption-1);
@@ -369,19 +369,19 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成');
 }
 
 .btn-ai-single:hover {
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
 }
 
 .btn-ai-single:disabled {
-    background: var(--apple-gray);
-    border-color: var(--apple-gray);
+    background: var(--md-gray);
+    border-color: var(--md-gray);
     color: white;
     cursor: not-allowed;
 }
 
 .generating {
-    border-color: var(--apple-blue) !important;
+    border-color: var(--md-blue) !important;
     background: rgba(0,122,255,0.05) !important;
 }
 
@@ -394,7 +394,7 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成');
 
 .guardian-confirmed-badge {
     display: inline-block;
-    background: var(--apple-green);
+    background: var(--md-green);
     color: white;
     padding: 6px 15px;
     border-radius: var(--radius-xl);
@@ -405,7 +405,7 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成');
 
 .quick-link {
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-sm);
     text-decoration: none;
     color: var(--text-primary);
@@ -415,7 +415,7 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成');
     display: inline-block;
     margin-bottom: var(--spacing-lg);
 }
-.quick-link:hover { background: var(--apple-gray-5); }
+.quick-link:hover { background: var(--md-gray-5); }
 
 @media (max-width: 768px) {
     .selection-area { flex-direction: column; }
@@ -497,7 +497,7 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成');
                                     <input type="hidden" name="delete_monitoring_id" value="<?= $monitoring['id'] ?>">
                                     <input type="hidden" name="student_id" value="<?= $selectedStudentId ?>">
                                     <input type="hidden" name="plan_id" value="<?= $selectedPlanId ?>">
-                                    <button type="submit" style="background: var(--apple-red); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: var(--text-caption-1);">🗑️</button>
+                                    <button type="submit" style="background: var(--md-red); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: var(--text-caption-1);"><span class="material-symbols-outlined">delete</span></button>
                                 </form>
                             </div>
                         <?php endforeach; ?>
@@ -625,21 +625,21 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成');
                     <div class="section-title" style="margin-top: var(--spacing-2xl);">目標の達成状況</div>
 
                     <!-- 長期目標 -->
-                    <div style="margin-bottom: 25px; padding: var(--spacing-lg); background: var(--apple-gray-6); border-radius: var(--radius-sm); border-left: 4px solid var(--primary-purple);">
-                        <h4 style="color: var(--primary-purple); margin-bottom: 12px; font-size: var(--text-callout);">🎯 長期目標</h4>
+                    <div style="margin-bottom: 25px; padding: var(--spacing-lg); background: var(--md-gray-6); border-radius: var(--radius-sm); border-left: 4px solid var(--primary-purple);">
+                        <h4 style="color: var(--primary-purple); margin-bottom: 12px; font-size: var(--text-callout);"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">target</span> 長期目標</h4>
                         <?php if (!empty($planData['long_term_goal_text'])): ?>
-                            <div style="padding: var(--spacing-md); background: var(--apple-bg-primary); border-radius: 6px; margin-bottom: 15px; line-height: 1.6;">
+                            <div style="padding: var(--spacing-md); background: var(--md-bg-primary); border-radius: 6px; margin-bottom: 15px; line-height: 1.6;">
                                 <?= nl2br(htmlspecialchars($planData['long_term_goal_text'])) ?>
                             </div>
                         <?php else: ?>
-                            <div style="padding: var(--spacing-md); background: var(--apple-bg-primary); border-radius: 6px; margin-bottom: 15px; color: var(--text-secondary); font-style: italic;">
+                            <div style="padding: var(--spacing-md); background: var(--md-bg-primary); border-radius: 6px; margin-bottom: 15px; color: var(--text-secondary); font-style: italic;">
                                 長期目標が設定されていません
                             </div>
                         <?php endif; ?>
 
                         <div class="form-group" style="margin-bottom: 12px;">
                             <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">達成状況</label>
-                            <select name="long_term_goal_achievement" style="width: 100%; padding: var(--spacing-md); border: 1px solid var(--apple-gray-5); border-radius: 6px; font-size: var(--text-subhead);">
+                            <select name="long_term_goal_achievement" style="width: 100%; padding: var(--spacing-md); border: 1px solid var(--md-gray-5); border-radius: 6px; font-size: var(--text-subhead);">
                                 <option value="">-- 選択してください --</option>
                                 <option value="未着手" <?= ($monitoringData['long_term_goal_achievement'] ?? '') == '未着手' ? 'selected' : '' ?>>未着手</option>
                                 <option value="進行中" <?= ($monitoringData['long_term_goal_achievement'] ?? '') == '進行中' ? 'selected' : '' ?>>進行中</option>
@@ -651,26 +651,26 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成');
 
                         <div class="form-group">
                             <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">コメント</label>
-                            <textarea name="long_term_goal_comment" rows="4" style="width: 100%; padding: var(--spacing-md); border: 1px solid var(--apple-gray-5); border-radius: 6px; font-size: var(--text-subhead); font-family: inherit; resize: vertical;" placeholder="長期目標に対する振り返りや意見を記入してください"><?= htmlspecialchars($monitoringData['long_term_goal_comment'] ?? '') ?></textarea>
+                            <textarea name="long_term_goal_comment" rows="4" style="width: 100%; padding: var(--spacing-md); border: 1px solid var(--md-gray-5); border-radius: 6px; font-size: var(--text-subhead); font-family: inherit; resize: vertical;" placeholder="長期目標に対する振り返りや意見を記入してください"><?= htmlspecialchars($monitoringData['long_term_goal_comment'] ?? '') ?></textarea>
                         </div>
                     </div>
 
                     <!-- 短期目標 -->
-                    <div style="margin-bottom: 25px; padding: var(--spacing-lg); background: var(--apple-gray-6); border-radius: var(--radius-sm); border-left: 4px solid var(--apple-green);">
-                        <h4 style="color: var(--apple-green); margin-bottom: 12px; font-size: var(--text-callout);">📌 短期目標</h4>
+                    <div style="margin-bottom: 25px; padding: var(--spacing-lg); background: var(--md-gray-6); border-radius: var(--radius-sm); border-left: 4px solid var(--md-green);">
+                        <h4 style="color: var(--md-green); margin-bottom: 12px; font-size: var(--text-callout);"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">push_pin</span> 短期目標</h4>
                         <?php if (!empty($planData['short_term_goal_text'])): ?>
-                            <div style="padding: var(--spacing-md); background: var(--apple-bg-primary); border-radius: 6px; margin-bottom: 15px; line-height: 1.6;">
+                            <div style="padding: var(--spacing-md); background: var(--md-bg-primary); border-radius: 6px; margin-bottom: 15px; line-height: 1.6;">
                                 <?= nl2br(htmlspecialchars($planData['short_term_goal_text'])) ?>
                             </div>
                         <?php else: ?>
-                            <div style="padding: var(--spacing-md); background: var(--apple-bg-primary); border-radius: 6px; margin-bottom: 15px; color: var(--text-secondary); font-style: italic;">
+                            <div style="padding: var(--spacing-md); background: var(--md-bg-primary); border-radius: 6px; margin-bottom: 15px; color: var(--text-secondary); font-style: italic;">
                                 短期目標が設定されていません
                             </div>
                         <?php endif; ?>
 
                         <div class="form-group" style="margin-bottom: 12px;">
                             <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">達成状況</label>
-                            <select name="short_term_goal_achievement" style="width: 100%; padding: var(--spacing-md); border: 1px solid var(--apple-gray-5); border-radius: 6px; font-size: var(--text-subhead);">
+                            <select name="short_term_goal_achievement" style="width: 100%; padding: var(--spacing-md); border: 1px solid var(--md-gray-5); border-radius: 6px; font-size: var(--text-subhead);">
                                 <option value="">-- 選択してください --</option>
                                 <option value="未着手" <?= ($monitoringData['short_term_goal_achievement'] ?? '') == '未着手' ? 'selected' : '' ?>>未着手</option>
                                 <option value="進行中" <?= ($monitoringData['short_term_goal_achievement'] ?? '') == '進行中' ? 'selected' : '' ?>>進行中</option>
@@ -682,7 +682,7 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成');
 
                         <div class="form-group">
                             <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">コメント</label>
-                            <textarea name="short_term_goal_comment" rows="4" style="width: 100%; padding: var(--spacing-md); border: 1px solid var(--apple-gray-5); border-radius: 6px; font-size: var(--text-subhead); font-family: inherit; resize: vertical;" placeholder="短期目標に対する振り返りや意見を記入してください"><?= htmlspecialchars($monitoringData['short_term_goal_comment'] ?? '') ?></textarea>
+                            <textarea name="short_term_goal_comment" rows="4" style="width: 100%; padding: var(--spacing-md); border: 1px solid var(--md-gray-5); border-radius: 6px; font-size: var(--text-subhead); font-family: inherit; resize: vertical;" placeholder="短期目標に対する振り返りや意見を記入してください"><?= htmlspecialchars($monitoringData['short_term_goal_comment'] ?? '') ?></textarea>
                         </div>
                     </div>
 
@@ -694,8 +694,8 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成');
 
                     <!-- ボタン -->
                     <div class="button-group">
-                        <button type="submit" name="save_draft" class="btn btn-secondary">📝 下書き保存（保護者非公開）</button>
-                        <button type="submit" class="btn btn-success">✓ 作成・提出（保護者公開）</button>
+                        <button type="submit" name="save_draft" class="btn btn-secondary"><span class="material-symbols-outlined">edit_note</span> 下書き保存（保護者非公開）</button>
+                        <button type="submit" class="btn btn-success"><span class="material-symbols-outlined">check_circle</span> 作成・提出（保護者公開）</button>
                     </div>
                 </form>
             <?php else: ?>
@@ -853,7 +853,7 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成');
                     }
 
                     // 成功アニメーション
-                    commentTextarea.style.borderColor = '#28a745';
+                    commentTextarea.style.borderColor = '#388E3C';
                     setTimeout(() => {
                         commentTextarea.style.borderColor = '';
                     }, 2000);

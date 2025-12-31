@@ -71,7 +71,7 @@ $pageTitle = $staffOnly ? 'かけはし（スタッフ）' : 'かけはし（ス
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <link rel="stylesheet" href="/assets/css/apple-design.css">
+    <link rel="stylesheet" href="/assets/css/google-design.css">
     <meta charset="UTF-8">
     <title><?= $pageTitle ?> - <?= htmlspecialchars($student['student_name']) ?></title>
     <style>
@@ -170,10 +170,11 @@ $pageTitle = $staffOnly ? 'かけはし（スタッフ）' : 'かけはし（ス
     </style>
 </head>
 <body>
-    <button class="print-button no-print" onclick="window.print()">🖨️ PDF印刷</button>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <button class="print-button no-print" onclick="window.print()"><span class="material-symbols-outlined">print</span> PDF印刷</button>
 
     <div class="header">
-        <h1>🌉 <?= $pageTitle ?></h1>
+        <h1><span class="material-symbols-outlined">handshake</span> <?= $pageTitle ?></h1>
     </div>
 
     <div class="meta-info">
@@ -182,7 +183,7 @@ $pageTitle = $staffOnly ? 'かけはし（スタッフ）' : 'かけはし（ス
             <span><?= htmlspecialchars($student['student_name']) ?></span>
         </div>
         <div class="meta-item">
-            <span class="meta-label">📋 個別支援計画：</span>
+            <span class="meta-label"><span class="material-symbols-outlined">assignment</span> 個別支援計画：</span>
             <span><?= getIndividualSupportPlanStartMonth($period) ?>開始分</span>
         </div>
     </div>
@@ -222,53 +223,53 @@ $pageTitle = $staffOnly ? 'かけはし（スタッフ）' : 'かけはし（ス
 <?php if ($staffOnly): ?>
     <!-- スタッフのみ表示 -->
     <div class="section">
-        <div class="section-title">💫 本人の願い</div>
+        <div class="section-title"><span class="material-symbols-outlined">auto_awesome</span> 本人の願い</div>
         <div class="section-content"><?= $kakehashiData ? htmlspecialchars($kakehashiData['student_wish']) : '（未入力）' ?></div>
     </div>
 
     <div class="section">
-        <div class="section-title">🎯 短期目標（6か月）</div>
+        <div class="section-title"><span class="material-symbols-outlined">flag</span> 短期目標（6か月）</div>
         <div class="section-content"><?= $kakehashiData ? htmlspecialchars($kakehashiData['short_term_goal']) : '（未入力）' ?></div>
     </div>
 
     <div class="section">
-        <div class="section-title">🎯 長期目標（1年以上）</div>
+        <div class="section-title"><span class="material-symbols-outlined">flag</span> 長期目標（1年以上）</div>
         <div class="section-content"><?= $kakehashiData ? htmlspecialchars($kakehashiData['long_term_goal']) : '（未入力）' ?></div>
     </div>
 
     <div class="section">
-        <div class="section-title">🌟 五領域の課題</div>
+        <div class="section-title"><span class="material-symbols-outlined">star</span> 五領域の課題</div>
         <div class="domain-item">
-            <div class="domain-label">❤️ 健康・生活</div>
+            <div class="domain-label"><span class="material-symbols-outlined">favorite</span> 健康・生活</div>
             <div class="section-content"><?= $kakehashiData ? htmlspecialchars($kakehashiData['domain_health_life']) : '（未入力）' ?></div>
         </div>
         <div class="domain-item" style="margin-top: 15px;">
-            <div class="domain-label">🏃 運動・感覚</div>
+            <div class="domain-label"><span class="material-symbols-outlined">directions_run</span> 運動・感覚</div>
             <div class="section-content"><?= $kakehashiData ? htmlspecialchars($kakehashiData['domain_motor_sensory']) : '（未入力）' ?></div>
         </div>
         <div class="domain-item" style="margin-top: 15px;">
-            <div class="domain-label">🧠 認知・行動</div>
+            <div class="domain-label"><span class="material-symbols-outlined">psychology</span> 認知・行動</div>
             <div class="section-content"><?= $kakehashiData ? htmlspecialchars($kakehashiData['domain_cognitive_behavior']) : '（未入力）' ?></div>
         </div>
         <div class="domain-item" style="margin-top: 15px;">
-            <div class="domain-label">💬 言語・コミュニケーション</div>
+            <div class="domain-label"><span class="material-symbols-outlined">chat</span> 言語・コミュニケーション</div>
             <div class="section-content"><?= $kakehashiData ? htmlspecialchars($kakehashiData['domain_language_communication']) : '（未入力）' ?></div>
         </div>
         <div class="domain-item" style="margin-top: 15px;">
-            <div class="domain-label">👥 人間関係・社会性</div>
+            <div class="domain-label"><span class="material-symbols-outlined">group</span> 人間関係・社会性</div>
             <div class="section-content"><?= $kakehashiData ? htmlspecialchars($kakehashiData['domain_social_relations']) : '（未入力）' ?></div>
         </div>
     </div>
 
     <div class="section">
-        <div class="section-title">📌 その他の課題</div>
+        <div class="section-title"><span class="material-symbols-outlined">push_pin</span> その他の課題</div>
         <div class="section-content"><?= $kakehashiData ? htmlspecialchars($kakehashiData['other_challenges']) : '（未入力）' ?></div>
     </div>
 
 <?php else: ?>
     <!-- スタッフ・保護者統合版 -->
     <div class="section">
-        <div class="section-title">💫 本人の願い</div>
+        <div class="section-title"><span class="material-symbols-outlined">auto_awesome</span> 本人の願い</div>
         <div class="combined-section">
             <div class="sub-section">
                 <div class="sub-section-label">保護者</div>
@@ -282,7 +283,7 @@ $pageTitle = $staffOnly ? 'かけはし（スタッフ）' : 'かけはし（ス
     </div>
 
     <div class="section">
-        <div class="section-title">🏠 家庭での願い / 🏢 事業所での願い</div>
+        <div class="section-title"><span class="material-symbols-outlined">home</span> 家庭での願い / <span class="material-symbols-outlined">business</span> 事業所での願い</div>
         <div class="combined-section">
             <div class="sub-section">
                 <div class="sub-section-label">保護者（家庭）</div>
@@ -296,7 +297,7 @@ $pageTitle = $staffOnly ? 'かけはし（スタッフ）' : 'かけはし（ス
     </div>
 
     <div class="section">
-        <div class="section-title">🎯 短期目標（6か月）</div>
+        <div class="section-title"><span class="material-symbols-outlined">flag</span> 短期目標（6か月）</div>
         <div class="combined-section">
             <div class="sub-section">
                 <div class="sub-section-label">保護者</div>
@@ -310,7 +311,7 @@ $pageTitle = $staffOnly ? 'かけはし（スタッフ）' : 'かけはし（ス
     </div>
 
     <div class="section">
-        <div class="section-title">🎯 長期目標（1年以上）</div>
+        <div class="section-title"><span class="material-symbols-outlined">flag</span> 長期目標（1年以上）</div>
         <div class="combined-section">
             <div class="sub-section">
                 <div class="sub-section-label">保護者</div>
@@ -324,7 +325,7 @@ $pageTitle = $staffOnly ? 'かけはし（スタッフ）' : 'かけはし（ス
     </div>
 
     <div class="section">
-        <div class="section-title">🌟 五領域の課題</div>
+        <div class="section-title"><span class="material-symbols-outlined">star</span> 五領域の課題</div>
 
         <div class="domain-item">
             <div class="domain-label">健康・生活</div>
@@ -398,7 +399,7 @@ $pageTitle = $staffOnly ? 'かけはし（スタッフ）' : 'かけはし（ス
     </div>
 
     <div class="section">
-        <div class="section-title">📌 その他の課題</div>
+        <div class="section-title"><span class="material-symbols-outlined">push_pin</span> その他の課題</div>
         <div class="combined-section">
             <div class="sub-section">
                 <div class="sub-section-label">保護者</div>

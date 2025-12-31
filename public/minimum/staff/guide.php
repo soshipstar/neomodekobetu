@@ -24,7 +24,7 @@ renderPageStart('staff', $currentPage, '業務フローガイド');
 }
 
 .guide-section {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border-radius: var(--radius-lg);
     padding: var(--spacing-xl);
     margin-bottom: var(--spacing-xl);
@@ -77,7 +77,7 @@ renderPageStart('staff', $currentPage, '業務フローガイド');
     align-items: flex-start;
     gap: var(--spacing-md);
     padding: var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-md);
     position: relative;
 }
@@ -167,7 +167,7 @@ renderPageStart('staff', $currentPage, '業務フローガイド');
     top: 0;
     bottom: 0;
     width: 2px;
-    background: var(--apple-gray-4);
+    background: var(--md-gray-4);
 }
 
 .timeline-item {
@@ -210,7 +210,7 @@ renderPageStart('staff', $currentPage, '業務フローガイド');
     align-items: center;
     gap: var(--spacing-sm);
     padding: var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-md);
     text-decoration: none;
     color: var(--text-primary);
@@ -251,7 +251,7 @@ renderPageStart('staff', $currentPage, '業務フローガイド');
 
     <!-- 概要 -->
     <div class="guide-section">
-        <h2>📌 システム概要</h2>
+        <h2><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">push_pin</span> システム概要</h2>
         <p>このシステムは、放課後等デイサービスにおける<strong>個別支援計画の作成・管理</strong>を効率化するためのツールです。</p>
 
         <div class="highlight-box">
@@ -302,7 +302,7 @@ renderPageStart('staff', $currentPage, '業務フローガイド');
 
     <!-- かけはし -->
     <div class="guide-section">
-        <h2>🌉 かけはしについて</h2>
+        <h2><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">handshake</span> かけはしについて</h2>
         <p>「かけはし」は保護者と施設をつなぎ、<strong>現状の課題と目標を共有するための資料</strong>です。個別支援計画を作成する前に必ず作成します。</p>
 
         <div class="highlight-box" style="border-left-color: #f59e0b;">
@@ -340,7 +340,7 @@ renderPageStart('staff', $currentPage, '業務フローガイド');
         <h3>かけはしメニュー</h3>
         <div class="quick-links">
             <a href="kakehashi_staff.php" class="quick-link">
-                <span class="quick-link-icon">🌉</span>
+                <span class="quick-link-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">handshake</span></span>
                 <span>かけはし（職員）入力</span>
             </a>
             <a href="kakehashi_guardian_view.php" class="quick-link">
@@ -352,7 +352,7 @@ renderPageStart('staff', $currentPage, '業務フローガイド');
 
     <!-- 個別支援計画 -->
     <div class="guide-section">
-        <h2>📋 個別支援計画について</h2>
+        <h2><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">assignment</span> 個別支援計画について</h2>
         <p>個別支援計画は、お子様一人ひとりの支援目標と具体的な支援内容を定めた計画書です。<strong>半年ごと</strong>に作成・更新します。</p>
 
         <div class="highlight-box" style="border-left-color: #ef4444;">
@@ -398,7 +398,7 @@ renderPageStart('staff', $currentPage, '業務フローガイド');
         <h3>計画メニュー</h3>
         <div class="quick-links">
             <a href="kobetsu_plan.php" class="quick-link">
-                <span class="quick-link-icon">📋</span>
+                <span class="quick-link-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">assignment</span></span>
                 <span>個別支援計画の作成</span>
             </a>
         </div>
@@ -406,7 +406,7 @@ renderPageStart('staff', $currentPage, '業務フローガイド');
 
     <!-- モニタリング -->
     <div class="guide-section">
-        <h2>📊 モニタリングについて</h2>
+        <h2><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">monitoring</span> モニタリングについて</h2>
         <p>モニタリングは、個別支援計画の進捗状況を評価・記録するものです。<strong>次の個別支援計画の1ヶ月前まで</strong>（＝現在の計画期限の5ヶ月後）に実施します。</p>
 
         <h3>モニタリングの目的</h3>
@@ -464,7 +464,7 @@ renderPageStart('staff', $currentPage, '業務フローガイド');
         <h3>モニタリングメニュー</h3>
         <div class="quick-links">
             <a href="kobetsu_monitoring.php" class="quick-link">
-                <span class="quick-link-icon">📊</span>
+                <span class="quick-link-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">monitoring</span></span>
                 <span>モニタリングの作成・評価</span>
             </a>
         </div>
@@ -472,7 +472,7 @@ renderPageStart('staff', $currentPage, '業務フローガイド');
 
     <!-- 年間スケジュール -->
     <div class="guide-section">
-        <h2>📅 年間スケジュール例</h2>
+        <h2><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event</span> 年間スケジュール例</h2>
         <p>以下は4月入所の生徒を例にした業務サイクルです。<strong>生徒ごとに支援開始日が異なるため、提出期限は個別に管理されます。</strong></p>
 
         <h3>6ヶ月サイクルの例（4月入所の場合）</h3>

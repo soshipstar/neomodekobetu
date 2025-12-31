@@ -14,27 +14,27 @@ try {
     echo "ステップ1: ファイル読み込み開始\n";
 
     require_once __DIR__ . '/../../config/database.php';
-    echo "✓ database.php 読み込み成功\n";
+    echo "<span class='material-symbols-outlined'>check_circle</span> database.php 読み込み成功\n";
 
     require_once __DIR__ . '/../../includes/auth.php';
-    echo "✓ auth.php 読み込み成功\n";
+    echo "<span class='material-symbols-outlined'>check_circle</span> auth.php 読み込み成功\n";
 
     require_once __DIR__ . '/../../includes/student_helper.php';
-    echo "✓ student_helper.php 読み込み成功\n";
+    echo "<span class='material-symbols-outlined'>check_circle</span> student_helper.php 読み込み成功\n";
 
     require_once __DIR__ . '/../../includes/kakehashi_helper.php';
-    echo "✓ kakehashi_helper.php 読み込み成功\n";
+    echo "<span class='material-symbols-outlined'>check_circle</span> kakehashi_helper.php 読み込み成功\n";
 
     echo "\nステップ2: ログインチェック\n";
     requireLogin();
-    echo "✓ ログイン確認成功\n";
+    echo "<span class='material-symbols-outlined'>check_circle</span> ログイン確認成功\n";
 
     checkUserType('staff');
-    echo "✓ 権限確認成功\n";
+    echo "<span class='material-symbols-outlined'>check_circle</span> 権限確認成功\n";
 
     echo "\nステップ3: データベース接続\n";
     $pdo = getDbConnection();
-    echo "✓ データベース接続成功\n";
+    echo "<span class='material-symbols-outlined'>check_circle</span> データベース接続成功\n";
 
     $action = $_POST['action'] ?? '';
     echo "\nアクション: " . htmlspecialchars($action) . "\n";
@@ -88,7 +88,7 @@ try {
         ]);
 
         $studentId = $pdo->lastInsertId();
-        echo "✓ 生徒登録成功 ID: " . $studentId . "\n";
+        echo "<span class='material-symbols-outlined'>check_circle</span> 生徒登録成功 ID: " . $studentId . "\n";
 
         // かけはし期間の自動生成
         if (!empty($kakehashiInitialDate)) {
@@ -98,11 +98,11 @@ try {
 
             try {
                 $result = generateKakehashiPeriods($pdo, $studentId, $kakehashiInitialDate);
-                echo "✓ かけはし期間生成成功\n";
+                echo "<span class='material-symbols-outlined'>check_circle</span> かけはし期間生成成功\n";
                 echo "生成された期間:\n";
                 print_r($result);
             } catch (Exception $e) {
-                echo "⚠ かけはし期間生成エラー: " . $e->getMessage() . "\n";
+                echo "<span class='material-symbols-outlined'>warning</span> かけはし期間生成エラー: " . $e->getMessage() . "\n";
                 echo "スタックトレース:\n" . $e->getTraceAsString() . "\n";
             }
         }
@@ -112,7 +112,7 @@ try {
     }
 
 } catch (Exception $e) {
-    echo "\n❌ エラーが発生しました\n";
+    echo "\n<span class='material-symbols-outlined'>cancel</span> エラーが発生しました\n";
     echo "エラーメッセージ: " . $e->getMessage() . "\n";
     echo "\nスタックトレース:\n";
     echo $e->getTraceAsString();

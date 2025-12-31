@@ -15,13 +15,13 @@ $pageTitle = $pageTitle ?? 'メニュー';
 $role = $role ?? ($_SESSION['user_type'] ?? 'staff');
 $classroom = $classroom ?? null;
 
-// ロール別カラーとアイコン
+// ロール別カラーとアイコン（Material Symbols アイコン名）
 $roleConfig = [
-    'admin' => ['color' => 'purple', 'icon' => '⚙️'],
-    'staff' => ['color' => 'blue', 'icon' => '👨‍💼'],
-    'guardian' => ['color' => 'green', 'icon' => '📖'],
-    'student' => ['color' => 'orange', 'icon' => '🎒'],
-    'tablet_user' => ['color' => 'teal', 'icon' => '📱'],
+    'admin' => ['color' => 'purple', 'icon' => 'settings'],
+    'staff' => ['color' => 'blue', 'icon' => 'badge'],
+    'guardian' => ['color' => 'green', 'icon' => 'menu_book'],
+    'student' => ['color' => 'orange', 'icon' => 'backpack'],
+    'tablet_user' => ['color' => 'teal', 'icon' => 'tablet'],
 ];
 
 $config = $roleConfig[$role] ?? $roleConfig['staff'];
@@ -33,7 +33,7 @@ $userName = $_SESSION['full_name'] ?? '';
         <?php if (isset($classroom) && $classroom && !empty($classroom['logo_path'])): ?>
             <img src="/<?= htmlspecialchars($classroom['logo_path']) ?>" alt="教室ロゴ">
         <?php else: ?>
-            <span class="logo-emoji"><?= $config['icon'] ?></span>
+            <span class="material-symbols-outlined logo-icon" style="font-size: 32px; color: var(--primary-purple);"><?= $config['icon'] ?></span>
         <?php endif; ?>
         <div class="mobile-header-info">
             <h1><?= htmlspecialchars($pageTitle) ?></h1>
@@ -45,7 +45,7 @@ $userName = $_SESSION['full_name'] ?? '';
     <div class="mobile-header-bottom">
         <div class="menu-dropdown">
             <button class="menu-btn" onclick="toggleMenu()">
-                📑 メニュー ▼
+                <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">menu</span> メニュー ▼
             </button>
             <div class="menu-content" id="menuDropdown">
                 <?php if (isset($menuItems) && is_array($menuItems)): ?>
@@ -62,7 +62,7 @@ $userName = $_SESSION['full_name'] ?? '';
                             if (!empty($item['master_only']) && !$isMaster) continue;
                         ?>
                             <a href="<?= htmlspecialchars($item['url']) ?>">
-                                <?= $item['icon'] ?> <?= htmlspecialchars($item['label']) ?>
+                                <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle; margin-right: 8px;"><?= $item['icon'] ?></span><?= htmlspecialchars($item['label']) ?>
                             </a>
                         <?php endif; ?>
                     <?php endforeach; ?>

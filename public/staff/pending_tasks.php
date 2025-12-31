@@ -516,7 +516,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .count-badge {
-            background: var(--apple-red);
+            background: var(--md-red);
             color: white;
             padding: 5px 15px;
             border-radius: var(--radius-xl);
@@ -525,7 +525,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .count-badge.success {
-            background: var(--apple-green);
+            background: var(--md-green);
         }
 
         .table-wrapper {
@@ -537,11 +537,11 @@ renderPageStart('staff', $currentPage, $pageTitle);
         table {
             width: 100%;
             border-collapse: collapse;
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
         }
 
         th {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             color: var(--text-primary);
             padding: 15px;
             text-align: left;
@@ -555,7 +555,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         tr:hover {
-            background: var(--apple-gray-6);
+            background: var(--md-gray-6);
         }
 
         .status-badge {
@@ -567,27 +567,27 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .status-badge.none {
-            background: var(--apple-red);
+            background: var(--md-red);
             color: white;
         }
 
         .status-badge.outdated {
-            background: var(--apple-orange);
+            background: var(--md-orange);
             color: var(--text-primary);
         }
 
         .status-badge.overdue {
-            background: var(--apple-gray);
+            background: var(--md-gray);
             color: white;
         }
 
         .status-badge.urgent {
-            background: var(--apple-red);
+            background: var(--md-red);
             color: white;
         }
 
         .status-badge.warning {
-            background: var(--apple-orange);
+            background: var(--md-orange);
             color: var(--text-primary);
         }
 
@@ -597,7 +597,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             border-radius: var(--radius-sm);
             font-size: var(--text-caption-2);
             font-weight: 600;
-            background: var(--apple-blue);
+            background: var(--md-blue);
             color: white;
             margin-left: 8px;
         }
@@ -615,7 +615,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .btn-primary {
-            background: var(--apple-bg-secondary);
+            background: var(--md-bg-secondary);
             color: var(--text-primary);
         }
 
@@ -625,12 +625,12 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .btn-success {
-            background: var(--apple-green);
+            background: var(--md-green);
             color: white;
         }
 
         .btn-success:hover {
-            background: var(--apple-green);
+            background: var(--md-green);
         }
 
         .empty-state {
@@ -640,7 +640,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .empty-state h3 {
-            color: var(--apple-green);
+            color: var(--md-green);
             margin-bottom: var(--spacing-md);
         }
 
@@ -652,7 +652,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .summary-card {
-            background: var(--apple-bg-primary);
+            background: var(--md-bg-primary);
             padding: var(--spacing-lg);
             border-radius: var(--radius-md);
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -660,15 +660,15 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .summary-card.urgent {
-            border-left-color: var(--apple-red);
+            border-left-color: var(--md-red);
         }
 
         .summary-card.warning {
-            border-left-color: var(--apple-orange);
+            border-left-color: var(--md-orange);
         }
 
         .summary-card.success {
-            border-left-color: var(--apple-green);
+            border-left-color: var(--md-green);
         }
 
         .summary-card-title {
@@ -685,7 +685,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
         .btn-hide {
             padding: 6px 12px;
-            background: var(--apple-gray);
+            background: var(--md-gray);
             color: white;
             border: none;
             border-radius: 6px;
@@ -696,7 +696,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .btn-hide:hover {
-            background: var(--apple-gray);
+            background: var(--md-gray);
         }
 
         .btn-hide:disabled {
@@ -746,7 +746,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             <!-- 個別支援計画書セクション -->
             <div class="section">
                 <div class="section-header">
-                    <h2 class="section-title">📝 個別支援計画書</h2>
+                    <h2 class="section-title"><span class="material-symbols-outlined">edit_note</span> 個別支援計画書</h2>
                     <?php if (!empty($studentsNeedingPlan)): ?>
                         <span class="count-badge"><?php echo count($studentsNeedingPlan); ?>件の対応が必要です</span>
                     <?php else: ?>
@@ -818,7 +818,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                     </div>
                 <?php else: ?>
                     <div class="empty-state">
-                        <h3>✅ すべての生徒の個別支援計画書が最新です</h3>
+                        <h3><span class="material-symbols-outlined">check_circle</span> すべての生徒の個別支援計画書が最新です</h3>
                         <p>対応が必要な項目はありません。</p>
                     </div>
                 <?php endif; ?>
@@ -827,7 +827,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             <!-- モニタリングセクション -->
             <div class="section">
                 <div class="section-header">
-                    <h2 class="section-title">📊 モニタリング</h2>
+                    <h2 class="section-title"><span class="material-symbols-outlined">monitoring</span> モニタリング</h2>
                     <?php if (!empty($studentsNeedingMonitoring)): ?>
                         <span class="count-badge"><?php echo count($studentsNeedingMonitoring); ?>件の対応が必要です</span>
                     <?php else: ?>
@@ -914,7 +914,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                     </div>
                 <?php else: ?>
                     <div class="empty-state">
-                        <h3>✅ すべての生徒のモニタリングが最新です</h3>
+                        <h3><span class="material-symbols-outlined">check_circle</span> すべての生徒のモニタリングが最新です</h3>
                         <p>対応が必要な項目はありません。</p>
                     </div>
                 <?php endif; ?>
@@ -923,7 +923,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             <!-- 保護者かけはしセクション -->
             <div class="section">
                 <div class="section-header">
-                    <h2 class="section-title">🌉 保護者かけはし</h2>
+                    <h2 class="section-title"><span class="material-symbols-outlined">handshake</span> 保護者かけはし</h2>
                     <?php if (!empty($pendingGuardianKakehashi)): ?>
                         <span class="count-badge"><?php echo count($pendingGuardianKakehashi); ?>件の未提出があります</span>
                     <?php else: ?>
@@ -977,7 +977,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                     </div>
                 <?php else: ?>
                     <div class="empty-state">
-                        <h3>✅ すべての保護者かけはしが提出済みです</h3>
+                        <h3><span class="material-symbols-outlined">check_circle</span> すべての保護者かけはしが提出済みです</h3>
                         <p>対応が必要な項目はありません。</p>
                     </div>
                 <?php endif; ?>
@@ -986,7 +986,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
             <!-- スタッフかけはしセクション -->
             <div class="section">
                 <div class="section-header">
-                    <h2 class="section-title">🌉 スタッフかけはし</h2>
+                    <h2 class="section-title"><span class="material-symbols-outlined">handshake</span> スタッフかけはし</h2>
                     <?php if (!empty($pendingStaffKakehashi)): ?>
                         <span class="count-badge"><?php echo count($pendingStaffKakehashi); ?>件の未作成があります</span>
                     <?php else: ?>
@@ -1040,7 +1040,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                     </div>
                 <?php else: ?>
                     <div class="empty-state">
-                        <h3>✅ すべてのスタッフかけはしが作成済みです</h3>
+                        <h3><span class="material-symbols-outlined">check_circle</span> すべてのスタッフかけはしが作成済みです</h3>
                         <p>対応が必要な項目はありません。</p>
                     </div>
                 <?php endif; ?>

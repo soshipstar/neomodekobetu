@@ -1,6 +1,6 @@
 /**
  * 管理者用CSS
- * アクセントカラー: 紫 (--apple-purple)
+ * アクセントカラー: 紫 (--md-purple)
  */
 
 /* ========================================
@@ -9,13 +9,13 @@
 
 .role-admin .sidebar-menu a:hover {
     background: rgba(175, 82, 222, 0.1);
-    border-left-color: var(--apple-purple);
+    border-left-color: var(--md-purple);
 }
 
 .role-admin .sidebar-menu a.active {
     background: rgba(175, 82, 222, 0.15);
-    border-left-color: var(--apple-purple);
-    color: var(--apple-purple);
+    border-left-color: var(--md-purple);
+    color: var(--md-purple);
 }
 
 .role-admin .sidebar-user-info {
@@ -24,15 +24,15 @@
 
 .role-admin .user-info-box {
     background: rgba(175, 82, 222, 0.1);
-    color: var(--apple-purple);
+    color: var(--md-purple);
 }
 
 .role-admin .stat-card .number {
-    color: var(--apple-purple);
+    color: var(--md-purple);
 }
 
 .role-admin .menu-card h3 {
-    color: var(--apple-purple);
+    color: var(--md-purple);
 }
 
 /* ========================================
@@ -64,21 +64,21 @@
 
 .admin-status.active {
     background: rgba(52, 199, 89, 0.15);
-    color: var(--apple-green);
+    color: var(--md-green);
 }
 
 .admin-status.inactive {
     background: rgba(142, 142, 147, 0.15);
-    color: var(--apple-gray-2);
+    color: var(--md-gray-2);
 }
 
 /* 教室管理カード */
 .classroom-card {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border-radius: var(--radius-md);
     padding: var(--spacing-lg);
     box-shadow: var(--shadow-sm);
-    border-left: 4px solid var(--apple-purple);
+    border-left: 4px solid var(--md-purple);
 }
 
 .classroom-card-header {
@@ -106,7 +106,7 @@
 .classroom-stat-value {
     font-size: var(--text-title-3);
     font-weight: 600;
-    color: var(--apple-purple);
+    color: var(--md-purple);
 }
 
 .classroom-stat-label {
@@ -122,18 +122,18 @@
 }
 
 .admin-table th {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     padding: var(--spacing-md) var(--spacing-lg);
     text-align: left;
     font-weight: 600;
     font-size: var(--text-subhead);
     color: var(--text-secondary);
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
 }
 
 .admin-table td {
     padding: var(--spacing-md) var(--spacing-lg);
-    border-bottom: 1px solid var(--apple-gray-5);
+    border-bottom: 1px solid var(--md-gray-5);
     vertical-align: middle;
 }
 

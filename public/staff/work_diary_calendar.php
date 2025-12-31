@@ -82,7 +82,7 @@ renderPageStart('staff', $currentPage, '業務日誌');
 }
 
 .calendar-panel {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border-radius: var(--radius-md);
     padding: var(--spacing-lg);
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -107,7 +107,7 @@ renderPageStart('staff', $currentPage, '業務日誌');
 
 .calendar-nav a {
     padding: 6px 12px;
-    background: var(--apple-gray-5);
+    background: var(--md-gray-5);
     color: var(--text-primary);
     text-decoration: none;
     border-radius: var(--radius-sm);
@@ -115,7 +115,7 @@ renderPageStart('staff', $currentPage, '業務日誌');
 }
 
 .calendar-nav a:hover {
-    background: var(--apple-gray-4);
+    background: var(--md-gray-4);
 }
 
 .calendar-grid {
@@ -132,8 +132,8 @@ renderPageStart('staff', $currentPage, '業務日誌');
     color: var(--text-secondary);
 }
 
-.calendar-day-header.sunday { color: var(--apple-red); }
-.calendar-day-header.saturday { color: var(--apple-blue); }
+.calendar-day-header.sunday { color: var(--md-red); }
+.calendar-day-header.saturday { color: var(--md-blue); }
 
 .calendar-day {
     aspect-ratio: 1;
@@ -149,7 +149,7 @@ renderPageStart('staff', $currentPage, '業務日誌');
 }
 
 .calendar-day:hover {
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
 }
 
 .calendar-day.empty {
@@ -157,12 +157,12 @@ renderPageStart('staff', $currentPage, '業務日誌');
 }
 
 .calendar-day.today {
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
 }
 
 .calendar-day.selected {
-    background: var(--apple-green);
+    background: var(--md-green);
     color: white;
 }
 
@@ -172,7 +172,7 @@ renderPageStart('staff', $currentPage, '業務日誌');
     bottom: 4px;
     width: 6px;
     height: 6px;
-    background: var(--apple-orange);
+    background: var(--md-orange);
     border-radius: 50%;
 }
 
@@ -185,8 +185,8 @@ renderPageStart('staff', $currentPage, '業務日誌');
     font-weight: 500;
 }
 
-.calendar-day .day-number.sunday { color: var(--apple-red); }
-.calendar-day .day-number.saturday { color: var(--apple-blue); }
+.calendar-day .day-number.sunday { color: var(--md-red); }
+.calendar-day .day-number.saturday { color: var(--md-blue); }
 .calendar-day.today .day-number,
 .calendar-day.selected .day-number {
     color: white;
@@ -195,7 +195,7 @@ renderPageStart('staff', $currentPage, '業務日誌');
 .calendar-legend {
     margin-top: var(--spacing-lg);
     padding-top: var(--spacing-md);
-    border-top: 1px solid var(--apple-gray-5);
+    border-top: 1px solid var(--md-gray-5);
     display: flex;
     gap: 20px;
     font-size: var(--text-footnote);
@@ -214,11 +214,11 @@ renderPageStart('staff', $currentPage, '業務日誌');
     border-radius: 50%;
 }
 
-.legend-dot.diary { background: var(--apple-orange); }
-.legend-dot.today { background: var(--apple-blue); }
+.legend-dot.diary { background: var(--md-orange); }
+.legend-dot.today { background: var(--md-blue); }
 
 .diary-panel {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border-radius: var(--radius-md);
     padding: var(--spacing-lg);
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -230,7 +230,7 @@ renderPageStart('staff', $currentPage, '業務日誌');
     align-items: center;
     margin-bottom: var(--spacing-lg);
     padding-bottom: var(--spacing-md);
-    border-bottom: 2px solid var(--apple-blue);
+    border-bottom: 2px solid var(--md-blue);
 }
 
 .diary-panel-header h3 {
@@ -240,7 +240,7 @@ renderPageStart('staff', $currentPage, '業務日誌');
 
 .edit-btn {
     padding: 8px 16px;
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
     text-decoration: none;
     border-radius: var(--radius-sm);
@@ -257,7 +257,7 @@ renderPageStart('staff', $currentPage, '業務日誌');
 
 .diary-section h4 {
     font-size: var(--text-subhead);
-    color: var(--apple-blue);
+    color: var(--md-blue);
     margin-bottom: 8px;
     display: flex;
     align-items: center;
@@ -265,7 +265,7 @@ renderPageStart('staff', $currentPage, '業務日誌');
 }
 
 .diary-content {
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     padding: var(--spacing-md);
     border-radius: var(--radius-sm);
     font-size: var(--text-subhead);
@@ -291,7 +291,7 @@ renderPageStart('staff', $currentPage, '業務日誌');
 
 .create-btn {
     padding: 12px 24px;
-    background: var(--apple-blue);
+    background: var(--md-blue);
     color: white;
     text-decoration: none;
     border-radius: var(--radius-sm);
@@ -307,7 +307,7 @@ renderPageStart('staff', $currentPage, '業務日誌');
     color: var(--text-tertiary);
     margin-top: var(--spacing-lg);
     padding-top: var(--spacing-md);
-    border-top: 1px solid var(--apple-gray-5);
+    border-top: 1px solid var(--md-gray-5);
 }
 
 .quick-actions {
@@ -318,7 +318,7 @@ renderPageStart('staff', $currentPage, '業務日誌');
 
 .quick-action-btn {
     padding: 10px 20px;
-    background: var(--apple-green);
+    background: var(--md-green);
     color: white;
     text-decoration: none;
     border-radius: var(--radius-sm);
@@ -337,7 +337,7 @@ renderPageStart('staff', $currentPage, '業務日誌');
     <a href="work_diary.php?date=<?php echo date('Y-m-d'); ?>" class="quick-action-btn">
         <span>+</span> 本日の業務日誌を作成
     </a>
-    <a href="renrakucho_activities.php" class="nav-btn" style="padding: 10px 20px; background: var(--apple-gray-5); color: var(--text-primary); text-decoration: none; border-radius: var(--radius-sm);">
+    <a href="renrakucho_activities.php" class="nav-btn" style="padding: 10px 20px; background: var(--md-gray-5); color: var(--text-primary); text-decoration: none; border-radius: var(--radius-sm);">
         ← 活動管理に戻る
     </a>
 </div>
@@ -426,32 +426,32 @@ renderPageStart('staff', $currentPage, '業務日誌');
             </div>
 
             <div class="diary-section">
-                <h4><span>📝</span> 前日の振り返り</h4>
+                <h4><span class="material-symbols-outlined">edit_note</span> 前日の振り返り</h4>
                 <div class="diary-content <?php echo empty($selectedDiary['previous_day_review']) ? 'empty' : ''; ?>"><?php echo !empty($selectedDiary['previous_day_review']) ? htmlspecialchars($selectedDiary['previous_day_review']) : '記入なし'; ?></div>
             </div>
 
             <div class="diary-section">
-                <h4><span>📢</span> 本日の伝達事項</h4>
+                <h4><span class="material-symbols-outlined">campaign</span> 本日の伝達事項</h4>
                 <div class="diary-content <?php echo empty($selectedDiary['daily_communication']) ? 'empty' : ''; ?>"><?php echo !empty($selectedDiary['daily_communication']) ? htmlspecialchars($selectedDiary['daily_communication']) : '記入なし'; ?></div>
             </div>
 
             <div class="diary-section">
-                <h4><span>👥</span> 本日の役割分担</h4>
+                <h4><span class="material-symbols-outlined">group</span> 本日の役割分担</h4>
                 <div class="diary-content <?php echo empty($selectedDiary['daily_roles']) ? 'empty' : ''; ?>"><?php echo !empty($selectedDiary['daily_roles']) ? htmlspecialchars($selectedDiary['daily_roles']) : '記入なし'; ?></div>
             </div>
 
             <div class="diary-section">
-                <h4><span>👧</span> 前日の児童の状況</h4>
+                <h4><span class="material-symbols-outlined">face</span> 前日の児童の状況</h4>
                 <div class="diary-content <?php echo empty($selectedDiary['prev_day_children_status']) ? 'empty' : ''; ?>"><?php echo !empty($selectedDiary['prev_day_children_status']) ? htmlspecialchars($selectedDiary['prev_day_children_status']) : '記入なし'; ?></div>
             </div>
 
             <div class="diary-section">
-                <h4><span>📌</span> 児童に関する特記事項</h4>
+                <h4><span class="material-symbols-outlined">push_pin</span> 児童に関する特記事項</h4>
                 <div class="diary-content <?php echo empty($selectedDiary['children_special_notes']) ? 'empty' : ''; ?>"><?php echo !empty($selectedDiary['children_special_notes']) ? htmlspecialchars($selectedDiary['children_special_notes']) : '記入なし'; ?></div>
             </div>
 
             <div class="diary-section">
-                <h4><span>📋</span> その他メモ</h4>
+                <h4><span class="material-symbols-outlined">description</span> その他メモ</h4>
                 <div class="diary-content <?php echo empty($selectedDiary['other_notes']) ? 'empty' : ''; ?>"><?php echo !empty($selectedDiary['other_notes']) ? htmlspecialchars($selectedDiary['other_notes']) : '記入なし'; ?></div>
             </div>
 

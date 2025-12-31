@@ -19,6 +19,6 @@ if (isLoggedIn()) {
     exit;
 }
 
-// 未ログインの場合はログインページへ
-header('Location: /login.php');
+// 未ログインの場合はかけはしログインページへ
+header('Location: /minimum/login.php');
 exit;

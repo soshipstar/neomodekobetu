@@ -117,16 +117,16 @@ renderPageStart('staff', $currentPage, '未確認連絡帳一覧');
 }
 
 .stat-card {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: 20px;
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
     text-align: center;
 }
 
-.stat-card.urgent { border-left: 4px solid var(--apple-red); }
-.stat-card.warning { border-left: 4px solid var(--apple-orange); }
-.stat-card.total { border-left: 4px solid var(--apple-blue); }
+.stat-card.urgent { border-left: 4px solid var(--md-red); }
+.stat-card.warning { border-left: 4px solid var(--md-orange); }
+.stat-card.total { border-left: 4px solid var(--md-blue); }
 
 .stat-number {
     font-size: 36px;
@@ -134,26 +134,26 @@ renderPageStart('staff', $currentPage, '未確認連絡帳一覧');
     margin-bottom: 5px;
 }
 
-.stat-number.urgent { color: var(--apple-red); }
-.stat-number.warning { color: var(--apple-orange); }
-.stat-number.total { color: var(--apple-blue); }
+.stat-number.urgent { color: var(--md-red); }
+.stat-number.warning { color: var(--md-orange); }
+.stat-number.total { color: var(--md-blue); }
 .stat-label { color: var(--text-secondary); font-size: var(--text-subhead); }
 
 .note-card {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: 20px;
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-md);
     box-shadow: var(--shadow-sm);
-    border-left: 4px solid var(--apple-gray-4);
+    border-left: 4px solid var(--md-gray-4);
 }
 
 .note-card.urgent {
-    border-left-color: var(--apple-red);
+    border-left-color: var(--md-red);
     background: rgba(255,59,48,0.03);
 }
 
-.note-card.warning { border-left-color: var(--apple-orange); }
+.note-card.warning { border-left-color: var(--md-orange); }
 
 .note-header {
     display: flex;
@@ -185,9 +185,9 @@ renderPageStart('staff', $currentPage, '未確認連絡帳一覧');
     font-weight: bold;
 }
 
-.days-badge.urgent { background: var(--apple-red); color: white; }
-.days-badge.warning { background: var(--apple-orange); color: white; }
-.days-badge.normal { background: var(--apple-gray-5); color: var(--text-primary); }
+.days-badge.urgent { background: var(--md-red); color: white; }
+.days-badge.warning { background: var(--md-orange); color: white; }
+.days-badge.normal { background: var(--md-gray-5); color: var(--text-primary); }
 
 .note-meta { color: var(--text-secondary); font-size: var(--text-footnote); margin-bottom: 12px; }
 
@@ -196,7 +196,7 @@ renderPageStart('staff', $currentPage, '未確認連絡帳一覧');
     font-size: var(--text-subhead);
     line-height: 1.6;
     white-space: pre-wrap;
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     padding: 12px;
     border-radius: var(--radius-sm);
     max-height: 150px;
@@ -206,7 +206,7 @@ renderPageStart('staff', $currentPage, '未確認連絡帳一覧');
 .guardian-info {
     margin-top: 12px;
     padding-top: 12px;
-    border-top: 1px solid var(--apple-gray-5);
+    border-top: 1px solid var(--md-gray-5);
     font-size: var(--text-footnote);
     color: var(--text-secondary);
 }
@@ -214,17 +214,17 @@ renderPageStart('staff', $currentPage, '未確認連絡帳一覧');
 .empty-state {
     text-align: center;
     padding: 60px 20px;
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
 }
 
-.empty-state h2 { color: var(--apple-green); margin-bottom: var(--spacing-md); }
+.empty-state h2 { color: var(--md-green); margin-bottom: var(--spacing-md); }
 .empty-icon { font-size: 64px; margin-bottom: var(--spacing-md); }
 
 .quick-link {
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-sm);
     text-decoration: none;
     color: var(--text-primary);
@@ -234,7 +234,7 @@ renderPageStart('staff', $currentPage, '未確認連絡帳一覧');
     display: inline-block;
     margin-bottom: var(--spacing-lg);
 }
-.quick-link:hover { background: var(--apple-gray-5); }
+.quick-link:hover { background: var(--md-gray-5); }
 
 .filter-row {
     display: flex;
@@ -296,7 +296,7 @@ renderPageStart('staff', $currentPage, '未確認連絡帳一覧');
 
         <?php if (empty($unconfirmedNotes)): ?>
             <div class="empty-state">
-                <div class="empty-icon">✅</div>
+                <div class="empty-icon"><span class="material-symbols-outlined">check_circle</span></div>
                 <h2>未確認の連絡帳はありません</h2>
                 <p>過去<?php echo $filterDays; ?>日間に送信した連絡帳はすべて保護者に確認されています。</p>
             </div>
@@ -336,7 +336,7 @@ renderPageStart('staff', $currentPage, '未確認連絡帳一覧');
                     <div class="note-content"><?php echo htmlspecialchars($note['integrated_content']); ?></div>
                     <?php if ($note['guardian_name']): ?>
                         <div class="guardian-info">
-                            👤 保護者: <?php echo htmlspecialchars($note['guardian_name']); ?>さん
+                            <span class="material-symbols-outlined">person</span> 保護者: <?php echo htmlspecialchars($note['guardian_name']); ?>さん
                         </div>
                     <?php endif; ?>
                 </div>

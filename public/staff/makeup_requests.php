@@ -12,6 +12,11 @@ requireUserType(['staff', 'admin']);
 $pdo = getDbConnection();
 $staffId = $_SESSION['user_id'];
 
+// スタッフの所属教室を取得
+$stmt = $pdo->prepare("SELECT classroom_id FROM users WHERE id = ?");
+$stmt->execute([$staffId]);
+$staffClassroomId = $stmt->fetchColumn();
+
 // 検索パラメータ
 $status = $_GET['status'] ?? 'pending'; // pending, approved, rejected, all
 $searchDate = $_GET['search_date'] ?? '';
@@ -19,6 +24,10 @@ $searchDate = $_GET['search_date'] ?? '';
 // クエリ構築
 $where = [];
 $params = [];
+
+// 教室IDでフィルタリング（必須）
+$where[] = "s.classroom_id = ?";
+$params[] = $staffClassroomId;
 
 // 振替希望日が設定されているものだけ表示（未設定は欠席扱い）
 $where[] = "an.makeup_request_date IS NOT NULL";
@@ -85,26 +94,26 @@ renderPageStart('staff', $currentPage, '振替依頼管理');
 }
 
 .request-card {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-lg);
     border-radius: var(--radius-sm);
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    border-left: 4px solid var(--apple-gray-5);
+    border-left: 4px solid var(--md-gray-5);
 }
 
 .request-card.pending {
-    border-left-color: var(--apple-orange);
-    background: var(--apple-bg-secondary);
+    border-left-color: var(--md-orange);
+    background: var(--md-bg-secondary);
 }
 
 .request-card.approved {
-    border-left-color: var(--apple-green);
-    background: var(--apple-bg-secondary);
+    border-left-color: var(--md-green);
+    background: var(--md-bg-secondary);
 }
 
 .request-card.rejected {
-    border-left-color: var(--apple-red);
-    background: var(--apple-bg-secondary);
+    border-left-color: var(--md-red);
+    background: var(--md-bg-secondary);
 }
 
 .request-header {
@@ -137,9 +146,9 @@ renderPageStart('staff', $currentPage, '振替依頼管理');
     white-space: nowrap;
 }
 
-.status-badge.pending { background: rgba(255,149,0,0.15); color: var(--apple-orange); }
-.status-badge.approved { background: rgba(52,199,89,0.15); color: var(--apple-green); }
-.status-badge.rejected { background: rgba(255,59,48,0.15); color: var(--apple-red); }
+.status-badge.pending { background: rgba(255,149,0,0.15); color: var(--md-orange); }
+.status-badge.approved { background: rgba(52,199,89,0.15); color: var(--md-green); }
+.status-badge.rejected { background: rgba(255,59,48,0.15); color: var(--md-red); }
 
 .request-details {
     display: grid;
@@ -147,7 +156,7 @@ renderPageStart('staff', $currentPage, '振替依頼管理');
     gap: 15px;
     margin-bottom: 15px;
     padding: 15px;
-    background: var(--apple-bg-tertiary);
+    background: var(--md-bg-tertiary);
     border-radius: 6px;
 }
 
@@ -171,14 +180,14 @@ renderPageStart('staff', $currentPage, '振替依頼管理');
 
 .detail-value.highlight {
     font-weight: 600;
-    color: var(--apple-blue);
+    color: var(--md-blue);
     font-size: var(--text-callout);
 }
 
 .reason-text {
     margin-bottom: 15px;
     padding: var(--spacing-md);
-    background: var(--apple-gray-6);
+    background: var(--md-gray-6);
     border-radius: 6px;
     font-size: var(--text-subhead);
     color: var(--text-secondary);
@@ -200,11 +209,11 @@ renderPageStart('staff', $currentPage, '振替依頼管理');
     transition: all var(--duration-fast) var(--ease-out);
 }
 
-.btn-approve { background: var(--apple-green); color: white; }
+.btn-approve { background: var(--md-green); color: white; }
 .btn-approve:hover { background: #28b463; }
-.btn-reject { background: var(--apple-red); color: white; }
+.btn-reject { background: var(--md-red); color: white; }
 .btn-reject:hover { background: #dc2626; }
-.btn-note { background: var(--apple-gray); color: white; }
+.btn-note { background: var(--md-gray); color: white; }
 .btn-note:hover { background: #4b5563; }
 
 .approved-info {
@@ -212,7 +221,7 @@ renderPageStart('staff', $currentPage, '振替依頼管理');
     background: rgba(52,199,89,0.1);
     border-radius: 6px;
     font-size: var(--text-subhead);
-    color: var(--apple-green);
+    color: var(--md-green);
 }
 
 .rejected-info {
@@ -220,7 +229,7 @@ renderPageStart('staff', $currentPage, '振替依頼管理');
     background: rgba(255,59,48,0.1);
     border-radius: 6px;
     font-size: var(--text-subhead);
-    color: var(--apple-red);
+    color: var(--md-red);
 }
 
 .note-text {
@@ -242,7 +251,7 @@ renderPageStart('staff', $currentPage, '振替依頼管理');
 }
 
 .search-box {
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-lg);
@@ -271,7 +280,7 @@ renderPageStart('staff', $currentPage, '振替依頼管理');
 .modal.show { display: flex; }
 
 .modal-content {
-    background: var(--apple-bg-primary);
+    background: var(--md-bg-primary);
     padding: var(--spacing-2xl);
     border-radius: var(--radius-md);
     max-width: 500px;
@@ -292,7 +301,7 @@ renderPageStart('staff', $currentPage, '振替依頼管理');
 .modal-body textarea {
     width: 100%;
     padding: var(--spacing-md);
-    border: 1px solid var(--apple-gray-5);
+    border: 1px solid var(--md-gray-5);
     border-radius: 6px;
     font-size: var(--text-subhead);
     font-family: inherit;
@@ -315,14 +324,14 @@ renderPageStart('staff', $currentPage, '振替依頼管理');
     cursor: pointer;
 }
 
-.btn-cancel { background: var(--apple-gray-5); color: var(--text-primary); }
-.btn-cancel:hover { background: var(--apple-gray-4); }
-.btn-confirm { background: var(--apple-blue); color: white; }
+.btn-cancel { background: var(--md-gray-5); color: var(--text-primary); }
+.btn-cancel:hover { background: var(--md-gray-4); }
+.btn-confirm { background: var(--md-blue); color: white; }
 .btn-confirm:hover { background: #1d4ed8; }
 
 .quick-link {
     padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--apple-bg-secondary);
+    background: var(--md-bg-secondary);
     border-radius: var(--radius-sm);
     text-decoration: none;
     color: var(--text-primary);
@@ -332,7 +341,7 @@ renderPageStart('staff', $currentPage, '振替依頼管理');
     display: inline-block;
     margin-bottom: var(--spacing-lg);
 }
-.quick-link:hover { background: var(--apple-gray-5); }
+.quick-link:hover { background: var(--md-gray-5); }
 </style>
 
 <!-- ページヘッダー -->
@@ -410,7 +419,7 @@ renderPageStart('staff', $currentPage, '振替依頼管理');
                                         <?= $makeupDate->format('Y年n月j日') ?>
                                         (<?= ['日', '月', '火', '水', '木', '金', '土'][$makeupDate->format('w')] ?>)
                                     <?php else: ?>
-                                        <span style="color: var(--apple-orange);">未設定</span>
+                                        <span style="color: var(--md-orange);">未設定</span>
                                     <?php endif; ?>
                                 </div>
                             </div>
