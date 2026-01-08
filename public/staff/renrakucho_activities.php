@@ -13,6 +13,7 @@ require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/student_helper.php';
 require_once __DIR__ . '/../../includes/kakehashi_auto_generator.php';
 require_once __DIR__ . '/../../includes/layouts/page_wrapper.php';
+require_once __DIR__ . '/../../includes/pending_tasks_helper.php';
 
 // スタッフまたは管理者のみアクセス可能
 requireUserType(['staff', 'admin']);
@@ -746,268 +747,23 @@ if (!$isHoliday) {
     }
 }
 
-// 個別支援計画書が未作成または古い生徒の数を取得（自分の教室のみ）
-// ※ pending_tasks.php と同じロジック（次の期限が1ヶ月以内の場合のみ表示）
-$planNeedingCount = 0;
+// 個別支援計画書のタスクカウント（共通ヘルパーを使用）
+$planTaskCounts = getPlanTaskCounts($pdo, $classroomId);
+$planNeedingCount = $planTaskCounts['total'];
+$planNoneCount = $planTaskCounts['none'];
+$planDraftCount = $planTaskCounts['draft'];
+$planNeedsConfirmCount = $planTaskCounts['needs_confirm'];
+$planOverdueCount = $planTaskCounts['outdated'];
+$planUrgentCount = $planTaskCounts['urgent'];
 
-// 次の個別支援計画書期限が1ヶ月以内かチェックする関数
-function isNextPlanDeadlineWithinOneMonthForCount($supportStartDate, $latestPlanDate) {
-    if (!$supportStartDate) return false;
-
-    $oneMonthLater = new DateTime();
-    $oneMonthLater->modify('+1 month');
-
-    if (!$latestPlanDate) {
-        // 計画書がない場合、初回期限は支援開始日の前日
-        $firstDeadline = new DateTime($supportStartDate);
-        $firstDeadline->modify('-1 day');
-        return $firstDeadline <= $oneMonthLater;
-    }
-
-    // 次の計画書期限は最新計画書から180日後
-    $nextDeadline = new DateTime($latestPlanDate);
-    $nextDeadline->modify('+180 days');
-    return $nextDeadline <= $oneMonthLater;
-}
-
-// 次のモニタリング期限が1ヶ月以内かチェックする関数
-function isNextMonitoringDeadlineWithinOneMonthForCount($supportStartDate, $latestMonitoringDate) {
-    if (!$supportStartDate) return false;
-
-    $oneMonthLater = new DateTime();
-    $oneMonthLater->modify('+1 month');
-
-    if (!$latestMonitoringDate) {
-        // モニタリングがない場合、初回期限は支援開始日から5ヶ月後
-        $firstDeadline = new DateTime($supportStartDate);
-        $firstDeadline->modify('+5 months');
-        $firstDeadline->modify('-1 day');
-        return $firstDeadline <= $oneMonthLater;
-    }
-
-    // 次のモニタリング期限は最新モニタリングから180日後
-    $nextDeadline = new DateTime($latestMonitoringDate);
-    $nextDeadline->modify('+180 days');
-    return $nextDeadline <= $oneMonthLater;
-}
-
-// 個別支援計画書の件数（pending_tasks.phpと完全に同じロジック）
-$studentConditionForCount = $classroomId ? "AND u.classroom_id = ?" : "";
-$studentParamsForCount = $classroomId ? [$classroomId] : [];
-
-// 状態別カウント用
-$planNoneCount = 0;      // 未作成
-$planDraftCount = 0;     // 下書きあり
-$planOverdueCount = 0;   // 期限切れ
-$planUrgentCount = 0;    // 1か月以内
-
-$sqlPlanCount = "
-    SELECT
-        s.id,
-        s.student_name,
-        s.support_start_date,
-        isp.id as plan_id,
-        isp.created_date,
-        isp.is_draft,
-        COALESCE(isp.is_hidden, 0) as is_hidden,
-        DATEDIFF(CURDATE(), isp.created_date) as days_since_plan,
-        (
-            SELECT MAX(isp2.id)
-            FROM individual_support_plans isp2
-            WHERE isp2.student_id = s.id AND isp2.is_draft = 0
-        ) as latest_submitted_plan_id
-    FROM students s
-    INNER JOIN users u ON s.guardian_id = u.id
-    LEFT JOIN individual_support_plans isp ON s.id = isp.student_id
-    WHERE s.is_active = 1
-    {$studentConditionForCount}
-    ORDER BY s.student_name, isp.created_date DESC
-";
-$stmt = $pdo->prepare($sqlPlanCount);
-$stmt->execute($studentParamsForCount);
-$allPlanDataForCount = $stmt->fetchAll();
-
-// 生徒ごとにグループ化
-$studentPlansForCount = [];
-foreach ($allPlanDataForCount as $row) {
-    $studentId = $row['id'];
-    if (!isset($studentPlansForCount[$studentId])) {
-        $studentPlansForCount[$studentId] = [
-            'student_name' => $row['student_name'],
-            'support_start_date' => $row['support_start_date'],
-            'plans' => [],
-            'latest_submitted_plan_id' => $row['latest_submitted_plan_id']
-        ];
-    }
-    if ($row['plan_id']) {
-        $studentPlansForCount[$studentId]['plans'][] = $row;
-    }
-}
-
-// カウント（pending_tasks.phpと同じロジック）
-foreach ($studentPlansForCount as $studentId => $data) {
-    $latestSubmittedId = $data['latest_submitted_plan_id'];
-    $supportStartDate = $data['support_start_date'];
-
-    // 最新の提出済み計画書の日付を取得
-    $latestSubmittedPlanDate = null;
-    foreach ($data['plans'] as $plan) {
-        if ($plan['plan_id'] == $latestSubmittedId) {
-            $latestSubmittedPlanDate = $plan['created_date'];
-            break;
-        }
-    }
-
-    // 計画書がない場合
-    if (empty($data['plans'])) {
-        if (isNextPlanDeadlineWithinOneMonthForCount($supportStartDate, null)) {
-            $planNeedingCount++;
-            $planNoneCount++;
-        }
-        continue;
-    }
-
-    // 下書きがあるかチェック（非表示を除外）
-    $hasDraft = false;
-    foreach ($data['plans'] as $plan) {
-        if ($plan['is_draft'] && !$plan['is_hidden']) {
-            $hasDraft = true;
-            break;
-        }
-    }
-
-    // 下書きがある場合
-    if ($hasDraft) {
-        if (isNextPlanDeadlineWithinOneMonthForCount($supportStartDate, $latestSubmittedPlanDate)) {
-            $planNeedingCount++;
-            $planDraftCount++;
-        }
-        continue;
-    }
-
-    // 下書きがない場合、最新の提出済みが期限切れかチェック
-    foreach ($data['plans'] as $plan) {
-        if ($plan['is_hidden']) continue;
-        if (!$plan['is_draft'] && $plan['days_since_plan'] >= 150 && $plan['plan_id'] == $latestSubmittedId) {
-            $planNeedingCount++;
-            if ($plan['days_since_plan'] >= 180) {
-                $planOverdueCount++;
-            } else {
-                $planUrgentCount++;
-            }
-            break;
-        }
-    }
-}
-
-// モニタリングが未作成または古い生徒の数を取得（pending_tasks.phpと完全に同じロジック）
-$monitoringNeedingCount = 0;
-// 状態別カウント用
-$monitoringNoneCount = 0;      // 未作成
-$monitoringDraftCount = 0;     // 下書きあり
-$monitoringOverdueCount = 0;   // 期限切れ
-$monitoringUrgentCount = 0;    // 1か月以内
-
-$sqlMonitoringCount = "
-    SELECT
-        s.id,
-        s.student_name,
-        s.support_start_date,
-        mr.id as monitoring_id,
-        mr.plan_id,
-        mr.monitoring_date,
-        mr.is_draft,
-        COALESCE(mr.is_hidden, 0) as is_hidden,
-        DATEDIFF(CURDATE(), mr.monitoring_date) as days_since_monitoring,
-        (
-            SELECT MAX(mr2.id)
-            FROM monitoring_records mr2
-            WHERE mr2.student_id = s.id AND mr2.is_draft = 0
-        ) as latest_submitted_monitoring_id
-    FROM students s
-    INNER JOIN users u ON s.guardian_id = u.id
-    LEFT JOIN monitoring_records mr ON s.id = mr.student_id
-    WHERE s.is_active = 1
-    AND EXISTS (SELECT 1 FROM individual_support_plans isp WHERE isp.student_id = s.id)
-    {$studentConditionForCount}
-    ORDER BY s.student_name, mr.monitoring_date DESC
-";
-$stmt = $pdo->prepare($sqlMonitoringCount);
-$stmt->execute($studentParamsForCount);
-$allMonitoringDataForCount = $stmt->fetchAll();
-
-// 生徒ごとにグループ化
-$studentMonitoringsForCount = [];
-foreach ($allMonitoringDataForCount as $row) {
-    $studentId = $row['id'];
-    if (!isset($studentMonitoringsForCount[$studentId])) {
-        $studentMonitoringsForCount[$studentId] = [
-            'student_name' => $row['student_name'],
-            'support_start_date' => $row['support_start_date'],
-            'monitorings' => [],
-            'latest_submitted_monitoring_id' => $row['latest_submitted_monitoring_id']
-        ];
-    }
-    if ($row['monitoring_id']) {
-        $studentMonitoringsForCount[$studentId]['monitorings'][] = $row;
-    }
-}
-
-// カウント（pending_tasks.phpと同じロジック）
-foreach ($studentMonitoringsForCount as $studentId => $data) {
-    $latestSubmittedId = $data['latest_submitted_monitoring_id'];
-    $supportStartDate = $data['support_start_date'];
-
-    // 最新の提出済みモニタリングの日付を取得
-    $latestSubmittedMonitoringDate = null;
-    foreach ($data['monitorings'] as $monitoring) {
-        if ($monitoring['monitoring_id'] == $latestSubmittedId) {
-            $latestSubmittedMonitoringDate = $monitoring['monitoring_date'];
-            break;
-        }
-    }
-
-    // モニタリングがない場合
-    if (empty($data['monitorings'])) {
-        if (isNextMonitoringDeadlineWithinOneMonthForCount($supportStartDate, null)) {
-            $monitoringNeedingCount++;
-            $monitoringNoneCount++;
-        }
-        continue;
-    }
-
-    // 下書きがあるかチェック（非表示を除外）
-    $hasDraft = false;
-    foreach ($data['monitorings'] as $monitoring) {
-        if ($monitoring['is_draft'] && !$monitoring['is_hidden']) {
-            $hasDraft = true;
-            break;
-        }
-    }
-
-    // 下書きがある場合
-    if ($hasDraft) {
-        if (isNextMonitoringDeadlineWithinOneMonthForCount($supportStartDate, $latestSubmittedMonitoringDate)) {
-            $monitoringNeedingCount++;
-            $monitoringDraftCount++;
-        }
-        continue;
-    }
-
-    // 下書きがない場合、最新の提出済みが期限切れかチェック
-    foreach ($data['monitorings'] as $monitoring) {
-        if ($monitoring['is_hidden']) continue;
-        if (!$monitoring['is_draft'] && $monitoring['days_since_monitoring'] >= 150 && $monitoring['monitoring_id'] == $latestSubmittedId) {
-            $monitoringNeedingCount++;
-            if ($monitoring['days_since_monitoring'] >= 180) {
-                $monitoringOverdueCount++;
-            } else {
-                $monitoringUrgentCount++;
-            }
-            break;
-        }
-    }
-}
+// モニタリングのタスクカウント（共通ヘルパーを使用）
+$monitoringTaskCounts = getMonitoringTaskCounts($pdo, $classroomId);
+$monitoringNeedingCount = $monitoringTaskCounts['total'];
+$monitoringNoneCount = $monitoringTaskCounts['none'];
+$monitoringDraftCount = $monitoringTaskCounts['draft'];
+$monitoringNeedsConfirmCount = $monitoringTaskCounts['needs_confirm'];
+$monitoringOverdueCount = $monitoringTaskCounts['outdated'];
+$monitoringUrgentCount = $monitoringTaskCounts['urgent'];
 
 // かけはし通知データを取得
 $today = date('Y-m-d');
@@ -1102,95 +858,15 @@ if ($classroomId) {
     }
 }
 
-// 2. 未作成のスタッフかけはし（非表示を除外、1ヶ月以内のみ）の件数を取得（自分の教室のみ、各生徒の最新期間のみ）
-$staffKakehashiCount = 0;
-if ($classroomId) {
-    try {
-        $stmt = $pdo->prepare("
-            SELECT COUNT(*) as count
-            FROM students s
-            INNER JOIN users u ON s.guardian_id = u.id
-            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-            LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
-            WHERE s.is_active = 1 AND u.classroom_id = ?
-            AND kp.is_active = 1
-            AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
-            AND COALESCE(ks.is_hidden, 0) = 0
-            AND kp.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
-            AND kp.submission_deadline = (
-                SELECT MAX(kp2.submission_deadline)
-                FROM kakehashi_periods kp2
-                WHERE kp2.student_id = s.id AND kp2.is_active = 1
-                AND kp2.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
-            )
-        ");
-        $stmt->execute([$classroomId]);
-        $staffKakehashiCount = (int)$stmt->fetchColumn();
-    } catch (Exception $e) {
-        // is_hiddenカラムが存在しない場合は、非表示チェックなしでカウント
-        error_log("Staff kakehashi count error: " . $e->getMessage());
-        $stmt = $pdo->prepare("
-            SELECT COUNT(*) as count
-            FROM students s
-            INNER JOIN users u ON s.guardian_id = u.id
-            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-            LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
-            WHERE s.is_active = 1 AND u.classroom_id = ?
-            AND kp.is_active = 1
-            AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
-            AND kp.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
-            AND kp.submission_deadline = (
-                SELECT MAX(kp2.submission_deadline)
-                FROM kakehashi_periods kp2
-                WHERE kp2.student_id = s.id AND kp2.is_active = 1
-                AND kp2.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
-            )
-        ");
-        $stmt->execute([$classroomId]);
-        $staffKakehashiCount = (int)$stmt->fetchColumn();
-    }
-} else {
-    try {
-        $stmt = $pdo->query("
-            SELECT COUNT(*) as count
-            FROM students s
-            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-            LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
-            WHERE s.is_active = 1
-            AND kp.is_active = 1
-            AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
-            AND COALESCE(ks.is_hidden, 0) = 0
-            AND kp.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
-            AND kp.submission_deadline = (
-                SELECT MAX(kp2.submission_deadline)
-                FROM kakehashi_periods kp2
-                WHERE kp2.student_id = s.id AND kp2.is_active = 1
-                AND kp2.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
-            )
-        ");
-        $staffKakehashiCount = (int)$stmt->fetchColumn();
-    } catch (Exception $e) {
-        // is_hiddenカラムが存在しない場合は、非表示チェックなしでカウント
-        error_log("Staff kakehashi count error: " . $e->getMessage());
-        $stmt = $pdo->query("
-            SELECT COUNT(*) as count
-            FROM students s
-            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-            LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
-            WHERE s.is_active = 1
-            AND kp.is_active = 1
-            AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
-            AND kp.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
-            AND kp.submission_deadline = (
-                SELECT MAX(kp2.submission_deadline)
-                FROM kakehashi_periods kp2
-                WHERE kp2.student_id = s.id AND kp2.is_active = 1
-                AND kp2.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
-            )
-        ");
-        $staffKakehashiCount = (int)$stmt->fetchColumn();
-    }
-}
+// 2. スタッフかけはしのタスクカウント（共通ヘルパーを使用）
+$staffKakehashiTaskCounts = getStaffKakehashiTaskCounts($pdo, $classroomId);
+$staffKakehashiCount = $staffKakehashiTaskCounts['total'];
+$staffKakehashiNoneCount = $staffKakehashiTaskCounts['none'];
+$staffKakehashiDraftCount = $staffKakehashiTaskCounts['draft'];
+$staffKakehashiNeedsConfirmCount = $staffKakehashiTaskCounts['needs_confirm'];
+$staffKakehashiOverdueCount = $staffKakehashiTaskCounts['overdue'];
+$staffKakehashiUrgentCount = $staffKakehashiTaskCounts['urgent'];
+$staffKakehashiWarningCount = $staffKakehashiTaskCounts['warning'];
 
 // 3. 未提出の提出期限の件数を取得（自分の教室のみ）
 $submissionRequestCount = 0;
@@ -1402,46 +1078,16 @@ if ($classroomId) {
         error_log("Guardian kakehashi fetch error: " . $e->getMessage());
     }
 
-    // スタッフかけはし未作成（各生徒の最新期間のみ、1ヶ月以内のみ）
-    try {
-        $stmt = $pdo->prepare("
-            SELECT
-                s.id as student_id,
-                s.student_name,
-                kp.id as period_id,
-                kp.start_date,
-                kp.end_date,
-                kp.submission_deadline,
-                DATEDIFF(kp.submission_deadline, CURDATE()) as days_left
-            FROM students s
-            INNER JOIN users u ON s.guardian_id = u.id
-            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-            LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
-            WHERE s.is_active = 1 AND u.classroom_id = ?
-            AND kp.is_active = 1
-            AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
-            AND COALESCE(ks.is_hidden, 0) = 0
-            AND kp.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
-            AND kp.submission_deadline = (
-                SELECT MAX(kp2.submission_deadline)
-                FROM kakehashi_periods kp2
-                WHERE kp2.student_id = s.id AND kp2.is_active = 1
-                AND kp2.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
-            )
-            ORDER BY kp.submission_deadline ASC
-        ");
-        $stmt->execute([$classroomId]);
-        $allStaffKakehashi = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        foreach ($allStaffKakehashi as $item) {
-            if ($item['days_left'] < 0) {
-                $overdueStaffKakehashi[] = $item;
-            } else {
-                $urgentStaffKakehashi[] = $item;
-            }
+    // スタッフかけはし（ヘルパーからのデータを使用）
+    foreach ($staffKakehashiTaskCounts['items'] as $item) {
+        $daysLeft = $item['days_left'] ?? 0;
+        if ($daysLeft < 0) {
+            $overdueStaffKakehashi[] = $item;
+        } elseif ($daysLeft <= 7) {
+            $urgentStaffKakehashi[] = $item;
+        } else {
+            $pendingStaffKakehashi[] = $item;
         }
-    } catch (Exception $e) {
-        error_log("Staff kakehashi fetch error: " . $e->getMessage());
     }
 
     // 提出期限未提出
@@ -1590,44 +1236,16 @@ if ($classroomId) {
         error_log("Guardian kakehashi fetch error: " . $e->getMessage());
     }
 
-    // スタッフかけはし未作成（各生徒の最新期間のみ、1ヶ月以内のみ）
-    try {
-        $stmt = $pdo->query("
-            SELECT
-                s.id as student_id,
-                s.student_name,
-                kp.id as period_id,
-                kp.start_date,
-                kp.end_date,
-                kp.submission_deadline,
-                DATEDIFF(kp.submission_deadline, CURDATE()) as days_left
-            FROM students s
-            INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-            LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
-            WHERE s.is_active = 1
-            AND kp.is_active = 1
-            AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
-            AND COALESCE(ks.is_hidden, 0) = 0
-            AND kp.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
-            AND kp.submission_deadline = (
-                SELECT MAX(kp2.submission_deadline)
-                FROM kakehashi_periods kp2
-                WHERE kp2.student_id = s.id AND kp2.is_active = 1
-                AND kp2.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
-            )
-            ORDER BY kp.submission_deadline ASC
-        ");
-        $allStaffKakehashi = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        foreach ($allStaffKakehashi as $item) {
-            if ($item['days_left'] < 0) {
-                $overdueStaffKakehashi[] = $item;
-            } else {
-                $urgentStaffKakehashi[] = $item;
-            }
+    // スタッフかけはし（ヘルパーからのデータを使用）
+    foreach ($staffKakehashiTaskCounts['items'] as $item) {
+        $daysLeft = $item['days_left'] ?? 0;
+        if ($daysLeft < 0) {
+            $overdueStaffKakehashi[] = $item;
+        } elseif ($daysLeft <= 7) {
+            $urgentStaffKakehashi[] = $item;
+        } else {
+            $pendingStaffKakehashi[] = $item;
         }
-    } catch (Exception $e) {
-        error_log("Staff kakehashi fetch error: " . $e->getMessage());
     }
 
     // 提出期限未提出
@@ -2051,6 +1669,16 @@ renderPageStart('staff', $currentPage, '活動管理');
         .task-count.warning {
             background: rgba(255, 204, 0, 0.15);
             color: var(--md-yellow);
+        }
+
+        .task-count.needs-confirm {
+            background: rgba(0, 150, 136, 0.15);
+            color: var(--md-teal);
+        }
+
+        .task-count.draft {
+            background: rgba(33, 150, 243, 0.15);
+            color: var(--md-blue);
         }
 
         .task-summary-link {
@@ -3216,7 +2844,7 @@ renderPageStart('staff', $currentPage, '活動管理');
         $totalMonitoringNeeding = $monitoringNeedingCount;
         $totalUncreatedKakehashi = count($uncreatedKakehashiPeriods);
         $totalGuardianKakehashi = count($overdueGuardianKakehashi) + count($urgentGuardianKakehashi) + count($pendingGuardianKakehashi);
-        $totalStaffKakehashi = count($overdueStaffKakehashi) + count($urgentStaffKakehashi) + count($pendingStaffKakehashi);
+        $totalStaffKakehashi = $staffKakehashiCount;  // ヘルパー関数の統一カウントを使用
         $totalSubmissionRequests = count($overdueSubmissionRequests) + count($urgentSubmissionRequests) + count($pendingSubmissionRequests);
 
         // いずれかのタスクが存在する場合のみセクションを表示
@@ -3242,6 +2870,9 @@ renderPageStart('staff', $currentPage, '活動管理');
                         <?php endif; ?>
                         <?php if ($planDraftCount > 0): ?>
                             <span class="task-count warning">下書き <?php echo $planDraftCount; ?>件</span>
+                        <?php endif; ?>
+                        <?php if ($planNeedsConfirmCount > 0): ?>
+                            <span class="task-count needs-confirm">要保護者確認 <?php echo $planNeedsConfirmCount; ?>件</span>
                         <?php endif; ?>
                         <?php if ($planOverdueCount > 0): ?>
                             <span class="task-count overdue">期限切れ <?php echo $planOverdueCount; ?>件</span>
@@ -3271,6 +2902,9 @@ renderPageStart('staff', $currentPage, '活動管理');
                         <?php endif; ?>
                         <?php if ($monitoringDraftCount > 0): ?>
                             <span class="task-count warning">下書き <?php echo $monitoringDraftCount; ?>件</span>
+                        <?php endif; ?>
+                        <?php if ($monitoringNeedsConfirmCount > 0): ?>
+                            <span class="task-count needs-confirm">要保護者確認 <?php echo $monitoringNeedsConfirmCount; ?>件</span>
                         <?php endif; ?>
                         <?php if ($monitoringOverdueCount > 0): ?>
                             <span class="task-count overdue">期限切れ <?php echo $monitoringOverdueCount; ?>件</span>
@@ -3310,25 +2944,31 @@ renderPageStart('staff', $currentPage, '活動管理');
             <?php endif; ?>
 
             <!-- スタッフかけはし -->
-            <?php if ($totalStaffKakehashi > 0): ?>
+            <?php if ($staffKakehashiCount > 0): ?>
                 <div class="task-summary-item">
                     <div class="task-summary-header">
-                        <span class="task-summary-title"><span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">edit_note</span> スタッフかけはし未作成
+                        <span class="task-summary-title"><span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">edit_note</span> スタッフかけはし
                             <span class="help-icon" onclick="toggleHelp(this, event)">?
-                                <div class="help-tooltip">スタッフがまだ作成していない「かけはし」の件数です。期間終了前にスタッフ側の記入を完了してください。</div>
+                                <div class="help-tooltip">スタッフかけはしの状況です。未作成・下書き・保護者確認待ちの件数を表示しています。</div>
                             </span>
                         </span>
-                        <span class="task-summary-total"><?php echo $totalStaffKakehashi; ?>件</span>
+                        <span class="task-summary-total"><?php echo $staffKakehashiCount; ?>件</span>
                     </div>
                     <div class="task-summary-details">
-                        <?php if (count($overdueStaffKakehashi) > 0): ?>
-                            <span class="task-count overdue">期限切れ <?php echo count($overdueStaffKakehashi); ?>件</span>
+                        <?php if ($staffKakehashiOverdueCount > 0): ?>
+                            <span class="task-count overdue">期限切れ <?php echo $staffKakehashiOverdueCount; ?>件</span>
                         <?php endif; ?>
-                        <?php if (count($urgentStaffKakehashi) > 0): ?>
-                            <span class="task-count urgent">1か月以内 <?php echo count($urgentStaffKakehashi); ?>件</span>
+                        <?php if ($staffKakehashiUrgentCount > 0): ?>
+                            <span class="task-count urgent">緊急 <?php echo $staffKakehashiUrgentCount; ?>件</span>
                         <?php endif; ?>
-                        <?php if (count($pendingStaffKakehashi) > 0): ?>
-                            <span class="task-count warning">1か月以上 <?php echo count($pendingStaffKakehashi); ?>件</span>
+                        <?php if ($staffKakehashiDraftCount > 0): ?>
+                            <span class="task-count draft">下書き <?php echo $staffKakehashiDraftCount; ?>件</span>
+                        <?php endif; ?>
+                        <?php if ($staffKakehashiNeedsConfirmCount > 0): ?>
+                            <span class="task-count needs-confirm">要保護者確認 <?php echo $staffKakehashiNeedsConfirmCount; ?>件</span>
+                        <?php endif; ?>
+                        <?php if ($staffKakehashiWarningCount > 0): ?>
+                            <span class="task-count warning">未作成 <?php echo $staffKakehashiWarningCount; ?>件</span>
                         <?php endif; ?>
                         <a href="pending_tasks.php" class="task-summary-link">詳細を確認</a>
                     </div>

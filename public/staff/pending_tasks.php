@@ -13,6 +13,7 @@ require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/kakehashi_auto_generator.php';
 require_once __DIR__ . '/../../includes/layouts/page_wrapper.php';
+require_once __DIR__ . '/../../includes/pending_tasks_helper.php';
 
 // スタッフまたは管理者のみアクセス可能
 requireUserType(['staff', 'admin']);
@@ -77,6 +78,7 @@ $sql = "
         isp.created_date,
         isp.is_draft,
         COALESCE(isp.is_hidden, 0) as is_hidden,
+        COALESCE(isp.guardian_confirmed, 0) as guardian_confirmed,
         DATEDIFF(CURDATE(), isp.created_date) as days_since_plan,
         (
             SELECT MAX(isp2.id)
@@ -107,28 +109,9 @@ foreach ($allPlanData as $row) {
         ];
     }
     if ($row['plan_id']) {
+        $row['guardian_confirmed'] = (int)$row['guardian_confirmed'];
         $studentPlans[$studentId]['plans'][] = $row;
     }
-}
-
-// 次の個別支援計画書期限が1ヶ月以内かチェックする関数
-function isNextPlanDeadlineWithinOneMonth($supportStartDate, $latestPlanDate) {
-    if (!$supportStartDate) return false;
-
-    $oneMonthLater = new DateTime();
-    $oneMonthLater->modify('+1 month');
-
-    if (!$latestPlanDate) {
-        // 計画書がない場合、初回期限は支援開始日の前日
-        $firstDeadline = new DateTime($supportStartDate);
-        $firstDeadline->modify('-1 day');
-        return $firstDeadline <= $oneMonthLater;
-    }
-
-    // 次の計画書期限は最新計画書から180日後
-    $nextDeadline = new DateTime($latestPlanDate);
-    $nextDeadline->modify('+180 days');
-    return $nextDeadline <= $oneMonthLater;
 }
 
 // 表示対象を抽出
@@ -194,13 +177,14 @@ foreach ($studentPlans as $studentId => $data) {
         continue; // この生徒は下書きのみ表示、期限切れは表示しない
     }
 
-    // 下書きがない場合、最新の提出済みが期限切れかチェック
+    // 下書きがない場合、提出済みで保護者確認が必要かチェック
+    $needsGuardianConfirm = false;
     foreach ($data['plans'] as $plan) {
         // 非表示のものはスキップ
         if ($plan['is_hidden']) continue;
 
-        // 提出済みで150日以上経過（残り1ヶ月以内）かつ最新の提出済み
-        if (!$plan['is_draft'] && $plan['days_since_plan'] >= 150 && $plan['plan_id'] == $latestSubmittedId) {
+        // 提出済みで保護者未確認かつ最新の提出済み
+        if (!$plan['is_draft'] && !$plan['guardian_confirmed'] && $plan['plan_id'] == $latestSubmittedId) {
             $studentsNeedingPlan[] = [
                 'id' => $studentId,
                 'student_name' => $data['student_name'],
@@ -208,11 +192,38 @@ foreach ($studentPlans as $studentId => $data) {
                 'plan_id' => $plan['plan_id'],
                 'latest_plan_date' => $plan['created_date'],
                 'days_since_plan' => $plan['days_since_plan'],
-                'status_code' => 'outdated',
+                'status_code' => 'needs_confirm',
                 'has_newer' => false,
-                'is_hidden' => false
+                'is_hidden' => false,
+                'guardian_confirmed' => false
             ];
-            break; // 1件だけ表示
+            $needsGuardianConfirm = true;
+            break;
+        }
+    }
+
+    // 保護者確認が必要でない場合、期限切れかチェック
+    if (!$needsGuardianConfirm) {
+        foreach ($data['plans'] as $plan) {
+            // 非表示のものはスキップ
+            if ($plan['is_hidden']) continue;
+
+            // 提出済みで150日以上経過（残り1ヶ月以内）かつ最新の提出済み
+            if (!$plan['is_draft'] && $plan['days_since_plan'] >= 150 && $plan['plan_id'] == $latestSubmittedId) {
+                $studentsNeedingPlan[] = [
+                    'id' => $studentId,
+                    'student_name' => $data['student_name'],
+                    'support_start_date' => $supportStartDate,
+                    'plan_id' => $plan['plan_id'],
+                    'latest_plan_date' => $plan['created_date'],
+                    'days_since_plan' => $plan['days_since_plan'],
+                    'status_code' => 'outdated',
+                    'has_newer' => false,
+                    'is_hidden' => false,
+                    'guardian_confirmed' => $plan['guardian_confirmed']
+                ];
+                break; // 1件だけ表示
+            }
         }
     }
 }
@@ -231,6 +242,7 @@ $sql = "
         mr.monitoring_date,
         mr.is_draft,
         COALESCE(mr.is_hidden, 0) as is_hidden,
+        COALESCE(mr.guardian_confirmed, 0) as guardian_confirmed,
         DATEDIFF(CURDATE(), mr.monitoring_date) as days_since_monitoring,
         (
             SELECT MAX(mr2.id)
@@ -263,30 +275,9 @@ foreach ($allMonitoringData as $row) {
         ];
     }
     if ($row['monitoring_id']) {
+        $row['guardian_confirmed'] = (int)$row['guardian_confirmed'];
         $studentMonitorings[$studentId]['monitorings'][] = $row;
     }
-}
-
-// 次のモニタリング期限が1ヶ月以内かチェックする関数
-// モニタリングは個別支援計画書の5ヶ月後が期限
-function isNextMonitoringDeadlineWithinOneMonth($supportStartDate, $latestMonitoringDate) {
-    if (!$supportStartDate) return false;
-
-    $oneMonthLater = new DateTime();
-    $oneMonthLater->modify('+1 month');
-
-    if (!$latestMonitoringDate) {
-        // モニタリングがない場合、初回期限は支援開始日から5ヶ月後
-        $firstDeadline = new DateTime($supportStartDate);
-        $firstDeadline->modify('+5 months');
-        $firstDeadline->modify('-1 day');
-        return $firstDeadline <= $oneMonthLater;
-    }
-
-    // 次のモニタリング期限は最新モニタリングから180日後
-    $nextDeadline = new DateTime($latestMonitoringDate);
-    $nextDeadline->modify('+180 days');
-    return $nextDeadline <= $oneMonthLater;
 }
 
 // 表示対象を抽出
@@ -373,13 +364,14 @@ foreach ($studentMonitorings as $studentId => $data) {
         continue;
     }
 
-    // 下書きがない場合、最新の提出済みが期限切れかチェック
+    // 下書きがない場合、提出済みで保護者確認が必要かチェック
+    $needsGuardianConfirm = false;
     foreach ($data['monitorings'] as $monitoring) {
         // 非表示のものはスキップ
         if ($monitoring['is_hidden']) continue;
 
-        // 提出済みで150日以上経過（残り1ヶ月以内）
-        if (!$monitoring['is_draft'] && $monitoring['days_since_monitoring'] >= 150 && $monitoring['monitoring_id'] == $latestSubmittedId) {
+        // 提出済みで保護者未確認かつ最新の提出済み
+        if (!$monitoring['is_draft'] && !$monitoring['guardian_confirmed'] && $monitoring['monitoring_id'] == $latestSubmittedId) {
             $monitoringDeadline = $calcMonitoringDeadline($supportStartDate, $monitoring['monitoring_date']);
             $studentsNeedingMonitoring[] = [
                 'id' => $studentId,
@@ -389,11 +381,40 @@ foreach ($studentMonitorings as $studentId => $data) {
                 'plan_id' => $monitoring['plan_id'],
                 'monitoring_deadline' => $monitoringDeadline,
                 'days_since_monitoring' => $monitoring['days_since_monitoring'],
-                'status_code' => 'outdated',
+                'status_code' => 'needs_confirm',
                 'has_newer' => false,
-                'is_hidden' => false
+                'is_hidden' => false,
+                'guardian_confirmed' => false
             ];
+            $needsGuardianConfirm = true;
             break;
+        }
+    }
+
+    // 保護者確認が必要でない場合、期限切れかチェック
+    if (!$needsGuardianConfirm) {
+        foreach ($data['monitorings'] as $monitoring) {
+            // 非表示のものはスキップ
+            if ($monitoring['is_hidden']) continue;
+
+            // 提出済みで150日以上経過（残り1ヶ月以内）
+            if (!$monitoring['is_draft'] && $monitoring['days_since_monitoring'] >= 150 && $monitoring['monitoring_id'] == $latestSubmittedId) {
+                $monitoringDeadline = $calcMonitoringDeadline($supportStartDate, $monitoring['monitoring_date']);
+                $studentsNeedingMonitoring[] = [
+                    'id' => $studentId,
+                    'student_name' => $data['student_name'],
+                    'support_start_date' => $supportStartDate,
+                    'monitoring_id' => $monitoring['monitoring_id'],
+                    'plan_id' => $monitoring['plan_id'],
+                    'monitoring_deadline' => $monitoringDeadline,
+                    'days_since_monitoring' => $monitoring['days_since_monitoring'],
+                    'status_code' => 'outdated',
+                    'has_newer' => false,
+                    'is_hidden' => false,
+                    'guardian_confirmed' => $monitoring['guardian_confirmed']
+                ];
+                break;
+            }
         }
     }
 }
@@ -443,7 +464,7 @@ try {
     error_log("Guardian kakehashi fetch error: " . $e->getMessage());
 }
 
-// 3-2. スタッフかけはし未作成（各生徒の最新の未提出期間のみ、非表示を除外、1ヶ月以内のみ）
+// 3-2. スタッフかけはし（未作成・下書き・要保護者確認を含む）
 $pendingStaffKakehashi = [];
 $staffSql = "
     SELECT
@@ -457,14 +478,19 @@ $staffSql = "
         DATEDIFF(kp.submission_deadline, ?) as days_left,
         ks.id as kakehashi_id,
         ks.is_submitted,
-        COALESCE(ks.is_hidden, 0) as is_hidden
+        COALESCE(ks.is_hidden, 0) as is_hidden,
+        COALESCE(ks.guardian_confirmed, 0) as guardian_confirmed
     FROM students s
     INNER JOIN users u ON s.guardian_id = u.id
     INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
     LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
     WHERE s.is_active = 1
     AND kp.is_active = 1
-    AND (ks.is_submitted = 0 OR ks.is_submitted IS NULL)
+    AND (
+        ks.is_submitted = 0
+        OR ks.is_submitted IS NULL
+        OR (ks.is_submitted = 1 AND COALESCE(ks.guardian_confirmed, 0) = 0)
+    )
     AND COALESCE(ks.is_hidden, 0) = 0
     AND kp.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
     AND kp.submission_deadline = (
@@ -589,6 +615,16 @@ renderPageStart('staff', $currentPage, $pageTitle);
         .status-badge.warning {
             background: var(--md-orange);
             color: var(--text-primary);
+        }
+
+        .status-badge.draft {
+            background: var(--md-purple);
+            color: white;
+        }
+
+        .status-badge.needs-confirm {
+            background: var(--md-teal);
+            color: white;
         }
 
         .has-newer-badge {
@@ -772,19 +808,39 @@ renderPageStart('staff', $currentPage, $pageTitle);
                                     $daysSince = $student['days_since_plan'];
                                     $hasNewer = $student['has_newer'];
 
+                                    // 期限状態を計算（下書き・要保護者確認の場合も表示するため）
+                                    $deadlineLabel = '';
+                                    $deadlineClass = '';
+                                    if ($daysSince !== null) {
+                                        if ($daysSince >= 180) {
+                                            $deadlineLabel = '期限切れ（' . floor($daysSince / 30) . 'ヶ月経過）';
+                                            $deadlineClass = 'overdue';
+                                        } elseif ($daysSince >= 150) {
+                                            $daysLeft = 180 - $daysSince;
+                                            $deadlineLabel = '残り' . $daysLeft . '日';
+                                            $deadlineClass = 'urgent';
+                                        }
+                                    }
+
+                                    // メイン状態を設定
                                     if ($statusCode === 'none') {
-                                        $statusLabel = 'なし';
+                                        $statusLabel = '未作成';
                                         $statusClass = 'none';
+                                    } elseif ($statusCode === 'needs_confirm') {
+                                        $statusLabel = '要保護者確認';
+                                        $statusClass = 'needs-confirm';
                                     } elseif ($statusCode === 'draft') {
-                                        $statusLabel = '下書きあり（未提出）';
-                                        $statusClass = 'warning';
+                                        $statusLabel = '下書き';
+                                        $statusClass = 'draft';
                                     } elseif ($daysSince >= 180) {
                                         $statusLabel = '期限切れ（' . floor($daysSince / 30) . 'ヶ月経過）';
                                         $statusClass = 'overdue';
+                                        $deadlineLabel = ''; // 期限切れの場合は重複表示しない
                                     } else {
                                         $daysLeft = 180 - $daysSince;
                                         $statusLabel = '1か月以内（残り' . $daysLeft . '日）';
                                         $statusClass = 'urgent';
+                                        $deadlineLabel = ''; // 1か月以内の場合は重複表示しない
                                     }
                                 ?>
                                     <tr>
@@ -795,15 +851,26 @@ renderPageStart('staff', $currentPage, $pageTitle);
                                             <span class="status-badge <?php echo $statusClass; ?>">
                                                 <?php echo htmlspecialchars($statusLabel); ?>
                                             </span>
+                                            <?php if ($deadlineLabel): ?>
+                                                <span class="status-badge <?php echo $deadlineClass; ?>">
+                                                    <?php echo htmlspecialchars($deadlineLabel); ?>
+                                                </span>
+                                            <?php endif; ?>
                                             <?php if ($hasNewer): ?>
                                                 <span class="has-newer-badge">最新あり</span>
                                             <?php endif; ?>
                                         </td>
                                         <td>
                                             <div class="action-buttons">
-                                                <a href="kobetsu_plan.php?student_id=<?php echo $student['id']; ?><?php echo $student['plan_id'] ? '&plan_id=' . $student['plan_id'] : ''; ?>" class="btn btn-primary">
-                                                    計画書を作成
-                                                </a>
+                                                <?php if ($statusCode === 'needs_confirm'): ?>
+                                                    <a href="kobetsu_plan.php?student_id=<?php echo $student['id']; ?>&plan_id=<?php echo $student['plan_id']; ?>" class="btn btn-primary">
+                                                        確認依頼
+                                                    </a>
+                                                <?php else: ?>
+                                                    <a href="kobetsu_plan.php?student_id=<?php echo $student['id']; ?><?php echo $student['plan_id'] ? '&plan_id=' . $student['plan_id'] : ''; ?>" class="btn btn-primary">
+                                                        計画書を作成
+                                                    </a>
+                                                <?php endif; ?>
                                                 <?php if ($student['plan_id']): ?>
                                                     <button class="btn-hide" onclick="hideItem('plan', <?php echo $student['plan_id']; ?>, this)">
                                                         非表示
@@ -862,18 +929,37 @@ renderPageStart('staff', $currentPage, $pageTitle);
                                         $daysUntilDeadline = $diff->invert ? -$diff->days : $diff->days;
                                     }
 
+                                    // 期限状態を計算（下書き・要保護者確認の場合も表示するため）
+                                    $deadlineLabel = '';
+                                    $deadlineClass = '';
+                                    if ($daysUntilDeadline !== null) {
+                                        if ($daysUntilDeadline < 0) {
+                                            $deadlineLabel = '期限切れ（' . abs($daysUntilDeadline) . '日超過）';
+                                            $deadlineClass = 'overdue';
+                                        } elseif ($daysUntilDeadline <= 30) {
+                                            $deadlineLabel = '残り' . $daysUntilDeadline . '日';
+                                            $deadlineClass = 'urgent';
+                                        }
+                                    }
+
+                                    // メイン状態を設定
                                     if ($statusCode === 'none') {
                                         $statusLabel = '初回モニタリング未作成';
                                         $statusClass = 'none';
+                                    } elseif ($statusCode === 'needs_confirm') {
+                                        $statusLabel = '要保護者確認';
+                                        $statusClass = 'needs-confirm';
                                     } elseif ($statusCode === 'draft') {
-                                        $statusLabel = '下書きあり（未提出）';
-                                        $statusClass = 'warning';
+                                        $statusLabel = '下書き';
+                                        $statusClass = 'draft';
                                     } elseif ($daysUntilDeadline !== null && $daysUntilDeadline < 0) {
                                         $statusLabel = '期限切れ（' . abs($daysUntilDeadline) . '日超過）';
                                         $statusClass = 'overdue';
+                                        $deadlineLabel = ''; // 期限切れの場合は重複表示しない
                                     } elseif ($daysUntilDeadline !== null && $daysUntilDeadline <= 30) {
                                         $statusLabel = '1か月以内（残り' . $daysUntilDeadline . '日）';
                                         $statusClass = 'urgent';
+                                        $deadlineLabel = ''; // 1か月以内の場合は重複表示しない
                                     } else {
                                         $statusLabel = '対応が必要';
                                         $statusClass = 'warning';
@@ -887,15 +973,26 @@ renderPageStart('staff', $currentPage, $pageTitle);
                                             <span class="status-badge <?php echo $statusClass; ?>">
                                                 <?php echo htmlspecialchars($statusLabel); ?>
                                             </span>
+                                            <?php if ($deadlineLabel): ?>
+                                                <span class="status-badge <?php echo $deadlineClass; ?>">
+                                                    <?php echo htmlspecialchars($deadlineLabel); ?>
+                                                </span>
+                                            <?php endif; ?>
                                             <?php if ($hasNewer): ?>
                                                 <span class="has-newer-badge">最新あり</span>
                                             <?php endif; ?>
                                         </td>
                                         <td>
                                             <div class="action-buttons">
-                                                <a href="kobetsu_monitoring.php?student_id=<?php echo $student['id']; ?><?php echo $student['monitoring_id'] ? '&monitoring_id=' . $student['monitoring_id'] : ''; ?>" class="btn btn-primary">
-                                                    モニタリング作成
-                                                </a>
+                                                <?php if ($statusCode === 'needs_confirm'): ?>
+                                                    <a href="kobetsu_monitoring.php?student_id=<?php echo $student['id']; ?>&monitoring_id=<?php echo $student['monitoring_id']; ?>" class="btn btn-primary">
+                                                        確認依頼
+                                                    </a>
+                                                <?php else: ?>
+                                                    <a href="kobetsu_monitoring.php?student_id=<?php echo $student['id']; ?><?php echo $student['monitoring_id'] ? '&monitoring_id=' . $student['monitoring_id'] : ''; ?>" class="btn btn-primary">
+                                                        モニタリング作成
+                                                    </a>
+                                                <?php endif; ?>
                                                 <?php if ($student['monitoring_id']): ?>
                                                     <button class="btn-hide" onclick="hideItem('monitoring', <?php echo $student['monitoring_id']; ?>, this)">
                                                         非表示
@@ -1008,26 +1105,59 @@ renderPageStart('staff', $currentPage, $pageTitle);
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($pendingStaffKakehashi as $kakehashi): ?>
+                                <?php foreach ($pendingStaffKakehashi as $kakehashi):
+                                    // 状態を判定
+                                    $isNotCreated = empty($kakehashi['kakehashi_id']); // レコードなし = 未作成
+                                    $isDraft = !empty($kakehashi['kakehashi_id']) && !$kakehashi['is_submitted']; // レコードあり & 未提出 = 下書き
+                                    $isNeedsGuardianConfirm = !empty($kakehashi['kakehashi_id']) && $kakehashi['is_submitted'] && !$kakehashi['guardian_confirmed']; // 提出済み & 未確認 = 要保護者確認
+                                    $daysLeft = $kakehashi['days_left'];
+
+                                    // 期限状態を計算（下書き・要保護者確認の場合も表示するため）
+                                    $deadlineLabel = '';
+                                    $deadlineClass = '';
+                                    if ($daysLeft < 0) {
+                                        $deadlineLabel = '期限切れ（' . abs($daysLeft) . '日経過）';
+                                        $deadlineClass = 'overdue';
+                                    } elseif ($daysLeft <= 30) {
+                                        $deadlineLabel = '残り' . $daysLeft . '日';
+                                        $deadlineClass = ($daysLeft <= 7) ? 'urgent' : 'warning';
+                                    }
+                                ?>
                                     <tr>
                                         <td><?php echo htmlspecialchars($kakehashi['student_name']); ?></td>
                                         <td><?php echo htmlspecialchars($kakehashi['period_name']); ?></td>
                                         <td><?php echo date('Y/m/d', strtotime($kakehashi['start_date'])) . ' ～ ' . date('Y/m/d', strtotime($kakehashi['end_date'])); ?></td>
                                         <td><?php echo date('Y年n月j日', strtotime($kakehashi['submission_deadline'])); ?></td>
                                         <td>
-                                            <?php if ($kakehashi['days_left'] < 0): ?>
-                                                <span class="status-badge overdue">期限切れ（<?php echo abs($kakehashi['days_left']); ?>日経過）</span>
-                                            <?php elseif ($kakehashi['days_left'] <= 7): ?>
-                                                <span class="status-badge urgent">緊急（残り<?php echo $kakehashi['days_left']; ?>日）</span>
+                                            <?php if ($isNeedsGuardianConfirm): ?>
+                                                <span class="status-badge needs-confirm">要保護者確認</span>
+                                                <?php if ($deadlineLabel): ?>
+                                                    <span class="status-badge <?php echo $deadlineClass; ?>"><?php echo $deadlineLabel; ?></span>
+                                                <?php endif; ?>
+                                            <?php elseif ($isDraft): ?>
+                                                <span class="status-badge draft">下書き</span>
+                                                <?php if ($deadlineLabel): ?>
+                                                    <span class="status-badge <?php echo $deadlineClass; ?>"><?php echo $deadlineLabel; ?></span>
+                                                <?php endif; ?>
+                                            <?php elseif ($daysLeft < 0): ?>
+                                                <span class="status-badge overdue">期限切れ（<?php echo abs($daysLeft); ?>日経過）</span>
+                                            <?php elseif ($daysLeft <= 7): ?>
+                                                <span class="status-badge urgent">緊急（残り<?php echo $daysLeft; ?>日）</span>
                                             <?php else: ?>
-                                                <span class="status-badge warning">未作成（残り<?php echo $kakehashi['days_left']; ?>日）</span>
+                                                <span class="status-badge warning">未作成（残り<?php echo $daysLeft; ?>日）</span>
                                             <?php endif; ?>
                                         </td>
                                         <td>
                                             <div class="action-buttons">
-                                                <a href="kakehashi_staff.php?student_id=<?php echo $kakehashi['student_id']; ?>&period_id=<?php echo $kakehashi['period_id']; ?>" class="btn btn-primary">
-                                                    作成する
-                                                </a>
+                                                <?php if ($isNeedsGuardianConfirm): ?>
+                                                    <a href="kakehashi_staff.php?student_id=<?php echo $kakehashi['student_id']; ?>&period_id=<?php echo $kakehashi['period_id']; ?>" class="btn btn-primary">
+                                                        確認依頼
+                                                    </a>
+                                                <?php else: ?>
+                                                    <a href="kakehashi_staff.php?student_id=<?php echo $kakehashi['student_id']; ?>&period_id=<?php echo $kakehashi['period_id']; ?>" class="btn btn-primary">
+                                                        <?php echo $isDraft ? '編集する' : '作成する'; ?>
+                                                    </a>
+                                                <?php endif; ?>
                                                 <button class="btn-hide" onclick="hideKakehashi('staff', <?php echo $kakehashi['period_id']; ?>, <?php echo $kakehashi['student_id']; ?>, this)">
                                                     非表示
                                                 </button>
