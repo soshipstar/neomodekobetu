@@ -245,8 +245,10 @@ renderPageStart('staff', $currentPage, $pageTitle);
             resize: none;
             font-family: inherit;
             font-size: var(--text-subhead);
+            line-height: 1.5;
             min-height: 50px;
             max-height: 120px;
+            overflow-y: auto;
             background: var(--md-gray-4);
             color: white;
         }
@@ -428,7 +430,13 @@ renderPageStart('staff', $currentPage, $pageTitle);
         messagesArea.scrollTop = messagesArea.scrollHeight;
     }
 
-    scrollToBottom();
+    // ページ読み込み完了後に最下部にスクロール
+    document.addEventListener('DOMContentLoaded', function() {
+        // 少し待ってからスクロールすることでレンダリングを確実に待つ
+        requestAnimationFrame(function() {
+            scrollToBottom();
+        });
+    });
 
     fileInput.addEventListener('change', function() {
         if (this.files.length > 0) {

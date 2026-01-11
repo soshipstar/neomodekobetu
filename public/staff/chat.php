@@ -938,7 +938,7 @@ function formatFileSize(bytes) {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
 
-function loadMessages() {
+function loadMessages(forceScroll = false) {
     if (!roomId) return;
 
     fetch('chat_api.php?action=get_messages&room_id=' + roomId + '&last_id=' + lastMessageId)
@@ -953,7 +953,7 @@ function loadMessages() {
                     lastMessageId = Math.max(lastMessageId, msg.id);
                 });
 
-                if (shouldScroll) scrollToBottom();
+                if (shouldScroll || forceScroll) scrollToBottom();
             }
         })
         .catch(error => console.error('メッセージの読み込みエラー:', error));
@@ -1344,8 +1344,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // 初期化
 if (roomId) {
-    loadMessages();
-    scrollToBottom();
+    loadMessages(true); // 初回ロードは最下部にスクロール
     setInterval(checkNewMessages, 5000);
 }
 JS;

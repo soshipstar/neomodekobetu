@@ -175,7 +175,13 @@ const MAX_FILE_SIZE = 3 * 1024 * 1024;
 function scrollToBottom() {
     messagesArea.scrollTop = messagesArea.scrollHeight;
 }
-scrollToBottom();
+
+// ページ読み込み完了後に最下部にスクロール
+document.addEventListener('DOMContentLoaded', function() {
+    requestAnimationFrame(function() {
+        scrollToBottom();
+    });
+});
 
 fileInput.addEventListener('change', function() {
     if (this.files.length > 0) {

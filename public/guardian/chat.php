@@ -372,7 +372,7 @@ function formatFileSize(bytes) {
 }
 
 // メッセージを読み込む
-function loadMessages() {
+function loadMessages(forceScroll = false) {
     if (!roomId) return;
 
     fetch('chat_api.php?action=get_messages&room_id=' + roomId + '&last_id=' + lastMessageId)
@@ -392,7 +392,7 @@ function loadMessages() {
                     lastMessageId = Math.max(lastMessageId, msg.id);
                 });
 
-                if (shouldScroll) scrollToBottom();
+                if (shouldScroll || forceScroll) scrollToBottom();
             } else if (data.success && data.messages.length === 0 && lastMessageId === 0) {
                 // メッセージが0件の場合
                 messagesArea.innerHTML = '<div class="chat-empty-state"><div class="chat-empty-state-icon"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">chat</span></div><h3>まだメッセージがありません</h3><p>下の入力欄からメッセージを送信してください</p></div>';
@@ -734,8 +734,7 @@ function checkNewMessages() {
 
 // 初期読み込み
 if (roomId) {
-    loadMessages();
-    scrollToBottom();
+    loadMessages(true); // 初回ロードは最下部にスクロール
     setInterval(checkNewMessages, 5000);
 }
 JS;
