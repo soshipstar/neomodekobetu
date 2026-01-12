@@ -71,12 +71,14 @@ try {
     // 画像の場合はインラインで表示、それ以外はダウンロード
     $mimeType = $message['attachment_type'] ?: 'application/octet-stream';
     $isImage = strpos($mimeType, 'image/') === 0;
+    $filename = $message['attachment_original_name'];
+    $encodedFilename = rawurlencode($filename);
 
     header('Content-Type: ' . $mimeType);
     if ($isImage) {
-        header('Content-Disposition: inline; filename="' . $message['attachment_original_name'] . '"');
+        header("Content-Disposition: inline; filename=\"{$encodedFilename}\"; filename*=UTF-8''{$encodedFilename}");
     } else {
-        header('Content-Disposition: attachment; filename="' . $message['attachment_original_name'] . '"');
+        header("Content-Disposition: attachment; filename=\"{$encodedFilename}\"; filename*=UTF-8''{$encodedFilename}");
     }
     header('Content-Length: ' . filesize($filePath));
     readfile($filePath);

@@ -1,12 +1,13 @@
 <?php
 /**
- * 個別支援計画書 PDF出力
+ * 個別支援計画書（案）PDF出力
+ * 保護者確認依頼中の計画案を表示
  */
 session_start();
 require_once __DIR__ . '/../../config/database.php';
 
 // 認証チェック
-if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'staff') {
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['user_type'], ['staff', 'admin'])) {
     header('Location: ../login.php');
     exit;
 }
@@ -47,9 +48,6 @@ $stmt = $pdo->prepare("SELECT * FROM individual_support_plan_details WHERE plan_
 $stmt->execute([$planId]);
 $planDetails = $stmt->fetchAll();
 
-// TCPDF/FPDFを使わず、HTMLをPDFに変換する方法として、DomPDFを使用します
-// ここではシンプルにHTML出力してブラウザのPDF印刷機能を利用する方法を採用します
-
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -57,7 +55,7 @@ $planDetails = $stmt->fetchAll();
     <link rel="stylesheet" href="/assets/css/google-design.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <meta charset="UTF-8">
-    <title>個別支援計画書 - <?= htmlspecialchars($planData['student_name']) ?></title>
+    <title>個別支援計画書（案）- <?= htmlspecialchars($planData['student_name']) ?></title>
     <style>
         :root {
             --table-font-size: 9pt;
@@ -78,7 +76,6 @@ $planDetails = $stmt->fetchAll();
                 height: 297mm;
                 overflow: hidden;
             }
-            /* 空白ページを防ぐ */
             html, body, .section, .goal-section, table {
                 page-break-inside: avoid;
                 page-break-after: auto;
@@ -118,7 +115,7 @@ $planDetails = $stmt->fetchAll();
             top: 0;
             left: 0;
             right: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
             padding: 10px 20px;
             display: flex;
             align-items: center;
@@ -180,16 +177,47 @@ $planDetails = $stmt->fetchAll();
             background: #059669;
         }
 
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
         .header {
             text-align: center;
             margin-bottom: 10px;
             border-bottom: 2px solid var(--text-primary);
             padding-bottom: 8px;
+            position: relative;
         }
 
         .header h1 {
             font-size: 18pt;
             margin: 0;
+        }
+
+        .draft-badge {
+            display: inline-block;
+            background: #ff9800;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12pt;
+            font-weight: bold;
+            margin-left: 10px;
+            vertical-align: middle;
         }
 
         .meta-info {
@@ -284,7 +312,7 @@ $planDetails = $stmt->fetchAll();
             background: #d1fae5;
         }
 
-        /* 署名フッター */
+        /* 署名フッター（案の場合は署名欄を空白で表示） */
         .signature-footer {
             display: flex;
             justify-content: space-between;
@@ -321,15 +349,12 @@ $planDetails = $stmt->fetchAll();
             border-bottom: 1px solid #333;
             min-width: 150px;
             padding: 3px 5px;
-        }
-
-        .signature-footer .signature-image {
-            max-height: 40px;
-            max-width: 120px;
+            min-height: 30px;
         }
 
         .signature-footer .signature-name {
             font-size: 9pt;
+            color: #999;
         }
 
         .footer-issuer {
@@ -382,8 +407,11 @@ $planDetails = $stmt->fetchAll();
     </style>
 </head>
 <body>
-    <!-- サイズ調整コントロールパネル -->
+    <!-- コントロールパネル -->
     <div class="control-panel no-print">
+        <a href="kobetsu_plan.php?student_id=<?= $planData['student_id'] ?>&plan_id=<?= $planId ?>" class="back-btn">
+            <span class="material-symbols-outlined">arrow_back</span> 戻る
+        </a>
         <div class="control-group">
             <label>文字サイズ:</label>
             <button class="control-btn" onclick="adjustFontSize(-1)">−</button>
@@ -391,16 +419,7 @@ $planDetails = $stmt->fetchAll();
             <button class="control-btn" onclick="adjustFontSize(1)">+</button>
         </div>
         <div class="control-group">
-            <label>セル余白:</label>
-            <button class="control-btn" onclick="adjustPadding(-2)">−</button>
-            <span class="size-display" id="paddingDisplay">4px</span>
-            <button class="control-btn" onclick="adjustPadding(2)">+</button>
-        </div>
-        <div class="control-group">
-            <label>セル高さ:</label>
-            <button class="control-btn" onclick="adjustHeight(-10)">−</button>
-            <span class="size-display" id="heightDisplay">40px</span>
-            <button class="control-btn" onclick="adjustHeight(10)">+</button>
+            <span class="size-display" style="background: #fff3cd; color: #856404;">計画案（保護者確認用）</span>
         </div>
         <div class="control-group">
             <span class="size-display" style="background: #fef3c7; color: #92400e;">A3 横向き</span>
@@ -410,30 +429,16 @@ $planDetails = $stmt->fetchAll();
 
     <script>
         let fontSize = 9;
-        let cellPadding = 4;
-        let cellHeight = 40;
 
         function adjustFontSize(delta) {
             fontSize = Math.max(6, Math.min(14, fontSize + delta));
             document.documentElement.style.setProperty('--table-font-size', fontSize + 'pt');
             document.getElementById('fontSizeDisplay').textContent = fontSize + 'pt';
         }
-
-        function adjustPadding(delta) {
-            cellPadding = Math.max(2, Math.min(16, cellPadding + delta));
-            document.documentElement.style.setProperty('--cell-padding', cellPadding + 'px ' + (cellPadding + 2) + 'px');
-            document.getElementById('paddingDisplay').textContent = cellPadding + 'px';
-        }
-
-        function adjustHeight(delta) {
-            cellHeight = Math.max(30, Math.min(150, cellHeight + delta));
-            document.documentElement.style.setProperty('--cell-min-height', cellHeight + 'px');
-            document.getElementById('heightDisplay').textContent = cellHeight + 'px';
-        }
     </script>
 
     <div class="header">
-        <h1>個別支援計画書</h1>
+        <h1>個別支援計画書<span class="draft-badge">案</span></h1>
     </div>
 
     <div class="meta-info">
@@ -442,8 +447,8 @@ $planDetails = $stmt->fetchAll();
             <span><?= htmlspecialchars($planData['student_name']) ?></span>
         </div>
         <div class="meta-item">
-            <span class="meta-label">同意日：</span>
-            <span><?= $planData['consent_date'] ? date('Y年m月d日', strtotime($planData['consent_date'])) : '' ?></span>
+            <span class="meta-label">作成日：</span>
+            <span><?= $planData['created_date'] ? date('Y年m月d日', strtotime($planData['created_date'])) : '' ?></span>
         </div>
     </div>
 
@@ -516,32 +521,19 @@ $planDetails = $stmt->fetchAll();
         </table>
     </div>
 
-    <!-- 署名欄フッター -->
+    <!-- 署名欄フッター（案なので署名欄は空白） -->
     <div class="signature-footer">
         <div class="signature-center">
             <div class="signature-item">
                 <div class="signature-label">児童発達支援管理責任者</div>
                 <div class="signature-content">
-                    <?php if (!empty($planData['staff_signature_image'])): ?>
-                    <img src="<?= $planData['staff_signature_image'] ?>" alt="職員署名" class="signature-image">
-                    <?php
-                    $signerName = $planData['staff_signer_name'] ?? $planData['manager_name'] ?? '';
-                    if ($signerName): ?>
-                    <div class="signature-name">(<?= htmlspecialchars($signerName) ?>)</div>
-                    <?php endif; ?>
-                    <?php else: ?>
                     <div class="signature-name"><?= htmlspecialchars($planData['manager_name'] ?? '') ?></div>
-                    <?php endif; ?>
                 </div>
             </div>
             <div class="signature-item">
                 <div class="signature-label">保護者署名</div>
                 <div class="signature-content">
-                    <?php if (!empty($planData['guardian_signature_image'])): ?>
-                    <img src="<?= $planData['guardian_signature_image'] ?>" alt="保護者署名" class="signature-image">
-                    <?php else: ?>
-                    <div class="signature-name"><?= htmlspecialchars($planData['guardian_signature'] ?? '') ?></div>
-                    <?php endif; ?>
+                    <div class="signature-name" style="color: #999;">（確認後に署名）</div>
                 </div>
             </div>
         </div>

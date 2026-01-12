@@ -1,27 +1,28 @@
 <?php
 /**
- * 個別支援計画書 PDF出力
+ * 個別支援計画書 PDF出力（保護者用）
  */
 session_start();
 require_once __DIR__ . '/../../config/database.php';
 
 // 認証チェック
-if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'staff') {
+if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'guardian') {
     header('Location: ../login.php');
     exit;
 }
 
+$guardianId = $_SESSION['user_id'];
 $planId = $_GET['plan_id'] ?? null;
 
 if (!$planId) {
     $_SESSION['error'] = '計画IDが指定されていません。';
-    header('Location: kobetsu_plan.php');
+    header('Location: support_plans.php');
     exit;
 }
 
 $pdo = getDbConnection();
 
-// 計画データを取得（施設情報も含む）
+// 計画データを取得（保護者の子供の計画のみ）
 $stmt = $pdo->prepare("
     SELECT isp.*,
            s.classroom_id,
@@ -29,16 +30,16 @@ $stmt = $pdo->prepare("
            c.address as classroom_address,
            c.phone as classroom_phone
     FROM individual_support_plans isp
-    LEFT JOIN students s ON isp.student_id = s.id
+    INNER JOIN students s ON isp.student_id = s.id
     LEFT JOIN classrooms c ON s.classroom_id = c.id
-    WHERE isp.id = ?
+    WHERE isp.id = ? AND s.guardian_id = ?
 ");
-$stmt->execute([$planId]);
+$stmt->execute([$planId, $guardianId]);
 $planData = $stmt->fetch();
 
 if (!$planData) {
     $_SESSION['error'] = '指定された計画が見つかりません。';
-    header('Location: kobetsu_plan.php');
+    header('Location: support_plans.php');
     exit;
 }
 
@@ -46,9 +47,6 @@ if (!$planData) {
 $stmt = $pdo->prepare("SELECT * FROM individual_support_plan_details WHERE plan_id = ? ORDER BY row_order");
 $stmt->execute([$planId]);
 $planDetails = $stmt->fetchAll();
-
-// TCPDF/FPDFを使わず、HTMLをPDFに変換する方法として、DomPDFを使用します
-// ここではシンプルにHTML出力してブラウザのPDF印刷機能を利用する方法を採用します
 
 ?>
 <!DOCTYPE html>
@@ -118,7 +116,7 @@ $planDetails = $stmt->fetchAll();
             top: 0;
             left: 0;
             right: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
             padding: 10px 20px;
             display: flex;
             align-items: center;
@@ -132,26 +130,6 @@ $planDetails = $stmt->fetchAll();
             align-items: center;
             gap: 8px;
             color: white;
-        }
-
-        .control-group label {
-            font-size: 12px;
-            white-space: nowrap;
-        }
-
-        .control-btn {
-            background: rgba(255,255,255,0.2);
-            border: 1px solid rgba(255,255,255,0.3);
-            color: white;
-            padding: 5px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.2s;
-        }
-
-        .control-btn:hover {
-            background: rgba(255,255,255,0.3);
         }
 
         .size-display {
@@ -178,6 +156,24 @@ $planDetails = $stmt->fetchAll();
 
         .print-btn:hover {
             background: #059669;
+        }
+
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
         }
 
         .header {
@@ -382,55 +378,16 @@ $planDetails = $stmt->fetchAll();
     </style>
 </head>
 <body>
-    <!-- サイズ調整コントロールパネル -->
+    <!-- コントロールパネル -->
     <div class="control-panel no-print">
-        <div class="control-group">
-            <label>文字サイズ:</label>
-            <button class="control-btn" onclick="adjustFontSize(-1)">−</button>
-            <span class="size-display" id="fontSizeDisplay">9pt</span>
-            <button class="control-btn" onclick="adjustFontSize(1)">+</button>
-        </div>
-        <div class="control-group">
-            <label>セル余白:</label>
-            <button class="control-btn" onclick="adjustPadding(-2)">−</button>
-            <span class="size-display" id="paddingDisplay">4px</span>
-            <button class="control-btn" onclick="adjustPadding(2)">+</button>
-        </div>
-        <div class="control-group">
-            <label>セル高さ:</label>
-            <button class="control-btn" onclick="adjustHeight(-10)">−</button>
-            <span class="size-display" id="heightDisplay">40px</span>
-            <button class="control-btn" onclick="adjustHeight(10)">+</button>
-        </div>
+        <a href="support_plans.php" class="back-btn">
+            <span class="material-symbols-outlined">arrow_back</span> 戻る
+        </a>
         <div class="control-group">
             <span class="size-display" style="background: #fef3c7; color: #92400e;">A3 横向き</span>
         </div>
         <button class="print-btn" onclick="window.print()"><span class="material-symbols-outlined">print</span> PDF印刷</button>
     </div>
-
-    <script>
-        let fontSize = 9;
-        let cellPadding = 4;
-        let cellHeight = 40;
-
-        function adjustFontSize(delta) {
-            fontSize = Math.max(6, Math.min(14, fontSize + delta));
-            document.documentElement.style.setProperty('--table-font-size', fontSize + 'pt');
-            document.getElementById('fontSizeDisplay').textContent = fontSize + 'pt';
-        }
-
-        function adjustPadding(delta) {
-            cellPadding = Math.max(2, Math.min(16, cellPadding + delta));
-            document.documentElement.style.setProperty('--cell-padding', cellPadding + 'px ' + (cellPadding + 2) + 'px');
-            document.getElementById('paddingDisplay').textContent = cellPadding + 'px';
-        }
-
-        function adjustHeight(delta) {
-            cellHeight = Math.max(30, Math.min(150, cellHeight + delta));
-            document.documentElement.style.setProperty('--cell-min-height', cellHeight + 'px');
-            document.getElementById('heightDisplay').textContent = cellHeight + 'px';
-        }
-    </script>
 
     <div class="header">
         <h1>個別支援計画書</h1>

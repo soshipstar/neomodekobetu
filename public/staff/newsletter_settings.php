@@ -425,6 +425,36 @@ renderPageStart('staff', $currentPage, '施設通信設定');
     text-decoration: line-through;
 }
 
+.format-selection {
+    margin-left: 20px;
+    margin-bottom: 15px;
+    padding: var(--spacing-md);
+    background: var(--md-bg-secondary);
+    border-radius: var(--radius-sm);
+}
+
+.format-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    font-size: var(--text-subhead);
+    color: var(--text-primary);
+}
+
+.format-options {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.format-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    color: var(--text-primary);
+}
+
 @media (max-width: 768px) {
     .settings-section {
         padding: var(--spacing-lg);
@@ -513,14 +543,14 @@ renderPageStart('staff', $currentPage, '施設通信設定');
         </div>
 
         <!-- カレンダー形式選択 -->
-        <div class="format-selection" style="margin-left: 20px; margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px;">
-            <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9rem;">カレンダー形式:</label>
-            <div style="display: flex; gap: 20px;">
-                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+        <div class="format-selection">
+            <label class="format-label">カレンダー形式:</label>
+            <div class="format-options">
+                <label class="format-option">
                     <input type="radio" name="calendar_format" value="list" <?= ($settings['calendar_format'] ?? 'list') === 'list' ? 'checked' : '' ?>>
                     <span>一覧形式（日付と名前）</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <label class="format-option">
                     <input type="radio" name="calendar_format" value="table" <?= ($settings['calendar_format'] ?? 'list') === 'table' ? 'checked' : '' ?>>
                     <span>表形式（カレンダー表）</span>
                 </label>

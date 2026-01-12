@@ -3,19 +3,22 @@
  * メール送信ヘルパー関数
  */
 
+// 環境変数を読み込む
+require_once __DIR__ . '/env.php';
+
 /**
  * メール送信設定
- * 本番環境では適切なSMTP設定に変更してください
+ * 環境変数から設定を読み込む
  */
 function getEmailConfig() {
     return [
-        'from_email' => 'info@narze.xyz',
-        'from_name' => '個別支援連絡帳システム きづり',
-        'smtp_host' => 'localhost', // 本番環境では適切なSMTPサーバーを設定
-        'smtp_port' => 25,
-        'smtp_username' => '',
-        'smtp_password' => '',
-        'use_smtp' => false, // trueにするとSMTPを使用
+        'from_email' => env('MAIL_FROM_ADDRESS', 'noreply@kiduri.jp'),
+        'from_name' => env('MAIL_FROM_NAME', '個別支援連絡帳システム きづり'),
+        'smtp_host' => env('MAIL_HOST', 'localhost'),
+        'smtp_port' => (int) env('MAIL_PORT', 25),
+        'smtp_username' => env('MAIL_USERNAME', ''),
+        'smtp_password' => env('MAIL_PASSWORD', ''),
+        'use_smtp' => env('MAIL_USE_SMTP', 'false') === 'true',
     ];
 }
 
@@ -54,7 +57,17 @@ function sendEmail($to, $subject, $message, $isHtml = true) {
             return sendEmailViaSMTP($to, $encodedSubject, $message, $headers, $config);
         } else {
             // PHP標準のmail関数を使用
-            return mail($to, $encodedSubject, $message, implode("\r\n", $headers));
+            // HETEMLサーバーでは-fパラメータで送信元を指定
+            $additionalParams = '-f' . $config['from_email'];
+            $result = mail($to, $encodedSubject, $message, implode("\r\n", $headers), $additionalParams);
+
+            if (!$result) {
+                error_log("Email sending failed: mail() returned false. To: {$to}, Subject: {$encodedSubject}");
+            } else {
+                error_log("Email sent successfully to: {$to}");
+            }
+
+            return $result;
         }
     } catch (Exception $e) {
         error_log("Email sending failed: " . $e->getMessage());

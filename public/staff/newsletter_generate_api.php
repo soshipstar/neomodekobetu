@@ -57,7 +57,7 @@ try {
             LEFT JOIN student_records sr ON dr.id = sr.daily_record_id
             LEFT JOIN students s ON sr.student_id = s.id
             WHERE dr.record_date BETWEEN ? AND ?
-            AND dr.classroom_id = ?
+            AND u.classroom_id = ?
             GROUP BY dr.id
             ORDER BY dr.record_date, dr.created_at
         ");

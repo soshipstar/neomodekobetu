@@ -134,6 +134,11 @@ function renderPageEnd(array $options = []): void
                    isset($_SESSION['user_type']) &&
                    in_array($_SESSION['user_type'], ['staff', 'admin']);
 
+    // 保護者向けにヘルプボタンを表示
+    $showGuardianHelp = !$noChatbot &&
+                        isset($_SESSION['user_type']) &&
+                        $_SESSION['user_type'] === 'guardian';
+
     if (!$noContainer):
 ?>
             </div><!-- /.container -->
@@ -143,6 +148,10 @@ function renderPageEnd(array $options = []): void
 
     <?php if ($showChatbot): ?>
     <?php include __DIR__ . '/../components/chatbot.php'; ?>
+    <?php endif; ?>
+
+    <?php if ($showGuardianHelp): ?>
+    <?php include __DIR__ . '/../components/guardian_help.php'; ?>
     <?php endif; ?>
 
     <!-- 追加JS -->

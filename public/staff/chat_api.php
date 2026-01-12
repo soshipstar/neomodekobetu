@@ -62,6 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                     cm.sender_type,
                     cm.sender_id,
                     cm.message_type,
+                    cm.meeting_request_id,
                     cm.created_at,
                     cm.attachment_path,
                     cm.attachment_original_name,

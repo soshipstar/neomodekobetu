@@ -185,10 +185,53 @@ renderPageStart('guardian', $currentPage, 'チャット', [
     padding: var(--spacing-2xl);
     color: var(--text-secondary);
 }
+
+/* 面談予約メッセージ */
+.message-bubble.meeting {
+    background: linear-gradient(135deg, rgba(175, 82, 222, 0.15) 0%, rgba(175, 82, 222, 0.08) 100%) !important;
+    border: 1px solid rgba(175, 82, 222, 0.3);
+}
+
+/* 面談申込フォーム */
+.special-form-title.meeting {
+    color: var(--md-purple);
+}
+
+.special-form-select.meeting:focus {
+    border-color: var(--md-purple);
+}
+
+.special-form-submit.meeting {
+    background: var(--md-purple);
+    color: white;
+}
+
+input[type="datetime-local"].special-form-select {
+    width: 100%;
+    padding: var(--spacing-md);
+    border: 2px solid var(--md-gray-5);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-subhead);
+    background: var(--md-bg-primary);
+    color: var(--text-primary);
+}
+
+input[type="datetime-local"].special-form-select.meeting:focus {
+    border-color: var(--md-purple);
+    outline: none;
+}
 </style>
 
 <?php if (!empty($students)): ?>
 <div class="chat-wrapper role-guardian">
+    <!-- モバイル用ヘッダー -->
+    <div class="chat-mobile-header">
+        <a href="dashboard.php" class="chat-back-btn">
+            <span class="material-symbols-outlined">arrow_back</span>
+        </a>
+        <div class="chat-mobile-title">チャット</div>
+    </div>
+
     <!-- 生徒セレクター -->
     <div class="chat-student-selector">
         <select onchange="location.href='chat.php?student_id=' + this.value">
@@ -299,13 +342,52 @@ renderPageStart('guardian', $currentPage, 'チャット', [
         </button>
     </div>
 
+    <!-- 面談申込フォーム -->
+    <div class="special-form-area" id="meetingFormArea">
+        <div class="special-form-header">
+            <div class="special-form-title meeting"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">calendar_month</span> 面談の申し込み</div>
+            <button type="button" class="special-form-close" onclick="closeMeetingForm()">閉じる</button>
+        </div>
+        <div style="margin-bottom: var(--spacing-md);">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">面談の目的</label>
+            <select class="special-form-select meeting" id="meetingPurpose">
+                <option value="">選択してください</option>
+                <option value="個別支援計画">個別支援計画について</option>
+                <option value="モニタリング">モニタリングについて</option>
+                <option value="進路相談">進路相談</option>
+                <option value="学習相談">学習相談</option>
+                <option value="生活相談">生活・行動について</option>
+                <option value="その他">その他</option>
+            </select>
+        </div>
+        <textarea class="special-form-textarea" id="meetingDetail" placeholder="面談で相談したい内容（任意）&#10;例：最近の様子について相談したい"></textarea>
+
+        <div style="margin-bottom: var(--spacing-md);">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">希望日時（第1希望）<span style="color: var(--md-red);">*</span></label>
+            <input type="datetime-local" class="special-form-select meeting" id="meetingDate1" required>
+        </div>
+        <div style="margin-bottom: var(--spacing-md);">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">希望日時（第2希望）</label>
+            <input type="datetime-local" class="special-form-select meeting" id="meetingDate2">
+        </div>
+        <div style="margin-bottom: var(--spacing-md);">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600;">希望日時（第3希望）</label>
+            <input type="datetime-local" class="special-form-select meeting" id="meetingDate3">
+        </div>
+
+        <button type="button" class="special-form-submit meeting" onclick="sendMeetingRequest()" id="sendMeetingBtn">
+            面談を申し込む
+        </button>
+    </div>
+
     <!-- 入力エリア -->
     <div class="chat-input-area">
         <div class="message-type-selector">
             <select onchange="selectMessageType(this.value)">
-                <option value="normal"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">chat</span> 通常メッセージ</option>
-                <option value="absence"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event_busy</span> 欠席連絡</option>
-                <option value="event"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">celebration</span> イベント参加申込</option>
+                <option value="normal">💬 通常メッセージ</option>
+                <option value="absence">📅 欠席連絡</option>
+                <option value="event">🎉 イベント参加申込</option>
+                <option value="meeting">📆 面談の申し込み</option>
             </select>
         </div>
 
@@ -413,6 +495,9 @@ function appendMessage(msg) {
     const isOwn = msg.sender_type === 'guardian';
     const isAbsence = msg.message_type === 'absence_notification';
     const isEvent = msg.message_type === 'event_registration';
+    const isMeetingRequest = msg.message_type === 'meeting_request';
+    const isMeetingCounter = msg.message_type === 'meeting_counter';
+    const isMeetingConfirmed = msg.message_type === 'meeting_confirmed';
 
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message ' + (isOwn ? 'sent' : 'received');
@@ -420,6 +505,7 @@ function appendMessage(msg) {
     let bubbleClass = 'message-bubble';
     if (isAbsence) bubbleClass += ' absence';
     if (isEvent) bubbleClass += ' event';
+    if (isMeetingRequest || isMeetingCounter) bubbleClass += ' meeting';
 
     let html = '<div class="message-content">';
     if (!isOwn) {
@@ -430,6 +516,13 @@ function appendMessage(msg) {
     html += '<div class="' + bubbleClass + '">';
     if (msg.message) {
         html += escapeHtml(msg.message).replace(/\\n/g, '<br>');
+    }
+    // 面談予約リンクを追加
+    if ((isMeetingRequest || isMeetingCounter) && msg.meeting_request_id) {
+        html += '<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(175, 82, 222, 0.3);">';
+        html += '<a href="meeting_response.php?request_id=' + msg.meeting_request_id + '" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; background: var(--md-purple); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">';
+        html += '<span class="material-symbols-outlined" style="font-size: 18px;">calendar_month</span> 日程を回答する';
+        html += '</a></div>';
     }
     if (msg.attachment_path) {
         html += '<div class="message-attachment"><a href="download_attachment.php?id=' + msg.id + '" target="_blank"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">attach_file</span> ' + escapeHtml(msg.attachment_original_name || 'ファイル') + '</a></div>';
@@ -498,7 +591,12 @@ function handleKeyDown(event) {
 
 function scrollToBottom() {
     const messagesArea = document.getElementById('messagesArea');
-    messagesArea.scrollTop = messagesArea.scrollHeight;
+    // 少し遅延させてDOM更新後にスクロール
+    requestAnimationFrame(() => {
+        setTimeout(() => {
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }, 50);
+    });
 }
 
 function escapeHtml(text) {
@@ -524,6 +622,7 @@ function formatDateTime(dateTimeStr) {
 function selectMessageType(type) {
     document.getElementById('absenceFormArea').classList.remove('show');
     document.getElementById('eventFormArea').classList.remove('show');
+    document.getElementById('meetingFormArea').classList.remove('show');
     document.getElementById('chatForm').style.display = 'flex';
 
     if (type === 'absence') {
@@ -531,6 +630,9 @@ function selectMessageType(type) {
         document.getElementById('chatForm').style.display = 'none';
     } else if (type === 'event') {
         document.getElementById('eventFormArea').classList.add('show');
+        document.getElementById('chatForm').style.display = 'none';
+    } else if (type === 'meeting') {
+        document.getElementById('meetingFormArea').classList.add('show');
         document.getElementById('chatForm').style.display = 'none';
     }
 }
@@ -543,6 +645,70 @@ function closeAbsenceForm() {
 function closeEventForm() {
     document.querySelector('.message-type-selector select').value = 'normal';
     selectMessageType('normal');
+}
+
+function closeMeetingForm() {
+    document.querySelector('.message-type-selector select').value = 'normal';
+    selectMessageType('normal');
+}
+
+function sendMeetingRequest() {
+    const purpose = document.getElementById('meetingPurpose').value;
+    const detail = document.getElementById('meetingDetail').value;
+    const date1 = document.getElementById('meetingDate1').value;
+    const date2 = document.getElementById('meetingDate2').value;
+    const date3 = document.getElementById('meetingDate3').value;
+
+    if (!purpose) {
+        alert('面談の目的を選択してください。');
+        return;
+    }
+    if (!date1) {
+        alert('第1希望の日時を入力してください。');
+        return;
+    }
+
+    const btn = document.getElementById('sendMeetingBtn');
+    btn.disabled = true;
+    btn.textContent = '送信中...';
+
+    const formData = new FormData();
+    formData.append('action', 'meeting_request');
+    formData.append('room_id', roomId);
+    formData.append('student_id', studentId);
+    formData.append('purpose', purpose);
+    formData.append('detail', detail);
+    formData.append('date1', date1);
+    formData.append('date2', date2);
+    formData.append('date3', date3);
+
+    fetch('chat_api.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // フォームをリセット
+            document.getElementById('meetingPurpose').value = '';
+            document.getElementById('meetingDetail').value = '';
+            document.getElementById('meetingDate1').value = '';
+            document.getElementById('meetingDate2').value = '';
+            document.getElementById('meetingDate3').value = '';
+            closeMeetingForm();
+            loadMessages();
+            alert('面談の申し込みを送信しました。スタッフからの回答をお待ちください。');
+        } else {
+            alert('エラー: ' + (data.message || '送信に失敗しました'));
+        }
+    })
+    .catch(error => {
+        alert('送信エラー: ' + error);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.textContent = '面談を申し込む';
+    });
 }
 
 function showEventDetails() {
@@ -737,6 +903,9 @@ if (roomId) {
     loadMessages(true); // 初回ロードは最下部にスクロール
     setInterval(checkNewMessages, 5000);
 }
+
+// モバイル用：bodyにクラスを追加（:has()セレクタのフォールバック）
+document.body.classList.add('has-chat');
 JS;
 
 renderPageEnd(['inlineJs' => $inlineJs]);

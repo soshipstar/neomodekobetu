@@ -450,6 +450,7 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
             <a href="#schedule" class="manual-nav-link"><span class="material-symbols-outlined nav-icon">event</span>書類スケジュール</a>
             <a href="#master" class="manual-nav-link"><span class="material-symbols-outlined nav-icon">settings</span>マスタ管理</a>
             <a href="#faq" class="manual-nav-link"><span class="material-symbols-outlined nav-icon">help</span>よくある質問</a>
+            <a href="#signature" class="manual-nav-link"><span class="material-symbols-outlined nav-icon">draw</span>電子署名</a>
             <a href="#tips" class="manual-nav-link"><span class="material-symbols-outlined nav-icon">lightbulb</span>ヒントとコツ</a>
             <a href="#contact" class="manual-nav-link"><span class="material-symbols-outlined nav-icon">contact_support</span>お問い合わせ</a>
         </div>
@@ -1673,6 +1674,104 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
                     <div class="feature-title">Q: 生徒の学年が生年月日と合わないのですが？</div>
                     <p>
                         A: 生徒管理画面で「学年調整」機能を使用してください。-2～+2学年の範囲で調整できます。飛び級や留年などのケースに対応しています。
+                    </p>
+                </div>
+            </div>
+
+            <!-- 電子署名機能 -->
+            <div class="section" id="signature">
+                <h2><span class="material-symbols-outlined" style="font-size: 24px; vertical-align: middle;">draw</span> 電子署名機能</h2>
+                <p>
+                    個別支援計画書とモニタリング表では、電子署名による確認が可能です。
+                    保護者との面談時に、画面上で直接署名をいただくことができます。
+                </p>
+
+                <div class="feature-box">
+                    <div class="feature-title"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">sync</span> 個別支援計画書のワークフロー</div>
+                    <p style="margin-bottom: 15px;">個別支援計画書は以下のステップで作成・確認します。</p>
+
+                    <div class="step-box">
+                        <span class="step-number">1</span>
+                        <strong>計画書案を作成</strong><br>
+                        個別支援計画書を作成し、「計画書案として提出」ボタンで保護者に確認依頼を送信します。
+                    </div>
+                    <div class="step-box">
+                        <span class="step-number">2</span>
+                        <strong>保護者が内容を確認</strong><br>
+                        保護者は計画書案を閲覧し、「変更なし」で確認するか、変更希望がある場合はコメントを送信できます。
+                    </div>
+                    <div class="step-box">
+                        <span class="step-number">3</span>
+                        <strong>コメント確認・修正（必要な場合）</strong><br>
+                        保護者からコメントがあった場合は、計画書画面にオレンジ色のバナーで表示されます。内容を確認し、必要に応じて修正してください。
+                    </div>
+                    <div class="step-box">
+                        <span class="step-number">4</span>
+                        <strong>面談で電子署名</strong><br>
+                        保護者との面談時に、画面上の署名欄に職員・保護者両方の署名を入力し、「正式版として提出」ボタンで完了します。
+                    </div>
+
+                    <div class="note-box" style="margin-top: 15px;">
+                        <strong><span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">info</span> 署名について:</strong>
+                        <ul style="margin-top: 8px;">
+                            <li>署名はタッチ操作（スマホ・タブレット）またはマウス操作で入力できます</li>
+                            <li>「クリア」ボタンで署名をやり直すことができます</li>
+                            <li>署名日は自動的に入力日が設定されますが、変更も可能です</li>
+                            <li>署名済みの計画書はPDF出力時に署名画像が表示されます</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="feature-box">
+                    <div class="feature-title"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">monitoring</span> モニタリング表の電子署名</div>
+                    <p>モニタリング表も同様に電子署名に対応しています。</p>
+                    <ul>
+                        <li>モニタリング表を作成し、保護者に確認依頼を送信</li>
+                        <li>保護者が画面から内容を確認し、署名を入力</li>
+                        <li>署名済みのモニタリング表はPDF出力可能</li>
+                    </ul>
+                </div>
+
+                <div class="feature-box">
+                    <div class="feature-title"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">visibility</span> ステータス表示</div>
+                    <p>計画書の状態は以下のバッジで確認できます。</p>
+                    <table class="schedule-table" style="margin-top: 10px;">
+                        <thead>
+                            <tr>
+                                <th style="width: 30%;">バッジ</th>
+                                <th>説明</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span style="background: var(--md-gray-4); color: var(--text-primary); padding: 2px 8px; border-radius: 4px; font-size: 12px;">下書き</span></td>
+                                <td>作成中の計画書。保護者には非公開です。</td>
+                            </tr>
+                            <tr>
+                                <td><span style="background: var(--md-blue); color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">案</span></td>
+                                <td>保護者に確認依頼中の計画書案。</td>
+                            </tr>
+                            <tr>
+                                <td><span style="background: var(--md-orange); color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">コメントあり</span></td>
+                                <td>保護者から変更希望のコメントが届いています。</td>
+                            </tr>
+                            <tr>
+                                <td><span style="background: var(--md-green); color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">確認済み</span></td>
+                                <td>保護者が内容を確認済み（変更なし）。面談での署名待ちです。</td>
+                            </tr>
+                            <tr>
+                                <td><span style="background: var(--md-purple); color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">正式版</span></td>
+                                <td>署名済みの正式な計画書。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="tip-box">
+                    <strong><span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">lightbulb</span> 面談時のコツ:</strong>
+                    <p style="margin-top: 8px;">
+                        タブレット端末を使用すると、保護者が直接画面に署名できるので便利です。
+                        署名後は必ず内容を保護者と一緒に確認してから「正式版として提出」してください。
                     </p>
                 </div>
             </div>

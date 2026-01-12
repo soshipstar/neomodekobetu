@@ -73,8 +73,11 @@ try {
     }
 
     // ファイルを送信
+    $filename = $message['attachment_original_name'];
+    $encodedFilename = rawurlencode($filename);
+
     header('Content-Type: ' . ($message['attachment_type'] ?: 'application/octet-stream'));
-    header('Content-Disposition: attachment; filename="' . $message['attachment_original_name'] . '"');
+    header("Content-Disposition: attachment; filename=\"{$encodedFilename}\"; filename*=UTF-8''{$encodedFilename}");
     header('Content-Length: ' . filesize($filePath));
     readfile($filePath);
 

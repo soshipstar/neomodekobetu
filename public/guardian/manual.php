@@ -292,8 +292,9 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
         <li><a href="#daily-records">1. 日々の活動記録について</a></li>
         <li><a href="#kakehashi">2. かけはしについて</a></li>
         <li><a href="#support-plan">3. 個別支援計画書について</a></li>
-        <li><a href="#flow">4. 書類作成の流れ</a></li>
-        <li><a href="#request">5. 保護者の皆様へのお願い</a></li>
+        <li><a href="#signature">4. 電子署名について</a></li>
+        <li><a href="#flow">5. 書類作成の流れ</a></li>
+        <li><a href="#request">6. 保護者の皆様へのお願い</a></li>
     </ul>
 </div>
 
@@ -376,9 +377,57 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
     </p>
 </div>
 
+<!-- 電子署名について -->
+<div class="section" id="signature">
+    <h2><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">draw</span> 4. 電子署名について</h2>
+    <p>
+        個別支援計画書とモニタリング表では、<strong>電子署名</strong>による確認をお願いしています。
+        紙の書類に署名する代わりに、画面上で直接署名できます。
+    </p>
+
+    <h3>個別支援計画書の確認手順</h3>
+    <div class="flow-diagram">
+        <div class="flow-step">
+            <div class="flow-number">1</div>
+            <div class="flow-content">
+                <div class="flow-title">計画書案を確認</div>
+                <div class="flow-desc">スタッフが作成した計画書案がシステムに届きます。内容をご確認ください。</div>
+            </div>
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">
+            <div class="flow-number">2</div>
+            <div class="flow-content">
+                <div class="flow-title">確認またはコメント送信</div>
+                <div class="flow-desc">内容に問題がなければ「確認」、変更希望がある場合は「コメントを送信」を選択します。</div>
+            </div>
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">
+            <div class="flow-number">3</div>
+            <div class="flow-content">
+                <div class="flow-title">面談で電子署名</div>
+                <div class="flow-desc">スタッフとの面談時に、画面上で署名をお願いします。</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="highlight-box green">
+        <strong><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">draw</span> 電子署名の方法</strong><br><br>
+        スマートフォンやタブレットの場合は<strong>指で直接</strong>、パソコンの場合は<strong>マウス</strong>で署名欄に署名できます。<br>
+        書き直したい場合は「クリア」ボタンで消してやり直せます。
+    </div>
+
+    <div class="highlight-box orange">
+        <strong><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">info</span> 変更希望がある場合</strong><br><br>
+        計画書案の内容に変更を希望される場合は、コメント欄に具体的なご希望を記入してください。<br>
+        スタッフが内容を確認し、修正した計画書を改めてお送りします。
+    </div>
+</div>
+
 <!-- 書類作成の流れ -->
 <div class="section" id="flow">
-    <h2><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">sync</span> 4. 書類作成の流れ</h2>
+    <h2><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">sync</span> 5. 書類作成の流れ</h2>
     <p>以下の流れで、日々の記録から支援計画が作成されます。</p>
 
     <div class="flow-diagram">
@@ -424,7 +473,7 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
     </div>
 
     <div class="highlight-box green">
-        <strong>✨ このサイクルのポイント</strong><br><br>
+        <strong><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">auto_awesome</span> このサイクルのポイント</strong><br><br>
         日々の記録 → かけはし → 支援計画 という流れにより、<br>
         <strong>「今のお子様の姿」に基づいた支援</strong>を行うことができます。
     </div>
@@ -432,7 +481,7 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
 
 <!-- 保護者へのお願い -->
 <div class="section important" id="request">
-    <h2>🙏 5. 保護者の皆様へのお願い</h2>
+    <h2><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">volunteer_activism</span> 6. 保護者の皆様へのお願い</h2>
     <p>お子様のより良い支援のために、以下のご協力をお願いいたします。</p>
 
     <ul class="check-list">

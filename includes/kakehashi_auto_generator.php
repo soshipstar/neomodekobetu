@@ -137,8 +137,20 @@ function calculateMonitoringDeadline($supportPlanDeadline) {
 function generateKakehashiPeriodsForStudent($pdo, $studentId, $supportStartDate) {
     $generatedPeriods = [];
 
+    // support_plan_start_type カラムの存在チェック
+    $hasSupportPlanStartType = false;
+    try {
+        $checkCol = $pdo->query("SHOW COLUMNS FROM students LIKE 'support_plan_start_type'");
+        $hasSupportPlanStartType = $checkCol->rowCount() > 0;
+    } catch (Exception $e) {
+        $hasSupportPlanStartType = false;
+    }
+
     // 生徒情報を取得
-    $stmt = $pdo->prepare("SELECT student_name, withdrawal_date FROM students WHERE id = ?");
+    $selectCols = $hasSupportPlanStartType
+        ? "student_name, withdrawal_date, support_plan_start_type"
+        : "student_name, withdrawal_date";
+    $stmt = $pdo->prepare("SELECT {$selectCols} FROM students WHERE id = ?");
     $stmt->execute([$studentId]);
     $student = $stmt->fetch();
 
@@ -148,6 +160,15 @@ function generateKakehashiPeriodsForStudent($pdo, $studentId, $supportStartDate)
 
     $studentName = $student['student_name'];
     $withdrawalDate = $student['withdrawal_date'] ? new DateTime($student['withdrawal_date']) : null;
+    $supportPlanStartType = $hasSupportPlanStartType ? ($student['support_plan_start_type'] ?? 'current') : 'current';
+
+    // support_plan_start_type が 'next' の場合は次回の期間から開始
+    // 1回目のかけはしは作成せず、2回目以降から作成する
+    // ただし、提出期限が来たら通常通り作成する（autoGenerateNextKakehashiPeriodsで処理）
+    if ($supportPlanStartType === 'next') {
+        error_log("Student {$studentId} has support_plan_start_type='next'. Skipping initial kakehashi generation. Will generate when next period is due.");
+        return $generatedPeriods;
+    }
 
     // 既存のかけはし期間を確認
     $stmt = $pdo->prepare("
@@ -302,6 +323,15 @@ function shouldGenerateNextKakehashi($pdo, $studentId) {
 function autoGenerateNextKakehashiPeriods($pdo) {
     $generatedPeriods = [];
 
+    // support_plan_start_type カラムの存在チェック
+    $hasSupportPlanStartType = false;
+    try {
+        $checkCol = $pdo->query("SHOW COLUMNS FROM students LIKE 'support_plan_start_type'");
+        $hasSupportPlanStartType = $checkCol->rowCount() > 0;
+    } catch (Exception $e) {
+        $hasSupportPlanStartType = false;
+    }
+
     // 1つ以上のかけはしを持つ全生徒を取得（退所していない、または退所日が未来の生徒のみ）
     $stmt = $pdo->query("
         SELECT DISTINCT s.id, s.student_name, s.support_start_date, s.withdrawal_date
@@ -324,6 +354,161 @@ function autoGenerateNextKakehashiPeriods($pdo) {
         }
     }
 
+    // support_plan_start_type='next' でまだかけはしがない生徒も処理（カラムが存在する場合のみ）
+    // 次回の期間（2回目相当）の提出期限が近づいたら、1回目のかけはしから生成
+    if ($hasSupportPlanStartType) {
+        $stmt = $pdo->query("
+            SELECT s.id, s.student_name, s.support_start_date, s.withdrawal_date
+            FROM students s
+            LEFT JOIN kakehashi_periods kp ON s.id = kp.student_id
+            WHERE s.is_active = 1
+            AND s.support_plan_start_type = 'next'
+            AND (s.withdrawal_date IS NULL OR s.withdrawal_date > CURDATE())
+            AND s.support_start_date IS NOT NULL
+            GROUP BY s.id
+            HAVING COUNT(kp.id) = 0
+        ");
+        $studentsWithNext = $stmt->fetchAll();
+
+        foreach ($studentsWithNext as $student) {
+            if (shouldGenerateFirstKakehashiForNextType($student['support_start_date'])) {
+                // 1回目のかけはしから生成を開始
+                $newPeriods = generateKakehashiPeriodsForStudentForced($pdo, $student['id'], $student['support_start_date']);
+                $generatedPeriods = array_merge($generatedPeriods, $newPeriods);
+            }
+        }
+    }
+
+    return $generatedPeriods;
+}
+
+/**
+ * support_plan_start_type='next' の生徒で、初回かけはし生成のタイミングかチェック
+ * 次回の期間（初回終了後の期間）の提出期限の1ヶ月前になったら生成
+ *
+ * @param string $supportStartDate 支援開始日
+ * @return bool 生成すべき場合true
+ */
+function shouldGenerateFirstKakehashiForNextType($supportStartDate) {
+    $startDate = new DateTime($supportStartDate);
+
+    // 初回の仮想的な終了日を計算（支援開始日から6ヶ月後の前日）
+    $firstEndDate = clone $startDate;
+    $firstEndDate->modify('+6 months');
+    $firstEndDate->modify('-1 day');
+
+    // 次回（2回目）の提出期限 = 初回終了日の翌日（2回目開始日）の1ヶ月前 = 初回終了日
+    // その1ヶ月前に生成 = 初回終了日の1ヶ月前
+    $generationTriggerDate = clone $firstEndDate;
+    $generationTriggerDate->modify('-1 month');
+
+    $today = new DateTime();
+
+    return $today >= $generationTriggerDate;
+}
+
+/**
+ * support_plan_start_type を無視してかけはし期間を強制生成
+ * support_plan_start_type='next' の生徒で、提出期限が来た場合に使用
+ *
+ * @param PDO $pdo データベース接続
+ * @param int $studentId 生徒ID
+ * @param string $supportStartDate 支援開始日
+ * @return array 生成されたかけはし期間の配列
+ */
+function generateKakehashiPeriodsForStudentForced($pdo, $studentId, $supportStartDate) {
+    $generatedPeriods = [];
+
+    // 生徒情報を取得
+    $stmt = $pdo->prepare("SELECT student_name, withdrawal_date FROM students WHERE id = ?");
+    $stmt->execute([$studentId]);
+    $student = $stmt->fetch();
+
+    if (!$student) {
+        throw new Exception("生徒が見つかりません: ID={$studentId}");
+    }
+
+    $studentName = $student['student_name'];
+    $withdrawalDate = $student['withdrawal_date'] ? new DateTime($student['withdrawal_date']) : null;
+
+    // 既存のかけはし期間を確認
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*) as period_count
+        FROM kakehashi_periods
+        WHERE student_id = ?
+    ");
+    $stmt->execute([$studentId]);
+    $existingData = $stmt->fetch();
+    $periodCount = (int)$existingData['period_count'];
+
+    // すでにかけはしが存在する場合はスキップ
+    if ($periodCount > 0) {
+        error_log("Student {$studentId} already has kakehashi periods. Skipping forced generation.");
+        return $generatedPeriods;
+    }
+
+    // 生成上限日を計算（本日+1ヶ月）
+    $today = new DateTime();
+    $generationLimit = clone $today;
+    $generationLimit->modify('+1 month');
+
+    $supportStartDateTime = new DateTime($supportStartDate);
+    $prevEndDate = null;
+    $currentPeriodNumber = 1;
+
+    while (true) {
+        // 正しい日付を計算
+        $dates = calculateKakehashiDates($supportStartDateTime, $currentPeriodNumber, $prevEndDate);
+
+        // 提出期限が生成上限より未来の場合は終了
+        if ($dates['submission_deadline'] > $generationLimit) {
+            error_log("Kakehashi deadline {$dates['submission_deadline']->format('Y-m-d')} is beyond generation limit. Stopping.");
+            break;
+        }
+
+        // 退所日が設定されている場合、対象期間開始日が退所日以降ならスキップ
+        if ($withdrawalDate && $dates['start_date'] >= $withdrawalDate) {
+            error_log("Kakehashi start_date {$dates['start_date']->format('Y-m-d')} is after withdrawal date. Stopping.");
+            break;
+        }
+
+        // 期間名を設定
+        $periodName = "{$currentPeriodNumber}回目かけはし（{$studentName}）";
+
+        // 挿入
+        $stmt = $pdo->prepare("
+            INSERT INTO kakehashi_periods (
+                student_id, period_name, start_date, end_date, submission_deadline, is_active, created_at
+            ) VALUES (?, ?, ?, ?, ?, 1, NOW())
+        ");
+        $stmt->execute([
+            $studentId,
+            $periodName,
+            $dates['start_date']->format('Y-m-d'),
+            $dates['end_date']->format('Y-m-d'),
+            $dates['submission_deadline']->format('Y-m-d')
+        ]);
+        $newPeriodId = $pdo->lastInsertId();
+
+        $generatedPeriods[] = [
+            'id' => $newPeriodId,
+            'period_name' => $periodName,
+            'submission_deadline' => $dates['submission_deadline']->format('Y-m-d'),
+            'type' => "{$currentPeriodNumber}回目"
+        ];
+
+        // 保護者・スタッフレコードを作成
+        createKakehashiRecordsForPeriod($pdo, $newPeriodId, $studentId);
+
+        // モニタリングシートを作成
+        createMonitoringForPeriod($pdo, $studentId, $dates['submission_deadline']->format('Y-m-d'));
+
+        // 次の期間のために終了日を保存
+        $prevEndDate = $dates['end_date'];
+        $currentPeriodNumber++;
+    }
+
+    error_log("Forced generation completed for student {$studentId}. Generated " . count($generatedPeriods) . " periods.");
     return $generatedPeriods;
 }
 
@@ -341,12 +526,25 @@ function autoGenerateNextKakehashiPeriods($pdo) {
  * @return array|null 生成されたかけはし期間の情報、または既に存在する場合はnull
  */
 function generateNextKakehashiPeriod($pdo, $studentId, $studentName) {
+    // support_plan_start_type カラムの存在チェック
+    $hasSupportPlanStartType = false;
+    try {
+        $checkCol = $pdo->query("SHOW COLUMNS FROM students LIKE 'support_plan_start_type'");
+        $hasSupportPlanStartType = $checkCol->rowCount() > 0;
+    } catch (Exception $e) {
+        $hasSupportPlanStartType = false;
+    }
+
     // 生徒の退所日を確認
-    $stmt = $pdo->prepare("SELECT withdrawal_date, support_start_date FROM students WHERE id = ?");
+    $selectCols = $hasSupportPlanStartType
+        ? "withdrawal_date, support_start_date, support_plan_start_type"
+        : "withdrawal_date, support_start_date";
+    $stmt = $pdo->prepare("SELECT {$selectCols} FROM students WHERE id = ?");
     $stmt->execute([$studentId]);
     $student = $stmt->fetch();
     $withdrawalDate = $student['withdrawal_date'] ? new DateTime($student['withdrawal_date']) : null;
     $supportStartDate = $student['support_start_date'] ? new DateTime($student['support_start_date']) : null;
+    $supportPlanStartType = $hasSupportPlanStartType ? ($student['support_plan_start_type'] ?? 'current') : 'current';
 
     // 最新のかけはし期間を取得（end_date順）
     $stmt = $pdo->prepare("

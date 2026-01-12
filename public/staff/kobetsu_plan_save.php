@@ -1,6 +1,11 @@
 <?php
 /**
  * 個別支援計画書保存処理
+ *
+ * 新しいワークフロー:
+ * - save_draft: 下書き保存（保護者非公開）
+ * - save: 計画書案として提出（保護者に確認依頼）
+ * - save_official: 正式版として提出（署名済み、保護者確認済み）
  */
 session_start();
 require_once __DIR__ . '/../../config/database.php';
@@ -23,6 +28,7 @@ $studentId = $_POST['student_id'] ?? null;
 $planId = $_POST['plan_id'] ?? null;
 $action = $_POST['action'] ?? 'save';
 $isDraft = isset($_POST['save_draft']) ? 1 : 0; // 下書き保存ボタンが押された場合は1
+$isOfficial = ($action === 'save_official') ? 1 : 0; // 正式版として提出
 
 // 基本情報
 $studentName = $_POST['student_name'] ?? '';
@@ -36,6 +42,23 @@ $shortTermGoalText = $_POST['short_term_goal_text'] ?? '';
 $managerName = $_POST['manager_name'] ?? '';
 $consentDate = $_POST['consent_date'] ?? null;
 $guardianSignature = $_POST['guardian_signature'] ?? '';
+
+// 電子署名データ（職員）
+$staffSignatureImage = $_POST['staff_signature_image'] ?? null;
+$staffSignatureDate = $_POST['staff_signature_date'] ?? null;
+$staffSignerName = $_POST['staff_signer_name'] ?? null;
+
+// 電子署名データ（保護者）- 面談時に職員画面から取得
+$guardianSignatureImage = $_POST['guardian_signature_image'] ?? null;
+$guardianSignatureDate = $_POST['guardian_signature_date'] ?? null;
+
+// 空の署名データは保存しない
+if ($staffSignatureImage && strpos($staffSignatureImage, 'data:image') !== 0) {
+    $staffSignatureImage = null;
+}
+if ($guardianSignatureImage && strpos($guardianSignatureImage, 'data:image') !== 0) {
+    $guardianSignatureImage = null;
+}
 
 // 明細データ
 $details = $_POST['details'] ?? [];
@@ -100,7 +123,7 @@ try {
 
     if ($planId) {
         // 更新
-        $stmt = $pdo->prepare("
+        $sql = "
             UPDATE individual_support_plans SET
                 student_name = ?,
                 created_date = ?,
@@ -114,10 +137,11 @@ try {
                 consent_date = ?,
                 guardian_signature = ?,
                 is_draft = ?,
+                is_official = ?,
                 updated_at = NOW()
-            WHERE id = ?
-        ");
-        $stmt->execute([
+        ";
+
+        $params = [
             $studentName,
             $createdDate,
             $lifeIntention,
@@ -130,15 +154,51 @@ try {
             $consentDate ?: null,
             $guardianSignature,
             $isDraft,
-            $planId
-        ]);
+            $isOfficial
+        ];
+
+        // 職員署名がある場合は追加
+        if ($staffSignatureImage) {
+            $sql .= ",
+                staff_signature_image = ?,
+                staff_signature_date = ?,
+                staff_signer_name = ?
+            ";
+            $params[] = $staffSignatureImage;
+            $params[] = $staffSignatureDate ?: null;
+            $params[] = $staffSignerName;
+        }
+
+        // 保護者署名がある場合は追加
+        if ($guardianSignatureImage) {
+            $sql .= ",
+                guardian_signature_image = ?,
+                guardian_signature_date = ?
+            ";
+            $params[] = $guardianSignatureImage;
+            $params[] = $guardianSignatureDate ?: null;
+        }
+
+        // 正式版として保存する場合は確認済みフラグも設定
+        if ($isOfficial) {
+            $sql .= ",
+                guardian_confirmed = 1,
+                guardian_confirmed_at = NOW()
+            ";
+        }
+
+        $sql .= " WHERE id = ?";
+        $params[] = $planId;
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
 
         // 既存の明細を削除
         $stmt = $pdo->prepare("DELETE FROM individual_support_plan_details WHERE plan_id = ?");
         $stmt->execute([$planId]);
     } else {
         // 新規作成
-        $stmt = $pdo->prepare("
+        $sql = "
             INSERT INTO individual_support_plans (
                 student_id,
                 student_name,
@@ -153,9 +213,28 @@ try {
                 consent_date,
                 guardian_signature,
                 is_draft,
-                created_by
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ");
+                is_official,
+                created_by,
+                staff_signature_image,
+                staff_signature_date,
+                staff_signer_name,
+                guardian_signature_image,
+                guardian_signature_date
+        ";
+
+        if ($isOfficial) {
+            $sql .= ", guardian_confirmed, guardian_confirmed_at";
+        }
+
+        $sql .= ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?";
+
+        if ($isOfficial) {
+            $sql .= ", 1, NOW()";
+        }
+
+        $sql .= ")";
+
+        $stmt = $pdo->prepare($sql);
         $stmt->execute([
             $studentId,
             $studentName,
@@ -170,7 +249,13 @@ try {
             $consentDate ?: null,
             $guardianSignature,
             $isDraft,
-            $staffId
+            $isOfficial,
+            $staffId,
+            $staffSignatureImage,
+            $staffSignatureDate ?: null,
+            $staffSignerName,
+            $guardianSignatureImage,
+            $guardianSignatureDate ?: null
         ]);
 
         $planId = $pdo->lastInsertId();
@@ -216,8 +301,10 @@ try {
 
     if ($isDraft) {
         $_SESSION['success'] = '個別支援計画書を下書き保存しました。（保護者には非公開）';
+    } elseif ($isOfficial) {
+        $_SESSION['success'] = '個別支援計画書を正式版として提出しました。（署名済み・保護者確認済み）';
     } else {
-        $_SESSION['success'] = '個別支援計画書を提出しました。（保護者にも公開）';
+        $_SESSION['success'] = '個別支援計画書（案）を提出しました。保護者に確認を依頼してください。';
     }
 
 } catch (PDOException $e) {

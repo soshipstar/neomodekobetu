@@ -20,10 +20,19 @@ $guardianId = $_SESSION['user_id'];
 // POSTデータを取得
 $input = json_decode(file_get_contents('php://input'), true);
 $monitoringId = $input['monitoring_id'] ?? null;
+$guardianSignatureImage = $input['guardian_signature_image'] ?? null;
+$guardianSignatureDate = $input['guardian_signature_date'] ?? null;
 
 if (!$monitoringId) {
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'モニタリングIDが指定されていません']);
+    exit;
+}
+
+// 署名データのバリデーション
+if ($guardianSignatureImage && strpos($guardianSignatureImage, 'data:image') !== 0) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => '署名データが無効です']);
     exit;
 }
 
@@ -50,16 +59,28 @@ try {
         exit;
     }
 
-    // 確認済みフラグを更新
-    $stmt = $pdo->prepare("
-        UPDATE monitoring_records
-        SET guardian_confirmed = 1,
-            guardian_confirmed_at = NOW()
-        WHERE id = ?
-    ");
-    $stmt->execute([$monitoringId]);
+    // 確認済みフラグと署名データを更新
+    if ($guardianSignatureImage) {
+        $stmt = $pdo->prepare("
+            UPDATE monitoring_records
+            SET guardian_confirmed = 1,
+                guardian_confirmed_at = NOW(),
+                guardian_signature_image = ?,
+                guardian_signature_date = ?
+            WHERE id = ?
+        ");
+        $stmt->execute([$guardianSignatureImage, $guardianSignatureDate, $monitoringId]);
+    } else {
+        $stmt = $pdo->prepare("
+            UPDATE monitoring_records
+            SET guardian_confirmed = 1,
+                guardian_confirmed_at = NOW()
+            WHERE id = ?
+        ");
+        $stmt->execute([$monitoringId]);
+    }
 
-    echo json_encode(['success' => true, 'message' => '確認しました']);
+    echo json_encode(['success' => true, 'message' => '署名が完了しました']);
 
 } catch (PDOException $e) {
     http_response_code(500);

@@ -32,6 +32,16 @@ $longTermGoalComment = $_POST['long_term_goal_comment'] ?? '';
 $details = $_POST['details'] ?? [];
 $isDraft = isset($_POST['save_draft']) ? 1 : 0; // 下書き保存ボタンが押された場合は1
 
+// 電子署名データ
+$staffSignatureImage = $_POST['staff_signature_image'] ?? null;
+$staffSignatureDate = $_POST['staff_signature_date'] ?? null;
+$staffSignerName = $_POST['staff_signer_name'] ?? null;
+
+// 空の署名データは保存しない
+if ($staffSignatureImage && strpos($staffSignatureImage, 'data:image') !== 0) {
+    $staffSignatureImage = null;
+}
+
 // バリデーション
 if (!$planId || !$studentId || !$monitoringDate) {
     $_SESSION['error'] = '必須項目を入力してください。';
@@ -84,29 +94,60 @@ try {
     $pdo->beginTransaction();
 
     if ($monitoringId) {
-        // 更新
-        $stmt = $pdo->prepare("
-            UPDATE monitoring_records SET
-                monitoring_date = ?,
-                overall_comment = ?,
-                short_term_goal_achievement = ?,
-                short_term_goal_comment = ?,
-                long_term_goal_achievement = ?,
-                long_term_goal_comment = ?,
-                is_draft = ?,
-                updated_at = NOW()
-            WHERE id = ?
-        ");
-        $stmt->execute([
-            $monitoringDate,
-            $overallComment,
-            $shortTermGoalAchievement,
-            $shortTermGoalComment,
-            $longTermGoalAchievement,
-            $longTermGoalComment,
-            $isDraft,
-            $monitoringId
-        ]);
+        // 更新（署名データがある場合のみ署名カラムも更新）
+        if ($staffSignatureImage) {
+            $stmt = $pdo->prepare("
+                UPDATE monitoring_records SET
+                    monitoring_date = ?,
+                    overall_comment = ?,
+                    short_term_goal_achievement = ?,
+                    short_term_goal_comment = ?,
+                    long_term_goal_achievement = ?,
+                    long_term_goal_comment = ?,
+                    is_draft = ?,
+                    staff_signature_image = ?,
+                    staff_signature_date = ?,
+                    staff_signer_name = ?,
+                    updated_at = NOW()
+                WHERE id = ?
+            ");
+            $stmt->execute([
+                $monitoringDate,
+                $overallComment,
+                $shortTermGoalAchievement,
+                $shortTermGoalComment,
+                $longTermGoalAchievement,
+                $longTermGoalComment,
+                $isDraft,
+                $staffSignatureImage,
+                $staffSignatureDate ?: null,
+                $staffSignerName,
+                $monitoringId
+            ]);
+        } else {
+            $stmt = $pdo->prepare("
+                UPDATE monitoring_records SET
+                    monitoring_date = ?,
+                    overall_comment = ?,
+                    short_term_goal_achievement = ?,
+                    short_term_goal_comment = ?,
+                    long_term_goal_achievement = ?,
+                    long_term_goal_comment = ?,
+                    is_draft = ?,
+                    updated_at = NOW()
+                WHERE id = ?
+            ");
+            $stmt->execute([
+                $monitoringDate,
+                $overallComment,
+                $shortTermGoalAchievement,
+                $shortTermGoalComment,
+                $longTermGoalAchievement,
+                $longTermGoalComment,
+                $isDraft,
+                $monitoringId
+            ]);
+        }
 
         // 既存の明細を削除
         $stmt = $pdo->prepare("DELETE FROM monitoring_details WHERE monitoring_id = ?");
@@ -125,8 +166,11 @@ try {
                 long_term_goal_achievement,
                 long_term_goal_comment,
                 is_draft,
-                created_by
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                created_by,
+                staff_signature_image,
+                staff_signature_date,
+                staff_signer_name
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         $stmt->execute([
             $planId,
@@ -139,7 +183,10 @@ try {
             $longTermGoalAchievement,
             $longTermGoalComment,
             $isDraft,
-            $staffId
+            $staffId,
+            $staffSignatureImage,
+            $staffSignatureDate ?: null,
+            $staffSignerName
         ]);
 
         $monitoringId = $pdo->lastInsertId();

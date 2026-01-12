@@ -227,16 +227,37 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
 ?>
 
 <style>
+/* ページ全体のスクロールを無効化 */
+html, body {
+    overflow: hidden;
+    height: 100%;
+}
+
+.page-wrapper {
+    height: 100%;
+    overflow: hidden;
+}
+
+.main-content {
+    height: 100%;
+    overflow: hidden;
+    padding: 0 !important;
+    max-width: 100% !important;
+}
+
 /* スタッフチャット固有のスタイル */
 .staff-chat-layout {
     display: flex;
-    height: calc(100vh - 60px);
+    height: 100vh;
+    max-height: 100vh;
     background: var(--md-bg-primary);
+    overflow: hidden;
 }
 
-@media (min-width: 769px) {
+@media (max-width: 768px) {
     .staff-chat-layout {
-        height: 100vh;
+        height: calc(100vh - 60px);
+        max-height: calc(100vh - 60px);
     }
 }
 
@@ -609,6 +630,12 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
         justify-content: flex-end;
     }
 }
+
+/* 面談予約メッセージ */
+.message-bubble.meeting {
+    background: linear-gradient(135deg, rgba(175, 82, 222, 0.15) 0%, rgba(175, 82, 222, 0.08) 100%) !important;
+    border: 1px solid rgba(175, 82, 222, 0.3);
+}
 </style>
 
 <div class="staff-chat-layout">
@@ -783,6 +810,7 @@ renderPageStart('staff', $currentPage, '保護者チャット', [
                     <button class="pin-btn <?= $selectedStudentPinned ? 'pinned' : '' ?>" onclick="togglePin()" id="pinBtn">
                         <span class="material-symbols-outlined">push_pin</span> <?= $selectedStudentPinned ? 'ピン解除' : 'ピン留め' ?>
                     </button>
+                    <a href="meeting_request.php?student_id=<?= $selectedStudentId ?>" class="submission-btn" style="background: var(--md-purple); text-decoration: none;"><span class="material-symbols-outlined">calendar_month</span> 面談予約</a>
                     <button class="submission-btn" onclick="openSubmissionModal()"><span class="material-symbols-outlined">assignment</span> 提出期限</button>
                 </div>
             </div>
@@ -965,6 +993,9 @@ function appendMessage(msg) {
     const isOwnMessage = isStaffOrAdmin && msg.sender_id == currentStaffId;
     const isAbsence = msg.message_type === 'absence_notification';
     const isEvent = msg.message_type === 'event_registration';
+    const isMeetingRequest = msg.message_type === 'meeting_request';
+    const isMeetingCounter = msg.message_type === 'meeting_counter';
+    const isMeetingConfirmed = msg.message_type === 'meeting_confirmed';
 
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message ' + (isStaffOrAdmin ? 'sent' : 'received');
@@ -973,6 +1004,7 @@ function appendMessage(msg) {
     let bubbleClass = 'message-bubble';
     if (isAbsence) bubbleClass += ' absence';
     if (isEvent) bubbleClass += ' event';
+    if (isMeetingRequest || isMeetingCounter) bubbleClass += ' meeting';
 
     let html = '<div class="message-content">';
     // 保護者からのメッセージ、または他のスタッフからのメッセージには送信者名を表示
@@ -985,6 +1017,13 @@ function appendMessage(msg) {
     html += '<div class="' + bubbleClass + '">';
     if (msg.message) {
         html += escapeHtml(msg.message).replace(/\\n/g, '<br>');
+    }
+    // 保護者からの対案メッセージにはリンクを表示
+    if (isMeetingCounter && !isStaffOrAdmin && msg.meeting_request_id) {
+        html += '<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(175, 82, 222, 0.3);">';
+        html += '<a href="meeting_response.php?request_id=' + msg.meeting_request_id + '" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; background: var(--md-purple); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">';
+        html += '<span class="material-symbols-outlined" style="font-size: 18px;">calendar_month</span> 日程を確認・回答する';
+        html += '</a></div>';
     }
     if (msg.attachment_path) {
         html += '<div class="message-attachment"><a href="download_attachment.php?id=' + msg.id + '" target="_blank"><span class="material-symbols-outlined">attach_file</span> ' + escapeHtml(msg.attachment_original_name || 'ファイル') + '</a></div>';

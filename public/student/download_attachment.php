@@ -45,8 +45,11 @@ if (!file_exists($filePath)) {
 }
 
 // ファイルをダウンロード
+$filename = $message['attachment_original_name'];
+$encodedFilename = rawurlencode($filename);
+
 header('Content-Type: application/octet-stream');
-header('Content-Disposition: attachment; filename="' . $message['attachment_original_name'] . '"');
+header("Content-Disposition: attachment; filename=\"{$encodedFilename}\"; filename*=UTF-8''{$encodedFilename}");
 header('Content-Length: ' . filesize($filePath));
 
 readfile($filePath);

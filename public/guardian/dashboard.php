@@ -485,6 +485,181 @@ if (!empty($students)) {
     }
 }
 
+// 保留中の面談予約を取得
+$pendingMeetingRequests = [];
+$confirmedMeetings = [];
+try {
+    // 回答待ちの面談予約
+    $stmt = $pdo->prepare("
+        SELECT mr.*, s.student_name, u.full_name as staff_name
+        FROM meeting_requests mr
+        INNER JOIN students s ON mr.student_id = s.id
+        LEFT JOIN users u ON mr.staff_id = u.id
+        WHERE mr.guardian_id = ? AND mr.status IN ('pending', 'staff_counter')
+        ORDER BY mr.created_at DESC
+    ");
+    $stmt->execute([$guardianId]);
+    $pendingMeetingRequests = $stmt->fetchAll();
+
+    // 確定済みの面談（未実施）
+    $stmt = $pdo->prepare("
+        SELECT mr.*, s.student_name, u.full_name as staff_name
+        FROM meeting_requests mr
+        INNER JOIN students s ON mr.student_id = s.id
+        LEFT JOIN users u ON mr.staff_id = u.id
+        WHERE mr.guardian_id = ? AND mr.status = 'confirmed' AND mr.is_completed = 0
+        AND mr.confirmed_date >= CURDATE()
+        ORDER BY mr.confirmed_date ASC
+    ");
+    $stmt->execute([$guardianId]);
+    $confirmedMeetings = $stmt->fetchAll();
+} catch (Exception $e) {
+    error_log("Error fetching meeting requests: " . $e->getMessage());
+}
+
+// 未確認の個別支援計画書を取得
+$pendingSupportPlans = [];
+$signaturePendingPlans = [];
+foreach ($students as $student) {
+    try {
+        // 確認依頼中の計画案（is_draft=0, is_official=0）
+        $stmt = $pdo->prepare("
+            SELECT
+                isp.id,
+                isp.student_name,
+                isp.created_date,
+                isp.is_official,
+                isp.guardian_confirmed,
+                isp.guardian_review_comment,
+                isp.guardian_review_comment_at
+            FROM individual_support_plans isp
+            WHERE isp.student_id = ?
+            AND isp.is_draft = 0
+            AND isp.is_official = 0
+            AND (isp.guardian_review_comment IS NULL OR isp.guardian_review_comment = '')
+            AND isp.guardian_review_comment_at IS NULL
+            ORDER BY isp.created_date DESC
+        ");
+        $stmt->execute([$student['id']]);
+        $plans = $stmt->fetchAll();
+        foreach ($plans as $plan) {
+            $plan['student_id'] = $student['id'];
+            $pendingSupportPlans[] = $plan;
+        }
+
+        // 署名待ちの正式版（is_official=1, guardian_confirmed=0）
+        $stmt = $pdo->prepare("
+            SELECT
+                isp.id,
+                isp.student_name,
+                isp.created_date,
+                isp.is_official,
+                isp.guardian_confirmed
+            FROM individual_support_plans isp
+            WHERE isp.student_id = ?
+            AND isp.is_official = 1
+            AND isp.guardian_confirmed = 0
+            ORDER BY isp.created_date DESC
+        ");
+        $stmt->execute([$student['id']]);
+        $officialPlans = $stmt->fetchAll();
+        foreach ($officialPlans as $plan) {
+            $plan['student_id'] = $student['id'];
+            $signaturePendingPlans[] = $plan;
+        }
+    } catch (Exception $e) {
+        error_log("Error fetching support plans for student " . $student['id'] . ": " . $e->getMessage());
+    }
+}
+
+// 未確認のモニタリング表を取得
+$pendingMonitoringRecords = [];
+$signaturePendingMonitoring = [];
+foreach ($students as $student) {
+    try {
+        // 確認待ちのモニタリング表（is_draft=0, is_official=0 または is_official未設定）
+        $stmt = $pdo->prepare("
+            SELECT
+                mr.id,
+                mr.student_id,
+                mr.monitoring_date,
+                mr.is_official,
+                mr.guardian_confirmed,
+                s.student_name
+            FROM monitoring_records mr
+            INNER JOIN students s ON mr.student_id = s.id
+            WHERE mr.student_id = ?
+            AND mr.is_draft = 0
+            AND (mr.is_official = 0 OR mr.is_official IS NULL)
+            AND (mr.guardian_confirmed = 0 OR mr.guardian_confirmed IS NULL)
+            ORDER BY mr.monitoring_date DESC
+        ");
+        $stmt->execute([$student['id']]);
+        $records = $stmt->fetchAll();
+        foreach ($records as $record) {
+            $pendingMonitoringRecords[] = $record;
+        }
+
+        // 署名待ちのモニタリング表（is_official=1, guardian_confirmed=0）
+        $stmt = $pdo->prepare("
+            SELECT
+                mr.id,
+                mr.student_id,
+                mr.monitoring_date,
+                mr.is_official,
+                mr.guardian_confirmed,
+                s.student_name
+            FROM monitoring_records mr
+            INNER JOIN students s ON mr.student_id = s.id
+            WHERE mr.student_id = ?
+            AND mr.is_official = 1
+            AND (mr.guardian_confirmed = 0 OR mr.guardian_confirmed IS NULL)
+            ORDER BY mr.monitoring_date DESC
+        ");
+        $stmt->execute([$student['id']]);
+        $officialRecords = $stmt->fetchAll();
+        foreach ($officialRecords as $record) {
+            $signaturePendingMonitoring[] = $record;
+        }
+    } catch (Exception $e) {
+        error_log("Error fetching monitoring records for student " . $student['id'] . ": " . $e->getMessage());
+    }
+}
+
+// カレンダー用の確定済み面談を取得
+$calendarMeetings = [];
+try {
+    $firstDayStr = date('Y-m-d', $firstDay);
+    $lastDayStr = date('Y-m-d', $lastDay);
+
+    $stmt = $pdo->prepare("
+        SELECT mr.*, s.student_name
+        FROM meeting_requests mr
+        INNER JOIN students s ON mr.student_id = s.id
+        WHERE mr.guardian_id = ?
+        AND mr.status = 'confirmed'
+        AND DATE(mr.confirmed_date) BETWEEN ? AND ?
+        ORDER BY mr.confirmed_date ASC
+    ");
+    $stmt->execute([$guardianId, $firstDayStr, $lastDayStr]);
+    $meetings = $stmt->fetchAll();
+
+    foreach ($meetings as $meeting) {
+        $date = date('Y-m-d', strtotime($meeting['confirmed_date']));
+        if (!isset($calendarMeetings[$date])) {
+            $calendarMeetings[$date] = [];
+        }
+        $calendarMeetings[$date][] = [
+            'id' => $meeting['id'],
+            'student_name' => $meeting['student_name'],
+            'purpose' => $meeting['purpose'],
+            'time' => date('H:i', strtotime($meeting['confirmed_date']))
+        ];
+    }
+} catch (Exception $e) {
+    error_log("Error fetching calendar meetings: " . $e->getMessage());
+}
+
 // 学年表示用のラベル
 function getGradeLabel($gradeLevel) {
     $labels = [
@@ -510,6 +685,64 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
     </div>
 </div>
 
+<!-- 回答待ちの面談予約通知 -->
+<?php if (!empty($pendingMeetingRequests)): ?>
+    <div class="notification-banner" style="border-left-color: var(--md-purple);">
+        <div class="notification-header" style="color: var(--md-purple);">
+            <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">calendar_month</span> 回答待ちの面談予約があります（<?= count($pendingMeetingRequests) ?>件）
+        </div>
+        <?php foreach ($pendingMeetingRequests as $meeting): ?>
+            <div class="notification-item">
+                <div class="notification-info">
+                    <div class="notification-student">
+                        <?= htmlspecialchars($meeting['student_name']) ?>さんの面談
+                    </div>
+                    <div class="notification-period">
+                        目的: <?= htmlspecialchars($meeting['purpose']) ?>
+                    </div>
+                    <div class="notification-deadline" style="color: var(--md-purple);">
+                        <?= $meeting['status'] === 'staff_counter' ? 'スタッフから新たな日程が提案されました' : '日程を選択してください' ?>
+                    </div>
+                </div>
+                <div class="notification-action">
+                    <a href="meeting_response.php?request_id=<?= $meeting['id'] ?>" class="notification-btn" style="background: var(--md-purple);">
+                        回答する
+                    </a>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>
+
+<!-- 確定済みの面談予定 -->
+<?php if (!empty($confirmedMeetings)): ?>
+    <div class="notification-banner" style="border-left-color: var(--md-green);">
+        <div class="notification-header" style="color: var(--md-green);">
+            <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event_available</span> 予定されている面談があります（<?= count($confirmedMeetings) ?>件）
+        </div>
+        <?php foreach ($confirmedMeetings as $meeting): ?>
+            <?php
+            $meetingDate = strtotime($meeting['confirmed_date']);
+            $dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'];
+            $dateStr = date('Y年n月j日（', $meetingDate) . $dayOfWeek[date('w', $meetingDate)] . date('）H:i', $meetingDate);
+            ?>
+            <div class="notification-item">
+                <div class="notification-info">
+                    <div class="notification-student">
+                        <?= htmlspecialchars($meeting['student_name']) ?>さんの面談
+                    </div>
+                    <div class="notification-period">
+                        目的: <?= htmlspecialchars($meeting['purpose']) ?>
+                    </div>
+                    <div class="notification-deadline" style="color: var(--md-green); font-weight: 600;">
+                        <?= $dateStr ?>
+                    </div>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>
+
 <!-- 新着チャットメッセージ通知 -->
 <?php if ($totalUnreadMessages > 0): ?>
     <div class="notification-banner" style="border-left-color: var(--md-blue);">
@@ -532,6 +765,122 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
                 <div class="notification-action">
                     <a href="chat.php?room_id=<?= $chatRoom['room_id'] ?>" class="notification-btn" style="background: var(--md-blue);">
                         チャットを開く
+                    </a>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>
+
+<!-- 確認依頼中の個別支援計画書通知 -->
+<?php if (!empty($pendingSupportPlans)): ?>
+    <div class="notification-banner" style="border-left-color: var(--md-purple);">
+        <div class="notification-header" style="color: var(--md-purple);">
+            <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">assignment</span> 確認待ちの個別支援計画書があります（<?= count($pendingSupportPlans) ?>件）
+        </div>
+        <?php foreach ($pendingSupportPlans as $plan): ?>
+            <div class="notification-item">
+                <div class="notification-info">
+                    <div class="notification-student">
+                        <?= htmlspecialchars($plan['student_name']) ?>さんの個別支援計画書（案）
+                    </div>
+                    <div class="notification-period">
+                        作成日: <?= date('Y年n月j日', strtotime($plan['created_date'])) ?>
+                    </div>
+                    <div class="notification-deadline" style="color: var(--md-purple);">
+                        内容をご確認のうえ、「確認しました」ボタンを押してください
+                    </div>
+                </div>
+                <div class="notification-action">
+                    <a href="support_plans.php?student_id=<?= $plan['student_id'] ?>&plan_id=<?= $plan['id'] ?>" class="notification-btn" style="background: var(--md-purple);">
+                        計画書を確認
+                    </a>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>
+
+<!-- 署名待ちの正式版個別支援計画書通知 -->
+<?php if (!empty($signaturePendingPlans)): ?>
+    <div class="notification-banner" style="border-left-color: var(--md-green);">
+        <div class="notification-header" style="color: var(--md-green);">
+            <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">draw</span> 署名待ちの個別支援計画書があります（<?= count($signaturePendingPlans) ?>件）
+        </div>
+        <?php foreach ($signaturePendingPlans as $plan): ?>
+            <div class="notification-item">
+                <div class="notification-info">
+                    <div class="notification-student">
+                        <?= htmlspecialchars($plan['student_name']) ?>さんの個別支援計画書（正式版）
+                    </div>
+                    <div class="notification-period">
+                        作成日: <?= date('Y年n月j日', strtotime($plan['created_date'])) ?>
+                    </div>
+                    <div class="notification-deadline" style="color: var(--md-green);">
+                        次回の面談時に署名をお願いいたします
+                    </div>
+                </div>
+                <div class="notification-action">
+                    <a href="support_plans.php?student_id=<?= $plan['student_id'] ?>&plan_id=<?= $plan['id'] ?>" class="notification-btn" style="background: var(--md-green);">
+                        計画書を見る
+                    </a>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>
+
+<!-- 確認待ちのモニタリング表通知 -->
+<?php if (!empty($pendingMonitoringRecords)): ?>
+    <div class="notification-banner" style="border-left-color: #17a2b8;">
+        <div class="notification-header" style="color: #17a2b8;">
+            <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">monitoring</span> 確認待ちのモニタリング表があります（<?= count($pendingMonitoringRecords) ?>件）
+        </div>
+        <?php foreach ($pendingMonitoringRecords as $record): ?>
+            <div class="notification-item">
+                <div class="notification-info">
+                    <div class="notification-student">
+                        <?= htmlspecialchars($record['student_name']) ?>さんのモニタリング表
+                    </div>
+                    <div class="notification-period">
+                        モニタリング日: <?= date('Y年n月j日', strtotime($record['monitoring_date'])) ?>
+                    </div>
+                    <div class="notification-deadline" style="color: #17a2b8;">
+                        内容をご確認ください
+                    </div>
+                </div>
+                <div class="notification-action">
+                    <a href="monitoring.php?student_id=<?= $record['student_id'] ?>&record_id=<?= $record['id'] ?>" class="notification-btn" style="background: #17a2b8;">
+                        モニタリング表を確認
+                    </a>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>
+
+<!-- 署名待ちのモニタリング表通知 -->
+<?php if (!empty($signaturePendingMonitoring)): ?>
+    <div class="notification-banner" style="border-left-color: #20c997;">
+        <div class="notification-header" style="color: #20c997;">
+            <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">draw</span> 署名待ちのモニタリング表があります（<?= count($signaturePendingMonitoring) ?>件）
+        </div>
+        <?php foreach ($signaturePendingMonitoring as $record): ?>
+            <div class="notification-item">
+                <div class="notification-info">
+                    <div class="notification-student">
+                        <?= htmlspecialchars($record['student_name']) ?>さんのモニタリング表（正式版）
+                    </div>
+                    <div class="notification-period">
+                        モニタリング日: <?= date('Y年n月j日', strtotime($record['monitoring_date'])) ?>
+                    </div>
+                    <div class="notification-deadline" style="color: #20c997;">
+                        次回の面談時に署名をお願いいたします
+                    </div>
+                </div>
+                <div class="notification-action">
+                    <a href="monitoring.php?student_id=<?= $record['student_id'] ?>&record_id=<?= $record['id'] ?>" class="notification-btn" style="background: #20c997;">
+                        モニタリング表を見る
                     </a>
                 </div>
             </div>
@@ -886,6 +1235,16 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
                 }
             }
 
+            // 面談予定を表示
+            if (isset($calendarMeetings[$currentDate]) && !empty($calendarMeetings[$currentDate])) {
+                foreach ($calendarMeetings[$currentDate] as $meetingInfo) {
+                    echo "<div class='meeting-label' style='background: rgba(175, 82, 222, 0.15); color: var(--md-purple); padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-top: 2px;'>";
+                    echo "<span class='material-symbols-outlined' style='font-size: 14px; vertical-align: middle;'>calendar_month</span> ";
+                    echo htmlspecialchars($meetingInfo['time']) . " 面談";
+                    echo "</div>";
+                }
+            }
+
             echo "</div>";
             echo "</div>";
         }
@@ -936,6 +1295,10 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
         <div class="legend-item">
             <span style="color: var(--md-green); font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">add</span></span>
             <span>追加利用</span>
+        </div>
+        <div class="legend-item">
+            <span style="color: var(--md-purple); font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">calendar_month</span></span>
+            <span>面談予定</span>
         </div>
     </div>
 </div>

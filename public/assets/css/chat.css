@@ -60,6 +60,45 @@
     font-size: 24px;
 }
 
+/* モバイル用チャットヘッダー */
+.chat-mobile-header {
+    display: none;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--md-bg-secondary);
+    border-bottom: 1px solid var(--md-gray-5);
+    flex-shrink: 0;
+}
+
+.chat-back-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--md-gray-5);
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+.chat-back-btn:hover {
+    background: var(--md-gray-4);
+}
+
+.chat-mobile-title {
+    font-size: var(--text-headline);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+    .chat-mobile-header {
+        display: flex;
+    }
+}
+
 .chat-student-selector {
     padding: var(--spacing-md);
     background: var(--md-bg-secondary);
@@ -710,6 +749,90 @@
    ======================================== */
 
 @media (max-width: 768px) {
+    /* モバイル用：ナビゲーションを非表示にしてチャットをフルスクリーン */
+    body:has(.chat-wrapper) .sidebar,
+    body:has(.chat-wrapper) .mobile-header,
+    body:has(.chat-wrapper) .bottom-nav,
+    body.has-chat .sidebar,
+    body.has-chat .mobile-header,
+    body.has-chat .bottom-nav {
+        display: none !important;
+    }
+
+    body:has(.chat-wrapper) .page-wrapper,
+    body.has-chat .page-wrapper {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    body:has(.chat-wrapper) .main-content,
+    body.has-chat .main-content {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+    }
+
+    /* モバイル用：固定レイアウト */
+    .chat-wrapper {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 100vh;
+        height: 100dvh; /* Dynamic viewport height for mobile browsers */
+        max-height: 100vh;
+        max-height: 100dvh;
+        border-radius: 0;
+        z-index: 100;
+    }
+
+    .page-wrapper .chat-wrapper {
+        height: 100vh;
+        height: 100dvh;
+        max-height: 100vh;
+        max-height: 100dvh;
+    }
+
+    /* 生徒セレクター - 上部固定 */
+    .chat-student-selector {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: var(--md-bg-secondary);
+    }
+
+    /* メッセージエリア - スクロール可能な中央部分 */
+    .messages-area {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: var(--spacing-xl);
+    }
+
+    /* 入力エリア - 下部固定 */
+    .chat-input-area {
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: var(--spacing-sm);
+        background: var(--md-bg-primary);
+        border-top: 1px solid var(--md-gray-5);
+        z-index: 10;
+    }
+
+    /* 特殊フォーム - 入力エリアの上に表示 */
+    .special-form-area {
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: var(--spacing-md);
+        max-height: 60vh;
+        z-index: 11;
+    }
+
     .message {
         max-width: 90%;
     }
@@ -719,29 +842,26 @@
         font-size: var(--text-subhead);
     }
 
-    .chat-input-area {
-        padding: var(--spacing-sm);
-    }
-
     .chat-input-form {
-        flex-wrap: wrap;
+        display: flex;
+        gap: var(--spacing-sm);
+        align-items: flex-end;
     }
 
     .chat-textarea {
-        width: 100%;
+        flex: 1;
+        min-width: 0;
         order: 1;
-        margin-bottom: var(--spacing-sm);
     }
 
     .file-attach-btn {
         order: 2;
+        flex-shrink: 0;
     }
 
     .chat-send-btn {
         order: 3;
-        flex: 1;
-        width: auto;
-        border-radius: var(--radius-md);
+        flex-shrink: 0;
     }
 
     .chat-header {
@@ -752,8 +872,14 @@
         font-size: var(--text-callout);
     }
 
-    .special-form-area {
-        padding: var(--spacing-md);
+    /* メッセージタイプセレクターを小さく */
+    .message-type-selector {
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .message-type-selector select {
+        padding: var(--spacing-sm) var(--spacing-md);
+        font-size: var(--text-footnote);
     }
 }
 
@@ -761,5 +887,15 @@
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
     .chat-input-area {
         padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom));
+    }
+
+    @media (max-width: 768px) {
+        .chat-wrapper {
+            padding-top: env(safe-area-inset-top);
+        }
+
+        .chat-input-area {
+            padding-bottom: calc(var(--spacing-sm) + env(safe-area-inset-bottom));
+        }
     }
 }

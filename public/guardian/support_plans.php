@@ -419,6 +419,64 @@ renderPageStart('guardian', $currentPage, $pageTitle);
                 padding: var(--spacing-md);
             }
         }
+
+        /* 電子署名スタイル */
+        .signature-section {
+            background: var(--md-gray-6);
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-md);
+            margin-top: var(--spacing-md);
+        }
+
+        .signature-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-sm);
+            font-size: var(--text-subhead);
+        }
+
+        .signature-container {
+            border: 2px solid #e1e8ed;
+            border-radius: var(--radius-sm);
+            background: white;
+            overflow: hidden;
+        }
+
+        .signature-canvas {
+            display: block;
+            width: 100%;
+            height: 150px;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        .signature-controls {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-md);
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .signature-preview {
+            max-width: 250px;
+            max-height: 100px;
+            border: 1px solid #e1e8ed;
+            border-radius: var(--radius-sm);
+        }
+
+        .signature-display {
+            margin-top: var(--spacing-md);
+            padding: var(--spacing-md);
+            background: var(--md-bg-primary);
+            border-radius: var(--radius-sm);
+        }
+
+        .staff-signature-section {
+            margin-top: var(--spacing-lg);
+            padding-top: var(--spacing-lg);
+            border-top: 1px solid #e1e8ed;
+        }
     </style>
 
 <!-- ページヘッダー -->
@@ -469,7 +527,21 @@ renderPageStart('guardian', $currentPage, $pageTitle);
 
                     <!-- 計画詳細 -->
                     <?php if ($planData): ?>
-                        <div class="section-title">計画書の詳細</div>
+                        <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <span>計画書の詳細</span>
+                            <div style="display: flex; gap: 10px;">
+                                <?php if ($planData['is_official'] ?? 0): ?>
+                                    <a href="support_plan_pdf.php?plan_id=<?= $planData['id'] ?>" class="btn" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 8px 16px; font-size: 14px;" target="_blank">
+                                        <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">verified</span> 正式版PDF
+                                    </a>
+                                <?php endif; ?>
+                                <?php if (!($planData['is_draft'] ?? true)): ?>
+                                    <a href="support_plan_draft_pdf.php?plan_id=<?= $planData['id'] ?>" class="btn" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; padding: 8px 16px; font-size: 14px;" target="_blank">
+                                        <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">description</span> 計画案PDF
+                                    </a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
 
                         <!-- 基本情報 -->
                         <div class="info-grid">
@@ -590,28 +662,118 @@ renderPageStart('guardian', $currentPage, $pageTitle);
                             </div>
                         <?php endif; ?>
 
-                        <!-- 保護者確認 -->
-                        <div class="section-title">保護者確認</div>
+                        <!-- 確認・署名状況 -->
+                        <div class="section-title">確認状況</div>
                         <?php
                         $guardianConfirmed = $planData['guardian_confirmed'] ?? 0;
                         $guardianConfirmedAt = $planData['guardian_confirmed_at'] ?? null;
+                        $isOfficial = $planData['is_official'] ?? 0;
+                        $guardianReviewComment = $planData['guardian_review_comment'] ?? null;
+                        $guardianReviewCommentAt = $planData['guardian_review_comment_at'] ?? null;
                         ?>
-                        <?php if ($guardianConfirmed): ?>
+
+                        <?php if ($guardianConfirmed && $isOfficial): ?>
+                            <!-- 正式版で署名済み -->
                             <div class="confirmation-box confirmed">
                                 <div class="confirmation-icon">✓</div>
                                 <div class="confirmation-content">
-                                    <div class="confirmation-title">確認済み</div>
+                                    <div class="confirmation-title">署名・確認済み（正式版）</div>
                                     <div class="confirmation-date">
                                         確認日時: <?= date('Y年n月j日 H:i', strtotime($guardianConfirmedAt)) ?>
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- 電子署名の表示 -->
+                            <?php if (!empty($planData['guardian_signature_image']) || !empty($planData['staff_signature_image'])): ?>
+                                <div class="section-title">電子署名</div>
+                                <div class="info-grid">
+                                    <?php if (!empty($planData['staff_signature_image'])): ?>
+                                        <div class="info-item">
+                                            <label>職員署名</label>
+                                            <p style="margin: 0 0 8px 0; font-size: var(--text-footnote); color: var(--text-secondary);">
+                                                署名者: <?= htmlspecialchars($planData['staff_signer_name'] ?? '') ?>
+                                            </p>
+                                            <img src="<?= htmlspecialchars($planData['staff_signature_image']) ?>" alt="職員署名" class="signature-preview">
+                                            <?php if ($planData['staff_signature_date']): ?>
+                                                <p style="margin: 8px 0 0 0; font-size: var(--text-footnote); color: var(--text-secondary);">
+                                                    署名日: <?= date('Y年n月j日', strtotime($planData['staff_signature_date'])) ?>
+                                                </p>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                    <?php if (!empty($planData['guardian_signature_image'])): ?>
+                                        <div class="info-item">
+                                            <label>保護者署名</label>
+                                            <img src="<?= htmlspecialchars($planData['guardian_signature_image']) ?>" alt="保護者署名" class="signature-preview">
+                                            <?php if ($planData['guardian_signature_date']): ?>
+                                                <p style="margin: 8px 0 0 0; font-size: var(--text-footnote); color: var(--text-secondary);">
+                                                    署名日: <?= date('Y年n月j日', strtotime($planData['guardian_signature_date'])) ?>
+                                                </p>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+
+                        <?php elseif ($isOfficial && !$guardianConfirmed): ?>
+                            <!-- 正式版だが署名待ち -->
+                            <div class="confirmation-box" style="background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%); border: 2px solid #ffc107;">
+                                <p style="color: #856404; margin: 0;">
+                                    <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">schedule</span>
+                                    正式版の個別支援計画書です。次回の面談時に署名をお願いいたします。
+                                </p>
+                            </div>
+
+                        <?php elseif ($guardianReviewComment): ?>
+                            <!-- コメント送信済み -->
+                            <div class="confirmation-box" style="background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%); border: 2px solid #17a2b8;">
+                                <div class="confirmation-icon" style="background: #17a2b8;">!</div>
+                                <div class="confirmation-content">
+                                    <div class="confirmation-title" style="color: #0c5460;">変更希望コメント送信済み</div>
+                                    <div class="confirmation-date" style="color: #0c5460;">
+                                        送信日時: <?= date('Y年n月j日 H:i', strtotime($guardianReviewCommentAt)) ?>
+                                    </div>
+                                    <div style="margin-top: var(--spacing-md); padding: var(--spacing-md); background: rgba(255,255,255,0.7); border-radius: var(--radius-sm);">
+                                        <p style="margin: 0; font-size: var(--text-footnote); color: #0c5460; font-weight: 600;">送信したコメント:</p>
+                                        <p style="margin: 8px 0 0 0; color: #0c5460;"><?= nl2br(htmlspecialchars($guardianReviewComment)) ?></p>
+                                    </div>
+                                    <p style="margin: var(--spacing-md) 0 0 0; font-size: var(--text-footnote); color: #0c5460;">
+                                        スタッフがコメントを確認し、正式版を作成いたします。
+                                    </p>
+                                </div>
+                            </div>
+
                         <?php else: ?>
-                            <div class="confirmation-box">
-                                <p>この個別支援計画書の内容を確認しました。</p>
-                                <button onclick="confirmPlan(<?= $selectedPlanId ?>)" class="btn btn-primary" id="confirmBtn">
-                                    ✓ 内容を確認しました
-                                </button>
+                            <!-- 計画書案の確認待ち -->
+                            <div class="review-section" style="background: var(--md-gray-6); padding: var(--spacing-lg); border-radius: var(--radius-md);">
+                                <p style="margin-bottom: var(--spacing-lg); color: var(--text-primary); font-size: var(--text-callout);">
+                                    <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">description</span>
+                                    この個別支援計画書（案）の内容をご確認ください。
+                                </p>
+
+                                <div style="background: #fff3cd; padding: var(--spacing-md); border-radius: var(--radius-sm); margin-bottom: var(--spacing-lg); border-left: 4px solid #ffc107;">
+                                    <p style="margin: 0; color: #856404; font-size: var(--text-subhead);">
+                                        <strong>変更をご希望の場合：</strong>下記のコメント欄にご記入ください。<br>
+                                        <strong>内容に問題がない場合：</strong>「内容を確認しました」ボタンを押してください。
+                                    </p>
+                                </div>
+
+                                <div class="form-group" style="margin-bottom: var(--spacing-lg);">
+                                    <label style="font-weight: 600; color: var(--text-primary); margin-bottom: var(--spacing-sm); display: block;">
+                                        変更希望コメント（任意）
+                                    </label>
+                                    <textarea id="reviewComment" rows="4" style="width: 100%; padding: var(--spacing-md); border: 2px solid #e1e8ed; border-radius: var(--radius-sm); font-size: 15px; resize: vertical;" placeholder="変更をご希望の場合はこちらにコメントをご記入ください..."></textarea>
+                                </div>
+
+                                <div style="display: flex; gap: var(--spacing-md); flex-wrap: wrap;">
+                                    <button onclick="submitReviewComment(<?= $selectedPlanId ?>)" class="btn" id="commentBtn" style="flex: 1; min-width: 200px; background: #17a2b8; color: white;">
+                                        <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">send</span> コメントを送信
+                                    </button>
+                                    <button onclick="confirmPlanReview(<?= $selectedPlanId ?>)" class="btn btn-primary" id="confirmBtn" style="flex: 1; min-width: 200px; background: linear-gradient(135deg, var(--md-green) 0%, #20c997 100%); color: white;">
+                                        <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">check_circle</span> 内容を確認しました
+                                    </button>
+                                </div>
                             </div>
                         <?php endif; ?>
                     <?php endif; ?>
@@ -630,37 +792,86 @@ renderPageStart('guardian', $currentPage, $pageTitle);
                 </div><!-- /.content-box -->
 
     <script>
-        function confirmPlan(planId) {
-            if (!confirm('この個別支援計画書の内容を確認しましたか？\n確認後は取り消せません。')) {
+        // 変更希望コメントを送信
+        function submitReviewComment(planId) {
+            const comment = document.getElementById('reviewComment').value.trim();
+            if (!comment) {
+                alert('コメントを入力してください。');
                 return;
             }
 
-            const btn = document.getElementById('confirmBtn');
+            if (!confirm('このコメントを送信しますか？')) {
+                return;
+            }
+
+            const btn = document.getElementById('commentBtn');
             btn.disabled = true;
-            btn.textContent = '処理中...';
+            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">hourglass_empty</span> 送信中...';
 
             fetch('support_plan_confirm.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ plan_id: planId })
+                body: JSON.stringify({
+                    plan_id: planId,
+                    action: 'submit_comment',
+                    review_comment: comment
+                })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('確認しました。ありがとうございます。');
+                    alert('コメントを送信しました。スタッフが確認いたします。');
                     location.reload();
                 } else {
                     alert('エラー: ' + data.message);
                     btn.disabled = false;
-                    btn.textContent = '✓ 内容を確認しました';
+                    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">send</span> コメントを送信';
                 }
             })
             .catch(error => {
                 alert('エラーが発生しました: ' + error);
                 btn.disabled = false;
-                btn.textContent = '✓ 内容を確認しました';
+                btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">send</span> コメントを送信';
+            });
+        }
+
+        // 内容確認（変更なし）
+        function confirmPlanReview(planId) {
+            if (!confirm('この個別支援計画書（案）の内容を確認しましたか？\n確認後、スタッフが正式版を作成します。')) {
+                return;
+            }
+
+            const btn = document.getElementById('confirmBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">hourglass_empty</span> 処理中...';
+
+            fetch('support_plan_confirm.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    plan_id: planId,
+                    action: 'confirm_review'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('確認しました。ありがとうございます。\n正式版作成後、面談時に署名をお願いいたします。');
+                    location.reload();
+                } else {
+                    alert('エラー: ' + data.message);
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">check_circle</span> 内容を確認しました';
+                }
+            })
+            .catch(error => {
+                alert('エラーが発生しました: ' + error);
+                btn.disabled = false;
+                btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">check_circle</span> 内容を確認しました';
             });
         }
     </script>

@@ -43,6 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                     cm.message,
                     cm.sender_type,
                     cm.message_type,
+                    cm.meeting_request_id,
                     cm.created_at,
                     cm.attachment_path,
                     cm.attachment_original_name,
@@ -425,6 +426,104 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->commit();
 
             echo json_encode(['success' => true, 'message_id' => $messageId]);
+        } catch (PDOException $e) {
+            $pdo->rollBack();
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'データベースエラー: ' . $e->getMessage()]);
+        }
+    }
+
+    // 面談申込
+    elseif ($action === 'meeting_request') {
+        $roomId = $_POST['room_id'] ?? null;
+        $studentId = $_POST['student_id'] ?? null;
+        $purpose = $_POST['purpose'] ?? '';
+        $detail = $_POST['detail'] ?? '';
+        $date1 = $_POST['date1'] ?? null;
+        $date2 = $_POST['date2'] ?: null;
+        $date3 = $_POST['date3'] ?: null;
+
+        if (!$roomId || !$studentId || !$purpose || !$date1) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => '必須項目が不足しています']);
+            exit;
+        }
+
+        try {
+            // ルームの所有者確認
+            $stmt = $pdo->prepare("SELECT id, student_id FROM chat_rooms WHERE id = ? AND guardian_id = ?");
+            $stmt->execute([$roomId, $userId]);
+            $room = $stmt->fetch();
+            if (!$room) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'アクセス権限がありません']);
+                exit;
+            }
+
+            // 教室IDを取得
+            $stmt = $pdo->prepare("SELECT classroom_id FROM students WHERE id = ?");
+            $stmt->execute([$studentId]);
+            $student = $stmt->fetch();
+            $classroomId = $student['classroom_id'] ?? null;
+
+            if (!$classroomId) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => '教室情報が取得できません']);
+                exit;
+            }
+
+            $pdo->beginTransaction();
+
+            // 面談リクエストを保存（保護者からの申し込みはguardian_counter_dateに保存）
+            $stmt = $pdo->prepare("
+                INSERT INTO meeting_requests (
+                    classroom_id, student_id, guardian_id, staff_id,
+                    purpose, purpose_detail,
+                    guardian_counter_date1, guardian_counter_date2, guardian_counter_date3,
+                    status, created_at
+                ) VALUES (?, ?, ?, 0, ?, ?, ?, ?, ?, 'guardian_counter', NOW())
+            ");
+            $stmt->execute([
+                $classroomId, $studentId, $userId,
+                $purpose, $detail,
+                $date1, $date2, $date3
+            ]);
+            $meetingRequestId = $pdo->lastInsertId();
+
+            // チャットメッセージを作成
+            $dateFormat = 'Y年n月j日 H:i';
+            $date1Str = date($dateFormat, strtotime($date1));
+            $date2Str = $date2 ? date($dateFormat, strtotime($date2)) : '';
+            $date3Str = $date3 ? date($dateFormat, strtotime($date3)) : '';
+
+            $messageText = "【面談のお願い】\n\n";
+            $messageText .= "面談目的：{$purpose}\n";
+            if ($detail) {
+                $messageText .= "詳細：{$detail}\n";
+            }
+            $messageText .= "\n希望日時：\n";
+            $messageText .= "① {$date1Str}\n";
+            if ($date2Str) {
+                $messageText .= "② {$date2Str}\n";
+            }
+            if ($date3Str) {
+                $messageText .= "③ {$date3Str}\n";
+            }
+            $messageText .= "\nご都合の良い日時をご確認ください。";
+
+            $stmt = $pdo->prepare("
+                INSERT INTO chat_messages (room_id, sender_type, sender_id, message, message_type, meeting_request_id, created_at)
+                VALUES (?, 'guardian', ?, ?, 'meeting_request', ?, NOW())
+            ");
+            $stmt->execute([$roomId, $userId, $messageText, $meetingRequestId]);
+
+            // ルームの最終メッセージ時刻を更新
+            $stmt = $pdo->prepare("UPDATE chat_rooms SET last_message_at = NOW() WHERE id = ?");
+            $stmt->execute([$roomId]);
+
+            $pdo->commit();
+
+            echo json_encode(['success' => true, 'meeting_request_id' => $meetingRequestId]);
         } catch (PDOException $e) {
             $pdo->rollBack();
             http_response_code(500);

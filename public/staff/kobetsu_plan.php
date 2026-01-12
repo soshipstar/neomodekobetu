@@ -469,15 +469,95 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
     .meta-row { flex-direction: column; }
     .button-group { flex-direction: column; }
 }
+
+/* 電子署名スタイル */
+.signature-section {
+    background: var(--md-bg-secondary);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-md);
+    margin-top: var(--spacing-md);
+}
+
+.signature-row {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.signature-item {
+    flex: 1;
+    min-width: 300px;
+}
+
+.signature-label {
+    font-weight: 600;
+    color: var(--md-blue);
+    margin-bottom: var(--spacing-sm);
+    font-size: var(--text-subhead);
+}
+
+.signature-container {
+    border: 2px solid var(--md-gray-4);
+    border-radius: var(--radius-sm);
+    background: white;
+    overflow: hidden;
+}
+
+.signature-canvas {
+    display: block;
+    width: 100%;
+    height: 120px;
+    cursor: crosshair;
+    touch-action: none;
+}
+
+.signature-controls {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+    align-items: center;
+}
+
+.existing-signature {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--md-gray-6);
+    border-radius: var(--radius-sm);
+}
+
+.existing-signature p {
+    margin: 0 0 var(--spacing-sm) 0;
+    font-size: var(--text-footnote);
+    color: var(--text-secondary);
+}
+
+.signature-preview {
+    max-width: 200px;
+    max-height: 80px;
+    border: 1px solid var(--md-gray-5);
+    border-radius: var(--radius-sm);
+}
 </style>
 
 <!-- ページヘッダー -->
 <div class="page-header">
     <div class="page-header-content">
         <h1 class="page-title"><span class="material-symbols-outlined">assignment</span> 個別支援計画書作成</h1>
-        <?php if ($planData && ($planData['guardian_confirmed'] ?? 0)): ?>
+        <?php if ($planData && ($planData['guardian_confirmed'] ?? 0) && ($planData['is_official'] ?? 0)): ?>
             <div class="guardian-confirmed-badge">
-                ✓ 保護者確認済み（<?= date('Y/m/d H:i', strtotime($planData['guardian_confirmed_at'])) ?>）
+                ✓ 署名済み（正式版）（<?= date('Y/m/d H:i', strtotime($planData['guardian_confirmed_at'])) ?>）
+            </div>
+        <?php elseif ($planData && ($planData['is_official'] ?? 0)): ?>
+            <div class="guardian-confirmed-badge" style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);">
+                正式版（署名待ち）
+            </div>
+        <?php elseif ($planData && !empty($planData['guardian_review_comment'])): ?>
+            <div class="guardian-confirmed-badge" style="background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);">
+                保護者コメントあり
+            </div>
+        <?php elseif ($planData && isset($planData['guardian_review_comment_at'])): ?>
+            <div class="guardian-confirmed-badge" style="background: linear-gradient(135deg, var(--md-green) 0%, #20c997 100%);">
+                保護者確認済み（案）
             </div>
         <?php endif; ?>
     </div>
@@ -493,6 +573,36 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
 <?php if (isset($_SESSION['error'])): ?>
     <div class="alert alert-danger"><?= htmlspecialchars($_SESSION['error']) ?></div>
     <?php unset($_SESSION['error']); ?>
+<?php endif; ?>
+
+<!-- 保護者コメント表示 -->
+<?php if ($planData && !empty($planData['guardian_review_comment'])): ?>
+    <div class="alert" style="background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%); border: 2px solid #17a2b8; border-radius: var(--radius-md);">
+        <h4 style="color: #0c5460; margin: 0 0 var(--spacing-md) 0; display: flex; align-items: center; gap: 8px;">
+            <span class="material-symbols-outlined">comment</span> 保護者からの変更希望コメント
+        </h4>
+        <div style="background: rgba(255,255,255,0.7); padding: var(--spacing-md); border-radius: var(--radius-sm); margin-bottom: var(--spacing-md);">
+            <p style="margin: 0; color: #0c5460; white-space: pre-wrap;"><?= htmlspecialchars($planData['guardian_review_comment']) ?></p>
+        </div>
+        <p style="margin: 0; font-size: var(--text-footnote); color: #0c5460;">
+            送信日時: <?= date('Y年m月d日 H:i', strtotime($planData['guardian_review_comment_at'])) ?>
+        </p>
+        <p style="margin: var(--spacing-sm) 0 0 0; font-size: var(--text-subhead); color: #0c5460;">
+            <strong>対応方法:</strong> コメント内容を反映し、正式版として提出してください。
+        </p>
+    </div>
+<?php elseif ($planData && $planData['guardian_review_comment'] === '' && !empty($planData['guardian_review_comment_at']) && !($planData['is_official'] ?? 0)): ?>
+    <div class="alert alert-success" style="border-left: 4px solid var(--md-green);">
+        <h4 style="margin: 0 0 var(--spacing-sm) 0; display: flex; align-items: center; gap: 8px;">
+            <span class="material-symbols-outlined">check_circle</span> 保護者確認済み（変更希望なし）
+        </h4>
+        <p style="margin: 0; font-size: var(--text-subhead);">
+            確認日時: <?= date('Y年m月d日 H:i', strtotime($planData['guardian_review_comment_at'])) ?>
+        </p>
+        <p style="margin: var(--spacing-sm) 0 0 0; font-size: var(--text-subhead);">
+            <strong>次のステップ:</strong> 正式版として提出し、面談時に署名を取得してください。
+        </p>
+    </div>
 <?php endif; ?>
 
 <!-- 生徒選択エリア -->
@@ -531,35 +641,59 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
             <table class="plans-table">
                 <thead>
                     <tr>
-                        <th style="width: 150px;">作成日</th>
-                        <th style="width: 200px;">個別支援計画</th>
-                        <th style="width: 200px;">個別支援計画の根拠</th>
-                        <th style="width: 120px;">状態</th>
+                        <th style="width: 120px;">作成日</th>
+                        <th style="width: 100px;">状態</th>
+                        <th style="width: 130px;">編集</th>
+                        <th style="width: 130px;">計画案PDF</th>
+                        <th style="width: 130px;">正式版PDF</th>
+                        <th style="width: 140px;">根拠</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($studentPlans as $plan): ?>
                         <tr class="<?= $plan['id'] == $selectedPlanId ? 'active-row' : '' ?>">
-                            <td><?= date('Y年m月d日', strtotime($plan['created_date'])) ?></td>
+                            <td><?= date('Y/m/d', strtotime($plan['created_date'])) ?></td>
+                            <td>
+                                <?php if ($plan['is_draft'] ?? true): ?>
+                                    <span style="color: var(--md-orange); font-weight: 500;"><span class="material-symbols-outlined" style="font-size: 16px;">edit_note</span> 下書き</span>
+                                <?php elseif ($plan['is_official'] ?? false): ?>
+                                    <?php if ($plan['guardian_confirmed'] ?? false): ?>
+                                        <span style="color: var(--md-green); font-weight: 500;"><span class="material-symbols-outlined" style="font-size: 16px;">verified</span> 署名済</span>
+                                    <?php else: ?>
+                                        <span style="color: #ffc107; font-weight: 500;"><span class="material-symbols-outlined" style="font-size: 16px;">pending</span> 署名待</span>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <span style="color: var(--md-blue); font-weight: 500;"><span class="material-symbols-outlined" style="font-size: 16px;">send</span> 確認依頼中</span>
+                                <?php endif; ?>
+                            </td>
                             <td>
                                 <a href="kobetsu_plan.php?student_id=<?= $selectedStudentId ?>&plan_id=<?= $plan['id'] ?>"
                                    class="plan-link">
-                                    <span class="material-symbols-outlined">description</span> 計画書を見る
+                                    <span class="material-symbols-outlined">edit</span> 編集
                                 </a>
+                            </td>
+                            <td>
+                                <?php if (!($plan['is_draft'] ?? true)): ?>
+                                    <a href="kobetsu_plan_draft_pdf.php?plan_id=<?= $plan['id'] ?>" class="plan-link" target="_blank" style="background: rgba(255, 152, 0, 0.1); color: var(--md-orange);">
+                                        <span class="material-symbols-outlined">description</span> 計画案
+                                    </a>
+                                <?php else: ?>
+                                    <span style="color: var(--text-secondary);">-</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php if ($plan['is_official'] ?? false): ?>
+                                    <a href="kobetsu_plan_pdf.php?plan_id=<?= $plan['id'] ?>" class="plan-link" target="_blank" style="background: rgba(40, 167, 69, 0.1); color: var(--md-green);">
+                                        <span class="material-symbols-outlined">verified</span> 正式版
+                                    </a>
+                                <?php else: ?>
+                                    <span style="color: var(--text-secondary);">-</span>
+                                <?php endif; ?>
                             </td>
                             <td>
                                 <a href="kobetsu_plan_basis.php?plan_id=<?= $plan['id'] ?>" class="basis-link">
-                                    <span class="material-symbols-outlined">monitoring</span> 根拠を見る
+                                    <span class="material-symbols-outlined">monitoring</span> 根拠
                                 </a>
-                            </td>
-                            <td>
-                                <?php if ($plan['is_draft'] ?? true): ?>
-                                    <span style="color: var(--md-orange); font-weight: 500;"><span class="material-symbols-outlined">edit_note</span> 下書き</span>
-                                <?php elseif ($plan['guardian_confirmed'] ?? false): ?>
-                                    <span style="color: var(--md-green); font-weight: 500;"><span class="material-symbols-outlined">check_circle</span> 確認済</span>
-                                <?php else: ?>
-                                    <span style="color: var(--md-blue); font-weight: 500;"><span class="material-symbols-outlined">check_circle</span> 提出済</span>
-                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -567,11 +701,13 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
                     <!-- 新規作成リンク（既存の計画を表示中の場合のみ） -->
                     <tr>
                         <td>-</td>
+                        <td><span style="color: var(--text-secondary);">-</span></td>
                         <td>
                             <a href="kobetsu_plan.php?student_id=<?= $selectedStudentId ?>" class="plan-link">
                                 <span class="material-symbols-outlined">add</span> 新規作成
                             </a>
                         </td>
+                        <td><span style="color: var(--text-secondary);">-</span></td>
                         <td><span style="color: var(--text-secondary);">-</span></td>
                         <td><span style="color: var(--text-secondary);">-</span></td>
                     </tr>
@@ -743,16 +879,42 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
                         <input type="date" name="consent_date" class="form-control" value="<?= $planData['consent_date'] ?? ($generatedPlan['consent_date'] ?? '') ?>">
                     </div>
                     <div class="meta-item">
-                        <div class="meta-label">保護者署名</div>
+                        <div class="meta-label">保護者署名（テキスト）</div>
                         <input type="text" name="guardian_signature" class="form-control" value="<?= htmlspecialchars($planData['guardian_signature'] ?? '') ?>">
                     </div>
                 </div>
 
+                <!-- 署名状況 -->
+                <?php if (!empty($planData['guardian_signature_image']) || !empty($planData['staff_signature_image'])): ?>
+                <div class="section-title">署名状況</div>
+                <div class="signature-status-box" style="background: var(--md-bg-secondary); padding: var(--spacing-md); border-radius: var(--radius-sm); margin-bottom: var(--spacing-lg);">
+                    <div style="display: flex; gap: var(--spacing-xl); flex-wrap: wrap;">
+                        <div>
+                            <strong>保護者署名:</strong>
+                            <?php if (!empty($planData['guardian_signature_image'])): ?>
+                                <span style="color: var(--md-green);">署名済み（<?= $planData['guardian_signature_date'] ?? '' ?>）</span>
+                            <?php else: ?>
+                                <span style="color: var(--text-secondary);">未署名</span>
+                            <?php endif; ?>
+                        </div>
+                        <div>
+                            <strong>職員署名:</strong>
+                            <?php if (!empty($planData['staff_signature_image'])): ?>
+                                <span style="color: var(--md-green);">署名済み（<?= htmlspecialchars($planData['staff_signer_name'] ?? '') ?> / <?= $planData['staff_signature_date'] ?? '' ?>）</span>
+                            <?php else: ?>
+                                <span style="color: var(--text-secondary);">未署名</span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+
                 <!-- ボタン -->
                 <div class="button-group">
                     <button type="submit" name="save_draft" class="btn btn-secondary"><span class="material-symbols-outlined">edit_note</span> 下書き保存（保護者非公開）</button>
-                    <button type="submit" name="action" value="save" class="btn btn-success"><span class="material-symbols-outlined">check_circle</span> 作成・提出（保護者に公開）</button>
+                    <button type="submit" name="action" value="save" class="btn btn-warning"><span class="material-symbols-outlined">visibility</span> 計画書案として提出（保護者確認依頼）</button>
                     <?php if ($selectedPlanId): ?>
+                        <a href="kobetsu_plan_sign.php?plan_id=<?= $selectedPlanId ?>" class="btn btn-success"><span class="material-symbols-outlined">draw</span> 署名入力へ進む</a>
                         <a href="kobetsu_plan_export.php?plan_id=<?= $selectedPlanId ?>" class="btn btn-info"><span class="material-symbols-outlined">save</span> CSV出力</a>
                         <a href="kobetsu_plan_pdf.php?plan_id=<?= $selectedPlanId ?>" class="btn btn-primary" target="_blank" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"><span class="material-symbols-outlined">description</span> PDF出力</a>
                     <?php endif; ?>

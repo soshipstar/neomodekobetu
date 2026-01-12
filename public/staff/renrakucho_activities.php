@@ -199,6 +199,42 @@ foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
     $schoolHolidayDates[$row['activity_date']] = true;
 }
 
+// この月の確定済み面談を取得
+$calendarMeetings = [];
+try {
+    $firstDayStr = date('Y-m-01', strtotime("$year-$month-01"));
+    $lastDayStr = date('Y-m-t', strtotime("$year-$month-01"));
+
+    $stmt = $pdo->prepare("
+        SELECT mr.*, s.student_name, u.full_name as guardian_name
+        FROM meeting_requests mr
+        INNER JOIN students s ON mr.student_id = s.id
+        LEFT JOIN users u ON mr.guardian_id = u.id
+        WHERE mr.classroom_id = ?
+        AND mr.status = 'confirmed'
+        AND DATE(mr.confirmed_date) BETWEEN ? AND ?
+        ORDER BY mr.confirmed_date ASC
+    ");
+    $stmt->execute([$classroomId, $firstDayStr, $lastDayStr]);
+    $meetings = $stmt->fetchAll();
+
+    foreach ($meetings as $meeting) {
+        $date = date('Y-m-d', strtotime($meeting['confirmed_date']));
+        if (!isset($calendarMeetings[$date])) {
+            $calendarMeetings[$date] = [];
+        }
+        $calendarMeetings[$date][] = [
+            'id' => $meeting['id'],
+            'student_name' => $meeting['student_name'],
+            'guardian_name' => $meeting['guardian_name'],
+            'purpose' => $meeting['purpose'],
+            'time' => date('H:i', strtotime($meeting['confirmed_date']))
+        ];
+    }
+} catch (Exception $e) {
+    error_log("Error fetching calendar meetings: " . $e->getMessage());
+}
+
 // 選択された日付の活動一覧を取得（同じ教室のスタッフの活動を全て表示）
 if ($classroomId) {
     $stmt = $pdo->prepare("
@@ -283,6 +319,35 @@ if ($classroomId) {
 }
 $pendingMakeupRequests = $stmt->fetchAll();
 $pendingMakeupCount = count($pendingMakeupRequests);
+
+// 0.5. 面談予約（保護者からの対案待ち・新規申込）
+$pendingMeetingResponses = [];
+if ($classroomId) {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT
+                mr.id,
+                mr.purpose,
+                mr.status,
+                mr.staff_id,
+                mr.updated_at,
+                s.student_name,
+                u.full_name as guardian_name
+            FROM meeting_requests mr
+            INNER JOIN students s ON mr.student_id = s.id
+            LEFT JOIN users u ON mr.guardian_id = u.id
+            WHERE mr.classroom_id = ?
+            AND mr.status = 'guardian_counter'
+            ORDER BY mr.updated_at DESC
+        ");
+        $stmt->execute([$classroomId]);
+        $pendingMeetingResponses = $stmt->fetchAll();
+    } catch (PDOException $e) {
+        // meeting_requests テーブルが存在しない場合は無視
+        error_log("Meeting requests query error (table may not exist): " . $e->getMessage());
+    }
+}
+$pendingMeetingResponseCount = count($pendingMeetingResponses);
 
 // 1. 保護者からの新しいメッセージ（未読）- スタッフごとの既読管理対応
 if ($classroomId) {
@@ -2809,6 +2874,35 @@ renderPageStart('staff', $currentPage, '活動管理');
             </div>
         <?php endif; ?>
 
+        <!-- 面談予約対応通知 -->
+        <?php if ($pendingMeetingResponseCount > 0): ?>
+            <div class="notification-banner" style="margin-bottom: 20px; background: rgba(175, 82, 222, 0.1); border-left: 4px solid var(--md-purple);">
+                <div class="notification-header" style="color: var(--md-purple);">
+                    <span class="material-symbols-outlined">calendar_month</span> 面談日程の対応が必要です（<?= $pendingMeetingResponseCount ?>件）
+                </div>
+                <?php foreach ($pendingMeetingResponses as $meetingReq): ?>
+                    <div class="notification-item">
+                        <div class="notification-info">
+                            <div class="notification-student">
+                                <?= htmlspecialchars($meetingReq['student_name']) ?>さん（<?= htmlspecialchars($meetingReq['guardian_name'] ?? '') ?>）
+                            </div>
+                            <div class="notification-period">
+                                面談目的: <?= htmlspecialchars($meetingReq['purpose']) ?>
+                            </div>
+                            <div class="notification-period" style="font-size: var(--text-caption-1); color: var(--md-purple);">
+                                保護者から別日程の提案があります
+                            </div>
+                        </div>
+                        <div class="notification-action">
+                            <a href="meeting_response.php?request_id=<?= $meetingReq['id'] ?>" class="notification-btn" style="background: var(--md-purple);">
+                                対応する
+                            </a>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+
         <!-- 旧バージョンのコメントアウト -->
         <?php if (false && !empty($studentsWithoutPlan)): ?>
             <div class="notification-banner urgent">
@@ -3132,6 +3226,16 @@ renderPageStart('staff', $currentPage, '活動管理');
                                     echo "<div class='event-label clickable' onclick='event.stopPropagation(); showEventModal(" . $eventJson . ");'>";
                                     echo "<span class='event-marker' style='background: " . htmlspecialchars($event['color']) . ";'></span>";
                                     echo htmlspecialchars($event['name']);
+                                    echo "</div>";
+                                }
+                            }
+
+                            // 面談予定を表示
+                            if (isset($calendarMeetings[$currentDate]) && !empty($calendarMeetings[$currentDate])) {
+                                foreach ($calendarMeetings[$currentDate] as $meetingInfo) {
+                                    echo "<div class='meeting-label' style='background: rgba(175, 82, 222, 0.15); color: var(--md-purple); padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-top: 2px; cursor: pointer;' onclick=\"event.stopPropagation(); window.location.href='meeting_response.php?request_id=" . $meetingInfo['id'] . "';\">";
+                                    echo "<span class='material-symbols-outlined' style='font-size: 14px; vertical-align: middle;'>calendar_month</span> ";
+                                    echo htmlspecialchars($meetingInfo['time']) . " " . htmlspecialchars($meetingInfo['student_name']) . " 面談";
                                     echo "</div>";
                                 }
                             }

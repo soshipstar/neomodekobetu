@@ -314,6 +314,115 @@ renderPageStart('guardian', $currentPage, 'モニタリング表', [
         text-align: center;
     }
 }
+
+/* 署名関連スタイル */
+.signature-section {
+    background: var(--md-bg-secondary);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-md);
+    margin-top: var(--spacing-lg);
+}
+
+.signature-section h4 {
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
+    font-size: var(--text-callout);
+}
+
+.signature-canvas-container {
+    background: white;
+    border: 2px solid var(--md-gray-5);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--spacing-md);
+    overflow: hidden;
+}
+
+.signature-canvas {
+    display: block;
+    width: 100%;
+    height: 150px;
+    touch-action: none;
+    cursor: crosshair;
+}
+
+.signature-controls {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.signature-date-group {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.signature-date-group label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.signature-date-group input {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: 1px solid var(--md-gray-5);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-subhead);
+}
+
+.signature-display {
+    background: var(--md-bg-secondary);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-md);
+    margin-top: var(--spacing-lg);
+}
+
+.signature-display h4 {
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
+    font-size: var(--text-callout);
+}
+
+.signature-image-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xl);
+    justify-content: center;
+}
+
+.signature-item {
+    text-align: center;
+    min-width: 200px;
+}
+
+.signature-item-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-sm);
+    font-size: var(--text-subhead);
+}
+
+.signature-item-signer {
+    font-size: var(--text-caption-1);
+    color: var(--text-tertiary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.signature-item-image {
+    max-width: 200px;
+    max-height: 80px;
+    border: 1px solid var(--md-gray-5);
+    border-radius: var(--radius-sm);
+    background: white;
+}
+
+.signature-item-date {
+    font-size: var(--text-caption-1);
+    color: var(--text-tertiary);
+    margin-top: var(--spacing-xs);
+}
 </style>
 
 <!-- ページヘッダー -->
@@ -521,6 +630,36 @@ renderPageStart('guardian', $currentPage, 'モニタリング表', [
                 </div>
             <?php endif; ?>
 
+            <!-- 電子署名の表示 -->
+            <?php if (!empty($monitoringData['staff_signature_image']) || !empty($monitoringData['guardian_signature_image'])): ?>
+                <div class="section-title">電子署名</div>
+                <div class="signature-display">
+                    <div class="signature-image-container">
+                        <?php if (!empty($monitoringData['staff_signature_image'])): ?>
+                            <div class="signature-item">
+                                <div class="signature-item-label">職員署名</div>
+                                <?php if (!empty($monitoringData['staff_signer_name'])): ?>
+                                    <div class="signature-item-signer">署名者: <?= htmlspecialchars($monitoringData['staff_signer_name']) ?></div>
+                                <?php endif; ?>
+                                <img src="<?= $monitoringData['staff_signature_image'] ?>" alt="職員署名" class="signature-item-image">
+                                <?php if (!empty($monitoringData['staff_signature_date'])): ?>
+                                    <div class="signature-item-date">署名日: <?= date('Y年n月j日', strtotime($monitoringData['staff_signature_date'])) ?></div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+                        <?php if (!empty($monitoringData['guardian_signature_image'])): ?>
+                            <div class="signature-item">
+                                <div class="signature-item-label">保護者署名</div>
+                                <img src="<?= $monitoringData['guardian_signature_image'] ?>" alt="保護者署名" class="signature-item-image">
+                                <?php if (!empty($monitoringData['guardian_signature_date'])): ?>
+                                    <div class="signature-item-date">署名日: <?= date('Y年n月j日', strtotime($monitoringData['guardian_signature_date'])) ?></div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
             <!-- 保護者確認 -->
             <div class="section-title">保護者確認</div>
             <?php
@@ -540,10 +679,28 @@ renderPageStart('guardian', $currentPage, 'モニタリング表', [
             <?php else: ?>
                 <div class="confirmation-section">
                     <p style="margin-bottom: var(--spacing-lg); font-size: var(--text-callout);">
-                        このモニタリング表の内容を確認しました。
+                        このモニタリング表の内容を確認し、署名をお願いします。
                     </p>
-                    <button onclick="confirmMonitoring(<?= $selectedMonitoringId ?>)" class="btn btn-success" id="confirmBtn">
-                        ✓ 内容を確認しました
+
+                    <!-- 署名入力セクション -->
+                    <div class="signature-section">
+                        <h4>保護者署名</h4>
+                        <div class="signature-canvas-container">
+                            <canvas id="guardianSignatureCanvas" class="signature-canvas"></canvas>
+                        </div>
+                        <div class="signature-controls">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="clearGuardianSignature()">
+                                クリア
+                            </button>
+                            <div class="signature-date-group">
+                                <label for="guardianSignatureDate">署名日:</label>
+                                <input type="date" id="guardianSignatureDate" value="<?= date('Y-m-d') ?>">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="confirmWithSignature(<?= $selectedMonitoringId ?>)" class="btn btn-success" id="confirmBtn" style="margin-top: var(--spacing-md);">
+                        署名して確認
                     </button>
                 </div>
             <?php endif; ?>
@@ -566,8 +723,135 @@ renderPageStart('guardian', $currentPage, 'モニタリング表', [
 
 <?php
 $inlineJs = <<<'JS'
-function confirmMonitoring(monitoringId) {
-    if (!confirm('このモニタリング表の内容を確認しましたか？\n確認後は取り消せません。')) {
+// 署名パッドクラス
+class SignaturePad {
+    constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        if (!this.canvas) return;
+        this.ctx = this.canvas.getContext('2d');
+        this.drawing = false;
+        this.lastX = 0;
+        this.lastY = 0;
+        this.hasDrawn = false;
+        this.init();
+    }
+
+    init() {
+        // キャンバスの表示サイズに内部サイズを合わせる
+        const rect = this.canvas.getBoundingClientRect();
+        this.canvas.width = rect.width;
+        this.canvas.height = rect.height;
+
+        this.ctx.strokeStyle = '#000';
+        this.ctx.lineWidth = 2;
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+        this.clear();
+        this.bindEvents();
+    }
+
+    bindEvents() {
+        // マウスイベント
+        this.canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
+        this.canvas.addEventListener('mousemove', (e) => this.draw(e));
+        this.canvas.addEventListener('mouseup', () => this.stopDrawing());
+        this.canvas.addEventListener('mouseleave', () => this.stopDrawing());
+
+        // タッチイベント
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            this.startDrawing(e);
+        });
+        this.canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            this.draw(e);
+        });
+        this.canvas.addEventListener('touchend', () => this.stopDrawing());
+    }
+
+    getCoordinates(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        if (e.touches && e.touches.length > 0) {
+            return {
+                x: (e.touches[0].clientX - rect.left) * scaleX,
+                y: (e.touches[0].clientY - rect.top) * scaleY
+            };
+        }
+        return {
+            x: (e.clientX - rect.left) * scaleX,
+            y: (e.clientY - rect.top) * scaleY
+        };
+    }
+
+    startDrawing(e) {
+        this.drawing = true;
+        const coords = this.getCoordinates(e);
+        this.lastX = coords.x;
+        this.lastY = coords.y;
+    }
+
+    draw(e) {
+        if (!this.drawing) return;
+        const coords = this.getCoordinates(e);
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.lastX, this.lastY);
+        this.ctx.lineTo(coords.x, coords.y);
+        this.ctx.stroke();
+        this.lastX = coords.x;
+        this.lastY = coords.y;
+        this.hasDrawn = true;
+    }
+
+    stopDrawing() {
+        this.drawing = false;
+    }
+
+    clear() {
+        this.ctx.fillStyle = '#fff';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.hasDrawn = false;
+    }
+
+    isEmpty() {
+        return !this.hasDrawn;
+    }
+
+    toDataURL() {
+        return this.canvas.toDataURL('image/png');
+    }
+}
+
+// 保護者署名パッド
+let guardianSignaturePad = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const canvas = document.getElementById('guardianSignatureCanvas');
+    if (canvas) {
+        guardianSignaturePad = new SignaturePad('guardianSignatureCanvas');
+    }
+});
+
+function clearGuardianSignature() {
+    if (guardianSignaturePad) {
+        guardianSignaturePad.clear();
+    }
+}
+
+function confirmWithSignature(monitoringId) {
+    if (!guardianSignaturePad || guardianSignaturePad.isEmpty()) {
+        alert('署名を入力してください。');
+        return;
+    }
+
+    const signatureDate = document.getElementById('guardianSignatureDate').value;
+    if (!signatureDate) {
+        alert('署名日を入力してください。');
+        return;
+    }
+
+    if (!confirm('このモニタリング表の内容を確認し、署名しますか？\n確認後は取り消せません。')) {
         return;
     }
 
@@ -580,23 +864,27 @@ function confirmMonitoring(monitoringId) {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ monitoring_id: monitoringId })
+        body: JSON.stringify({
+            monitoring_id: monitoringId,
+            guardian_signature_image: guardianSignaturePad.toDataURL(),
+            guardian_signature_date: signatureDate
+        })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('確認しました。ありがとうございます。');
+            alert('署名が完了しました。ありがとうございます。');
             location.reload();
         } else {
             alert('エラー: ' + data.message);
             btn.disabled = false;
-            btn.textContent = '✓ 内容を確認しました';
+            btn.textContent = '署名して確認';
         }
     })
     .catch(error => {
         alert('エラーが発生しました: ' + error);
         btn.disabled = false;
-        btn.textContent = '✓ 内容を確認しました';
+        btn.textContent = '署名して確認';
     });
 }
 JS;
