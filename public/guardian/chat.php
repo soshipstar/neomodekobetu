@@ -186,11 +186,6 @@ renderPageStart('guardian', $currentPage, 'チャット', [
     color: var(--text-secondary);
 }
 
-/* 面談予約メッセージ */
-.message-bubble.meeting {
-    background: linear-gradient(135deg, rgba(175, 82, 222, 0.15) 0%, rgba(175, 82, 222, 0.08) 100%) !important;
-    border: 1px solid rgba(175, 82, 222, 0.3);
-}
 
 /* 面談申込フォーム */
 .special-form-title.meeting {
@@ -653,6 +648,9 @@ function closeMeetingForm() {
 }
 
 function sendMeetingRequest() {
+    // 二重送信防止
+    if (isLoading) return;
+
     const purpose = document.getElementById('meetingPurpose').value;
     const detail = document.getElementById('meetingDetail').value;
     const date1 = document.getElementById('meetingDate1').value;
@@ -668,6 +666,7 @@ function sendMeetingRequest() {
         return;
     }
 
+    isLoading = true;
     const btn = document.getElementById('sendMeetingBtn');
     btn.disabled = true;
     btn.textContent = '送信中...';
@@ -706,6 +705,7 @@ function sendMeetingRequest() {
         alert('送信エラー: ' + error);
     })
     .finally(() => {
+        isLoading = false;
         btn.disabled = false;
         btn.textContent = '面談を申し込む';
     });

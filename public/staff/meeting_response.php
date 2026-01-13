@@ -423,6 +423,17 @@ renderPageStart('staff', $currentPage, '面談予約の対応');
                     </div>
                 </div>
 
+                <div class="meeting-notes-section" style="margin-top: var(--spacing-xl); padding: var(--spacing-lg); background: rgba(52, 199, 89, 0.05); border-radius: var(--radius-md); border: 1px solid rgba(52, 199, 89, 0.2);">
+                    <h3 style="font-size: var(--text-subhead); font-weight: 600; color: var(--md-green); margin-bottom: var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-sm);">
+                        <span class="material-symbols-outlined">info</span>
+                        面談当日のご案内（保護者へ表示）
+                    </h3>
+                    <p style="color: var(--text-secondary); font-size: var(--text-footnote); margin-bottom: var(--spacing-md);">
+                        持ち物や注意事項など、面談当日に保護者に伝えたいことを入力してください。カレンダーから面談予定をクリックしたときに表示されます。
+                    </p>
+                    <textarea name="meeting_notes" class="form-textarea" placeholder="例：&#10;・印鑑をお持ちください&#10;・ご予約時間の5分前にはお越しください&#10;・個別支援計画書をご持参ください" style="min-height: 120px;"><?= htmlspecialchars($request['meeting_notes'] ?? '') ?></textarea>
+                </div>
+
                 <div class="counter-section">
                     <h3 class="counter-title">
                         <span class="material-symbols-outlined">edit_calendar</span>

@@ -1018,8 +1018,8 @@ function appendMessage(msg) {
     if (msg.message) {
         html += escapeHtml(msg.message).replace(/\\n/g, '<br>');
     }
-    // 保護者からの対案メッセージにはリンクを表示
-    if (isMeetingCounter && !isStaffOrAdmin && msg.meeting_request_id) {
+    // 保護者からの面談申し込み・対案メッセージにはリンクを表示
+    if ((isMeetingRequest || isMeetingCounter) && !isStaffOrAdmin && msg.meeting_request_id) {
         html += '<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(175, 82, 222, 0.3);">';
         html += '<a href="meeting_response.php?request_id=' + msg.meeting_request_id + '" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; background: var(--md-purple); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">';
         html += '<span class="material-symbols-outlined" style="font-size: 18px;">calendar_month</span> 日程を確認・回答する';

@@ -633,9 +633,10 @@ try {
     $lastDayStr = date('Y-m-d', $lastDay);
 
     $stmt = $pdo->prepare("
-        SELECT mr.*, s.student_name
+        SELECT mr.*, s.student_name, u.full_name as staff_name
         FROM meeting_requests mr
         INNER JOIN students s ON mr.student_id = s.id
+        LEFT JOIN users u ON mr.staff_id = u.id
         WHERE mr.guardian_id = ?
         AND mr.status = 'confirmed'
         AND DATE(mr.confirmed_date) BETWEEN ? AND ?
@@ -652,8 +653,13 @@ try {
         $calendarMeetings[$date][] = [
             'id' => $meeting['id'],
             'student_name' => $meeting['student_name'],
+            'staff_name' => $meeting['staff_name'],
             'purpose' => $meeting['purpose'],
-            'time' => date('H:i', strtotime($meeting['confirmed_date']))
+            'purpose_detail' => $meeting['purpose_detail'],
+            'meeting_notes' => $meeting['meeting_notes'] ?? '',
+            'time' => date('H:i', strtotime($meeting['confirmed_date'])),
+            'confirmed_date' => $meeting['confirmed_date'],
+            'is_completed' => $meeting['is_completed']
         ];
     }
 } catch (Exception $e) {
@@ -1099,13 +1105,13 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
 <?php endif; ?>
 
 <!-- カレンダーセクション -->
-<div class="calendar-section">
+<div class="calendar-section" id="calendar">
     <div class="calendar-header">
         <h2><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event</span> <?= $year ?>年 <?= $month ?>月のカレンダー</h2>
         <div class="calendar-nav">
-            <a href="?year=<?= $prevYear ?>&month=<?= $prevMonth ?>">← 前月</a>
-            <a href="?year=<?= date('Y') ?>&month=<?= date('n') ?>">今月</a>
-            <a href="?year=<?= $nextYear ?>&month=<?= $nextMonth ?>">次月 →</a>
+            <a href="?year=<?= $prevYear ?>&month=<?= $prevMonth ?>#calendar">← 前月</a>
+            <a href="?year=<?= date('Y') ?>&month=<?= date('n') ?>#calendar">今月</a>
+            <a href="?year=<?= $nextYear ?>&month=<?= $nextMonth ?>#calendar">次月 →</a>
         </div>
     </div>
 
@@ -1238,7 +1244,8 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
             // 面談予定を表示
             if (isset($calendarMeetings[$currentDate]) && !empty($calendarMeetings[$currentDate])) {
                 foreach ($calendarMeetings[$currentDate] as $meetingInfo) {
-                    echo "<div class='meeting-label' style='background: rgba(175, 82, 222, 0.15); color: var(--md-purple); padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-top: 2px;'>";
+                    $meetingJson = htmlspecialchars(json_encode($meetingInfo, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8');
+                    echo "<div class='meeting-label clickable' onclick='event.stopPropagation(); showMeetingModal(" . $meetingJson . ");' style='background: rgba(175, 82, 222, 0.15); color: var(--md-purple); padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-top: 2px; cursor: pointer;'>";
                     echo "<span class='material-symbols-outlined' style='font-size: 14px; vertical-align: middle;'>calendar_month</span> ";
                     echo htmlspecialchars($meetingInfo['time']) . " 面談";
                     echo "</div>";
@@ -1385,6 +1392,17 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
     </div>
 </div>
 
+<!-- 面談詳細モーダル -->
+<div id="meetingModal" class="modal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeMeetingModal()">&times;</button>
+        <div class="modal-header">
+            <h2 id="meetingModalTitle" style="color: var(--md-purple);"><span class="material-symbols-outlined" style="font-size: 24px; vertical-align: middle;">calendar_month</span> 面談予定</h2>
+        </div>
+        <div id="meetingModalContent"></div>
+    </div>
+</div>
+
 <?php
 $inlineJs = <<<'JS'
 function confirmNote(noteId) {
@@ -1481,13 +1499,62 @@ function showEventModal(eventData) {
 
 function closeEventModal() { document.getElementById('eventModal').classList.remove('show'); }
 function closeNoteModal() { document.getElementById('noteModal').classList.remove('show'); }
+function closeMeetingModal() { document.getElementById('meetingModal').classList.remove('show'); }
+
+function showMeetingModal(meetingData) {
+    const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'];
+    const date = new Date(meetingData.confirmed_date);
+    const dateStr = date.getFullYear() + '年' + (date.getMonth() + 1) + '月' + date.getDate() + '日（' + dayOfWeek[date.getDay()] + '）';
+    const timeStr = meetingData.time;
+
+    let html = '<div style="background: rgba(175, 82, 222, 0.1); padding: 16px; border-radius: 8px; margin-bottom: 16px;">';
+    html += '<div style="font-size: 18px; font-weight: 600; color: var(--md-purple); margin-bottom: 8px;">' + dateStr + ' ' + timeStr + '</div>';
+    html += '<div style="color: var(--text-secondary);">' + escapeHtml(meetingData.student_name) + 'さんの面談</div>';
+    html += '</div>';
+
+    html += '<div class="event-detail-section"><h4 style="color: var(--md-purple);"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">target</span> 面談目的</h4>';
+    html += '<p>' + escapeHtml(meetingData.purpose) + '</p></div>';
+
+    if (meetingData.purpose_detail) {
+        html += '<div class="event-detail-section"><h4 style="color: var(--md-purple);"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">description</span> 詳細・ご相談内容</h4>';
+        html += '<p style="white-space: pre-wrap;">' + escapeHtml(meetingData.purpose_detail) + '</p></div>';
+    }
+
+    if (meetingData.staff_name) {
+        html += '<div class="event-detail-section"><h4 style="color: var(--md-purple);"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">person</span> 担当スタッフ</h4>';
+        html += '<p>' + escapeHtml(meetingData.staff_name) + '</p></div>';
+    }
+
+    // 面談当日の案内
+    html += '<div class="event-detail-section" style="background: var(--md-bg-secondary); padding: 16px; border-radius: 8px; border-left: 4px solid var(--md-purple);">';
+    html += '<h4 style="color: var(--md-purple); margin-bottom: 12px;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">info</span> 面談当日のご案内</h4>';
+
+    if (meetingData.meeting_notes && meetingData.meeting_notes.trim() !== '') {
+        // スタッフが入力した案内を表示
+        html += '<p style="white-space: pre-wrap; color: var(--text-secondary); line-height: 1.8; margin: 0;">' + escapeHtml(meetingData.meeting_notes) + '</p>';
+    } else {
+        // デフォルトの案内を表示
+        html += '<ul style="margin: 0; padding-left: 20px; color: var(--text-secondary); line-height: 1.8;">';
+        html += '<li>ご予約時間の5分前にはお越しください</li>';
+        html += '<li>印鑑をお持ちください（計画書への署名に必要です）</li>';
+        html += '<li>ご質問やご相談事項があれば事前にメモをご用意いただくとスムーズです</li>';
+        html += '<li>ご都合が悪くなった場合は、お早めにチャットでご連絡ください</li>';
+        html += '</ul>';
+    }
+    html += '</div>';
+
+    document.getElementById('meetingModalContent').innerHTML = html;
+    document.getElementById('meetingModal').classList.add('show');
+}
 
 document.getElementById('eventModal').addEventListener('click', function(e) { if (e.target === this) closeEventModal(); });
 document.getElementById('noteModal').addEventListener('click', function(e) { if (e.target === this) closeNoteModal(); });
+document.getElementById('meetingModal').addEventListener('click', function(e) { if (e.target === this) closeMeetingModal(); });
 
 function escapeHtml(text) {
+    if (!text) return '';
     const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-    return text.replace(/[&<>"']/g, m => map[m]);
+    return String(text).replace(/[&<>"']/g, m => map[m]);
 }
 JS;
 

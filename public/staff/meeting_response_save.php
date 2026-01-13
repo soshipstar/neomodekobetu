@@ -26,6 +26,7 @@ $counterDate1 = $_POST['counter_date1'] ?: null;
 $counterDate2 = $_POST['counter_date2'] ?: null;
 $counterDate3 = $_POST['counter_date3'] ?: null;
 $counterMessage = $_POST['counter_message'] ?? '';
+$meetingNotes = $_POST['meeting_notes'] ?? '';
 
 if (!$requestId) {
     $_SESSION['error'] = 'リクエストIDが指定されていません。';
@@ -60,10 +61,12 @@ try {
                 confirmed_by = 'staff',
                 confirmed_at = NOW(),
                 status = 'confirmed',
+                meeting_notes = ?,
+                staff_id = ?,
                 updated_at = NOW()
             WHERE id = ?
         ");
-        $stmt->execute([$selectedDate, $requestId]);
+        $stmt->execute([$selectedDate, $meetingNotes, $staffId, $requestId]);
 
         // チャットにメッセージを送信
         $dateFormat = 'Y年n月j日 H:i';

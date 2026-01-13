@@ -481,7 +481,7 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     purpose, purpose_detail,
                     guardian_counter_date1, guardian_counter_date2, guardian_counter_date3,
                     status, created_at
-                ) VALUES (?, ?, ?, 0, ?, ?, ?, ?, ?, 'guardian_counter', NOW())
+                ) VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, 'guardian_counter', NOW())
             ");
             $stmt->execute([
                 $classroomId, $studentId, $userId,
@@ -490,18 +490,18 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             $meetingRequestId = $pdo->lastInsertId();
 
-            // チャットメッセージを作成
+            // チャットメッセージを作成（スタッフ側と同じフォーマット）
             $dateFormat = 'Y年n月j日 H:i';
             $date1Str = date($dateFormat, strtotime($date1));
             $date2Str = $date2 ? date($dateFormat, strtotime($date2)) : '';
             $date3Str = $date3 ? date($dateFormat, strtotime($date3)) : '';
 
-            $messageText = "【面談のお願い】\n\n";
+            $messageText = "【面談のご依頼】\n\n";
             $messageText .= "面談目的：{$purpose}\n";
             if ($detail) {
                 $messageText .= "詳細：{$detail}\n";
             }
-            $messageText .= "\n希望日時：\n";
+            $messageText .= "\n以下の日程から、ご都合の良い日時をお選びください。\n\n";
             $messageText .= "① {$date1Str}\n";
             if ($date2Str) {
                 $messageText .= "② {$date2Str}\n";
@@ -509,7 +509,8 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($date3Str) {
                 $messageText .= "③ {$date3Str}\n";
             }
-            $messageText .= "\nご都合の良い日時をご確認ください。";
+            $messageText .= "\n下記リンクから回答してください。\n";
+            $messageText .= "ご都合が合わない場合は、別の希望日時を提案いただけます。";
 
             $stmt = $pdo->prepare("
                 INSERT INTO chat_messages (room_id, sender_type, sender_id, message, message_type, meeting_request_id, created_at)

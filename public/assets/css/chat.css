@@ -277,6 +277,12 @@
     font-style: italic;
 }
 
+.message-bubble.meeting {
+    background: rgba(175, 82, 222, 0.1) !important;
+    border-left: 4px solid var(--md-purple);
+    color: var(--text-primary) !important;
+}
+
 /* ========================================
    添付ファイル
    ======================================== */
