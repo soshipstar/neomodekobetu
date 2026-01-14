@@ -163,10 +163,16 @@ if ($selectedPlanId) {
 
 // ページ開始
 $currentPage = 'kobetsu_monitoring';
-renderPageStart('staff', $currentPage, 'モニタリング表作成');
+renderPageStart('staff', $currentPage, 'モニタリング表作成', ['noContainer' => true]);
 ?>
 
 <style>
+/* フルワイドレイアウト用のコンテナ */
+.page-container {
+    padding: var(--spacing-lg);
+    max-width: 100%;
+}
+
 .selection-area {
     display: flex;
     gap: 20px;
@@ -490,6 +496,8 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成');
     border-radius: var(--radius-sm);
 }
 </style>
+
+<div class="page-container">
 
 <!-- ページヘッダー -->
 <div class="page-header">
@@ -1114,4 +1122,6 @@ function clearStaffSignature() {
         }
 </script>
 
-<?php renderPageEnd(); ?>
+</div><!-- /.page-container -->
+
+<?php renderPageEnd(['noContainer' => true]); ?>

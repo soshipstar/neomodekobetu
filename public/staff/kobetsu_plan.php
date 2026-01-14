@@ -203,10 +203,16 @@ if ($selectedStudentId) {
 
 // ページ開始
 $currentPage = 'kobetsu_plan';
-renderPageStart('staff', $currentPage, '個別支援計画書作成');
+renderPageStart('staff', $currentPage, '個別支援計画書作成', ['noContainer' => true]);
 ?>
 
 <style>
+/* フルワイドレイアウト用のコンテナ */
+.page-container {
+    padding: var(--spacing-lg);
+    max-width: 100%;
+}
+
 .selection-area {
     display: flex;
     gap: 20px;
@@ -538,6 +544,8 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成');
     border-radius: var(--radius-sm);
 }
 </style>
+
+<div class="page-container">
 
 <!-- ページヘッダー -->
 <div class="page-header">
@@ -1001,6 +1009,9 @@ function addDetailRow() {
     rowIndex++;
 }
 JS;
+?>
 
-renderPageEnd(['inlineJs' => $inlineJs]);
+</div><!-- /.page-container -->
+
+<?php renderPageEnd(['inlineJs' => $inlineJs, 'noContainer' => true]);
 ?>
