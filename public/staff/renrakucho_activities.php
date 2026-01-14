@@ -2796,31 +2796,6 @@ renderPageStart('staff', $currentPage, '活動管理');
             </div>
         </div>
 
-        <!-- 新着チャットメッセージ通知 -->
-        <?php if ($totalUnreadMessages > 0): ?>
-            <div class="unread-notification" style="background: rgba(0, 122, 255, 0.1); border-left: 5px solid var(--md-blue); border-radius: var(--radius-md); padding: 20px; margin-bottom: var(--spacing-lg);">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; font-size: var(--text-headline); font-weight: bold; color: var(--md-blue);">
-                    <span class="material-symbols-outlined">chat</span> 新着メッセージがあります！（<?= $totalUnreadMessages ?>件）
-                </div>
-                <?php foreach ($unreadChatMessages as $chatRoom): ?>
-                    <div style="background: var(--md-bg-primary); padding: 15px; border-radius: var(--radius-sm); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <div style="font-weight: bold; color: var(--text-primary); margin-bottom: 5px;">
-                                <?= htmlspecialchars($chatRoom['student_name']) ?>さん（<?= htmlspecialchars($chatRoom['guardian_name']) ?>様）
-                            </div>
-                            <div style="font-size: var(--text-subhead); color: var(--text-secondary); margin-bottom: 3px;">
-                                未読メッセージ: <?= $chatRoom['unread_count'] ?>件
-                            </div>
-                            <div style="font-size: var(--text-subhead); font-weight: bold; color: var(--md-blue);">
-                                最新: <?= date('Y年n月j日 H:i', strtotime($chatRoom['last_message_at'])) ?>
-                            </div>
-                        </div>
-                        <a href="chat.php?room_id=<?= $chatRoom['room_id'] ?>" class="btn btn-primary btn-sm">チャットを開く</a>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
-
         <?php if (isset($_SESSION['success'])): ?>
             <div class="success-message">
                 <?php
@@ -2836,70 +2811,6 @@ renderPageStart('staff', $currentPage, '活動管理');
                 echo htmlspecialchars($_SESSION['error'], ENT_QUOTES, 'UTF-8');
                 unset($_SESSION['error']);
                 ?>
-            </div>
-        <?php endif; ?>
-
-        <!-- 振替希望通知 -->
-        <?php if ($pendingMakeupCount > 0): ?>
-            <div class="notification-banner urgent" style="margin-bottom: 20px;">
-                <div class="notification-header urgent">
-                    <span class="material-symbols-outlined">sync</span> 振替希望があります（<?= $pendingMakeupCount ?>件）
-                </div>
-                <?php foreach ($pendingMakeupRequests as $request):
-                    $makeupDate = new DateTime($request['makeup_request_date']);
-                    $absenceDate = new DateTime($request['absence_date']);
-                ?>
-                    <div class="notification-item">
-                        <div class="notification-info">
-                            <div class="notification-student">
-                                <?= htmlspecialchars($request['student_name']) ?>さん
-                            </div>
-                            <div class="notification-period">
-                                欠席日: <?= $absenceDate->format('n月j日') ?>（<?= ['日','月','火','水','木','金','土'][$absenceDate->format('w')] ?>）
-                                → 振替希望日: <strong><?= $makeupDate->format('n月j日') ?>（<?= ['日','月','火','水','木','金','土'][$makeupDate->format('w')] ?>）</strong>
-                            </div>
-                            <?php if ($request['reason']): ?>
-                                <div class="notification-period" style="font-size: var(--text-caption-1); color: var(--text-tertiary);">
-                                    理由: <?= htmlspecialchars($request['reason']) ?>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                        <div class="notification-action">
-                            <a href="makeup_requests.php?status=pending" class="notification-btn">
-                                対応する
-                            </a>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
-
-        <!-- 面談予約対応通知 -->
-        <?php if ($pendingMeetingResponseCount > 0): ?>
-            <div class="notification-banner" style="margin-bottom: 20px; background: rgba(175, 82, 222, 0.1); border-left: 4px solid var(--md-purple);">
-                <div class="notification-header" style="color: var(--md-purple);">
-                    <span class="material-symbols-outlined">calendar_month</span> 面談日程の対応が必要です（<?= $pendingMeetingResponseCount ?>件）
-                </div>
-                <?php foreach ($pendingMeetingResponses as $meetingReq): ?>
-                    <div class="notification-item">
-                        <div class="notification-info">
-                            <div class="notification-student">
-                                <?= htmlspecialchars($meetingReq['student_name']) ?>さん（<?= htmlspecialchars($meetingReq['guardian_name'] ?? '') ?>）
-                            </div>
-                            <div class="notification-period">
-                                面談目的: <?= htmlspecialchars($meetingReq['purpose']) ?>
-                            </div>
-                            <div class="notification-period" style="font-size: var(--text-caption-1); color: var(--md-purple);">
-                                保護者から別日程の提案があります
-                            </div>
-                        </div>
-                        <div class="notification-action">
-                            <a href="meeting_response.php?request_id=<?= $meetingReq['id'] ?>" class="notification-btn" style="background: var(--md-purple);">
-                                対応する
-                            </a>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
             </div>
         <?php endif; ?>
 

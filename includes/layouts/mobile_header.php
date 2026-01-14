@@ -8,12 +8,16 @@
  *   include __DIR__ . '/mobile_header.php';
  *
  * 必要な変数: $role, $pageTitle
- * オプション: $classroom, $menuItems (sidebar.phpから引き継ぎ)
+ * オプション: $classroom, $menuItems, $notificationData (page_wrapperから引き継ぎ)
  */
+
+// 通知ベルコンポーネントを読み込み
+require_once __DIR__ . '/../components/notification_bell.php';
 
 $pageTitle = $pageTitle ?? 'メニュー';
 $role = $role ?? ($_SESSION['user_type'] ?? 'staff');
 $classroom = $classroom ?? null;
+$notificationData = $notificationData ?? ['notifications' => [], 'totalCount' => 0];
 
 // ロール別カラーとアイコン（Material Symbols アイコン名）
 $roleConfig = [
@@ -26,6 +30,7 @@ $roleConfig = [
 
 $config = $roleConfig[$role] ?? $roleConfig['staff'];
 $userName = $_SESSION['full_name'] ?? '';
+$showNotifications = in_array($role, ['staff', 'admin', 'guardian']);
 ?>
 <!-- モバイル用ヘッダー -->
 <div class="mobile-header mobile-header--<?= $config['color'] ?>">
@@ -69,6 +74,9 @@ $userName = $_SESSION['full_name'] ?? '';
                 <?php endif; ?>
             </div>
         </div>
+        <?php if ($showNotifications): ?>
+            <?php renderNotificationBell($notificationData, $role); ?>
+        <?php endif; ?>
         <span class="user-info-box">
             <?= htmlspecialchars($userName) ?>さん
         </span>

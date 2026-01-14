@@ -112,6 +112,10 @@ $roleConfig = [
 
 $config = $roleConfig[$role] ?? $roleConfig['staff'];
 $menuItems = $menuConfig[$role] ?? [];
+$showSidebarNotifications = in_array($role, ['staff', 'admin', 'guardian']);
+
+// 通知データを取得（グローバル変数から）
+$notificationData = $notificationData ?? ['notifications' => [], 'totalCount' => 0];
 
 // ユーザー情報
 $userName = $_SESSION['full_name'] ?? '';
@@ -139,6 +143,16 @@ $userTypeLabel = match($role) {
             <?php endif; ?>
         </div>
     </div>
+
+    <?php if ($showSidebarNotifications && $notificationData['totalCount'] > 0): ?>
+    <div class="sidebar-notification-wrapper">
+        <a href="<?= $role === 'guardian' ? '/guardian/dashboard.php' : '/staff/pending_tasks.php' ?>" class="sidebar-notification-btn">
+            <span class="material-symbols-outlined">notifications</span>
+            <span>通知</span>
+            <span class="sidebar-notification-badge"><?= $notificationData['totalCount'] > 99 ? '99+' : $notificationData['totalCount'] ?></span>
+        </a>
+    </div>
+    <?php endif; ?>
 
     <div class="sidebar-menu">
         <?php foreach ($menuItems as $item): ?>

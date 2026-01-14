@@ -691,6 +691,305 @@
 /* Light Mode Only - Dark mode disabled */
 
 /* ========================================
+   通知ベル
+   ======================================== */
+
+.notification-bell-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.notification-bell-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: background var(--duration-fast) var(--ease-out);
+}
+
+.notification-bell-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.notification-bell-btn .material-symbols-outlined {
+    font-size: 24px;
+    color: var(--text-primary);
+}
+
+.notification-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: var(--md-red);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    animation: badgePulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.notification-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 320px;
+    max-width: calc(100vw - 32px);
+    background: var(--md-bg-primary);
+    border-radius: var(--radius-md);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    z-index: 1100;
+    margin-top: 8px;
+    overflow: hidden;
+    border: 1px solid var(--md-gray-5);
+}
+
+.notification-dropdown.show {
+    display: block;
+    animation: dropdownFadeIn 0.2s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.notification-dropdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid var(--md-gray-5);
+    background: var(--md-bg-secondary);
+}
+
+.notification-dropdown-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.notification-dropdown-count {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--md-red);
+    background: rgba(255, 59, 48, 0.1);
+    padding: 4px 8px;
+    border-radius: 12px;
+}
+
+.notification-dropdown-body {
+    max-height: 360px;
+    overflow-y: auto;
+}
+
+.notification-empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-tertiary);
+}
+
+.notification-empty .material-symbols-outlined {
+    font-size: 48px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+.notification-empty p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.notification-dropdown-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    text-decoration: none;
+    border-bottom: 1px solid var(--md-gray-6);
+    transition: background var(--duration-fast) var(--ease-out);
+}
+
+.notification-dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.notification-dropdown-item:hover {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.notification-dropdown-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.notification-dropdown-icon .material-symbols-outlined {
+    font-size: 18px;
+    color: white;
+}
+
+.notification-dropdown-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-dropdown-item-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.notification-dropdown-item-detail {
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.notification-dropdown-item-count {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--md-blue);
+    background: rgba(0, 122, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 8px;
+}
+
+.notification-dropdown-item-more {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+}
+
+.notification-dropdown-badge {
+    font-size: 12px;
+    font-weight: 700;
+    color: white;
+    min-width: 24px;
+    height: 24px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.notification-dropdown-footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--md-gray-5);
+    background: var(--md-bg-secondary);
+    text-align: center;
+}
+
+.notification-dropdown-footer-link {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--md-blue);
+    text-decoration: none;
+}
+
+.notification-dropdown-footer-link:hover {
+    text-decoration: underline;
+}
+
+/* サイドバー内の通知ベル */
+.sidebar-notification-wrapper {
+    padding: 0 16px 16px;
+}
+
+.sidebar-notification-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--md-bg-secondary);
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    text-align: left;
+    transition: background var(--duration-fast) var(--ease-out);
+    position: relative;
+}
+
+.sidebar-notification-btn:hover {
+    background: var(--md-bg-tertiary);
+}
+
+.sidebar-notification-btn .material-symbols-outlined {
+    font-size: 20px;
+    color: var(--text-secondary);
+}
+
+.sidebar-notification-btn span:not(.material-symbols-outlined):not(.sidebar-notification-badge) {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.sidebar-notification-badge {
+    margin-left: auto;
+    background: var(--md-red);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+}
+
+/* サイドバー折りたたみ時 */
+.sidebar.collapsed .sidebar-notification-btn span:not(.material-symbols-outlined):not(.sidebar-notification-badge) {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-notification-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+}
+
+/* ========================================
    印刷用スタイル
    ======================================== */
 

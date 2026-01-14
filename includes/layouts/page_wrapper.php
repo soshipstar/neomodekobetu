@@ -9,6 +9,9 @@
  *   renderPageEnd();
  */
 
+// 通知ヘルパーを読み込み
+require_once __DIR__ . '/../notification_helper.php';
+
 /**
  * ページの開始部分をレンダリング
  *
@@ -21,10 +24,11 @@
  *   - 'classroom' => 教室情報配列
  *   - 'bodyClass' => bodyタグに追加するクラス
  *   - 'noContainer' => true でcontainerを出力しない
+ *   - 'noNotifications' => true で通知ベルを非表示
  */
 function renderPageStart(string $role, string $currentPage, string $pageTitle, array $options = []): void
 {
-    global $classroom, $isMaster, $menuItems;
+    global $classroom, $isMaster, $menuItems, $notificationData;
 
     // オプションのデフォルト値
     $additionalCss = $options['additionalCss'] ?? [];
@@ -32,9 +36,28 @@ function renderPageStart(string $role, string $currentPage, string $pageTitle, a
     $classroom = $options['classroom'] ?? ($GLOBALS['classroom'] ?? null);
     $bodyClass = $options['bodyClass'] ?? '';
     $noContainer = $options['noContainer'] ?? false;
+    $noNotifications = $options['noNotifications'] ?? false;
 
     // isMasterの設定
     $isMaster = function_exists('isMasterAdmin') ? isMasterAdmin() : false;
+
+    // 通知データを取得（スタッフ・保護者のみ）
+    $notificationData = ['notifications' => [], 'totalCount' => 0];
+    if (!$noNotifications && in_array($role, ['staff', 'admin', 'guardian'])) {
+        try {
+            $pdo = function_exists('getDbConnection') ? getDbConnection() : null;
+            if ($pdo && isset($_SESSION['user_id'])) {
+                if ($role === 'guardian') {
+                    $notificationData = getGuardianNotifications($pdo, $_SESSION['user_id']);
+                } elseif (in_array($role, ['staff', 'admin'])) {
+                    $classroomId = $_SESSION['classroom_id'] ?? null;
+                    $notificationData = getStaffNotifications($pdo, $_SESSION['user_id'], $classroomId);
+                }
+            }
+        } catch (Exception $e) {
+            error_log("Error fetching notifications: " . $e->getMessage());
+        }
+    }
 
     // ロール別CSS
     $roleCssMap = [
