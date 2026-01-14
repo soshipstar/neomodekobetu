@@ -1457,23 +1457,31 @@ usort($uncreatedKakehashiPeriods, function($a, $b) {
 
 // ページ開始
 $currentPage = 'renrakucho_activities';
-renderPageStart('staff', $currentPage, '活動管理');
+renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
 ?>
 
 <style>
+        /* フルワイドレイアウト用のコンテナ */
+        .page-container {
+            padding: var(--spacing-lg);
+            max-width: 100%;
+        }
+
         .two-column-layout {
             display: grid;
-            grid-template-columns: 600px 1fr;
-            gap: 20px;
+            grid-template-columns: 8fr 2fr;
+            gap: 24px;
             align-items: start;
         }
 
         .left-column {
-            /* カレンダー用 */
+            /* カレンダー用 - 80% */
+            min-width: 0;
         }
 
         .right-column {
-            /* 参加予定者一覧用 */
+            /* 業務日誌・参加予定者一覧用 - 20% */
+            min-width: 0;
         }
 
         .main-content {
@@ -1831,11 +1839,11 @@ renderPageStart('staff', $currentPage, '活動管理');
 
         .calendar-container {
             background: var(--md-bg-secondary);
-            padding: var(--spacing-md);
-            border-radius: var(--radius-sm);
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-md);
             margin-bottom: 15px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            max-width: 600px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
         }
 
         .calendar-header {
@@ -1872,22 +1880,22 @@ renderPageStart('staff', $currentPage, '活動管理');
         .calendar {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 2px;
+            gap: 4px;
         }
 
         .calendar-day-header {
             text-align: center;
-            padding: 4px 2px;
-            font-weight: bold;
+            padding: 8px 4px;
+            font-weight: 600;
             color: var(--text-secondary);
-            font-size: 10px;
+            font-size: 13px;
         }
 
         .calendar-day {
             aspect-ratio: 1;
             border: 1px solid var(--md-gray-5);
-            border-radius: 3px;
-            padding: 3px;
+            border-radius: var(--radius-sm);
+            padding: 6px;
             cursor: pointer;
             background: var(--md-bg-secondary);
             position: relative;
@@ -1895,7 +1903,7 @@ renderPageStart('staff', $currentPage, '活動管理');
             display: flex;
             flex-direction: column;
             align-items: flex-start;
-            min-height: 50px;
+            min-height: 80px;
         }
 
         .calendar-day:hover {
@@ -1942,14 +1950,14 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         .calendar-day-number {
-            font-size: 11px;
+            font-size: 14px;
             font-weight: 600;
-            margin-bottom: 2px;
+            margin-bottom: 4px;
             color: var(--text-primary);
         }
 
         .calendar-day-content {
-            font-size: 8px;
+            font-size: 11px;
             line-height: 1.2;
             width: 100%;
             color: var(--text-primary);
@@ -1980,8 +1988,8 @@ renderPageStart('staff', $currentPage, '活動管理');
 
         .event-marker {
             display: inline-block;
-            width: 4px;
-            height: 4px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             flex-shrink: 0;
         }
@@ -1997,10 +2005,10 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
 
         .day-type-label {
-            font-size: 9px;
-            padding: 1px 4px;
-            border-radius: 3px;
-            margin-bottom: 2px;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-bottom: 4px;
             display: inline-block;
         }
 
@@ -2564,10 +2572,10 @@ renderPageStart('staff', $currentPage, '活動管理');
             margin-bottom: var(--spacing-lg);
         }
 
-        /* デスクトップ用レイアウト（デフォルト） */
+        /* デスクトップ用レイアウト（8:2比率） */
         @media (min-width: 769px) {
             .two-column-layout {
-                grid-template-columns: 600px 1fr !important;
+                grid-template-columns: 8fr 2fr;
             }
         }
 
@@ -2787,6 +2795,8 @@ renderPageStart('staff', $currentPage, '活動管理');
             }
         }
         </script>
+
+        <div class="page-container">
 
         <!-- ページヘッダー -->
         <div class="page-header">
@@ -3437,4 +3447,6 @@ renderPageStart('staff', $currentPage, '活動管理');
         }
     </script>
 
-<?php renderPageEnd(); ?>
+        </div><!-- /.page-container -->
+
+<?php renderPageEnd(['noContainer' => true]); ?>
