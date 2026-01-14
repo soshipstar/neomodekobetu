@@ -1469,18 +1469,18 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
 
         .two-column-layout {
             display: grid;
-            grid-template-columns: 8fr 2fr;
+            grid-template-columns: 7fr 3fr;
             gap: 24px;
             align-items: start;
         }
 
         .left-column {
-            /* カレンダー用 - 80% */
+            /* カレンダー用 - 70% */
             min-width: 0;
         }
 
         .right-column {
-            /* 業務日誌・参加予定者一覧用 - 20% */
+            /* 業務日誌・参加予定者一覧用 - 30% */
             min-width: 0;
         }
 
@@ -2572,10 +2572,10 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
             margin-bottom: var(--spacing-lg);
         }
 
-        /* デスクトップ用レイアウト（8:2比率） */
+        /* デスクトップ用レイアウト（7:3比率） */
         @media (min-width: 769px) {
             .two-column-layout {
-                grid-template-columns: 8fr 2fr;
+                grid-template-columns: 7fr 3fr;
             }
         }
 
