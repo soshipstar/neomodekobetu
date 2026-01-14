@@ -2842,220 +2842,108 @@ renderPageStart('staff', $currentPage, '活動管理');
             </div>
         <?php endif; ?>
 
-        <!-- 未作成・未提出タスク通知セクション -->
+        <!-- 未作成・未提出タスク アコーディオンセクション -->
         <?php
-        // 各タスクの合計件数を計算（pending_tasks.phpと同じロジックで計算済みの変数を使用）
+        // 各タスクの合計件数を計算
         $totalPlanNeeding = $planNeedingCount;
         $totalMonitoringNeeding = $monitoringNeedingCount;
         $totalUncreatedKakehashi = count($uncreatedKakehashiPeriods);
         $totalGuardianKakehashi = count($overdueGuardianKakehashi) + count($urgentGuardianKakehashi) + count($pendingGuardianKakehashi);
-        $totalStaffKakehashi = $staffKakehashiCount;  // ヘルパー関数の統一カウントを使用
+        $totalStaffKakehashi = $staffKakehashiCount;
         $totalSubmissionRequests = count($overdueSubmissionRequests) + count($urgentSubmissionRequests) + count($pendingSubmissionRequests);
+        $totalAllTasks = $totalPlanNeeding + $totalMonitoringNeeding + $totalGuardianKakehashi + $totalStaffKakehashi + $totalSubmissionRequests;
 
-        // いずれかのタスクが存在する場合のみセクションを表示
-        if ($totalPlanNeeding > 0 || $totalMonitoringNeeding > 0 || $totalUncreatedKakehashi > 0 || $totalGuardianKakehashi > 0 || $totalStaffKakehashi > 0 || $totalSubmissionRequests > 0):
+        if ($totalAllTasks > 0):
         ?>
-        <div class="notifications-container">
-            <h2 style="margin-bottom: 20px; color: var(--text-primary); font-size: var(--text-title-3); font-weight: 600; display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined" style="font-size: 1.2em;">assignment</span> 未作成・未提出タスク</h2>
-
-            <!-- 個別支援計画書 -->
-            <?php if ($totalPlanNeeding > 0): ?>
-                <div class="task-summary-item">
-                    <div class="task-summary-header">
-                        <span class="task-summary-title"><span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">description</span> 個別支援計画書
-                            <span class="help-icon" onclick="toggleHelp(this, event)">?
-                                <div class="help-tooltip">生徒ごとに作成が必要な個別支援計画書の状況です。未作成・下書き中・更新期限が近いものが表示されます。計画書は6ヶ月ごとに更新が必要です。</div>
-                            </span>
-                        </span>
-                        <span class="task-summary-total"><?php echo $totalPlanNeeding; ?>件</span>
-                    </div>
-                    <div class="task-summary-details">
-                        <?php if ($planNoneCount > 0): ?>
-                            <span class="task-count overdue">未作成 <?php echo $planNoneCount; ?>件</span>
-                        <?php endif; ?>
-                        <?php if ($planDraftCount > 0): ?>
-                            <span class="task-count warning">下書き <?php echo $planDraftCount; ?>件</span>
-                        <?php endif; ?>
-                        <?php if ($planNeedsConfirmCount > 0): ?>
-                            <span class="task-count needs-confirm">要保護者確認 <?php echo $planNeedsConfirmCount; ?>件</span>
-                        <?php endif; ?>
-                        <?php if ($planOverdueCount > 0): ?>
-                            <span class="task-count overdue">期限切れ <?php echo $planOverdueCount; ?>件</span>
-                        <?php endif; ?>
-                        <?php if ($planUrgentCount > 0): ?>
-                            <span class="task-count urgent">1か月以内 <?php echo $planUrgentCount; ?>件</span>
-                        <?php endif; ?>
-                        <a href="pending_tasks.php" class="task-summary-link">詳細を確認</a>
-                    </div>
+        <div class="task-accordion-container">
+            <div class="task-accordion-header" onclick="toggleTaskAccordion()">
+                <div class="task-accordion-title">
+                    <span class="material-symbols-outlined">assignment_late</span>
+                    <span>未作成・未提出タスク</span>
+                    <span class="task-accordion-badge"><?= $totalAllTasks ?>件</span>
                 </div>
-            <?php endif; ?>
-
-            <!-- モニタリング表 -->
-            <?php if ($totalMonitoringNeeding > 0): ?>
-                <div class="task-summary-item">
-                    <div class="task-summary-header">
-                        <span class="task-summary-title"><span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">monitoring</span> モニタリング表
-                            <span class="help-icon" onclick="toggleHelp(this, event)">?
-                                <div class="help-tooltip">個別支援計画書の進捗を確認するモニタリング表の状況です。次の個別支援計画書作成の1ヶ月前までに作成する必要があります。</div>
-                            </span>
-                        </span>
-                        <span class="task-summary-total"><?php echo $totalMonitoringNeeding; ?>件</span>
-                    </div>
-                    <div class="task-summary-details">
-                        <?php if ($monitoringNoneCount > 0): ?>
-                            <span class="task-count overdue">未作成 <?php echo $monitoringNoneCount; ?>件</span>
-                        <?php endif; ?>
-                        <?php if ($monitoringDraftCount > 0): ?>
-                            <span class="task-count warning">下書き <?php echo $monitoringDraftCount; ?>件</span>
-                        <?php endif; ?>
-                        <?php if ($monitoringNeedsConfirmCount > 0): ?>
-                            <span class="task-count needs-confirm">要保護者確認 <?php echo $monitoringNeedsConfirmCount; ?>件</span>
-                        <?php endif; ?>
-                        <?php if ($monitoringOverdueCount > 0): ?>
-                            <span class="task-count overdue">期限切れ <?php echo $monitoringOverdueCount; ?>件</span>
-                        <?php endif; ?>
-                        <?php if ($monitoringUrgentCount > 0): ?>
-                            <span class="task-count urgent">1か月以内 <?php echo $monitoringUrgentCount; ?>件</span>
-                        <?php endif; ?>
-                        <a href="pending_tasks.php" class="task-summary-link">詳細を確認</a>
-                    </div>
-                </div>
-            <?php endif; ?>
-
-<!-- 保護者かけはし -->
-            <?php if ($totalGuardianKakehashi > 0): ?>
-                <div class="task-summary-item">
-                    <div class="task-summary-header">
-                        <span class="task-summary-title"><span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">edit_note</span> 保護者かけはし未提出
-                            <span class="help-icon" onclick="toggleHelp(this, event)">?
-                                <div class="help-tooltip">保護者がまだ記入していない「かけはし」の件数です。期間終了前に保護者へ記入を依頼してください。</div>
-                            </span>
-                        </span>
-                        <span class="task-summary-total"><?php echo $totalGuardianKakehashi; ?>件</span>
-                    </div>
-                    <div class="task-summary-details">
-                        <?php if (count($overdueGuardianKakehashi) > 0): ?>
-                            <span class="task-count overdue">期限切れ <?php echo count($overdueGuardianKakehashi); ?>件</span>
-                        <?php endif; ?>
-                        <?php if (count($urgentGuardianKakehashi) > 0): ?>
-                            <span class="task-count urgent">1か月以内 <?php echo count($urgentGuardianKakehashi); ?>件</span>
-                        <?php endif; ?>
-                        <?php if (count($pendingGuardianKakehashi) > 0): ?>
-                            <span class="task-count warning">1か月以上 <?php echo count($pendingGuardianKakehashi); ?>件</span>
-                        <?php endif; ?>
-                        <a href="pending_tasks.php" class="task-summary-link">詳細を確認</a>
-                    </div>
-                </div>
-            <?php endif; ?>
-
-            <!-- スタッフかけはし -->
-            <?php if ($staffKakehashiCount > 0): ?>
-                <div class="task-summary-item">
-                    <div class="task-summary-header">
-                        <span class="task-summary-title"><span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">edit_note</span> スタッフかけはし
-                            <span class="help-icon" onclick="toggleHelp(this, event)">?
-                                <div class="help-tooltip">スタッフかけはしの状況です。未作成・下書き・保護者確認待ちの件数を表示しています。</div>
-                            </span>
-                        </span>
-                        <span class="task-summary-total"><?php echo $staffKakehashiCount; ?>件</span>
-                    </div>
-                    <div class="task-summary-details">
-                        <?php if ($staffKakehashiOverdueCount > 0): ?>
-                            <span class="task-count overdue">期限切れ <?php echo $staffKakehashiOverdueCount; ?>件</span>
-                        <?php endif; ?>
-                        <?php if ($staffKakehashiUrgentCount > 0): ?>
-                            <span class="task-count urgent">緊急 <?php echo $staffKakehashiUrgentCount; ?>件</span>
-                        <?php endif; ?>
-                        <?php if ($staffKakehashiDraftCount > 0): ?>
-                            <span class="task-count draft">下書き <?php echo $staffKakehashiDraftCount; ?>件</span>
-                        <?php endif; ?>
-                        <?php if ($staffKakehashiNeedsConfirmCount > 0): ?>
-                            <span class="task-count needs-confirm">要保護者確認 <?php echo $staffKakehashiNeedsConfirmCount; ?>件</span>
-                        <?php endif; ?>
-                        <?php if ($staffKakehashiWarningCount > 0): ?>
-                            <span class="task-count warning">未作成 <?php echo $staffKakehashiWarningCount; ?>件</span>
-                        <?php endif; ?>
-                        <a href="pending_tasks.php" class="task-summary-link">詳細を確認</a>
-                    </div>
-                </div>
-            <?php endif; ?>
-
-            <!-- 提出期限 -->
-            <?php if ($totalSubmissionRequests > 0): ?>
-                <div class="task-summary-item">
-                    <div class="task-summary-header">
-                        <span class="task-summary-title"><span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">upload_file</span> 提出期限未提出
-                            <span class="help-icon" onclick="toggleHelp(this, event)">?
-                                <div class="help-tooltip">保護者へ依頼した書類（サービス提供実績記録票など）の提出状況です。期限までに保護者から提出してもらうよう確認してください。</div>
-                            </span>
-                        </span>
-                        <span class="task-summary-total"><?php echo $totalSubmissionRequests; ?>件</span>
-                    </div>
-                    <div class="task-summary-details">
-                        <?php if (count($overdueSubmissionRequests) > 0): ?>
-                            <span class="task-count overdue">期限切れ <?php echo count($overdueSubmissionRequests); ?>件</span>
-                        <?php endif; ?>
-                        <?php if (count($urgentSubmissionRequests) > 0): ?>
-                            <span class="task-count urgent">1か月以内 <?php echo count($urgentSubmissionRequests); ?>件</span>
-                        <?php endif; ?>
-                        <?php if (count($pendingSubmissionRequests) > 0): ?>
-                            <span class="task-count warning">1か月以上 <?php echo count($pendingSubmissionRequests); ?>件</span>
-                        <?php endif; ?>
-                        <a href="pending_tasks.php" class="task-summary-link">詳細を確認</a>
-                    </div>
-                </div>
-            <?php endif; ?>
-        </div>
-        <?php endif; ?>
-
-        <!-- 未確認連絡帳アラート -->
-        <?php if ($unconfirmedCount > 0): ?>
-        <div class="unconfirmed-alert <?php echo $urgentUnconfirmedCount > 0 ? 'urgent' : ''; ?>">
-            <div class="alert-content">
-                <div class="alert-icon"><span class="material-symbols-outlined"><?php echo $urgentUnconfirmedCount > 0 ? 'warning' : 'warning'; ?></span></div>
-                <div class="alert-text">
-                    <div class="alert-title">未確認の連絡帳があります</div>
-                    <div class="alert-detail">
-                        過去7日間で <strong><?php echo $unconfirmedCount; ?>件</strong> の連絡帳が保護者に確認されていません
-                        <?php if ($urgentUnconfirmedCount > 0): ?>
-                            <span class="urgent-badge">うち <?php echo $urgentUnconfirmedCount; ?>件が3日以上経過</span>
-                        <?php endif; ?>
-                    </div>
-                </div>
+                <span class="task-accordion-toggle" id="taskAccordionToggle">▼</span>
             </div>
-            <a href="unconfirmed_notes.php" class="alert-btn">未確認一覧を確認</a>
-        </div>
-        <?php endif; ?>
-
-        <!-- 連絡帳確認済み一覧 -->
-        <?php if (!empty($confirmedNotes)): ?>
-        <div class="notifications-container">
-            <h2 style="margin-bottom: 15px; color: var(--text-primary); font-size: 18px; display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined" style="font-size: 1.2em;">assignment</span> 連絡帳確認済み一覧（過去3日以内）</h2>
-
-            <!-- 確認済み連絡帳（アコーディオン・初期で閉じている） -->
-            <div class="notification-section">
-                <div class="notification-section-header" onclick="toggleNotificationSection(this)">
-                    <div class="notification-section-title">
-                        <span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">check_circle</span> 保護者確認済み
-                        <span class="notification-section-count confirmed"><?php echo count($confirmedNotes); ?>件</span>
+            <div class="task-accordion-content" id="taskAccordionContent">
+                <?php if ($totalPlanNeeding > 0): ?>
+                <a href="pending_tasks.php" class="task-accordion-item">
+                    <span class="material-symbols-outlined" style="color: var(--md-purple);">description</span>
+                    <span class="task-accordion-item-title">個別支援計画書</span>
+                    <div class="task-accordion-item-badges">
+                        <?php if ($planNoneCount > 0): ?><span class="task-badge overdue">未作成<?= $planNoneCount ?></span><?php endif; ?>
+                        <?php if ($planDraftCount > 0): ?><span class="task-badge warning">下書き<?= $planDraftCount ?></span><?php endif; ?>
+                        <?php if ($planNeedsConfirmCount > 0): ?><span class="task-badge needs-confirm">要確認<?= $planNeedsConfirmCount ?></span><?php endif; ?>
+                        <?php if ($planOverdueCount > 0): ?><span class="task-badge overdue">期限切れ<?= $planOverdueCount ?></span><?php endif; ?>
+                        <?php if ($planUrgentCount > 0): ?><span class="task-badge urgent">緊急<?= $planUrgentCount ?></span><?php endif; ?>
                     </div>
-                    <span class="notification-section-toggle collapsed">▼</span>
-                </div>
-                <div class="notification-section-content collapsed">
-                    <?php foreach ($confirmedNotes as $note): ?>
-                    <div class="notification-item note-confirmed">
-                        <div class="notification-content">
-                            <div class="notification-title"><span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">check_circle</span> 連絡帳が保護者に確認されました</div>
-                            <div class="notification-meta">
-                                <?php echo htmlspecialchars($note['student_name'], ENT_QUOTES, 'UTF-8'); ?> - <?php echo htmlspecialchars($note['activity_name'], ENT_QUOTES, 'UTF-8'); ?>（<?php echo date('Y年m月d日', strtotime($note['record_date'])); ?>）
-                                - 確認日時: <?php echo date('Y年m月d日 H:i', strtotime($note['guardian_confirmed_at'])); ?>
-                            </div>
-                        </div>
+                    <span class="task-accordion-item-count"><?= $totalPlanNeeding ?>件</span>
+                </a>
+                <?php endif; ?>
+
+                <?php if ($totalMonitoringNeeding > 0): ?>
+                <a href="pending_tasks.php" class="task-accordion-item">
+                    <span class="material-symbols-outlined" style="color: var(--md-teal);">monitoring</span>
+                    <span class="task-accordion-item-title">モニタリング表</span>
+                    <div class="task-accordion-item-badges">
+                        <?php if ($monitoringNoneCount > 0): ?><span class="task-badge overdue">未作成<?= $monitoringNoneCount ?></span><?php endif; ?>
+                        <?php if ($monitoringDraftCount > 0): ?><span class="task-badge warning">下書き<?= $monitoringDraftCount ?></span><?php endif; ?>
+                        <?php if ($monitoringNeedsConfirmCount > 0): ?><span class="task-badge needs-confirm">要確認<?= $monitoringNeedsConfirmCount ?></span><?php endif; ?>
+                        <?php if ($monitoringOverdueCount > 0): ?><span class="task-badge overdue">期限切れ<?= $monitoringOverdueCount ?></span><?php endif; ?>
+                        <?php if ($monitoringUrgentCount > 0): ?><span class="task-badge urgent">緊急<?= $monitoringUrgentCount ?></span><?php endif; ?>
                     </div>
-                    <?php endforeach; ?>
-                </div>
+                    <span class="task-accordion-item-count"><?= $totalMonitoringNeeding ?>件</span>
+                </a>
+                <?php endif; ?>
+
+                <?php if ($totalGuardianKakehashi > 0): ?>
+                <a href="pending_tasks.php" class="task-accordion-item">
+                    <span class="material-symbols-outlined" style="color: var(--md-green);">edit_note</span>
+                    <span class="task-accordion-item-title">保護者かけはし</span>
+                    <div class="task-accordion-item-badges">
+                        <?php if (count($overdueGuardianKakehashi) > 0): ?><span class="task-badge overdue">期限切れ<?= count($overdueGuardianKakehashi) ?></span><?php endif; ?>
+                        <?php if (count($urgentGuardianKakehashi) > 0): ?><span class="task-badge urgent">緊急<?= count($urgentGuardianKakehashi) ?></span><?php endif; ?>
+                        <?php if (count($pendingGuardianKakehashi) > 0): ?><span class="task-badge warning">未提出<?= count($pendingGuardianKakehashi) ?></span><?php endif; ?>
+                    </div>
+                    <span class="task-accordion-item-count"><?= $totalGuardianKakehashi ?>件</span>
+                </a>
+                <?php endif; ?>
+
+                <?php if ($staffKakehashiCount > 0): ?>
+                <a href="pending_tasks.php" class="task-accordion-item">
+                    <span class="material-symbols-outlined" style="color: var(--md-orange);">handshake</span>
+                    <span class="task-accordion-item-title">スタッフかけはし</span>
+                    <div class="task-accordion-item-badges">
+                        <?php if ($staffKakehashiOverdueCount > 0): ?><span class="task-badge overdue">期限切れ<?= $staffKakehashiOverdueCount ?></span><?php endif; ?>
+                        <?php if ($staffKakehashiUrgentCount > 0): ?><span class="task-badge urgent">緊急<?= $staffKakehashiUrgentCount ?></span><?php endif; ?>
+                        <?php if ($staffKakehashiDraftCount > 0): ?><span class="task-badge warning">下書き<?= $staffKakehashiDraftCount ?></span><?php endif; ?>
+                        <?php if ($staffKakehashiNeedsConfirmCount > 0): ?><span class="task-badge needs-confirm">要確認<?= $staffKakehashiNeedsConfirmCount ?></span><?php endif; ?>
+                    </div>
+                    <span class="task-accordion-item-count"><?= $staffKakehashiCount ?>件</span>
+                </a>
+                <?php endif; ?>
+
+                <?php if ($totalSubmissionRequests > 0): ?>
+                <a href="pending_tasks.php" class="task-accordion-item">
+                    <span class="material-symbols-outlined" style="color: var(--md-red);">upload_file</span>
+                    <span class="task-accordion-item-title">提出物</span>
+                    <div class="task-accordion-item-badges">
+                        <?php if (count($overdueSubmissionRequests) > 0): ?><span class="task-badge overdue">期限切れ<?= count($overdueSubmissionRequests) ?></span><?php endif; ?>
+                        <?php if (count($urgentSubmissionRequests) > 0): ?><span class="task-badge urgent">緊急<?= count($urgentSubmissionRequests) ?></span><?php endif; ?>
+                        <?php if (count($pendingSubmissionRequests) > 0): ?><span class="task-badge warning">未提出<?= count($pendingSubmissionRequests) ?></span><?php endif; ?>
+                    </div>
+                    <span class="task-accordion-item-count"><?= $totalSubmissionRequests ?>件</span>
+                </a>
+                <?php endif; ?>
             </div>
         </div>
+        <script>
+        function toggleTaskAccordion() {
+            const content = document.getElementById('taskAccordionContent');
+            const toggle = document.getElementById('taskAccordionToggle');
+            content.classList.toggle('expanded');
+            toggle.textContent = content.classList.contains('expanded') ? '▲' : '▼';
+        }
+        </script>
         <?php endif; ?>
 
         <!-- 2カラムレイアウト -->
