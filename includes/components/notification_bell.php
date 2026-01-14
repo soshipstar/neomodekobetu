@@ -62,30 +62,10 @@ function renderNotificationBell(array $notificationData, string $role = 'staff')
                             <span class="material-symbols-outlined"><?= $notification['icon'] ?></span>
                         </div>
                         <div class="notification-dropdown-content">
-                            <div class="notification-dropdown-item-title"><?= htmlspecialchars($notification['title']) ?></div>
-                            <?php if (!empty($notification['items'])): ?>
-                                <?php
-                                // 最初の2件まで表示
-                                $displayItems = array_slice($notification['items'], 0, 2);
-                                foreach ($displayItems as $item):
-                                ?>
-                                    <div class="notification-dropdown-item-detail">
-                                        <?php if (isset($item['student_name'])): ?>
-                                            <?= htmlspecialchars($item['student_name']) ?>さん
-                                        <?php elseif (isset($item['title'])): ?>
-                                            <?= htmlspecialchars($item['title']) ?>
-                                        <?php endif; ?>
-                                        <?php if (isset($item['unread_count'])): ?>
-                                            <span class="notification-dropdown-item-count"><?= $item['unread_count'] ?>件</span>
-                                        <?php endif; ?>
-                                    </div>
-                                <?php endforeach; ?>
-                                <?php if (count($notification['items']) > 2): ?>
-                                    <div class="notification-dropdown-item-more">
-                                        他 <?= count($notification['items']) - 2 ?>件
-                                    </div>
-                                <?php endif; ?>
-                            <?php endif; ?>
+                            <div class="notification-dropdown-item-title"><?= htmlspecialchars($notification['title']) ?>があります</div>
+                            <div class="notification-dropdown-item-detail">
+                                <?= $notification['count'] ?>件
+                            </div>
                         </div>
                         <div class="notification-dropdown-badge" style="background: <?= $color ?>;">
                             <?= $notification['count'] ?>

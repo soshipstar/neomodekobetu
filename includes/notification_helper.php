@@ -85,7 +85,7 @@ function getStaffNotifications(PDO $pdo, int $staffId, ?int $classroomId): array
             'type' => 'chat',
             'icon' => 'chat',
             'color' => 'blue',
-            'title' => '新着メッセージ',
+            'title' => '未読メッセージ',
             'count' => $unreadChatCount,
             'items' => $unreadChatMessages,
             'url' => '/staff/chat.php'
@@ -125,7 +125,7 @@ function getStaffNotifications(PDO $pdo, int $staffId, ?int $classroomId): array
             'type' => 'makeup',
             'icon' => 'sync',
             'color' => 'orange',
-            'title' => '振替希望',
+            'title' => '承認待ちの振替希望',
             'count' => count($pendingMakeupRequests),
             'items' => $pendingMakeupRequests,
             'url' => '/staff/makeup_requests.php?status=pending'
@@ -163,7 +163,7 @@ function getStaffNotifications(PDO $pdo, int $staffId, ?int $classroomId): array
             'type' => 'meeting',
             'icon' => 'calendar_month',
             'color' => 'purple',
-            'title' => '面談日程対応',
+            'title' => '対応待ちの面談予約',
             'count' => count($pendingMeetingResponses),
             'items' => $pendingMeetingResponses,
             'url' => '/staff/meeting_response.php'
@@ -229,7 +229,7 @@ function getGuardianNotifications(PDO $pdo, int $guardianId): array
             'type' => 'chat',
             'icon' => 'chat',
             'color' => 'blue',
-            'title' => '新着メッセージ',
+            'title' => '未読メッセージ',
             'count' => $unreadChatCount,
             'items' => $unreadChatMessages,
             'url' => '/guardian/chat.php'
@@ -264,7 +264,7 @@ function getGuardianNotifications(PDO $pdo, int $guardianId): array
             'type' => 'meeting',
             'icon' => 'calendar_month',
             'color' => 'purple',
-            'title' => '面談予約',
+            'title' => '回答待ちの面談予約',
             'count' => count($pendingMeetingRequests),
             'items' => $pendingMeetingRequests,
             'url' => '/guardian/meeting_response.php'
@@ -413,7 +413,7 @@ function getGuardianNotifications(PDO $pdo, int $guardianId): array
             'type' => 'kakehashi',
             'icon' => 'handshake',
             'color' => 'orange',
-            'title' => 'かけはし',
+            'title' => '未提出のかけはし',
             'count' => count($pendingKakehashi),
             'items' => $pendingKakehashi,
             'url' => '/guardian/kakehashi.php'
@@ -448,7 +448,7 @@ function getGuardianNotifications(PDO $pdo, int $guardianId): array
             'type' => 'submission',
             'icon' => 'upload_file',
             'color' => 'red',
-            'title' => '提出物',
+            'title' => '未提出の提出物',
             'count' => count($pendingSubmissions),
             'items' => $pendingSubmissions,
             'url' => '/guardian/submissions.php'

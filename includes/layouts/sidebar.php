@@ -146,12 +146,35 @@ $userTypeLabel = match($role) {
 
     <?php if ($showSidebarNotifications && $notificationData['totalCount'] > 0): ?>
     <div class="sidebar-notification-wrapper">
-        <a href="<?= $role === 'guardian' ? '/guardian/dashboard.php' : '/staff/pending_tasks.php' ?>" class="sidebar-notification-btn">
+        <button class="sidebar-notification-btn" onclick="toggleSidebarNotificationDropdown(event)">
             <span class="material-symbols-outlined">notifications</span>
             <span>通知</span>
             <span class="sidebar-notification-badge"><?= $notificationData['totalCount'] > 99 ? '99+' : $notificationData['totalCount'] ?></span>
-        </a>
+        </button>
+        <div class="sidebar-notification-dropdown" id="sidebarNotificationDropdown">
+            <?php foreach ($notificationData['notifications'] as $notification): ?>
+                <a href="<?= htmlspecialchars($notification['url']) ?>" class="sidebar-notification-item">
+                    <span class="material-symbols-outlined" style="color: var(--md-<?= $notification['color'] ?>);"><?= $notification['icon'] ?></span>
+                    <span class="sidebar-notification-text"><?= htmlspecialchars($notification['title']) ?>があります</span>
+                    <span class="sidebar-notification-count"><?= $notification['count'] ?></span>
+                </a>
+            <?php endforeach; ?>
+        </div>
     </div>
+    <script>
+    function toggleSidebarNotificationDropdown(event) {
+        event.stopPropagation();
+        const dropdown = document.getElementById('sidebarNotificationDropdown');
+        dropdown.classList.toggle('show');
+    }
+    document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('sidebarNotificationDropdown');
+        const btn = document.querySelector('.sidebar-notification-btn');
+        if (dropdown && btn && !dropdown.contains(event.target) && !btn.contains(event.target)) {
+            dropdown.classList.remove('show');
+        }
+    });
+    </script>
     <?php endif; ?>
 
     <div class="sidebar-menu">
