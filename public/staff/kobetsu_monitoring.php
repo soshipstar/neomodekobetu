@@ -638,9 +638,9 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成', ['noContai
                             <thead>
                                 <tr>
                                     <th style="width: 100px;">項目</th>
-                                    <th style="width: 180px;">支援目標</th>
+                                    <th style="width: 196px;">支援目標</th>
                                     <th style="width: 245px;">支援内容</th>
-                                    <th style="width: 80px;">達成時期</th>
+                                    <th style="width: 64px;">達成時期</th>
                                     <th style="width: 95px;">達成状況</th>
                                     <th style="width: 300px;">モニタリングコメント</th>
                                 </tr>
