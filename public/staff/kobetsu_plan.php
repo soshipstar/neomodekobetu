@@ -830,11 +830,11 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成', ['noContai
                             <tr>
                                 <th style="width: 80px;">項目</th>
                                 <th style="width: 220px;">支援目標<br>（具体的な到達目標）</th>
-                                <th style="width: 300px;">支援内容<br>（内容・支援の提供上のポイント・5領域（※）との関連性等）</th>
-                                <th style="width: 90px;">達成時期</th>
-                                <th style="width: 130px;">担当者／提供機関</th>
+                                <th style="width: 355px;">支援内容<br>（内容・支援の提供上のポイント・5領域（※）との関連性等）</th>
+                                <th style="width: 70px;">達成時期</th>
+                                <th style="width: 105px;">担当者／提供機関</th>
                                 <th style="width: 140px;">留意事項</th>
-                                <th style="width: 60px;">優先順位</th>
+                                <th style="width: 50px;">優先順位</th>
                             </tr>
                         </thead>
                         <tbody id="detailsTable">
