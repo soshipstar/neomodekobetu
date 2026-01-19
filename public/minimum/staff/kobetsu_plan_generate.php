@@ -291,7 +291,7 @@ try {
     $prompt .= "- 【重要】長期目標・短期目標・支援目標には「1年後には」「半年後には」「○ヶ月後」「いつまでに」などの期間を含めた表現は絶対に使用しないでください。期間は別途入力するため、目標文には到達してほしい具体的な行動のみを記述してください\n";
 
     // OpenAI GPT-4に送信
-    $apiKey = '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';
+    $apiKey = env('OPENAI_API_KEY');
 
     $data = [
         'model' => 'gpt-5.2',

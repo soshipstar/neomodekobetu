@@ -4,8 +4,8 @@
  */
 
 // OpenAI APIキーの設定
-// .envファイルまたは環境変数から取得することを推奨
-define('OPENAI_API_KEY', getenv('OPENAI_API_KEY') ?: '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');
+// .envファイルまたは環境変数から取得
+define('OPENAI_API_KEY', getenv('OPENAI_API_KEY') ?: '');
 
 /**
  * OpenAI APIを呼び出してテキストを生成
