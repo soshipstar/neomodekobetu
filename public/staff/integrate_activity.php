@@ -417,8 +417,10 @@ draftSaveBtn.addEventListener('click', async function() {
         if (result.success) {
             showMessage(result.message, 'success');
             updateLastSaved();
+            alert('保存しました');
         } else {
             showMessage(result.error || '保存に失敗しました', 'error');
+            alert('保存に失敗しました');
         }
     } catch (error) {
         console.error('Error:', error);

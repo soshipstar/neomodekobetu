@@ -7,7 +7,12 @@
 require_once __DIR__ . '/env.php';
 
 // ChatGPT APIキー（環境変数から取得）
-define('CHATGPT_API_KEY', env('CHATGPT_API_KEY', ''));
+// CHATGPT_API_KEYまたはOPENAI_API_KEYから取得
+$apiKey = env('CHATGPT_API_KEY', '');
+if (empty($apiKey)) {
+    $apiKey = env('OPENAI_API_KEY', '');
+}
+define('CHATGPT_API_KEY', $apiKey);
 define('CHATGPT_API_URL', 'https://api.openai.com/v1/chat/completions');
 
 // 強力なtrim処理関数
