@@ -374,7 +374,41 @@ function getGuardianNotifications(PDO $pdo, int $guardianId): array
         $totalCount += count($pendingMonitoringRecords);
     }
 
-    // 6. 未提出かけはし
+    // 6. スタッフからのかけはし（確認待ち）
+    $pendingStaffKakehashi = [];
+    try {
+        if (!empty($studentIds)) {
+            $placeholders = implode(',', array_fill(0, count($studentIds), '?'));
+            $stmt = $pdo->prepare("
+                SELECT ks.id, ks.student_id, ks.period_id, kp.period_name, s.student_name
+                FROM kakehashi_staff ks
+                INNER JOIN kakehashi_periods kp ON ks.period_id = kp.id
+                INNER JOIN students s ON ks.student_id = s.id
+                WHERE ks.student_id IN ($placeholders)
+                AND ks.is_submitted = 1
+                AND (ks.guardian_confirmed = 0 OR ks.guardian_confirmed IS NULL)
+            ");
+            $stmt->execute($studentIds);
+            $pendingStaffKakehashi = $stmt->fetchAll();
+        }
+    } catch (Exception $e) {
+        error_log("Error fetching pending staff kakehashi: " . $e->getMessage());
+    }
+
+    if (count($pendingStaffKakehashi) > 0) {
+        $notifications['staff_kakehashi'] = [
+            'type' => 'staff_kakehashi',
+            'icon' => 'description',
+            'color' => 'blue',
+            'title' => 'スタッフかけはし確認',
+            'count' => count($pendingStaffKakehashi),
+            'items' => $pendingStaffKakehashi,
+            'url' => '/guardian/kakehashi_history.php'
+        ];
+        $totalCount += count($pendingStaffKakehashi);
+    }
+
+    // 7. 未提出かけはし
     $pendingKakehashi = [];
     $today = date('Y-m-d');
     $oneMonthLater = date('Y-m-d', strtotime('+1 month'));

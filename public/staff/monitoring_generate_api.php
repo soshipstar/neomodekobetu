@@ -282,7 +282,7 @@ function getRelatedRecords($recordsByDomain, $category, $subCategory) {
  * ChatGPT APIで評価を生成
  */
 function generateEvaluationWithAI($studentName, $category, $subCategory, $supportGoal, $supportContent, $relatedRecords) {
-    $apiKey = env('CHATGPT_API_KEY', '');
+    $apiKey = env('OPENAI_API_KEY', '');
 
     if (empty($apiKey)) {
         return [
@@ -383,7 +383,7 @@ PROMPT;
  * ChatGPT APIを呼び出す
  */
 function callChatGPTAPI($prompt) {
-    $apiKey = env('CHATGPT_API_KEY', '');
+    $apiKey = env('OPENAI_API_KEY', '');
 
     $url = 'https://api.openai.com/v1/chat/completions';
 
