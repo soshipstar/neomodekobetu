@@ -42,7 +42,7 @@ function renderNotificationBell(array $notificationData, string $role = 'staff')
     </button>
     <div class="notification-dropdown" id="notificationDropdown">
         <div class="notification-dropdown-header">
-            <span class="notification-dropdown-title">通知</span>
+            <span class="notification-dropdown-title">未読メッセージ</span>
             <?php if ($totalCount > 0): ?>
                 <span class="notification-dropdown-count"><?= $totalCount ?>件</span>
             <?php endif; ?>
@@ -50,8 +50,8 @@ function renderNotificationBell(array $notificationData, string $role = 'staff')
         <div class="notification-dropdown-body">
             <?php if (empty($notifications)): ?>
                 <div class="notification-empty">
-                    <span class="material-symbols-outlined">notifications_off</span>
-                    <p>通知はありません</p>
+                    <span class="material-symbols-outlined">mark_chat_read</span>
+                    <p>未読メッセージはありません</p>
                 </div>
             <?php else: ?>
                 <?php foreach ($notifications as $key => $notification):
@@ -62,7 +62,7 @@ function renderNotificationBell(array $notificationData, string $role = 'staff')
                             <span class="material-symbols-outlined"><?= $notification['icon'] ?></span>
                         </div>
                         <div class="notification-dropdown-content">
-                            <div class="notification-dropdown-item-title"><?= htmlspecialchars($notification['title']) ?>があります</div>
+                            <div class="notification-dropdown-item-title"><?= htmlspecialchars($notification['title']) ?></div>
                             <div class="notification-dropdown-item-detail">
                                 <?= $notification['count'] ?>件
                             </div>
@@ -77,9 +77,9 @@ function renderNotificationBell(array $notificationData, string $role = 'staff')
         <?php if (!empty($notifications)): ?>
             <div class="notification-dropdown-footer">
                 <?php if ($role === 'staff' || $role === 'admin'): ?>
-                    <a href="/staff/pending_tasks.php" class="notification-dropdown-footer-link">すべてのタスクを見る</a>
+                    <a href="/staff/chat.php" class="notification-dropdown-footer-link">チャットを開く</a>
                 <?php else: ?>
-                    <a href="/guardian/dashboard.php" class="notification-dropdown-footer-link">ダッシュボードへ</a>
+                    <a href="/guardian/chat.php" class="notification-dropdown-footer-link">チャットを開く</a>
                 <?php endif; ?>
             </div>
         <?php endif; ?>
@@ -87,36 +87,50 @@ function renderNotificationBell(array $notificationData, string $role = 'staff')
 </div>
 
 <script>
-// 通知ドロップダウンの開閉
-function toggleNotificationDropdown(event) {
-    event.stopPropagation();
-    const dropdown = document.getElementById('notificationDropdown');
-    const isOpen = dropdown.classList.contains('show');
+(function() {
+    // 通知ドロップダウンの開閉
+    function handleNotificationClick(event) {
+        event.stopPropagation();
+        event.preventDefault();
 
-    // 他のドロップダウンを閉じる
-    document.querySelectorAll('.notification-dropdown.show').forEach(el => {
-        if (el !== dropdown) el.classList.remove('show');
-    });
+        var dropdown = document.getElementById('notificationDropdown');
+        if (!dropdown) {
+            console.error('notificationDropdown not found');
+            return;
+        }
 
-    dropdown.classList.toggle('show');
-}
+        var isOpen = dropdown.classList.contains('show');
 
-// ドロップダウン外をクリックで閉じる
-document.addEventListener('click', function(event) {
-    const dropdown = document.getElementById('notificationDropdown');
-    const bellBtn = document.querySelector('.notification-bell-btn');
-    if (dropdown && bellBtn && !dropdown.contains(event.target) && !bellBtn.contains(event.target)) {
-        dropdown.classList.remove('show');
+        // メニューも閉じる
+        var menuDropdown = document.getElementById('menuDropdown');
+        if (menuDropdown) menuDropdown.classList.remove('show');
+
+        if (isOpen) {
+            dropdown.classList.remove('show');
+        } else {
+            dropdown.classList.add('show');
+        }
     }
-});
 
-// ESCキーで閉じる
-document.addEventListener('keydown', function(event) {
-    if (event.key === 'Escape') {
-        const dropdown = document.getElementById('notificationDropdown');
-        if (dropdown) dropdown.classList.remove('show');
+    // グローバル関数として登録
+    window.toggleNotificationDropdown = handleNotificationClick;
+
+    // ドロップダウン外をクリックで閉じる
+    function handleDocumentClick(event) {
+        var dropdown = document.getElementById('notificationDropdown');
+        var bellBtn = document.querySelector('.notification-bell-btn');
+        if (!dropdown || !bellBtn) return;
+
+        if (!dropdown.contains(event.target) && !bellBtn.contains(event.target)) {
+            dropdown.classList.remove('show');
+        }
     }
-});
+
+    // 既存のリスナーを削除してから追加（重複防止）
+    document.removeEventListener('click', window._notificationDocClickHandler);
+    window._notificationDocClickHandler = handleDocumentClick;
+    document.addEventListener('click', handleDocumentClick);
+})();
 </script>
 <?php
 }

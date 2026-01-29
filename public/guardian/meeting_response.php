@@ -23,15 +23,15 @@ if (!$requestId) {
     exit;
 }
 
-// 面談リクエストを取得
+// 面談リクエストを取得（students テーブル経由で保護者を確認 - より堅牢）
 $stmt = $pdo->prepare("
     SELECT mr.*, s.student_name, u.full_name as staff_name
     FROM meeting_requests mr
     INNER JOIN students s ON mr.student_id = s.id
     LEFT JOIN users u ON mr.staff_id = u.id
-    WHERE mr.id = ? AND mr.guardian_id = ?
+    WHERE mr.id = ? AND (mr.guardian_id = ? OR s.guardian_id = ?)
 ");
-$stmt->execute([$requestId, $guardianId]);
+$stmt->execute([$requestId, $guardianId, $guardianId]);
 $request = $stmt->fetch();
 
 if (!$request) {

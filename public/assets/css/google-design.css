@@ -1101,6 +1101,60 @@ select,
 }
 
 /* ========================================
+   Table Scroll Support (モバイル対応)
+   ======================================== */
+
+.table-responsive,
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: var(--spacing-md);
+}
+
+.table-responsive > table,
+.table-wrapper > table {
+    min-width: 600px;
+    width: 100%;
+}
+
+/* 横スクロール可能なテーブル用のヒント */
+@media (max-width: 768px) {
+    .table-responsive,
+    .table-wrapper {
+        position: relative;
+        border: 1px solid var(--md-gray-5);
+        border-radius: var(--radius-sm);
+    }
+
+    .table-responsive > table,
+    .table-wrapper > table {
+        min-width: 700px;
+    }
+
+    /* スクロールヒント（影） */
+    .table-responsive::after,
+    .table-wrapper::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 20px;
+        background: linear-gradient(to left, rgba(0,0,0,0.08), transparent);
+        pointer-events: none;
+        opacity: 1;
+        transition: opacity 0.3s;
+    }
+
+    /* スクロール済みの場合は影を非表示 */
+    .table-responsive.scrolled-right::after,
+    .table-wrapper.scrolled-right::after {
+        opacity: 0;
+    }
+}
+
+/* ========================================
    Utility Classes
    ======================================== */
 

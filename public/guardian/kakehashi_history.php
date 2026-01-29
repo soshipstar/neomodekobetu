@@ -49,6 +49,8 @@ if ($selectedStudentId) {
             ks.id as staff_kakehashi_id,
             ks.is_submitted as staff_submitted,
             ks.submitted_at as staff_submitted_at,
+            ks.guardian_confirmed as staff_guardian_confirmed,
+            ks.guardian_confirmed_at as staff_guardian_confirmed_at,
             kg.id as guardian_kakehashi_id,
             kg.is_submitted as guardian_submitted,
             kg.submitted_at as guardian_submitted_at
@@ -193,6 +195,42 @@ renderPageStart('guardian', $currentPage, 'かけはし履歴', ['classroom' => 
     color: var(--text-secondary);
 }
 
+.status-confirmed {
+    background: var(--md-teal);
+    color: white;
+}
+
+.status-not-confirmed {
+    background: var(--md-orange);
+    color: white;
+}
+
+.confirm-btn {
+    background: linear-gradient(180deg, #4CAF50 0%, #388E3C 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.confirm-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+}
+
+.confirm-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
 .document-card-meta {
     font-size: var(--text-caption-1);
     color: var(--text-secondary);
@@ -319,16 +357,33 @@ renderPageStart('guardian', $currentPage, 'かけはし履歴', ['classroom' => 
                                 <div class="document-card-meta">
                                     提出日: <?= date('Y/m/d H:i', strtotime($item['staff_submitted_at'])) ?>
                                 </div>
+                                <!-- 確認状態 -->
+                                <div style="margin-bottom: var(--spacing-md);">
+                                    <?php if ($item['staff_guardian_confirmed']): ?>
+                                        <span class="status-badge status-confirmed">
+                                            <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">check_circle</span>
+                                            確認済み
+                                        </span>
+                                        <div style="font-size: var(--text-caption-1); color: var(--text-secondary); margin-top: 4px;">
+                                            確認日: <?= date('Y/m/d H:i', strtotime($item['staff_guardian_confirmed_at'])) ?>
+                                        </div>
+                                    <?php else: ?>
+                                        <span class="status-badge status-not-confirmed">
+                                            <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">pending</span>
+                                            未確認
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
                                 <div class="document-card-actions">
                                     <a href="kakehashi_history_view.php?student_id=<?= $selectedStudentId ?>&period_id=<?= $item['period_id'] ?>&type=staff"
                                        class="btn btn-secondary btn-sm">
                                         <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">visibility</span> 表示
                                     </a>
-                                    <a href="kakehashi_history_view.php?student_id=<?= $selectedStudentId ?>&period_id=<?= $item['period_id'] ?>&type=staff"
-                                       class="btn btn-info btn-sm"
-                                       target="_blank">
-                                        <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">print</span> 印刷
-                                    </a>
+                                    <?php if (!$item['staff_guardian_confirmed']): ?>
+                                        <button type="button" class="confirm-btn" onclick="confirmStaffKakehashi(<?= $selectedStudentId ?>, <?= $item['period_id'] ?>, this)">
+                                            <span class="material-symbols-outlined" style="font-size: 18px;">check</span> 確認しました
+                                        </button>
+                                    <?php endif; ?>
                                 </div>
                             <?php else: ?>
                                 <div class="document-card-meta">
@@ -348,6 +403,42 @@ $inlineJs = <<<JS
 function changeStudent() {
     const studentId = document.getElementById('studentSelect').value;
     window.location.href = 'kakehashi_history.php?student_id=' + studentId;
+}
+
+function confirmStaffKakehashi(studentId, periodId, btn) {
+    if (!confirm('事業所かけはしの内容を確認しましたか？')) {
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 18px;">hourglass_empty</span> 処理中...';
+
+    fetch('kakehashi_staff_confirm.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            student_id: studentId,
+            period_id: periodId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('確認しました。ありがとうございます。');
+            location.reload();
+        } else {
+            alert('エラー: ' + data.message);
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 18px;">check</span> 確認しました';
+        }
+    })
+    .catch(error => {
+        alert('エラーが発生しました: ' + error);
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 18px;">check</span> 確認しました';
+    });
 }
 JS;
 

@@ -146,32 +146,57 @@ $userTypeLabel = match($role) {
 
     <?php if ($showSidebarNotifications && $notificationData['totalCount'] > 0): ?>
     <div class="sidebar-notification-wrapper">
-        <button class="sidebar-notification-btn" onclick="toggleSidebarNotificationDropdown(event)">
+        <button class="sidebar-notification-btn" id="sidebarNotificationBtn">
             <span class="material-symbols-outlined">notifications</span>
-            <span>通知</span>
+            <span>未読メッセージ</span>
             <span class="sidebar-notification-badge"><?= $notificationData['totalCount'] > 99 ? '99+' : $notificationData['totalCount'] ?></span>
         </button>
         <div class="sidebar-notification-dropdown" id="sidebarNotificationDropdown">
             <?php foreach ($notificationData['notifications'] as $notification): ?>
                 <a href="<?= htmlspecialchars($notification['url']) ?>" class="sidebar-notification-item">
                     <span class="material-symbols-outlined" style="color: var(--md-<?= $notification['color'] ?>);"><?= $notification['icon'] ?></span>
-                    <span class="sidebar-notification-text"><?= htmlspecialchars($notification['title']) ?>があります</span>
+                    <span class="sidebar-notification-text"><?= htmlspecialchars($notification['title']) ?></span>
                     <span class="sidebar-notification-count"><?= $notification['count'] ?></span>
                 </a>
             <?php endforeach; ?>
         </div>
     </div>
     <script>
-    function toggleSidebarNotificationDropdown(event) {
-        event.stopPropagation();
-        const dropdown = document.getElementById('sidebarNotificationDropdown');
-        dropdown.classList.toggle('show');
-    }
-    document.addEventListener('click', function(event) {
-        const dropdown = document.getElementById('sidebarNotificationDropdown');
-        const btn = document.querySelector('.sidebar-notification-btn');
-        if (dropdown && btn && !dropdown.contains(event.target) && !btn.contains(event.target)) {
-            dropdown.classList.remove('show');
+    document.addEventListener('DOMContentLoaded', function() {
+        var btn = document.getElementById('sidebarNotificationBtn');
+        var dropdown = document.getElementById('sidebarNotificationDropdown');
+
+        console.log('Sidebar notification init:', btn, dropdown);
+
+        if (btn && dropdown) {
+            btn.style.cursor = 'pointer';
+
+            btn.addEventListener('click', function(e) {
+                console.log('Sidebar notification button clicked');
+                e.stopPropagation();
+                e.preventDefault();
+
+                var isVisible = dropdown.style.display === 'block';
+                if (isVisible) {
+                    dropdown.style.display = 'none';
+                } else {
+                    // ボタンの位置を取得してドロップダウンを配置
+                    var rect = btn.getBoundingClientRect();
+                    dropdown.style.position = 'fixed';
+                    dropdown.style.top = rect.top + 'px';
+                    dropdown.style.left = (rect.right + 8) + 'px';
+                    dropdown.style.display = 'block';
+                    dropdown.style.zIndex = '9999';
+                }
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
+                    dropdown.style.display = 'none';
+                }
+            });
+        } else {
+            console.error('Sidebar notification elements not found');
         }
     });
     </script>

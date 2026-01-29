@@ -315,6 +315,21 @@ renderPageStart('guardian', $currentPage, 'モニタリング表', [
     }
 }
 
+/* テーブル横スクロール対応 */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--md-gray-5);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.table-responsive > .table {
+    min-width: 800px;
+    margin-bottom: 0;
+}
+
 /* 署名関連スタイル */
 .signature-section {
     background: var(--md-bg-secondary);

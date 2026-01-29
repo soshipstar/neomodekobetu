@@ -264,6 +264,8 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
 
 .status-draft { background: var(--md-orange); color: white; }
 .status-submitted { background: var(--md-green); color: white; }
+.status-confirmed { background: var(--md-teal); color: white; }
+.status-not-confirmed { background: var(--md-gray-4); color: var(--text-secondary); }
 
 .button-group {
     display: flex;
@@ -596,6 +598,18 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
                     <span class="status-badge status-draft">下書き</span>
                 <?php endif; ?>
             </p>
+            <?php if ($kakehashiData && $kakehashiData['is_submitted']): ?>
+            <p>
+                <strong>保護者確認:</strong>
+                <?php if (!empty($kakehashiData['guardian_confirmed'])): ?>
+                    <span class="status-badge status-confirmed"><span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">check_circle</span> 確認済み</span>
+                    <small>（確認日時: <?= date('Y年m月d日 H:i', strtotime($kakehashiData['guardian_confirmed_at'])) ?>）</small>
+                <?php else: ?>
+                    <span class="status-badge status-not-confirmed"><span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">pending</span> 未確認</span>
+                    <small>（保護者が「かけはし履歴」から確認できます）</small>
+                <?php endif; ?>
+            </p>
+            <?php endif; ?>
         </div>
 
         <!-- かけはし入力フォーム -->

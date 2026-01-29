@@ -18,6 +18,7 @@ $pageTitle = $pageTitle ?? 'メニュー';
 $role = $role ?? ($_SESSION['user_type'] ?? 'staff');
 $classroom = $classroom ?? null;
 $notificationData = $notificationData ?? ['notifications' => [], 'totalCount' => 0];
+$isMaster = $isMaster ?? (function_exists('isMasterAdmin') ? isMasterAdmin() : false);
 
 // ロール別カラーとアイコン（Material Symbols アイコン名）
 $roleConfig = [

@@ -228,6 +228,7 @@ renderPageStart('guardian', $currentPage, $pageTitle);
 
         .table-wrapper {
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
             border-radius: var(--radius-md);
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             margin-bottom: var(--spacing-lg);
@@ -235,6 +236,7 @@ renderPageStart('guardian', $currentPage, $pageTitle);
 
         table {
             width: 100%;
+            min-width: 700px;
             border-collapse: collapse;
             background: var(--md-bg-primary);
         }
