@@ -50,6 +50,7 @@ $menuConfig = [
         ['type' => 'divider', 'label' => '計画・支援'],
         ['page' => 'support_plans', 'icon' => 'description', 'label' => '支援案', 'url' => '/staff/support_plans.php'],
         ['page' => 'student_weekly_plans', 'icon' => 'edit_note', 'label' => '週間計画', 'url' => '/staff/student_weekly_plans.php'],
+        ['page' => 'student_interviews', 'icon' => 'record_voice_over', 'label' => '生徒面談記録', 'url' => '/staff/student_interviews.php'],
         ['page' => 'kobetsu_plan', 'icon' => 'assignment', 'label' => '個別支援計画', 'url' => '/staff/kobetsu_plan.php'],
         ['page' => 'kobetsu_monitoring', 'icon' => 'monitoring', 'label' => 'モニタリング', 'url' => '/staff/kobetsu_monitoring.php'],
         // 提出物

@@ -154,6 +154,71 @@ try {
     $previousShortTermGoal = $previousKakehashi['short_term_goal'] ?? null;
     $previousLongTermGoal = $previousKakehashi['long_term_goal'] ?? null;
 
+    // 同期間の面談記録を取得（学校での様子、家庭での様子、困りごと・悩み）
+    $stmt = $pdo->prepare("
+        SELECT
+            interview_date,
+            child_wish,
+            check_school,
+            check_school_note,
+            check_home,
+            check_home_note,
+            check_troubles,
+            check_troubles_note,
+            interview_content
+        FROM student_interviews
+        WHERE student_id = ?
+        AND interview_date >= ?
+        AND interview_date < ?
+        ORDER BY interview_date DESC
+        LIMIT 10
+    ");
+    $stmt->execute([
+        $studentId,
+        $fiveMonthsAgo->format('Y-m-d'),
+        $periodStart->format('Y-m-d')
+    ]);
+    $interviewRecords = $stmt->fetchAll();
+
+    // 面談記録のサマリーを作成
+    $interviewSummary = "";
+    if (!empty($interviewRecords)) {
+        $schoolNotes = [];
+        $homeNotes = [];
+        $troubleNotes = [];
+        $childWishes = [];
+
+        foreach ($interviewRecords as $interview) {
+            $date = date('Y年m月d日', strtotime($interview['interview_date']));
+
+            if ($interview['check_school'] && !empty($interview['check_school_note'])) {
+                $schoolNotes[] = "【{$date}】" . $interview['check_school_note'];
+            }
+            if ($interview['check_home'] && !empty($interview['check_home_note'])) {
+                $homeNotes[] = "【{$date}】" . $interview['check_home_note'];
+            }
+            if ($interview['check_troubles'] && !empty($interview['check_troubles_note'])) {
+                $troubleNotes[] = "【{$date}】" . $interview['check_troubles_note'];
+            }
+            if (!empty($interview['child_wish'])) {
+                $childWishes[] = "【{$date}】" . $interview['child_wish'];
+            }
+        }
+
+        if (!empty($schoolNotes)) {
+            $interviewSummary .= "\n■ 学校での様子\n" . implode("\n", array_slice($schoolNotes, 0, 5)) . "\n";
+        }
+        if (!empty($homeNotes)) {
+            $interviewSummary .= "\n■ 家庭での様子\n" . implode("\n", array_slice($homeNotes, 0, 5)) . "\n";
+        }
+        if (!empty($troubleNotes)) {
+            $interviewSummary .= "\n■ 困りごと・悩み\n" . implode("\n", array_slice($troubleNotes, 0, 5)) . "\n";
+        }
+        if (!empty($childWishes)) {
+            $interviewSummary .= "\n■ 児童の願い\n" . implode("\n", array_slice($childWishes, 0, 5)) . "\n";
+        }
+    }
+
     // OpenAI APIで五領域の課題を生成
     $domainsPrompt = "あなたは発達支援・特別支援教育の専門スタッフです。以下の生徒の直近5か月の連絡帳記録を詳細に分析し、今後6か月間の具体的な支援課題を各領域ごとに300文字程度でまとめてください。
 
@@ -219,7 +284,7 @@ try {
     }
 
     // 短期目標を生成
-    $shortTermPrompt = "以下の五領域の課題分析から、今後6か月間の短期目標を300文字程度で作成してください。
+    $shortTermPrompt = "以下の五領域の課題分析と面談記録から、今後6か月間の短期目標を300文字程度で作成してください。
 
 【五領域の課題】
 ■健康・生活
@@ -235,10 +300,22 @@ try {
 " . ($domainsData['domain_language_communication'] ?? '') . "
 
 ■人間関係・社会性
-" . ($domainsData['domain_social_relations'] ?? '') . "
+" . ($domainsData['domain_social_relations'] ?? '') . "";
+
+    // 面談記録がある場合はプロンプトに追加
+    if (!empty(trim($interviewSummary))) {
+        $shortTermPrompt .= "
+
+【面談記録からの情報】
+" . $interviewSummary;
+    }
+
+    $shortTermPrompt .= "
 
 【短期目標作成の要点】
 - 各領域の課題を総合的に考慮し、優先度の高いものから記述
+- 面談で把握した学校での様子、家庭での様子、困りごと・悩みを考慮する
+- 児童の願いや希望を尊重した目標設定を心がける
 - 具体的で測定可能な目標（例：「〜ができるようになる」）
 - 6か月後に達成可能な現実的な目標設定
 - 本人の強みや興味を活かした支援の視点
@@ -253,6 +330,14 @@ try {
 【短期目標（今後6か月）】
 " . $shortTermGoal;
 
+    // 面談記録がある場合はプロンプトに追加
+    if (!empty(trim($interviewSummary))) {
+        $longTermPrompt .= "
+
+【面談記録からの情報】
+" . $interviewSummary;
+    }
+
     if ($previousLongTermGoal || $previousShortTermGoal) {
         $longTermPrompt .= "
 
@@ -262,22 +347,26 @@ try {
 【長期目標作成の要点】
 - 前回の長期目標からの成長や変化を考慮
 - 短期目標の達成を踏まえた次のステップ
+- 面談で把握した学校での様子、家庭での様子、困りごと・悩みを踏まえる
+- 児童の願いや希望を長期的な視点で実現できるよう目標に反映する
 - 1年後～数年後の本人の姿を具体的にイメージ
 - 社会参加や自立に向けた視点を含める
 - 本人の可能性を信じた前向きな目標設定
 
-前回の長期目標を参考にしつつ、短期目標の達成を加味して、より発展的な長期目標を350文字程度で記述してください。";
+前回の長期目標を参考にしつつ、短期目標の達成と面談記録の内容を加味して、より発展的な長期目標を350文字程度で記述してください。";
     } else {
         $longTermPrompt .= "
 
 【長期目標作成の要点】
 - 短期目標の延長線上にある1年後～数年後の姿
+- 面談で把握した学校での様子、家庭での様子、困りごと・悩みを踏まえる
+- 児童の願いや希望を長期的な視点で実現できるよう目標に反映する
 - 生活の質（QOL）向上や社会参加の視点
 - 本人の特性や強みを活かした自立への道筋
 - 将来の進路や生活場面を見据えた具体的な目標
 - 本人と家族が希望する将来像
 
-短期目標を踏まえて、1年以上先を見据えた長期的な成長目標を350文字程度で記述してください。";
+短期目標と面談記録の内容を踏まえて、1年以上先を見据えた長期的な成長目標を350文字程度で記述してください。";
     }
 
     $longTermPrompt .= "

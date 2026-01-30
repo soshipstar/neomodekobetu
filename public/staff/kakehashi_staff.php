@@ -198,6 +198,23 @@ if ($selectedStudentId) {
     $selectedStudent = $stmt->fetch();
 }
 
+// 6か月以内の面談記録を取得（児童の願いがあるもの）
+$recentInterviews = [];
+if ($selectedStudentId) {
+    $sixMonthsAgo = date('Y-m-d', strtotime('-6 months'));
+    $stmt = $pdo->prepare("
+        SELECT id, interview_date, child_wish
+        FROM student_interviews
+        WHERE student_id = ?
+        AND interview_date >= ?
+        AND child_wish IS NOT NULL
+        AND child_wish != ''
+        ORDER BY interview_date DESC
+    ");
+    $stmt->execute([$selectedStudentId, $sixMonthsAgo]);
+    $recentInterviews = $stmt->fetchAll();
+}
+
 // ページ開始
 $currentPage = 'kakehashi_staff';
 renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
@@ -497,6 +514,41 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
 .help-icon.active .help-tooltip {
     display: block;
 }
+
+/* 本人の願い自動生成ボタン */
+.btn-wish-generate {
+    background: linear-gradient(135deg, #00BCD4 0%, #00838F 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 188, 212, 0.3);
+    padding: 8px 16px;
+    font-size: 14px;
+}
+
+.btn-wish-generate:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 188, 212, 0.4);
+}
+
+.btn-wish-generate:disabled {
+    background: var(--md-gray-4);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-wish-generate .spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
 </style>
 
 <!-- ページヘッダー -->
@@ -624,7 +676,24 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
                     <div class="section-title"><span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">auto_awesome</span> 本人の願い</div>
                     <div class="form-group">
                         <label class="form-label">本人が望んでいること、なりたい姿</label>
-                        <textarea name="student_wish" class="form-control" rows="6"><?= $kakehashiData['student_wish'] ?? '' ?></textarea>
+                        <?php if (!empty($recentInterviews)): ?>
+                        <div style="margin-bottom: var(--spacing-sm);">
+                            <button type="button" id="generateWishBtn" class="btn btn-wish-generate" onclick="generateWishFromInterview()">
+                                <span class="material-symbols-outlined">psychology</span>
+                                面談記録から自動生成
+                            </button>
+                            <span style="font-size: var(--text-caption-1); color: var(--text-secondary); margin-left: 8px;">
+                                （<?= count($recentInterviews) ?>件の面談記録があります）
+                            </span>
+                        </div>
+                        <?php else: ?>
+                        <div style="margin-bottom: var(--spacing-sm); font-size: var(--text-footnote); color: var(--text-secondary);">
+                            <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">info</span>
+                            6か月以内の面談記録がないため、自動生成機能は利用できません。
+                            <a href="student_interview_detail.php?student_id=<?= $selectedStudentId ?>&new=1" style="color: var(--md-blue);">面談記録を作成</a>
+                        </div>
+                        <?php endif; ?>
+                        <textarea name="student_wish" id="studentWishTextarea" class="form-control" rows="6"><?= $kakehashiData['student_wish'] ?? '' ?></textarea>
                     </div>
 
                     <!-- 目標設定 -->
@@ -778,6 +847,52 @@ document.addEventListener('click', function(event) {
         });
     }
 });
+
+// 面談記録から本人の願いを自動生成
+function generateWishFromInterview() {
+    const btn = document.getElementById('generateWishBtn');
+    const textarea = document.getElementById('studentWishTextarea');
+    const studentId = document.getElementById('studentSelect').value;
+
+    if (!studentId) {
+        alert('生徒を選択してください。');
+        return;
+    }
+
+    if (textarea.value.trim() !== '' && !confirm('現在入力されている内容は上書きされます。\\n面談記録から本人の願いを自動生成しますか？')) {
+        return;
+    }
+
+    // ボタンを無効化してローディング表示
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> 生成中...';
+
+    fetch('generate_wish_from_interview.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'student_id=' + encodeURIComponent(studentId)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            textarea.value = data.wish;
+            alert('面談記録から本人の願いを生成しました。');
+        } else {
+            alert('エラー: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('通信エラーが発生しました。');
+    })
+    .finally(() => {
+        // ボタンを元に戻す
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-symbols-outlined">psychology</span> 面談記録から自動生成';
+    });
+}
 JS;
 
 renderPageEnd(['inlineJs' => $inlineJs]);
