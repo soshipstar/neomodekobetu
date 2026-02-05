@@ -627,89 +627,7 @@ foreach ($students as $student) {
     }
 }
 
-// モニタリング作成期限が近い生徒を検出（まだ作成されていないが期限が近い）
-$upcomingMonitoringDeadlines = [];
-foreach ($students as $student) {
-    try {
-        $supportStartDate = $student['support_start_date'] ?? null;
-        if (!$supportStartDate) continue;
-
-        // この生徒に個別支援計画書が存在するか確認
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM individual_support_plans WHERE student_id = ?");
-        $stmt->execute([$student['id']]);
-        $hasPlan = $stmt->fetchColumn() > 0;
-        if (!$hasPlan) continue; // 個別支援計画書がない場合はモニタリングも不要
-
-        // 最新の提出済みモニタリング日を取得
-        $stmt = $pdo->prepare("
-            SELECT MAX(monitoring_date) as latest_date
-            FROM monitoring_records
-            WHERE student_id = ? AND is_draft = 0
-        ");
-        $stmt->execute([$student['id']]);
-        $latestMonitoring = $stmt->fetch();
-        $latestMonitoringDate = $latestMonitoring['latest_date'] ?? null;
-
-        // モニタリング期限を計算
-        if (!$latestMonitoringDate) {
-            // 初回期限は支援開始日から5ヶ月後の前日
-            $deadline = new DateTime($supportStartDate);
-            $deadline->modify('+5 months');
-            $deadline->modify('-1 day');
-        } else {
-            // 次の期限は最新モニタリングから180日後
-            $deadline = new DateTime($latestMonitoringDate);
-            $deadline->modify('+180 days');
-        }
-
-        // 1ヶ月以内かチェック
-        $oneMonthLater = new DateTime();
-        $oneMonthLater->modify('+1 month');
-        $today = new DateTime();
-
-        if ($deadline <= $oneMonthLater) {
-            // 既に確認待ち/署名待ちのモニタリングがある場合は除外
-            $hasExistingAlert = false;
-            foreach ($pendingMonitoringRecords as $record) {
-                if ($record['student_id'] == $student['id']) {
-                    $hasExistingAlert = true;
-                    break;
-                }
-            }
-            foreach ($signaturePendingMonitoring as $record) {
-                if ($record['student_id'] == $student['id']) {
-                    $hasExistingAlert = true;
-                    break;
-                }
-            }
-
-            // 下書き中のモニタリングがある場合も除外
-            $stmt = $pdo->prepare("
-                SELECT COUNT(*) FROM monitoring_records
-                WHERE student_id = ? AND is_draft = 1
-            ");
-            $stmt->execute([$student['id']]);
-            $hasDraft = $stmt->fetchColumn() > 0;
-
-            if (!$hasExistingAlert && !$hasDraft) {
-                $daysLeft = $today->diff($deadline)->days;
-                if ($deadline < $today) {
-                    $daysLeft = -$daysLeft;
-                }
-
-                $upcomingMonitoringDeadlines[] = [
-                    'student_id' => $student['id'],
-                    'student_name' => $student['student_name'],
-                    'deadline' => $deadline->format('Y-m-d'),
-                    'days_left' => $daysLeft,
-                    'is_overdue' => $deadline < $today
-                ];
-            }
-        }
-    } catch (Exception $e) {
-        error_log("Error checking monitoring deadline for student " . $student['id'] . ": " . $e->getMessage());
-    }
-}
+// モニタリング期限のアラートは保護者には表示しない（署名依頼時のみ通知）
 
 // カレンダー用の確定済み面談を取得
 $calendarMeetings = [];
@@ -811,7 +729,6 @@ renderPageStart('guardian', $currentPage, 'ダッシュボード', [
 // アラートがあるかチェック
 $hasAlerts = !empty($pendingSupportPlans) || !empty($signaturePendingPlans) ||
              !empty($pendingMonitoringRecords) || !empty($signaturePendingMonitoring) ||
-             !empty($upcomingMonitoringDeadlines) ||
              !empty($pendingStaffKakehashi) ||
              !empty($overdueKakehashi) || !empty($urgentKakehashi) || !empty($pendingKakehashi) ||
              !empty($overdueSubmissions) || !empty($urgentSubmissions) ||
@@ -861,8 +778,8 @@ $hasAlerts = !empty($pendingSupportPlans) || !empty($signaturePendingPlans) ||
         </div>
         <?php endif; ?>
 
-        <?php if (!empty($pendingMonitoringRecords) || !empty($signaturePendingMonitoring) || !empty($upcomingMonitoringDeadlines)): ?>
-        <!-- モニタリング表のアラート -->
+        <?php if (!empty($pendingMonitoringRecords) || !empty($signaturePendingMonitoring)): ?>
+        <!-- モニタリング表のアラート（確認待ち・署名待ちのみ表示） -->
         <div class="alert-card" style="background: rgba(48, 176, 199, 0.1); border-left: 4px solid var(--md-teal); padding: var(--spacing-md); border-radius: var(--radius-md);">
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: var(--spacing-sm);">
                 <span class="material-symbols-outlined" style="color: var(--md-teal);">monitoring</span>
@@ -881,42 +798,6 @@ $hasAlerts = !empty($pendingSupportPlans) || !empty($signaturePendingPlans) ||
             <?php if (!empty($signaturePendingMonitoring)): ?>
             <div style="margin-bottom: var(--spacing-sm);">
                 <span style="color: var(--md-green); font-weight: 600;"><?= count($signaturePendingMonitoring) ?>件</span>の署名待ちがあります
-            </div>
-            <?php endif; ?>
-            <?php
-            // 期限切れと期限間近を分ける
-            $overdueMonitoring = array_filter($upcomingMonitoringDeadlines, fn($m) => $m['is_overdue']);
-            $urgentMonitoring = array_filter($upcomingMonitoringDeadlines, fn($m) => !$m['is_overdue'] && $m['days_left'] <= 7);
-            $warningMonitoring = array_filter($upcomingMonitoringDeadlines, fn($m) => !$m['is_overdue'] && $m['days_left'] > 7);
-            ?>
-            <?php if (!empty($overdueMonitoring)): ?>
-            <div style="margin-bottom: var(--spacing-sm); color: var(--md-red);">
-                <span style="font-weight: 600;"><?= count($overdueMonitoring) ?>件</span>の作成期限を過ぎています
-                <ul style="margin: var(--spacing-xs) 0 0 var(--spacing-lg); padding: 0; font-size: var(--text-footnote);">
-                    <?php foreach ($overdueMonitoring as $m): ?>
-                    <li><?= htmlspecialchars($m['student_name']) ?>さん（期限: <?= date('Y/m/d', strtotime($m['deadline'])) ?>）</li>
-                    <?php endforeach; ?>
-                </ul>
-            </div>
-            <?php endif; ?>
-            <?php if (!empty($urgentMonitoring)): ?>
-            <div style="margin-bottom: var(--spacing-sm);">
-                <span style="color: var(--md-orange); font-weight: 600;"><?= count($urgentMonitoring) ?>件</span>の作成期限が近づいています（7日以内）
-                <ul style="margin: var(--spacing-xs) 0 0 var(--spacing-lg); padding: 0; font-size: var(--text-footnote); color: var(--text-secondary);">
-                    <?php foreach ($urgentMonitoring as $m): ?>
-                    <li><?= htmlspecialchars($m['student_name']) ?>さん（期限: <?= date('Y/m/d', strtotime($m['deadline'])) ?>）</li>
-                    <?php endforeach; ?>
-                </ul>
-            </div>
-            <?php endif; ?>
-            <?php if (!empty($warningMonitoring)): ?>
-            <div style="margin-bottom: var(--spacing-sm);">
-                <span style="color: var(--text-secondary); font-weight: 600;"><?= count($warningMonitoring) ?>件</span>の作成期限が1ヶ月以内です
-                <ul style="margin: var(--spacing-xs) 0 0 var(--spacing-lg); padding: 0; font-size: var(--text-footnote); color: var(--text-secondary);">
-                    <?php foreach ($warningMonitoring as $m): ?>
-                    <li><?= htmlspecialchars($m['student_name']) ?>さん（期限: <?= date('Y/m/d', strtotime($m['deadline'])) ?>）</li>
-                    <?php endforeach; ?>
-                </ul>
             </div>
             <?php endif; ?>
             <a href="monitoring.php" style="display: inline-block; margin-top: var(--spacing-sm); color: var(--md-teal); text-decoration: none; font-weight: 500; font-size: var(--text-footnote);">

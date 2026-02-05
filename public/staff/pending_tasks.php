@@ -280,10 +280,48 @@ foreach ($allMonitoringData as $row) {
     }
 }
 
-// 表示対象を抽出
+// 表示対象を抽出（個別支援計画期限の1ヶ月前 = かけはしと同じ期限）
+$todayDt = new DateTime();
+$oneMonthLaterDt = new DateTime();
+$oneMonthLaterDt->modify('+1 month');
+
 foreach ($studentMonitorings as $studentId => $data) {
     $latestSubmittedId = $data['latest_submitted_monitoring_id'];
     $supportStartDate = $data['support_start_date'];
+
+    // 支援開始日がない場合はスキップ
+    if (!$supportStartDate) {
+        continue;
+    }
+
+    // 次の個別支援計画期限を計算（支援開始日から6ヶ月ごと）
+    $startDate = new DateTime($supportStartDate);
+    $nextPlanDeadline = clone $startDate;
+
+    // 次の計画期限を見つける（過去の期限はスキップ）
+    while ($nextPlanDeadline <= $todayDt) {
+        $nextPlanDeadline->modify('+6 months');
+    }
+
+    // モニタリング期限 = 個別支援計画期限の1ヶ月前（かけはしと同じ）
+    $deadline = clone $nextPlanDeadline;
+    $deadline->modify('-1 month');
+    $monitoringDeadline = $deadline->format('Y-m-d');
+    $daysLeft = (int)$todayDt->diff($deadline)->format('%r%a');
+    $isOverdue = $deadline < $todayDt;
+
+    // 期限が1ヶ月以上先の場合はスキップ
+    if ($deadline > $oneMonthLaterDt) {
+        continue;
+    }
+
+    // 個別支援計画が存在するか確認
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM individual_support_plans WHERE student_id = ?");
+    $stmt->execute([$studentId]);
+    $hasPlan = $stmt->fetchColumn() > 0;
+    if (!$hasPlan) {
+        continue;
+    }
 
     // 最新の提出済みモニタリングの日付を取得
     $latestSubmittedMonitoringDate = null;
@@ -294,29 +332,32 @@ foreach ($studentMonitorings as $studentId => $data) {
         }
     }
 
-    // モニタリング期限を計算する関数
-    $calcMonitoringDeadline = function($supportStartDate, $latestMonitoringDate) {
-        if (!$supportStartDate) return null;
+    // この期限に対応するモニタリングが既に作成されているか確認（期限の前後30日以内）
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*) FROM monitoring_records
+        WHERE student_id = ?
+        AND ABS(DATEDIFF(monitoring_date, ?)) <= 30
+        AND is_draft = 0
+    ");
+    $stmt->execute([$studentId, $monitoringDeadline]);
+    $hasMonitoringForPeriod = $stmt->fetchColumn() > 0;
 
-        if (!$latestMonitoringDate) {
-            // 初回期限は支援開始日から5ヶ月後の前日
-            $deadline = new DateTime($supportStartDate);
-            $deadline->modify('+5 months');
-            $deadline->modify('-1 day');
-            return $deadline->format('Y-m-d');
-        }
-
-        // 次の期限は最新モニタリングから180日後
-        $deadline = new DateTime($latestMonitoringDate);
-        $deadline->modify('+180 days');
-        return $deadline->format('Y-m-d');
-    };
+    // 既にこの期間のモニタリングが作成済みならスキップ
+    if ($hasMonitoringForPeriod) {
+        continue;
+    }
 
     // モニタリングがない場合
     if (empty($data['monitorings'])) {
-        // 次の期限が1ヶ月以内の場合のみ表示（非表示フラグがセットされている場合は除外）
-        if (isNextMonitoringDeadlineWithinOneMonth($supportStartDate, null) && !$data['hide_initial_monitoring']) {
-            $monitoringDeadline = $calcMonitoringDeadline($supportStartDate, null);
+        // 非表示フラグがセットされている場合は除外
+        if (!$data['hide_initial_monitoring']) {
+            if ($isOverdue) {
+                $statusCode = 'outdated';
+            } elseif ($daysLeft <= 7) {
+                $statusCode = 'urgent';
+            } else {
+                $statusCode = 'none';
+            }
             $studentsNeedingMonitoring[] = [
                 'id' => $studentId,
                 'student_name' => $data['student_name'],
@@ -324,9 +365,10 @@ foreach ($studentMonitorings as $studentId => $data) {
                 'monitoring_id' => null,
                 'monitoring_deadline' => $monitoringDeadline,
                 'days_since_monitoring' => null,
-                'status_code' => 'none',
+                'status_code' => $statusCode,
                 'has_newer' => false,
-                'is_hidden' => false
+                'is_hidden' => false,
+                'next_plan_deadline' => $nextPlanDeadline->format('Y-m-d')
             ];
         }
         continue;
@@ -343,24 +385,22 @@ foreach ($studentMonitorings as $studentId => $data) {
         }
     }
 
-    // 下書きがある場合は下書きのみ表示（次の期限が1ヶ月以内の場合のみ）
+    // 下書きがある場合
     if ($hasDraft && $draftMonitoring) {
-        if (isNextMonitoringDeadlineWithinOneMonth($supportStartDate, $latestSubmittedMonitoringDate)) {
-            $hasNewer = $latestSubmittedId && $draftMonitoring['monitoring_id'] != $latestSubmittedId;
-            $monitoringDeadline = $calcMonitoringDeadline($supportStartDate, $latestSubmittedMonitoringDate);
-            $studentsNeedingMonitoring[] = [
-                'id' => $studentId,
-                'student_name' => $data['student_name'],
-                'support_start_date' => $supportStartDate,
-                'monitoring_id' => $draftMonitoring['monitoring_id'],
-                'plan_id' => $draftMonitoring['plan_id'],
-                'monitoring_deadline' => $monitoringDeadline,
-                'days_since_monitoring' => $draftMonitoring['days_since_monitoring'],
-                'status_code' => 'draft',
-                'has_newer' => $hasNewer,
-                'is_hidden' => false
-            ];
-        }
+        $hasNewer = $latestSubmittedId && $draftMonitoring['monitoring_id'] != $latestSubmittedId;
+        $studentsNeedingMonitoring[] = [
+            'id' => $studentId,
+            'student_name' => $data['student_name'],
+            'support_start_date' => $supportStartDate,
+            'monitoring_id' => $draftMonitoring['monitoring_id'],
+            'plan_id' => $draftMonitoring['plan_id'],
+            'monitoring_deadline' => $monitoringDeadline,
+            'days_since_monitoring' => $draftMonitoring['days_since_monitoring'],
+            'status_code' => 'draft',
+            'has_newer' => $hasNewer,
+            'is_hidden' => false,
+            'next_plan_deadline' => $nextPlanDeadline->format('Y-m-d')
+        ];
         continue;
     }
 
@@ -372,7 +412,6 @@ foreach ($studentMonitorings as $studentId => $data) {
 
         // 提出済みで保護者未確認かつ最新の提出済み
         if (!$monitoring['is_draft'] && !$monitoring['guardian_confirmed'] && $monitoring['monitoring_id'] == $latestSubmittedId) {
-            $monitoringDeadline = $calcMonitoringDeadline($supportStartDate, $monitoring['monitoring_date']);
             $studentsNeedingMonitoring[] = [
                 'id' => $studentId,
                 'student_name' => $data['student_name'],
@@ -384,38 +423,37 @@ foreach ($studentMonitorings as $studentId => $data) {
                 'status_code' => 'needs_confirm',
                 'has_newer' => false,
                 'is_hidden' => false,
-                'guardian_confirmed' => false
+                'guardian_confirmed' => false,
+                'next_plan_deadline' => $nextPlanDeadline->format('Y-m-d')
             ];
             $needsGuardianConfirm = true;
             break;
         }
     }
 
-    // 保護者確認が必要でない場合、期限切れかチェック
+    // 保護者確認が必要でない場合、新しいモニタリングが必要かチェック
     if (!$needsGuardianConfirm) {
-        foreach ($data['monitorings'] as $monitoring) {
-            // 非表示のものはスキップ
-            if ($monitoring['is_hidden']) continue;
-
-            // 提出済みで150日以上経過（残り1ヶ月以内）
-            if (!$monitoring['is_draft'] && $monitoring['days_since_monitoring'] >= 150 && $monitoring['monitoring_id'] == $latestSubmittedId) {
-                $monitoringDeadline = $calcMonitoringDeadline($supportStartDate, $monitoring['monitoring_date']);
-                $studentsNeedingMonitoring[] = [
-                    'id' => $studentId,
-                    'student_name' => $data['student_name'],
-                    'support_start_date' => $supportStartDate,
-                    'monitoring_id' => $monitoring['monitoring_id'],
-                    'plan_id' => $monitoring['plan_id'],
-                    'monitoring_deadline' => $monitoringDeadline,
-                    'days_since_monitoring' => $monitoring['days_since_monitoring'],
-                    'status_code' => 'outdated',
-                    'has_newer' => false,
-                    'is_hidden' => false,
-                    'guardian_confirmed' => $monitoring['guardian_confirmed']
-                ];
-                break;
-            }
+        if ($isOverdue) {
+            $statusCode = 'outdated';
+        } elseif ($daysLeft <= 7) {
+            $statusCode = 'urgent';
+        } else {
+            $statusCode = 'none';
         }
+        $studentsNeedingMonitoring[] = [
+            'id' => $studentId,
+            'student_name' => $data['student_name'],
+            'support_start_date' => $supportStartDate,
+            'monitoring_id' => null,
+            'plan_id' => null,
+            'monitoring_deadline' => $monitoringDeadline,
+            'days_since_monitoring' => null,
+            'status_code' => $statusCode,
+            'has_newer' => false,
+            'is_hidden' => false,
+            'guardian_confirmed' => false,
+            'next_plan_deadline' => $nextPlanDeadline->format('Y-m-d')
+        ];
     }
 }
 
@@ -997,7 +1035,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                                                     <button class="btn-hide" onclick="hideItem('monitoring', <?php echo $student['monitoring_id']; ?>, this)">
                                                         非表示
                                                     </button>
-                                                <?php elseif ($student['status_code'] === 'none'): ?>
+                                                <?php elseif (!$student['monitoring_id']): ?>
                                                     <button class="btn-hide" onclick="hideInitialMonitoring(<?php echo $student['id']; ?>, this)">
                                                         非表示
                                                     </button>
@@ -1222,7 +1260,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         function hideInitialMonitoring(studentId, button) {
-            if (!confirm('この生徒の初回モニタリング未作成を非表示にしますか？\n非表示にすると、タスク一覧に表示されなくなります。')) {
+            if (!confirm('このモニタリングタスクを非表示にしますか？\n非表示にすると、タスク一覧に表示されなくなります。')) {
                 return;
             }
 
