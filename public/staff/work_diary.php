@@ -254,18 +254,18 @@ renderPageStart('staff', $currentPage, '業務日誌');
 }
 
 .success-message {
-    background: #d4edda;
-    color: #155724;
+    background: rgba(36, 161, 72, 0.15);
+    color: var(--cds-support-success);
     padding: var(--spacing-md);
-    border-radius: var(--radius-sm);
+    border-radius: 0;
     margin-bottom: var(--spacing-lg);
 }
 
 .error-message {
-    background: #f8d7da;
-    color: #721c24;
+    background: rgba(218, 30, 40, 0.15);
+    color: var(--cds-support-error);
     padding: var(--spacing-md);
-    border-radius: var(--radius-sm);
+    border-radius: 0;
     margin-bottom: var(--spacing-lg);
 }
 </style>

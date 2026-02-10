@@ -137,11 +137,11 @@ function getGradeLabel($gradeLevel) {
 }
 
 function getGradeBadgeColor($gradeLevel) {
-    if ($gradeLevel === 'preschool') return '#FF9800';
-    if (strpos($gradeLevel, 'elementary') === 0) return '#388E3C';
-    if (strpos($gradeLevel, 'junior_high') === 0) return '#007bff';
-    if (strpos($gradeLevel, 'high_school') === 0) return '#dc3545';
-    return '#6c757d';
+    if ($gradeLevel === 'preschool') return 'var(--cds-orange-50)';
+    if (strpos($gradeLevel, 'elementary') === 0) return 'var(--cds-support-success)';
+    if (strpos($gradeLevel, 'junior_high') === 0) return 'var(--cds-blue-60)';
+    if (strpos($gradeLevel, 'high_school') === 0) return 'var(--cds-support-error)';
+    return 'var(--cds-text-secondary)';
 }
 
 // ページ開始
@@ -153,7 +153,7 @@ renderPageStart('staff', $currentPage, '生徒管理');
 .grade-badge {
     display: inline-block;
     padding: 4px 10px;
-    border-radius: var(--radius-md);
+    border-radius: 0;
     font-size: var(--text-caption-1);
     color: white;
     font-weight: bold;
@@ -161,7 +161,7 @@ renderPageStart('staff', $currentPage, '生徒管理');
 .status-badge {
     display: inline-block;
     padding: 4px 10px;
-    border-radius: var(--radius-md);
+    border-radius: 0;
     font-size: var(--text-caption-1);
     font-weight: bold;
 }
@@ -183,7 +183,7 @@ renderPageStart('staff', $currentPage, '生徒管理');
 .modal-content {
     background: var(--md-bg-primary);
     padding: var(--spacing-2xl);
-    border-radius: var(--radius-md);
+    border-radius: 0;
     max-width: 700px;
     width: 90%;
     max-height: 90vh;
@@ -209,7 +209,7 @@ renderPageStart('staff', $currentPage, '生徒管理');
 .login-settings {
     background: var(--md-gray-6);
     padding: 15px;
-    border-radius: var(--radius-sm);
+    border-radius: 0;
     border: 1px solid var(--md-gray-5);
 }
 </style>

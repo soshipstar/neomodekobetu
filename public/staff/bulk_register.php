@@ -102,10 +102,10 @@ renderPageStart($role, $currentPage, '利用者一括登録', [
 }
 .ai-badge {
     display: inline-block;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--cds-purple-60);
     color: white;
     padding: 2px 8px;
-    border-radius: 10px;
+    border-radius: 0;
     font-size: 11px;
     font-weight: 600;
     margin-left: 6px;
@@ -176,7 +176,7 @@ renderPageStart($role, $currentPage, '利用者一括登録', [
 
     <!-- AI自動解析 -->
     <div id="panel-ai" class="upload-panel">
-        <div class="info-box" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-radius: var(--radius-md); border: 1px solid rgba(102, 126, 234, 0.3);">
+        <div class="info-box" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); background: rgba(111, 66, 193, 0.15); border-radius: var(--radius-md); border: 1px solid rgba(111, 66, 193, 0.3);">
             <h3 style="margin-bottom: var(--spacing-sm); font-size: var(--text-body);">
                 AI自動解析について <span class="ai-badge">AI</span>
             </h3>
@@ -203,7 +203,7 @@ renderPageStart($role, $currentPage, '利用者一括登録', [
             </div>
 
             <div class="form-actions" style="margin-top: var(--spacing-xl);">
-                <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <button type="submit" class="btn btn-primary" style="background: var(--cds-purple-60);">
                     AIで解析する
                 </button>
             </div>

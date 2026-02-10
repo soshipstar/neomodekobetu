@@ -120,13 +120,13 @@ renderPageStart('staff', $currentPage, 'タグ設定');
 }
 
 .info-box {
-    background: #e7f3ff;
+    background: rgba(33, 150, 243, 0.15);
     padding: 15px;
-    border-radius: var(--radius-sm);
-    border-left: 4px solid #2196F3;
+    border-radius: 0;
+    border-left: 4px solid var(--cds-blue-60);
     margin-bottom: 25px;
     font-size: var(--text-subhead);
-    color: var(--text-primary);
+    color: var(--cds-text-primary);
 }
 
 .tag-list {
@@ -266,11 +266,11 @@ renderPageStart('staff', $currentPage, 'タグ設定');
 <?php endif; ?>
 
 <?php if (isset($_SESSION['warning'])): ?>
-    <div class="alert" style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: var(--radius-sm); margin-bottom: var(--spacing-lg);">
+    <div class="alert" style="background: rgba(255, 193, 7, 0.15); border-left: 4px solid var(--cds-support-warning); padding: 15px; border-radius: 0; margin-bottom: var(--spacing-lg);">
         <strong>注意:</strong> <?= htmlspecialchars($_SESSION['warning']) ?>
         <div style="margin-top: 10px; font-size: var(--text-footnote);">
             以下のSQLをデータベースで実行してください：<br>
-            <code style="background: #f8f9fa; padding: 2px 6px; border-radius: 4px;">migrations/v57_classroom_tags.sql</code>
+            <code style="background: var(--cds-ui-light-01); padding: 2px 6px; border-radius: 0;">migrations/v57_classroom_tags.sql</code>
         </div>
     </div>
     <?php unset($_SESSION['warning']); ?>

@@ -167,7 +167,7 @@ renderPageStart('staff', $currentPage, '生徒週間計画表');
             align-items: center;
             margin-bottom: 15px;
             padding-bottom: 15px;
-            border-bottom: 2px solid #f0f0f0;
+            border-bottom: 2px solid var(--cds-border-subtle-00);
         }
 
         .student-avatar {
@@ -202,13 +202,13 @@ renderPageStart('staff', $currentPage, '生徒週間計画表');
         }
 
         .status-badge.active {
-            background: #d4edda;
-            color: #155724;
+            background: rgba(36, 161, 72, 0.15);
+            color: var(--cds-support-success);
         }
 
         .status-badge.inactive {
             background: var(--md-bg-secondary);
-            color: #721c24;
+            color: var(--cds-support-error);
         }
 
         .plan-preview {

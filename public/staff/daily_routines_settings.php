@@ -113,10 +113,10 @@ renderPageStart('staff', $currentPage, '毎日の支援設定');
 }
 
 .info-box {
-    background: #e7f3ff;
+    background: rgba(33, 150, 243, 0.15);
     padding: 15px;
-    border-radius: var(--radius-sm);
-    border-left: 4px solid #2196F3;
+    border-radius: 0;
+    border-left: 4px solid var(--cds-blue-60);
     margin-bottom: 25px;
     font-size: var(--text-subhead);
     color: var(--text-primary);
@@ -137,7 +137,7 @@ renderPageStart('staff', $currentPage, '毎日の支援設定');
 
 .routine-card.filled {
     border-color: var(--md-green);
-    background: #f0fff0;
+    background: rgba(36, 161, 72, 0.15);
 }
 
 .routine-header {
@@ -262,7 +262,7 @@ renderPageStart('staff', $currentPage, '毎日の支援設定');
 }
 
 .add-routine-btn:hover {
-    background: #1565C0;
+    background: var(--cds-blue-60);
 }
 
 .add-routine-btn:disabled {
@@ -306,11 +306,11 @@ renderPageStart('staff', $currentPage, '毎日の支援設定');
 <?php endif; ?>
 
 <?php if (isset($_SESSION['warning'])): ?>
-    <div class="alert" style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: var(--radius-sm); margin-bottom: var(--spacing-lg);">
+    <div class="alert" style="background: rgba(255, 193, 7, 0.15); border-left: 4px solid var(--cds-support-warning); padding: 15px; border-radius: 0; margin-bottom: var(--spacing-lg);">
         <strong>注意:</strong> <?= htmlspecialchars($_SESSION['warning']) ?>
         <div style="margin-top: 10px; font-size: var(--text-footnote);">
             以下のSQLをデータベースで実行してください：<br>
-            <code style="background: #f8f9fa; padding: 2px 6px; border-radius: 4px;">migrations/v56_daily_routines.sql</code>
+            <code style="background: var(--cds-border-subtle-00); padding: 2px 6px; border-radius: 0;">migrations/v56_daily_routines.sql</code>
         </div>
     </div>
     <?php unset($_SESSION['warning']); ?>

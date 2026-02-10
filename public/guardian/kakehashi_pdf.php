@@ -89,14 +89,14 @@ if ($kakehashiData && $kakehashiData['is_hidden']) {
         .header {
             text-align: center;
             margin-bottom: var(--spacing-lg);
-            border-bottom: 2px solid #333;
+            border-bottom: 2px solid var(--cds-text-primary);
             padding-bottom: 10px;
         }
 
         .header h1 {
             font-size: 18pt;
             margin: 0 0 10px 0;
-            color: #333;
+            color: var(--cds-text-primary);
         }
 
         .meta-info {
@@ -121,22 +121,22 @@ if ($kakehashiData && $kakehashiData['is_hidden']) {
         }
 
         .section-title {
-            background: #4a5568;
+            background: var(--cds-text-primary);
             color: white;
             padding: 8px 12px;
             font-weight: bold;
             font-size: 12pt;
             margin-bottom: 10px;
-            border-radius: 4px;
+            border-radius: 0;
         }
 
         .section-content {
             padding: var(--spacing-md);
-            border: 1px solid #ccc;
+            border: 1px solid var(--cds-border-subtle-00);
             min-height: 60px;
             white-space: pre-wrap;
-            background: #f9f9f9;
-            border-radius: 4px;
+            background: rgba(0,0,0,0.02);
+            border-radius: 0;
         }
 
         .domains-grid {
@@ -152,10 +152,10 @@ if ($kakehashiData && $kakehashiData['is_hidden']) {
 
         .domain-label {
             font-weight: bold;
-            background: #e2e8f0;
+            background: rgba(0,0,0,0.05);
             padding: 6px 10px;
             margin-bottom: 5px;
-            border-radius: 4px;
+            border-radius: 0;
         }
 
         .print-button {
@@ -163,10 +163,10 @@ if ($kakehashiData && $kakehashiData['is_hidden']) {
             top: 20px;
             right: 20px;
             padding: 15px 30px;
-            background: #3b82f6;
+            background: var(--cds-blue-60);
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 0;
             font-size: 14pt;
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
@@ -174,7 +174,8 @@ if ($kakehashiData && $kakehashiData['is_hidden']) {
         }
 
         .print-button:hover {
-            background: #2563eb;
+            background: var(--cds-blue-60);
+            opacity: 0.8;
         }
 
         .status-badge {
@@ -186,12 +187,12 @@ if ($kakehashiData && $kakehashiData['is_hidden']) {
         }
 
         .status-submitted {
-            background: #10b981;
+            background: var(--cds-support-success);
             color: white;
         }
 
         .status-draft {
-            background: #f59e0b;
+            background: var(--cds-support-warning);
             color: white;
         }
     </style>

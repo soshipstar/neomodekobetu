@@ -74,7 +74,7 @@ renderPageStart('staff', $currentPage, '生徒面談記録');
 
     .student-card {
         background: var(--md-bg-primary);
-        border-radius: var(--radius-md);
+        border-radius: 0;
         padding: var(--spacing-lg);
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         transition: transform var(--duration-fast) var(--ease-out), box-shadow 0.2s;
@@ -94,7 +94,7 @@ renderPageStart('staff', $currentPage, '生徒面談記録');
         align-items: center;
         margin-bottom: 15px;
         padding-bottom: 15px;
-        border-bottom: 2px solid #f0f0f0;
+        border-bottom: 2px solid var(--cds-border-subtle-00);
     }
 
     .student-avatar {
@@ -123,19 +123,19 @@ renderPageStart('staff', $currentPage, '生徒面談記録');
     .status-badge {
         display: inline-block;
         padding: 6px 12px;
-        border-radius: var(--radius-lg);
+        border-radius: 0;
         font-size: var(--text-footnote);
         font-weight: 600;
     }
 
     .status-badge.active {
-        background: #d4edda;
-        color: #155724;
+        background: rgba(36, 161, 72, 0.15);
+        color: var(--cds-support-success);
     }
 
     .status-badge.inactive {
         background: var(--md-bg-secondary);
-        color: #666;
+        color: var(--cds-text-secondary);
     }
 
     .interview-preview {
@@ -155,7 +155,7 @@ renderPageStart('staff', $currentPage, '生徒面談記録');
         padding: 60px 20px;
         color: var(--text-secondary);
         background: var(--md-bg-primary);
-        border-radius: var(--radius-md);
+        border-radius: 0;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
 

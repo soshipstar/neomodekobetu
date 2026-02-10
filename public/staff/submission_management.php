@@ -228,7 +228,7 @@ renderPageStart('staff', $currentPage, '提出期限管理');
         }
 
         .stat-card.pending .stat-value {
-            color: #ff9800;
+            color: var(--cds-orange-50);
         }
 
         .stat-card.completed .stat-value {
@@ -246,7 +246,7 @@ renderPageStart('staff', $currentPage, '提出期限管理');
             display: flex;
             gap: 10px;
             margin-bottom: var(--spacing-lg);
-            border-bottom: 2px solid #e1e8ed;
+            border-bottom: 2px solid var(--cds-border-subtle-00);
         }
 
         .filter-tab {
@@ -278,7 +278,7 @@ renderPageStart('staff', $currentPage, '提出期限管理');
         }
 
         .submission-card {
-            border: 2px solid #e1e8ed;
+            border: 2px solid var(--cds-border-subtle-00);
             border-radius: var(--radius-md);
             padding: var(--spacing-lg);
             transition: all var(--duration-normal) var(--ease-out);
@@ -338,7 +338,7 @@ renderPageStart('staff', $currentPage, '提出期限管理');
             align-items: center;
             gap: 5px;
             padding: var(--spacing-sm) 12px;
-            background: #e8eaf6;
+            background: var(--cds-border-subtle-00);
             color: var(--primary-purple);
             text-decoration: none;
             border-radius: var(--radius-sm);
@@ -349,7 +349,7 @@ renderPageStart('staff', $currentPage, '提出期限管理');
         }
 
         .attachment-link:hover {
-            background: #c5cae9;
+            background: var(--cds-border-subtle-01);
         }
 
         .due-date {
@@ -367,11 +367,11 @@ renderPageStart('staff', $currentPage, '提出期限管理');
 
         .due-date.soon {
             background: var(--md-bg-secondary);
-            color: #856404;
+            color: var(--cds-support-warning);
         }
 
         .due-date.normal {
-            background: #e8eaf6;
+            background: var(--cds-border-subtle-00);
             color: var(--primary-purple);
         }
 
@@ -384,8 +384,8 @@ renderPageStart('staff', $currentPage, '提出期限管理');
         .completed-badge {
             display: inline-block;
             padding: 6px 12px;
-            background: #d4edda;
-            color: #155724;
+            background: rgba(36, 161, 72, 0.15);
+            color: var(--cds-support-success);
             border-radius: var(--radius-sm);
             font-size: var(--text-footnote);
             font-weight: 600;
@@ -457,7 +457,7 @@ renderPageStart('staff', $currentPage, '提出期限管理');
         .form-group textarea {
             width: 100%;
             padding: var(--spacing-md);
-            border: 2px solid #e1e8ed;
+            border: 2px solid var(--cds-border-subtle-00);
             border-radius: var(--radius-sm);
             font-size: var(--text-subhead);
             font-family: inherit;

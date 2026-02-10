@@ -316,13 +316,13 @@ html, body {
 }
 
 .section-header.pinned {
-    background: rgba(255, 204, 0, 0.2);
-    color: #b8860b;
+    background: rgba(218, 30, 40, 0.15);
+    color: var(--cds-support-warning);
 }
 
 .section-header.unread {
-    background: rgba(255, 59, 48, 0.1);
-    color: var(--md-red);
+    background: rgba(218, 30, 40, 0.15);
+    color: var(--cds-support-error);
 }
 
 .accordion-header {
@@ -388,8 +388,8 @@ html, body {
 }
 
 .student-item.active {
-    background: rgba(0, 122, 255, 0.2);
-    border-left: 4px solid var(--md-blue);
+    background: rgba(13, 110, 253, 0.15);
+    border-left: 0px solid var(--cds-blue-60);
 }
 
 .student-item.has-unread {
@@ -411,7 +411,7 @@ html, body {
 }
 
 .pin-icon {
-    color: #ffc107;
+    color: var(--cds-support-warning);
     font-size: 12px;
 }
 
@@ -497,9 +497,9 @@ html, body {
 }
 
 .pin-btn.pinned {
-    background: rgba(255, 204, 0, 0.2);
-    border-color: #ffc107;
-    color: #b8860b;
+    background: rgba(218, 30, 40, 0.15);
+    border-color: var(--cds-support-warning);
+    color: var(--cds-support-warning);
 }
 
 .submission-btn {
@@ -633,8 +633,8 @@ html, body {
 
 /* 面談予約メッセージ */
 .message-bubble.meeting {
-    background: linear-gradient(135deg, rgba(175, 82, 222, 0.15) 0%, rgba(175, 82, 222, 0.08) 100%) !important;
-    border: 1px solid rgba(175, 82, 222, 0.3);
+    background: rgba(125, 84, 221, 0.15) !important;
+    border: 1px solid rgba(125, 84, 221, 0.3);
 }
 </style>
 
@@ -810,7 +810,7 @@ html, body {
                     <button class="pin-btn <?= $selectedStudentPinned ? 'pinned' : '' ?>" onclick="togglePin()" id="pinBtn">
                         <span class="material-symbols-outlined">push_pin</span> <?= $selectedStudentPinned ? 'ピン解除' : 'ピン留め' ?>
                     </button>
-                    <a href="meeting_request.php?student_id=<?= $selectedStudentId ?>" class="submission-btn" style="background: var(--md-purple); text-decoration: none;"><span class="material-symbols-outlined">calendar_month</span> 面談予約</a>
+                    <a href="meeting_request.php?student_id=<?= $selectedStudentId ?>" class="submission-btn" style="background: var(--cds-purple-60); text-decoration: none; border-color: var(--cds-purple-60);"><span class="material-symbols-outlined">calendar_month</span> 面談予約</a>
                     <button class="submission-btn" onclick="openSubmissionModal()"><span class="material-symbols-outlined">assignment</span> 提出期限</button>
                 </div>
             </div>
@@ -1020,8 +1020,8 @@ function appendMessage(msg) {
     }
     // 保護者からの面談申し込み・対案メッセージにはリンクを表示
     if ((isMeetingRequest || isMeetingCounter) && !isStaffOrAdmin && msg.meeting_request_id) {
-        html += '<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(175, 82, 222, 0.3);">';
-        html += '<a href="meeting_response.php?request_id=' + msg.meeting_request_id + '" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; background: var(--md-purple); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">';
+        html += '<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(125, 84, 221, 0.3);">';
+        html += '<a href="meeting_response.php?request_id=' + msg.meeting_request_id + '" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; background: var(--cds-purple-60); color: white; text-decoration: none; border-radius: 0; font-weight: 600;">';
         html += '<span class="material-symbols-outlined" style="font-size: 18px;">calendar_month</span> 日程を確認・回答する';
         html += '</a></div>';
     }

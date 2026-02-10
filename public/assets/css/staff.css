@@ -1,6 +1,6 @@
 /**
- * スタッフ用CSS
- * アクセントカラー: 青 (--md-blue)
+ * スタッフ用CSS - Carbon Design System
+ * アクセントカラー: 青 (--cds-blue-60)
  */
 
 /* ========================================
@@ -8,31 +8,35 @@
    ======================================== */
 
 .role-staff .sidebar-menu a:hover {
-    background: rgba(0, 122, 255, 0.1);
-    border-left-color: var(--md-blue);
+    background: rgba(15, 98, 254, 0.1);
+    border-left-color: var(--cds-blue-60);
 }
 
 .role-staff .sidebar-menu a.active {
-    background: rgba(0, 122, 255, 0.15);
-    border-left-color: var(--md-blue);
-    color: var(--md-blue);
+    background: rgba(15, 98, 254, 0.15);
+    border-left-color: var(--cds-blue-60);
+    color: var(--cds-blue-60);
 }
 
 .role-staff .sidebar-user-info {
-    background: rgba(0, 122, 255, 0.1);
+    background: rgba(15, 98, 254, 0.1);
 }
 
 .role-staff .user-info-box {
-    background: rgba(0, 122, 255, 0.1);
-    color: var(--md-blue);
+    background: rgba(15, 98, 254, 0.1);
+    color: var(--cds-blue-60);
 }
 
 .role-staff .stat-card .number {
-    color: var(--md-blue);
+    color: var(--cds-blue-60);
 }
 
 .role-staff .menu-card h3 {
-    color: var(--md-blue);
+    color: var(--cds-blue-60);
+}
+
+.role-staff .menu-card:hover {
+    border-left-color: var(--cds-blue-60);
 }
 
 /* ========================================
@@ -41,27 +45,27 @@
 
 /* 活動カレンダー */
 .activity-calendar {
-    background: var(--md-bg-primary);
-    border-radius: var(--radius-md);
-    padding: var(--spacing-lg);
-    box-shadow: var(--shadow-sm);
+    background: var(--cds-layer-01);
+    border-radius: 0;
+    padding: var(--cds-spacing-06);
+    box-shadow: var(--cds-shadow);
 }
 
 .calendar-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--cds-spacing-05);
 }
 
 .calendar-title {
-    font-size: var(--text-headline);
+    font-size: 18px;
     font-weight: 600;
 }
 
 .calendar-nav {
     display: flex;
-    gap: var(--spacing-sm);
+    gap: var(--cds-spacing-03);
 }
 
 .calendar-grid {
@@ -72,10 +76,10 @@
 
 .calendar-day-header {
     text-align: center;
-    padding: var(--spacing-sm);
-    font-size: var(--text-caption-1);
+    padding: var(--cds-spacing-03);
+    font-size: 12px;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: var(--cds-text-secondary);
 }
 
 .calendar-day {
@@ -84,19 +88,19 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: var(--spacing-xs);
-    border-radius: var(--radius-sm);
+    padding: var(--cds-spacing-02);
+    border-radius: 0;
     cursor: pointer;
-    transition: all var(--duration-fast) var(--ease-out);
+    transition: all 0.11s cubic-bezier(0.2, 0, 0.38, 0.9);
 }
 
 .calendar-day:hover {
-    background: rgba(0, 122, 255, 0.1);
+    background: rgba(15, 98, 254, 0.1);
 }
 
 .calendar-day.today {
-    background: var(--md-blue);
-    color: white;
+    background: var(--cds-blue-60);
+    color: var(--cds-text-on-color);
 }
 
 .calendar-day.has-records {
@@ -109,32 +113,32 @@
     bottom: 4px;
     width: 6px;
     height: 6px;
-    background: var(--md-green);
+    background: var(--cds-support-success);
     border-radius: 50%;
 }
 
 .calendar-day.holiday {
-    color: var(--md-red);
+    color: var(--cds-support-error);
 }
 
 .calendar-day.other-month {
-    color: var(--md-gray-3);
+    color: var(--cds-text-helper);
 }
 
 /* 生徒選択リスト */
 .student-list {
-    background: var(--md-bg-primary);
-    border-radius: var(--radius-md);
+    background: var(--cds-layer-01);
+    border-radius: 0;
     overflow: hidden;
 }
 
 .student-item {
     display: flex;
     align-items: center;
-    padding: var(--spacing-md) var(--spacing-lg);
-    border-bottom: 1px solid var(--md-gray-5);
+    padding: var(--cds-spacing-04) var(--cds-spacing-05);
+    border-bottom: 1px solid var(--cds-border-subtle-00);
     cursor: pointer;
-    transition: background var(--duration-fast) var(--ease-out);
+    transition: background 0.11s cubic-bezier(0.2, 0, 0.38, 0.9);
 }
 
 .student-item:last-child {
@@ -142,24 +146,24 @@
 }
 
 .student-item:hover {
-    background: rgba(0, 122, 255, 0.05);
+    background: rgba(15, 98, 254, 0.05);
 }
 
 .student-item.selected {
-    background: rgba(0, 122, 255, 0.1);
-    border-left: 3px solid var(--md-blue);
+    background: rgba(15, 98, 254, 0.1);
+    border-left: 3px solid var(--cds-blue-60);
 }
 
 .student-avatar {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: var(--md-gray-5);
+    background: var(--cds-layer-02);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 18px;
-    margin-right: var(--spacing-md);
+    margin-right: var(--cds-spacing-04);
 }
 
 .student-info {
@@ -168,32 +172,32 @@
 
 .student-name {
     font-weight: 500;
-    color: var(--text-primary);
+    color: var(--cds-text-primary);
 }
 
 .student-grade {
-    font-size: var(--text-caption-1);
-    color: var(--text-secondary);
+    font-size: 12px;
+    color: var(--cds-text-secondary);
 }
 
 /* 通知バッジ */
-.notification-badge {
+.notification-badge-staff {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     min-width: 20px;
     height: 20px;
     padding: 0 6px;
-    background: var(--md-red);
-    color: white;
-    border-radius: var(--radius-full);
+    background: var(--cds-support-error);
+    color: var(--cds-text-on-color);
+    border-radius: 10px;
     font-size: 11px;
     font-weight: 600;
 }
 
 /* 未読メッセージバッジ */
 .unread-badge {
-    background: var(--md-blue);
+    background: var(--cds-blue-60);
 }
 
 /* かけはしステータス */
@@ -201,25 +205,25 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 4px 10px;
-    border-radius: var(--radius-full);
+    padding: 4px 12px;
+    border-radius: 0;
     font-size: 12px;
     font-weight: 500;
 }
 
 .kakehashi-status.completed {
-    background: rgba(52, 199, 89, 0.15);
-    color: var(--md-green);
+    background: rgba(36, 161, 72, 0.15);
+    color: var(--cds-support-success);
 }
 
 .kakehashi-status.pending {
-    background: rgba(255, 149, 0, 0.15);
-    color: var(--md-orange);
+    background: rgba(255, 131, 43, 0.15);
+    color: var(--cds-orange-50);
 }
 
 .kakehashi-status.not-started {
-    background: rgba(142, 142, 147, 0.15);
-    color: var(--md-gray-2);
+    background: var(--cds-layer-01);
+    color: var(--cds-text-helper);
 }
 
 /* ========================================
@@ -227,61 +231,61 @@
    ======================================== */
 
 .task-accordion-container {
-    background: var(--md-bg-primary);
-    border-radius: var(--radius-md);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    margin-bottom: 20px;
+    background: var(--cds-layer-01);
+    border-radius: 0;
+    box-shadow: var(--cds-shadow);
+    margin-bottom: var(--cds-spacing-05);
     overflow: hidden;
-    border: 1px solid var(--md-gray-5);
+    border: 1px solid var(--cds-border-subtle-00);
 }
 
 .task-accordion-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 20px;
-    background: linear-gradient(135deg, rgba(255, 59, 48, 0.08) 0%, rgba(255, 149, 0, 0.08) 100%);
+    padding: var(--cds-spacing-04) var(--cds-spacing-05);
+    background: rgba(218, 30, 40, 0.08);
     cursor: pointer;
-    transition: background var(--duration-fast) var(--ease-out);
+    transition: background 0.11s cubic-bezier(0.2, 0, 0.38, 0.9);
 }
 
 .task-accordion-header:hover {
-    background: linear-gradient(135deg, rgba(255, 59, 48, 0.12) 0%, rgba(255, 149, 0, 0.12) 100%);
+    background: rgba(218, 30, 40, 0.12);
 }
 
 .task-accordion-title {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 15px;
+    gap: var(--cds-spacing-03);
+    font-size: 14px;
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--cds-text-primary);
 }
 
 .task-accordion-title .material-symbols-outlined {
     font-size: 22px;
-    color: var(--md-red);
+    color: var(--cds-support-error);
 }
 
 .task-accordion-badge {
-    background: var(--md-red);
-    color: white;
+    background: var(--cds-support-error);
+    color: var(--cds-text-on-color);
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     padding: 4px 10px;
-    border-radius: 12px;
+    border-radius: 0;
     margin-left: 4px;
 }
 
 .task-accordion-toggle {
     font-size: 12px;
-    color: var(--text-tertiary);
-    transition: transform var(--duration-fast) var(--ease-out);
+    color: var(--cds-text-helper);
+    transition: transform 0.11s cubic-bezier(0.2, 0, 0.38, 0.9);
 }
 
 .task-accordion-content {
     display: none;
-    border-top: 1px solid var(--md-gray-5);
+    border-top: 1px solid var(--cds-border-subtle-00);
 }
 
 .task-accordion-content.expanded {
@@ -291,12 +295,12 @@
 .task-accordion-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 14px 20px;
+    gap: var(--cds-spacing-04);
+    padding: var(--cds-spacing-04) var(--cds-spacing-05);
     text-decoration: none;
-    color: var(--text-primary);
-    border-bottom: 1px solid var(--md-gray-6);
-    transition: background var(--duration-fast) var(--ease-out);
+    color: var(--cds-text-primary);
+    border-bottom: 1px solid var(--cds-border-subtle-00);
+    transition: background 0.11s cubic-bezier(0.2, 0, 0.38, 0.9);
 }
 
 .task-accordion-item:last-child {
@@ -304,7 +308,7 @@
 }
 
 .task-accordion-item:hover {
-    background: rgba(0, 0, 0, 0.03);
+    background: var(--cds-layer-hover-01);
 }
 
 .task-accordion-item .material-symbols-outlined {
@@ -329,41 +333,41 @@
     font-size: 11px;
     font-weight: 600;
     padding: 3px 8px;
-    border-radius: 10px;
+    border-radius: 0;
 }
 
 .task-badge.overdue {
-    background: rgba(255, 59, 48, 0.15);
-    color: var(--md-red);
+    background: rgba(218, 30, 40, 0.15);
+    color: var(--cds-support-error);
 }
 
 .task-badge.urgent {
-    background: rgba(255, 149, 0, 0.15);
-    color: var(--md-orange);
+    background: rgba(255, 131, 43, 0.15);
+    color: var(--cds-orange-50);
 }
 
 .task-badge.warning {
-    background: rgba(255, 204, 0, 0.2);
-    color: #b38600;
+    background: rgba(241, 194, 27, 0.2);
+    color: #8e6929;
 }
 
 .task-badge.needs-confirm {
-    background: rgba(175, 82, 222, 0.15);
-    color: var(--md-purple);
+    background: rgba(138, 63, 252, 0.15);
+    color: var(--cds-purple-60);
 }
 
 .task-accordion-item-count {
     font-size: 13px;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: var(--cds-text-secondary);
     margin-left: auto;
 }
 
 /* モバイル対応 */
-@media (max-width: 600px) {
+@media (max-width: 672px) {
     .task-accordion-item {
         flex-wrap: wrap;
-        gap: 8px;
+        gap: var(--cds-spacing-03);
     }
 
     .task-accordion-item-title {
@@ -371,7 +375,7 @@
         width: 100%;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: var(--cds-spacing-03);
     }
 
     .task-accordion-item-badges {
@@ -381,8 +385,8 @@
 
     .task-accordion-item-count {
         position: absolute;
-        right: 20px;
-        top: 14px;
+        right: var(--cds-spacing-05);
+        top: var(--cds-spacing-04);
     }
 
     .task-accordion-item {

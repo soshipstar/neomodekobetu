@@ -1,0 +1,1185 @@
+/**
+ * IBM Carbon Design System for Kobetu Project
+ * Complete CSS utility library based on Carbon Design System
+ * https://carbondesignsystem.com/
+ */
+
+/* ========================================
+   IBM Carbon Design Tokens
+   ======================================== */
+
+:root {
+    /* ----------------------------------------
+       Carbon Blue Primary
+       ---------------------------------------- */
+    --cds-blue-10: #edf5ff;
+    --cds-blue-20: #d0e2ff;
+    --cds-blue-30: #a6c8ff;
+    --cds-blue-40: #78a9ff;
+    --cds-blue-50: #4589ff;
+    --cds-blue-60: #0f62fe;
+    --cds-blue-70: #0043ce;
+    --cds-blue-80: #002d9c;
+    --cds-blue-90: #001d6c;
+    --cds-blue-100: #001141;
+
+    /* ----------------------------------------
+       Carbon Gray Scale
+       ---------------------------------------- */
+    --cds-gray-10: #f4f4f4;
+    --cds-gray-20: #e0e0e0;
+    --cds-gray-30: #c6c6c6;
+    --cds-gray-40: #a8a8a8;
+    --cds-gray-50: #8d8d8d;
+    --cds-gray-60: #6f6f6f;
+    --cds-gray-70: #525252;
+    --cds-gray-80: #393939;
+    --cds-gray-90: #262626;
+    --cds-gray-100: #161616;
+
+    /* ----------------------------------------
+       Carbon Cool Gray
+       ---------------------------------------- */
+    --cds-cool-gray-10: #f2f4f8;
+    --cds-cool-gray-20: #dde1e6;
+    --cds-cool-gray-30: #c1c7cd;
+    --cds-cool-gray-40: #a2a9b0;
+    --cds-cool-gray-50: #878d96;
+    --cds-cool-gray-60: #697077;
+    --cds-cool-gray-70: #4d5358;
+    --cds-cool-gray-80: #343a3f;
+    --cds-cool-gray-90: #21272a;
+    --cds-cool-gray-100: #121619;
+
+    /* ----------------------------------------
+       Carbon Support Colors
+       ---------------------------------------- */
+    --cds-red-40: #ff8389;
+    --cds-red-50: #fa4d56;
+    --cds-red-60: #da1e28;
+    --cds-red-70: #a2191f;
+
+    --cds-green-40: #42be65;
+    --cds-green-50: #24a148;
+    --cds-green-60: #198038;
+    --cds-green-70: #0e6027;
+
+    --cds-yellow-30: #f1c21b;
+    --cds-yellow-40: #d2a106;
+
+    --cds-orange-40: #ff832b;
+    --cds-orange-60: #ba4e00;
+
+    --cds-purple-50: #a56eff;
+    --cds-purple-60: #8a3ffc;
+    --cds-purple-70: #6929c4;
+
+    --cds-teal-40: #08bdba;
+    --cds-teal-50: #009d9a;
+    --cds-teal-60: #007d79;
+    --cds-teal-70: #005d5d;
+
+    --cds-cyan-40: #33b1ff;
+    --cds-cyan-50: #1192e8;
+    --cds-cyan-60: #0072c3;
+
+    --cds-magenta-50: #ee5396;
+    --cds-magenta-60: #d02670;
+
+    /* ----------------------------------------
+       Semantic Token Aliases (Light Mode)
+       ---------------------------------------- */
+
+    /* Interactive */
+    --cds-interactive: var(--cds-blue-60);
+    --cds-interactive-hover: var(--cds-blue-70);
+    --cds-interactive-active: var(--cds-blue-80);
+
+    /* UI Colors */
+    --cds-ui-background: #ffffff;
+    --cds-ui-01: var(--cds-gray-10);
+    --cds-ui-02: #ffffff;
+    --cds-ui-03: var(--cds-gray-20);
+    --cds-ui-04: var(--cds-gray-50);
+    --cds-ui-05: var(--cds-gray-100);
+
+    /* Text Colors */
+    --cds-text-primary: var(--cds-gray-100);
+    --cds-text-secondary: var(--cds-gray-70);
+    --cds-text-tertiary: var(--cds-gray-40);
+    --cds-text-placeholder: var(--cds-gray-40);
+    --cds-text-on-color: #ffffff;
+    --cds-text-helper: var(--cds-gray-60);
+    --cds-text-error: var(--cds-red-60);
+    --cds-text-inverse: #ffffff;
+
+    /* Link Colors */
+    --cds-link-primary: var(--cds-blue-60);
+    --cds-link-primary-hover: var(--cds-blue-70);
+    --cds-link-secondary: var(--cds-blue-70);
+    --cds-link-visited: var(--cds-purple-60);
+
+    /* Icon Colors */
+    --cds-icon-primary: var(--cds-gray-100);
+    --cds-icon-secondary: var(--cds-gray-70);
+    --cds-icon-on-color: #ffffff;
+    --cds-icon-interactive: var(--cds-blue-60);
+
+    /* Border Colors */
+    --cds-border-subtle: var(--cds-gray-20);
+    --cds-border-strong: var(--cds-gray-50);
+    --cds-border-interactive: var(--cds-blue-60);
+    --cds-border-inverse: var(--cds-gray-100);
+
+    /* Field Colors */
+    --cds-field: var(--cds-gray-10);
+    --cds-field-hover: var(--cds-gray-20);
+
+    /* Support Colors */
+    --cds-support-error: var(--cds-red-60);
+    --cds-support-success: var(--cds-green-50);
+    --cds-support-warning: var(--cds-yellow-30);
+    --cds-support-info: var(--cds-blue-60);
+
+    /* Focus */
+    --cds-focus: var(--cds-blue-60);
+    --cds-focus-inset: #ffffff;
+
+    /* Overlay */
+    --cds-overlay: rgba(22, 22, 22, 0.5);
+
+    /* ----------------------------------------
+       Legacy Project Colors Mapped to Carbon
+       ---------------------------------------- */
+    --md-blue: var(--cds-blue-60);
+    --md-green: var(--cds-green-50);
+    --md-indigo: var(--cds-blue-70);
+    --md-orange: var(--cds-orange-40);
+    --md-pink: var(--cds-magenta-50);
+    --md-purple: var(--cds-purple-60);
+    --md-red: var(--cds-red-60);
+    --md-teal: var(--cds-teal-50);
+    --md-yellow: var(--cds-yellow-30);
+
+    --primary-purple: var(--cds-purple-60);
+    --primary-purple-dark: var(--cds-purple-70);
+    --success-green: var(--cds-green-50);
+    --danger-red: var(--cds-red-60);
+    --info-blue: var(--cds-blue-60);
+    --secondary-gray: var(--cds-gray-60);
+
+    /* Grays */
+    --md-gray: var(--cds-gray-60);
+    --md-gray-2: var(--cds-gray-50);
+    --md-gray-3: var(--cds-gray-40);
+    --md-gray-4: var(--cds-gray-30);
+    --md-gray-5: var(--cds-gray-20);
+    --md-gray-6: var(--cds-gray-10);
+
+    /* Text Colors */
+    --text-primary: var(--cds-text-primary);
+    --text-secondary: var(--cds-text-secondary);
+    --text-tertiary: var(--cds-text-tertiary);
+
+    /* Backgrounds */
+    --md-bg-primary: var(--cds-ui-background);
+    --md-bg-secondary: var(--cds-ui-01);
+    --md-bg-tertiary: var(--cds-ui-02);
+    --md-bg-elevated: var(--cds-ui-02);
+
+    /* Semantic Colors for Grades */
+    --grade-elementary: var(--cds-green-50);
+    --grade-junior-high: var(--cds-blue-60);
+    --grade-high-school: var(--cds-red-60);
+
+    /* Status Colors */
+    --status-active: var(--cds-green-50);
+    --status-pending: var(--cds-orange-40);
+    --status-inactive: var(--cds-gray-60);
+    --status-error: var(--cds-red-60);
+    --status-info: var(--cds-blue-60);
+
+    /* ----------------------------------------
+       Typography - IBM Plex
+       ---------------------------------------- */
+    --cds-font-family: 'IBM Plex Sans JP', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --cds-font-family-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+
+    /* Font Weights */
+    --font-thin: 100;
+    --font-ultralight: 200;
+    --font-light: 300;
+    --font-regular: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+    --font-heavy: 800;
+    --font-black: 900;
+
+    /* Carbon Type Scale */
+    --cds-heading-07: 54px;
+    --cds-heading-06: 42px;
+    --cds-heading-05: 32px;
+    --cds-heading-04: 28px;
+    --cds-heading-03: 20px;
+    --cds-heading-02: 16px;
+    --cds-heading-01: 14px;
+
+    --cds-body-02: 16px;
+    --cds-body-01: 14px;
+    --cds-body-compact-02: 16px;
+    --cds-body-compact-01: 14px;
+
+    --cds-label-02: 14px;
+    --cds-label-01: 12px;
+    --cds-helper-text-02: 14px;
+    --cds-helper-text-01: 12px;
+
+    --cds-caption-02: 14px;
+    --cds-caption-01: 12px;
+
+    /* Legacy Font Sizes */
+    --text-large-title: var(--cds-heading-05);
+    --text-title-1: var(--cds-heading-04);
+    --text-title-2: var(--cds-heading-03);
+    --text-title-3: 18px;
+    --text-headline: var(--cds-body-02);
+    --text-body: var(--cds-body-02);
+    --text-callout: var(--cds-body-02);
+    --text-subhead: var(--cds-body-01);
+    --text-footnote: var(--cds-label-01);
+    --text-caption-1: var(--cds-caption-01);
+    --text-caption-2: 11px;
+
+    /* ----------------------------------------
+       Spacing - Carbon 2x Grid (8px base)
+       ---------------------------------------- */
+    --cds-spacing-01: 2px;
+    --cds-spacing-02: 4px;
+    --cds-spacing-03: 8px;
+    --cds-spacing-04: 12px;
+    --cds-spacing-05: 16px;
+    --cds-spacing-06: 24px;
+    --cds-spacing-07: 32px;
+    --cds-spacing-08: 40px;
+    --cds-spacing-09: 48px;
+    --cds-spacing-10: 64px;
+    --cds-spacing-11: 80px;
+    --cds-spacing-12: 96px;
+    --cds-spacing-13: 160px;
+
+    /* Legacy Spacing */
+    --spacing-xs: var(--cds-spacing-02);
+    --spacing-sm: var(--cds-spacing-03);
+    --spacing-md: var(--cds-spacing-05);
+    --spacing-lg: var(--cds-spacing-06);
+    --spacing-xl: var(--cds-spacing-07);
+    --spacing-2xl: var(--cds-spacing-09);
+    --spacing-3xl: var(--cds-spacing-10);
+    --spacing-4xl: var(--cds-spacing-12);
+    --spacing-5xl: var(--cds-spacing-13);
+
+    /* ----------------------------------------
+       Border Radius - Carbon uses minimal radius
+       ---------------------------------------- */
+    --cds-border-radius-sm: 2px;
+    --cds-border-radius-md: 4px;
+    --cds-border-radius-lg: 8px;
+
+    /* Legacy Radius */
+    --radius-sm: var(--cds-border-radius-md);
+    --radius-md: var(--cds-border-radius-lg);
+    --radius-lg: var(--cds-border-radius-lg);
+    --radius-xl: 12px;
+    --radius-2xl: 16px;
+    --radius-full: 9999px;
+
+    /* ----------------------------------------
+       Shadows - Carbon Elevation
+       ---------------------------------------- */
+    --cds-shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.1);
+    --cds-shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+    --cds-shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
+    --cds-shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.12);
+
+    /* Legacy Shadows */
+    --shadow-sm: var(--cds-shadow-sm);
+    --shadow-md: var(--cds-shadow-md);
+    --shadow-lg: var(--cds-shadow-lg);
+    --shadow-xl: var(--cds-shadow-xl);
+    --shadow-2xl: 0 16px 32px rgba(0, 0, 0, 0.15);
+
+    /* ----------------------------------------
+       Motion - Carbon Easing
+       ---------------------------------------- */
+    --cds-ease-in: cubic-bezier(0, 0, 0.38, 0.9);
+    --cds-ease-out: cubic-bezier(0.2, 0, 1, 0.9);
+    --cds-ease-standard: cubic-bezier(0.2, 0, 0.38, 0.9);
+    --cds-ease-expressive: cubic-bezier(0.4, 0.14, 0.3, 1);
+
+    /* Carbon Duration */
+    --cds-duration-fast-01: 70ms;
+    --cds-duration-fast-02: 110ms;
+    --cds-duration-moderate-01: 150ms;
+    --cds-duration-moderate-02: 240ms;
+    --cds-duration-slow-01: 400ms;
+    --cds-duration-slow-02: 700ms;
+
+    /* Legacy Animation */
+    --ease-in-out: var(--cds-ease-standard);
+    --ease-out: var(--cds-ease-out);
+    --ease-in: var(--cds-ease-in);
+    --ease-spring: var(--cds-ease-expressive);
+    --duration-instant: var(--cds-duration-fast-01);
+    --duration-fast: var(--cds-duration-fast-02);
+    --duration-normal: var(--cds-duration-moderate-01);
+    --duration-slow: var(--cds-duration-slow-01);
+    --duration-slower: var(--cds-duration-slow-02);
+
+    /* ----------------------------------------
+       Layout - Carbon Containers
+       ---------------------------------------- */
+    --cds-container-01: 320px;
+    --cds-container-02: 672px;
+    --cds-container-03: 1056px;
+    --cds-container-04: 1312px;
+    --cds-container-05: 1584px;
+
+    /* ----------------------------------------
+       Role-based Colors (Project Specific)
+       ---------------------------------------- */
+    --role-admin-primary: var(--cds-purple-60);
+    --role-admin-hover: var(--cds-purple-70);
+    --role-admin-bg: var(--cds-purple-60);
+
+    --role-staff-primary: var(--cds-blue-60);
+    --role-staff-hover: var(--cds-blue-70);
+    --role-staff-bg: var(--cds-blue-60);
+
+    --role-guardian-primary: var(--cds-green-50);
+    --role-guardian-hover: var(--cds-green-60);
+    --role-guardian-bg: var(--cds-green-50);
+
+    --role-student-primary: var(--cds-orange-40);
+    --role-student-hover: var(--cds-orange-60);
+    --role-student-bg: var(--cds-orange-40);
+
+    --role-tablet-primary: var(--cds-teal-50);
+    --role-tablet-hover: var(--cds-teal-60);
+    --role-tablet-bg: var(--cds-teal-50);
+}
+
+/* ========================================
+   Dark Mode Support
+   ======================================== */
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* UI Colors - Dark Mode */
+        --cds-ui-background: var(--cds-gray-100);
+        --cds-ui-01: var(--cds-gray-90);
+        --cds-ui-02: var(--cds-gray-80);
+        --cds-ui-03: var(--cds-gray-70);
+        --cds-ui-04: var(--cds-gray-50);
+        --cds-ui-05: var(--cds-gray-10);
+
+        /* Text Colors - Dark Mode */
+        --cds-text-primary: var(--cds-gray-10);
+        --cds-text-secondary: var(--cds-gray-30);
+        --cds-text-tertiary: var(--cds-gray-50);
+        --cds-text-placeholder: var(--cds-gray-50);
+        --cds-text-inverse: var(--cds-gray-100);
+
+        /* Link Colors - Dark Mode */
+        --cds-link-primary: var(--cds-blue-40);
+        --cds-link-primary-hover: var(--cds-blue-30);
+
+        /* Icon Colors - Dark Mode */
+        --cds-icon-primary: var(--cds-gray-10);
+        --cds-icon-secondary: var(--cds-gray-30);
+        --cds-icon-interactive: var(--cds-blue-40);
+
+        /* Border Colors - Dark Mode */
+        --cds-border-subtle: var(--cds-gray-80);
+        --cds-border-strong: var(--cds-gray-60);
+
+        /* Field Colors - Dark Mode */
+        --cds-field: var(--cds-gray-90);
+        --cds-field-hover: var(--cds-gray-80);
+
+        /* Interactive - Dark Mode */
+        --cds-interactive: var(--cds-blue-40);
+        --cds-interactive-hover: var(--cds-blue-30);
+        --cds-interactive-active: var(--cds-blue-50);
+
+        /* Focus - Dark Mode */
+        --cds-focus: var(--cds-blue-40);
+        --cds-focus-inset: var(--cds-gray-100);
+
+        /* Legacy Mapping - Dark Mode */
+        --md-blue: var(--cds-blue-40);
+        --md-green: var(--cds-green-40);
+        --md-indigo: var(--cds-blue-50);
+        --md-orange: var(--cds-orange-40);
+        --md-pink: var(--cds-magenta-50);
+        --md-purple: var(--cds-purple-50);
+        --md-red: var(--cds-red-40);
+        --md-teal: var(--cds-teal-40);
+        --md-yellow: var(--cds-yellow-30);
+
+        --primary-purple: var(--cds-purple-50);
+        --primary-purple-dark: var(--cds-purple-60);
+        --success-green: var(--cds-green-40);
+        --danger-red: var(--cds-red-40);
+        --info-blue: var(--cds-blue-40);
+        --secondary-gray: var(--cds-gray-40);
+
+        --md-gray: var(--cds-gray-40);
+        --md-gray-2: var(--cds-gray-50);
+        --md-gray-3: var(--cds-gray-60);
+        --md-gray-4: var(--cds-gray-70);
+        --md-gray-5: var(--cds-gray-80);
+        --md-gray-6: var(--cds-gray-90);
+
+        --text-primary: var(--cds-text-primary);
+        --text-secondary: var(--cds-text-secondary);
+        --text-tertiary: var(--cds-text-tertiary);
+
+        --md-bg-primary: var(--cds-ui-background);
+        --md-bg-secondary: var(--cds-ui-01);
+        --md-bg-tertiary: var(--cds-ui-02);
+        --md-bg-elevated: var(--cds-ui-02);
+    }
+}
+
+/* ========================================
+   Base Styles
+   ======================================== */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    font-family: var(--cds-font-family);
+    font-size: var(--cds-body-02);
+    line-height: 1.5;
+    color: var(--cds-text-primary);
+    background-color: var(--cds-ui-background);
+    margin: 0;
+    padding: 0;
+}
+
+/* ========================================
+   Typography
+   ======================================== */
+
+h1, h2, h3, h4, h5, h6 {
+    margin: 0 0 var(--cds-spacing-05);
+    font-weight: var(--font-semibold);
+    line-height: 1.25;
+    color: var(--cds-text-primary);
+}
+
+h1 { font-size: var(--cds-heading-05); font-weight: var(--font-light); }
+h2 { font-size: var(--cds-heading-04); font-weight: var(--font-regular); }
+h3 { font-size: var(--cds-heading-03); }
+h4 { font-size: var(--cds-heading-02); }
+h5 { font-size: var(--cds-heading-01); }
+h6 { font-size: var(--cds-body-01); }
+
+p {
+    margin: 0 0 var(--cds-spacing-05);
+    line-height: 1.6;
+}
+
+a {
+    color: var(--cds-link-primary);
+    text-decoration: none;
+    transition: color var(--cds-duration-fast-02) var(--cds-ease-standard);
+}
+
+a:hover {
+    color: var(--cds-link-primary-hover);
+    text-decoration: underline;
+}
+
+small {
+    font-size: var(--cds-caption-01);
+}
+
+strong, b {
+    font-weight: var(--font-semibold);
+}
+
+/* ========================================
+   Buttons - Carbon Style
+   ======================================== */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--cds-spacing-03);
+    min-height: 48px;
+    padding: calc(var(--cds-spacing-05) - 3px) var(--cds-spacing-05);
+    font-family: var(--cds-font-family);
+    font-size: var(--cds-body-01);
+    font-weight: var(--font-regular);
+    line-height: 1.3;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    outline: none;
+    transition: background var(--cds-duration-fast-02) var(--cds-ease-standard),
+                border-color var(--cds-duration-fast-02) var(--cds-ease-standard),
+                color var(--cds-duration-fast-02) var(--cds-ease-standard);
+    position: relative;
+}
+
+/* Arrow icon removed - use btn-arrow class if needed */
+.btn::after {
+    display: none;
+}
+
+.btn:focus {
+    outline: 2px solid var(--cds-focus);
+    outline-offset: -2px;
+}
+
+/* Primary Button */
+.btn-primary {
+    background: var(--cds-interactive);
+    color: var(--cds-text-on-color);
+}
+
+.btn-primary:hover {
+    background: var(--cds-interactive-hover);
+}
+
+.btn-primary:active {
+    background: var(--cds-interactive-active);
+}
+
+/* Secondary Button */
+.btn-secondary {
+    background: var(--cds-ui-04);
+    color: var(--cds-text-on-color);
+}
+
+/* Arrow removed from secondary buttons */
+
+.btn-secondary:hover {
+    background: var(--cds-gray-60);
+}
+
+/* Tertiary Button (Ghost with border) */
+.btn-outline,
+.btn-tertiary {
+    background: transparent;
+    border: 1px solid var(--cds-interactive);
+    color: var(--cds-interactive);
+    padding-right: var(--cds-spacing-05);
+}
+
+/* Arrow already hidden via .btn::after */
+
+.btn-outline:hover,
+.btn-tertiary:hover {
+    background: var(--cds-blue-10);
+    color: var(--cds-interactive);
+}
+
+@media (prefers-color-scheme: dark) {
+    .btn-outline:hover,
+    .btn-tertiary:hover {
+        background: rgba(15, 98, 254, 0.16);
+    }
+}
+
+/* Ghost Button */
+.btn-ghost {
+    background: transparent;
+    color: var(--cds-link-primary);
+    padding-right: var(--cds-spacing-05);
+}
+
+/* Arrow already hidden via .btn::after */
+
+.btn-ghost:hover {
+    background: var(--cds-blue-10);
+}
+
+@media (prefers-color-scheme: dark) {
+    .btn-ghost:hover {
+        background: rgba(15, 98, 254, 0.16);
+    }
+}
+
+/* Danger Button */
+.btn-danger {
+    background: var(--cds-red-60);
+    color: var(--cds-text-on-color);
+}
+
+.btn-danger:hover {
+    background: var(--cds-red-70);
+}
+
+/* Success Button */
+.btn-success {
+    background: var(--cds-green-50);
+    color: var(--cds-text-on-color);
+}
+
+.btn-success:hover {
+    background: var(--cds-green-60);
+}
+
+/* Info Button */
+.btn-info {
+    background: var(--cds-cyan-50);
+    color: var(--cds-text-on-color);
+}
+
+.btn-info:hover {
+    background: var(--cds-cyan-60);
+}
+
+/* Button Sizes */
+.btn-xs {
+    min-height: 24px;
+    padding: var(--cds-spacing-01) var(--cds-spacing-03);
+    padding-right: var(--cds-spacing-03);
+    font-size: var(--cds-caption-01);
+}
+
+/* Arrow already hidden via .btn::after */
+
+.btn-sm {
+    min-height: 32px;
+    padding: var(--cds-spacing-02) var(--cds-spacing-04);
+    padding-right: var(--cds-spacing-04);
+    font-size: var(--cds-caption-01);
+}
+
+/* Arrow already hidden via .btn::after */
+
+.btn-lg {
+    min-height: 64px;
+    padding: var(--cds-spacing-05) var(--cds-spacing-06);
+    font-size: var(--cds-body-02);
+}
+
+/* Icon-only button */
+.btn-icon {
+    padding: var(--cds-spacing-03);
+    padding-right: var(--cds-spacing-03);
+    min-height: 48px;
+    min-width: 48px;
+}
+
+/* Arrow already hidden via .btn::after */
+
+.btn-icon.btn-sm {
+    min-height: 32px;
+    min-width: 32px;
+    padding: var(--cds-spacing-02);
+}
+
+/* Disabled Button */
+.btn:disabled,
+.btn.disabled {
+    background: var(--cds-gray-30);
+    color: var(--cds-gray-50);
+    cursor: not-allowed;
+    border-color: var(--cds-gray-30);
+}
+
+/* Arrow disabled styles no longer needed */
+
+@media (prefers-color-scheme: dark) {
+    .btn:disabled,
+    .btn.disabled {
+        background: var(--cds-gray-70);
+        color: var(--cds-gray-50);
+    }
+}
+
+/* ========================================
+   Form Elements - Carbon Style
+   ======================================== */
+
+.form-group {
+    margin-bottom: var(--cds-spacing-06);
+}
+
+.form-label {
+    display: block;
+    font-size: var(--cds-label-01);
+    font-weight: var(--font-regular);
+    color: var(--cds-text-secondary);
+    margin-bottom: var(--cds-spacing-03);
+    letter-spacing: 0.32px;
+}
+
+.form-control {
+    display: block;
+    width: 100%;
+    height: 40px;
+    padding: 0 var(--cds-spacing-05);
+    font-family: var(--cds-font-family);
+    font-size: var(--cds-body-01);
+    color: var(--cds-text-primary);
+    background: var(--cds-field);
+    border: none;
+    border-bottom: 1px solid var(--cds-border-strong);
+    outline: none;
+    transition: border-color var(--cds-duration-fast-02) var(--cds-ease-standard),
+                background var(--cds-duration-fast-02) var(--cds-ease-standard);
+}
+
+.form-control:hover {
+    background: var(--cds-field-hover);
+}
+
+.form-control:focus {
+    border-bottom-color: var(--cds-focus);
+    outline: 2px solid var(--cds-focus);
+    outline-offset: -2px;
+}
+
+.form-control::placeholder {
+    color: var(--cds-text-placeholder);
+}
+
+/* Textarea */
+textarea.form-control {
+    height: auto;
+    min-height: 120px;
+    padding: var(--cds-spacing-04) var(--cds-spacing-05);
+    resize: vertical;
+}
+
+/* Select */
+select.form-control {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23161616'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right var(--cds-spacing-05) center;
+    padding-right: calc(var(--cds-spacing-05) + 24px);
+    cursor: pointer;
+}
+
+@media (prefers-color-scheme: dark) {
+    select.form-control {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23f4f4f4'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+    }
+}
+
+/* Checkbox & Radio */
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: var(--cds-spacing-03);
+    margin-bottom: var(--cds-spacing-03);
+}
+
+.form-check input[type="checkbox"],
+.form-check input[type="radio"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--cds-interactive);
+}
+
+.form-check label {
+    font-size: var(--cds-body-01);
+    color: var(--cds-text-primary);
+    cursor: pointer;
+}
+
+/* Helper Text */
+.form-helper {
+    font-size: var(--cds-helper-text-01);
+    color: var(--cds-text-helper);
+    margin-top: var(--cds-spacing-02);
+}
+
+/* Error State */
+.form-control.is-invalid,
+.form-control.error {
+    border-bottom-color: var(--cds-support-error);
+    outline-color: var(--cds-support-error);
+}
+
+.form-error {
+    font-size: var(--cds-helper-text-01);
+    color: var(--cds-text-error);
+    margin-top: var(--cds-spacing-02);
+}
+
+/* ========================================
+   Cards - Carbon Style
+   ======================================== */
+
+.card {
+    background: var(--cds-ui-02);
+    border: 1px solid var(--cds-border-subtle);
+    padding: var(--cds-spacing-05);
+    transition: box-shadow var(--cds-duration-fast-02) var(--cds-ease-standard);
+}
+
+.card:hover {
+    box-shadow: var(--cds-shadow-md);
+}
+
+.card-flat {
+    background: var(--cds-ui-01);
+    border: none;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: var(--cds-spacing-05);
+    margin-bottom: var(--cds-spacing-05);
+    border-bottom: 1px solid var(--cds-border-subtle);
+}
+
+.card-header h3,
+.card-header h4 {
+    margin: 0;
+    font-size: var(--cds-heading-02);
+    font-weight: var(--font-semibold);
+}
+
+.card-body {
+    font-size: var(--cds-body-01);
+    color: var(--cds-text-secondary);
+    line-height: 1.6;
+}
+
+.card-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--cds-spacing-03);
+    padding-top: var(--cds-spacing-05);
+    margin-top: var(--cds-spacing-05);
+    border-top: 1px solid var(--cds-border-subtle);
+}
+
+/* ========================================
+   Tables - Carbon Style
+   ======================================== */
+
+.table-wrapper,
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--cds-body-01);
+}
+
+.table thead {
+    background: var(--cds-ui-05);
+}
+
+.table th {
+    padding: var(--cds-spacing-05);
+    font-size: var(--cds-heading-01);
+    font-weight: var(--font-semibold);
+    color: var(--cds-text-on-color);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.table td {
+    padding: var(--cds-spacing-05);
+    color: var(--cds-text-primary);
+    border-bottom: 1px solid var(--cds-border-subtle);
+    vertical-align: middle;
+}
+
+.table tbody tr {
+    background: var(--cds-ui-02);
+    transition: background var(--cds-duration-fast-02) var(--cds-ease-standard);
+}
+
+.table tbody tr:hover {
+    background: var(--cds-ui-01);
+}
+
+.table tbody tr:nth-child(even) {
+    background: var(--cds-ui-01);
+}
+
+.table tbody tr:nth-child(even):hover {
+    background: var(--cds-ui-03);
+}
+
+/* ========================================
+   Badges & Tags - Carbon Style
+   ======================================== */
+
+.badge,
+.tag {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--cds-spacing-01) var(--cds-spacing-03);
+    font-size: var(--cds-label-01);
+    font-weight: var(--font-regular);
+    line-height: 1.4;
+    letter-spacing: 0.32px;
+}
+
+.badge-primary,
+.tag-blue {
+    background: var(--cds-blue-60);
+    color: var(--cds-text-on-color);
+}
+
+.badge-success,
+.tag-green {
+    background: var(--cds-green-50);
+    color: var(--cds-text-on-color);
+}
+
+.badge-danger,
+.tag-red {
+    background: var(--cds-red-60);
+    color: var(--cds-text-on-color);
+}
+
+.badge-warning,
+.tag-yellow {
+    background: var(--cds-yellow-30);
+    color: var(--cds-gray-100);
+}
+
+.badge-info,
+.tag-teal {
+    background: var(--cds-teal-50);
+    color: var(--cds-text-on-color);
+}
+
+.badge-secondary,
+.tag-gray {
+    background: var(--cds-gray-20);
+    color: var(--cds-text-primary);
+}
+
+.badge-purple,
+.tag-purple {
+    background: var(--cds-purple-60);
+    color: var(--cds-text-on-color);
+}
+
+/* ========================================
+   Alerts / Notifications - Carbon Style
+   ======================================== */
+
+.alert {
+    display: flex;
+    gap: var(--cds-spacing-04);
+    padding: var(--cds-spacing-05);
+    border-left: 3px solid;
+    background: var(--cds-ui-01);
+}
+
+.alert-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-title {
+    font-size: var(--cds-heading-01);
+    font-weight: var(--font-semibold);
+    margin-bottom: var(--cds-spacing-02);
+}
+
+.alert-message {
+    font-size: var(--cds-body-01);
+    color: var(--cds-text-secondary);
+}
+
+.alert-success {
+    border-color: var(--cds-support-success);
+    background: var(--cds-green-10, #defbe6);
+}
+
+.alert-success .alert-icon { color: var(--cds-support-success); }
+
+.alert-danger,
+.alert-error {
+    border-color: var(--cds-support-error);
+    background: var(--cds-red-10, #fff1f1);
+}
+
+.alert-danger .alert-icon,
+.alert-error .alert-icon { color: var(--cds-support-error); }
+
+.alert-warning {
+    border-color: var(--cds-support-warning);
+    background: var(--cds-yellow-10, #fcf4d6);
+}
+
+.alert-warning .alert-icon { color: var(--cds-support-warning); }
+
+.alert-info {
+    border-color: var(--cds-support-info);
+    background: var(--cds-blue-10);
+}
+
+.alert-info .alert-icon { color: var(--cds-support-info); }
+
+/* ========================================
+   Grid System
+   ======================================== */
+
+.container {
+    width: 100%;
+    max-width: var(--cds-container-04);
+    margin: 0 auto;
+    padding: 0 var(--cds-spacing-05);
+}
+
+.container-fluid {
+    width: 100%;
+    padding: 0 var(--cds-spacing-05);
+}
+
+.grid {
+    display: grid;
+    gap: var(--cds-spacing-05);
+}
+
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+@media (max-width: 1056px) {
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 672px) {
+    .grid-2,
+    .grid-3,
+    .grid-4 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ========================================
+   Utility Classes
+   ======================================== */
+
+/* Display */
+.d-none { display: none !important; }
+.d-block { display: block !important; }
+.d-flex { display: flex !important; }
+.d-inline-flex { display: inline-flex !important; }
+.d-grid { display: grid !important; }
+
+/* Flex */
+.flex-row { flex-direction: row !important; }
+.flex-column { flex-direction: column !important; }
+.flex-wrap { flex-wrap: wrap !important; }
+.justify-start { justify-content: flex-start !important; }
+.justify-center { justify-content: center !important; }
+.justify-end { justify-content: flex-end !important; }
+.justify-between { justify-content: space-between !important; }
+.align-start { align-items: flex-start !important; }
+.align-center { align-items: center !important; }
+.align-end { align-items: flex-end !important; }
+.gap-1 { gap: var(--cds-spacing-03) !important; }
+.gap-2 { gap: var(--cds-spacing-05) !important; }
+.gap-3 { gap: var(--cds-spacing-06) !important; }
+
+/* Margin */
+.m-0 { margin: 0 !important; }
+.mt-1 { margin-top: var(--cds-spacing-03) !important; }
+.mt-2 { margin-top: var(--cds-spacing-05) !important; }
+.mt-3 { margin-top: var(--cds-spacing-06) !important; }
+.mt-4 { margin-top: var(--cds-spacing-07) !important; }
+.mb-1 { margin-bottom: var(--cds-spacing-03) !important; }
+.mb-2 { margin-bottom: var(--cds-spacing-05) !important; }
+.mb-3 { margin-bottom: var(--cds-spacing-06) !important; }
+.mb-4 { margin-bottom: var(--cds-spacing-07) !important; }
+
+/* Padding */
+.p-0 { padding: 0 !important; }
+.p-1 { padding: var(--cds-spacing-03) !important; }
+.p-2 { padding: var(--cds-spacing-05) !important; }
+.p-3 { padding: var(--cds-spacing-06) !important; }
+.p-4 { padding: var(--cds-spacing-07) !important; }
+
+/* Text Alignment */
+.text-left { text-align: left !important; }
+.text-center { text-align: center !important; }
+.text-right { text-align: right !important; }
+
+/* Font Weights */
+.fw-light { font-weight: var(--font-light) !important; }
+.fw-regular { font-weight: var(--font-regular) !important; }
+.fw-medium { font-weight: var(--font-medium) !important; }
+.fw-semibold { font-weight: var(--font-semibold) !important; }
+.fw-bold { font-weight: var(--font-bold) !important; }
+
+/* Colors */
+.text-primary { color: var(--cds-text-primary) !important; }
+.text-secondary { color: var(--cds-text-secondary) !important; }
+.text-muted { color: var(--cds-text-tertiary) !important; }
+.text-success { color: var(--cds-support-success) !important; }
+.text-danger { color: var(--cds-support-error) !important; }
+.text-warning { color: var(--cds-support-warning) !important; }
+.text-info { color: var(--cds-support-info) !important; }
+
+.bg-primary { background-color: var(--cds-interactive) !important; }
+.bg-secondary { background-color: var(--cds-ui-01) !important; }
+.bg-success { background-color: var(--cds-support-success) !important; }
+.bg-danger { background-color: var(--cds-support-error) !important; }
+.bg-warning { background-color: var(--cds-support-warning) !important; }
+.bg-info { background-color: var(--cds-support-info) !important; }
+
+/* Border */
+.border { border: 1px solid var(--cds-border-subtle) !important; }
+.border-0 { border: none !important; }
+.border-top { border-top: 1px solid var(--cds-border-subtle) !important; }
+.border-bottom { border-bottom: 1px solid var(--cds-border-subtle) !important; }
+
+/* Visibility */
+.visible { visibility: visible !important; }
+.invisible { visibility: hidden !important; }
+
+/* Overflow */
+.overflow-hidden { overflow: hidden !important; }
+.overflow-auto { overflow: auto !important; }
+
+/* Cursor */
+.cursor-pointer { cursor: pointer !important; }
+.cursor-default { cursor: default !important; }
+
+/* Width */
+.w-100 { width: 100% !important; }
+.w-auto { width: auto !important; }

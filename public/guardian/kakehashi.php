@@ -143,20 +143,20 @@ renderPageStart('guardian', $currentPage, 'かけはし入力', ['classroom' => 
 }
 
 .deadline-countdown {
-    background: linear-gradient(135deg, var(--md-blue) 0%, var(--md-purple) 100%);
+    background: var(--cds-blue-60);
     color: white;
     padding: var(--spacing-xl);
-    border-radius: var(--radius-md);
+    border-radius: 0;
     margin-bottom: var(--spacing-lg);
     text-align: center;
 }
 
 .deadline-countdown.urgent {
-    background: linear-gradient(135deg, var(--md-red) 0%, #ff6b6b 100%);
+    background: var(--cds-support-error);
 }
 
 .deadline-countdown.warning {
-    background: linear-gradient(135deg, var(--md-orange) 0%, #ff9800 100%);
+    background: var(--cds-support-warning);
 }
 
 .countdown-display {
@@ -182,20 +182,20 @@ renderPageStart('guardian', $currentPage, 'かけはし入力', ['classroom' => 
 }
 
 .period-info {
-    background: rgba(0, 122, 255, 0.1);
+    background: rgba(13, 110, 253, 0.15);
     padding: var(--spacing-md);
-    border-radius: var(--radius-sm);
+    border-radius: 0;
     margin-bottom: var(--spacing-lg);
-    border-left: 4px solid var(--md-blue);
+    border-left: 4px solid var(--cds-border-subtle-00);
 }
 
 .section-title {
     font-size: var(--text-headline);
     font-weight: 600;
-    color: var(--md-purple);
+    color: var(--cds-text-primary);
     margin: var(--spacing-xl) 0 var(--spacing-md) 0;
     padding-bottom: var(--spacing-sm);
-    border-bottom: 2px solid var(--md-purple);
+    border-bottom: 2px solid var(--cds-border-subtle-00);
 }
 
 .domains-grid {
@@ -221,12 +221,12 @@ renderPageStart('guardian', $currentPage, 'かけはし入力', ['classroom' => 
 }
 
 .status-draft {
-    background: var(--md-orange);
+    background: var(--cds-support-warning);
     color: white;
 }
 
 .status-submitted {
-    background: var(--md-green);
+    background: var(--cds-support-success);
     color: white;
 }
 

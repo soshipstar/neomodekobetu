@@ -371,7 +371,7 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成', ['noContai
 }
 
 .plans-table tr.active-row {
-    background: rgba(0, 122, 255, 0.1);
+    background: rgba(36, 161, 72, 0.15);
 }
 
 .plan-link {
@@ -396,10 +396,10 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成', ['noContai
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    background: var(--cds-purple-60);
     color: white;
     text-decoration: none;
-    border-radius: 6px;
+    border-radius: 0;
     font-size: var(--text-footnote);
     font-weight: 500;
     transition: all var(--duration-fast);
@@ -407,7 +407,7 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成', ['noContai
 
 .basis-link:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(240, 147, 251, 0.4);
+    box-shadow: 0 4px 12px rgba(121, 86, 200, 0.4);
 }
 
 .basis-link.disabled {
@@ -420,8 +420,8 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成', ['noContai
     display: inline-block;
     padding: var(--spacing-sm) 15px;
     margin: 5px;
-    background: rgba(0, 122, 255, 0.1);
-    border-radius: 6px;
+    background: rgba(36, 161, 72, 0.15);
+    border-radius: 0;
     text-decoration: none;
     color: var(--md-blue);
     transition: all var(--duration-normal) var(--ease-out);
@@ -439,13 +439,13 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成', ['noContai
 
 .guardian-confirmed-badge {
     display: inline-block;
-    background: linear-gradient(135deg, var(--md-green) 0%, #20c997 100%);
+    background: var(--cds-support-success);
     color: white;
     padding: 6px 15px;
-    border-radius: var(--radius-xl);
+    border-radius: 0;
     font-size: var(--text-footnote);
     font-weight: 600;
-    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+    box-shadow: 0 2px 8px rgba(36, 161, 72, 0.3);
 }
 
 .analyze-section {
@@ -556,15 +556,15 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成', ['noContai
                 ✓ 署名済み（正式版）（<?= date('Y/m/d H:i', strtotime($planData['guardian_confirmed_at'])) ?>）
             </div>
         <?php elseif ($planData && ($planData['is_official'] ?? 0)): ?>
-            <div class="guardian-confirmed-badge" style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);">
+            <div class="guardian-confirmed-badge" style="background: var(--cds-support-warning);">
                 正式版（署名待ち）
             </div>
         <?php elseif ($planData && !empty($planData['guardian_review_comment'])): ?>
-            <div class="guardian-confirmed-badge" style="background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);">
+            <div class="guardian-confirmed-badge" style="background: var(--cds-teal-60);">
                 保護者コメントあり
             </div>
         <?php elseif ($planData && isset($planData['guardian_review_comment_at'])): ?>
-            <div class="guardian-confirmed-badge" style="background: linear-gradient(135deg, var(--md-green) 0%, #20c997 100%);">
+            <div class="guardian-confirmed-badge" style="background: var(--cds-support-success);">
                 保護者確認済み（案）
             </div>
         <?php endif; ?>
@@ -585,17 +585,17 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成', ['noContai
 
 <!-- 保護者コメント表示 -->
 <?php if ($planData && !empty($planData['guardian_review_comment'])): ?>
-    <div class="alert" style="background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%); border: 2px solid #17a2b8; border-radius: var(--radius-md);">
-        <h4 style="color: #0c5460; margin: 0 0 var(--spacing-md) 0; display: flex; align-items: center; gap: 8px;">
+    <div class="alert" style="background: rgba(24, 158, 171, 0.15); border: 2px solid var(--cds-teal-60); border-radius: var(--radius-md);">
+        <h4 style="color: var(--cds-teal-60); margin: 0 0 var(--spacing-md) 0; display: flex; align-items: center; gap: 8px;">
             <span class="material-symbols-outlined">comment</span> 保護者からの変更希望コメント
         </h4>
         <div style="background: rgba(255,255,255,0.7); padding: var(--spacing-md); border-radius: var(--radius-sm); margin-bottom: var(--spacing-md);">
-            <p style="margin: 0; color: #0c5460; white-space: pre-wrap;"><?= htmlspecialchars($planData['guardian_review_comment']) ?></p>
+            <p style="margin: 0; color: var(--cds-teal-60); white-space: pre-wrap;"><?= htmlspecialchars($planData['guardian_review_comment']) ?></p>
         </div>
-        <p style="margin: 0; font-size: var(--text-footnote); color: #0c5460;">
+        <p style="margin: 0; font-size: var(--text-footnote); color: var(--cds-teal-60);">
             送信日時: <?= date('Y年m月d日 H:i', strtotime($planData['guardian_review_comment_at'])) ?>
         </p>
-        <p style="margin: var(--spacing-sm) 0 0 0; font-size: var(--text-subhead); color: #0c5460;">
+        <p style="margin: var(--spacing-sm) 0 0 0; font-size: var(--text-subhead); color: var(--cds-teal-60);">
             <strong>対応方法:</strong> コメント内容を反映し、正式版として提出してください。
         </p>
     </div>
@@ -668,7 +668,7 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成', ['noContai
                                     <?php if ($plan['guardian_confirmed'] ?? false): ?>
                                         <span style="color: var(--md-green); font-weight: 500;"><span class="material-symbols-outlined" style="font-size: 16px;">verified</span> 署名済</span>
                                     <?php else: ?>
-                                        <span style="color: #ffc107; font-weight: 500;"><span class="material-symbols-outlined" style="font-size: 16px;">pending</span> 署名待</span>
+                                        <span style="color: var(--cds-support-warning); font-weight: 500;"><span class="material-symbols-outlined" style="font-size: 16px;">pending</span> 署名待</span>
                                     <?php endif; ?>
                                 <?php else: ?>
                                     <span style="color: var(--md-blue); font-weight: 500;"><span class="material-symbols-outlined" style="font-size: 16px;">send</span> 確認依頼中</span>
@@ -682,7 +682,7 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成', ['noContai
                             </td>
                             <td>
                                 <?php if (!($plan['is_draft'] ?? true)): ?>
-                                    <a href="kobetsu_plan_draft_pdf.php?plan_id=<?= $plan['id'] ?>" class="plan-link" target="_blank" style="background: rgba(255, 152, 0, 0.1); color: var(--md-orange);">
+                                    <a href="kobetsu_plan_draft_pdf.php?plan_id=<?= $plan['id'] ?>" class="plan-link" target="_blank" style="background: rgba(255, 152, 65, 0.15); color: var(--md-orange);">
                                         <span class="material-symbols-outlined">description</span> 計画案
                                     </a>
                                 <?php else: ?>
@@ -691,7 +691,7 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成', ['noContai
                             </td>
                             <td>
                                 <?php if ($plan['is_official'] ?? false): ?>
-                                    <a href="kobetsu_plan_pdf.php?plan_id=<?= $plan['id'] ?>" class="plan-link" target="_blank" style="background: rgba(40, 167, 69, 0.1); color: var(--md-green);">
+                                    <a href="kobetsu_plan_pdf.php?plan_id=<?= $plan['id'] ?>" class="plan-link" target="_blank" style="background: rgba(36, 161, 72, 0.15); color: var(--md-green);">
                                         <span class="material-symbols-outlined">verified</span> 正式版
                                     </a>
                                 <?php else: ?>
@@ -750,7 +750,7 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成', ['noContai
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <button type="submit" class="btn btn-primary" style="background: var(--cds-purple-60);">
                         <span class="material-symbols-outlined">monitoring</span> AI分析開始
                     </button>
                 </form>
@@ -765,8 +765,8 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成', ['noContai
 
     <!-- 新規作成モード表示（既存計画がある場合） -->
     <?php if (!$selectedPlanId && !empty($studentPlans)): ?>
-        <div style="background: linear-gradient(135deg, rgba(0, 122, 255, 0.1), rgba(88, 86, 214, 0.1)); padding: var(--spacing-md) var(--spacing-lg); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); border-left: 4px solid var(--md-blue);">
-            <p style="margin: 0; color: var(--md-blue); font-weight: 500;"><span class="material-symbols-outlined">edit_note</span> 新しい個別支援計画書を作成中です</p>
+        <div style="background: rgba(33, 150, 243, 0.15); padding: var(--spacing-md) var(--spacing-lg); border-radius: 0; margin-bottom: var(--spacing-lg); border-left: 4px solid var(--cds-blue-60);">
+            <p style="margin: 0; color: var(--cds-blue-60); font-weight: 500;"><span class="material-symbols-outlined">edit_note</span> 新しい個別支援計画書を作成中です</p>
         </div>
     <?php endif; ?>
 
@@ -924,7 +924,7 @@ renderPageStart('staff', $currentPage, '個別支援計画書作成', ['noContai
                     <?php if ($selectedPlanId): ?>
                         <a href="kobetsu_plan_sign.php?plan_id=<?= $selectedPlanId ?>" class="btn btn-success"><span class="material-symbols-outlined">draw</span> 署名入力へ進む</a>
                         <a href="kobetsu_plan_export.php?plan_id=<?= $selectedPlanId ?>" class="btn btn-info"><span class="material-symbols-outlined">save</span> CSV出力</a>
-                        <a href="kobetsu_plan_pdf.php?plan_id=<?= $selectedPlanId ?>" class="btn btn-primary" target="_blank" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"><span class="material-symbols-outlined">description</span> PDF出力</a>
+                        <a href="kobetsu_plan_pdf.php?plan_id=<?= $selectedPlanId ?>" class="btn btn-primary" target="_blank" style="background: var(--cds-purple-60);"><span class="material-symbols-outlined">description</span> PDF出力</a>
                     <?php endif; ?>
                 </div>
             </div>

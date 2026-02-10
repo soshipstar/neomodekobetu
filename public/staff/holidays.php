@@ -129,7 +129,7 @@ renderPageStart('staff', $currentPage, '休日管理');
             <button type="button" class="tab-btn active" data-tab="regular" style="flex: 1; padding: 12px; border: 2px solid var(--md-blue); background: var(--md-blue); color: white; border-radius: 8px; cursor: pointer; font-weight: 600;">
                 定期休日（毎週の休み）
             </button>
-            <button type="button" class="tab-btn" data-tab="special" style="flex: 1; padding: 12px; border: 2px solid #ddd; background: white; color: #333; border-radius: 8px; cursor: pointer; font-weight: 600;">
+            <button type="button" class="tab-btn" data-tab="special" style="flex: 1; padding: 12px; border: 2px solid var(--cds-border-subtle-00); background: white; color: var(--cds-text-primary); border-radius: 0; cursor: pointer; font-weight: 600;">
                 特別休日（祝日・イベント等）
             </button>
         </div>
@@ -150,10 +150,10 @@ renderPageStart('staff', $currentPage, '休日管理');
                     <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
                         <?php
                         $dayNames = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
-                        $dayColors = ['#dc3545', '#333', '#333', '#333', '#333', '#333', '#007bff'];
+                        $dayColors = ['var(--cds-support-error)', 'var(--cds-text-primary)', 'var(--cds-text-primary)', 'var(--cds-text-primary)', 'var(--cds-text-primary)', 'var(--cds-text-primary)', 'var(--cds-blue-60)'];
                         foreach ($dayNames as $i => $dayName):
                         ?>
-                        <label style="display: flex; align-items: center; gap: 8px; padding: 10px 15px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                        <label style="display: flex; align-items: center; gap: 8px; padding: 10px 15px; border: 2px solid var(--cds-border-subtle-00); border-radius: 0; cursor: pointer; transition: all 0.2s;">
                             <input type="checkbox" name="days_of_week[]" value="<?= $i ?>" style="width: 18px; height: 18px; cursor: pointer;">
                             <span style="color: <?= $dayColors[$i] ?>; font-weight: 500;"><?= $dayName ?></span>
                         </label>
@@ -205,8 +205,8 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         // タブボタンのスタイル切り替え
         document.querySelectorAll('.tab-btn').forEach(b => {
             b.style.background = 'white';
-            b.style.color = '#333';
-            b.style.borderColor = '#ddd';
+            b.style.color = 'var(--cds-text-primary)';
+            b.style.borderColor = 'var(--cds-border-subtle-00)';
             b.classList.remove('active');
         });
         btn.style.background = 'var(--md-blue)';
@@ -228,11 +228,11 @@ document.querySelectorAll('input[name="days_of_week[]"]').forEach(checkbox => {
     checkbox.addEventListener('change', function() {
         const label = this.closest('label');
         if (this.checked) {
-            label.style.background = '#e3f2fd';
+            label.style.background = 'rgba(31, 98, 254, 0.15)';
             label.style.borderColor = 'var(--md-blue)';
         } else {
             label.style.background = 'white';
-            label.style.borderColor = '#ddd';
+            label.style.borderColor = 'var(--cds-border-subtle-00)';
         }
     });
 });

@@ -90,14 +90,19 @@ function renderPageStart(string $role, string $currentPage, string $pageTitle, a
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light dark">
     <!-- Critical Dark Mode CSS (prevents flash) -->
-    <style>@media(prefers-color-scheme:dark){html,body{background:#1E1E1E;color:rgba(255,255,255,0.87)}}</style>
+    <style>@media(prefers-color-scheme:dark){html,body{background:var(--cds-bg-ui);color:rgba(255,255,255,0.87)}}</style>
     <title><?= htmlspecialchars($pageTitle) ?> - きづり</title>
+
+    <!-- IBM Plex Sans JP (Carbon Design System typography) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Google Material Symbols -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 
-    <!-- 共通CSS -->
-    <link rel="stylesheet" href="/assets/css/google-design.css">
+    <!-- Carbon Design System CSS -->
+    <link rel="stylesheet" href="/assets/css/carbon-design.css">
     <link rel="stylesheet" href="/assets/css/layout.css">
 
     <!-- ロール別CSS -->
@@ -112,7 +117,7 @@ function renderPageStart(string $role, string $currentPage, string $pageTitle, a
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#667eea">
+    <meta name="theme-color" content="#5C6ACF">
     <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.svg">
 
     <?= $additionalHead ?>

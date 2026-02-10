@@ -115,7 +115,7 @@ $planDetails = $stmt->fetchAll();
             top: 0;
             left: 0;
             right: 0;
-            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            background: var(--cds-orange-50);
             padding: 10px 20px;
             display: flex;
             align-items: center;
@@ -142,11 +142,11 @@ $planDetails = $stmt->fetchAll();
         }
 
         .print-btn {
-            background: #10b981;
+            background: var(--cds-support-success);
             border: none;
             color: white;
             padding: 8px 20px;
-            border-radius: 4px;
+            border-radius: 0;
             cursor: pointer;
             font-size: 14px;
             font-weight: bold;
@@ -154,7 +154,8 @@ $planDetails = $stmt->fetchAll();
         }
 
         .print-btn:hover {
-            background: #059669;
+            background: var(--cds-support-success);
+            opacity: 0.8;
         }
 
         .back-btn {
@@ -162,7 +163,7 @@ $planDetails = $stmt->fetchAll();
             border: 1px solid rgba(255,255,255,0.3);
             color: white;
             padding: 8px 16px;
-            border-radius: 4px;
+            border-radius: 0;
             cursor: pointer;
             font-size: 14px;
             text-decoration: none;
@@ -189,10 +190,10 @@ $planDetails = $stmt->fetchAll();
 
         .draft-badge {
             display: inline-block;
-            background: #ff9800;
+            background: var(--cds-orange-50);
             color: white;
             padding: 4px 12px;
-            border-radius: 4px;
+            border-radius: 0;
             font-size: 12pt;
             font-weight: bold;
             margin-left: 10px;
@@ -221,7 +222,7 @@ $planDetails = $stmt->fetchAll();
         }
 
         .section-title {
-            background: #4a5568;
+            background: var(--cds-text-primary);
             color: white;
             padding: 5px 10px;
             font-weight: bold;
@@ -267,7 +268,7 @@ $planDetails = $stmt->fetchAll();
         }
 
         .details-table th {
-            background: #e2e8f0;
+            background: rgba(0,0,0,0.05);
             font-weight: bold;
             text-align: center;
             font-size: var(--table-font-size);
@@ -284,11 +285,11 @@ $planDetails = $stmt->fetchAll();
         }
 
         .category-家族支援 {
-            background: #dbeafe;
+            background: rgba(59, 130, 246, 0.15);
         }
 
         .category-地域支援 {
-            background: #d1fae5;
+            background: rgba(36, 161, 72, 0.15);
         }
 
         .signature-footer {
@@ -297,7 +298,7 @@ $planDetails = $stmt->fetchAll();
             align-items: center;
             margin-top: 15px;
             padding-top: 10px;
-            border-top: 1px solid #333;
+            border-top: 1px solid var(--cds-text-primary);
         }
 
         .signature-center {
@@ -332,7 +333,7 @@ $planDetails = $stmt->fetchAll();
 
         .signature-footer .signature-name {
             font-size: 9pt;
-            color: #999;
+            color: var(--cds-text-secondary);
         }
 
         .footer-issuer {
@@ -347,7 +348,7 @@ $planDetails = $stmt->fetchAll();
 
         .footer-issuer .issuer-details {
             font-size: 9pt;
-            color: #333;
+            color: var(--cds-text-primary);
         }
 
         .two-column {
@@ -390,10 +391,10 @@ $planDetails = $stmt->fetchAll();
             <span class="material-symbols-outlined">arrow_back</span> 戻る
         </a>
         <div class="control-group">
-            <span class="size-display" style="background: #fff3cd; color: #856404;">計画案（ご確認ください）</span>
+            <span class="size-display" style="background: rgba(217, 119, 6, 0.15); color: var(--cds-text-primary);">計画案（ご確認ください）</span>
         </div>
         <div class="control-group">
-            <span class="size-display" style="background: #fef3c7; color: #92400e;">A3 横向き</span>
+            <span class="size-display" style="background: rgba(245, 158, 11, 0.15); color: var(--cds-text-primary);">A3 横向き</span>
         </div>
         <button class="print-btn" onclick="window.print()"><span class="material-symbols-outlined">print</span> PDF印刷</button>
     </div>
@@ -490,7 +491,7 @@ $planDetails = $stmt->fetchAll();
             <div class="signature-item">
                 <div class="signature-label">保護者署名</div>
                 <div class="signature-content">
-                    <div class="signature-name" style="color: #999;">（確認後に署名）</div>
+                    <div class="signature-name" style="color: var(--cds-text-secondary);">（確認後に署名）</div>
                 </div>
             </div>
         </div>

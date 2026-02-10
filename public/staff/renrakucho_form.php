@@ -227,7 +227,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .common-activity-section h2 {
-            color: #856404;
+            color: var(--cds-orange-50);
             font-size: 18px;
             margin-bottom: 15px;
         }
@@ -264,7 +264,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .domain-selection h4 {
-            color: #555;
+            color: var(--cds-text-secondary);
             font-size: var(--text-callout);
             margin-bottom: var(--spacing-md);
         }
@@ -474,7 +474,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
         .student-item.selected {
             border-color: var(--primary-purple);
-            background: #e3f2fd;
+            background: rgba(25, 118, 210, 0.15);
         }
 
         .student-item-info {
@@ -641,7 +641,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                     <?php if ($existingRecord['staff_id'] == $currentUser['id']): ?>
                         <span style="color: var(--primary-purple); font-weight: bold;">(自分)</span>
                     <?php else: ?>
-                        <span style="color: #ff9800; font-weight: bold;">(他のスタッフ)</span>
+                        <span style="color: var(--cds-orange-50); font-weight: bold;">(他のスタッフ)</span>
                     <?php endif; ?>
                 </div>
             <?php endif; ?>
@@ -693,7 +693,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 <h2>本日の活動（共通）</h2>
                 <p class="info-text">全ての参加者に反映される共通の活動内容を記入してください</p>
                 <?php if ($supportPlan): ?>
-                    <p class="info-text" style="background: #e7f3ff; padding: var(--spacing-md); border-radius: var(--radius-sm); border-left: 4px solid var(--primary-purple); margin-bottom: var(--spacing-md);">
+                    <p class="info-text" style="background: rgba(25, 118, 210, 0.15); padding: var(--spacing-md); border-radius: var(--radius-sm); border-left: 4px solid var(--primary-purple); margin-bottom: var(--spacing-md);">
                         <span class="material-symbols-outlined">tips_and_updates</span> 支援案「<?php echo htmlspecialchars($supportPlan['activity_name'], ENT_QUOTES, 'UTF-8'); ?>」の活動内容が反映されています。必要に応じて編集してください。
                     </p>
                 <?php endif; ?>
@@ -726,8 +726,8 @@ renderPageStart('staff', $currentPage, $pageTitle);
                     <input type="hidden" name="students[<?php echo $studentId; ?>][id]" value="<?php echo $studentId; ?>">
 
                     <!-- 本日の様子 -->
-                    <div class="domain-group" style="background: #e3f2fd; padding: 15px; border-radius: var(--radius-sm); border-left: 4px solid #2196f3;">
-                        <h4 style="color: #1976d2;">本日の様子</h4>
+                    <div class="domain-group" style="background: rgba(25, 118, 210, 0.15); padding: 15px; border-radius: var(--radius-sm); border-left: 4px solid var(--cds-blue-60);">
+                        <h4 style="color: var(--cds-blue-60);">本日の様子</h4>
                         <textarea
                             name="students[<?php echo $studentId; ?>][daily_note]"
                             class="domain-textarea"
@@ -1017,8 +1017,8 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 <input type="hidden" name="students[${studentId}][id]" value="${studentId}">
 
                 <!-- 本日の様子 -->
-                <div class="domain-group" style="background: #e3f2fd; padding: 15px; border-radius: var(--radius-sm); border-left: 4px solid #2196f3;">
-                    <h4 style="color: #1976d2;">本日の様子</h4>
+                <div class="domain-group" style="background: rgba(25, 118, 210, 0.15); padding: 15px; border-radius: var(--radius-sm); border-left: 4px solid var(--cds-blue-60);">
+                    <h4 style="color: var(--cds-blue-60);">本日の様子</h4>
                     <textarea
                         name="students[${studentId}][daily_note]"
                         class="domain-textarea"

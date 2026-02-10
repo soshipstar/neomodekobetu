@@ -140,7 +140,7 @@ renderPageStart('guardian', $currentPage, $pageTitle);
 
         .form-group select {
             padding: var(--spacing-md);
-            border: 2px solid #e1e8ed;
+            border: 2px solid var(--cds-border-subtle-00);
             border-radius: var(--radius-sm);
             font-size: 15px;
             background: var(--md-bg-primary);
@@ -155,7 +155,7 @@ renderPageStart('guardian', $currentPage, $pageTitle);
 
         .plan-card {
             background: var(--md-bg-primary);
-            border: 2px solid #e1e8ed;
+            border: 2px solid var(--cds-border-subtle-00);
             border-radius: var(--radius-md);
             padding: var(--spacing-lg);
             margin-bottom: 15px;
@@ -170,7 +170,7 @@ renderPageStart('guardian', $currentPage, $pageTitle);
 
         .plan-card.selected {
             border-color: var(--primary-purple);
-            background: linear-gradient(135deg, #f0f4ff 0%, #faf0ff 100%);
+            background: var(--md-bg-primary);
         }
 
         .plan-card-header {
@@ -252,7 +252,7 @@ renderPageStart('guardian', $currentPage, $pageTitle);
 
         td {
             padding: 15px 12px;
-            border-bottom: 1px solid #e1e8ed;
+            border-bottom: 1px solid var(--cds-border-subtle-00);
             vertical-align: top;
         }
 
@@ -311,7 +311,7 @@ renderPageStart('guardian', $currentPage, $pageTitle);
         }
 
         .confirmation-box.confirmed {
-            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            background: rgba(36, 161, 72, 0.15);
             border: 2px solid var(--md-green);
             display: flex;
             align-items: center;
@@ -340,13 +340,13 @@ renderPageStart('guardian', $currentPage, $pageTitle);
         .confirmation-title {
             font-size: 20px;
             font-weight: bold;
-            color: #155724;
+            color: var(--cds-support-success);
             margin-bottom: 5px;
         }
 
         .confirmation-date {
             font-size: var(--text-subhead);
-            color: #155724;
+            color: var(--cds-support-success);
         }
 
         .alert {
@@ -356,15 +356,15 @@ renderPageStart('guardian', $currentPage, $pageTitle);
         }
 
         .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background: rgba(36, 161, 72, 0.15);
+            color: var(--cds-support-success);
+            border: 1px solid var(--cds-support-success);
         }
 
         .alert-error {
-            background: var(--md-bg-secondary);
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            background: rgba(218, 30, 40, 0.15);
+            color: var(--cds-support-error);
+            border: 1px solid var(--cds-support-error);
         }
 
         /* スマートフォン対応 */
@@ -438,7 +438,7 @@ renderPageStart('guardian', $currentPage, $pageTitle);
         }
 
         .signature-container {
-            border: 2px solid #e1e8ed;
+            border: 2px solid var(--cds-border-subtle-00);
             border-radius: var(--radius-sm);
             background: white;
             overflow: hidden;
@@ -463,7 +463,7 @@ renderPageStart('guardian', $currentPage, $pageTitle);
         .signature-preview {
             max-width: 250px;
             max-height: 100px;
-            border: 1px solid #e1e8ed;
+            border: 1px solid var(--cds-border-subtle-00);
             border-radius: var(--radius-sm);
         }
 
@@ -477,7 +477,7 @@ renderPageStart('guardian', $currentPage, $pageTitle);
         .staff-signature-section {
             margin-top: var(--spacing-lg);
             padding-top: var(--spacing-lg);
-            border-top: 1px solid #e1e8ed;
+            border-top: 1px solid var(--cds-border-subtle-00);
         }
     </style>
 
@@ -533,12 +533,12 @@ renderPageStart('guardian', $currentPage, $pageTitle);
                             <span>計画書の詳細</span>
                             <div style="display: flex; gap: 10px;">
                                 <?php if ($planData['is_official'] ?? 0): ?>
-                                    <a href="support_plan_pdf.php?plan_id=<?= $planData['id'] ?>" class="btn" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 8px 16px; font-size: 14px;" target="_blank">
+                                    <a href="support_plan_pdf.php?plan_id=<?= $planData['id'] ?>" class="btn" style="background: rgba(36, 161, 72, 0.15); color: var(--cds-support-success); padding: 8px 16px; font-size: 14px;" target="_blank">
                                         <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">verified</span> 正式版PDF
                                     </a>
                                 <?php endif; ?>
                                 <?php if (!($planData['is_draft'] ?? true)): ?>
-                                    <a href="support_plan_draft_pdf.php?plan_id=<?= $planData['id'] ?>" class="btn" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; padding: 8px 16px; font-size: 14px;" target="_blank">
+                                    <a href="support_plan_draft_pdf.php?plan_id=<?= $planData['id'] ?>" class="btn" style="background: var(--cds-orange-50); color: white; padding: 8px 16px; font-size: 14px;" target="_blank">
                                         <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">description</span> 計画案PDF
                                     </a>
                                 <?php endif; ?>
@@ -720,8 +720,8 @@ renderPageStart('guardian', $currentPage, $pageTitle);
 
                         <?php elseif ($isOfficial && !$guardianConfirmed): ?>
                             <!-- 正式版だが署名待ち -->
-                            <div class="confirmation-box" style="background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%); border: 2px solid #ffc107;">
-                                <p style="color: #856404; margin: 0;">
+                            <div class="confirmation-box" style="background: var(--cds-support-warning); border: 2px solid var(--cds-support-warning);">
+                                <p style="color: var(--text-primary); margin: 0;">
                                     <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">schedule</span>
                                     正式版の個別支援計画書です。次回の面談時に署名をお願いいたします。
                                 </p>
@@ -729,18 +729,18 @@ renderPageStart('guardian', $currentPage, $pageTitle);
 
                         <?php elseif ($guardianReviewComment): ?>
                             <!-- コメント送信済み -->
-                            <div class="confirmation-box" style="background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%); border: 2px solid #17a2b8;">
-                                <div class="confirmation-icon" style="background: #17a2b8;">!</div>
+                            <div class="confirmation-box" style="background: var(--cds-blue-60); border: 2px solid var(--cds-blue-60);">
+                                <div class="confirmation-icon" style="background: var(--cds-blue-60);">!</div>
                                 <div class="confirmation-content">
-                                    <div class="confirmation-title" style="color: #0c5460;">変更希望コメント送信済み</div>
-                                    <div class="confirmation-date" style="color: #0c5460;">
+                                    <div class="confirmation-title" style="color: var(--text-primary);">変更希望コメント送信済み</div>
+                                    <div class="confirmation-date" style="color: var(--text-primary);">
                                         送信日時: <?= date('Y年n月j日 H:i', strtotime($guardianReviewCommentAt)) ?>
                                     </div>
                                     <div style="margin-top: var(--spacing-md); padding: var(--spacing-md); background: rgba(255,255,255,0.7); border-radius: var(--radius-sm);">
-                                        <p style="margin: 0; font-size: var(--text-footnote); color: #0c5460; font-weight: 600;">送信したコメント:</p>
-                                        <p style="margin: 8px 0 0 0; color: #0c5460;"><?= nl2br(htmlspecialchars($guardianReviewComment)) ?></p>
+                                        <p style="margin: 0; font-size: var(--text-footnote); color: var(--text-primary); font-weight: 600;">送信したコメント:</p>
+                                        <p style="margin: 8px 0 0 0; color: var(--text-primary);"><?= nl2br(htmlspecialchars($guardianReviewComment)) ?></p>
                                     </div>
-                                    <p style="margin: var(--spacing-md) 0 0 0; font-size: var(--text-footnote); color: #0c5460;">
+                                    <p style="margin: var(--spacing-md) 0 0 0; font-size: var(--text-footnote); color: var(--text-primary);">
                                         スタッフがコメントを確認し、正式版を作成いたします。
                                     </p>
                                 </div>
@@ -754,8 +754,8 @@ renderPageStart('guardian', $currentPage, $pageTitle);
                                     この個別支援計画書（案）の内容をご確認ください。
                                 </p>
 
-                                <div style="background: #fff3cd; padding: var(--spacing-md); border-radius: var(--radius-sm); margin-bottom: var(--spacing-lg); border-left: 4px solid #ffc107;">
-                                    <p style="margin: 0; color: #856404; font-size: var(--text-subhead);">
+                                <div style="background: var(--cds-support-warning); padding: var(--spacing-md); border-radius: var(--radius-sm); margin-bottom: var(--spacing-lg); border-left: 4px solid var(--cds-support-warning);">
+                                    <p style="margin: 0; color: var(--text-primary); font-size: var(--text-subhead);">
                                         <strong>変更をご希望の場合：</strong>下記のコメント欄にご記入ください。<br>
                                         <strong>内容に問題がない場合：</strong>「内容を確認しました」ボタンを押してください。
                                     </p>
@@ -769,10 +769,10 @@ renderPageStart('guardian', $currentPage, $pageTitle);
                                 </div>
 
                                 <div style="display: flex; gap: var(--spacing-md); flex-wrap: wrap;">
-                                    <button onclick="submitReviewComment(<?= $selectedPlanId ?>)" class="btn" id="commentBtn" style="flex: 1; min-width: 200px; background: #17a2b8; color: white;">
+                                    <button onclick="submitReviewComment(<?= $selectedPlanId ?>)" class="btn" id="commentBtn" style="flex: 1; min-width: 200px; background: var(--cds-blue-60); color: white;">
                                         <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">send</span> コメントを送信
                                     </button>
-                                    <button onclick="confirmPlanReview(<?= $selectedPlanId ?>)" class="btn btn-primary" id="confirmBtn" style="flex: 1; min-width: 200px; background: linear-gradient(135deg, var(--md-green) 0%, #20c997 100%); color: white;">
+                                    <button onclick="confirmPlanReview(<?= $selectedPlanId ?>)" class="btn btn-primary" id="confirmBtn" style="flex: 1; min-width: 200px; background: rgba(36, 161, 72, 0.15); color: var(--cds-support-success);">
                                         <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">check_circle</span> 内容を確認しました
                                     </button>
                                 </div>

@@ -150,7 +150,7 @@ if ($type === 'staff') {
 
         /* ヘッダー */
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--cds-purple-60);
             color: white;
             padding: 20px 24px;
             text-align: center;
@@ -170,11 +170,11 @@ if ($type === 'staff') {
 
         /* メタ情報 */
         .meta-card {
-            background: #fafafa;
+            background: rgba(0,0,0,0.02);
             margin: 16px;
             padding: 16px 20px;
-            border-radius: 12px;
-            border: 1px solid #e5e5e7;
+            border-radius: 0;
+            border: 1px solid var(--cds-border-subtle-00);
         }
 
         .meta-grid {
@@ -191,13 +191,13 @@ if ($type === 'staff') {
 
         .meta-label {
             font-size: 8pt;
-            color: #86868b;
+            color: var(--cds-text-secondary);
             font-weight: 500;
         }
 
         .meta-value {
             font-size: 10pt;
-            color: #1d1d1f;
+            color: var(--cds-text-primary);
             font-weight: 600;
         }
 
@@ -212,12 +212,12 @@ if ($type === 'staff') {
         }
 
         .status-submitted {
-            background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+            background: var(--cds-support-success);
             color: white;
         }
 
         .status-draft {
-            background: linear-gradient(135deg, #FF9800 0%, #ff9f0a 100%);
+            background: var(--cds-support-warning);
             color: white;
         }
 
@@ -251,22 +251,22 @@ if ($type === 'staff') {
         .section-title {
             font-size: 11pt;
             font-weight: 600;
-            color: #1d1d1f;
+            color: var(--cds-text-primary);
         }
 
         .section-content {
-            background: #f5f5f7;
-            border-radius: 10px;
+            background: rgba(0,0,0,0.02);
+            border-radius: 0;
             padding: 12px 14px;
             font-size: 9pt;
             line-height: 1.6;
-            color: #1d1d1f;
+            color: var(--cds-text-primary);
             white-space: pre-wrap;
             min-height: 40px;
         }
 
         .empty-content {
-            color: #86868b;
+            color: var(--cds-text-secondary);
             font-style: italic;
         }
 
@@ -278,14 +278,14 @@ if ($type === 'staff') {
         }
 
         .goal-card {
-            background: #f5f5f7;
-            border-radius: 10px;
+            background: rgba(0,0,0,0.02);
+            border-radius: 0;
             padding: 12px 14px;
         }
 
         .goal-label {
             font-size: 8pt;
-            color: #86868b;
+            color: var(--cds-text-secondary);
             font-weight: 600;
             margin-bottom: 6px;
             display: flex;
@@ -296,16 +296,16 @@ if ($type === 'staff') {
         .goal-content {
             font-size: 9pt;
             line-height: 1.5;
-            color: #1d1d1f;
+            color: var(--cds-text-primary);
             white-space: pre-wrap;
         }
 
         /* 五領域 */
         .domains-section {
-            background: #fafafa;
-            border-radius: 12px;
+            background: rgba(0,0,0,0.02);
+            border-radius: 0;
             padding: 14px;
-            border: 1px solid #e5e5e7;
+            border: 1px solid var(--cds-border-subtle-00);
         }
 
         .domains-header {
@@ -314,7 +314,7 @@ if ($type === 'staff') {
             gap: 8px;
             margin-bottom: 12px;
             padding-bottom: 10px;
-            border-bottom: 1px solid #e5e5e7;
+            border-bottom: 1px solid var(--cds-border-subtle-00);
         }
 
         .domains-grid {
@@ -333,31 +333,31 @@ if ($type === 'staff') {
         .domain-label {
             font-size: 9pt;
             font-weight: 600;
-            color: #1d1d1f;
+            color: var(--cds-text-primary);
             padding: 8px 10px;
             background: white;
-            border-radius: 8px;
-            border: 1px solid #e5e5e7;
+            border-radius: 0;
+            border: 1px solid var(--cds-border-subtle-00);
             text-align: center;
         }
 
         .domain-content {
             font-size: 9pt;
             line-height: 1.5;
-            color: #1d1d1f;
+            color: var(--cds-text-primary);
             background: white;
-            border-radius: 8px;
+            border-radius: 0;
             padding: 8px 10px;
             white-space: pre-wrap;
             min-height: 32px;
         }
 
         /* カラーテーマ */
-        .icon-wish { background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%); }
-        .icon-home { background: linear-gradient(135deg, #4ecdc4 0%, #6ee7de 100%); }
-        .icon-goal { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .icon-domain { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-        .icon-other { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .icon-wish { background: var(--cds-support-error); }
+        .icon-home { background: var(--cds-teal-60); }
+        .icon-goal { background: var(--cds-purple-60); }
+        .icon-domain { background: var(--cds-support-warning); }
+        .icon-other { background: var(--cds-blue-60); }
 
         /* 印刷ボタン */
         .print-buttons {
@@ -371,14 +371,14 @@ if ($type === 'staff') {
 
         .print-button {
             padding: 12px 24px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--cds-purple-60);
             color: white;
             border: none;
-            border-radius: 12px;
+            border-radius: 0;
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             text-decoration: none;
             display: inline-flex;
             align-items: center;
@@ -388,16 +388,16 @@ if ($type === 'staff') {
 
         .print-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+            opacity: 0.8;
         }
 
         .print-button.secondary {
-            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
-            box-shadow: 0 4px 15px rgba(107, 114, 128, 0.3);
+            background: var(--cds-text-secondary);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
         }
 
         .print-button.secondary:hover {
-            box-shadow: 0 6px 20px rgba(107, 114, 128, 0.4);
+            opacity: 0.8;
         }
     </style>
 </head>

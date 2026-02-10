@@ -217,11 +217,11 @@ renderPageStart('staff', $currentPage, '利用日変更');
 }
 
 .calendar-day.holiday {
-    background: rgba(255, 59, 48, 0.05);
+    background: rgba(218, 30, 40, 0.15);
 }
 
 .calendar-day.regular-day {
-    background: rgba(0, 122, 255, 0.05);
+    background: var(--cds-blue-60);
 }
 
 .calendar-day.today {
@@ -247,27 +247,27 @@ renderPageStart('staff', $currentPage, '利用日変更');
 .day-label {
     font-size: 10px;
     padding: 2px 6px;
-    border-radius: 4px;
+    border-radius: 0;
 }
 
 .day-label.regular {
-    background: rgba(0, 122, 255, 0.15);
-    color: var(--md-blue);
+    background: var(--cds-blue-60);
+    color: var(--cds-blue-60);
 }
 
 .day-label.holiday {
-    background: rgba(255, 59, 48, 0.15);
-    color: var(--md-red);
+    background: rgba(218, 30, 40, 0.15);
+    color: var(--cds-support-error);
 }
 
 .day-label.additional {
-    background: rgba(52, 199, 89, 0.15);
-    color: var(--md-green);
+    background: rgba(36, 161, 72, 0.15);
+    color: var(--cds-support-success);
 }
 
 .day-label.cancelled {
-    background: rgba(255, 59, 48, 0.15);
-    color: var(--md-red);
+    background: rgba(218, 30, 40, 0.15);
+    color: var(--cds-support-error);
 }
 
 .usage-checkbox {
@@ -321,19 +321,19 @@ renderPageStart('staff', $currentPage, '利用日変更');
     bottom: 20px;
     right: 20px;
     padding: var(--spacing-md) var(--spacing-xl);
-    background: var(--md-green);
+    background: var(--cds-support-success);
     color: white;
     border: none;
-    border-radius: var(--radius-md);
+    border-radius: 0;
     font-size: var(--text-body);
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(52, 199, 89, 0.4);
+    box-shadow: 0 4px 12px rgba(36, 161, 72, 0.4);
     display: none;
 }
 
 .save-button:hover {
-    background: #28b463;
+    background: var(--cds-support-success);
 }
 
 .save-button.show {
@@ -504,15 +504,15 @@ renderPageStart('staff', $currentPage, '利用日変更');
 
     <div class="legend">
         <div class="legend-item">
-            <div class="legend-box" style="background: rgba(0, 122, 255, 0.15); border: 1px solid var(--md-blue);"></div>
+            <div class="legend-box" style="background: var(--cds-blue-60); border: 1px solid var(--cds-border-subtle-00);"></div>
             <span>通常利用日</span>
         </div>
         <div class="legend-item">
-            <div class="legend-box" style="background: rgba(52, 199, 89, 0.15); border: 1px solid var(--md-green);"></div>
+            <div class="legend-box" style="background: rgba(36, 161, 72, 0.15); border: 1px solid var(--cds-border-subtle-00);"></div>
             <span>追加利用</span>
         </div>
         <div class="legend-item">
-            <div class="legend-box" style="background: rgba(255, 59, 48, 0.15); border: 1px solid var(--md-red);"></div>
+            <div class="legend-box" style="background: rgba(218, 30, 40, 0.15); border: 1px solid var(--cds-border-subtle-00);"></div>
             <span>キャンセル / 休日</span>
         </div>
     </div>

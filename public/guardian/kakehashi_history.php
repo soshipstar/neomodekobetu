@@ -206,11 +206,11 @@ renderPageStart('guardian', $currentPage, 'かけはし履歴', ['classroom' => 
 }
 
 .confirm-btn {
-    background: linear-gradient(180deg, #4CAF50 0%, #388E3C 100%);
-    color: white;
+    background: rgba(36, 161, 72, 0.15);
+    color: var(--cds-support-success);
     border: none;
     padding: 8px 16px;
-    border-radius: 8px;
+    border-radius: 0;
     font-weight: 600;
     cursor: pointer;
     display: inline-flex;
@@ -222,7 +222,7 @@ renderPageStart('guardian', $currentPage, 'かけはし履歴', ['classroom' => 
 
 .confirm-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+    box-shadow: 0 4px 12px rgba(36, 161, 72, 0.2);
 }
 
 .confirm-btn:disabled {

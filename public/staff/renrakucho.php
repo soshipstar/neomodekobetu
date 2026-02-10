@@ -236,7 +236,7 @@ renderPageStart('staff', $currentPage, '連絡帳入力');
 .student-grade-badge {
     font-size: 11px;
     padding: 2px 6px;
-    border-radius: 3px;
+    border-radius: 0;
     margin-left: 5px;
 }
 

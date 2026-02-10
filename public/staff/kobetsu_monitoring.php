@@ -184,11 +184,11 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成', ['noContai
 }
 
 .plan-info {
-    background: rgba(0, 122, 255, 0.1);
+    background: rgba(15, 98, 254, 0.15);
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-2xl);
-    border-left: 4px solid var(--md-blue);
+    border-left: 4px solid var(--cds-blue-60);
 }
 
 .info-row {
@@ -292,35 +292,35 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成', ['noContai
     display: inline-block;
     padding: var(--spacing-sm) 15px;
     margin: 5px;
-    background: rgba(255,149,0,0.15);
-    border-radius: 6px;
+    background: rgba(255, 131, 43, 0.15);
+    border-radius: 0;
     text-decoration: none;
-    color: var(--md-orange);
+    color: var(--cds-orange-50);
     transition: all var(--duration-normal) var(--ease-out);
 }
 
 .monitoring-item:hover,
 .monitoring-item.active {
-    background: var(--md-orange);
+    background: var(--cds-orange-50);
     color: white;
 }
 
 .btn-ai-generate {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--cds-purple-60);
     color: white;
     border: none;
     padding: 10px 20px;
-    border-radius: var(--radius-md);
+    border-radius: 0;
     font-size: var(--text-subhead);
     font-weight: 600;
     cursor: pointer;
     transition: all var(--duration-normal) var(--ease-out);
-    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 3px 10px rgba(111, 66, 193, 0.3);
 }
 
 .btn-ai-generate:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 5px 15px rgba(111, 66, 193, 0.4);
 }
 
 .btn-ai-generate:disabled {
@@ -348,8 +348,8 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成', ['noContai
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #667eea, #764ba2);
-    border-radius: 4px;
+    background: var(--cds-purple-60);
+    border-radius: 0;
     transition: width 0.3s ease;
     width: 0%;
 }
@@ -387,8 +387,8 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成', ['noContai
 }
 
 .generating {
-    border-color: var(--md-blue) !important;
-    background: rgba(0,122,255,0.05) !important;
+    border-color: var(--cds-blue-60) !important;
+    background: rgba(15, 98, 254, 0.05) !important;
 }
 
 @keyframes pulse {
@@ -583,7 +583,7 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成', ['noContai
 
                 <!-- 計画情報表示 -->
                 <div class="plan-info">
-                    <h3 style="margin-bottom: 15px; color: #1976d2;">対象の個別支援計画書</h3>
+                    <h3 style="margin-bottom: 15px; color: var(--cds-blue-60);">対象の個別支援計画書</h3>
                     <div class="info-row">
                         <div class="info-item">
                             <div class="info-label">生徒氏名</div>
@@ -714,8 +714,8 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成', ['noContai
                         <?php endif; ?>
 
                         <div class="form-group" style="margin-bottom: 12px;">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">達成状況</label>
-                            <select name="long_term_goal_achievement" style="width: 100%; padding: var(--spacing-md); border: 1px solid var(--md-gray-5); border-radius: 6px; font-size: var(--text-subhead);">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--cds-text-primary);">達成状況</label>
+                            <select name="long_term_goal_achievement" style="width: 100%; padding: var(--spacing-md); border: 1px solid var(--md-gray-5); border-radius: 0; font-size: var(--text-subhead);">
                                 <option value="">-- 選択してください --</option>
                                 <option value="未着手" <?= ($monitoringData['long_term_goal_achievement'] ?? '') == '未着手' ? 'selected' : '' ?>>未着手</option>
                                 <option value="進行中" <?= ($monitoringData['long_term_goal_achievement'] ?? '') == '進行中' ? 'selected' : '' ?>>進行中</option>
@@ -726,8 +726,8 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成', ['noContai
                         </div>
 
                         <div class="form-group">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">コメント</label>
-                            <textarea name="long_term_goal_comment" rows="4" style="width: 100%; padding: var(--spacing-md); border: 1px solid var(--md-gray-5); border-radius: 6px; font-size: var(--text-subhead); font-family: inherit; resize: vertical;" placeholder="長期目標に対する振り返りや意見を記入してください"><?= htmlspecialchars($monitoringData['long_term_goal_comment'] ?? '') ?></textarea>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--cds-text-primary);">コメント</label>
+                            <textarea name="long_term_goal_comment" rows="4" style="width: 100%; padding: var(--spacing-md); border: 1px solid var(--md-gray-5); border-radius: 0; font-size: var(--text-subhead); font-family: inherit; resize: vertical;" placeholder="長期目標に対する振り返りや意見を記入してください"><?= htmlspecialchars($monitoringData['long_term_goal_comment'] ?? '') ?></textarea>
                         </div>
                     </div>
 
@@ -745,8 +745,8 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成', ['noContai
                         <?php endif; ?>
 
                         <div class="form-group" style="margin-bottom: 12px;">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">達成状況</label>
-                            <select name="short_term_goal_achievement" style="width: 100%; padding: var(--spacing-md); border: 1px solid var(--md-gray-5); border-radius: 6px; font-size: var(--text-subhead);">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--cds-text-primary);">達成状況</label>
+                            <select name="short_term_goal_achievement" style="width: 100%; padding: var(--spacing-md); border: 1px solid var(--md-gray-5); border-radius: 0; font-size: var(--text-subhead);">
                                 <option value="">-- 選択してください --</option>
                                 <option value="未着手" <?= ($monitoringData['short_term_goal_achievement'] ?? '') == '未着手' ? 'selected' : '' ?>>未着手</option>
                                 <option value="進行中" <?= ($monitoringData['short_term_goal_achievement'] ?? '') == '進行中' ? 'selected' : '' ?>>進行中</option>
@@ -757,8 +757,8 @@ renderPageStart('staff', $currentPage, 'モニタリング表作成', ['noContai
                         </div>
 
                         <div class="form-group">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">コメント</label>
-                            <textarea name="short_term_goal_comment" rows="4" style="width: 100%; padding: var(--spacing-md); border: 1px solid var(--md-gray-5); border-radius: 6px; font-size: var(--text-subhead); font-family: inherit; resize: vertical;" placeholder="短期目標に対する振り返りや意見を記入してください"><?= htmlspecialchars($monitoringData['short_term_goal_comment'] ?? '') ?></textarea>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--cds-text-primary);">コメント</label>
+                            <textarea name="short_term_goal_comment" rows="4" style="width: 100%; padding: var(--spacing-md); border: 1px solid var(--md-gray-5); border-radius: 0; font-size: var(--text-subhead); font-family: inherit; resize: vertical;" placeholder="短期目標に対する振り返りや意見を記入してください"><?= htmlspecialchars($monitoringData['short_term_goal_comment'] ?? '') ?></textarea>
                         </div>
                     </div>
 
@@ -904,7 +904,7 @@ class SignaturePad {
         const coords = this.getCoordinates(e);
 
         this.ctx.beginPath();
-        this.ctx.strokeStyle = '#000000';
+        this.ctx.strokeStyle = '#1d1d1f';
         this.ctx.lineWidth = 2;
         this.ctx.lineCap = 'round';
         this.ctx.lineJoin = 'round';
@@ -922,7 +922,7 @@ class SignaturePad {
     }
 
     clear() {
-        this.ctx.fillStyle = '#ffffff';
+        this.ctx.fillStyle = '#f5f5f5';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         this.hasDrawn = false;
     }
@@ -1103,7 +1103,7 @@ function clearStaffSignature() {
                     }
 
                     // 成功アニメーション
-                    commentTextarea.style.borderColor = '#388E3C';
+                    commentTextarea.style.borderColor = 'var(--cds-support-success)';
                     setTimeout(() => {
                         commentTextarea.style.borderColor = '';
                     }, 2000);

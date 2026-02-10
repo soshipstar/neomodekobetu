@@ -302,16 +302,15 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
 }
 
 .btn-generate {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    color: white;
+    background: var(--cds-purple-60);
+    color: var(--cds-text-on-color);
     display: inline-flex;
     align-items: center;
     gap: 8px;
 }
 
 .btn-generate:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 20px rgba(245, 87, 108, 0.4);
+    opacity: 0.9;
 }
 
 .quick-links {
@@ -368,60 +367,51 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
 }
 
 .btn-primary {
-    background: linear-gradient(180deg, #1976D2 0%, #1565C0 100%);
-    color: white;
-    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+    background: var(--cds-blue-60);
+    color: var(--cds-text-on-color);
 }
 
 .btn-primary:hover {
-    background: linear-gradient(180deg, #42A5F5 0%, #1976D2 100%);
-    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
+    opacity: 0.9;
 }
 
 .btn-secondary {
-    background: linear-gradient(180deg, #757575 0%, #636366 100%);
-    color: white;
-    box-shadow: 0 2px 8px rgba(142, 142, 147, 0.3);
+    background: var(--cds-layer-02);
+    color: var(--cds-text-primary);
+    border: 1px solid var(--cds-border-strong-01);
 }
 
 .btn-secondary:hover {
-    background: linear-gradient(180deg, #9E9EA3 0%, #757575 100%);
-    box-shadow: 0 4px 12px rgba(142, 142, 147, 0.4);
+    background: var(--cds-layer-hover-02);
 }
 
 .btn-success {
-    background: linear-gradient(180deg, #4CAF50 0%, #388E3C 100%);
-    color: white;
-    box-shadow: 0 2px 8px rgba(52, 199, 89, 0.3);
+    background: var(--cds-support-success);
+    color: var(--cds-text-on-color);
 }
 
 .btn-success:hover {
-    background: linear-gradient(180deg, #66BB6A 0%, #4CAF50 100%);
-    box-shadow: 0 4px 12px rgba(52, 199, 89, 0.4);
+    opacity: 0.9;
 }
 
 .btn-danger {
-    background: linear-gradient(180deg, #F44336 0%, #D32F2F 100%);
-    color: white;
-    box-shadow: 0 2px 8px rgba(255, 59, 48, 0.3);
+    background: var(--cds-support-error);
+    color: var(--cds-text-on-color);
 }
 
 .btn-danger:hover {
-    background: linear-gradient(180deg, #EF5350 0%, #F44336 100%);
-    box-shadow: 0 4px 12px rgba(255, 59, 48, 0.4);
+    opacity: 0.9;
 }
 
 .btn-generate {
-    background: linear-gradient(135deg, #AF52DE 0%, #5856D6 100%);
-    color: white;
-    box-shadow: 0 2px 12px rgba(88, 86, 214, 0.4);
+    background: var(--cds-purple-60);
+    color: var(--cds-text-on-color);
     padding: 14px 28px;
     font-size: 16px;
 }
 
 .btn-generate:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(88, 86, 214, 0.5);
+    opacity: 0.9;
 }
 
 .action-buttons-row {
@@ -517,16 +507,14 @@ renderPageStart('staff', $currentPage, 'スタッフかけはし入力');
 
 /* 本人の願い自動生成ボタン */
 .btn-wish-generate {
-    background: linear-gradient(135deg, #00BCD4 0%, #00838F 100%);
-    color: white;
-    box-shadow: 0 2px 8px rgba(0, 188, 212, 0.3);
+    background: var(--cds-teal-60);
+    color: var(--cds-text-on-color);
     padding: 8px 16px;
     font-size: 14px;
 }
 
 .btn-wish-generate:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 188, 212, 0.4);
+    opacity: 0.9;
 }
 
 .btn-wish-generate:disabled {

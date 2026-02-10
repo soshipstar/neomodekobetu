@@ -213,7 +213,7 @@ renderPageStart('guardian', $currentPage, '連絡帳一覧', ['classroom' => $cl
 }
 
 .domain-bar-fill {
-    background: linear-gradient(90deg, var(--md-purple), #764ba2);
+    background: var(--cds-purple-60);
     height: 100%;
     border-radius: var(--radius-md);
     transition: width 0.3s;
@@ -275,8 +275,8 @@ renderPageStart('guardian', $currentPage, '連絡帳一覧', ['classroom' => $cl
 }
 
 .domain-badge {
-    background: rgba(0, 122, 255, 0.1);
-    color: var(--md-blue);
+    background: var(--cds-blue-60);
+    color: white;
     padding: 3px 10px;
     border-radius: var(--radius-md);
     font-size: 11px;
@@ -291,12 +291,12 @@ renderPageStart('guardian', $currentPage, '連絡帳一覧', ['classroom' => $cl
 }
 
 .search-info {
-    background: rgba(0, 122, 255, 0.1);
-    border-left: 4px solid var(--md-blue);
+    background: var(--cds-blue-60);
+    border-left: 4px solid var(--cds-blue-60);
     padding: var(--spacing-md);
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-lg);
-    color: var(--md-blue);
+    color: white;
 }
 
 @media (max-width: 768px) {
@@ -475,7 +475,7 @@ renderPageStart('guardian', $currentPage, '連絡帳一覧', ['classroom' => $cl
                 <strong>検索結果:</strong> <?= count($notes) ?>件の連絡帳が見つかりました
             </div>
         <?php else: ?>
-            <div class="search-info" style="background: rgba(88, 86, 214, 0.1); border-left-color: var(--md-purple);">
+            <div class="search-info" style="background: var(--cds-purple-60); border-left-color: var(--cds-purple-60);">
                 <strong><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event</span> 直近1か月分を表示中</strong>（<?= date('Y年n月j日', strtotime($defaultStartDate)) ?>以降）<br>
                 <span style="font-size: var(--text-caption-1);">過去の連絡帳を見るには、上の検索フォームで期間を指定してください</span>
             </div>

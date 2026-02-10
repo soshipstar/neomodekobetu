@@ -739,7 +739,7 @@ $hasAlerts = !empty($pendingSupportPlans) || !empty($signaturePendingPlans) ||
 <!-- アラートセクション -->
 <div class="alerts-section" style="margin-bottom: var(--spacing-xl);">
     <h2 style="font-size: var(--text-title-3); color: var(--text-primary); margin-bottom: var(--spacing-md); display: flex; align-items: center; gap: 8px;">
-        <span class="material-symbols-outlined" style="color: var(--md-orange);">notifications_active</span>
+        <span class="material-symbols-outlined" style="color: var(--cds-orange-50);">notifications_active</span>
         確認が必要な項目
     </h2>
 
@@ -747,14 +747,14 @@ $hasAlerts = !empty($pendingSupportPlans) || !empty($signaturePendingPlans) ||
 
         <?php if (!empty($pendingSupportPlans) || !empty($signaturePendingPlans)): ?>
         <!-- 個別支援計画書のアラート -->
-        <div class="alert-card" style="background: rgba(175, 82, 222, 0.1); border-left: 4px solid var(--md-purple); padding: var(--spacing-md); border-radius: var(--radius-md);">
+        <div class="alert-card" style="background: rgba(175, 82, 222, 0.15); border-left: 4px solid var(--cds-purple-60); padding: var(--spacing-md); border-radius: 0;">
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: var(--spacing-sm);">
-                <span class="material-symbols-outlined" style="color: var(--md-purple);">assignment</span>
-                <span style="font-weight: 600; color: var(--md-purple);">個別支援計画書</span>
+                <span class="material-symbols-outlined" style="color: var(--cds-purple-60);">assignment</span>
+                <span style="font-weight: 600; color: var(--cds-purple-60);">個別支援計画書</span>
             </div>
             <?php if (!empty($pendingSupportPlans)): ?>
             <div style="margin-bottom: var(--spacing-sm);">
-                <span style="color: var(--md-red); font-weight: 600;"><?= count($pendingSupportPlans) ?>件</span>の確認待ちがあります
+                <span style="color: var(--cds-support-error); font-weight: 600;"><?= count($pendingSupportPlans) ?>件</span>の確認待ちがあります
                 <ul style="margin: var(--spacing-xs) 0 0 var(--spacing-lg); padding: 0; font-size: var(--text-footnote); color: var(--text-secondary);">
                     <?php foreach ($pendingSupportPlans as $plan): ?>
                     <li><?= htmlspecialchars($plan['student_name']) ?>さんの計画書案（<?= date('Y/m/d', strtotime($plan['created_date'])) ?>作成）</li>
@@ -764,7 +764,7 @@ $hasAlerts = !empty($pendingSupportPlans) || !empty($signaturePendingPlans) ||
             <?php endif; ?>
             <?php if (!empty($signaturePendingPlans)): ?>
             <div style="margin-bottom: var(--spacing-sm);">
-                <span style="color: var(--md-green); font-weight: 600;"><?= count($signaturePendingPlans) ?>件</span>の署名待ちがあります
+                <span style="color: var(--cds-support-success); font-weight: 600;"><?= count($signaturePendingPlans) ?>件</span>の署名待ちがあります
                 <ul style="margin: var(--spacing-xs) 0 0 var(--spacing-lg); padding: 0; font-size: var(--text-footnote); color: var(--text-secondary);">
                     <?php foreach ($signaturePendingPlans as $plan): ?>
                     <li><?= htmlspecialchars($plan['student_name']) ?>さんの正式版計画書</li>
@@ -772,7 +772,7 @@ $hasAlerts = !empty($pendingSupportPlans) || !empty($signaturePendingPlans) ||
                 </ul>
             </div>
             <?php endif; ?>
-            <a href="support_plans.php" style="display: inline-block; margin-top: var(--spacing-sm); color: var(--md-purple); text-decoration: none; font-weight: 500; font-size: var(--text-footnote);">
+            <a href="support_plans.php" style="display: inline-block; margin-top: var(--spacing-sm); color: var(--cds-purple-60); text-decoration: none; font-weight: 500; font-size: var(--text-footnote);">
                 確認する →
             </a>
         </div>
@@ -780,14 +780,14 @@ $hasAlerts = !empty($pendingSupportPlans) || !empty($signaturePendingPlans) ||
 
         <?php if (!empty($pendingMonitoringRecords) || !empty($signaturePendingMonitoring)): ?>
         <!-- モニタリング表のアラート（確認待ち・署名待ちのみ表示） -->
-        <div class="alert-card" style="background: rgba(48, 176, 199, 0.1); border-left: 4px solid var(--md-teal); padding: var(--spacing-md); border-radius: var(--radius-md);">
+        <div class="alert-card" style="background: rgba(0, 104, 120, 0.15); border-left: 4px solid var(--cds-teal-60); padding: var(--spacing-md); border-radius: 0;">
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: var(--spacing-sm);">
-                <span class="material-symbols-outlined" style="color: var(--md-teal);">monitoring</span>
-                <span style="font-weight: 600; color: var(--md-teal);">モニタリング表</span>
+                <span class="material-symbols-outlined" style="color: var(--cds-teal-60);">monitoring</span>
+                <span style="font-weight: 600; color: var(--cds-teal-60);">モニタリング表</span>
             </div>
             <?php if (!empty($pendingMonitoringRecords)): ?>
             <div style="margin-bottom: var(--spacing-sm);">
-                <span style="color: var(--md-red); font-weight: 600;"><?= count($pendingMonitoringRecords) ?>件</span>の確認待ちがあります
+                <span style="color: var(--cds-support-error); font-weight: 600;"><?= count($pendingMonitoringRecords) ?>件</span>の確認待ちがあります
                 <ul style="margin: var(--spacing-xs) 0 0 var(--spacing-lg); padding: 0; font-size: var(--text-footnote); color: var(--text-secondary);">
                     <?php foreach ($pendingMonitoringRecords as $record): ?>
                     <li><?= htmlspecialchars($record['student_name']) ?>さん（<?= date('Y/m/d', strtotime($record['monitoring_date'])) ?>）</li>
@@ -797,10 +797,10 @@ $hasAlerts = !empty($pendingSupportPlans) || !empty($signaturePendingPlans) ||
             <?php endif; ?>
             <?php if (!empty($signaturePendingMonitoring)): ?>
             <div style="margin-bottom: var(--spacing-sm);">
-                <span style="color: var(--md-green); font-weight: 600;"><?= count($signaturePendingMonitoring) ?>件</span>の署名待ちがあります
+                <span style="color: var(--cds-support-success); font-weight: 600;"><?= count($signaturePendingMonitoring) ?>件</span>の署名待ちがあります
             </div>
             <?php endif; ?>
-            <a href="monitoring.php" style="display: inline-block; margin-top: var(--spacing-sm); color: var(--md-teal); text-decoration: none; font-weight: 500; font-size: var(--text-footnote);">
+            <a href="monitoring.php" style="display: inline-block; margin-top: var(--spacing-sm); color: var(--cds-teal-60); text-decoration: none; font-weight: 500; font-size: var(--text-footnote);">
                 確認する →
             </a>
         </div>
@@ -808,20 +808,20 @@ $hasAlerts = !empty($pendingSupportPlans) || !empty($signaturePendingPlans) ||
 
         <?php if (!empty($pendingStaffKakehashi)): ?>
         <!-- スタッフかけはしの確認待ち -->
-        <div class="alert-card" style="background: rgba(0, 122, 255, 0.1); border-left: 4px solid var(--md-blue); padding: var(--spacing-md); border-radius: var(--radius-md);">
+        <div class="alert-card" style="background: rgba(0, 112, 243, 0.15); border-left: 4px solid var(--cds-blue-60); padding: var(--spacing-md); border-radius: 0;">
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: var(--spacing-sm);">
-                <span class="material-symbols-outlined" style="color: var(--md-blue);">description</span>
-                <span style="font-weight: 600; color: var(--md-blue);">スタッフからのかけはし</span>
+                <span class="material-symbols-outlined" style="color: var(--cds-blue-60);">description</span>
+                <span style="font-weight: 600; color: var(--cds-blue-60);">スタッフからのかけはし</span>
             </div>
             <div style="margin-bottom: var(--spacing-sm);">
-                <span style="color: var(--md-blue); font-weight: 600;"><?= count($pendingStaffKakehashi) ?>件</span>の確認待ちがあります
+                <span style="color: var(--cds-blue-60); font-weight: 600;"><?= count($pendingStaffKakehashi) ?>件</span>の確認待ちがあります
                 <ul style="margin: var(--spacing-xs) 0 0 var(--spacing-lg); padding: 0; font-size: var(--text-footnote); color: var(--text-secondary);">
                     <?php foreach ($pendingStaffKakehashi as $sk): ?>
                     <li><?= htmlspecialchars($sk['student_name']) ?>さん「<?= htmlspecialchars($sk['period_name']) ?>」</li>
                     <?php endforeach; ?>
                 </ul>
             </div>
-            <a href="kakehashi_history.php" style="display: inline-block; margin-top: var(--spacing-sm); color: var(--md-blue); text-decoration: none; font-weight: 500; font-size: var(--text-footnote);">
+            <a href="kakehashi_history.php" style="display: inline-block; margin-top: var(--spacing-sm); color: var(--cds-blue-60); text-decoration: none; font-weight: 500; font-size: var(--text-footnote);">
                 確認する →
             </a>
         </div>
@@ -829,13 +829,13 @@ $hasAlerts = !empty($pendingSupportPlans) || !empty($signaturePendingPlans) ||
 
         <?php if (!empty($overdueKakehashi) || !empty($urgentKakehashi) || !empty($pendingKakehashi)): ?>
         <!-- 保護者かけはし作成促進 -->
-        <div class="alert-card" style="background: rgba(255, 149, 0, 0.1); border-left: 4px solid var(--md-orange); padding: var(--spacing-md); border-radius: var(--radius-md);">
+        <div class="alert-card" style="background: rgba(255, 111, 0, 0.15); border-left: 4px solid var(--cds-orange-50); padding: var(--spacing-md); border-radius: 0;">
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: var(--spacing-sm);">
-                <span class="material-symbols-outlined" style="color: var(--md-orange);">handshake</span>
-                <span style="font-weight: 600; color: var(--md-orange);">かけはしの提出</span>
+                <span class="material-symbols-outlined" style="color: var(--cds-orange-50);">handshake</span>
+                <span style="font-weight: 600; color: var(--cds-orange-50);">かけはしの提出</span>
             </div>
             <?php if (!empty($overdueKakehashi)): ?>
-            <div style="margin-bottom: var(--spacing-sm); color: var(--md-red);">
+            <div style="margin-bottom: var(--spacing-sm); color: var(--cds-support-error);">
                 <span style="font-weight: 600;"><?= count($overdueKakehashi) ?>件</span>が期限を過ぎています
                 <ul style="margin: var(--spacing-xs) 0 0 var(--spacing-lg); padding: 0; font-size: var(--text-footnote);">
                     <?php foreach ($overdueKakehashi as $k): ?>
@@ -846,7 +846,7 @@ $hasAlerts = !empty($pendingSupportPlans) || !empty($signaturePendingPlans) ||
             <?php endif; ?>
             <?php if (!empty($urgentKakehashi)): ?>
             <div style="margin-bottom: var(--spacing-sm);">
-                <span style="color: var(--md-orange); font-weight: 600;"><?= count($urgentKakehashi) ?>件</span>の提出期限が近づいています（7日以内）
+                <span style="color: var(--cds-orange-50); font-weight: 600;"><?= count($urgentKakehashi) ?>件</span>の提出期限が近づいています（7日以内）
                 <ul style="margin: var(--spacing-xs) 0 0 var(--spacing-lg); padding: 0; font-size: var(--text-footnote); color: var(--text-secondary);">
                     <?php foreach ($urgentKakehashi as $k): ?>
                     <li><?= htmlspecialchars($k['student_name']) ?>さん「<?= htmlspecialchars($k['period_name']) ?>」（期限: <?= date('Y/m/d', strtotime($k['submission_deadline'])) ?>）</li>
@@ -864,7 +864,7 @@ $hasAlerts = !empty($pendingSupportPlans) || !empty($signaturePendingPlans) ||
                 </ul>
             </div>
             <?php endif; ?>
-            <a href="kakehashi.php" style="display: inline-block; margin-top: var(--spacing-sm); color: var(--md-orange); text-decoration: none; font-weight: 500; font-size: var(--text-footnote);">
+            <a href="kakehashi.php" style="display: inline-block; margin-top: var(--spacing-sm); color: var(--cds-orange-50); text-decoration: none; font-weight: 500; font-size: var(--text-footnote);">
                 かけはしを作成する →
             </a>
         </div>
@@ -872,22 +872,22 @@ $hasAlerts = !empty($pendingSupportPlans) || !empty($signaturePendingPlans) ||
 
         <?php if (!empty($overdueSubmissions) || !empty($urgentSubmissions)): ?>
         <!-- 提出物のアラート -->
-        <div class="alert-card" style="background: rgba(255, 59, 48, 0.1); border-left: 4px solid var(--md-red); padding: var(--spacing-md); border-radius: var(--radius-md);">
+        <div class="alert-card" style="background: rgba(218, 30, 40, 0.15); border-left: 4px solid var(--cds-support-error); padding: var(--spacing-md); border-radius: 0;">
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: var(--spacing-sm);">
-                <span class="material-symbols-outlined" style="color: var(--md-red);">upload_file</span>
-                <span style="font-weight: 600; color: var(--md-red);">提出物</span>
+                <span class="material-symbols-outlined" style="color: var(--cds-support-error);">upload_file</span>
+                <span style="font-weight: 600; color: var(--cds-support-error);">提出物</span>
             </div>
             <?php if (!empty($overdueSubmissions)): ?>
-            <div style="margin-bottom: var(--spacing-sm); color: var(--md-red);">
+            <div style="margin-bottom: var(--spacing-sm); color: var(--cds-support-error);">
                 <span style="font-weight: 600;"><?= count($overdueSubmissions) ?>件</span>が期限を過ぎています
             </div>
             <?php endif; ?>
             <?php if (!empty($urgentSubmissions)): ?>
             <div style="margin-bottom: var(--spacing-sm);">
-                <span style="color: var(--md-orange); font-weight: 600;"><?= count($urgentSubmissions) ?>件</span>の提出期限が近づいています（3日以内）
+                <span style="color: var(--cds-orange-50); font-weight: 600;"><?= count($urgentSubmissions) ?>件</span>の提出期限が近づいています（3日以内）
             </div>
             <?php endif; ?>
-            <a href="submissions.php" style="display: inline-block; margin-top: var(--spacing-sm); color: var(--md-red); text-decoration: none; font-weight: 500; font-size: var(--text-footnote);">
+            <a href="submissions.php" style="display: inline-block; margin-top: var(--spacing-sm); color: var(--cds-support-error); text-decoration: none; font-weight: 500; font-size: var(--text-footnote);">
                 提出物を確認する →
             </a>
         </div>
@@ -895,15 +895,15 @@ $hasAlerts = !empty($pendingSupportPlans) || !empty($signaturePendingPlans) ||
 
         <?php if (!empty($pendingMeetingRequests)): ?>
         <!-- 面談予約のアラート -->
-        <div class="alert-card" style="background: rgba(175, 82, 222, 0.1); border-left: 4px solid var(--md-purple); padding: var(--spacing-md); border-radius: var(--radius-md);">
+        <div class="alert-card" style="background: rgba(175, 82, 222, 0.15); border-left: 4px solid var(--cds-purple-60); padding: var(--spacing-md); border-radius: 0;">
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: var(--spacing-sm);">
-                <span class="material-symbols-outlined" style="color: var(--md-purple);">calendar_month</span>
-                <span style="font-weight: 600; color: var(--md-purple);">面談予約</span>
+                <span class="material-symbols-outlined" style="color: var(--cds-purple-60);">calendar_month</span>
+                <span style="font-weight: 600; color: var(--cds-purple-60);">面談予約</span>
             </div>
             <div style="margin-bottom: var(--spacing-sm);">
-                <span style="color: var(--md-purple); font-weight: 600;"><?= count($pendingMeetingRequests) ?>件</span>の回答待ちがあります
+                <span style="color: var(--cds-purple-60); font-weight: 600;"><?= count($pendingMeetingRequests) ?>件</span>の回答待ちがあります
             </div>
-            <a href="meeting_response.php" style="display: inline-block; margin-top: var(--spacing-sm); color: var(--md-purple); text-decoration: none; font-weight: 500; font-size: var(--text-footnote);">
+            <a href="meeting_response.php" style="display: inline-block; margin-top: var(--spacing-sm); color: var(--cds-purple-60); text-decoration: none; font-weight: 500; font-size: var(--text-footnote);">
                 回答する →
             </a>
         </div>
@@ -1054,7 +1054,7 @@ $hasAlerts = !empty($pendingSupportPlans) || !empty($signaturePendingPlans) ||
             if (isset($calendarMeetings[$currentDate]) && !empty($calendarMeetings[$currentDate])) {
                 foreach ($calendarMeetings[$currentDate] as $meetingInfo) {
                     $meetingJson = htmlspecialchars(json_encode($meetingInfo, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8');
-                    echo "<div class='meeting-label clickable' onclick='event.stopPropagation(); showMeetingModal(" . $meetingJson . ");' style='background: rgba(175, 82, 222, 0.15); color: var(--md-purple); padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-top: 2px; cursor: pointer;'>";
+                    echo "<div class='meeting-label clickable' onclick='event.stopPropagation(); showMeetingModal(" . $meetingJson . ");' style='background: rgba(175, 82, 222, 0.15); color: var(--cds-purple-60); padding: 2px 6px; border-radius: 0; font-size: 11px; margin-top: 2px; cursor: pointer;'>";
                     echo "<span class='material-symbols-outlined' style='font-size: 14px; vertical-align: middle;'>calendar_month</span> ";
                     echo htmlspecialchars($meetingInfo['time']) . " 面談";
                     echo "</div>";
@@ -1073,7 +1073,7 @@ $hasAlerts = !empty($pendingSupportPlans) || !empty($signaturePendingPlans) ||
             <span>休日</span>
         </div>
         <div class="legend-item">
-            <div class="legend-box" style="background: rgba(52, 199, 89, 0.1); border: 2px solid var(--md-green);"></div>
+            <div class="legend-box" style="background: rgba(36, 161, 72, 0.15); border: 2px solid var(--cds-support-success);"></div>
             <span>今日</span>
         </div>
         <div class="legend-item">
@@ -1085,35 +1085,35 @@ $hasAlerts = !empty($pendingSupportPlans) || !empty($signaturePendingPlans) ||
             <span>学校休業日活動</span>
         </div>
         <div class="legend-item">
-            <span class="event-marker" style="background: var(--md-green);"></span>
+            <span class="event-marker" style="background: var(--cds-support-success);"></span>
             <span>イベント</span>
         </div>
         <div class="legend-item">
-            <span style="color: var(--md-green); font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">person</span></span>
+            <span style="color: var(--cds-support-success); font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">person</span></span>
             <span>活動予定日</span>
         </div>
         <div class="legend-item">
-            <span style="color: var(--md-green); font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit_note</span></span>
+            <span style="color: var(--cds-support-success); font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit_note</span></span>
             <span>連絡帳あり（確認済み）</span>
         </div>
         <div class="legend-item">
-            <span style="color: var(--md-red); font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit_note</span></span>
+            <span style="color: var(--cds-support-error); font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit_note</span></span>
             <span>連絡帳あり（未確認）</span>
         </div>
         <div class="legend-item">
-            <span style="color: var(--md-blue); font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">sync</span></span>
+            <span style="color: var(--cds-blue-60); font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">sync</span></span>
             <span>振替活動日</span>
         </div>
         <div class="legend-item">
-            <span style="color: var(--md-red); font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event_busy</span></span>
+            <span style="color: var(--cds-support-error); font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event_busy</span></span>
             <span>欠席日</span>
         </div>
         <div class="legend-item">
-            <span style="color: var(--md-green); font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">add</span></span>
+            <span style="color: var(--cds-support-success); font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">add</span></span>
             <span>追加利用</span>
         </div>
         <div class="legend-item">
-            <span style="color: var(--md-purple); font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">calendar_month</span></span>
+            <span style="color: var(--cds-purple-60); font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">calendar_month</span></span>
             <span>面談予定</span>
         </div>
     </div>
@@ -1135,12 +1135,12 @@ $hasAlerts = !empty($pendingSupportPlans) || !empty($signaturePendingPlans) ||
             </div>
 
             <div style="text-align: right; margin-bottom: var(--spacing-md);">
-                <a href="communication_logs.php?student_id=<?= $student['id'] ?>" style="color: var(--md-blue); text-decoration: none; font-size: var(--text-footnote);">
+                <a href="communication_logs.php?student_id=<?= $student['id'] ?>" style="color: var(--cds-blue-60); text-decoration: none; font-size: var(--text-footnote);">
                     すべての連絡帳を見る →
                 </a>
             </div>
             <?php if (empty($notesData[$student['id']])): ?>
-                <div class="no-notes" style="color: var(--md-green);">
+                <div class="no-notes" style="color: var(--cds-support-success);">
                     ✓ 確認が必要な連絡帳はありません
                 </div>
             <?php else: ?>
@@ -1206,7 +1206,7 @@ $hasAlerts = !empty($pendingSupportPlans) || !empty($signaturePendingPlans) ||
     <div class="modal-content">
         <button class="modal-close" onclick="closeMeetingModal()">&times;</button>
         <div class="modal-header">
-            <h2 id="meetingModalTitle" style="color: var(--md-purple);"><span class="material-symbols-outlined" style="font-size: 24px; vertical-align: middle;">calendar_month</span> 面談予定</h2>
+            <h2 id="meetingModalTitle" style="color: var(--cds-purple-60);"><span class="material-symbols-outlined" style="font-size: 24px; vertical-align: middle;">calendar_month</span> 面談予定</h2>
         </div>
         <div id="meetingModalContent"></div>
     </div>
@@ -1316,27 +1316,27 @@ function showMeetingModal(meetingData) {
     const dateStr = date.getFullYear() + '年' + (date.getMonth() + 1) + '月' + date.getDate() + '日（' + dayOfWeek[date.getDay()] + '）';
     const timeStr = meetingData.time;
 
-    let html = '<div style="background: rgba(175, 82, 222, 0.1); padding: 16px; border-radius: 8px; margin-bottom: 16px;">';
-    html += '<div style="font-size: 18px; font-weight: 600; color: var(--md-purple); margin-bottom: 8px;">' + dateStr + ' ' + timeStr + '</div>';
+    let html = '<div style="background: rgba(175, 82, 222, 0.15); padding: 16px; border-radius: 0; margin-bottom: 16px;">';
+    html += '<div style="font-size: 18px; font-weight: 600; color: var(--cds-purple-60); margin-bottom: 8px;">' + dateStr + ' ' + timeStr + '</div>';
     html += '<div style="color: var(--text-secondary);">' + escapeHtml(meetingData.student_name) + 'さんの面談</div>';
     html += '</div>';
 
-    html += '<div class="event-detail-section"><h4 style="color: var(--md-purple);"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">target</span> 面談目的</h4>';
+    html += '<div class="event-detail-section"><h4 style="color: var(--cds-purple-60);"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">target</span> 面談目的</h4>';
     html += '<p>' + escapeHtml(meetingData.purpose) + '</p></div>';
 
     if (meetingData.purpose_detail) {
-        html += '<div class="event-detail-section"><h4 style="color: var(--md-purple);"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">description</span> 詳細・ご相談内容</h4>';
+        html += '<div class="event-detail-section"><h4 style="color: var(--cds-purple-60);"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">description</span> 詳細・ご相談内容</h4>';
         html += '<p style="white-space: pre-wrap;">' + escapeHtml(meetingData.purpose_detail) + '</p></div>';
     }
 
     if (meetingData.staff_name) {
-        html += '<div class="event-detail-section"><h4 style="color: var(--md-purple);"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">person</span> 担当スタッフ</h4>';
+        html += '<div class="event-detail-section"><h4 style="color: var(--cds-purple-60);"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">person</span> 担当スタッフ</h4>';
         html += '<p>' + escapeHtml(meetingData.staff_name) + '</p></div>';
     }
 
     // 面談当日の案内
-    html += '<div class="event-detail-section" style="background: var(--md-bg-secondary); padding: 16px; border-radius: 8px; border-left: 4px solid var(--md-purple);">';
-    html += '<h4 style="color: var(--md-purple); margin-bottom: 12px;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">info</span> 面談当日のご案内</h4>';
+    html += '<div class="event-detail-section" style="background: var(--md-bg-secondary); padding: 16px; border-radius: 0; border-left: 4px solid var(--cds-purple-60);">';
+    html += '<h4 style="color: var(--cds-purple-60); margin-bottom: 12px;"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">info</span> 面談当日のご案内</h4>';
 
     if (meetingData.meeting_notes && meetingData.meeting_notes.trim() !== '') {
         // スタッフが入力した案内を表示

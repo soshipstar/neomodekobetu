@@ -266,22 +266,22 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .info-box {
-            background: #e7f3ff;
+            background: rgba(33, 150, 243, 0.15);
             padding: 15px;
-            border-radius: var(--radius-sm);
-            border-left: 4px solid #2196F3;
+            border-radius: 0;
+            border-left: 4px solid var(--cds-blue-60);
             margin-bottom: 25px;
             font-size: var(--text-subhead);
             color: var(--text-primary);
         }
 
         .error-message {
-            background: var(--md-bg-secondary);
-            color: #721c24;
+            background: rgba(218, 30, 40, 0.15);
+            color: var(--cds-support-error);
             padding: var(--spacing-md);
-            border-radius: var(--radius-sm);
+            border-radius: 0;
             margin-bottom: var(--spacing-lg);
-            border-left: 4px solid var(--md-red);
+            border-left: 4px solid var(--cds-support-error);
         }
 
         @keyframes spin {
@@ -291,10 +291,10 @@ renderPageStart('staff', $currentPage, $pageTitle);
         .routine-btn {
             display: inline-block;
             padding: var(--spacing-sm) 16px;
-            background: #ff9800;
+            background: var(--cds-orange-50);
             color: white;
             border: none;
-            border-radius: var(--radius-sm);
+            border-radius: 0;
             font-size: var(--text-footnote);
             font-weight: 600;
             cursor: pointer;
@@ -303,7 +303,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .routine-btn:hover {
-            background: #f57c00;
+            background: var(--cds-orange-50);
             transform: translateY(-1px);
         }
 
@@ -338,11 +338,11 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .schedule-item.routine {
-            border-left: 4px solid #ff9800;
+            border-left: 4px solid var(--cds-orange-50);
         }
 
         .schedule-item.main-activity {
-            border-left: 4px solid var(--md-blue);
+            border-left: 4px solid var(--cds-blue-60);
         }
 
         .schedule-order {
@@ -360,11 +360,11 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .schedule-item.routine .schedule-order {
-            background: #ff9800;
+            background: var(--cds-orange-50);
         }
 
         .schedule-item.main-activity .schedule-order {
-            background: var(--md-blue);
+            background: var(--cds-blue-60);
         }
 
         /* 活動スケジュールセクション全体 */
@@ -489,10 +489,10 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
         .routine-selector-btn {
             padding: 8px 16px;
-            background: #fff3e0;
-            border: 2px solid #ff9800;
-            border-radius: var(--radius-sm);
-            color: #e65100;
+            background: rgba(255, 152, 0, 0.15);
+            border: 2px solid var(--cds-orange-50);
+            border-radius: 0;
+            color: var(--cds-orange-50);
             font-weight: 600;
             cursor: pointer;
             transition: all var(--duration-fast) var(--ease-out);
@@ -502,12 +502,12 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .routine-selector-btn:hover {
-            background: #ff9800;
+            background: var(--cds-orange-50);
             color: white;
         }
 
         .routine-selector-btn.added {
-            background: #ff9800;
+            background: var(--cds-orange-50);
             color: white;
             opacity: 0.6;
         }
@@ -589,7 +589,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                             </div>
 
                             <!-- 日付範囲指定 -->
-                            <div style="background: var(--md-gray-6); padding: 15px; border-radius: var(--radius-sm); border: 2px solid #e9ecef;">
+                            <div style="background: var(--md-gray-6); padding: 15px; border-radius: 0; border: 2px solid var(--cds-border-subtle-00);">
                                 <div style="font-size: var(--text-footnote); color: var(--text-secondary); margin-bottom: var(--spacing-md); font-weight: 600;">期間を指定</div>
                                 <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                                     <input type="date" id="startDate" style="padding: var(--spacing-sm); border: 2px solid var(--primary-purple); border-radius: var(--radius-sm); font-size: var(--text-subhead);">
@@ -607,10 +607,10 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
                         <!-- 表示切り替えタブ -->
                         <div style="margin-bottom: var(--spacing-lg); border-bottom: 2px solid var(--md-gray-5);">
-                            <button type="button" id="viewByDateTab" class="cancel-btn" style="padding: var(--spacing-md) 20px; border-radius: var(--radius-sm) 5px 0 0; background: var(--primary-purple); color: white; margin-right: 5px; border: none;">
+                            <button type="button" id="viewByDateTab" class="cancel-btn" style="padding: var(--spacing-md) 20px; border-radius: 0 5px 0 0; background: var(--primary-purple); color: white; margin-right: 5px; border: none;">
                                 日付順
                             </button>
-                            <button type="button" id="viewByListTab" class="cancel-btn" style="padding: var(--spacing-md) 20px; border-radius: var(--radius-sm) 5px 0 0; background: #e9ecef; color: var(--text-primary); border: none;">
+                            <button type="button" id="viewByListTab" class="cancel-btn" style="padding: var(--spacing-md) 20px; border-radius: 0 5px 0 0; background: var(--md-gray-6); color: var(--text-primary); border: none;">
                                 一覧
                             </button>
                         </div>
@@ -646,9 +646,9 @@ renderPageStart('staff', $currentPage, $pageTitle);
                         foreach ($planTypes as $value => $label):
                             $checked = ($selectedType === $value) ? 'checked' : '';
                             $typeColors = [
-                                'normal' => '#1976D2',
-                                'event' => '#FF9800',
-                                'other' => '#757575'
+                                'normal' => 'var(--cds-blue-60)',
+                                'event' => 'var(--cds-orange-50)',
+                                'other' => 'var(--cds-text-secondary)'
                             ];
                             $color = $typeColors[$value];
                         ?>
@@ -667,10 +667,10 @@ renderPageStart('staff', $currentPage, $pageTitle);
                         <?php
                         $selectedGrades = isset($plan['target_grade']) ? explode(',', $plan['target_grade']) : [];
                         $gradeColors = [
-                            'preschool' => '#ff69b4',
-                            'elementary' => '#4CAF50',
-                            'junior_high' => '#1976D2',
-                            'high_school' => '#FF9800'
+                            'preschool' => 'var(--cds-purple-60)',
+                            'elementary' => 'var(--cds-support-success)',
+                            'junior_high' => 'var(--cds-blue-60)',
+                            'high_school' => 'var(--cds-orange-50)'
                         ];
                         foreach ($targetGrades as $value => $label):
                             $checked = in_array($value, $selectedGrades);
@@ -707,7 +707,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 </div>
 
                 <!-- 活動スケジュール設定 -->
-                <div class="form-group schedule-section" style="background: #f5f5f5; padding: 20px; border-radius: var(--radius-md); border: 2px solid var(--md-gray-5); overflow: hidden; max-width: 100%; box-sizing: border-box;">
+                <div class="form-group schedule-section" style="background: var(--md-gray-6); padding: 20px; border-radius: 0; border: 2px solid var(--cds-border-subtle-00); overflow: hidden; max-width: 100%; box-sizing: border-box;">
                     <label style="color: var(--text-primary); margin-bottom: 15px; font-size: var(--text-callout);">活動スケジュール</label>
                     <p style="font-size: var(--text-footnote); color: var(--text-secondary); margin-bottom: 15px;">
                         毎日の支援と主活動を追加し、順番と所要時間を設定してください。<br>
@@ -723,8 +723,8 @@ renderPageStart('staff', $currentPage, $pageTitle);
                     </div>
 
                     <!-- 主活動追加 -->
-                    <div style="margin-bottom: 15px; background: #e3f2fd; padding: 15px; border-radius: var(--radius-sm); overflow: hidden; box-sizing: border-box;">
-                        <label style="font-size: var(--text-footnote); color: var(--md-blue); font-weight: 600; margin-bottom: 10px; display: block;">主活動を追加</label>
+                    <div style="margin-bottom: 15px; background: rgba(33, 150, 243, 0.15); padding: 15px; border-radius: 0; overflow: hidden; box-sizing: border-box;">
+                        <label style="font-size: var(--text-footnote); color: var(--cds-blue-60); font-weight: 600; margin-bottom: 10px; display: block;">主活動を追加</label>
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
                             <input type="text" id="newMainActivity" placeholder="主活動名を入力" style="flex: 1; min-width: 150px; max-width: 100%; box-sizing: border-box;">
                             <input type="number" id="newMainActivityDuration" placeholder="時間" min="5" max="240" style="width: 70px;">
@@ -733,7 +733,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                         <div style="margin-bottom: 10px;">
                             <textarea id="newMainActivityContent" placeholder="主活動の内容を入力（この内容がAI生成時に参照されます）" style="width: 100%; min-height: 80px; resize: vertical; box-sizing: border-box;"></textarea>
                         </div>
-                        <button type="button" id="addMainActivityBtn" class="cancel-btn" style="background: var(--md-blue); color: white; padding: 8px 16px;">主活動を追加</button>
+                        <button type="button" id="addMainActivityBtn" class="cancel-btn" style="background: var(--cds-blue-60); color: white; padding: 8px 16px;">主活動を追加</button>
                     </div>
 
                     <!-- スケジュールリスト -->
@@ -748,16 +748,16 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 </div>
 
                 <!-- AI詳細生成ボタン -->
-                <div class="form-group" style="background: #e8f5e9; padding: 15px; border-radius: var(--radius-sm); border-left: 4px solid #4caf50;">
-                    <label style="color: #2e7d32; margin-bottom: 10px;">AIで活動内容を生成</label>
+                <div class="form-group" style="background: rgba(36, 161, 72, 0.15); padding: 15px; border-radius: 0; border-left: 4px solid var(--cds-support-success);">
+                    <label style="color: var(--cds-support-success); margin-bottom: 10px;">AIで活動内容を生成</label>
                     <p style="font-size: var(--text-footnote); color: var(--text-secondary); margin-bottom: 10px;">
                         活動名、目的、スケジュールを設定後、AIが時間配分を含めた詳細な活動内容を自動生成します。
                     </p>
-                    <button type="button" id="generateDetailBtn" class="cancel-btn" style="background: #4caf50; color: white; width: auto;">
+                    <button type="button" id="generateDetailBtn" class="cancel-btn" style="background: var(--cds-support-success); color: white; width: auto;">
                         スケジュールをもとに活動内容を生成
                     </button>
-                    <div id="detailGenerating" style="display: none; margin-top: 10px; color: #2e7d32;">
-                        <span class="spinner" style="display: inline-block; width: 16px; height: 16px; border: 2px solid #4caf50; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px; vertical-align: middle;"></span>
+                    <div id="detailGenerating" style="display: none; margin-top: 10px; color: var(--cds-support-success);">
+                        <span class="spinner" style="display: inline-block; width: 16px; height: 16px; border: 2px solid var(--cds-support-success); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px; vertical-align: middle;"></span>
                         生成中...（しばらくお待ちください）
                     </div>
                 </div>
@@ -769,16 +769,16 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 </div>
 
                 <!-- AI生成ボタン -->
-                <div class="form-group" style="background: #e3f2fd; padding: 15px; border-radius: var(--radius-sm); border-left: 4px solid #2196F3;">
-                    <label style="color: #1565c0; margin-bottom: 10px;">AIで詳細を生成</label>
+                <div class="form-group" style="background: rgba(33, 150, 243, 0.15); padding: 15px; border-radius: 0; border-left: 4px solid var(--cds-blue-60);">
+                    <label style="color: var(--cds-blue-60); margin-bottom: 10px;">AIで詳細を生成</label>
                     <p style="font-size: var(--text-footnote); color: var(--text-secondary); margin-bottom: 10px;">
                         活動名、目的、内容を入力後、AIが「五領域への配慮」と「その他」を自動生成します。
                     </p>
-                    <button type="button" id="generateAiBtn" class="cancel-btn" style="background: #1976D2; color: white; width: auto;">
+                    <button type="button" id="generateAiBtn" class="cancel-btn" style="background: var(--cds-blue-60); color: white; width: auto;">
                         AIで五領域への配慮を生成
                     </button>
-                    <div id="aiGenerating" style="display: none; margin-top: 10px; color: #1565c0;">
-                        <span class="spinner" style="display: inline-block; width: 16px; height: 16px; border: 2px solid #1976D2; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px; vertical-align: middle;"></span>
+                    <div id="aiGenerating" style="display: none; margin-top: 10px; color: var(--cds-blue-60);">
+                        <span class="spinner" style="display: inline-block; width: 16px; height: 16px; border: 2px solid var(--cds-blue-60); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px; vertical-align: middle;"></span>
                         生成中...
                     </div>
                 </div>
@@ -854,9 +854,9 @@ renderPageStart('staff', $currentPage, $pageTitle);
     // 種別選択のスタイル更新
     function updateTypeStyle(radio) {
         const typeColors = {
-            'normal': '#1976D2',
-            'event': '#FF9800',
-            'other': '#757575'
+            'normal': 'var(--cds-blue-60)',
+            'event': 'var(--cds-orange-50)',
+            'other': 'var(--cds-text-secondary)'
         };
 
         // すべてのラベルをリセット
@@ -917,10 +917,10 @@ renderPageStart('staff', $currentPage, $pageTitle);
             // ボタンのアクティブ状態を切り替え
             periodBtns.forEach(b => {
                 b.style.background = 'white';
-                b.style.color = '#667eea';
+                b.style.color = 'var(--cds-purple-60)';
                 b.classList.remove('active');
             });
-            this.style.background = '#667eea';
+            this.style.background = 'var(--cds-purple-60)';
             this.style.color = 'white';
             this.classList.add('active');
 
@@ -951,7 +951,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
         // 期間ボタンを非アクティブに
         periodBtns.forEach(b => {
             b.style.background = 'white';
-            b.style.color = '#667eea';
+            b.style.color = 'var(--cds-purple-60)';
             b.classList.remove('active');
         });
 
@@ -969,12 +969,12 @@ renderPageStart('staff', $currentPage, $pageTitle);
         currentPeriod = '30';
         periodBtns.forEach(b => {
             if (b.dataset.period === '30') {
-                b.style.background = '#667eea';
+                b.style.background = 'var(--cds-purple-60)';
                 b.style.color = 'white';
                 b.classList.add('active');
             } else {
                 b.style.background = 'white';
-                b.style.color = '#667eea';
+                b.style.color = 'var(--cds-purple-60)';
                 b.classList.remove('active');
             }
         });
@@ -1029,19 +1029,19 @@ renderPageStart('staff', $currentPage, $pageTitle);
     // タブ切り替え
     viewByDateTab.addEventListener('click', function() {
         currentView = 'date';
-        viewByDateTab.style.background = '#667eea';
+        viewByDateTab.style.background = 'var(--cds-purple-60)';
         viewByDateTab.style.color = 'white';
         viewByListTab.style.background = '#e9ecef';
-        viewByListTab.style.color = '#333';
+        viewByListTab.style.color = 'var(--text-primary)';
         renderPlans(getCurrentFilteredPlans());
     });
 
     viewByListTab.addEventListener('click', function() {
         currentView = 'list';
-        viewByListTab.style.background = '#667eea';
+        viewByListTab.style.background = 'var(--cds-purple-60)';
         viewByListTab.style.color = 'white';
         viewByDateTab.style.background = '#e9ecef';
-        viewByDateTab.style.color = '#333';
+        viewByDateTab.style.color = 'var(--text-primary)';
         renderPlans(getCurrentFilteredPlans());
     });
 

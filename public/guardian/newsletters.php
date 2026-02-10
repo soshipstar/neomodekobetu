@@ -173,7 +173,7 @@ renderPageStart('guardian', $currentPage, '施設通信', ['classroom' => $class
     text-align: center;
     padding-bottom: 15px;
     margin-bottom: 20px;
-    border-bottom: 3px solid #6366f1;
+    border-bottom: 3px solid var(--cds-purple-60);
     position: relative;
 }
 
@@ -185,12 +185,12 @@ renderPageStart('guardian', $currentPage, '施設通信', ['classroom' => $class
     transform: translateX(-50%);
     width: 100px;
     height: 3px;
-    background: #8b5cf6;
+    background: var(--cds-purple-60);
 }
 
 .detail-facility {
     font-size: 12px;
-    color: #6b7280;
+    color: var(--cds-text-secondary);
     margin-bottom: 5px;
     letter-spacing: 2px;
 }
@@ -198,35 +198,35 @@ renderPageStart('guardian', $currentPage, '施設通信', ['classroom' => $class
 .detail-title {
     font-size: 24px;
     font-weight: bold;
-    color: #1f2937;
+    color: var(--cds-text-primary);
     margin-bottom: 5px;
 }
 
 .detail-issue {
     font-size: 14px;
-    color: #6366f1;
+    color: var(--cds-purple-60);
     font-weight: 600;
 }
 
 .detail-meta {
     font-size: 11px;
-    color: #9ca3af;
+    color: var(--cds-text-secondary);
     margin-top: 10px;
 }
 
 /* あいさつ文 */
 .greeting-box {
-    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    background: var(--cds-blue-60);
     padding: 15px 20px;
-    border-radius: 8px;
+    border-radius: 0;
     margin-bottom: 20px;
-    border-left: 4px solid #6366f1;
+    border-left: 4px solid var(--cds-blue-60);
 }
 
 .greeting-text {
     font-size: 14px;
     line-height: 1.9;
-    color: #374151;
+    color: var(--cds-text-primary);
 }
 
 /* セクション */
@@ -238,10 +238,10 @@ renderPageStart('guardian', $currentPage, '施設通信', ['classroom' => $class
     display: flex;
     align-items: center;
     gap: 8px;
-    background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+    background: var(--cds-purple-60);
     color: white;
     padding: 10px 16px;
-    border-radius: 6px;
+    border-radius: 0;
     margin-bottom: 12px;
     font-size: 15px;
     font-weight: bold;
@@ -255,16 +255,16 @@ renderPageStart('guardian', $currentPage, '施設通信', ['classroom' => $class
     padding: 0 10px;
     font-size: 14px;
     line-height: 1.85;
-    color: #374151;
+    color: var(--cds-text-primary);
     white-space: pre-wrap;
     word-wrap: break-word;
 }
 
 /* カレンダー一覧形式 */
 .calendar-box {
-    background: #fafafa;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
+    background: var(--md-bg-secondary);
+    border: 1px solid var(--cds-border-subtle-00);
+    border-radius: 0;
     padding: 15px;
 }
 
@@ -273,14 +273,14 @@ renderPageStart('guardian', $currentPage, '施設通信', ['classroom' => $class
     font-size: 13px;
     line-height: 1.6;
     white-space: pre-wrap;
-    color: #374151;
+    color: var(--cds-text-primary);
 }
 
 /* カレンダー表形式 */
 .calendar-grid-container {
-    background: #fafafa;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
+    background: var(--md-bg-secondary);
+    border: 1px solid var(--cds-border-subtle-00);
+    border-radius: 0;
     padding: 15px;
 }
 
@@ -295,50 +295,50 @@ renderPageStart('guardian', $currentPage, '施設通信', ['classroom' => $class
     padding: 6px 4px;
     font-weight: bold;
     font-size: 12px;
-    color: #6b7280;
-    background: #f3f4f6;
-    border-radius: 3px;
+    color: var(--cds-text-secondary);
+    background: var(--md-gray-5);
+    border-radius: 0;
 }
 
-.calendar-day-header.sunday { color: #ef4444; }
-.calendar-day-header.saturday { color: #3b82f6; }
+.calendar-day-header.sunday { color: var(--cds-support-error); }
+.calendar-day-header.saturday { color: var(--cds-blue-60); }
 
 .calendar-day {
     min-height: 60px;
-    border: 1px solid #e5e7eb;
-    border-radius: 4px;
+    border: 1px solid var(--cds-border-subtle-00);
+    border-radius: 0;
     padding: 4px;
     background: white;
     font-size: 11px;
 }
 
 .calendar-day.empty {
-    background: #f9fafb;
-    border-color: #f3f4f6;
+    background: var(--md-bg-secondary);
+    border-color: var(--md-gray-5);
 }
 
 .calendar-day.holiday {
-    background: #fef2f2;
+    background: rgba(218, 30, 40, 0.15);
 }
 
 .calendar-day-num {
     font-size: 13px;
     font-weight: 600;
-    color: #374151;
+    color: var(--cds-text-primary);
     margin-bottom: 3px;
 }
 
-.calendar-day-num.sunday { color: #ef4444; }
-.calendar-day-num.saturday { color: #3b82f6; }
+.calendar-day-num.sunday { color: var(--cds-support-error); }
+.calendar-day-num.saturday { color: var(--cds-blue-60); }
 
 .calendar-event {
     font-size: 10px;
     line-height: 1.3;
     padding: 2px 4px;
     margin-bottom: 2px;
-    border-radius: 3px;
-    background: #e0e7ff;
-    color: #3730a3;
+    border-radius: 0;
+    background: var(--cds-purple-60);
+    color: white;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -346,7 +346,7 @@ renderPageStart('guardian', $currentPage, '施設通信', ['classroom' => $class
 
 .calendar-holiday-name {
     font-size: 10px;
-    color: #dc2626;
+    color: var(--cds-support-error);
     font-weight: 500;
 }
 
@@ -355,21 +355,21 @@ renderPageStart('guardian', $currentPage, '施設通信', ['classroom' => $class
     font-weight: bold;
     font-size: 14px;
     margin: 15px 0 10px 0;
-    color: #374151;
+    color: var(--cds-text-primary);
 }
 
 /* お知らせセクション */
 .notice-box {
-    background: #fef3c7;
-    border: 1px solid #fcd34d;
-    border-radius: 6px;
+    background: var(--cds-support-warning);
+    border: 1px solid var(--cds-support-warning);
+    border-radius: 0;
     padding: 12px 16px;
 }
 
 .notice-content {
     font-size: 14px;
     line-height: 1.8;
-    color: #92400e;
+    color: var(--text-primary);
     white-space: pre-wrap;
 }
 
@@ -382,10 +382,10 @@ renderPageStart('guardian', $currentPage, '施設通信', ['classroom' => $class
 }
 
 .grade-section {
-    background: #f9fafb;
-    border-radius: 6px;
+    background: var(--md-bg-secondary);
+    border-radius: 0;
     padding: 12px;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--cds-border-subtle-00);
 }
 
 .grade-header {
@@ -394,16 +394,16 @@ renderPageStart('guardian', $currentPage, '施設通信', ['classroom' => $class
     gap: 6px;
     font-size: 14px;
     font-weight: bold;
-    color: #6366f1;
+    color: var(--cds-purple-60);
     margin-bottom: 10px;
     padding-bottom: 8px;
-    border-bottom: 2px solid #6366f1;
+    border-bottom: 2px solid var(--cds-purple-60);
 }
 
 .grade-content {
     font-size: 13px;
     line-height: 1.8;
-    color: #374151;
+    color: var(--cds-text-primary);
     white-space: pre-wrap;
 }
 
@@ -411,18 +411,18 @@ renderPageStart('guardian', $currentPage, '施設通信', ['classroom' => $class
 .detail-footer {
     margin-top: 30px;
     padding-top: 15px;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--cds-border-subtle-00);
     text-align: center;
 }
 
 .footer-text {
     font-size: 11px;
-    color: #9ca3af;
+    color: var(--cds-text-secondary);
 }
 
 .footer-facility {
     font-size: 13px;
-    color: #6366f1;
+    color: var(--cds-purple-60);
     font-weight: 600;
     margin-top: 5px;
 }

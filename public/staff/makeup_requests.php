@@ -146,9 +146,9 @@ renderPageStart('staff', $currentPage, '振替依頼管理');
     white-space: nowrap;
 }
 
-.status-badge.pending { background: rgba(255,149,0,0.15); color: var(--md-orange); }
-.status-badge.approved { background: rgba(52,199,89,0.15); color: var(--md-green); }
-.status-badge.rejected { background: rgba(255,59,48,0.15); color: var(--md-red); }
+.status-badge.pending { background: var(--cds-orange-50); color: var(--cds-support-warning); }
+.status-badge.approved { background: rgba(36, 161, 72, 0.15); color: var(--cds-support-success); }
+.status-badge.rejected { background: rgba(218, 30, 40, 0.15); color: var(--cds-support-error); }
 
 .request-details {
     display: grid;
@@ -157,7 +157,7 @@ renderPageStart('staff', $currentPage, '振替依頼管理');
     margin-bottom: 15px;
     padding: 15px;
     background: var(--md-bg-tertiary);
-    border-radius: 6px;
+    border-radius: 0;
 }
 
 .detail-item {
@@ -180,7 +180,7 @@ renderPageStart('staff', $currentPage, '振替依頼管理');
 
 .detail-value.highlight {
     font-weight: 600;
-    color: var(--md-blue);
+    color: var(--cds-blue-60);
     font-size: var(--text-callout);
 }
 
@@ -188,9 +188,9 @@ renderPageStart('staff', $currentPage, '振替依頼管理');
     margin-bottom: 15px;
     padding: var(--spacing-md);
     background: var(--md-gray-6);
-    border-radius: 6px;
+    border-radius: 0;
     font-size: var(--text-subhead);
-    color: var(--text-secondary);
+    color: var(--cds-text-secondary);
 }
 
 .actions {
@@ -202,34 +202,34 @@ renderPageStart('staff', $currentPage, '振替依頼管理');
 .actions button {
     padding: var(--spacing-md) 20px;
     border: none;
-    border-radius: 6px;
+    border-radius: 0;
     font-size: var(--text-subhead);
     font-weight: 600;
     cursor: pointer;
     transition: all var(--duration-fast) var(--ease-out);
 }
 
-.btn-approve { background: var(--md-green); color: white; }
-.btn-approve:hover { background: #28b463; }
-.btn-reject { background: var(--md-red); color: white; }
-.btn-reject:hover { background: #dc2626; }
-.btn-note { background: var(--md-gray); color: white; }
-.btn-note:hover { background: #4b5563; }
+.btn-approve { background: var(--cds-support-success); color: white; }
+.btn-approve:hover { background: var(--cds-support-success); }
+.btn-reject { background: var(--cds-support-error); color: white; }
+.btn-reject:hover { background: var(--cds-support-error); }
+.btn-note { background: var(--cds-text-secondary); color: white; }
+.btn-note:hover { background: var(--cds-text-secondary); }
 
 .approved-info {
     padding: var(--spacing-md);
-    background: rgba(52,199,89,0.1);
-    border-radius: 6px;
+    background: rgba(36, 161, 72, 0.15);
+    border-radius: 0;
     font-size: var(--text-subhead);
-    color: var(--md-green);
+    color: var(--cds-support-success);
 }
 
 .rejected-info {
     padding: var(--spacing-md);
-    background: rgba(255,59,48,0.1);
-    border-radius: 6px;
+    background: rgba(218, 30, 40, 0.15);
+    border-radius: 0;
     font-size: var(--text-subhead);
-    color: var(--md-red);
+    color: var(--cds-support-error);
 }
 
 .note-text {
@@ -301,8 +301,8 @@ renderPageStart('staff', $currentPage, '振替依頼管理');
 .modal-body textarea {
     width: 100%;
     padding: var(--spacing-md);
-    border: 1px solid var(--md-gray-5);
-    border-radius: 6px;
+    border: 1px solid var(--cds-border-subtle-00);
+    border-radius: 0;
     font-size: var(--text-subhead);
     font-family: inherit;
     resize: vertical;
@@ -318,16 +318,16 @@ renderPageStart('staff', $currentPage, '振替依頼管理');
 .modal-footer button {
     padding: var(--spacing-md) 20px;
     border: none;
-    border-radius: 6px;
+    border-radius: 0;
     font-size: var(--text-subhead);
     font-weight: 600;
     cursor: pointer;
 }
 
-.btn-cancel { background: var(--md-gray-5); color: var(--text-primary); }
-.btn-cancel:hover { background: var(--md-gray-4); }
-.btn-confirm { background: var(--md-blue); color: white; }
-.btn-confirm:hover { background: #1d4ed8; }
+.btn-cancel { background: var(--cds-border-subtle-00); color: var(--cds-text-primary); }
+.btn-cancel:hover { background: var(--cds-border-subtle-00); }
+.btn-confirm { background: var(--cds-blue-60); color: white; }
+.btn-confirm:hover { background: var(--cds-blue-60); }
 
 .quick-link {
     padding: var(--spacing-sm) var(--spacing-md);

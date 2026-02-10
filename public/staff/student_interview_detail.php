@@ -193,8 +193,8 @@ renderPageStart('staff', $currentPage, $pageTitle);
     }
 
     .check-badge.checked {
-        background: #d4edda;
-        color: #155724;
+        background: rgba(36, 161, 72, 0.15);
+        color: var(--cds-support-success);
     }
 
     .check-badge.unchecked {
@@ -270,7 +270,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
     .interview-item.active {
         border-left-color: var(--md-blue);
-        background: #e3f2fd;
+        background: rgba(0, 125, 184, 0.15);
     }
 
     .interview-item-header {
@@ -306,14 +306,14 @@ renderPageStart('staff', $currentPage, $pageTitle);
     }
 
     .message.success {
-        background: #d4edda;
-        color: #155724;
+        background: rgba(36, 161, 72, 0.15);
+        color: var(--cds-support-success);
         border-left: 4px solid var(--md-green);
     }
 
     .message.error {
         background: var(--md-bg-secondary);
-        color: #721c24;
+        color: var(--cds-support-error);
         border-left: 4px solid var(--md-red);
     }
 

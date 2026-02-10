@@ -1524,7 +1524,7 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
         }
 
         .notification-item.plan {
-            border-left-color: #6f42c1;
+            border-left-color: var(--cds-purple-60);
         }
 
         .notification-item.note-confirmed {
@@ -1964,7 +1964,7 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
         }
 
         .holiday-label {
-            color: #F44336;
+            color: var(--cds-support-error);
             font-weight: bold;
             margin-bottom: 1px;
         }
@@ -2013,13 +2013,13 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
         }
 
         .day-type-label.weekday {
-            background: rgba(52, 199, 89, 0.25);
-            color: #059669;
+            background: rgba(36, 161, 72, 0.25);
+            color: var(--cds-support-success);
         }
 
         .day-type-label.school-holiday {
-            background: rgba(59, 130, 246, 0.25);
-            color: #2563eb;
+            background: rgba(15, 98, 254, 0.25);
+            color: var(--cds-blue-60);
         }
 
         /* 選択日のラベルを見やすく */
@@ -2029,11 +2029,11 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
         }
 
         .calendar-day.selected .day-type-label.weekday {
-            color: #047857;
+            color: var(--cds-support-success);
         }
 
         .calendar-day.selected .day-type-label.school-holiday {
-            color: #1d4ed8;
+            color: var(--cds-blue-60);
         }
 
         .activity-section {
@@ -2082,24 +2082,24 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
         }
 
         .activity-list h2 {
-            color: #1d1d1f;
+            color: var(--cds-text-primary);
             margin-bottom: 15px;
             font-size: 20px;
             font-weight: 700;
         }
 
         .activity-card {
-            border: 2px solid #e5e5e7;
+            border: 2px solid var(--cds-border-subtle-00);
             border-radius: var(--radius-sm);
             padding: 15px;
             margin-bottom: 15px;
-            transition: all 0.3s;
+            transition: all 0.11s cubic-bezier(0.2, 0, 0.38, 0.9);
             background: var(--md-bg-secondary);
         }
 
         .activity-card:hover {
-            border-color: #667eea;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+            border-color: var(--cds-blue-60);
+            box-shadow: 0 4px 12px rgba(15, 98, 254, 0.15);
         }
 
         .activity-header {
@@ -2118,10 +2118,10 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
         }
 
         .participant-count {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: var(--cds-blue-60);
+            color: var(--cds-text-on-color);
             padding: 6px 14px;
-            border-radius: 20px;
+            border-radius: 0;
             font-size: 14px;
             font-weight: 600;
         }
@@ -2183,19 +2183,20 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
         }
 
         .add-activity-btn {
-            padding: 15px 30px;
-            background: var(--md-green);
-            color: var(--text-primary);
+            padding: var(--cds-spacing-04, 1rem) var(--cds-spacing-06, 2rem);
+            background: var(--cds-green-50, #24a148);
+            color: var(--cds-text-on-color, #ffffff);
             border: none;
-            border-radius: var(--radius-sm);
-            font-size: var(--text-callout);
+            border-radius: 0;
+            font-size: 14px;
             cursor: pointer;
             width: 100%;
             font-weight: 600;
+            transition: opacity 0.11s cubic-bezier(0.2, 0, 0.38, 0.9);
         }
 
         .add-activity-btn:hover {
-            background: var(--md-green);
+            opacity: 0.9;
         }
 
         .empty-message {
@@ -2205,21 +2206,21 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
         }
 
         .success-message {
-            background: #d4edda;
-            color: #155724;
+            background: rgba(36, 161, 72, 0.15);
+            color: var(--cds-support-success);
             padding: var(--spacing-md);
             border-radius: var(--radius-sm);
             margin-bottom: var(--spacing-lg);
-            border-left: 4px solid var(--md-green);
+            border-left: 4px solid var(--cds-support-success);
         }
 
         .error-message {
-            background: var(--md-bg-secondary);
-            color: #721c24;
+            background: rgba(218, 30, 40, 0.15);
+            color: var(--cds-support-error);
             padding: var(--spacing-md);
             border-radius: var(--radius-sm);
             margin-bottom: var(--spacing-lg);
-            border-left: 4px solid var(--md-red);
+            border-left: 4px solid var(--cds-support-error);
         }
 
         .sunday {
@@ -2285,17 +2286,17 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
         }
 
         .accordion-header {
-            background: var(--md-bg-secondary);
-            color: var(--text-primary);
-            padding: var(--spacing-md) 15px;
+            background: var(--cds-layer-02, #f4f4f4);
+            color: var(--cds-text-primary, #161616);
+            padding: var(--cds-spacing-04, 1rem) var(--cds-spacing-05, 1rem);
             cursor: pointer;
-            border-radius: 6px;
+            border-radius: 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-weight: 600;
-            font-size: var(--text-subhead);
-            transition: all var(--duration-normal) var(--ease-out);
+            font-size: 14px;
+            transition: opacity 0.11s cubic-bezier(0.2, 0, 0.38, 0.9);
             user-select: none;
         }
 
@@ -2303,16 +2304,24 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
             opacity: 0.9;
         }
 
+        .accordion-header.preschool {
+            background: var(--cds-purple-60, #8a3ffc);
+            color: var(--cds-text-on-color, #ffffff);
+        }
+
         .accordion-header.elementary {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            background: var(--cds-green-50, #24a148);
+            color: var(--cds-text-on-color, #ffffff);
         }
 
         .accordion-header.junior_high {
-            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            background: var(--cds-blue-60, #0f62fe);
+            color: var(--cds-text-on-color, #ffffff);
         }
 
         .accordion-header.high_school {
-            background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+            background: var(--cds-orange-50, #ff832b);
+            color: var(--cds-text-on-color, #ffffff);
         }
 
         .accordion-title {
@@ -2322,11 +2331,11 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
         }
 
         .accordion-count {
-            background: var(--md-gray-5);
+            background: rgba(255, 255, 255, 0.2);
             padding: 2px 8px;
-            border-radius: var(--radius-md);
-            font-size: var(--text-caption-1);
-            font-weight: bold;
+            border-radius: 0;
+            font-size: 12px;
+            font-weight: 600;
         }
 
         .accordion-arrow {
@@ -2341,9 +2350,9 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
         .accordion-content {
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease-out;
-            background: var(--md-gray-6);
-            border-radius: 0 0 6px 6px;
+            transition: max-height 0.24s cubic-bezier(0.2, 0, 0.38, 0.9);
+            background: var(--cds-layer-01, #ffffff);
+            border-radius: 0;
         }
 
         .accordion-content.active {
@@ -2364,17 +2373,17 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
         }
 
         .notification-banner.urgent {
-            border-left: 5px solid var(--md-red);
-            background: #3a2020;
+            border-left: 5px solid var(--cds-support-error);
+            background: rgba(218, 30, 40, 0.15);
         }
 
         .notification-banner.warning {
-            border-left: 5px solid var(--md-orange);
-            background: #3a3820;
+            border-left: 5px solid var(--cds-orange-50);
+            background: rgba(255, 131, 43, 0.15);
         }
 
         .notification-banner.info {
-            border-left: 5px solid #17a2b8;
+            border-left: 5px solid var(--cds-teal-60);
             background: var(--md-bg-secondary);
         }
 
@@ -2397,7 +2406,7 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
         }
 
         .notification-header.warning {
-            color: #ff9800;
+            color: var(--cds-orange-50);
         }
 
         .notification-header.overdue {
@@ -2449,7 +2458,7 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
         }
 
         .notification-deadline.warning {
-            color: #ff9800;
+            color: var(--cds-orange-50);
         }
 
         .notification-deadline.overdue {
@@ -2496,14 +2505,14 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
 
         .task-card-title {
             font-size: var(--text-subhead);
-            color: #6c757d;
+            color: var(--cds-text-secondary);
             font-weight: 600;
         }
 
         .task-card-count {
             font-size: 32px;
             font-weight: 700;
-            color: #1d1d1f;
+            color: var(--cds-text-primary);
         }
 
         .task-card-count.urgent {
@@ -2511,7 +2520,7 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
         }
 
         .task-card-count.warning {
-            color: #ff9800;
+            color: var(--cds-orange-50);
         }
 
         .task-card-count.success {
@@ -2525,19 +2534,18 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
         .btn-task-detail {
             display: inline-block;
             padding: var(--spacing-md) 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: var(--cds-blue-60);
+            color: var(--cds-text-on-color);
             text-decoration: none;
-            border-radius: var(--radius-sm);
+            border-radius: 0;
             font-size: var(--text-subhead);
             font-weight: 600;
             text-align: center;
-            transition: all var(--duration-normal) var(--ease-out);
+            transition: opacity 0.11s cubic-bezier(0.2, 0, 0.38, 0.9);
         }
 
         .btn-task-detail:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            opacity: 0.9;
         }
 
         .notification-action {
@@ -2565,7 +2573,7 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
         }
 
         .notification-btn.staff:hover {
-            background: #5d3a7f;
+            background: var(--cds-purple-70);
         }
 
         .notifications-container {
@@ -2759,18 +2767,18 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
         }
 
         .event-detail-section.staff-only {
-            background: #3a3420;
+            background: rgba(255, 131, 43, 0.15);
             padding: 15px;
             border-radius: var(--radius-sm);
-            border-left: 4px solid #ff9800;
+            border-left: 4px solid var(--cds-orange-50);
         }
 
         .event-detail-section.staff-only h4 {
-            color: #ff9800;
+            color: var(--cds-orange-50);
         }
 
         .event-detail-section.staff-only p {
-            color: #f5f5f5;
+            color: var(--cds-text-primary);
         }
 
         .no-data {
@@ -3063,15 +3071,15 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
             <!-- 右カラム: 本日の参加予定者 -->
             <div class="right-column">
                 <!-- 業務日誌クイックアクセス -->
-                <div class="work-diary-box" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: var(--radius-md); margin-bottom: 15px; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);">
+                <div class="work-diary-box" style="background: var(--cds-blue-60); padding: 15px; border-radius: 0; margin-bottom: 15px; box-shadow: var(--cds-shadow);">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div style="color: white;">
+                        <div style="color: var(--cds-text-on-color);">
                             <div style="font-weight: bold; font-size: var(--text-callout); margin-bottom: 4px; display: flex; align-items: center; gap: 4px;"><span class="material-symbols-outlined" style="font-size: 1em;">menu_book</span> 業務日誌</div>
                             <div style="font-size: var(--text-footnote); opacity: 0.9;"><?php echo date('n月j日'); ?>の業務記録</div>
                         </div>
                         <div style="display: flex; gap: 8px;">
-                            <a href="work_diary.php?date=<?php echo date('Y-m-d'); ?>" style="padding: 8px 16px; background: white; color: #667eea; text-decoration: none; border-radius: var(--radius-sm); font-weight: bold; font-size: var(--text-footnote);">作成・編集</a>
-                            <a href="work_diary_calendar.php" style="padding: 8px 12px; background: rgba(255,255,255,0.2); color: white; text-decoration: none; border-radius: var(--radius-sm); font-size: var(--text-footnote);">履歴</a>
+                            <a href="work_diary.php?date=<?php echo date('Y-m-d'); ?>" style="padding: 8px 16px; background: var(--cds-layer-01); color: var(--cds-blue-60); text-decoration: none; border-radius: 0; font-weight: bold; font-size: var(--text-footnote);">作成・編集</a>
+                            <a href="work_diary_calendar.php" style="padding: 8px 12px; background: rgba(255,255,255,0.2); color: var(--cds-text-on-color); text-decoration: none; border-radius: 0; font-size: var(--text-footnote);">履歴</a>
                         </div>
                     </div>
                 </div>
@@ -3142,10 +3150,10 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
                                         <!-- イベント参加者を表示 -->
                                         <?php if (!empty($events)): ?>
                                             <?php foreach ($events as $participant): ?>
-                                                <div class="student-item" style="border-left: 4px solid #2563eb;">
+                                                <div class="student-item" style="border-left: 4px solid var(--cds-blue-60);">
                                                     <div class="student-item-name">
                                                         <?php echo htmlspecialchars($participant['student_name']); ?>
-                                                        <span style="color: #2563eb; font-weight: bold; margin-left: 8px;">
+                                                        <span style="color: var(--cds-blue-60); font-weight: bold; margin-left: 8px;">
                                                             <span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">event</span> <?= htmlspecialchars($participant['event_name']) ?>
                                                         </span>
                                                     </div>
@@ -3155,7 +3163,7 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
                                                         </div>
                                                     <?php endif; ?>
                                                     <?php if ($participant['notes']): ?>
-                                                        <div class="student-item-meta" style="color: #2563eb;">
+                                                        <div class="student-item-meta" style="color: var(--cds-blue-60);">
                                                             備考: <?php echo htmlspecialchars($participant['notes']); ?>
                                                         </div>
                                                     <?php endif; ?>
@@ -3173,12 +3181,12 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
             <!-- マイグレーション警告（管理者のみ） -->
             <?php if (!$hasMakeupColumn && $_SESSION['user_type'] === 'admin'): ?>
                 <div class="main-content" style="margin-bottom: 20px;">
-                    <div style="background: #4a4020; padding: 20px; border-radius: 12px; border-left: 4px solid #ffc107;">
-                        <h3 style="color: #856404; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined" style="font-size: 1.2em;">warning</span> データベースマイグレーションが必要です</h3>
-                        <p style="color: #856404; margin-bottom: 15px;">
+                    <div style="background: rgba(241, 194, 27, 0.15); padding: 20px; border-radius: 0; border-left: 4px solid var(--cds-support-warning);">
+                        <h3 style="color: var(--cds-support-warning); margin-bottom: 10px; display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined" style="font-size: 1.2em;">warning</span> データベースマイグレーションが必要です</h3>
+                        <p style="color: var(--cds-text-primary); margin-bottom: 15px;">
                             振替依頼機能を使用するには、データベースのマイグレーションが必要です。
                         </p>
-                        <a href="/admin/run_migration_v44.php" style="display: inline-block; background: #1976D2; color: var(--text-primary); padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                        <a href="/admin/run_migration_v44.php" style="display: inline-block; background: var(--cds-blue-60); color: var(--cds-text-on-color); padding: 10px 20px; border-radius: 0; text-decoration: none; font-weight: 600;">
                             マイグレーションを実行する →
                         </a>
                     </div>

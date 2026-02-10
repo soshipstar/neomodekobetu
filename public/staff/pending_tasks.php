@@ -615,7 +615,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
         td {
             padding: 15px;
-            border-bottom: 1px solid #e1e8ed;
+            border-bottom: 1px solid var(--cds-border-subtle-00);
         }
 
         tr:hover {

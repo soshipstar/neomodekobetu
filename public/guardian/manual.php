@@ -33,11 +33,11 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
 
 <style>
 .intro-section {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-    border-radius: var(--radius-md);
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 0;
     padding: var(--spacing-xl);
     margin-bottom: var(--spacing-xl);
-    border: 1px solid rgba(102, 126, 234, 0.3);
+    border: 1px solid var(--cds-border-subtle-00);
 }
 
 .intro-section h2 {
@@ -56,13 +56,13 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
     margin-bottom: var(--spacing-xl);
     padding: var(--spacing-lg);
     background: var(--md-bg-tertiary);
-    border-radius: var(--radius-md);
-    border-left: 4px solid var(--md-purple);
+    border-radius: 0;
+    border-left: 4px solid var(--cds-purple-60);
 }
 
 .section.important {
-    border-left-color: var(--md-orange);
-    background: rgba(255, 149, 0, 0.05);
+    border-left-color: var(--cds-orange-50);
+    background: rgba(255, 149, 0, 0.02);
 }
 
 .section h2 {
@@ -100,24 +100,24 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
 
 .highlight-box {
     background: var(--md-bg-secondary);
-    border-radius: var(--radius-sm);
+    border-radius: 0;
     padding: var(--spacing-md);
     margin: var(--spacing-md) 0;
 }
 
 .highlight-box.purple {
-    border: 1px solid var(--md-purple);
-    background: rgba(102, 126, 234, 0.1);
+    border: 1px solid var(--cds-purple-60);
+    background: rgba(102, 126, 234, 0.05);
 }
 
 .highlight-box.orange {
-    border: 1px solid var(--md-orange);
-    background: rgba(255, 149, 0, 0.1);
+    border: 1px solid var(--cds-orange-50);
+    background: rgba(255, 149, 0, 0.05);
 }
 
 .highlight-box.green {
-    border: 1px solid var(--md-green);
-    background: rgba(52, 199, 89, 0.1);
+    border: 1px solid var(--cds-support-success);
+    background: rgba(36, 161, 72, 0.05);
 }
 
 .flow-diagram {
@@ -133,15 +133,15 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
     gap: var(--spacing-md);
     padding: var(--spacing-md);
     background: var(--md-bg-secondary);
-    border-radius: var(--radius-sm);
+    border-radius: 0;
 }
 
 .flow-number {
     width: 36px;
     height: 36px;
-    background: linear-gradient(135deg, var(--md-purple), #764ba2);
+    background: var(--cds-purple-60);
     color: white;
-    border-radius: 50%;
+    border-radius: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -163,16 +163,16 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
 
 .flow-arrow {
     text-align: center;
-    color: var(--md-purple);
+    color: var(--cds-purple-60);
     font-size: var(--text-body);
 }
 
 .document-card {
     background: var(--md-bg-secondary);
-    border-radius: var(--radius-md);
+    border-radius: 0;
     padding: var(--spacing-lg);
     margin: var(--spacing-md) 0;
-    border: 1px solid var(--border-primary);
+    border: 1px solid var(--cds-border-subtle-00);
 }
 
 .document-card h4 {
@@ -196,7 +196,7 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
     padding: var(--spacing-sm) 0;
     padding-left: 30px;
     position: relative;
-    border-bottom: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--cds-border-subtle-00);
 }
 
 .check-list li:last-child {
@@ -214,7 +214,7 @@ renderPageStart('guardian', $currentPage, 'ご利用ガイド', ['classroom' => 
 
 .toc {
     background: var(--md-bg-tertiary);
-    border-radius: var(--radius-md);
+    border-radius: 0;
     padding: var(--spacing-lg);
     margin-bottom: var(--spacing-xl);
 }

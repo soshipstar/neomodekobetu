@@ -117,7 +117,7 @@ renderPageStart('staff', $currentPage, 'イベント管理');
     display: inline-block;
     width: 20px;
     height: 20px;
-    border-radius: 3px;
+    border-radius: 0;
     vertical-align: middle;
 }
 .color-preview {
@@ -223,17 +223,17 @@ renderPageStart('staff', $currentPage, 'イベント管理');
 .target-badge {
     display: inline-block;
     padding: 2px 8px;
-    border-radius: 4px;
+    border-radius: 0;
     font-size: 11px;
     margin: 1px;
 }
-.target-badge.all { background: #e0e7ff; color: #3730a3; }
-.target-badge.preschool { background: #fce7f3; color: #9d174d; }
-.target-badge.elementary { background: #d1fae5; color: #065f46; }
-.target-badge.junior_high { background: #dbeafe; color: #1e40af; }
-.target-badge.high_school { background: #fef3c7; color: #92400e; }
-.target-badge.guardian { background: #ede9fe; color: #5b21b6; }
-.target-badge.other { background: #f3f4f6; color: #374151; }
+.target-badge.all { background: rgba(0, 0, 0, 0.05); color: var(--cds-purple-60); }
+.target-badge.preschool { background: rgba(0, 0, 0, 0.05); color: var(--cds-purple-60); }
+.target-badge.elementary { background: rgba(36, 161, 72, 0.15); color: var(--cds-support-success); }
+.target-badge.junior_high { background: rgba(0, 0, 0, 0.05); color: var(--cds-blue-60); }
+.target-badge.high_school { background: rgba(0, 0, 0, 0.05); color: var(--cds-orange-50); }
+.target-badge.guardian { background: rgba(0, 0, 0, 0.05); color: var(--cds-purple-60); }
+.target-badge.other { background: rgba(0, 0, 0, 0.05); color: var(--cds-text-secondary); }
 .modal-footer {
     margin-top: var(--spacing-lg);
     padding-top: 20px;
@@ -329,16 +329,16 @@ renderPageStart('staff', $currentPage, 'イベント管理');
             <div class="form-group">
                 <label class="form-label">カレンダー表示色</label>
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <input type="color" name="event_color" id="event_color" value="#388E3C" style="width: 60px; height: 40px; border: none; cursor: pointer;">
+                    <input type="color" name="event_color" id="event_color" value="var(--cds-support-success)" style="width: 60px; height: 40px; border: none; cursor: pointer;">
                     <span style="color: var(--text-secondary);">選択した色でカレンダーに表示されます</span>
                 </div>
                 <div class="color-preview">
-                    <div class="color-option" style="background: var(--md-green);" onclick="document.getElementById('event_color').value='#388E3C'"></div>
-                    <div class="color-option" style="background: var(--md-blue);" onclick="document.getElementById('event_color').value='#007bff'"></div>
-                    <div class="color-option" style="background: var(--md-orange);" onclick="document.getElementById('event_color').value='#ffc107'"></div>
-                    <div class="color-option" style="background: var(--md-red);" onclick="document.getElementById('event_color').value='#dc3545'"></div>
-                    <div class="color-option" style="background: #17a2b8;" onclick="document.getElementById('event_color').value='#17a2b8'"></div>
-                    <div class="color-option" style="background: #6f42c1;" onclick="document.getElementById('event_color').value='#6f42c1'"></div>
+                    <div class="color-option" style="background: var(--cds-support-success);" onclick="document.getElementById('event_color').value='#24A148'"></div>
+                    <div class="color-option" style="background: var(--cds-blue-60);" onclick="document.getElementById('event_color').value='#0F62FE'"></div>
+                    <div class="color-option" style="background: var(--cds-support-warning);" onclick="document.getElementById('event_color').value='#F1C21B'"></div>
+                    <div class="color-option" style="background: var(--cds-support-error);" onclick="document.getElementById('event_color').value='#DA1E28'"></div>
+                    <div class="color-option" style="background: var(--cds-teal-60);" onclick="document.getElementById('event_color').value='#009D9A'"></div>
+                    <div class="color-option" style="background: var(--cds-purple-60);" onclick="document.getElementById('event_color').value='#A56EFF'"></div>
                 </div>
             </div>
             <div style="text-align: right;">
@@ -525,7 +525,7 @@ renderPageStart('staff', $currentPage, 'イベント管理');
 
             <div class="form-group">
                 <label class="form-label">イベント色</label>
-                <input type="color" name="event_color" id="edit_event_color" value="#667eea" style="width: 60px; height: 40px; border: none; cursor: pointer;">
+                <input type="color" name="event_color" id="edit_event_color" value="var(--cds-purple-60)" style="width: 60px; height: 40px; border: none; cursor: pointer;">
             </div>
 
             <div class="modal-footer">
@@ -545,7 +545,7 @@ function openEditModal(event) {
     document.getElementById('edit_event_description').value = event.event_description || '';
     document.getElementById('edit_staff_comment').value = event.staff_comment || '';
     document.getElementById('edit_guardian_message').value = event.guardian_message || '';
-    document.getElementById('edit_event_color').value = event.event_color || '#667eea';
+    document.getElementById('edit_event_color').value = event.event_color || '#A56EFF';
 
     // チェックボックスをリセットして設定
     const checkboxes = document.querySelectorAll('#edit_target_audience_group input[type="checkbox"]');

@@ -162,8 +162,8 @@ renderPageStart('staff', $currentPage, '施設通信作成');
     font-weight: 600;
 }
 
-.status-draft { background: rgba(255,149,0,0.15); color: var(--md-orange); }
-.status-published { background: rgba(52,199,89,0.15); color: var(--md-green); }
+.status-draft { background: rgba(255,149,0,0.15); color: var(--cds-orange-50); }
+.status-published { background: rgba(36,161,72,0.15); color: var(--cds-support-success); }
 
 .newsletter-actions {
     display: flex;
@@ -181,38 +181,38 @@ renderPageStart('staff', $currentPage, '施設通信作成');
     transition: all var(--duration-normal) var(--ease-out);
 }
 
-.btn-edit { background: var(--md-blue); color: white; }
-.btn-edit:hover { background: #1d4ed8; }
-.btn-view { background: var(--md-green); color: white; }
-.btn-view:hover { background: #28b463; }
-.btn-delete { background: var(--md-red); color: white; }
-.btn-delete:hover { background: #c9302c; }
+.btn-edit { background: var(--cds-blue-60); color: white; }
+.btn-edit:hover { background: var(--cds-blue-60); }
+.btn-view { background: var(--cds-support-success); color: white; }
+.btn-view:hover { background: var(--cds-support-success); }
+.btn-delete { background: var(--cds-support-error); color: white; }
+.btn-delete:hover { background: var(--cds-support-error); }
 
 .success-message {
-    background: rgba(52, 199, 89, 0.15);
-    color: var(--md-green);
+    background: rgba(36, 161, 72, 0.15);
+    color: var(--cds-support-success);
     padding: 15px;
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-lg);
-    border-left: 4px solid var(--md-green);
+    border-left: 4px solid var(--cds-support-success);
 }
 
 .error-message {
-    background: rgba(255, 59, 48, 0.15);
-    color: var(--md-red);
+    background: rgba(218, 30, 40, 0.15);
+    color: var(--cds-support-error);
     padding: 15px;
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-lg);
-    border-left: 4px solid var(--md-red);
+    border-left: 4px solid var(--cds-support-error);
 }
 
 .info-box {
     background: rgba(0,122,255,0.1);
-    border-left: 4px solid var(--md-blue);
+    border-left: 4px solid var(--cds-blue-60);
     padding: 15px;
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-lg);
-    color: var(--text-primary);
+    color: var(--cds-text-primary);
     font-size: var(--text-subhead);
     line-height: 1.6;
 }

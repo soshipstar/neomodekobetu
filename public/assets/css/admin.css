@@ -1,6 +1,6 @@
 /**
- * 管理者用CSS
- * アクセントカラー: 紫 (--md-purple)
+ * 管理者用CSS - Carbon Design System
+ * アクセントカラー: 紫 (--cds-purple-60)
  */
 
 /* ========================================
@@ -8,31 +8,35 @@
    ======================================== */
 
 .role-admin .sidebar-menu a:hover {
-    background: rgba(175, 82, 222, 0.1);
-    border-left-color: var(--md-purple);
+    background: rgba(138, 63, 252, 0.1);
+    border-left-color: var(--cds-purple-60);
 }
 
 .role-admin .sidebar-menu a.active {
-    background: rgba(175, 82, 222, 0.15);
-    border-left-color: var(--md-purple);
-    color: var(--md-purple);
+    background: rgba(138, 63, 252, 0.15);
+    border-left-color: var(--cds-purple-60);
+    color: var(--cds-purple-60);
 }
 
 .role-admin .sidebar-user-info {
-    background: rgba(175, 82, 222, 0.1);
+    background: rgba(138, 63, 252, 0.1);
 }
 
 .role-admin .user-info-box {
-    background: rgba(175, 82, 222, 0.1);
-    color: var(--md-purple);
+    background: rgba(138, 63, 252, 0.1);
+    color: var(--cds-purple-60);
 }
 
 .role-admin .stat-card .number {
-    color: var(--md-purple);
+    color: var(--cds-purple-60);
 }
 
 .role-admin .menu-card h3 {
-    color: var(--md-purple);
+    color: var(--cds-purple-60);
+}
+
+.role-admin .menu-card:hover {
+    border-left-color: var(--cds-purple-60);
 }
 
 /* ========================================
@@ -44,11 +48,11 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 4px 10px;
-    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
-    color: white;
-    border-radius: var(--radius-full);
-    font-size: 11px;
+    padding: 4px 12px;
+    background: var(--cds-support-error);
+    color: var(--cds-text-on-color);
+    border-radius: 0;
+    font-size: 12px;
     font-weight: 600;
 }
 
@@ -56,47 +60,47 @@
 .admin-status {
     display: inline-flex;
     align-items: center;
-    padding: 4px 10px;
-    border-radius: var(--radius-full);
+    padding: 4px 12px;
+    border-radius: 0;
     font-size: 12px;
     font-weight: 500;
 }
 
 .admin-status.active {
-    background: rgba(52, 199, 89, 0.15);
-    color: var(--md-green);
+    background: rgba(36, 161, 72, 0.15);
+    color: var(--cds-support-success);
 }
 
 .admin-status.inactive {
-    background: rgba(142, 142, 147, 0.15);
-    color: var(--md-gray-2);
+    background: var(--cds-layer-01);
+    color: var(--cds-text-helper);
 }
 
 /* 教室管理カード */
 .classroom-card {
-    background: var(--md-bg-primary);
-    border-radius: var(--radius-md);
-    padding: var(--spacing-lg);
-    box-shadow: var(--shadow-sm);
-    border-left: 4px solid var(--md-purple);
+    background: var(--cds-layer-01);
+    border-radius: 0;
+    padding: var(--cds-spacing-06);
+    box-shadow: var(--cds-shadow);
+    border-left: 4px solid var(--cds-purple-60);
 }
 
 .classroom-card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--cds-spacing-04);
 }
 
 .classroom-card-title {
-    font-size: var(--text-headline);
+    font-size: 18px;
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--cds-text-primary);
 }
 
 .classroom-card-stats {
     display: flex;
-    gap: var(--spacing-lg);
+    gap: var(--cds-spacing-06);
 }
 
 .classroom-stat {
@@ -104,14 +108,14 @@
 }
 
 .classroom-stat-value {
-    font-size: var(--text-title-3);
-    font-weight: 600;
-    color: var(--md-purple);
+    font-size: 28px;
+    font-weight: 300;
+    color: var(--cds-purple-60);
 }
 
 .classroom-stat-label {
-    font-size: var(--text-caption-1);
-    color: var(--text-secondary);
+    font-size: 12px;
+    color: var(--cds-text-secondary);
 }
 
 /* 管理者用テーブル */
@@ -122,32 +126,32 @@
 }
 
 .admin-table th {
-    background: var(--md-bg-secondary);
-    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--cds-layer-02);
+    padding: var(--cds-spacing-04) var(--cds-spacing-05);
     text-align: left;
     font-weight: 600;
-    font-size: var(--text-subhead);
-    color: var(--text-secondary);
-    border-bottom: 1px solid var(--md-gray-5);
+    font-size: 14px;
+    color: var(--cds-text-secondary);
+    border-bottom: 1px solid var(--cds-border-subtle-00);
 }
 
 .admin-table td {
-    padding: var(--spacing-md) var(--spacing-lg);
-    border-bottom: 1px solid var(--md-gray-5);
+    padding: var(--cds-spacing-04) var(--cds-spacing-05);
+    border-bottom: 1px solid var(--cds-border-subtle-00);
     vertical-align: middle;
 }
 
 .admin-table tr:hover td {
-    background: rgba(175, 82, 222, 0.05);
+    background: rgba(138, 63, 252, 0.05);
 }
 
 /* アクションボタングループ */
 .action-buttons {
     display: flex;
-    gap: var(--spacing-xs);
+    gap: var(--cds-spacing-02);
 }
 
 .action-buttons .btn {
-    padding: 6px 12px;
+    padding: var(--cds-spacing-02) var(--cds-spacing-04);
     font-size: 12px;
 }

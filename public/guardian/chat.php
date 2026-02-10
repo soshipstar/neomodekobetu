@@ -158,22 +158,22 @@ renderPageStart('guardian', $currentPage, 'チャット', [
 .makeup-section {
     margin-top: var(--spacing-lg);
     padding: var(--spacing-lg);
-    background: linear-gradient(135deg, rgba(52, 199, 89, 0.1) 0%, rgba(48, 209, 88, 0.05) 100%);
+    background: rgba(36, 161, 72, 0.15);
     border: 2px solid var(--md-green);
-    border-radius: var(--radius-md);
+    border-radius: 0;
 }
 
 .makeup-section-inner {
     background: var(--md-bg-primary);
     padding: var(--spacing-md);
-    border-radius: var(--radius-sm);
+    border-radius: 0;
     margin-bottom: var(--spacing-md);
 }
 
 .makeup-info-box {
     background: var(--md-bg-primary);
     padding: var(--spacing-md);
-    border-radius: var(--radius-sm);
+    border-radius: 0;
     border-left: 3px solid var(--md-blue);
     font-size: var(--text-caption-1);
     color: var(--text-secondary);
@@ -205,7 +205,7 @@ input[type="datetime-local"].special-form-select {
     width: 100%;
     padding: var(--spacing-md);
     border: 2px solid var(--md-gray-5);
-    border-radius: var(--radius-sm);
+    border-radius: 0;
     font-size: var(--text-subhead);
     background: var(--md-bg-primary);
     color: var(--text-primary);
@@ -213,6 +213,7 @@ input[type="datetime-local"].special-form-select {
 
 input[type="datetime-local"].special-form-select.meeting:focus {
     border-color: var(--md-purple);
+    border-radius: 0;
     outline: none;
 }
 </style>
@@ -514,8 +515,8 @@ function appendMessage(msg) {
     }
     // 面談予約リンクを追加
     if ((isMeetingRequest || isMeetingCounter) && msg.meeting_request_id) {
-        html += '<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(175, 82, 222, 0.3);">';
-        html += '<a href="meeting_response.php?request_id=' + msg.meeting_request_id + '" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; background: var(--md-purple); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">';
+        html += '<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(120, 82, 160, 0.3);">';
+        html += '<a href="meeting_response.php?request_id=' + msg.meeting_request_id + '" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; background: var(--md-purple); color: white; text-decoration: none; border-radius: 0; font-weight: 600;">';
         html += '<span class="material-symbols-outlined" style="font-size: 18px;">calendar_month</span> 日程を回答する';
         html += '</a></div>';
     }

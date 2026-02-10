@@ -109,8 +109,8 @@ renderPageStart('guardian', $currentPage, '面談予約の回答');
 }
 
 .status-pending {
-    background: rgba(255, 204, 0, 0.2);
-    color: #b8860b;
+    background: var(--cds-support-warning);
+    color: var(--text-primary);
 }
 
 .status-confirmed {
@@ -197,9 +197,9 @@ renderPageStart('guardian', $currentPage, '面談予約の回答');
 .counter-section {
     margin-top: var(--spacing-xl);
     padding: var(--spacing-lg);
-    background: rgba(0, 122, 255, 0.05);
+    background: var(--cds-blue-60);
     border-radius: var(--radius-md);
-    border: 1px solid rgba(0, 122, 255, 0.2);
+    border: 1px solid var(--cds-blue-60);
 }
 
 .counter-title {
@@ -302,15 +302,15 @@ renderPageStart('guardian', $currentPage, '面談予約の回答');
 }
 
 .alert-error {
-    background: rgba(255, 59, 48, 0.1);
-    color: var(--md-red);
-    border: 1px solid var(--md-red);
+    background: rgba(218, 30, 40, 0.15);
+    color: var(--cds-support-error);
+    border: 1px solid var(--cds-support-error);
 }
 
 .alert-success {
-    background: rgba(52, 199, 89, 0.1);
-    color: var(--md-green);
-    border: 1px solid var(--md-green);
+    background: rgba(36, 161, 72, 0.15);
+    color: var(--cds-support-success);
+    border: 1px solid var(--cds-support-success);
 }
 </style>
 
