@@ -75,36 +75,50 @@ renderPageStart('student', $currentPage, '週間計画表');
 ?>
 
 <style>
+/* ========================================
+   週間計画 - モバイルファースト設計
+   ======================================== */
+
 .week-nav {
-    background: var(--md-bg-primary);
-    padding: var(--spacing-md) var(--spacing-lg);
-    border-radius: var(--radius-md);
-    margin-bottom: var(--spacing-lg);
+    background: var(--cds-layer-01, var(--md-bg-primary));
+    padding: var(--cds-spacing-04, var(--spacing-md));
+    border-radius: 0;
+    margin-bottom: var(--cds-spacing-05, var(--spacing-lg));
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: var(--shadow-sm);
+    flex-direction: column;
+    gap: var(--cds-spacing-04, var(--spacing-md));
+    box-shadow: var(--cds-shadow, var(--shadow-sm));
 }
 
 .week-nav h2 {
-    color: var(--text-primary);
-    font-size: var(--text-body);
+    color: var(--cds-text-primary, var(--text-primary));
+    font-size: 16px;
     margin: 0;
+    text-align: center;
 }
 
 .week-nav-buttons {
     display: flex;
-    gap: var(--spacing-sm);
+    gap: var(--cds-spacing-03, var(--spacing-sm));
+    width: 100%;
+}
+
+.week-nav-buttons .btn {
+    flex: 1;
+    text-align: center;
+    padding: 12px 8px;
+    font-size: 14px;
+    min-height: 44px;
 }
 
 .plan-section {
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--cds-spacing-05, var(--spacing-lg));
 }
 
 .plan-section h3 {
-    color: var(--md-purple);
-    font-size: var(--text-callout);
-    margin-bottom: var(--spacing-md);
+    color: var(--cds-orange-40, var(--md-purple));
+    font-size: 15px;
+    margin-bottom: var(--cds-spacing-03, var(--spacing-md));
     display: flex;
     align-items: center;
     gap: 8px;
@@ -112,82 +126,120 @@ renderPageStart('student', $currentPage, '週間計画表');
 
 .plan-section textarea {
     width: 100%;
-    min-height: 60px;
-    padding: var(--spacing-md);
-    border: 1px solid var(--md-gray-5);
-    border-radius: var(--radius-sm);
-    font-size: var(--text-subhead);
+    min-height: 80px;
+    padding: var(--cds-spacing-04, var(--spacing-md));
+    border: 1px solid var(--cds-border-strong-01, var(--md-gray-5));
+    border-radius: 0;
+    font-size: 16px; /* iOS zoom防止 */
     font-family: inherit;
     resize: vertical;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.plan-section textarea:focus {
+    outline: 2px solid var(--cds-orange-40);
+    outline-offset: -2px;
+    border-color: var(--cds-orange-40);
 }
 
 .view-content {
-    padding: var(--spacing-md);
-    background: var(--md-gray-6);
-    border-left: 4px solid var(--md-purple);
-    border-radius: var(--radius-sm);
+    padding: var(--cds-spacing-04, var(--spacing-md));
+    background: var(--cds-layer-02, var(--md-gray-6));
+    border-left: 4px solid var(--cds-orange-40, var(--md-purple));
+    border-radius: 0;
     line-height: 1.6;
     white-space: pre-wrap;
+    word-break: break-word;
 }
 
 .view-content.empty {
-    color: var(--text-secondary);
+    color: var(--cds-text-secondary, var(--text-secondary));
     font-style: italic;
 }
 
-.daily-plans { margin-top: var(--spacing-lg); }
+.daily-plans {
+    margin-top: var(--cds-spacing-05, var(--spacing-lg));
+}
 
 .daily-plans h3 {
-    color: var(--text-primary);
-    font-size: var(--text-body);
-    margin-bottom: var(--spacing-md);
+    color: var(--cds-text-primary, var(--text-primary));
+    font-size: 16px;
+    margin-bottom: var(--cds-spacing-04, var(--spacing-md));
 }
 
 .day-plan {
-    display: grid;
-    grid-template-columns: 120px 1fr;
-    gap: var(--spacing-md);
-    margin-bottom: var(--spacing-md);
-    align-items: start;
+    display: flex;
+    flex-direction: column;
+    gap: var(--cds-spacing-02, 4px);
+    margin-bottom: var(--cds-spacing-04, var(--spacing-md));
+    padding-bottom: var(--cds-spacing-04, var(--spacing-md));
+    border-bottom: 1px solid var(--cds-border-subtle-00, var(--md-gray-5));
+}
+
+.day-plan:last-child {
+    border-bottom: none;
 }
 
 .day-label {
     font-weight: 600;
-    color: var(--md-purple);
-    padding-top: var(--spacing-md);
+    color: var(--cds-orange-40, var(--md-purple));
+    font-size: 15px;
 }
 
 .day-date {
-    font-size: var(--text-caption-1);
-    color: var(--text-secondary);
+    font-size: 13px;
+    color: var(--cds-text-secondary, var(--text-secondary));
+    margin-bottom: var(--cds-spacing-02, 4px);
+}
+
+.day-plan textarea {
+    width: 100%;
+    min-height: 60px;
+    padding: var(--cds-spacing-03, 12px);
+    border: 1px solid var(--cds-border-strong-01, var(--md-gray-5));
+    border-radius: 0;
+    font-size: 16px; /* iOS zoom防止 */
+    font-family: inherit;
+    resize: vertical;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.day-plan textarea:focus {
+    outline: 2px solid var(--cds-orange-40);
+    outline-offset: -2px;
+    border-color: var(--cds-orange-40);
 }
 
 .submissions-section {
-    margin-top: var(--spacing-xl);
-    padding-top: var(--spacing-lg);
-    border-top: 2px solid var(--md-gray-5);
+    margin-top: var(--cds-spacing-06, var(--spacing-xl));
+    padding-top: var(--cds-spacing-05, var(--spacing-lg));
+    border-top: 2px solid var(--cds-border-subtle-00, var(--md-gray-5));
 }
 
 .submissions-section h3 {
-    color: var(--md-red);
-    font-size: var(--text-body);
-    margin-bottom: var(--spacing-md);
+    color: var(--cds-support-error, var(--md-red));
+    font-size: 16px;
+    margin-bottom: var(--cds-spacing-04, var(--spacing-md));
 }
 
 .submission-view-item {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--spacing-md);
-    background: var(--md-gray-6);
-    border-left: 4px solid var(--md-orange);
-    border-radius: var(--radius-sm);
-    margin-bottom: var(--spacing-md);
+    flex-direction: column;
+    gap: var(--cds-spacing-03, 12px);
+    padding: var(--cds-spacing-04, var(--spacing-md));
+    background: var(--cds-layer-02, var(--md-gray-6));
+    border-left: 4px solid var(--cds-orange-40, var(--md-orange));
+    border-radius: 0;
+    margin-bottom: var(--cds-spacing-04, var(--spacing-md));
 }
 
 .submission-view-item.completed {
     opacity: 0.6;
-    border-left-color: var(--md-green);
+    border-left-color: var(--cds-support-success, var(--md-green));
     text-decoration: line-through;
 }
 
@@ -195,85 +247,206 @@ renderPageStart('student', $currentPage, '週間計画表');
 
 .submission-title {
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--cds-text-primary, var(--text-primary));
     margin-bottom: 5px;
+    font-size: 15px;
 }
 
 .submission-date {
-    font-size: var(--text-caption-1);
-    color: var(--text-secondary);
+    font-size: 13px;
+    color: var(--cds-text-secondary, var(--text-secondary));
 }
 
-.submission-date.urgent { color: var(--md-red); font-weight: 600; }
-.submission-date.overdue { color: #721c24; font-weight: 700; }
+.submission-date.urgent { color: var(--cds-support-error, var(--md-red)); font-weight: 600; }
+.submission-date.overdue { color: var(--cds-support-error); font-weight: 700; }
 
 .submission-checkbox {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
+    padding: 8px 0;
 }
 
 .submission-checkbox input[type="checkbox"] {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     cursor: pointer;
+    accent-color: var(--cds-orange-40);
 }
 
-.comments-section { margin-top: var(--spacing-lg); }
+.submission-checkbox label {
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.comments-section {
+    margin-top: var(--cds-spacing-05, var(--spacing-lg));
+}
 
 .comment {
-    padding: var(--spacing-md);
-    background: var(--md-gray-6);
-    border-left: 4px solid var(--md-purple);
-    border-radius: var(--radius-sm);
-    margin-bottom: var(--spacing-md);
+    padding: var(--cds-spacing-04, var(--spacing-md));
+    background: var(--cds-layer-02, var(--md-gray-6));
+    border-left: 4px solid var(--cds-orange-40, var(--md-purple));
+    border-radius: 0;
+    margin-bottom: var(--cds-spacing-04, var(--spacing-md));
 }
 
-.comment.staff { border-left-color: var(--md-green); }
-.comment.guardian { border-left-color: var(--md-orange); }
+.comment.staff { border-left-color: var(--cds-support-success, var(--md-green)); }
+.comment.guardian { border-left-color: var(--cds-orange-40, var(--md-orange)); }
 
 .comment-header {
     display: flex;
-    justify-content: space-between;
-    margin-bottom: var(--spacing-sm);
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: var(--cds-spacing-03, var(--spacing-sm));
 }
 
 .comment-author {
     font-weight: 600;
-    color: var(--md-purple);
+    color: var(--cds-orange-40, var(--md-purple));
+    font-size: 14px;
 }
 
 .comment-date {
-    font-size: var(--text-caption-1);
-    color: var(--text-secondary);
+    font-size: 12px;
+    color: var(--cds-text-secondary, var(--text-secondary));
 }
 
 .comment-body {
-    color: var(--text-primary);
+    color: var(--cds-text-primary, var(--text-primary));
     line-height: 1.6;
+    font-size: 15px;
 }
 
 .comment-form textarea {
     width: 100%;
     min-height: 100px;
-    padding: var(--spacing-md);
-    border: 1px solid var(--md-gray-5);
-    border-radius: var(--radius-sm);
+    padding: var(--cds-spacing-04, var(--spacing-md));
+    border: 1px solid var(--cds-border-strong-01, var(--md-gray-5));
+    border-radius: 0;
     font-family: inherit;
-    font-size: var(--text-subhead);
+    font-size: 16px; /* iOS zoom防止 */
     resize: vertical;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.comment-form textarea:focus {
+    outline: 2px solid var(--cds-orange-40);
+    outline-offset: -2px;
+    border-color: var(--cds-orange-40);
 }
 
 .no-plan {
     text-align: center;
-    padding: var(--spacing-3xl);
-    color: var(--text-secondary);
+    padding: var(--cds-spacing-07, var(--spacing-3xl));
+    color: var(--cds-text-secondary, var(--text-secondary));
 }
 
-@media (max-width: 768px) {
-    .day-plan { grid-template-columns: 1fr; gap: 5px; }
-    .week-nav { flex-direction: column; gap: var(--spacing-md); }
-    .comment-form textarea { font-size: 16px; }
+/* 編集ヘッダー - モバイル対応 */
+.edit-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--cds-spacing-04, var(--spacing-md));
+    margin-bottom: var(--cds-spacing-05, var(--spacing-lg));
+}
+
+.edit-header h2 {
+    color: var(--cds-text-primary, var(--text-primary));
+    font-size: 18px;
+    margin: 0;
+}
+
+.edit-header-buttons {
+    display: flex;
+    gap: var(--cds-spacing-03, var(--spacing-sm));
+    width: 100%;
+}
+
+.edit-header-buttons .btn {
+    flex: 1;
+    min-height: 48px;
+    font-size: 15px;
+}
+
+/* 表示ヘッダー - モバイル対応 */
+.view-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--cds-spacing-04, var(--spacing-md));
+    margin-bottom: var(--cds-spacing-05, var(--spacing-lg));
+}
+
+.view-header h2 {
+    color: var(--cds-text-primary, var(--text-primary));
+    font-size: 18px;
+    margin: 0;
+}
+
+.view-header .btn {
+    width: 100%;
+    min-height: 48px;
+    font-size: 15px;
+}
+
+/* デスクトップ対応 */
+@media (min-width: 768px) {
+    .week-nav {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .week-nav-buttons {
+        width: auto;
+    }
+
+    .week-nav-buttons .btn {
+        flex: none;
+        padding: 8px 16px;
+    }
+
+    .day-plan {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: var(--cds-spacing-04, var(--spacing-md));
+        align-items: start;
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .day-label {
+        padding-top: var(--cds-spacing-04, var(--spacing-md));
+    }
+
+    .submission-view-item {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .comment-header {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
+    .edit-header,
+    .view-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .edit-header-buttons {
+        width: auto;
+    }
+
+    .edit-header-buttons .btn,
+    .view-header .btn {
+        flex: none;
+        width: auto;
+    }
 }
 </style>
 
@@ -317,9 +490,9 @@ renderPageStart('student', $currentPage, '週間計画表');
         <input type="hidden" name="week_start_date" value="<?= $weekStartDate ?>">
         <div class="card">
             <div class="card-body">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
-                    <h2 style="color: var(--text-primary); font-size: var(--text-title-3); margin: 0;">週間計画を編集</h2>
-                    <div style="display: flex; gap: var(--spacing-sm);">
+                <div class="edit-header">
+                    <h2>週間計画を編集</h2>
+                    <div class="edit-header-buttons">
                         <a href="?date=<?= $targetDate ?>" class="btn btn-secondary">キャンセル</a>
                         <button type="submit" class="btn btn-success">保存する</button>
                     </div>
@@ -375,8 +548,8 @@ renderPageStart('student', $currentPage, '週間計画表');
     <!-- 表示モード -->
     <div class="card">
         <div class="card-body">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
-                <h2 style="color: var(--text-primary); font-size: var(--text-title-3); margin: 0;">週間計画</h2>
+            <div class="view-header">
+                <h2>週間計画</h2>
                 <a href="?date=<?= $targetDate ?>&edit=1" class="btn btn-primary">編集する</a>
             </div>
 

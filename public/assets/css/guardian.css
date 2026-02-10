@@ -1,6 +1,6 @@
 /**
  * 保護者用CSS - Carbon Design System
- * アクセントカラー: 緑 (--cds-green-60)
+ * アクセントカラー: 緑 (--cds-green-50: #24a148)
  */
 
 /* ========================================
@@ -9,13 +9,13 @@
 
 .role-guardian .sidebar-menu a:hover {
     background: rgba(36, 161, 72, 0.1);
-    border-left-color: var(--cds-green-60);
+    border-left-color: var(--cds-green-50);
 }
 
 .role-guardian .sidebar-menu a.active {
     background: rgba(36, 161, 72, 0.15);
-    border-left-color: var(--cds-green-60);
-    color: var(--cds-green-60);
+    border-left-color: var(--cds-green-50);
+    color: var(--cds-green-50);
 }
 
 .role-guardian .sidebar-user-info {
@@ -24,19 +24,19 @@
 
 .role-guardian .user-info-box {
     background: rgba(36, 161, 72, 0.1);
-    color: var(--cds-green-60);
+    color: var(--cds-green-50);
 }
 
 .role-guardian .stat-card .number {
-    color: var(--cds-green-60);
+    color: var(--cds-green-50);
 }
 
 .role-guardian .menu-card h3 {
-    color: var(--cds-green-60);
+    color: var(--cds-green-50);
 }
 
 .role-guardian .menu-card:hover {
-    border-left-color: var(--cds-green-60);
+    border-left-color: var(--cds-green-50);
 }
 
 /* ========================================
@@ -49,7 +49,7 @@
     border-radius: 0;
     padding: var(--cds-spacing-06);
     box-shadow: var(--cds-shadow);
-    border-left: 4px solid var(--cds-green-60);
+    border-left: 4px solid var(--cds-green-50);
     margin-bottom: var(--cds-spacing-04);
 }
 
@@ -64,7 +64,7 @@
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    background: var(--cds-green-60);
+    background: var(--cds-green-50);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -102,7 +102,7 @@
 }
 
 .communication-date .day-label {
-    background: var(--cds-green-60);
+    background: var(--cds-green-50);
     color: var(--cds-text-on-color);
     padding: 2px 8px;
     border-radius: 0;
@@ -130,7 +130,7 @@
 .kakehashi-section-title {
     font-size: 18px;
     font-weight: 600;
-    color: var(--cds-green-60);
+    color: var(--cds-green-50);
     margin-bottom: var(--cds-spacing-04);
     display: flex;
     align-items: center;
@@ -153,8 +153,8 @@
 
 .kakehashi-textarea:focus {
     outline: none;
-    border-color: var(--cds-green-60);
-    box-shadow: inset 0 0 0 1px var(--cds-green-60);
+    border-color: var(--cds-green-50);
+    box-shadow: inset 0 0 0 1px var(--cds-green-50);
 }
 
 /* 週間計画表示 */
@@ -166,7 +166,7 @@
 }
 
 .weekly-plan-header {
-    background: var(--cds-green-60);
+    background: var(--cds-green-50);
     color: var(--cds-text-on-color);
     padding: var(--cds-spacing-05);
 }
@@ -243,7 +243,7 @@
     align-items: center;
     margin-bottom: var(--cds-spacing-05);
     padding-bottom: var(--cds-spacing-04);
-    border-bottom: 2px solid var(--cds-green-60);
+    border-bottom: 2px solid var(--cds-green-50);
 }
 
 .calendar-header h2 {
@@ -259,7 +259,7 @@
 
 .calendar-nav a {
     padding: var(--cds-spacing-03) var(--cds-spacing-04);
-    background: var(--cds-green-60);
+    background: var(--cds-green-50);
     color: var(--cds-text-on-color);
     text-decoration: none;
     border-radius: 0;
@@ -304,7 +304,7 @@
 }
 
 .calendar-day.today {
-    border: 2px solid var(--cds-green-60);
+    border: 2px solid var(--cds-green-50);
     background: rgba(36, 161, 72, 0.1);
 }
 
@@ -590,7 +590,7 @@
 
 .notification-btn {
     padding: var(--cds-spacing-03) var(--cds-spacing-05);
-    background: var(--cds-green-60);
+    background: var(--cds-green-50);
     color: var(--cds-text-on-color);
     text-decoration: none;
     border-radius: 0;
@@ -621,7 +621,7 @@
     align-items: center;
     margin-bottom: var(--cds-spacing-05);
     padding-bottom: var(--cds-spacing-04);
-    border-bottom: 2px solid var(--cds-green-60);
+    border-bottom: 2px solid var(--cds-green-50);
 }
 
 .student-name {
@@ -632,7 +632,7 @@
 }
 
 .grade-badge {
-    background: var(--cds-green-60);
+    background: var(--cds-green-50);
     color: var(--cds-text-on-color);
     padding: 4px 12px;
     border-radius: 0;
@@ -644,7 +644,7 @@
     padding: var(--cds-spacing-05);
     border-radius: 0;
     margin-bottom: var(--cds-spacing-04);
-    border-left: 4px solid var(--cds-green-60);
+    border-left: 4px solid var(--cds-green-50);
 }
 
 .note-header {
@@ -656,7 +656,7 @@
 
 .activity-name {
     font-weight: 600;
-    color: var(--cds-green-60);
+    color: var(--cds-green-50);
     font-size: 14px;
 }
 
@@ -692,7 +692,7 @@
     width: 18px;
     height: 18px;
     cursor: pointer;
-    accent-color: var(--cds-green-60);
+    accent-color: var(--cds-green-50);
 }
 
 .confirmation-checkbox label {
@@ -779,7 +779,7 @@
 .modal-header {
     margin-bottom: var(--cds-spacing-05);
     padding-bottom: var(--cds-spacing-04);
-    border-bottom: 2px solid var(--cds-green-60);
+    border-bottom: 2px solid var(--cds-green-50);
 }
 
 .modal-header h2 {
@@ -800,7 +800,7 @@
 }
 
 .event-detail-section h4 {
-    color: var(--cds-green-60);
+    color: var(--cds-green-50);
     font-size: 14px;
     margin-bottom: var(--cds-spacing-03);
     font-weight: 600;

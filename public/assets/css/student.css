@@ -1,6 +1,6 @@
 /**
  * 生徒用CSS - Carbon Design System
- * アクセントカラー: オレンジ (--cds-orange-50)
+ * アクセントカラー: オレンジ (--cds-orange-40: #ff832b)
  */
 
 /* ========================================
@@ -9,13 +9,13 @@
 
 .role-student .sidebar-menu a:hover {
     background: rgba(255, 131, 43, 0.1);
-    border-left-color: var(--cds-orange-50);
+    border-left-color: var(--cds-orange-40);
 }
 
 .role-student .sidebar-menu a.active {
     background: rgba(255, 131, 43, 0.15);
-    border-left-color: var(--cds-orange-50);
-    color: var(--cds-orange-50);
+    border-left-color: var(--cds-orange-40);
+    color: var(--cds-orange-40);
 }
 
 .role-student .sidebar-user-info {
@@ -24,19 +24,19 @@
 
 .role-student .user-info-box {
     background: rgba(255, 131, 43, 0.1);
-    color: var(--cds-orange-50);
+    color: var(--cds-orange-40);
 }
 
 .role-student .stat-card .number {
-    color: var(--cds-orange-50);
+    color: var(--cds-orange-40);
 }
 
 .role-student .menu-card h3 {
-    color: var(--cds-orange-50);
+    color: var(--cds-orange-40);
 }
 
 .role-student .menu-card:hover {
-    border-left-color: var(--cds-orange-50);
+    border-left-color: var(--cds-orange-40);
 }
 
 /* ========================================
@@ -50,7 +50,7 @@
     padding: var(--cds-spacing-06);
     box-shadow: var(--cds-shadow);
     margin-bottom: var(--cds-spacing-04);
-    border-left: 4px solid var(--cds-orange-50);
+    border-left: 4px solid var(--cds-orange-40);
 }
 
 .submission-card.urgent {
@@ -85,7 +85,7 @@
 }
 
 .submission-deadline.soon {
-    color: var(--cds-orange-50);
+    color: var(--cds-orange-40);
     font-weight: 500;
 }
 
@@ -118,7 +118,7 @@
 
 .deadline-badge.soon {
     background: rgba(255, 131, 43, 0.15);
-    color: var(--cds-orange-50);
+    color: var(--cds-orange-40);
 }
 
 .deadline-badge.urgent {
@@ -155,7 +155,7 @@
     flex-shrink: 0;
     font-size: 14px;
     font-weight: 600;
-    color: var(--cds-orange-50);
+    color: var(--cds-orange-40);
 }
 
 .schedule-content {
@@ -200,15 +200,15 @@
 
 .chat-textarea:focus {
     outline: none;
-    border-color: var(--cds-orange-50);
-    box-shadow: inset 0 0 0 1px var(--cds-orange-50);
+    border-color: var(--cds-orange-40);
+    box-shadow: inset 0 0 0 1px var(--cds-orange-40);
 }
 
 .chat-send-btn {
     width: 48px;
     height: 48px;
     border-radius: 0;
-    background: var(--cds-orange-50);
+    background: var(--cds-orange-40);
     color: var(--cds-text-on-color);
     border: none;
     cursor: pointer;
@@ -252,7 +252,7 @@
 .progress-percentage {
     font-size: 28px;
     font-weight: 300;
-    color: var(--cds-orange-50);
+    color: var(--cds-orange-40);
 }
 
 .progress-bar {
@@ -264,7 +264,7 @@
 
 .progress-fill {
     height: 100%;
-    background: var(--cds-orange-50);
+    background: var(--cds-orange-40);
     border-radius: 0;
     transition: width 0.24s cubic-bezier(0.2, 0, 0.38, 0.9);
 }

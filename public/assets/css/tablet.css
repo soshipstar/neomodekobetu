@@ -1,6 +1,6 @@
 /**
  * タブレット用CSS - Carbon Design System
- * アクセントカラー: ティール (--cds-teal-60)
+ * アクセントカラー: ティール (--cds-teal-50: #009d9a)
  * 特徴: 大きなタッチターゲット、シンプルなUI
  */
 
@@ -10,13 +10,13 @@
 
 .role-tablet .sidebar-menu a:hover {
     background: rgba(0, 157, 154, 0.1);
-    border-left-color: var(--cds-teal-60);
+    border-left-color: var(--cds-teal-50);
 }
 
 .role-tablet .sidebar-menu a.active {
     background: rgba(0, 157, 154, 0.15);
-    border-left-color: var(--cds-teal-60);
-    color: var(--cds-teal-60);
+    border-left-color: var(--cds-teal-50);
+    color: var(--cds-teal-50);
 }
 
 .role-tablet .sidebar-user-info {
@@ -25,19 +25,19 @@
 
 .role-tablet .user-info-box {
     background: rgba(0, 157, 154, 0.1);
-    color: var(--cds-teal-60);
+    color: var(--cds-teal-50);
 }
 
 .role-tablet .stat-card .number {
-    color: var(--cds-teal-60);
+    color: var(--cds-teal-50);
 }
 
 .role-tablet .menu-card h3 {
-    color: var(--cds-teal-60);
+    color: var(--cds-teal-50);
 }
 
 .role-tablet .menu-card:hover {
-    border-left-color: var(--cds-teal-60);
+    border-left-color: var(--cds-teal-50);
 }
 
 /* ========================================
@@ -101,11 +101,11 @@
 }
 
 .student-select-btn:hover {
-    border-color: var(--cds-teal-60);
+    border-color: var(--cds-teal-50);
 }
 
 .student-select-btn.selected {
-    border-color: var(--cds-teal-60);
+    border-color: var(--cds-teal-50);
     background: rgba(0, 157, 154, 0.1);
 }
 
@@ -113,7 +113,7 @@
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    background: var(--cds-teal-60);
+    background: var(--cds-teal-50);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -146,7 +146,7 @@
 .record-form-title {
     font-size: 20px;
     font-weight: 600;
-    color: var(--cds-teal-60);
+    color: var(--cds-teal-50);
     margin-bottom: var(--cds-spacing-05);
     display: flex;
     align-items: center;
@@ -172,7 +172,7 @@
 .tablet-checkbox input[type="checkbox"] {
     width: 28px;
     height: 28px;
-    accent-color: var(--cds-teal-60);
+    accent-color: var(--cds-teal-50);
 }
 
 .tablet-checkbox label {
@@ -210,16 +210,16 @@
 }
 
 .tablet-radio input[type="radio"]:checked + label {
-    border-color: var(--cds-teal-60);
+    border-color: var(--cds-teal-50);
     background: rgba(0, 157, 154, 0.1);
-    color: var(--cds-teal-60);
+    color: var(--cds-teal-50);
 }
 
 /* 送信ボタン */
 .tablet-submit-btn {
     width: 100%;
     min-height: 72px;
-    background: var(--cds-teal-60);
+    background: var(--cds-teal-50);
     color: var(--cds-text-on-color);
     border: none;
     border-radius: 0;
