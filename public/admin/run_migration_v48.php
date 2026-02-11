@@ -1,6 +1,7 @@
 <?php
 /**
  * Migration v48: 事業所評価シートシステム用テーブル作成
+ * Created: 2026-02-11
  */
 
 require_once __DIR__ . '/../../config/database.php';
