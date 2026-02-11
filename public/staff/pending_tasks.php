@@ -61,40 +61,98 @@ try {
 // スタッフの教室IDを取得
 $classroomId = $_SESSION['classroom_id'] ?? null;
 
+// 検索パラメータを取得
+$searchName = $_GET['name'] ?? '';
+$searchDocType = $_GET['doc_type'] ?? '';  // plan, monitoring, guardian_kakehashi, staff_kakehashi
+
 // 生徒一覧を取得（最新の個別支援計画書・モニタリングを確認するため）
 $studentCondition = $classroomId ? "AND u.classroom_id = ?" : "";
 $studentParams = $classroomId ? [$classroomId] : [];
 
+// 名前検索条件
+$nameCondition = "";
+$nameParam = null;
+if (!empty($searchName)) {
+    $nameCondition = " AND s.student_name LIKE ?";
+    $nameParam = '%' . $searchName . '%';
+}
+
+// 次の対象期間を計算する関数
+function getNextTargetPeriod($supportStartDate, $existingPlanCount) {
+    if (!$supportStartDate) {
+        return ['start' => null, 'end' => null, 'number' => null];
+    }
+    $start = new DateTime($supportStartDate);
+    $planNumber = $existingPlanCount + 1;
+
+    // 対象期間を計算（6ヶ月ごと）
+    $periodStart = clone $start;
+    $periodStart->modify('+' . ($existingPlanCount * 6) . ' months');
+
+    $periodEnd = clone $periodStart;
+    $periodEnd->modify('+6 months');
+    $periodEnd->modify('-1 day');
+
+    return [
+        'start' => $periodStart->format('Y-m-d'),
+        'end' => $periodEnd->format('Y-m-d'),
+        'number' => $planNumber
+    ];
+}
+
+// 対象期間を表示用にフォーマットする関数
+function formatTargetPeriod($start, $end, $number = null) {
+    if (!$start || !$end) return '';
+    $startDate = new DateTime($start);
+    $endDate = new DateTime($end);
+    $prefix = $number ? "{$number}回目: " : '';
+    return $prefix . $startDate->format('Y年n月') . '〜' . $endDate->format('Y年n月');
+}
+
 // 1. 個別支援計画書一覧を取得（未提出・下書き・期限切れ）
 // 各生徒の最新の提出済み計画書IDを取得
 $studentsNeedingPlan = [];
+$allPlanData = [];
 
-$sql = "
-    SELECT
-        s.id,
-        s.student_name,
-        s.support_start_date,
-        isp.id as plan_id,
-        isp.created_date,
-        isp.is_draft,
-        COALESCE(isp.is_hidden, 0) as is_hidden,
-        COALESCE(isp.guardian_confirmed, 0) as guardian_confirmed,
-        DATEDIFF(CURDATE(), isp.created_date) as days_since_plan,
-        (
-            SELECT MAX(isp2.id)
-            FROM individual_support_plans isp2
-            WHERE isp2.student_id = s.id AND isp2.is_draft = 0
-        ) as latest_submitted_plan_id
-    FROM students s
-    INNER JOIN users u ON s.guardian_id = u.id
-    LEFT JOIN individual_support_plans isp ON s.id = isp.student_id
-    WHERE s.is_active = 1
-    {$studentCondition}
-    ORDER BY s.student_name, isp.created_date DESC
-";
-$stmt = $pdo->prepare($sql);
-$stmt->execute($studentParams);
-$allPlanData = $stmt->fetchAll();
+if (empty($searchDocType) || $searchDocType === 'plan') {
+    $sql = "
+        SELECT
+            s.id,
+            s.student_name,
+            s.support_start_date,
+            isp.id as plan_id,
+            isp.created_date,
+            isp.is_draft,
+            COALESCE(isp.is_hidden, 0) as is_hidden,
+            COALESCE(isp.guardian_confirmed, 0) as guardian_confirmed,
+            DATEDIFF(CURDATE(), isp.created_date) as days_since_plan,
+            isp.target_period_start,
+            isp.target_period_end,
+            isp.plan_number,
+            (
+                SELECT MAX(isp2.id)
+                FROM individual_support_plans isp2
+                WHERE isp2.student_id = s.id AND isp2.is_draft = 0
+            ) as latest_submitted_plan_id,
+            (
+                SELECT COUNT(*)
+                FROM individual_support_plans isp3
+                WHERE isp3.student_id = s.id
+            ) as total_plans
+        FROM students s
+        INNER JOIN users u ON s.guardian_id = u.id
+        LEFT JOIN individual_support_plans isp ON s.id = isp.student_id
+        WHERE s.is_active = 1
+        {$studentCondition}
+        {$nameCondition}
+        ORDER BY s.student_name, isp.created_date DESC
+    ";
+    $params = $studentParams;
+    if ($nameParam) $params[] = $nameParam;
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $allPlanData = $stmt->fetchAll();
+}
 
 // 生徒ごとにグループ化
 $studentPlans = [];
@@ -132,6 +190,7 @@ foreach ($studentPlans as $studentId => $data) {
     if (empty($data['plans'])) {
         // 次の期限が1ヶ月以内の場合のみ表示
         if (isNextPlanDeadlineWithinOneMonth($supportStartDate, null)) {
+            $nextPeriod = getNextTargetPeriod($supportStartDate, 0);
             $studentsNeedingPlan[] = [
                 'id' => $studentId,
                 'student_name' => $data['student_name'],
@@ -141,7 +200,10 @@ foreach ($studentPlans as $studentId => $data) {
                 'days_since_plan' => null,
                 'status_code' => 'none',
                 'has_newer' => false,
-                'is_hidden' => false
+                'is_hidden' => false,
+                'target_period_start' => $nextPeriod['start'],
+                'target_period_end' => $nextPeriod['end'],
+                'plan_number' => $nextPeriod['number']
             ];
         }
         continue;
@@ -162,6 +224,20 @@ foreach ($studentPlans as $studentId => $data) {
     if ($hasDraft && $draftPlan) {
         if (isNextPlanDeadlineWithinOneMonth($supportStartDate, $latestSubmittedPlanDate)) {
             $hasNewer = $latestSubmittedId && $draftPlan['plan_id'] != $latestSubmittedId;
+            // 下書きの対象期間を使用、なければ計算
+            $targetStart = $draftPlan['target_period_start'] ?? null;
+            $targetEnd = $draftPlan['target_period_end'] ?? null;
+            $planNumber = $draftPlan['plan_number'] ?? null;
+            if (!$targetStart) {
+                $submittedCount = 0;
+                foreach ($data['plans'] as $p) {
+                    if (!$p['is_draft']) $submittedCount++;
+                }
+                $nextPeriod = getNextTargetPeriod($supportStartDate, $submittedCount);
+                $targetStart = $nextPeriod['start'];
+                $targetEnd = $nextPeriod['end'];
+                $planNumber = $nextPeriod['number'];
+            }
             $studentsNeedingPlan[] = [
                 'id' => $studentId,
                 'student_name' => $data['student_name'],
@@ -171,7 +247,10 @@ foreach ($studentPlans as $studentId => $data) {
                 'days_since_plan' => $draftPlan['days_since_plan'],
                 'status_code' => 'draft',
                 'has_newer' => $hasNewer,
-                'is_hidden' => false
+                'is_hidden' => false,
+                'target_period_start' => $targetStart,
+                'target_period_end' => $targetEnd,
+                'plan_number' => $planNumber
             ];
         }
         continue; // この生徒は下書きのみ表示、期限切れは表示しない
@@ -195,7 +274,10 @@ foreach ($studentPlans as $studentId => $data) {
                 'status_code' => 'needs_confirm',
                 'has_newer' => false,
                 'is_hidden' => false,
-                'guardian_confirmed' => false
+                'guardian_confirmed' => false,
+                'target_period_start' => $plan['target_period_start'] ?? null,
+                'target_period_end' => $plan['target_period_end'] ?? null,
+                'plan_number' => $plan['plan_number'] ?? null
             ];
             $needsGuardianConfirm = true;
             break;
@@ -210,6 +292,12 @@ foreach ($studentPlans as $studentId => $data) {
 
             // 提出済みで150日以上経過（残り1ヶ月以内）かつ最新の提出済み
             if (!$plan['is_draft'] && $plan['days_since_plan'] >= 150 && $plan['plan_id'] == $latestSubmittedId) {
+                // 次の計画書の対象期間を計算
+                $submittedCount = 0;
+                foreach ($data['plans'] as $p) {
+                    if (!$p['is_draft']) $submittedCount++;
+                }
+                $nextPeriod = getNextTargetPeriod($supportStartDate, $submittedCount);
                 $studentsNeedingPlan[] = [
                     'id' => $studentId,
                     'student_name' => $data['student_name'],
@@ -220,7 +308,10 @@ foreach ($studentPlans as $studentId => $data) {
                     'status_code' => 'outdated',
                     'has_newer' => false,
                     'is_hidden' => false,
-                    'guardian_confirmed' => $plan['guardian_confirmed']
+                    'guardian_confirmed' => $plan['guardian_confirmed'],
+                    'target_period_start' => $nextPeriod['start'],
+                    'target_period_end' => $nextPeriod['end'],
+                    'plan_number' => $nextPeriod['number']
                 ];
                 break; // 1件だけ表示
             }
@@ -230,36 +321,42 @@ foreach ($studentPlans as $studentId => $data) {
 
 // 2. モニタリング一覧を取得
 $studentsNeedingMonitoring = [];
+$allMonitoringData = [];
 
-$sql = "
-    SELECT
-        s.id,
-        s.student_name,
-        s.support_start_date,
-        COALESCE(s.hide_initial_monitoring, 0) as hide_initial_monitoring,
-        mr.id as monitoring_id,
-        mr.plan_id,
-        mr.monitoring_date,
-        mr.is_draft,
-        COALESCE(mr.is_hidden, 0) as is_hidden,
-        COALESCE(mr.guardian_confirmed, 0) as guardian_confirmed,
-        DATEDIFF(CURDATE(), mr.monitoring_date) as days_since_monitoring,
-        (
-            SELECT MAX(mr2.id)
-            FROM monitoring_records mr2
-            WHERE mr2.student_id = s.id AND mr2.is_draft = 0
-        ) as latest_submitted_monitoring_id
-    FROM students s
-    INNER JOIN users u ON s.guardian_id = u.id
-    LEFT JOIN monitoring_records mr ON s.id = mr.student_id
-    WHERE s.is_active = 1
-    AND EXISTS (SELECT 1 FROM individual_support_plans isp WHERE isp.student_id = s.id)
-    {$studentCondition}
-    ORDER BY s.student_name, mr.monitoring_date DESC
-";
-$stmt = $pdo->prepare($sql);
-$stmt->execute($studentParams);
-$allMonitoringData = $stmt->fetchAll();
+if (empty($searchDocType) || $searchDocType === 'monitoring') {
+    $sql = "
+        SELECT
+            s.id,
+            s.student_name,
+            s.support_start_date,
+            COALESCE(s.hide_initial_monitoring, 0) as hide_initial_monitoring,
+            mr.id as monitoring_id,
+            mr.plan_id,
+            mr.monitoring_date,
+            mr.is_draft,
+            COALESCE(mr.is_hidden, 0) as is_hidden,
+            COALESCE(mr.guardian_confirmed, 0) as guardian_confirmed,
+            DATEDIFF(CURDATE(), mr.monitoring_date) as days_since_monitoring,
+            (
+                SELECT MAX(mr2.id)
+                FROM monitoring_records mr2
+                WHERE mr2.student_id = s.id AND mr2.is_draft = 0
+            ) as latest_submitted_monitoring_id
+        FROM students s
+        INNER JOIN users u ON s.guardian_id = u.id
+        LEFT JOIN monitoring_records mr ON s.id = mr.student_id
+        WHERE s.is_active = 1
+        AND EXISTS (SELECT 1 FROM individual_support_plans isp WHERE isp.student_id = s.id)
+        {$studentCondition}
+        {$nameCondition}
+        ORDER BY s.student_name, mr.monitoring_date DESC
+    ";
+    $params = $studentParams;
+    if ($nameParam) $params[] = $nameParam;
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $allMonitoringData = $stmt->fetchAll();
+}
 
 // 生徒ごとにグループ化
 $studentMonitorings = [];
@@ -462,91 +559,99 @@ foreach ($studentMonitorings as $studentId => $data) {
 
 // 3-1. 保護者かけはし未提出（各生徒の最新の未提出期間のみ、非表示を除外、1ヶ月以内のみ）
 $pendingGuardianKakehashi = [];
-$guardianSql = "
-    SELECT
-        s.id as student_id,
-        s.student_name,
-        kp.id as period_id,
-        kp.period_name,
-        kp.submission_deadline,
-        kp.start_date,
-        kp.end_date,
-        DATEDIFF(kp.submission_deadline, ?) as days_left,
-        kg.id as kakehashi_id,
-        kg.is_submitted,
-        COALESCE(kg.is_hidden, 0) as is_hidden
-    FROM students s
-    INNER JOIN users u ON s.guardian_id = u.id
-    INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-    LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = s.id
-    WHERE s.is_active = 1
-    AND kp.is_active = 1
-    AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
-    AND COALESCE(kg.is_hidden, 0) = 0
-    AND kp.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
-    AND kp.submission_deadline = (
-        SELECT MAX(kp2.submission_deadline)
-        FROM kakehashi_periods kp2
-        WHERE kp2.student_id = s.id AND kp2.is_active = 1
-        AND kp2.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
-    )
-    " . ($classroomId ? "AND u.classroom_id = ?" : "") . "
-    ORDER BY kp.submission_deadline ASC, s.student_name
-";
-try {
-    $stmt = $pdo->prepare($guardianSql);
-    $params = $classroomId ? [$today, $classroomId] : [$today];
-    $stmt->execute($params);
-    $pendingGuardianKakehashi = $stmt->fetchAll();
-} catch (Exception $e) {
-    error_log("Guardian kakehashi fetch error: " . $e->getMessage());
+if (empty($searchDocType) || $searchDocType === 'guardian_kakehashi') {
+    $guardianSql = "
+        SELECT
+            s.id as student_id,
+            s.student_name,
+            kp.id as period_id,
+            kp.period_name,
+            kp.submission_deadline,
+            kp.start_date,
+            kp.end_date,
+            DATEDIFF(kp.submission_deadline, ?) as days_left,
+            kg.id as kakehashi_id,
+            kg.is_submitted,
+            COALESCE(kg.is_hidden, 0) as is_hidden
+        FROM students s
+        INNER JOIN users u ON s.guardian_id = u.id
+        INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+        LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = s.id
+        WHERE s.is_active = 1
+        AND kp.is_active = 1
+        AND (kg.is_submitted = 0 OR kg.is_submitted IS NULL)
+        AND COALESCE(kg.is_hidden, 0) = 0
+        AND kp.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
+        AND kp.submission_deadline = (
+            SELECT MAX(kp2.submission_deadline)
+            FROM kakehashi_periods kp2
+            WHERE kp2.student_id = s.id AND kp2.is_active = 1
+            AND kp2.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
+        )
+        " . ($classroomId ? "AND u.classroom_id = ?" : "") . "
+        " . (!empty($searchName) ? "AND s.student_name LIKE ?" : "") . "
+        ORDER BY kp.submission_deadline ASC, s.student_name
+    ";
+    try {
+        $stmt = $pdo->prepare($guardianSql);
+        $params = $classroomId ? [$today, $classroomId] : [$today];
+        if (!empty($searchName)) $params[] = '%' . $searchName . '%';
+        $stmt->execute($params);
+        $pendingGuardianKakehashi = $stmt->fetchAll();
+    } catch (Exception $e) {
+        error_log("Guardian kakehashi fetch error: " . $e->getMessage());
+    }
 }
 
 // 3-2. スタッフかけはし（未作成・下書き・要保護者確認を含む）
 $pendingStaffKakehashi = [];
-$staffSql = "
-    SELECT
-        s.id as student_id,
-        s.student_name,
-        kp.id as period_id,
-        kp.period_name,
-        kp.submission_deadline,
-        kp.start_date,
-        kp.end_date,
-        DATEDIFF(kp.submission_deadline, ?) as days_left,
-        ks.id as kakehashi_id,
-        ks.is_submitted,
-        COALESCE(ks.is_hidden, 0) as is_hidden,
-        COALESCE(ks.guardian_confirmed, 0) as guardian_confirmed
-    FROM students s
-    INNER JOIN users u ON s.guardian_id = u.id
-    INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
-    LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
-    WHERE s.is_active = 1
-    AND kp.is_active = 1
-    AND (
-        ks.is_submitted = 0
-        OR ks.is_submitted IS NULL
-        OR (ks.is_submitted = 1 AND COALESCE(ks.guardian_confirmed, 0) = 0)
-    )
-    AND COALESCE(ks.is_hidden, 0) = 0
-    AND kp.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
-    AND kp.submission_deadline = (
-        SELECT MAX(kp2.submission_deadline)
-        FROM kakehashi_periods kp2
-        WHERE kp2.student_id = s.id AND kp2.is_active = 1
-        AND kp2.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
-    )
-    " . ($classroomId ? "AND u.classroom_id = ?" : "") . "
-    ORDER BY kp.submission_deadline ASC, s.student_name
-";
-try {
-    $stmt = $pdo->prepare($staffSql);
-    $params = $classroomId ? [$today, $classroomId] : [$today];
-    $stmt->execute($params);
-    $pendingStaffKakehashi = $stmt->fetchAll();
-} catch (Exception $e) {
-    error_log("Staff kakehashi fetch error: " . $e->getMessage());
+if (empty($searchDocType) || $searchDocType === 'staff_kakehashi') {
+    $staffSql = "
+        SELECT
+            s.id as student_id,
+            s.student_name,
+            kp.id as period_id,
+            kp.period_name,
+            kp.submission_deadline,
+            kp.start_date,
+            kp.end_date,
+            DATEDIFF(kp.submission_deadline, ?) as days_left,
+            ks.id as kakehashi_id,
+            ks.is_submitted,
+            COALESCE(ks.is_hidden, 0) as is_hidden,
+            COALESCE(ks.guardian_confirmed, 0) as guardian_confirmed
+        FROM students s
+        INNER JOIN users u ON s.guardian_id = u.id
+        INNER JOIN kakehashi_periods kp ON s.id = kp.student_id
+        LEFT JOIN kakehashi_staff ks ON kp.id = ks.period_id AND ks.student_id = s.id
+        WHERE s.is_active = 1
+        AND kp.is_active = 1
+        AND (
+            ks.is_submitted = 0
+            OR ks.is_submitted IS NULL
+            OR (ks.is_submitted = 1 AND COALESCE(ks.guardian_confirmed, 0) = 0)
+        )
+        AND COALESCE(ks.is_hidden, 0) = 0
+        AND kp.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
+        AND kp.submission_deadline = (
+            SELECT MAX(kp2.submission_deadline)
+            FROM kakehashi_periods kp2
+            WHERE kp2.student_id = s.id AND kp2.is_active = 1
+            AND kp2.submission_deadline <= DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
+        )
+        " . ($classroomId ? "AND u.classroom_id = ?" : "") . "
+        " . (!empty($searchName) ? "AND s.student_name LIKE ?" : "") . "
+        ORDER BY kp.submission_deadline ASC, s.student_name
+    ";
+    try {
+        $stmt = $pdo->prepare($staffSql);
+        $params = $classroomId ? [$today, $classroomId] : [$today];
+        if (!empty($searchName)) $params[] = '%' . $searchName . '%';
+        $stmt->execute($params);
+        $pendingStaffKakehashi = $stmt->fetchAll();
+    } catch (Exception $e) {
+        error_log("Staff kakehashi fetch error: " . $e->getMessage());
+    }
 }
 
 // ページ開始
@@ -556,6 +661,59 @@ renderPageStart('staff', $currentPage, $pageTitle);
 ?>
 
 <style>
+        .filter-area {
+            background: var(--md-bg-primary);
+            padding: 16px 20px;
+            margin-bottom: var(--spacing-lg);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .form-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .form-control {
+            padding: 8px 12px;
+            border: 1px solid var(--cds-border-subtle-00);
+            border-radius: 0;
+            font-size: 14px;
+            min-width: 180px;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--cds-blue-60);
+            box-shadow: 0 0 0 2px rgba(15, 98, 254, 0.2);
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .result-count {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--cds-border-subtle-00);
+        }
+
         .content {
             padding: var(--spacing-2xl);
         }
@@ -719,40 +877,46 @@ renderPageStart('staff', $currentPage, $pageTitle);
         }
 
         .summary-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: var(--spacing-2xl);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: var(--spacing-lg);
         }
 
         .summary-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
             background: var(--md-bg-primary);
-            padding: var(--spacing-lg);
-            border-radius: var(--radius-md);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border-left: 4px solid var(--primary-purple);
+            padding: 10px 16px;
+            border-radius: var(--radius-sm);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border-left: 3px solid var(--primary-purple);
         }
 
         .summary-card.urgent {
             border-left-color: var(--md-red);
+            background: rgba(255, 59, 48, 0.05);
         }
 
         .summary-card.warning {
             border-left-color: var(--md-orange);
+            background: rgba(255, 149, 0, 0.05);
         }
 
         .summary-card.success {
             border-left-color: var(--md-green);
+            background: rgba(52, 199, 89, 0.05);
         }
 
         .summary-card-title {
-            font-size: var(--text-subhead);
+            font-size: 13px;
+            font-weight: 500;
             color: var(--text-secondary);
-            margin-bottom: var(--spacing-md);
         }
 
         .summary-card-value {
-            font-size: 32px;
+            font-size: 18px;
             font-weight: 700;
             color: var(--text-primary);
         }
@@ -783,6 +947,28 @@ renderPageStart('staff', $currentPage, $pageTitle);
             gap: 10px;
             align-items: center;
         }
+
+        @media (max-width: 768px) {
+            .filter-form {
+                flex-direction: column;
+            }
+
+            .filter-group {
+                width: 100%;
+            }
+
+            .form-control {
+                width: 100%;
+            }
+
+            .filter-buttons {
+                width: 100%;
+            }
+
+            .filter-buttons .btn {
+                flex: 1;
+            }
+        }
     </style>
 
 <!-- ページヘッダー -->
@@ -792,7 +978,46 @@ renderPageStart('staff', $currentPage, $pageTitle);
         <p class="page-subtitle">個別支援計画書・モニタリング・かけはしの未作成タスク</p>
     </div>
     <div class="page-header-actions">
-        <a href="renrakucho_activities.php" class="btn btn-secondary">← 活動管理に戻る</a>
+        <a href="hidden_documents.php" class="btn btn-secondary" style="margin-right: 10px;">
+            <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">visibility_off</span>
+            非表示一覧
+        </a>
+        <a href="renrakucho_activities.php" class="btn btn-secondary"><- 活動管理に戻る</a>
+    </div>
+</div>
+
+<!-- 検索フィルター -->
+<div class="filter-area">
+    <form method="GET" class="filter-form">
+        <div class="filter-group">
+            <label class="form-label">生徒名で検索</label>
+            <input type="text" name="name" class="form-control" value="<?php echo htmlspecialchars($searchName); ?>" placeholder="生徒名を入力...">
+        </div>
+        <div class="filter-group">
+            <label class="form-label">ドキュメントの種類</label>
+            <select name="doc_type" class="form-control">
+                <option value="">すべて</option>
+                <option value="plan" <?php echo $searchDocType === 'plan' ? 'selected' : ''; ?>>個別支援計画書</option>
+                <option value="monitoring" <?php echo $searchDocType === 'monitoring' ? 'selected' : ''; ?>>モニタリング</option>
+                <option value="guardian_kakehashi" <?php echo $searchDocType === 'guardian_kakehashi' ? 'selected' : ''; ?>>保護者かけはし</option>
+                <option value="staff_kakehashi" <?php echo $searchDocType === 'staff_kakehashi' ? 'selected' : ''; ?>>スタッフかけはし</option>
+            </select>
+        </div>
+        <div class="filter-buttons">
+            <button type="submit" class="btn btn-primary">
+                <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">search</span> 検索
+            </button>
+            <a href="?" class="btn btn-secondary">リセット</a>
+        </div>
+    </form>
+    <?php
+    $totalCount = count($studentsNeedingPlan) + count($studentsNeedingMonitoring) + count($pendingGuardianKakehashi) + count($pendingStaffKakehashi);
+    ?>
+    <div class="result-count">
+        <?php echo $totalCount; ?>件の未作成タスク
+        <?php if (!empty($searchName) || !empty($searchDocType)): ?>
+            （フィルター適用中）
+        <?php endif; ?>
     </div>
 </div>
 
@@ -800,20 +1025,20 @@ renderPageStart('staff', $currentPage, $pageTitle);
             <!-- サマリーカード -->
             <div class="summary-cards">
                 <div class="summary-card <?php echo !empty($studentsNeedingPlan) ? 'urgent' : 'success'; ?>">
-                    <div class="summary-card-title">個別支援計画書</div>
-                    <div class="summary-card-value"><?php echo count($studentsNeedingPlan); ?>件</div>
+                    <span class="summary-card-title">個別支援計画書</span>
+                    <span class="summary-card-value"><?php echo count($studentsNeedingPlan); ?>件</span>
                 </div>
                 <div class="summary-card <?php echo !empty($studentsNeedingMonitoring) ? 'warning' : 'success'; ?>">
-                    <div class="summary-card-title">モニタリング</div>
-                    <div class="summary-card-value"><?php echo count($studentsNeedingMonitoring); ?>件</div>
+                    <span class="summary-card-title">モニタリング</span>
+                    <span class="summary-card-value"><?php echo count($studentsNeedingMonitoring); ?>件</span>
                 </div>
                 <div class="summary-card <?php echo !empty($pendingGuardianKakehashi) ? 'warning' : 'success'; ?>">
-                    <div class="summary-card-title">保護者かけはし</div>
-                    <div class="summary-card-value"><?php echo count($pendingGuardianKakehashi); ?>件</div>
+                    <span class="summary-card-title">保護者かけはし</span>
+                    <span class="summary-card-value"><?php echo count($pendingGuardianKakehashi); ?>件</span>
                 </div>
                 <div class="summary-card <?php echo !empty($pendingStaffKakehashi) ? 'warning' : 'success'; ?>">
-                    <div class="summary-card-title">スタッフかけはし</div>
-                    <div class="summary-card-value"><?php echo count($pendingStaffKakehashi); ?>件</div>
+                    <span class="summary-card-title">スタッフかけはし</span>
+                    <span class="summary-card-value"><?php echo count($pendingStaffKakehashi); ?>件</span>
                 </div>
             </div>
 
@@ -834,7 +1059,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                             <thead>
                                 <tr>
                                     <th>生徒名</th>
-                                    <th>支援開始日</th>
+                                    <th>対象期間</th>
                                     <th>最新計画日</th>
                                     <th>状態</th>
                                     <th>アクション</th>
@@ -883,7 +1108,16 @@ renderPageStart('staff', $currentPage, $pageTitle);
                                 ?>
                                     <tr>
                                         <td><?php echo htmlspecialchars($student['student_name']); ?></td>
-                                        <td><?php echo $student['support_start_date'] ? date('Y年n月j日', strtotime($student['support_start_date'])) : '-'; ?></td>
+                                        <td>
+                                            <?php
+                                            $targetPeriod = formatTargetPeriod(
+                                                $student['target_period_start'] ?? null,
+                                                $student['target_period_end'] ?? null,
+                                                $student['plan_number'] ?? null
+                                            );
+                                            echo $targetPeriod ?: '-';
+                                            ?>
+                                        </td>
                                         <td><?php echo $student['latest_plan_date'] ? date('Y年n月j日', strtotime($student['latest_plan_date'])) : '-'; ?></td>
                                         <td>
                                             <span class="status-badge <?php echo $statusClass; ?>">
