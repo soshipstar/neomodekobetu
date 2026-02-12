@@ -700,6 +700,26 @@ foreach ($students as $student) {
     }
 }
 
+// 事業所評価（回答募集中）の取得
+$pendingFacilityEvaluations = [];
+try {
+    if ($classroomId) {
+        $stmt = $pdo->prepare("
+            SELECT fep.id, fep.fiscal_year, fep.title, fep.guardian_deadline
+            FROM facility_evaluation_periods fep
+            LEFT JOIN facility_guardian_evaluations fge ON fep.id = fge.period_id AND fge.guardian_id = ?
+            WHERE fep.status = 'collecting'
+            AND fep.classroom_id = ?
+            AND (fge.is_submitted = 0 OR fge.is_submitted IS NULL)
+            ORDER BY fep.fiscal_year DESC
+        ");
+        $stmt->execute([$guardianId, $classroomId]);
+        $pendingFacilityEvaluations = $stmt->fetchAll();
+    }
+} catch (Exception $e) {
+    error_log("Error fetching facility evaluations: " . $e->getMessage());
+}
+
 // 学年表示用のラベル
 function getGradeLabel($gradeLevel) {
     $labels = [
@@ -732,7 +752,7 @@ $hasAlerts = !empty($pendingSupportPlans) || !empty($signaturePendingPlans) ||
              !empty($pendingStaffKakehashi) ||
              !empty($overdueKakehashi) || !empty($urgentKakehashi) || !empty($pendingKakehashi) ||
              !empty($overdueSubmissions) || !empty($urgentSubmissions) ||
-             !empty($pendingMeetingRequests);
+             !empty($pendingMeetingRequests) || !empty($pendingFacilityEvaluations);
 ?>
 
 <?php if ($hasAlerts): ?>
@@ -905,6 +925,27 @@ $hasAlerts = !empty($pendingSupportPlans) || !empty($signaturePendingPlans) ||
             </div>
             <a href="meeting_response.php" style="display: inline-block; margin-top: var(--spacing-sm); color: var(--cds-purple-60); text-decoration: none; font-weight: 500; font-size: var(--text-footnote);">
                 回答する →
+            </a>
+        </div>
+        <?php endif; ?>
+
+        <?php if (!empty($pendingFacilityEvaluations)): ?>
+        <!-- 事業所評価のアラート -->
+        <div class="alert-card" style="background: rgba(52, 199, 89, 0.15); border-left: 4px solid var(--cds-support-success); padding: var(--spacing-md); border-radius: 0;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: var(--spacing-sm);">
+                <span class="material-symbols-outlined" style="color: var(--cds-support-success);">fact_check</span>
+                <span style="font-weight: 600; color: var(--cds-support-success);">事業所評価アンケート</span>
+            </div>
+            <div style="margin-bottom: var(--spacing-sm);">
+                <span style="color: var(--cds-support-success); font-weight: 600;"><?= count($pendingFacilityEvaluations) ?>件</span>のアンケート回答をお願いしています
+                <ul style="margin: var(--spacing-xs) 0 0 var(--spacing-lg); padding: 0; font-size: var(--text-footnote); color: var(--text-secondary);">
+                    <?php foreach ($pendingFacilityEvaluations as $eval): ?>
+                    <li><?= htmlspecialchars($eval['title']) ?>（期限: <?= $eval['guardian_deadline'] ? date('Y/m/d', strtotime($eval['guardian_deadline'])) : '未設定' ?>）</li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+            <a href="facility_evaluation.php" style="display: inline-block; margin-top: var(--spacing-sm); color: var(--cds-support-success); text-decoration: none; font-weight: 500; font-size: var(--text-footnote);">
+                アンケートに回答する →
             </a>
         </div>
         <?php endif; ?>
