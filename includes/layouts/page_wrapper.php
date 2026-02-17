@@ -88,9 +88,7 @@ function renderPageStart(string $role, string $currentPage, string $pageTitle, a
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="color-scheme" content="light dark">
-    <!-- Critical Dark Mode CSS (prevents flash) -->
-    <style>@media(prefers-color-scheme:dark){html,body{background:var(--cds-bg-ui);color:rgba(255,255,255,0.87)}}</style>
+    <meta name="color-scheme" content="light">
     <title><?= htmlspecialchars($pageTitle) ?> - きづり</title>
 
     <!-- IBM Plex Sans JP (Carbon Design System typography) -->

@@ -123,64 +123,6 @@
 }
 
 /* ========================================
-   Dark Mode Support
-   ======================================== */
-
-@media (prefers-color-scheme: dark) {
-    :root {
-        /* Material Design Dark Theme Colors */
-        --md-blue: #90CAF9;
-        --md-green: #81C784;
-        --md-indigo: #9FA8DA;
-        --md-orange: #FFB74D;
-        --md-pink: #F48FB1;
-        --md-purple: #CE93D8;
-        --md-red: #EF9A9A;
-        --md-teal: #80CBC4;
-        --md-yellow: #FFF59D;
-
-        --primary-purple: #9fa8da;
-        --primary-purple-dark: #b39ddb;
-        --success-green: #81C784;
-        --danger-red: #EF9A9A;
-        --info-blue: #90CAF9;
-        --secondary-gray: #BDBDBD;
-
-        --md-gray: #BDBDBD;
-        --md-gray-2: #9E9E9E;
-        --md-gray-3: #757575;
-        --md-gray-4: #424242;
-        --md-gray-5: #303030;
-        --md-gray-6: #212121;
-
-        --text-primary: rgba(255, 255, 255, 0.87);
-        --text-secondary: rgba(255, 255, 255, 0.60);
-        --text-tertiary: rgba(255, 255, 255, 0.38);
-
-        --md-bg-primary: #121212;
-        --md-bg-secondary: #1E1E1E;
-        --md-bg-tertiary: #2C2C2C;
-        --md-bg-elevated: #2C2C2C;
-
-        --grade-elementary: #81C784;
-        --grade-junior-high: #90CAF9;
-        --grade-high-school: #EF9A9A;
-
-        --status-active: #81C784;
-        --status-pending: #FFB74D;
-        --status-inactive: #9E9E9E;
-        --status-error: #EF9A9A;
-        --status-info: #90CAF9;
-
-        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-        --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.25);
-        --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
-        --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.35);
-        --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.4);
-    }
-}
-
-/* ========================================
    Reset & Base Styles
    ======================================== */
 
@@ -194,7 +136,7 @@ html {
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    color-scheme: light dark;
+    color-scheme: light;
 }
 
 body {

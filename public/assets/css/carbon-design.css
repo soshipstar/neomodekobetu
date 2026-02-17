@@ -371,89 +371,6 @@
 }
 
 /* ========================================
-   Dark Mode Support
-   ======================================== */
-
-@media (prefers-color-scheme: dark) {
-    :root {
-        /* UI Colors - Dark Mode */
-        --cds-ui-background: var(--cds-gray-100);
-        --cds-ui-01: var(--cds-gray-90);
-        --cds-ui-02: var(--cds-gray-80);
-        --cds-ui-03: var(--cds-gray-70);
-        --cds-ui-04: var(--cds-gray-50);
-        --cds-ui-05: var(--cds-gray-10);
-
-        /* Text Colors - Dark Mode */
-        --cds-text-primary: var(--cds-gray-10);
-        --cds-text-secondary: var(--cds-gray-30);
-        --cds-text-tertiary: var(--cds-gray-50);
-        --cds-text-placeholder: var(--cds-gray-50);
-        --cds-text-inverse: var(--cds-gray-100);
-
-        /* Link Colors - Dark Mode */
-        --cds-link-primary: var(--cds-blue-40);
-        --cds-link-primary-hover: var(--cds-blue-30);
-
-        /* Icon Colors - Dark Mode */
-        --cds-icon-primary: var(--cds-gray-10);
-        --cds-icon-secondary: var(--cds-gray-30);
-        --cds-icon-interactive: var(--cds-blue-40);
-
-        /* Border Colors - Dark Mode */
-        --cds-border-subtle: var(--cds-gray-80);
-        --cds-border-strong: var(--cds-gray-60);
-
-        /* Field Colors - Dark Mode */
-        --cds-field: var(--cds-gray-90);
-        --cds-field-hover: var(--cds-gray-80);
-
-        /* Interactive - Dark Mode */
-        --cds-interactive: var(--cds-blue-40);
-        --cds-interactive-hover: var(--cds-blue-30);
-        --cds-interactive-active: var(--cds-blue-50);
-
-        /* Focus - Dark Mode */
-        --cds-focus: var(--cds-blue-40);
-        --cds-focus-inset: var(--cds-gray-100);
-
-        /* Legacy Mapping - Dark Mode */
-        --md-blue: var(--cds-blue-40);
-        --md-green: var(--cds-green-40);
-        --md-indigo: var(--cds-blue-50);
-        --md-orange: var(--cds-orange-40);
-        --md-pink: var(--cds-magenta-50);
-        --md-purple: var(--cds-purple-50);
-        --md-red: var(--cds-red-40);
-        --md-teal: var(--cds-teal-40);
-        --md-yellow: var(--cds-yellow-30);
-
-        --primary-purple: var(--cds-purple-50);
-        --primary-purple-dark: var(--cds-purple-60);
-        --success-green: var(--cds-green-40);
-        --danger-red: var(--cds-red-40);
-        --info-blue: var(--cds-blue-40);
-        --secondary-gray: var(--cds-gray-40);
-
-        --md-gray: var(--cds-gray-40);
-        --md-gray-2: var(--cds-gray-50);
-        --md-gray-3: var(--cds-gray-60);
-        --md-gray-4: var(--cds-gray-70);
-        --md-gray-5: var(--cds-gray-80);
-        --md-gray-6: var(--cds-gray-90);
-
-        --text-primary: var(--cds-text-primary);
-        --text-secondary: var(--cds-text-secondary);
-        --text-tertiary: var(--cds-text-tertiary);
-
-        --md-bg-primary: var(--cds-ui-background);
-        --md-bg-secondary: var(--cds-ui-01);
-        --md-bg-tertiary: var(--cds-ui-02);
-        --md-bg-elevated: var(--cds-ui-02);
-    }
-}
-
-/* ========================================
    Base Styles
    ======================================== */
 
@@ -600,13 +517,6 @@ strong, b {
     color: var(--cds-interactive);
 }
 
-@media (prefers-color-scheme: dark) {
-    .btn-outline:hover,
-    .btn-tertiary:hover {
-        background: rgba(15, 98, 254, 0.16);
-    }
-}
-
 /* Ghost Button */
 .btn-ghost {
     background: transparent;
@@ -618,12 +528,6 @@ strong, b {
 
 .btn-ghost:hover {
     background: var(--cds-blue-10);
-}
-
-@media (prefers-color-scheme: dark) {
-    .btn-ghost:hover {
-        background: rgba(15, 98, 254, 0.16);
-    }
 }
 
 /* Danger Button */
@@ -708,14 +612,6 @@ strong, b {
 
 /* Arrow disabled styles no longer needed */
 
-@media (prefers-color-scheme: dark) {
-    .btn:disabled,
-    .btn.disabled {
-        background: var(--cds-gray-70);
-        color: var(--cds-gray-50);
-    }
-}
-
 /* ========================================
    Form Elements - Carbon Style
    ======================================== */
@@ -779,12 +675,6 @@ select.form-control {
     background-position: right var(--cds-spacing-05) center;
     padding-right: calc(var(--cds-spacing-05) + 24px);
     cursor: pointer;
-}
-
-@media (prefers-color-scheme: dark) {
-    select.form-control {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23f4f4f4'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
-    }
 }
 
 /* Checkbox & Radio */

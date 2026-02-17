@@ -138,8 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="color-scheme" content="light dark">
-    <style>@media(prefers-color-scheme:dark){html,body{background:#1E1E1E;color:rgba(255,255,255,0.87)}}</style>
+    <meta name="color-scheme" content="light">
     <link rel="stylesheet" href="/assets/css/google-design.css">
     <title><?php echo $activityId ? '活動編集' : '新しい活動'; ?> - タブレット</title>
     <style>
