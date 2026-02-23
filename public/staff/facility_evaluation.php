@@ -23,6 +23,9 @@ $currentFiscalYear = $currentMonth >= 4 ? $currentYear : $currentYear - 1;
 $message = '';
 $messageType = '';
 
+// 教室IDを取得（POST処理用）
+$classroomId = $_SESSION['classroom_id'] ?? null;
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($_POST['action'] === 'create_period') {
         $fiscalYear = (int)$_POST['fiscal_year'];
@@ -30,18 +33,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $staffDeadline = $_POST['staff_deadline'];
 
         try {
-            // 既存チェック
-            $stmt = $pdo->prepare("SELECT id FROM facility_evaluation_periods WHERE fiscal_year = ?");
-            $stmt->execute([$fiscalYear]);
+            // 既存チェック（教室ごとに年度で一意）
+            $stmt = $pdo->prepare("SELECT id FROM facility_evaluation_periods WHERE fiscal_year = ? AND classroom_id = ?");
+            $stmt->execute([$fiscalYear, $classroomId]);
             if ($stmt->fetch()) {
                 $message = "{$fiscalYear}年度の評価期間は既に作成されています。";
                 $messageType = 'error';
             } else {
                 $stmt = $pdo->prepare("
-                    INSERT INTO facility_evaluation_periods (fiscal_year, title, guardian_deadline, staff_deadline, created_by, status)
-                    VALUES (?, ?, ?, ?, ?, 'draft')
+                    INSERT INTO facility_evaluation_periods (classroom_id, fiscal_year, title, guardian_deadline, staff_deadline, created_by, status)
+                    VALUES (?, ?, ?, ?, ?, ?, 'draft')
                 ");
                 $stmt->execute([
+                    $classroomId,
                     $fiscalYear,
                     "{$fiscalYear}年度 事業所評価",
                     $guardianDeadline ?: null,
@@ -90,23 +94,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
-// 評価期間一覧を取得
-$stmt = $pdo->query("
-    SELECT fep.*,
-           (SELECT COUNT(*) FROM facility_guardian_evaluations fge WHERE fge.period_id = fep.id AND fge.is_submitted = 1) as guardian_submitted_count,
-           (SELECT COUNT(*) FROM facility_guardian_evaluations fge WHERE fge.period_id = fep.id) as guardian_total_count,
-           (SELECT COUNT(*) FROM facility_staff_evaluations fse WHERE fse.period_id = fep.id AND fse.is_submitted = 1) as staff_submitted_count,
-           (SELECT COUNT(*) FROM facility_staff_evaluations fse WHERE fse.period_id = fep.id) as staff_total_count,
-           u.display_name as created_by_name
-    FROM facility_evaluation_periods fep
-    LEFT JOIN users u ON fep.created_by = u.id
-    ORDER BY fep.fiscal_year DESC
-");
+// 評価期間一覧を取得（教室でフィルタリング）
+if ($classroomId) {
+    $stmt = $pdo->prepare("
+        SELECT fep.*,
+               (SELECT COUNT(*) FROM facility_guardian_evaluations fge
+                JOIN users gu ON fge.guardian_id = gu.id
+                WHERE fge.period_id = fep.id AND fge.is_submitted = 1 AND gu.classroom_id = ?) as guardian_submitted_count,
+               (SELECT COUNT(*) FROM facility_guardian_evaluations fge
+                JOIN users gu ON fge.guardian_id = gu.id
+                WHERE fge.period_id = fep.id AND gu.classroom_id = ?) as guardian_total_count,
+               (SELECT COUNT(*) FROM facility_staff_evaluations fse
+                JOIN users su ON fse.staff_id = su.id
+                WHERE fse.period_id = fep.id AND fse.is_submitted = 1 AND su.classroom_id = ?) as staff_submitted_count,
+               (SELECT COUNT(*) FROM facility_staff_evaluations fse
+                JOIN users su ON fse.staff_id = su.id
+                WHERE fse.period_id = fep.id AND su.classroom_id = ?) as staff_total_count,
+               u.full_name as created_by_name
+        FROM facility_evaluation_periods fep
+        LEFT JOIN users u ON fep.created_by = u.id
+        WHERE fep.classroom_id = ?
+        ORDER BY fep.fiscal_year DESC
+    ");
+    $stmt->execute([$classroomId, $classroomId, $classroomId, $classroomId, $classroomId]);
+} else {
+    $stmt = $pdo->query("
+        SELECT fep.*,
+               (SELECT COUNT(*) FROM facility_guardian_evaluations fge WHERE fge.period_id = fep.id AND fge.is_submitted = 1) as guardian_submitted_count,
+               (SELECT COUNT(*) FROM facility_guardian_evaluations fge WHERE fge.period_id = fep.id) as guardian_total_count,
+               (SELECT COUNT(*) FROM facility_staff_evaluations fse WHERE fse.period_id = fep.id AND fse.is_submitted = 1) as staff_submitted_count,
+               (SELECT COUNT(*) FROM facility_staff_evaluations fse WHERE fse.period_id = fep.id) as staff_total_count,
+               u.full_name as created_by_name
+        FROM facility_evaluation_periods fep
+        LEFT JOIN users u ON fep.created_by = u.id
+        ORDER BY fep.fiscal_year DESC
+    ");
+}
 $periods = $stmt->fetchAll();
 
-// 保護者数とスタッフ数を取得
-$guardianCount = $pdo->query("SELECT COUNT(*) FROM users WHERE user_type = 'guardian' AND is_active = 1")->fetchColumn();
-$staffCount = $pdo->query("SELECT COUNT(*) FROM users WHERE user_type IN ('staff', 'admin') AND is_active = 1")->fetchColumn();
+// 保護者数とスタッフ数を取得（教室でフィルタリング）
+if ($classroomId) {
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE user_type = 'guardian' AND is_active = 1 AND classroom_id = ?");
+    $stmt->execute([$classroomId]);
+    $guardianCount = $stmt->fetchColumn();
+
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE user_type IN ('staff', 'admin') AND is_active = 1 AND classroom_id = ?");
+    $stmt->execute([$classroomId]);
+    $staffCount = $stmt->fetchColumn();
+} else {
+    $guardianCount = $pdo->query("SELECT COUNT(*) FROM users WHERE user_type = 'guardian' AND is_active = 1")->fetchColumn();
+    $staffCount = $pdo->query("SELECT COUNT(*) FROM users WHERE user_type IN ('staff', 'admin') AND is_active = 1")->fetchColumn();
+}
 
 // ページ開始
 $currentPage = 'facility_evaluation';

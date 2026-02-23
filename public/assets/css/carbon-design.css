@@ -149,6 +149,25 @@
     /* Overlay */
     --cds-overlay: rgba(22, 22, 22, 0.5);
 
+    /* Layer Colors */
+    --cds-layer-01: var(--cds-gray-10);
+    --cds-layer-02: #ffffff;
+    --cds-layer-hover-01: var(--cds-gray-20);
+    --cds-layer-hover-02: var(--cds-gray-20);
+    --cds-layer-selected-01: var(--cds-gray-20);
+
+    /* Border */
+    --cds-border-subtle-00: var(--cds-gray-20);
+
+    /* Button Colors */
+    --cds-button-primary: var(--cds-blue-60);
+    --cds-button-primary-hover: var(--cds-blue-70);
+    --cds-button-secondary: var(--cds-gray-80);
+    --cds-button-secondary-hover: var(--cds-gray-70);
+
+    /* Shadow */
+    --cds-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+
     /* ----------------------------------------
        Legacy Project Colors Mapped to Carbon
        ---------------------------------------- */

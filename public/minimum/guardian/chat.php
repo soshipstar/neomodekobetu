@@ -231,7 +231,6 @@ renderPageStart('guardian', $currentPage, 'チャット', [
                 id="messageInput"
                 placeholder="メッセージを入力..."
                 rows="1"
-                onkeydown="handleKeyDown(event)"
             ></textarea>
             <button type="submit">送信</button>
         </form>
@@ -332,14 +331,6 @@ async function sendMessage(event) {
     }
 
     return false;
-}
-
-// エンターキーで送信
-function handleKeyDown(event) {
-    if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        sendMessage(event);
-    }
 }
 
 // HTMLエスケープ

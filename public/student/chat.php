@@ -290,13 +290,6 @@ messageForm.addEventListener('submit', async function(e) {
     }
 });
 
-messageInput.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        messageForm.dispatchEvent(new Event('submit'));
-    }
-});
-
 setInterval(fetchNewMessages, 3000);
 JS;
 

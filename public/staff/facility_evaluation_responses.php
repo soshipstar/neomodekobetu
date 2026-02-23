@@ -35,7 +35,7 @@ $classroomId = $_SESSION['classroom_id'] ?? null;
 
 // 保護者一覧と回答状況を取得
 $guardianSql = "
-    SELECT u.id, u.display_name, u.email,
+    SELECT u.id, u.full_name, u.email,
            fge.id as evaluation_id, fge.is_submitted, fge.submitted_at, fge.created_at as started_at
     FROM users u
     LEFT JOIN facility_guardian_evaluations fge ON u.id = fge.guardian_id AND fge.period_id = ?
@@ -43,17 +43,17 @@ $guardianSql = "
 ";
 if ($classroomId) {
     $guardianSql .= " AND u.classroom_id = ?";
-    $stmt = $pdo->prepare($guardianSql . " ORDER BY fge.is_submitted DESC, u.display_name");
+    $stmt = $pdo->prepare($guardianSql . " ORDER BY fge.is_submitted DESC, u.full_name");
     $stmt->execute([$periodId, $classroomId]);
 } else {
-    $stmt = $pdo->prepare($guardianSql . " ORDER BY fge.is_submitted DESC, u.display_name");
+    $stmt = $pdo->prepare($guardianSql . " ORDER BY fge.is_submitted DESC, u.full_name");
     $stmt->execute([$periodId]);
 }
 $guardians = $stmt->fetchAll();
 
 // スタッフ一覧と回答状況を取得
 $staffSql = "
-    SELECT u.id, u.display_name, u.email,
+    SELECT u.id, u.full_name, u.email,
            fse.id as evaluation_id, fse.is_submitted, fse.submitted_at, fse.created_at as started_at
     FROM users u
     LEFT JOIN facility_staff_evaluations fse ON u.id = fse.staff_id AND fse.period_id = ?
@@ -61,10 +61,10 @@ $staffSql = "
 ";
 if ($classroomId) {
     $staffSql .= " AND u.classroom_id = ?";
-    $stmt = $pdo->prepare($staffSql . " ORDER BY fse.is_submitted DESC, u.display_name");
+    $stmt = $pdo->prepare($staffSql . " ORDER BY fse.is_submitted DESC, u.full_name");
     $stmt->execute([$periodId, $classroomId]);
 } else {
-    $stmt = $pdo->prepare($staffSql . " ORDER BY fse.is_submitted DESC, u.display_name");
+    $stmt = $pdo->prepare($staffSql . " ORDER BY fse.is_submitted DESC, u.full_name");
     $stmt->execute([$periodId]);
 }
 $staffMembers = $stmt->fetchAll();
@@ -320,7 +320,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 <tbody>
                     <?php foreach ($guardians as $guardian): ?>
                         <tr>
-                            <td><?php echo htmlspecialchars($guardian['display_name']); ?></td>
+                            <td><?php echo htmlspecialchars($guardian['full_name']); ?></td>
                             <td><?php echo htmlspecialchars($guardian['email'] ?? '-'); ?></td>
                             <td>
                                 <?php if ($guardian['is_submitted']): ?>
@@ -368,7 +368,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 <tbody>
                     <?php foreach ($staffMembers as $staff): ?>
                         <tr>
-                            <td><?php echo htmlspecialchars($staff['display_name']); ?></td>
+                            <td><?php echo htmlspecialchars($staff['full_name']); ?></td>
                             <td><?php echo htmlspecialchars($staff['email'] ?? '-'); ?></td>
                             <td>
                                 <?php if ($staff['is_submitted']): ?>

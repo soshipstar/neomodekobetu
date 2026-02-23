@@ -16,13 +16,21 @@ $currentUser = getCurrentUser();
 
 $periodId = $_GET['period_id'] ?? null;
 
-// 評価期間を取得（指定がなければ最新の収集中期間）
+// 教室IDを取得
+$classroomId = $_SESSION['classroom_id'] ?? null;
+
+// 評価期間を取得（指定がなければ最新の収集中期間、教室でフィルタ）
 if ($periodId) {
-    $stmt = $pdo->prepare("SELECT * FROM facility_evaluation_periods WHERE id = ? AND status = 'collecting'");
-    $stmt->execute([$periodId]);
+    $stmt = $pdo->prepare("SELECT * FROM facility_evaluation_periods WHERE id = ? AND status = 'collecting'" . ($classroomId ? " AND classroom_id = ?" : ""));
+    $stmt->execute($classroomId ? [$periodId, $classroomId] : [$periodId]);
     $period = $stmt->fetch();
 } else {
-    $stmt = $pdo->query("SELECT * FROM facility_evaluation_periods WHERE status = 'collecting' ORDER BY fiscal_year DESC LIMIT 1");
+    if ($classroomId) {
+        $stmt = $pdo->prepare("SELECT * FROM facility_evaluation_periods WHERE status = 'collecting' AND classroom_id = ? ORDER BY fiscal_year DESC LIMIT 1");
+        $stmt->execute([$classroomId]);
+    } else {
+        $stmt = $pdo->query("SELECT * FROM facility_evaluation_periods WHERE status = 'collecting' ORDER BY fiscal_year DESC LIMIT 1");
+    }
     $period = $stmt->fetch();
 }
 
@@ -96,57 +104,76 @@ foreach ($stmt->fetchAll() as $row) {
 // 保存処理
 $message = '';
 $messageType = '';
+$unansweredQuestions = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $isSubmit = isset($_POST['submit_action']) && $_POST['submit_action'] === 'submit';
 
-    try {
-        $pdo->beginTransaction();
-
+    // 提出時のバリデーション：全質問に回答しているか確認
+    if ($isSubmit) {
         foreach ($questions as $q) {
             $answer = $_POST['answer_' . $q['id']] ?? null;
-            $comment = $_POST['comment_' . $q['id']] ?? '';
+            if (empty($answer)) {
+                $unansweredQuestions[] = $q['id'];
+            }
+        }
 
+        if (!empty($unansweredQuestions)) {
+            $message = "未回答の質問があります。すべての質問に回答してください。";
+            $messageType = 'error';
+            $isSubmit = false; // 提出をキャンセル
+        }
+    }
+
+    if (empty($unansweredQuestions) || !$isSubmit) {
+        try {
+            $pdo->beginTransaction();
+
+            foreach ($questions as $q) {
+                $answer = $_POST['answer_' . $q['id']] ?? null;
+                $comment = $_POST['comment_' . $q['id']] ?? '';
+
+                $stmt = $pdo->prepare("
+                    INSERT INTO facility_guardian_evaluation_answers (evaluation_id, question_id, answer, comment)
+                    VALUES (?, ?, ?, ?)
+                    ON DUPLICATE KEY UPDATE answer = VALUES(answer), comment = VALUES(comment)
+                ");
+                $stmt->execute([$evaluationId, $q['id'], $answer, $comment]);
+            }
+
+            if ($isSubmit) {
+                $pdo->prepare("UPDATE facility_guardian_evaluations SET is_submitted = 1, submitted_at = NOW() WHERE id = ?")
+                    ->execute([$evaluationId]);
+                $message = "ご回答いただきありがとうございました。今後のサービス向上に活用させていただきます。";
+            } else {
+                $message = "下書きを保存しました。後から続きを入力できます。";
+            }
+            $messageType = 'success';
+
+            $pdo->commit();
+
+            // 回答を再取得
             $stmt = $pdo->prepare("
-                INSERT INTO facility_guardian_evaluation_answers (evaluation_id, question_id, answer, comment)
-                VALUES (?, ?, ?, ?)
-                ON DUPLICATE KEY UPDATE answer = VALUES(answer), comment = VALUES(comment)
+                SELECT question_id, answer, comment
+                FROM facility_guardian_evaluation_answers
+                WHERE evaluation_id = ?
             ");
-            $stmt->execute([$evaluationId, $q['id'], $answer, $comment]);
+            $stmt->execute([$evaluationId]);
+            $existingAnswers = [];
+            foreach ($stmt->fetchAll() as $row) {
+                $existingAnswers[$row['question_id']] = $row;
+            }
+
+            // 評価情報を再取得
+            $stmt = $pdo->prepare("SELECT * FROM facility_guardian_evaluations WHERE id = ?");
+            $stmt->execute([$evaluationId]);
+            $evaluation = $stmt->fetch();
+
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            $message = "エラー: " . $e->getMessage();
+            $messageType = 'error';
         }
-
-        if ($isSubmit) {
-            $pdo->prepare("UPDATE facility_guardian_evaluations SET is_submitted = 1, submitted_at = NOW() WHERE id = ?")
-                ->execute([$evaluationId]);
-            $message = "ご回答いただきありがとうございました。今後のサービス向上に活用させていただきます。";
-        } else {
-            $message = "下書きを保存しました。後から続きを入力できます。";
-        }
-        $messageType = 'success';
-
-        $pdo->commit();
-
-        // 回答を再取得
-        $stmt = $pdo->prepare("
-            SELECT question_id, answer, comment
-            FROM facility_guardian_evaluation_answers
-            WHERE evaluation_id = ?
-        ");
-        $stmt->execute([$evaluationId]);
-        $existingAnswers = [];
-        foreach ($stmt->fetchAll() as $row) {
-            $existingAnswers[$row['question_id']] = $row;
-        }
-
-        // 評価情報を再取得
-        $stmt = $pdo->prepare("SELECT * FROM facility_guardian_evaluations WHERE id = ?");
-        $stmt->execute([$evaluationId]);
-        $evaluation = $stmt->fetch();
-
-    } catch (Exception $e) {
-        $pdo->rollBack();
-        $message = "エラー: " . $e->getMessage();
-        $messageType = 'error';
     }
 }
 
@@ -252,6 +279,17 @@ renderPageStart('guardian', $currentPage, $pageTitle);
 
     .question-item:last-child {
         border-bottom: none;
+    }
+
+    .question-item.unanswered {
+        background: rgba(255, 59, 48, 0.08);
+        border-left: 4px solid var(--md-red);
+        animation: pulse-warning 1s ease-in-out;
+    }
+
+    @keyframes pulse-warning {
+        0% { background: rgba(255, 59, 48, 0.2); }
+        100% { background: rgba(255, 59, 48, 0.08); }
     }
 
     .question-number {
@@ -443,7 +481,7 @@ renderPageStart('guardian', $currentPage, $pageTitle);
                 <?php foreach ($categoryQuestions as $q):
                     $existing = $existingAnswers[$q['id']] ?? null;
                 ?>
-                    <div class="question-item">
+                    <div class="question-item" id="question_<?php echo $q['id']; ?>" data-question-id="<?php echo $q['id']; ?>">
                         <div class="question-text">
                             <span class="question-number"><?php echo $q['question_number']; ?></span>
                             <?php echo htmlspecialchars($q['question_text']); ?>
@@ -501,5 +539,31 @@ renderPageStart('guardian', $currentPage, $pageTitle);
         </div>
     <?php endif; ?>
 </form>
+
+<?php if (!empty($unansweredQuestions)): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 未回答の質問をハイライト
+    var unansweredIds = <?php echo json_encode($unansweredQuestions); ?>;
+
+    unansweredIds.forEach(function(id) {
+        var element = document.getElementById('question_' + id);
+        if (element) {
+            element.classList.add('unanswered');
+        }
+    });
+
+    // 最初の未回答質問にスクロール
+    if (unansweredIds.length > 0) {
+        var firstUnanswered = document.getElementById('question_' + unansweredIds[0]);
+        if (firstUnanswered) {
+            setTimeout(function() {
+                firstUnanswered.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+        }
+    }
+});
+</script>
+<?php endif; ?>
 
 <?php renderPageEnd(); ?>

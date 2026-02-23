@@ -3,9 +3,13 @@
  * OpenAI API ヘルパー関数
  */
 
+require_once __DIR__ . '/env.php';
+
 // OpenAI APIキーの設定
 // .envファイルまたは環境変数から取得
-define('OPENAI_API_KEY', getenv('OPENAI_API_KEY') ?: '');
+if (!defined('OPENAI_API_KEY')) {
+    define('OPENAI_API_KEY', env('OPENAI_API_KEY', ''));
+}
 
 /**
  * OpenAI APIを呼び出してテキストを生成

@@ -827,7 +827,7 @@ html, body {
                     <form class="chat-input-form" onsubmit="sendMessage(event)" id="chatForm">
                         <label for="fileInput" class="file-attach-btn" title="ファイルを添付"><span class="material-symbols-outlined">attach_file</span></label>
                         <input type="file" id="fileInput" class="file-attach-input" onchange="handleFileSelect(event)" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt">
-                        <textarea id="messageInput" class="chat-textarea" placeholder="メッセージを入力..." onkeydown="handleKeyDown(event)"></textarea>
+                        <textarea id="messageInput" class="chat-textarea" placeholder="メッセージを入力..."></textarea>
                         <button type="submit" class="chat-send-btn" id="sendBtn"><span class="material-symbols-outlined">send</span></button>
                     </form>
                 </div>
@@ -1085,13 +1085,6 @@ function sendMessage(event) {
         sendBtn.disabled = false;
         input.focus();
     });
-}
-
-function handleKeyDown(event) {
-    if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        sendMessage(event);
-    }
 }
 
 function scrollToBottom() {

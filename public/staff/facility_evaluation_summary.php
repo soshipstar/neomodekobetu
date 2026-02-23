@@ -7,6 +7,7 @@
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/layouts/page_wrapper.php';
+require_once __DIR__ . '/../../includes/openai_helper.php';
 
 // スタッフまたは管理者のみアクセス可能
 requireUserType(['staff', 'admin']);
@@ -34,42 +35,81 @@ if (!$period) {
 $message = '';
 $messageType = '';
 
+// 教室IDを取得
+$classroomId = $_SESSION['classroom_id'] ?? null;
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
         if ($_POST['action'] === 'aggregate') {
             try {
-                // 保護者評価の集計
-                $stmt = $pdo->prepare("
-                    SELECT q.id as question_id, q.question_type,
-                           SUM(CASE WHEN a.answer = 'yes' THEN 1 ELSE 0 END) as yes_count,
-                           SUM(CASE WHEN a.answer = 'neutral' THEN 1 ELSE 0 END) as neutral_count,
-                           SUM(CASE WHEN a.answer = 'no' THEN 1 ELSE 0 END) as no_count,
-                           SUM(CASE WHEN a.answer = 'unknown' THEN 1 ELSE 0 END) as unknown_count,
-                           COUNT(a.answer) as total_count
-                    FROM facility_evaluation_questions q
-                    LEFT JOIN facility_guardian_evaluation_answers a ON q.id = a.question_id
-                    LEFT JOIN facility_guardian_evaluations e ON a.evaluation_id = e.id AND e.period_id = ? AND e.is_submitted = 1
-                    WHERE q.question_type = 'guardian'
-                    GROUP BY q.id
-                ");
-                $stmt->execute([$periodId]);
+                // 保護者評価の集計（教室でフィルタリング）
+                if ($classroomId) {
+                    $stmt = $pdo->prepare("
+                        SELECT q.id as question_id, q.question_type,
+                               SUM(CASE WHEN a.answer = 'yes' THEN 1 ELSE 0 END) as yes_count,
+                               SUM(CASE WHEN a.answer = 'neutral' THEN 1 ELSE 0 END) as neutral_count,
+                               SUM(CASE WHEN a.answer = 'no' THEN 1 ELSE 0 END) as no_count,
+                               SUM(CASE WHEN a.answer = 'unknown' THEN 1 ELSE 0 END) as unknown_count,
+                               COUNT(a.answer) as total_count
+                        FROM facility_evaluation_questions q
+                        LEFT JOIN facility_guardian_evaluation_answers a ON q.id = a.question_id
+                        LEFT JOIN facility_guardian_evaluations e ON a.evaluation_id = e.id AND e.period_id = ? AND e.is_submitted = 1
+                        LEFT JOIN users u ON e.guardian_id = u.id AND u.classroom_id = ?
+                        WHERE q.question_type = 'guardian'
+                        GROUP BY q.id
+                    ");
+                    $stmt->execute([$periodId, $classroomId]);
+                } else {
+                    $stmt = $pdo->prepare("
+                        SELECT q.id as question_id, q.question_type,
+                               SUM(CASE WHEN a.answer = 'yes' THEN 1 ELSE 0 END) as yes_count,
+                               SUM(CASE WHEN a.answer = 'neutral' THEN 1 ELSE 0 END) as neutral_count,
+                               SUM(CASE WHEN a.answer = 'no' THEN 1 ELSE 0 END) as no_count,
+                               SUM(CASE WHEN a.answer = 'unknown' THEN 1 ELSE 0 END) as unknown_count,
+                               COUNT(a.answer) as total_count
+                        FROM facility_evaluation_questions q
+                        LEFT JOIN facility_guardian_evaluation_answers a ON q.id = a.question_id
+                        LEFT JOIN facility_guardian_evaluations e ON a.evaluation_id = e.id AND e.period_id = ? AND e.is_submitted = 1
+                        WHERE q.question_type = 'guardian'
+                        GROUP BY q.id
+                    ");
+                    $stmt->execute([$periodId]);
+                }
                 $guardianStats = $stmt->fetchAll();
 
-                // スタッフ評価の集計
-                $stmt = $pdo->prepare("
-                    SELECT q.id as question_id, q.question_type,
-                           SUM(CASE WHEN a.answer = 'yes' THEN 1 ELSE 0 END) as yes_count,
-                           SUM(CASE WHEN a.answer = 'neutral' THEN 1 ELSE 0 END) as neutral_count,
-                           SUM(CASE WHEN a.answer = 'no' THEN 1 ELSE 0 END) as no_count,
-                           SUM(CASE WHEN a.answer = 'unknown' THEN 1 ELSE 0 END) as unknown_count,
-                           COUNT(a.answer) as total_count
-                    FROM facility_evaluation_questions q
-                    LEFT JOIN facility_staff_evaluation_answers a ON q.id = a.question_id
-                    LEFT JOIN facility_staff_evaluations e ON a.evaluation_id = e.id AND e.period_id = ? AND e.is_submitted = 1
-                    WHERE q.question_type = 'staff'
-                    GROUP BY q.id
-                ");
-                $stmt->execute([$periodId]);
+                // スタッフ評価の集計（教室でフィルタリング）
+                if ($classroomId) {
+                    $stmt = $pdo->prepare("
+                        SELECT q.id as question_id, q.question_type,
+                               SUM(CASE WHEN a.answer = 'yes' THEN 1 ELSE 0 END) as yes_count,
+                               SUM(CASE WHEN a.answer = 'neutral' THEN 1 ELSE 0 END) as neutral_count,
+                               SUM(CASE WHEN a.answer = 'no' THEN 1 ELSE 0 END) as no_count,
+                               SUM(CASE WHEN a.answer = 'unknown' THEN 1 ELSE 0 END) as unknown_count,
+                               COUNT(a.answer) as total_count
+                        FROM facility_evaluation_questions q
+                        LEFT JOIN facility_staff_evaluation_answers a ON q.id = a.question_id
+                        LEFT JOIN facility_staff_evaluations e ON a.evaluation_id = e.id AND e.period_id = ? AND e.is_submitted = 1
+                        LEFT JOIN users u ON e.staff_id = u.id AND u.classroom_id = ?
+                        WHERE q.question_type = 'staff'
+                        GROUP BY q.id
+                    ");
+                    $stmt->execute([$periodId, $classroomId]);
+                } else {
+                    $stmt = $pdo->prepare("
+                        SELECT q.id as question_id, q.question_type,
+                               SUM(CASE WHEN a.answer = 'yes' THEN 1 ELSE 0 END) as yes_count,
+                               SUM(CASE WHEN a.answer = 'neutral' THEN 1 ELSE 0 END) as neutral_count,
+                               SUM(CASE WHEN a.answer = 'no' THEN 1 ELSE 0 END) as no_count,
+                               SUM(CASE WHEN a.answer = 'unknown' THEN 1 ELSE 0 END) as unknown_count,
+                               COUNT(a.answer) as total_count
+                        FROM facility_evaluation_questions q
+                        LEFT JOIN facility_staff_evaluation_answers a ON q.id = a.question_id
+                        LEFT JOIN facility_staff_evaluations e ON a.evaluation_id = e.id AND e.period_id = ? AND e.is_submitted = 1
+                        WHERE q.question_type = 'staff'
+                        GROUP BY q.id
+                    ");
+                    $stmt->execute([$periodId]);
+                }
                 $staffStats = $stmt->fetchAll();
 
                 // 集計結果を保存
@@ -135,6 +175,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $message = "公表エラー: " . $e->getMessage();
                 $messageType = 'error';
             }
+        } elseif ($_POST['action'] === 'save_self_summary') {
+            // 別紙３：自己評価総括表の保存
+            try {
+                $itemTypes = ['strength', 'weakness'];
+                foreach ($itemTypes as $itemType) {
+                    for ($i = 1; $i <= 3; $i++) {
+                        $description = $_POST["{$itemType}_{$i}_description"] ?? '';
+                        $efforts = $_POST["{$itemType}_{$i}_efforts"] ?? '';
+                        $plan = $_POST["{$itemType}_{$i}_plan"] ?? '';
+
+                        $stmt = $pdo->prepare("
+                            INSERT INTO facility_self_evaluation_summary (period_id, item_type, item_number, description, current_efforts, improvement_plan)
+                            VALUES (?, ?, ?, ?, ?, ?)
+                            ON DUPLICATE KEY UPDATE
+                                description = VALUES(description),
+                                current_efforts = VALUES(current_efforts),
+                                improvement_plan = VALUES(improvement_plan)
+                        ");
+                        $stmt->execute([$periodId, $itemType, $i, $description, $efforts, $plan]);
+                    }
+                }
+                $message = "自己評価総括表を保存しました。";
+                $messageType = 'success';
+            } catch (Exception $e) {
+                $message = "保存エラー: " . $e->getMessage();
+                $messageType = 'error';
+            }
         } elseif ($_POST['action'] === 'ai_summarize') {
             $questionId = (int)$_POST['question_id'];
             $questionType = $_POST['question_type'];
@@ -163,22 +230,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $message = "コメントがありません。";
                     $messageType = 'error';
                 } else {
-                    // AI要約（簡易版 - 実際にはOpenAI等のAPIを使用）
-                    $summary = "【主な意見】\n";
-                    foreach ($comments as $i => $comment) {
-                        if ($i >= 5) break; // 最大5件
-                        $summary .= "・" . mb_substr($comment, 0, 100) . (mb_strlen($comment) > 100 ? "..." : "") . "\n";
-                    }
+                    // GPT-5.2を使用してコメントを要約
+                    $commentsText = implode("\n", array_map(function($c, $i) {
+                        return ($i + 1) . ". " . $c;
+                    }, $comments, array_keys($comments)));
 
-                    // 保存
-                    $stmt = $pdo->prepare("
-                        UPDATE facility_evaluation_summaries
-                        SET comment_summary = ?
-                        WHERE period_id = ? AND question_id = ?
-                    ");
-                    $stmt->execute([$summary, $periodId, $questionId]);
-                    $message = "コメントを要約しました。";
-                    $messageType = 'success';
+                    $prompt = "以下は放課後等デイサービス事業所の評価アンケートに寄せられた保護者・スタッフからの意見です。
+これらの意見を分析し、以下の形式で要約してください：
+
+【主な意見】
+・ポジティブな意見を箇条書きで2-3点
+・改善要望や課題を箇条書きで2-3点
+
+【全体の傾向】
+全体的な傾向を1-2文で簡潔にまとめてください。
+
+===意見一覧===
+{$commentsText}
+===
+
+日本語で、簡潔かつ分かりやすく要約してください。";
+
+                    try {
+                        $summary = callOpenAI($prompt, 'gpt-5.2-2025-12-11', 800);
+
+                        // 保存
+                        $stmt = $pdo->prepare("
+                            UPDATE facility_evaluation_summaries
+                            SET comment_summary = ?
+                            WHERE period_id = ? AND question_id = ?
+                        ");
+                        $stmt->execute([$summary, $periodId, $questionId]);
+                        $message = "AIがコメントを要約しました。";
+                        $messageType = 'success';
+                    } catch (Exception $aiError) {
+                        $message = "AI要約エラー: " . $aiError->getMessage();
+                        $messageType = 'error';
+                    }
                 }
             } catch (Exception $e) {
                 $message = "要約エラー: " . $e->getMessage();
@@ -218,6 +306,24 @@ $guardianRespondents = $guardianCount->fetchColumn();
 $staffCount = $pdo->prepare("SELECT COUNT(*) FROM facility_staff_evaluations WHERE period_id = ? AND is_submitted = 1");
 $staffCount->execute([$periodId]);
 $staffRespondents = $staffCount->fetchColumn();
+
+// 別紙３：自己評価総括表データを取得
+$selfSummaryData = [];
+$stmt = $pdo->prepare("SELECT * FROM facility_self_evaluation_summary WHERE period_id = ?");
+$stmt->execute([$periodId]);
+$summaryRows = $stmt->fetchAll();
+foreach ($summaryRows as $row) {
+    $selfSummaryData[$row['item_type']][$row['item_number']] = $row;
+}
+
+// 教室情報を取得
+$classroomName = '';
+if ($classroomId) {
+    $stmt = $pdo->prepare("SELECT name FROM classrooms WHERE id = ?");
+    $stmt->execute([$classroomId]);
+    $classroom = $stmt->fetch();
+    $classroomName = $classroom ? $classroom['name'] : '';
+}
 
 // ページ開始
 $currentPage = 'facility_evaluation';
@@ -498,6 +604,120 @@ renderPageStart('staff', $currentPage, $pageTitle);
         font-size: 12px;
     }
 
+    /* 別紙３：自己評価総括表 */
+    .summary-form-section {
+        background: var(--md-bg-primary);
+        border-radius: var(--radius-md);
+        padding: var(--spacing-xl);
+        margin-bottom: var(--spacing-xl);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .summary-form-section h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: var(--spacing-lg);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .summary-form-section h3 .material-symbols-outlined {
+        color: var(--primary-purple);
+    }
+
+    .strength-section h3 {
+        color: var(--md-green);
+    }
+
+    .weakness-section h3 {
+        color: var(--md-orange);
+    }
+
+    .summary-item {
+        border: 1px solid var(--cds-border-subtle-00);
+        border-radius: var(--radius-md);
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .summary-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .summary-item-header {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: var(--spacing-md);
+    }
+
+    .summary-form-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-md);
+    }
+
+    @media (min-width: 768px) {
+        .summary-form-row.two-col {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    .summary-form-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+    }
+
+    .summary-form-group textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--cds-border-subtle-00);
+        border-radius: var(--radius-sm);
+        font-size: 14px;
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .summary-form-group textarea:focus {
+        outline: none;
+        border-color: var(--cds-blue-60);
+        box-shadow: 0 0 0 2px rgba(15, 98, 254, 0.2);
+    }
+
+    .summary-meta-info {
+        background: var(--md-gray-6);
+        border-radius: var(--radius-sm);
+        padding: var(--spacing-md);
+        margin-bottom: var(--spacing-lg);
+        font-size: 13px;
+    }
+
+    .meta-row {
+        display: flex;
+        gap: var(--spacing-md);
+        margin-bottom: 8px;
+    }
+
+    .meta-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .meta-label {
+        font-weight: 500;
+        color: var(--text-secondary);
+        min-width: 150px;
+    }
+
+    .meta-value {
+        color: var(--text-primary);
+    }
+
     @media print {
         .action-buttons, .btn, .tabs, .comment-actions, textarea {
             display: none !important;
@@ -589,8 +809,9 @@ renderPageStart('staff', $currentPage, $pageTitle);
 </div>
 
 <div class="tabs">
-    <div class="tab active" data-tab="guardian">保護者評価</div>
-    <div class="tab" data-tab="staff">スタッフ自己評価</div>
+    <div class="tab active" data-tab="guardian">保護者評価（別紙４）</div>
+    <div class="tab" data-tab="staff">スタッフ自己評価（別紙５）</div>
+    <div class="tab" data-tab="summary">自己評価総括表（別紙３）</div>
 </div>
 
 <!-- 保護者評価結果 -->
@@ -729,6 +950,123 @@ renderPageStart('staff', $currentPage, $pageTitle);
             <?php endforeach; ?>
         </div>
     <?php endforeach; ?>
+</div>
+
+<!-- 別紙３：自己評価総括表 -->
+<div class="tab-content" id="tab-summary">
+    <form method="POST">
+        <input type="hidden" name="action" value="save_self_summary">
+
+        <div class="summary-meta-info">
+            <div class="meta-row">
+                <span class="meta-label">事業所名</span>
+                <span class="meta-value"><?php echo htmlspecialchars($classroomName ?: '放課後等デイサービス'); ?></span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">保護者評価実施期間</span>
+                <span class="meta-value">
+                    <?php
+                    $startDate = $period['guardian_eval_start_date'] ?? $period['created_at'];
+                    $endDate = $period['guardian_deadline'] ?? '';
+                    echo date('Y年n月j日', strtotime($startDate)) . ' ～ ' . ($endDate ? date('Y年n月j日', strtotime($endDate)) : '');
+                    ?>
+                </span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">保護者評価有効回答数</span>
+                <span class="meta-value">
+                    対象者数: <?php echo $guardianRespondents; ?>件 / 回答者数: <?php echo $guardianRespondents; ?>件
+                </span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">従業者評価実施期間</span>
+                <span class="meta-value">
+                    <?php
+                    $startDate = $period['staff_eval_start_date'] ?? $period['created_at'];
+                    $endDate = $period['staff_deadline'] ?? '';
+                    echo date('Y年n月j日', strtotime($startDate)) . ' ～ ' . ($endDate ? date('Y年n月j日', strtotime($endDate)) : '');
+                    ?>
+                </span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">従業者評価有効回答数</span>
+                <span class="meta-value">
+                    対象者数: <?php echo $staffRespondents; ?>件 / 回答者数: <?php echo $staffRespondents; ?>件
+                </span>
+            </div>
+        </div>
+
+        <!-- 強み -->
+        <div class="summary-form-section strength-section">
+            <h3>
+                <span class="material-symbols-outlined">thumb_up</span>
+                事業所の強み（より強化・充実を図ることが期待されること）
+            </h3>
+
+            <?php for ($i = 1; $i <= 3; $i++):
+                $item = $selfSummaryData['strength'][$i] ?? [];
+            ?>
+            <div class="summary-item">
+                <div class="summary-item-header"><?php echo $i; ?></div>
+                <div class="summary-form-row">
+                    <div class="summary-form-group">
+                        <label>事業所の強みだと思われること</label>
+                        <textarea name="strength_<?php echo $i; ?>_description" placeholder="強みの内容を入力"><?php echo htmlspecialchars($item['description'] ?? ''); ?></textarea>
+                    </div>
+                </div>
+                <div class="summary-form-row two-col">
+                    <div class="summary-form-group">
+                        <label>工夫していることや意識的に行っている取組等</label>
+                        <textarea name="strength_<?php echo $i; ?>_efforts" placeholder="現在の取組を入力"><?php echo htmlspecialchars($item['current_efforts'] ?? ''); ?></textarea>
+                    </div>
+                    <div class="summary-form-group">
+                        <label>さらに充実を図るための取組等</label>
+                        <textarea name="strength_<?php echo $i; ?>_plan" placeholder="今後の取組を入力"><?php echo htmlspecialchars($item['improvement_plan'] ?? ''); ?></textarea>
+                    </div>
+                </div>
+            </div>
+            <?php endfor; ?>
+        </div>
+
+        <!-- 弱み -->
+        <div class="summary-form-section weakness-section">
+            <h3>
+                <span class="material-symbols-outlined">construction</span>
+                事業所の弱み（事業所の課題や改善が必要だと思われること）
+            </h3>
+
+            <?php for ($i = 1; $i <= 3; $i++):
+                $item = $selfSummaryData['weakness'][$i] ?? [];
+            ?>
+            <div class="summary-item">
+                <div class="summary-item-header"><?php echo $i; ?></div>
+                <div class="summary-form-row">
+                    <div class="summary-form-group">
+                        <label>事業所の弱みだと思われること</label>
+                        <textarea name="weakness_<?php echo $i; ?>_description" placeholder="課題・弱みの内容を入力"><?php echo htmlspecialchars($item['description'] ?? ''); ?></textarea>
+                    </div>
+                </div>
+                <div class="summary-form-row two-col">
+                    <div class="summary-form-group">
+                        <label>事業所として考えている課題の要因等</label>
+                        <textarea name="weakness_<?php echo $i; ?>_efforts" placeholder="課題の要因を入力"><?php echo htmlspecialchars($item['current_efforts'] ?? ''); ?></textarea>
+                    </div>
+                    <div class="summary-form-group">
+                        <label>改善に向けて必要な取組や工夫が必要な点等</label>
+                        <textarea name="weakness_<?php echo $i; ?>_plan" placeholder="改善策を入力"><?php echo htmlspecialchars($item['improvement_plan'] ?? ''); ?></textarea>
+                    </div>
+                </div>
+            </div>
+            <?php endfor; ?>
+        </div>
+
+        <div style="text-align: center; margin-top: var(--spacing-xl);">
+            <button type="submit" class="btn btn-primary" style="padding: 12px 40px;">
+                <span class="material-symbols-outlined">save</span>
+                自己評価総括表を保存
+            </button>
+        </div>
+    </form>
 </div>
 
 <script>

@@ -3,6 +3,7 @@
  * スタッフ自己評価フォーム
  * 事業所評価シートのスタッフ向け自己評価を入力
  */
+header('Content-Type: text/html; charset=UTF-8');
 
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../config/database.php';
@@ -75,57 +76,92 @@ foreach ($stmt->fetchAll() as $row) {
 $message = '';
 $messageType = '';
 
+// 未回答の質問IDを追跡
+$unansweredQuestions = [];
+// 改善計画が未記入の「いいえ」回答を追跡
+$missingImprovementQuestions = [];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $isSubmit = isset($_POST['submit_action']) && $_POST['submit_action'] === 'submit';
 
-    try {
-        $pdo->beginTransaction();
-
+    // 提出時のバリデーション
+    if ($isSubmit) {
         foreach ($questions as $q) {
             $answer = $_POST['answer_' . $q['id']] ?? null;
-            $comment = $_POST['comment_' . $q['id']] ?? '';
-            $improvement = $_POST['improvement_' . $q['id']] ?? '';
+            $improvement = trim($_POST['improvement_' . $q['id']] ?? '');
 
+            // 未回答チェック
+            if (empty($answer)) {
+                $unansweredQuestions[] = $q['id'];
+            }
+            // 「いいえ」の場合、改善計画が必須
+            elseif ($answer === 'no' && empty($improvement)) {
+                $missingImprovementQuestions[] = $q['id'];
+            }
+        }
+
+        if (!empty($unansweredQuestions)) {
+            $message = "未回答の質問があります。すべての質問に回答してください。";
+            $messageType = 'error';
+            $isSubmit = false;
+        } elseif (!empty($missingImprovementQuestions)) {
+            $message = "「いいえ」と回答した質問には改善計画を入力してください。";
+            $messageType = 'error';
+            $isSubmit = false;
+        }
+    }
+
+    if ((empty($unansweredQuestions) && empty($missingImprovementQuestions)) || !$isSubmit) {
+        try {
+            $pdo->beginTransaction();
+
+            foreach ($questions as $q) {
+                $answer = $_POST['answer_' . $q['id']] ?? null;
+                $comment = $_POST['comment_' . $q['id']] ?? '';
+                $improvement = $_POST['improvement_' . $q['id']] ?? '';
+
+                $stmt = $pdo->prepare("
+                    INSERT INTO facility_staff_evaluation_answers (evaluation_id, question_id, answer, comment, improvement_plan)
+                    VALUES (?, ?, ?, ?, ?)
+                    ON DUPLICATE KEY UPDATE answer = VALUES(answer), comment = VALUES(comment), improvement_plan = VALUES(improvement_plan)
+                ");
+                $stmt->execute([$evaluationId, $q['id'], $answer, $comment, $improvement]);
+            }
+
+            if ($isSubmit) {
+                // 提出済みフラグを更新
+                $pdo->prepare("UPDATE facility_staff_evaluations SET is_submitted = 1, submitted_at = NOW() WHERE id = ?")
+                    ->execute([$evaluationId]);
+                $message = "自己評価を提出しました。ご協力ありがとうございました。";
+            } else {
+                $message = "下書きを保存しました。";
+            }
+            $messageType = 'success';
+
+            $pdo->commit();
+
+            // 回答を再取得
             $stmt = $pdo->prepare("
-                INSERT INTO facility_staff_evaluation_answers (evaluation_id, question_id, answer, comment, improvement_plan)
-                VALUES (?, ?, ?, ?, ?)
-                ON DUPLICATE KEY UPDATE answer = VALUES(answer), comment = VALUES(comment), improvement_plan = VALUES(improvement_plan)
+                SELECT question_id, answer, comment, improvement_plan
+                FROM facility_staff_evaluation_answers
+                WHERE evaluation_id = ?
             ");
-            $stmt->execute([$evaluationId, $q['id'], $answer, $comment, $improvement]);
+            $stmt->execute([$evaluationId]);
+            $existingAnswers = [];
+            foreach ($stmt->fetchAll() as $row) {
+                $existingAnswers[$row['question_id']] = $row;
+            }
+
+            // 評価情報を再取得
+            $stmt = $pdo->prepare("SELECT * FROM facility_staff_evaluations WHERE id = ?");
+            $stmt->execute([$evaluationId]);
+            $evaluation = $stmt->fetch();
+
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            $message = "エラー: " . $e->getMessage();
+            $messageType = 'error';
         }
-
-        if ($isSubmit) {
-            $pdo->prepare("UPDATE facility_staff_evaluations SET is_submitted = 1, submitted_at = NOW() WHERE id = ?")
-                ->execute([$evaluationId]);
-            $message = "自己評価を提出しました。ご協力ありがとうございました。";
-        } else {
-            $message = "下書きを保存しました。";
-        }
-        $messageType = 'success';
-
-        $pdo->commit();
-
-        // 回答を再取得
-        $stmt = $pdo->prepare("
-            SELECT question_id, answer, comment, improvement_plan
-            FROM facility_staff_evaluation_answers
-            WHERE evaluation_id = ?
-        ");
-        $stmt->execute([$evaluationId]);
-        $existingAnswers = [];
-        foreach ($stmt->fetchAll() as $row) {
-            $existingAnswers[$row['question_id']] = $row;
-        }
-
-        // 評価情報を再取得
-        $stmt = $pdo->prepare("SELECT * FROM facility_staff_evaluations WHERE id = ?");
-        $stmt->execute([$evaluationId]);
-        $evaluation = $stmt->fetch();
-
-    } catch (Exception $e) {
-        $pdo->rollBack();
-        $message = "エラー: " . $e->getMessage();
-        $messageType = 'error';
     }
 }
 
@@ -197,6 +233,17 @@ renderPageStart('staff', $currentPage, $pageTitle);
 
     .question-item:last-child {
         border-bottom: none;
+    }
+
+    .question-item.unanswered {
+        background: rgba(255, 59, 48, 0.08);
+        border-left: 4px solid var(--md-red);
+        animation: pulse-warning 1s ease-in-out;
+    }
+
+    @keyframes pulse-warning {
+        0% { background: rgba(255, 59, 48, 0.2); }
+        100% { background: rgba(255, 59, 48, 0.08); }
     }
 
     .question-number {
@@ -378,7 +425,7 @@ renderPageStart('staff', $currentPage, $pageTitle);
                 <?php foreach ($categoryQuestions as $q):
                     $existing = $existingAnswers[$q['id']] ?? null;
                 ?>
-                    <div class="question-item">
+                    <div class="question-item" id="question_<?php echo $q['id']; ?>" data-question-id="<?php echo $q['id']; ?>">
                         <div class="question-text">
                             <span class="question-number"><?php echo $q['question_number']; ?></span>
                             <?php echo htmlspecialchars($q['question_text']); ?>
@@ -436,5 +483,47 @@ renderPageStart('staff', $currentPage, $pageTitle);
         </div>
     <?php endif; ?>
 </form>
+
+<?php if (!empty($unansweredQuestions) || !empty($missingImprovementQuestions)): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 未回答の質問をハイライト
+    var unansweredIds = <?php echo json_encode($unansweredQuestions); ?>;
+    // 改善計画未記入の質問をハイライト
+    var missingImprovementIds = <?php echo json_encode($missingImprovementQuestions); ?>;
+
+    unansweredIds.forEach(function(id) {
+        var element = document.getElementById('question_' + id);
+        if (element) {
+            element.classList.add('unanswered');
+        }
+    });
+
+    missingImprovementIds.forEach(function(id) {
+        var element = document.getElementById('question_' + id);
+        if (element) {
+            element.classList.add('unanswered');
+            // 改善計画のテキストエリアをハイライト
+            var improvementField = document.getElementById('improvement_' + id);
+            if (improvementField) {
+                improvementField.style.borderColor = 'var(--md-red)';
+                improvementField.style.boxShadow = '0 0 0 2px rgba(255, 59, 48, 0.3)';
+            }
+        }
+    });
+
+    // 最初の問題のある質問にスクロール
+    var firstProblemId = unansweredIds.length > 0 ? unansweredIds[0] : (missingImprovementIds.length > 0 ? missingImprovementIds[0] : null);
+    if (firstProblemId) {
+        var firstProblem = document.getElementById('question_' + firstProblemId);
+        if (firstProblem) {
+            setTimeout(function() {
+                firstProblem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+        }
+    }
+});
+</script>
+<?php endif; ?>
 
 <?php renderPageEnd(); ?>

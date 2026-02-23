@@ -988,6 +988,33 @@ try {
     $makeupRequestCount = 0;
 }
 
+// 事業所評価シートの未完了チェック
+$incompleteFacilityEvaluation = null;
+try {
+    if ($classroomId) {
+        // 回答収集中の期間で未提出、または下書き保存済みだが未提出の評価をチェック
+        $stmt = $pdo->prepare("
+            SELECT fep.id, fep.title, fep.fiscal_year, fep.staff_deadline, fep.status as period_status,
+                   fse.id as evaluation_id, fse.is_submitted
+            FROM facility_evaluation_periods fep
+            LEFT JOIN facility_staff_evaluations fse ON fep.id = fse.period_id AND fse.staff_id = ?
+            WHERE fep.classroom_id = ?
+            AND fep.status IN ('draft', 'collecting', 'aggregating')
+            AND (
+                (fep.status = 'collecting' AND (fse.id IS NULL OR fse.is_submitted = 0))
+                OR (fse.id IS NOT NULL AND fse.is_submitted = 0)
+            )
+            ORDER BY fep.fiscal_year DESC
+            LIMIT 1
+        ");
+        $stmt->execute([$currentUser['id'], $classroomId]);
+        $incompleteFacilityEvaluation = $stmt->fetch();
+    }
+} catch (PDOException $e) {
+    // テーブルが存在しない場合はスキップ
+    $incompleteFacilityEvaluation = null;
+}
+
 // 未作成・未提出タスクの詳細データを取得（残り1ヶ月以内のみ表示）
 // 個別支援計画書の期限別分類
 $overduePlans = [];
@@ -2786,6 +2813,79 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
             padding: var(--spacing-lg);
             color: var(--text-secondary);
         }
+
+        /* 事業所評価シート未完了アラート */
+        .facility-eval-alert {
+            background: linear-gradient(135deg, rgba(138, 43, 226, 0.1), rgba(138, 43, 226, 0.05));
+            border: 1px solid var(--primary-purple);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .facility-eval-alert-content {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .facility-eval-alert-content > .material-symbols-outlined {
+            font-size: 32px;
+            color: var(--primary-purple);
+            flex-shrink: 0;
+        }
+
+        .facility-eval-alert-text {
+            flex: 1;
+        }
+
+        .facility-eval-alert-text strong {
+            display: block;
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .facility-eval-alert-text p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .facility-eval-alert-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            background: var(--primary-purple);
+            color: white;
+            text-decoration: none;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+
+        .facility-eval-alert-btn:hover {
+            background: var(--primary-purple-dark);
+        }
+
+        .facility-eval-alert-btn .material-symbols-outlined {
+            font-size: 18px;
+        }
+
+        @media (max-width: 768px) {
+            .facility-eval-alert-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .facility-eval-alert-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
     </style>
 
         <script>
@@ -2858,6 +2958,27 @@ renderPageStart('staff', $currentPage, '活動管理', ['noContainer' => true]);
                     </div>
                 <?php endforeach; ?>
             </div>
+        <?php endif; ?>
+
+        <!-- 事業所評価シート未完了アラート -->
+        <?php if ($incompleteFacilityEvaluation): ?>
+        <div class="facility-eval-alert">
+            <div class="facility-eval-alert-content">
+                <span class="material-symbols-outlined">fact_check</span>
+                <div class="facility-eval-alert-text">
+                    <strong>事業所評価シートの作成がまだ完了していません</strong>
+                    <p><?= htmlspecialchars($incompleteFacilityEvaluation['title']) ?>
+                        <?php if ($incompleteFacilityEvaluation['staff_deadline']): ?>
+                            （期限: <?= date('Y年n月j日', strtotime($incompleteFacilityEvaluation['staff_deadline'])) ?>）
+                        <?php endif; ?>
+                    </p>
+                </div>
+                <a href="facility_evaluation_form.php?period_id=<?= $incompleteFacilityEvaluation['id'] ?>" class="facility-eval-alert-btn">
+                    <span class="material-symbols-outlined">edit</span>
+                    評価シートを作成
+                </a>
+            </div>
+        </div>
         <?php endif; ?>
 
         <!-- 未作成・未提出タスク アコーディオンセクション -->

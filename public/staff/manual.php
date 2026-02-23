@@ -447,6 +447,7 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
             <a href="#student" class="manual-nav-link"><span class="material-symbols-outlined nav-icon">school</span>生徒機能</a>
             <a href="#submission" class="manual-nav-link"><span class="material-symbols-outlined nav-icon">upload_file</span>提出物管理</a>
             <a href="#kakehashi" class="manual-nav-link"><span class="material-symbols-outlined nav-icon">handshake</span>かけはし管理</a>
+            <a href="#facility-evaluation" class="manual-nav-link"><span class="material-symbols-outlined nav-icon">fact_check</span>事業所評価</a>
             <a href="#schedule" class="manual-nav-link"><span class="material-symbols-outlined nav-icon">event</span>書類スケジュール</a>
             <a href="#master" class="manual-nav-link"><span class="material-symbols-outlined nav-icon">settings</span>マスタ管理</a>
             <a href="#faq" class="manual-nav-link"><span class="material-symbols-outlined nav-icon">help</span>よくある質問</a>
@@ -1132,6 +1133,148 @@ renderPageStart('staff', $currentPage, 'スタッフマニュアル');
                         <li>画像やファイルの添付が可能</li>
                         <li>配信履歴の管理</li>
                         <li>保護者ダッシュボードに自動表示</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 事業所評価 -->
+            <div class="section" id="facility-evaluation">
+                <h2><span class="material-symbols-outlined" style="font-size: 24px; vertical-align: middle;">fact_check</span> 事業所評価</h2>
+                <p>
+                    年度ごとに事業所の自己評価を実施し、サービスの質の向上と情報公開を行います。
+                    保護者向けアンケートとスタッフ自己評価の2種類があります。
+                </p>
+
+                <div class="feature-box">
+                    <div class="feature-title"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">assignment</span> 評価の種類</div>
+                    <table class="schedule-table" style="margin-top: 10px;">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left;">評価種別</th>
+                                <th style="text-align: center;">質問数</th>
+                                <th style="text-align: left;">回答形式</th>
+                                <th style="text-align: left;">対象</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>保護者向け評価（別紙2）</strong></td>
+                                <td style="text-align: center;">29問</td>
+                                <td>はい/どちらともいえない/いいえ/わからない + 意見欄</td>
+                                <td>保護者</td>
+                            </tr>
+                            <tr>
+                                <td><strong>スタッフ自己評価（別紙5）</strong></td>
+                                <td style="text-align: center;">54問</td>
+                                <td>はい/どちらともいえない/いいえ + 工夫点・改善点</td>
+                                <td>スタッフ</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="feature-box">
+                    <div class="feature-title"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">category</span> 評価カテゴリ</div>
+                    <p style="margin-bottom: 10px;"><strong>保護者向け評価のカテゴリ：</strong></p>
+                    <ul style="margin-bottom: 15px;">
+                        <li>環境・体制整備（4問）</li>
+                        <li>適切な支援の提供（7問）</li>
+                        <li>保護者への説明等（11問）</li>
+                        <li>非常時等の対応（4問）</li>
+                        <li>満足度（3問）</li>
+                    </ul>
+                    <p style="margin-bottom: 10px;"><strong>スタッフ自己評価のカテゴリ：</strong></p>
+                    <ul>
+                        <li>環境・体制整備（5問）</li>
+                        <li>業務改善（5問）</li>
+                        <li>適切な支援の提供（15問）</li>
+                        <li>関係機関や保護者との連携（10問）</li>
+                        <li>保護者への説明等（10問）</li>
+                        <li>非常時等の対応（9問）</li>
+                    </ul>
+                </div>
+
+                <div class="feature-box">
+                    <div class="feature-title"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">play_arrow</span> 評価の流れ</div>
+                    <div class="step-box">
+                        <span class="step-number">1</span>
+                        <strong>評価期間の作成</strong>：年度と回答期限を設定して評価期間を作成
+                    </div>
+                    <div class="step-box">
+                        <span class="step-number">2</span>
+                        <strong>回答収集開始</strong>：「回答収集開始」ボタンで保護者・スタッフへ通知
+                    </div>
+                    <div class="step-box">
+                        <span class="step-number">3</span>
+                        <strong>回答入力</strong>：保護者・スタッフがそれぞれ回答を入力・提出
+                    </div>
+                    <div class="step-box">
+                        <span class="step-number">4</span>
+                        <strong>集計・分析</strong>：回答を集計し、AIが意見を要約
+                    </div>
+                    <div class="step-box">
+                        <span class="step-number">5</span>
+                        <strong>総括表作成</strong>：強み・弱みを分析し、改善計画を記入（別紙3）
+                    </div>
+                    <div class="step-box">
+                        <span class="step-number">6</span>
+                        <strong>公表</strong>：評価結果を公表
+                    </div>
+                </div>
+
+                <div class="feature-box">
+                    <div class="feature-title"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">auto_awesome</span> AI要約機能</div>
+                    <p>
+                        保護者からの意見・コメントをAI（GPT-5.2）が自動で分析・要約します。
+                    </p>
+                    <ul>
+                        <li>ポジティブな意見と改善要望を自動分類</li>
+                        <li>全体的な傾向を簡潔にまとめ</li>
+                        <li>各質問の「意見を要約」ボタンから実行可能</li>
+                    </ul>
+                </div>
+
+                <div class="feature-box">
+                    <div class="feature-title"><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">description</span> 公表書類（別紙）</div>
+                    <table class="schedule-table" style="margin-top: 10px;">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left;">書類名</th>
+                                <th style="text-align: left;">内容</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>別紙3：自己評価総括表</strong></td>
+                                <td>事業所の強み3点・弱み3点と改善計画</td>
+                            </tr>
+                            <tr>
+                                <td><strong>別紙4：保護者評価集計シート</strong></td>
+                                <td>保護者回答の集計結果と事業所コメント</td>
+                            </tr>
+                            <tr>
+                                <td><strong>別紙5：事業者用自己評価シート</strong></td>
+                                <td>スタッフ自己評価の結果と改善点</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="tip-box">
+                    <strong><span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">lightbulb</span> 回答促進のコツ:</strong>
+                    <p style="margin-top: 8px;">
+                        回答収集中は、スタッフと保護者のダッシュボードに通知が表示されます。
+                        下書き保存した場合も「事業所評価シートの作成がまだ完了していません」というアラートが表示され続けるため、
+                        提出忘れを防止できます。
+                    </p>
+                </div>
+
+                <div class="warning-box" style="background: rgba(255, 149, 0, 0.1); border-left: 4px solid var(--md-orange); padding: 12px 16px; margin-top: 15px; border-radius: 4px;">
+                    <strong><span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">warning</span> 注意事項:</strong>
+                    <ul style="margin-top: 8px; margin-bottom: 0;">
+                        <li>「いいえ」と回答した項目には、改善計画の入力が必須です</li>
+                        <li>提出後は回答の修正ができません</li>
+                        <li>評価結果は法令に基づき公表が義務付けられています</li>
                     </ul>
                 </div>
             </div>

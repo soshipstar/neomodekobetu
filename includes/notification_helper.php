@@ -171,6 +171,39 @@ function getStaffNotifications(PDO $pdo, int $staffId, ?int $classroomId): array
         $totalCount += count($pendingMeetingResponses);
     }
 
+    // 4. 事業所評価（回答募集中）- スタッフ自己評価の依頼
+    $pendingEvaluations = [];
+    try {
+        if ($classroomId) {
+            $stmt = $pdo->prepare("
+                SELECT fep.id, fep.fiscal_year, fep.title, fep.staff_deadline
+                FROM facility_evaluation_periods fep
+                LEFT JOIN facility_staff_evaluations fse ON fep.id = fse.period_id AND fse.staff_id = ?
+                WHERE fep.status = 'collecting'
+                AND fep.classroom_id = ?
+                AND (fse.is_submitted = 0 OR fse.is_submitted IS NULL)
+                ORDER BY fep.fiscal_year DESC
+            ");
+            $stmt->execute([$staffId, $classroomId]);
+            $pendingEvaluations = $stmt->fetchAll();
+        }
+    } catch (Exception $e) {
+        // テーブルが存在しない場合は無視
+    }
+
+    if (count($pendingEvaluations) > 0) {
+        $notifications['facility_evaluation'] = [
+            'type' => 'facility_evaluation',
+            'icon' => 'fact_check',
+            'color' => 'green',
+            'title' => '事業所評価（自己評価）',
+            'count' => count($pendingEvaluations),
+            'items' => $pendingEvaluations,
+            'url' => '/staff/facility_evaluation.php'
+        ];
+        $totalCount += count($pendingEvaluations);
+    }
+
     return [
         'notifications' => $notifications,
         'totalCount' => $totalCount
@@ -490,19 +523,28 @@ function getGuardianNotifications(PDO $pdo, int $guardianId): array
         $totalCount += count($pendingSubmissions);
     }
 
-    // 8. 事業所評価（回答募集中）
+    // 8. 事業所評価（回答募集中）- 保護者の教室に対応する評価のみ表示
     $pendingEvaluations = [];
     try {
-        $stmt = $pdo->prepare("
-            SELECT fep.id, fep.fiscal_year, fep.title, fep.guardian_deadline
-            FROM facility_evaluation_periods fep
-            LEFT JOIN facility_guardian_evaluations fge ON fep.id = fge.period_id AND fge.guardian_id = ?
-            WHERE fep.status = 'collecting'
-            AND (fge.is_submitted = 0 OR fge.is_submitted IS NULL)
-            ORDER BY fep.fiscal_year DESC
-        ");
+        // 保護者の教室IDを取得
+        $guardianClassroomId = null;
+        $stmt = $pdo->prepare("SELECT classroom_id FROM users WHERE id = ?");
         $stmt->execute([$guardianId]);
-        $pendingEvaluations = $stmt->fetchAll();
+        $guardianClassroomId = $stmt->fetchColumn();
+
+        if ($guardianClassroomId) {
+            $stmt = $pdo->prepare("
+                SELECT fep.id, fep.fiscal_year, fep.title, fep.guardian_deadline
+                FROM facility_evaluation_periods fep
+                LEFT JOIN facility_guardian_evaluations fge ON fep.id = fge.period_id AND fge.guardian_id = ?
+                WHERE fep.status = 'collecting'
+                AND fep.classroom_id = ?
+                AND (fge.is_submitted = 0 OR fge.is_submitted IS NULL)
+                ORDER BY fep.fiscal_year DESC
+            ");
+            $stmt->execute([$guardianId, $guardianClassroomId]);
+            $pendingEvaluations = $stmt->fetchAll();
+        }
     } catch (Exception $e) {
         // テーブルが存在しない場合は無視
     }
