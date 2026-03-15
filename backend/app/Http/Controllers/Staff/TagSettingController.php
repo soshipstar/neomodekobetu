@@ -25,9 +25,15 @@ class TagSettingController extends Controller
 
         $tags = $query->orderBy('sort_order')->get();
 
+        $mapped = $tags->map(function ($tag) {
+            $data = $tag->toArray();
+            $data['name'] = $tag->tag_name;
+            return $data;
+        });
+
         return response()->json([
             'success' => true,
-            'data'    => $tags,
+            'data'    => $mapped,
         ]);
     }
 
@@ -39,14 +45,17 @@ class TagSettingController extends Controller
         $user = $request->user();
 
         $validated = $request->validate([
-            'tag_name'   => 'required|string|max:50',
+            'tag_name'   => 'required_without:name|string|max:50',
+            'name'       => 'required_without:tag_name|string|max:50',
             'sort_order' => 'nullable|integer',
             'is_active'  => 'boolean',
         ]);
 
+        $tagName = $validated['tag_name'] ?? $validated['name'];
+
         $tag = ClassroomTag::create([
             'classroom_id' => $user->classroom_id,
-            'tag_name'     => $validated['tag_name'],
+            'tag_name'     => $tagName,
             'sort_order'   => $validated['sort_order'] ?? 0,
             'is_active'    => $validated['is_active'] ?? true,
         ]);
@@ -71,11 +80,23 @@ class TagSettingController extends Controller
 
         $validated = $request->validate([
             'tag_name'   => 'sometimes|string|max:50',
+            'name'       => 'sometimes|string|max:50',
             'sort_order' => 'nullable|integer',
             'is_active'  => 'boolean',
         ]);
 
-        $tag->update($validated);
+        $updateData = [];
+        if (isset($validated['tag_name']) || isset($validated['name'])) {
+            $updateData['tag_name'] = $validated['tag_name'] ?? $validated['name'];
+        }
+        if (array_key_exists('sort_order', $validated)) {
+            $updateData['sort_order'] = $validated['sort_order'];
+        }
+        if (array_key_exists('is_active', $validated)) {
+            $updateData['is_active'] = $validated['is_active'];
+        }
+
+        $tag->update($updateData);
 
         return response()->json([
             'success' => true,

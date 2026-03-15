@@ -27,11 +27,23 @@ class StaffHolidayController extends Controller
             $query->whereYear('holiday_date', $request->year);
         }
 
+        if ($request->filled('month')) {
+            $query->whereMonth('holiday_date', $request->month);
+        }
+
         $holidays = $query->orderBy('holiday_date')->get();
+
+        $mapped = $holidays->map(function ($holiday) {
+            $data = $holiday->toArray();
+            $data['date'] = $holiday->holiday_date;
+            $data['name'] = $holiday->holiday_name;
+            $data['is_recurring'] = $holiday->holiday_type === 'regular';
+            return $data;
+        });
 
         return response()->json([
             'success' => true,
-            'data'    => $holidays,
+            'data'    => $mapped,
         ]);
     }
 
@@ -43,16 +55,23 @@ class StaffHolidayController extends Controller
         $user = $request->user();
 
         $validated = $request->validate([
-            'holiday_date' => 'required|date',
-            'holiday_name' => 'required|string|max:100',
+            'holiday_date' => 'required_without:date|date',
+            'date'         => 'required_without:holiday_date|date',
+            'holiday_name' => 'required_without:name|string|max:100',
+            'name'         => 'required_without:holiday_name|string|max:100',
             'holiday_type' => 'nullable|string|max:50',
+            'is_recurring' => 'nullable|boolean',
         ]);
+
+        $holidayDate = $validated['holiday_date'] ?? $validated['date'];
+        $holidayName = $validated['holiday_name'] ?? $validated['name'];
+        $holidayType = $validated['holiday_type'] ?? (isset($validated['is_recurring']) ? ($validated['is_recurring'] ? 'regular' : null) : null);
 
         $holiday = Holiday::create([
             'classroom_id' => $user->classroom_id,
-            'holiday_date' => $validated['holiday_date'],
-            'holiday_name' => $validated['holiday_name'],
-            'holiday_type' => $validated['holiday_type'] ?? null,
+            'holiday_date' => $holidayDate,
+            'holiday_name' => $holidayName,
+            'holiday_type' => $holidayType,
             'created_by'   => $user->id,
         ]);
 
