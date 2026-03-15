@@ -297,6 +297,15 @@ Route::prefix('staff')
         Route::post('/activity-support-plans/generate-ai/five-domains', [App\Http\Controllers\Staff\ActivitySupportPlanController::class, 'generateAiFiveDomains']);
         Route::post('/activity-support-plans/generate-ai/schedule-content', [App\Http\Controllers\Staff\ActivitySupportPlanController::class, 'generateAiScheduleContent']);
 
+        // --- スタッフ間チャット ---
+        Route::prefix('staff-chat')->group(function () {
+            Route::get('/rooms', [App\Http\Controllers\Staff\StaffChatController::class, 'rooms']);
+            Route::post('/rooms', [App\Http\Controllers\Staff\StaffChatController::class, 'createRoom']);
+            Route::get('/rooms/{room}/messages', [App\Http\Controllers\Staff\StaffChatController::class, 'messages']);
+            Route::post('/rooms/{room}/messages', [App\Http\Controllers\Staff\StaffChatController::class, 'sendMessage']);
+            Route::get('/rooms/{room}/members', [App\Http\Controllers\Staff\StaffChatController::class, 'members']);
+        });
+
         // --- プロフィール ---
         Route::get('/profile', [App\Http\Controllers\Staff\StaffProfileController::class, 'show']);
         Route::put('/profile', [App\Http\Controllers\Staff\StaffProfileController::class, 'update']);
