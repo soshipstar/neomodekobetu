@@ -254,6 +254,8 @@ Route::prefix('staff')
         // --- 追加利用 ---
         Route::get('/additional-usage', [App\Http\Controllers\Staff\AdditionalUsageController::class, 'index']);
         Route::post('/additional-usage', [App\Http\Controllers\Staff\AdditionalUsageController::class, 'store']);
+        Route::post('/additional-usage/batch', [App\Http\Controllers\Staff\AdditionalUsageController::class, 'batchUpdate']);
+        Route::get('/additional-usage/student-month', [App\Http\Controllers\Staff\AdditionalUsageController::class, 'studentMonth']);
         Route::delete('/additional-usage/{usage}', [App\Http\Controllers\Staff\AdditionalUsageController::class, 'destroy']);
 
         // --- 提出物管理 ---

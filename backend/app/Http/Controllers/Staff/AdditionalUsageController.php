@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
+use App\Models\AbsenceNotification;
 use App\Models\AdditionalUsage;
 use App\Models\Student;
 use Illuminate\Http\JsonResponse;
@@ -95,6 +96,123 @@ class AdditionalUsageController extends Controller
             'data'    => $usage,
             'message' => '登録しました。',
         ], 201);
+    }
+
+    /**
+     * 一括変更（旧additional_usage_api.php互換）
+     * actions: add(追加利用), remove(追加利用削除), cancel(通常日キャンセル), restore(キャンセル取消)
+     */
+    public function batchUpdate(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'changes'    => 'required|array',
+            'changes.*.date'   => 'required|date',
+            'changes.*.action' => 'required|in:add,remove,cancel,restore',
+        ]);
+
+        $student = Student::findOrFail($validated['student_id']);
+        if ($user->classroom_id && $student->classroom_id !== $user->classroom_id) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
+        DB::transaction(function () use ($validated, $user) {
+            foreach ($validated['changes'] as $change) {
+                $date = $change['date'];
+                $studentId = $validated['student_id'];
+
+                switch ($change['action']) {
+                    case 'add':
+                        AdditionalUsage::updateOrCreate(
+                            ['student_id' => $studentId, 'usage_date' => $date],
+                            ['created_by' => $user->id]
+                        );
+                        break;
+
+                    case 'remove':
+                        AdditionalUsage::where('student_id', $studentId)
+                            ->where('usage_date', $date)
+                            ->delete();
+                        break;
+
+                    case 'cancel':
+                        AbsenceNotification::updateOrCreate(
+                            ['student_id' => $studentId, 'absence_date' => $date],
+                            ['reason' => 'スタッフによるキャンセル', 'makeup_status' => 'none']
+                        );
+                        break;
+
+                    case 'restore':
+                        AbsenceNotification::where('student_id', $studentId)
+                            ->where('absence_date', $date)
+                            ->delete();
+                        break;
+                }
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => '保存しました。',
+        ]);
+    }
+
+    /**
+     * 生徒の月間利用状況を取得（カレンダー表示用）
+     */
+    public function studentMonth(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'year'       => 'required|integer',
+            'month'      => 'required|integer|min:1|max:12',
+        ]);
+
+        $student = Student::findOrFail($request->student_id);
+        if ($user->classroom_id && $student->classroom_id !== $user->classroom_id) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
+        // 追加利用日
+        $additionalDates = AdditionalUsage::where('student_id', $student->id)
+            ->whereYear('usage_date', $request->year)
+            ->whereMonth('usage_date', $request->month)
+            ->pluck('usage_date')
+            ->map(fn ($d) => $d->format('Y-m-d'))
+            ->toArray();
+
+        // キャンセル日
+        $cancelledDates = AbsenceNotification::where('student_id', $student->id)
+            ->whereYear('absence_date', $request->year)
+            ->whereMonth('absence_date', $request->month)
+            ->pluck('absence_date')
+            ->map(fn ($d) => \Illuminate\Support\Carbon::parse($d)->format('Y-m-d'))
+            ->toArray();
+
+        // 通常スケジュール
+        $schedule = [
+            'sunday'    => (bool) $student->scheduled_sunday,
+            'monday'    => (bool) $student->scheduled_monday,
+            'tuesday'   => (bool) $student->scheduled_tuesday,
+            'wednesday' => (bool) $student->scheduled_wednesday,
+            'thursday'  => (bool) $student->scheduled_thursday,
+            'friday'    => (bool) $student->scheduled_friday,
+            'saturday'  => (bool) $student->scheduled_saturday,
+        ];
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'student_name'     => $student->student_name,
+                'schedule'         => $schedule,
+                'additional_dates' => $additionalDates,
+                'cancelled_dates'  => $cancelledDates,
+            ],
+        ]);
     }
 
     /**

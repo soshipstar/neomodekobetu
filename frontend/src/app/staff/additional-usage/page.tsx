@@ -1,239 +1,384 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { Badge } from '@/components/ui/Badge';
-import { SkeletonTable } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, isSameDay } from 'date-fns';
-import { ja } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, X, Users } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Save,
+  Calendar,
+} from 'lucide-react';
 
-interface AdditionalUsage {
-  id: number;
-  student_id: number;
-  usage_date: string;
-  notes: string | null;
-  student?: { id: number; student_name: string };
-  created_at: string;
-}
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
-interface StudentOption {
+interface Student {
   id: number;
   student_name: string;
+  scheduled_monday: boolean;
+  scheduled_tuesday: boolean;
+  scheduled_wednesday: boolean;
+  scheduled_thursday: boolean;
+  scheduled_friday: boolean;
+  scheduled_saturday: boolean;
+  scheduled_sunday: boolean;
 }
+
+interface MonthData {
+  student_name: string;
+  schedule: Record<string, boolean>;
+  additional_dates: string[];
+  cancelled_dates: string[];
+}
+
+interface Change {
+  date: string;
+  action: 'add' | 'remove' | 'cancel' | 'restore';
+}
+
+const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
+const DAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+// ---------------------------------------------------------------------------
+// Main Component
+// ---------------------------------------------------------------------------
 
 export default function AdditionalUsagePage() {
   const queryClient = useQueryClient();
   const toast = useToast();
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [selectedStudent, setSelectedStudent] = useState('');
-  const [reason, setReason] = useState('');
 
-  const monthStr = format(currentMonth, 'yyyy-MM');
+  const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const [changes, setChanges] = useState<Record<string, Change>>({});
 
-  const { data: usages = [], isLoading } = useQuery({
-    queryKey: ['staff', 'additional-usage', monthStr],
+  // Fetch students
+  const { data: students = [] } = useQuery({
+    queryKey: ['staff', 'students-for-usage'],
     queryFn: async () => {
-      const res = await api.get<{ data: AdditionalUsage[] }>('/api/staff/additional-usage', {
-        params: { month: monthStr },
+      const res = await api.get('/api/staff/students');
+      const payload = res.data?.data;
+      return Array.isArray(payload) ? payload as Student[] : [];
+    },
+  });
+
+  // Fetch month data for selected student
+  const { data: monthData, isLoading: loadingMonth } = useQuery({
+    queryKey: ['staff', 'additional-usage', 'student-month', selectedStudentId, year, month],
+    queryFn: async () => {
+      const res = await api.get<{ data: MonthData }>('/api/staff/additional-usage/student-month', {
+        params: { student_id: selectedStudentId, year, month },
       });
       return res.data.data;
     },
+    enabled: !!selectedStudentId,
   });
 
-  const { data: students = [] } = useQuery({
-    queryKey: ['staff', 'students-list'],
-    queryFn: async () => {
-      const res = await api.get<{ data: StudentOption[] }>('/api/staff/students', { params: { per_page: 200, status: 'active' } });
-      return res.data.data;
-    },
-  });
-
-  const addMutation = useMutation({
-    mutationFn: async (data: { student_id: number; usage_date: string; notes: string }) => {
-      return api.post('/api/staff/additional-usage', data);
+  // Save batch mutation
+  const saveMutation = useMutation({
+    mutationFn: () => {
+      const changeList = Object.values(changes);
+      if (changeList.length === 0) return Promise.resolve({ data: { success: true } });
+      return api.post('/api/staff/additional-usage/batch', {
+        student_id: selectedStudentId,
+        changes: changeList,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'additional-usage'] });
-      toast.success('追加利用日を登録しました');
-      setSelectedStudent('');
-      setReason('');
+      toast.success('変更を保存しました');
+      setChanges({});
     },
-    onError: () => toast.error('登録に失敗しました'),
+    onError: () => toast.error('保存に失敗しました'),
   });
 
-  const removeMutation = useMutation({
-    mutationFn: (id: number) => api.delete(`/api/staff/additional-usage/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['staff', 'additional-usage'] });
-      toast.success('追加利用日を削除しました');
-    },
-    onError: () => toast.error('削除に失敗しました'),
-  });
+  // Build calendar grid
+  const calendarGrid = useMemo(() => {
+    const firstDay = new Date(year, month - 1, 1).getDay();
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const rows: (number | null)[][] = [];
+    let week: (number | null)[] = Array(firstDay).fill(null);
+    for (let d = 1; d <= daysInMonth; d++) {
+      week.push(d);
+      if (week.length === 7) { rows.push(week); week = []; }
+    }
+    if (week.length > 0) {
+      while (week.length < 7) week.push(null);
+      rows.push(week);
+    }
+    return rows;
+  }, [year, month]);
 
-  const usagesByDate = useMemo(() => {
-    const map: Record<string, AdditionalUsage[]> = {};
-    usages.forEach((u) => {
-      if (!map[u.usage_date]) map[u.usage_date] = [];
-      map[u.usage_date].push(u);
-    });
-    return map;
-  }, [usages]);
+  // Determine day status
+  const getDayStatus = useCallback((day: number): 'regular' | 'additional' | 'cancelled' | 'none' => {
+    if (!monthData) return 'none';
+    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-  const calendarDays = useMemo(() => {
-    const start = startOfMonth(currentMonth);
-    const end = endOfMonth(currentMonth);
-    return { days: eachDayOfInterval({ start, end }), startPad: getDay(start) };
-  }, [currentMonth]);
+    // Check pending changes first
+    if (changes[dateStr]) {
+      const action = changes[dateStr].action;
+      if (action === 'add') return 'additional';
+      if (action === 'remove') return 'none';
+      if (action === 'cancel') return 'cancelled';
+      if (action === 'restore') return 'regular';
+    }
 
-  const selectedUsages = selectedDate ? usagesByDate[selectedDate] || [] : [];
+    // Check data
+    const dayOfWeek = new Date(year, month - 1, day).getDay();
+    const dayKey = DAY_KEYS[dayOfWeek];
+    const isRegular = monthData.schedule[dayKey] ?? false;
+    const isAdditional = monthData.additional_dates.includes(dateStr);
+    const isCancelled = monthData.cancelled_dates.includes(dateStr);
+
+    if (isCancelled) return 'cancelled';
+    if (isAdditional) return 'additional';
+    if (isRegular) return 'regular';
+    return 'none';
+  }, [monthData, changes, year, month]);
+
+  // Toggle day checkbox
+  const toggleDay = useCallback((day: number) => {
+    if (!monthData) return;
+    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const dayOfWeek = new Date(year, month - 1, day).getDay();
+    const dayKey = DAY_KEYS[dayOfWeek];
+    const isRegular = monthData.schedule[dayKey] ?? false;
+    const isAdditional = monthData.additional_dates.includes(dateStr);
+    const isCancelled = monthData.cancelled_dates.includes(dateStr);
+
+    // Remove existing change for this date
+    const newChanges = { ...changes };
+
+    if (isRegular && !isCancelled) {
+      // Regular day, currently active → cancel
+      newChanges[dateStr] = { date: dateStr, action: 'cancel' };
+    } else if (isRegular && isCancelled) {
+      // Regular day, currently cancelled → restore
+      newChanges[dateStr] = { date: dateStr, action: 'restore' };
+    } else if (isAdditional) {
+      // Additional day → remove
+      newChanges[dateStr] = { date: dateStr, action: 'remove' };
+    } else {
+      // Not scheduled → add
+      newChanges[dateStr] = { date: dateStr, action: 'add' };
+    }
+
+    // If change would revert to original state, remove it
+    if (changes[dateStr]) {
+      const prev = changes[dateStr].action;
+      const next = newChanges[dateStr].action;
+      if ((prev === 'cancel' && next === 'restore') ||
+          (prev === 'restore' && next === 'cancel') ||
+          (prev === 'add' && next === 'remove') ||
+          (prev === 'remove' && next === 'add')) {
+        delete newChanges[dateStr];
+      }
+    }
+
+    setChanges(newChanges);
+  }, [monthData, changes, year, month]);
+
+  const goToPrevMonth = () => {
+    if (month === 1) { setYear(year - 1); setMonth(12); }
+    else setMonth(month - 1);
+    setChanges({});
+  };
+  const goToNextMonth = () => {
+    if (month === 12) { setYear(year + 1); setMonth(1); }
+    else setMonth(month + 1);
+    setChanges({});
+  };
+  const goToToday = () => {
+    const now = new Date();
+    setYear(now.getFullYear());
+    setMonth(now.getMonth() + 1);
+    setChanges({});
+  };
+
+  const hasChanges = Object.keys(changes).length > 0;
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">追加利用管理</h1>
-
-      {/* Summary */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card>
-          <div className="text-center">
-            <p className="text-sm text-[var(--neutral-foreground-3)]">今月の追加利用件数</p>
-            <p className="text-3xl font-bold text-[var(--brand-80)]">{usages.length}</p>
-          </div>
-        </Card>
-        <Card>
-          <div className="text-center">
-            <p className="text-sm text-[var(--neutral-foreground-3)]">利用生徒数</p>
-            <p className="text-3xl font-bold text-[var(--status-success-fg)]">
-              {new Set(usages.map((u) => u.student_id)).size}
-            </p>
-          </div>
-        </Card>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">利用日変更</h1>
+          <p className="text-sm text-[var(--neutral-foreground-3)]">利用日の追加・キャンセルを管理</p>
+        </div>
       </div>
 
-      {/* Calendar */}
+      {/* Student selector */}
       <Card>
-        <div className="flex items-center justify-between mb-4">
-          <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <h2 className="text-lg font-semibold">{format(currentMonth, 'yyyy年M月', { locale: ja })}</h2>
-          <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {isLoading ? (
-          <SkeletonTable rows={5} cols={7} />
-        ) : (
-          <div className="grid grid-cols-7 gap-px bg-[var(--neutral-stroke-2)] rounded-lg overflow-hidden">
-            {['日', '月', '火', '水', '木', '金', '土'].map((d) => (
-              <div key={d} className="bg-[var(--neutral-background-2)] py-2 text-center text-xs font-semibold text-[var(--neutral-foreground-3)]">{d}</div>
+        <CardBody>
+          <label className="mb-2 block text-sm font-medium text-[var(--neutral-foreground-2)]">生徒選択</label>
+          <select
+            className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
+            value={selectedStudentId ?? ''}
+            onChange={(e) => {
+              setSelectedStudentId(e.target.value ? Number(e.target.value) : null);
+              setChanges({});
+            }}
+          >
+            <option value="">-- 生徒を選択してください --</option>
+            {students.map((s) => (
+              <option key={s.id} value={s.id}>{s.student_name}</option>
             ))}
-            {Array.from({ length: calendarDays.startPad }).map((_, i) => (
-              <div key={`pad-${i}`} className="bg-[var(--neutral-background-1)] p-2 min-h-[70px]" />
-            ))}
-            {calendarDays.days.map((day) => {
-              const dateStr = format(day, 'yyyy-MM-dd');
-              const dayUsages = usagesByDate[dateStr] || [];
-              const isSelected = selectedDate === dateStr;
-              const isToday = isSameDay(day, new Date());
-              return (
-                <div
-                  key={dateStr}
-                  onClick={() => setSelectedDate(dateStr)}
-                  className={`bg-[var(--neutral-background-1)] p-2 min-h-[70px] cursor-pointer hover:bg-[var(--brand-160)] transition-colors ${isSelected ? 'ring-2 ring-[var(--brand-80)] ring-inset' : ''}`}
-                >
-                  <span className={`text-sm ${isToday ? 'font-bold text-[var(--brand-80)]' : 'text-[var(--neutral-foreground-2)]'}`}>
-                    {format(day, 'd')}
-                  </span>
-                  {dayUsages.length > 0 && (
-                    <div className="mt-1">
-                      <Badge variant="primary" className="text-[10px]">
-                        <Users className="mr-0.5 inline h-3 w-3" />
-                        {dayUsages.length}名
-                      </Badge>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
+          </select>
+        </CardBody>
       </Card>
 
-      {/* Selected date detail */}
-      {selectedDate && (
+      {/* Calendar */}
+      {selectedStudentId && (
         <Card>
-          <CardHeader>
-            <CardTitle>{format(new Date(selectedDate), 'M月d日(E)', { locale: ja })} の追加利用</CardTitle>
-          </CardHeader>
+          <CardBody>
+            {/* Month navigation */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <button onClick={goToPrevMonth}
+                  className="rounded-lg p-1.5 hover:bg-[var(--neutral-background-3)] transition-colors">
+                  <ChevronLeft className="h-5 w-5 text-[var(--neutral-foreground-3)]" />
+                </button>
+                <h2 className="text-lg font-bold text-[var(--neutral-foreground-1)] min-w-[120px] text-center">
+                  {year}年{month}月
+                </h2>
+                <button onClick={goToNextMonth}
+                  className="rounded-lg p-1.5 hover:bg-[var(--neutral-background-3)] transition-colors">
+                  <ChevronRight className="h-5 w-5 text-[var(--neutral-foreground-3)]" />
+                </button>
+                <Button variant="ghost" size="sm" onClick={goToToday} leftIcon={<Calendar className="h-4 w-4" />}>
+                  今月
+                </Button>
+              </div>
 
-          {/* Add form */}
-          <div className="mb-4 flex flex-col gap-2 rounded-lg border border-[var(--neutral-stroke-2)] p-3 sm:flex-row sm:items-end">
-            <div className="flex-1">
-              <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-2)]">生徒</label>
-              <select
-                value={selectedStudent}
-                onChange={(e) => setSelectedStudent(e.target.value)}
-                className="w-full rounded-lg border border-[var(--neutral-stroke-2)] px-3 py-2 text-sm"
-              >
-                <option value="">生徒を選択...</option>
-                {students.map((s) => (
-                  <option key={s.id} value={s.id}>{s.student_name}</option>
-                ))}
-              </select>
+              {/* Save button */}
+              {hasChanges && (
+                <Button
+                  leftIcon={<Save className="h-4 w-4" />}
+                  onClick={() => saveMutation.mutate()}
+                  isLoading={saveMutation.isPending}
+                >
+                  変更を保存（{Object.keys(changes).length}件）
+                </Button>
+              )}
             </div>
-            <div className="flex-1">
-              <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-2)]">備考（任意）</label>
-              <input
-                type="text"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                placeholder="追加利用の備考..."
-                className="w-full rounded-lg border border-[var(--neutral-stroke-2)] px-3 py-2 text-sm"
-              />
-            </div>
-            <Button
-              size="sm"
-              disabled={!selectedStudent}
-              onClick={() => addMutation.mutate({ student_id: Number(selectedStudent), usage_date: selectedDate, notes: reason })}
-              isLoading={addMutation.isPending}
-              leftIcon={<Plus className="h-4 w-4" />}
-            >
-              追加
-            </Button>
-          </div>
 
-          {/* List */}
-          {selectedUsages.length === 0 ? (
-            <p className="text-sm text-[var(--neutral-foreground-3)]">この日の追加利用はありません</p>
-          ) : (
-            <div className="space-y-2">
-              {selectedUsages.map((usage) => (
-                <div key={usage.id} className="flex items-center justify-between rounded-lg border border-[var(--neutral-stroke-2)] p-3">
-                  <div>
-                    <span className="font-medium text-[var(--neutral-foreground-1)]">{usage.student?.student_name || '-'}</span>
-                    {usage.notes && (
-                      <span className="ml-2 text-sm text-[var(--neutral-foreground-3)]">({usage.notes})</span>
-                    )}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => { if (confirm('この追加利用を削除しますか？')) removeMutation.mutate(usage.id); }}
-                  >
-                    <X className="h-4 w-4 text-[var(--status-danger-fg)]" />
-                  </Button>
+            {loadingMonth ? (
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full rounded" />)}
+              </div>
+            ) : (
+              <>
+                {/* Calendar grid */}
+                <table className="w-full table-fixed border-collapse">
+                  <thead>
+                    <tr>
+                      {WEEKDAYS.map((wd, i) => (
+                        <th key={wd} className={`py-2 text-center text-xs font-medium ${
+                          i === 0 ? 'text-[var(--status-danger-fg)]' : i === 6 ? 'text-[var(--brand-80)]' : 'text-[var(--neutral-foreground-3)]'
+                        }`}>{wd}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {calendarGrid.map((week, wi) => (
+                      <tr key={wi}>
+                        {week.map((day, di) => {
+                          if (day === null) return <td key={di} className="border border-[var(--neutral-stroke-3)] p-1" />;
+
+                          const status = getDayStatus(day);
+                          const isChecked = status === 'regular' || status === 'additional';
+                          const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                          const hasChange = !!changes[dateStr];
+                          const isSunday = di === 0;
+                          const isSaturday = di === 6;
+
+                          return (
+                            <td
+                              key={di}
+                              className={`border border-[var(--neutral-stroke-3)] p-2 align-top cursor-pointer transition-colors ${
+                                hasChange ? 'bg-yellow-50 ring-2 ring-inset ring-yellow-400' :
+                                status === 'cancelled' ? 'bg-red-50' :
+                                status === 'additional' ? 'bg-green-50' :
+                                status === 'regular' ? 'bg-blue-50' :
+                                ''
+                              }`}
+                              onClick={() => toggleDay(day)}
+                            >
+                              <div className="flex flex-col items-center gap-1 min-h-[60px]">
+                                <span className={`text-sm font-medium ${
+                                  isSunday ? 'text-[var(--status-danger-fg)]' :
+                                  isSaturday ? 'text-[var(--brand-80)]' :
+                                  'text-[var(--neutral-foreground-2)]'
+                                }`}>{day}</span>
+
+                                {/* Status label */}
+                                {status === 'regular' && (
+                                  <Badge variant="info" className="text-[9px] px-1.5 py-0">通常</Badge>
+                                )}
+                                {status === 'additional' && (
+                                  <Badge variant="success" className="text-[9px] px-1.5 py-0">追加</Badge>
+                                )}
+                                {status === 'cancelled' && (
+                                  <Badge variant="danger" className="text-[9px] px-1.5 py-0">キャンセル</Badge>
+                                )}
+
+                                {/* Checkbox */}
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => toggleDay(day)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="rounded border-[var(--neutral-stroke-2)] mt-1"
+                                />
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* Legend */}
+                <div className="mt-4 flex flex-wrap gap-4 text-xs text-[var(--neutral-foreground-3)]">
+                  <span className="flex items-center gap-1">
+                    <span className="inline-block h-3 w-3 rounded bg-blue-100 border border-blue-300" /> 通常利用日
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="inline-block h-3 w-3 rounded bg-green-100 border border-green-300" /> 追加利用
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="inline-block h-3 w-3 rounded bg-red-100 border border-red-300" /> キャンセル
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="inline-block h-3 w-3 rounded bg-yellow-50 ring-2 ring-yellow-400" /> 未保存の変更
+                  </span>
                 </div>
-              ))}
-            </div>
-          )}
+              </>
+            )}
+          </CardBody>
         </Card>
+      )}
+
+      {/* Fixed save button */}
+      {hasChanges && (
+        <div className="fixed bottom-6 right-6 z-50 print:hidden">
+          <Button
+            size="lg"
+            leftIcon={<Save className="h-5 w-5" />}
+            onClick={() => saveMutation.mutate()}
+            isLoading={saveMutation.isPending}
+            className="shadow-lg"
+          >
+            変更を保存（{Object.keys(changes).length}件）
+          </Button>
+        </div>
       )}
     </div>
   );
