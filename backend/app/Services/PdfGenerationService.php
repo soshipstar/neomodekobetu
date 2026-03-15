@@ -28,6 +28,8 @@ class PdfGenerationService
             'details' => $plan->details->sortBy('sort_order'),
         ])
             ->setPaper('a4', 'portrait')
+            ->setOption('isRemoteEnabled', true)
+            ->setOption('isFontSubsettingEnabled', true)
             ->setOption('defaultFont', 'ipag');
 
         return $this->storePdf($pdf, 'support-plans', "plan_{$plan->id}_{$plan->student_id}");
@@ -51,6 +53,8 @@ class PdfGenerationService
             'details' => $record->details,
         ])
             ->setPaper('a4', 'portrait')
+            ->setOption('isRemoteEnabled', true)
+            ->setOption('isFontSubsettingEnabled', true)
             ->setOption('defaultFont', 'ipag');
 
         return $this->storePdf($pdf, 'monitoring', "monitoring_{$record->id}_{$record->student_id}");
@@ -74,6 +78,8 @@ class PdfGenerationService
             'guardianEntries' => $period->guardianEntries,
         ])
             ->setPaper('a4', 'portrait')
+            ->setOption('isRemoteEnabled', true)
+            ->setOption('isFontSubsettingEnabled', true)
             ->setOption('defaultFont', 'ipag');
 
         return $this->storePdf($pdf, 'kakehashi', "kakehashi_{$period->id}_{$period->student_id}");
@@ -94,6 +100,8 @@ class PdfGenerationService
             'classroom' => $newsletter->classroom,
         ])
             ->setPaper('a4', 'portrait')
+            ->setOption('isRemoteEnabled', true)
+            ->setOption('isFontSubsettingEnabled', true)
             ->setOption('defaultFont', 'ipag');
 
         return $this->storePdf(

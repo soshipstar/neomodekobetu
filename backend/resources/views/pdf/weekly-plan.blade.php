@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>週間計画表 - {{ $weekStartFormatted }}〜{{ $weekEndFormatted }}</title>
     <style>
+        @font-face { font-family: "ipag"; src: url("file:///var/www/html/storage/fonts/ipag.ttf"); font-weight: normal; font-style: normal; }
         @page {
             size: A4 portrait;
             margin: 8mm;

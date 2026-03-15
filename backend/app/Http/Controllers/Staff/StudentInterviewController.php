@@ -164,6 +164,8 @@ class StudentInterviewController extends Controller
             'student' => $interview->student,
         ])
             ->setPaper('a4', 'portrait')
+            ->setOption('isRemoteEnabled', true)
+            ->setOption('isFontSubsettingEnabled', true)
             ->setOption('defaultFont', 'ipag');
 
         $filename = "student_interview_{$interview->id}.pdf";

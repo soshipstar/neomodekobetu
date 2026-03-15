@@ -283,6 +283,8 @@ class ActivitySupportPlanController extends Controller
             'dayOfWeekLabel' => $dayOfWeekLabel,
         ])
             ->setPaper('a4', 'portrait')
+            ->setOption('isRemoteEnabled', true)
+            ->setOption('isFontSubsettingEnabled', true)
             ->setOption('defaultFont', 'ipag');
 
         $filename = "activity_support_plan_{$plan->id}.pdf";

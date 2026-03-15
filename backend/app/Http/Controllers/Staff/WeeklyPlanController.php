@@ -157,6 +157,8 @@ class WeeklyPlanController extends Controller
             'submitFormatted' => $submitFormatted,
         ])
             ->setPaper('a4', 'portrait')
+            ->setOption('isRemoteEnabled', true)
+            ->setOption('isFontSubsettingEnabled', true)
             ->setOption('defaultFont', 'ipag');
 
         $filename = "weekly_plan_{$plan->id}_{$weekStart->format('Ymd')}.pdf";

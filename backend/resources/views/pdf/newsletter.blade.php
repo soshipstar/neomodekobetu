@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>{{ $newsletter->title ?? '施設通信' }} - PDF</title>
     <style>
+        @font-face { font-family: "ipag"; src: url("file:///var/www/html/storage/fonts/ipag.ttf"); font-weight: normal; font-style: normal; }
         @page {
             size: A4 portrait;
             margin: 10mm;
