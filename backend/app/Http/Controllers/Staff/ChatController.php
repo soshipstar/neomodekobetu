@@ -242,6 +242,43 @@ class ChatController extends Controller
     }
 
     /**
+     * 全保護者チャットルームに一斉送信
+     */
+    public function broadcast(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $classroomId = $user->classroom_id;
+
+        $request->validate([
+            'message' => 'required|string|max:5000',
+        ]);
+
+        $rooms = ChatRoom::forUser($user)->get();
+        $sentCount = 0;
+
+        DB::transaction(function () use ($rooms, $user, $request, &$sentCount) {
+            foreach ($rooms as $room) {
+                ChatMessage::create([
+                    'room_id'      => $room->id,
+                    'sender_id'    => $user->id,
+                    'sender_type'  => 'staff',
+                    'message'      => $request->message,
+                    'message_type' => 'broadcast',
+                ]);
+
+                $room->update(['last_message_at' => now()]);
+                $sentCount++;
+            }
+        });
+
+        return response()->json([
+            'success'    => true,
+            'sent_count' => $sentCount,
+            'message'    => "{$sentCount}件のチャットに送信しました。",
+        ]);
+    }
+
+    /**
      * スタッフがルームにアクセスできるか確認
      */
     private function canAccessRoom($user, ChatRoom $room): bool

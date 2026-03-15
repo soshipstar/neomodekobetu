@@ -126,6 +126,7 @@ Route::prefix('staff')
             Route::post('/rooms/{room}/messages', [App\Http\Controllers\Staff\ChatController::class, 'sendMessage']);
             Route::post('/rooms/{room}/pin', [App\Http\Controllers\Staff\ChatController::class, 'togglePin']);
             Route::post('/rooms/{room}/read', [App\Http\Controllers\Staff\ChatController::class, 'markRead']);
+            Route::post('/broadcast', [App\Http\Controllers\Staff\ChatController::class, 'broadcast']);
         });
 
         // --- 生徒管理 ---

@@ -11,7 +11,10 @@ import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { cn, formatRelativeTime, truncate } from '@/lib/utils';
-import { Search, Pin, ChevronDown, ChevronRight, ChevronLeft, Send, MessageCircle } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import { useToast } from '@/components/ui/Toast';
+import { Search, Pin, ChevronDown, ChevronRight, ChevronLeft, Send, MessageCircle, CalendarDays, ClipboardList, Megaphone } from 'lucide-react';
 import api from '@/lib/api';
 import type { ChatRoom } from '@/types/chat';
 
@@ -57,6 +60,26 @@ export default function StaffChatPage() {
   );
   // Mobile: track whether we're showing chat view
   const [showChat, setShowChat] = useState(false);
+  const toast = useToast();
+
+  // Meeting modal state
+  const [meetingModal, setMeetingModal] = useState(false);
+  const [meetingPurpose, setMeetingPurpose] = useState('');
+  const [meetingDetail, setMeetingDetail] = useState('');
+  const [meetingDates, setMeetingDates] = useState(['', '', '']);
+  const [meetingSending, setMeetingSending] = useState(false);
+
+  // Submission deadline modal state
+  const [submissionModal, setSubmissionModal] = useState(false);
+  const [submissionTitle, setSubmissionTitle] = useState('');
+  const [submissionDesc, setSubmissionDesc] = useState('');
+  const [submissionDueDate, setSubmissionDueDate] = useState('');
+  const [submissionSending, setSubmissionSending] = useState(false);
+
+  // Broadcast modal state
+  const [broadcastModal, setBroadcastModal] = useState(false);
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [broadcastSending, setBroadcastSending] = useState(false);
 
   useEffect(() => {
     fetchRooms();
@@ -92,6 +115,71 @@ export default function StaffChatPage() {
       fetchRooms();
     } catch { /* ignore */ }
   }, [activeRoom, fetchRooms]);
+
+  // Meeting request
+  const handleMeetingSubmit = useCallback(async () => {
+    if (!activeRoom || !meetingPurpose || meetingDates.every((d) => !d)) return;
+    setMeetingSending(true);
+    try {
+      await api.post('/api/staff/meetings', {
+        student_id: activeRoom.student_id,
+        guardian_id: activeRoom.guardian_id,
+        purpose: meetingPurpose,
+        purpose_detail: meetingDetail || undefined,
+        candidate_dates: meetingDates.filter((d) => d),
+      });
+      toast.success('面談予約を送信しました');
+      setMeetingModal(false);
+      setMeetingPurpose('');
+      setMeetingDetail('');
+      setMeetingDates(['', '', '']);
+      fetchMessages(activeRoom.id);
+    } catch {
+      toast.error('面談予約の送信に失敗しました');
+    } finally {
+      setMeetingSending(false);
+    }
+  }, [activeRoom, meetingPurpose, meetingDetail, meetingDates, fetchMessages, toast]);
+
+  // Submission deadline
+  const handleSubmissionSubmit = useCallback(async () => {
+    if (!activeRoom || !submissionTitle || !submissionDueDate) return;
+    setSubmissionSending(true);
+    try {
+      await api.post('/api/staff/submissions', {
+        student_id: activeRoom.student_id,
+        title: submissionTitle,
+        description: submissionDesc || undefined,
+        due_date: submissionDueDate,
+      });
+      toast.success('提出期限を設定しました');
+      setSubmissionModal(false);
+      setSubmissionTitle('');
+      setSubmissionDesc('');
+      setSubmissionDueDate('');
+    } catch {
+      toast.error('提出期限の設定に失敗しました');
+    } finally {
+      setSubmissionSending(false);
+    }
+  }, [activeRoom, submissionTitle, submissionDesc, submissionDueDate, toast]);
+
+  // Broadcast
+  const handleBroadcast = useCallback(async () => {
+    if (!broadcastMessage.trim()) return;
+    setBroadcastSending(true);
+    try {
+      const res = await api.post('/api/staff/chat/broadcast', { message: broadcastMessage });
+      toast.success(res.data?.message || '一斉送信しました');
+      setBroadcastModal(false);
+      setBroadcastMessage('');
+      fetchRooms();
+    } catch {
+      toast.error('一斉送信に失敗しました');
+    } finally {
+      setBroadcastSending(false);
+    }
+  }, [broadcastMessage, fetchRooms, toast]);
 
   // Toggle grade group accordion
   const toggleGroup = (key: string) => {
@@ -138,7 +226,18 @@ export default function StaffChatPage() {
           isDesktop ? 'w-[300px] shrink-0' : 'w-full'
         )}>
           {/* Header */}
-          <div className="border-b border-[var(--neutral-stroke-2)] px-3 py-2.5">
+          <div className="border-b border-[var(--neutral-stroke-2)] px-3 py-2.5 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-[var(--neutral-foreground-2)]">チャット</span>
+              <button
+                onClick={() => setBroadcastModal(true)}
+                className="flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-3)] transition-colors"
+                title="一斉送信"
+              >
+                <Megaphone className="h-3.5 w-3.5" />
+                一斉送信
+              </button>
+            </div>
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
               <Input
@@ -262,7 +361,7 @@ export default function StaffChatPage() {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                   <button
                     onClick={handleTogglePin}
                     className={cn(
@@ -274,6 +373,20 @@ export default function StaffChatPage() {
                     title={activeRoom.is_pinned ? 'ピン解除' : 'ピン留め'}
                   >
                     <Pin className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setMeetingModal(true)}
+                    className="rounded-md p-1.5 text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-3)] transition-colors"
+                    title="面談予約"
+                  >
+                    <CalendarDays className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setSubmissionModal(true)}
+                    className="rounded-md p-1.5 text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-3)] transition-colors"
+                    title="提出期限"
+                  >
+                    <ClipboardList className="h-4 w-4" />
                   </button>
                 </div>
               </div>
@@ -308,7 +421,158 @@ export default function StaffChatPage() {
           )}
         </div>
       )}
+
+      {/* Modals */}
+      <MeetingModal
+        isOpen={meetingModal} onClose={() => setMeetingModal(false)}
+        purpose={meetingPurpose} setPurpose={setMeetingPurpose}
+        detail={meetingDetail} setDetail={setMeetingDetail}
+        dates={meetingDates} setDates={setMeetingDates}
+        onSubmit={handleMeetingSubmit} isSending={meetingSending}
+      />
+      <SubmissionModal
+        isOpen={submissionModal} onClose={() => setSubmissionModal(false)}
+        title={submissionTitle} setTitle={setSubmissionTitle}
+        desc={submissionDesc} setDesc={setSubmissionDesc}
+        dueDate={submissionDueDate} setDueDate={setSubmissionDueDate}
+        onSubmit={handleSubmissionSubmit} isSending={submissionSending}
+      />
+      <BroadcastModal
+        isOpen={broadcastModal} onClose={() => setBroadcastModal(false)}
+        message={broadcastMessage} setMessage={setBroadcastMessage}
+        onSubmit={handleBroadcast} isSending={broadcastSending}
+        roomCount={rooms.length}
+      />
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Meeting Modal
+// ---------------------------------------------------------------------------
+
+function MeetingModal({
+  isOpen, onClose, purpose, setPurpose, detail, setDetail,
+  dates, setDates, onSubmit, isSending,
+}: {
+  isOpen: boolean; onClose: () => void;
+  purpose: string; setPurpose: (v: string) => void;
+  detail: string; setDetail: (v: string) => void;
+  dates: string[]; setDates: (v: string[]) => void;
+  onSubmit: () => void; isSending: boolean;
+}) {
+  const updateDate = (i: number, val: string) => {
+    const next = [...dates];
+    next[i] = val;
+    setDates(next);
+  };
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="面談予約" size="md">
+      <div className="space-y-4">
+        <div>
+          <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">目的 *</label>
+          <input value={purpose} onChange={(e) => setPurpose(e.target.value)}
+            className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
+            placeholder="面談の目的..." />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">詳細</label>
+          <textarea value={detail} onChange={(e) => setDetail(e.target.value)} rows={2}
+            className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
+            placeholder="補足事項..." />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">候補日時 *（最大3つ）</label>
+          {[0, 1, 2].map((i) => (
+            <input key={i} type="datetime-local" value={dates[i]}
+              onChange={(e) => updateDate(i, e.target.value)}
+              className="mt-1 block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]" />
+          ))}
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" onClick={onClose}>キャンセル</Button>
+          <Button onClick={onSubmit} isLoading={isSending}
+            disabled={!purpose || dates.every((d) => !d)}>送信</Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Submission Modal
+// ---------------------------------------------------------------------------
+
+function SubmissionModal({
+  isOpen, onClose, title, setTitle, desc, setDesc,
+  dueDate, setDueDate, onSubmit, isSending,
+}: {
+  isOpen: boolean; onClose: () => void;
+  title: string; setTitle: (v: string) => void;
+  desc: string; setDesc: (v: string) => void;
+  dueDate: string; setDueDate: (v: string) => void;
+  onSubmit: () => void; isSending: boolean;
+}) {
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="提出期限の設定" size="md">
+      <div className="space-y-4">
+        <div>
+          <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">提出物名 *</label>
+          <input value={title} onChange={(e) => setTitle(e.target.value)}
+            className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
+            placeholder="提出物の名称..." />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">説明</label>
+          <textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={2}
+            className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
+            placeholder="補足事項..." />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">提出期限 *</label>
+          <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)}
+            className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]" />
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" onClick={onClose}>キャンセル</Button>
+          <Button onClick={onSubmit} isLoading={isSending}
+            disabled={!title || !dueDate}>設定</Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Broadcast Modal
+// ---------------------------------------------------------------------------
+
+function BroadcastModal({
+  isOpen, onClose, message, setMessage, onSubmit, isSending, roomCount,
+}: {
+  isOpen: boolean; onClose: () => void;
+  message: string; setMessage: (v: string) => void;
+  onSubmit: () => void; isSending: boolean; roomCount: number;
+}) {
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="全保護者に一斉送信" size="md">
+      <div className="space-y-4">
+        <div>
+          <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">メッセージ</label>
+          <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={5}
+            className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
+            placeholder="全保護者に送信するメッセージ..." required />
+        </div>
+        <p className="text-sm text-[var(--neutral-foreground-3)]">
+          {roomCount}件のチャットルーム全てにメッセージが送信されます。
+        </p>
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" onClick={onClose}>キャンセル</Button>
+          <Button onClick={onSubmit} isLoading={isSending}
+            disabled={!message.trim()} leftIcon={<Send className="h-4 w-4" />}>送信</Button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
