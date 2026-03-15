@@ -24,16 +24,41 @@ class StaffEventController extends Controller
             $query->where('classroom_id', $classroomId);
         }
 
-        if ($request->filled('month') && $request->filled('year')) {
-            $query->whereMonth('event_date', $request->month)
-                  ->whereYear('event_date', $request->year);
+        // month パラメータ: "YYYY-MM" or separate month/year
+        if ($request->filled('month')) {
+            $monthParam = $request->month;
+            if (str_contains($monthParam, '-')) {
+                [$y, $m] = explode('-', $monthParam);
+                $query->whereYear('event_date', (int) $y)
+                      ->whereMonth('event_date', (int) $m);
+            } elseif ($request->filled('year')) {
+                $query->whereMonth('event_date', $monthParam)
+                      ->whereYear('event_date', $request->year);
+            }
         }
 
-        $events = $query->orderBy('event_date')->get();
+        $events = $query->orderBy('event_date')
+            ->withCount('registrations')
+            ->get();
+
+        $data = $events->map(fn ($e) => [
+            'id'                 => $e->id,
+            'title'              => $e->event_name,
+            'description'        => $e->event_description,
+            'date'               => $e->event_date?->format('Y-m-d'),
+            'start_time'         => null,
+            'end_time'           => null,
+            'location'           => null,
+            'capacity'           => null,
+            'registration_count' => $e->registrations_count ?? 0,
+            'is_published'       => true,
+            'event_color'        => $e->event_color,
+            'created_at'         => $e->created_at,
+        ]);
 
         return response()->json([
             'success' => true,
-            'data'    => $events,
+            'data'    => $data,
         ]);
     }
 
@@ -45,19 +70,29 @@ class StaffEventController extends Controller
         $user = $request->user();
 
         $validated = $request->validate([
-            'event_date'        => 'required|date',
-            'event_name'        => 'required|string|max:255',
+            'title'             => 'required_without:event_name|nullable|string|max:255',
+            'event_name'        => 'required_without:title|nullable|string|max:255',
+            'description'       => 'nullable|string|max:2000',
             'event_description' => 'nullable|string|max:2000',
+            'date'              => 'required_without:event_date|nullable|date',
+            'event_date'        => 'required_without:date|nullable|date',
             'target_audience'   => 'nullable|string|max:100',
             'event_color'       => 'nullable|string|max:20',
             'staff_comment'     => 'nullable|string|max:1000',
             'guardian_message'  => 'nullable|string|max:1000',
         ]);
 
-        $event = Event::create(array_merge($validated, [
-            'classroom_id' => $user->classroom_id,
-            'created_by'   => $user->id,
-        ]));
+        $event = Event::create([
+            'classroom_id'      => $user->classroom_id,
+            'created_by'        => $user->id,
+            'event_name'        => $validated['title'] ?? $validated['event_name'] ?? '',
+            'event_description' => $validated['description'] ?? $validated['event_description'] ?? null,
+            'event_date'        => $validated['date'] ?? $validated['event_date'],
+            'target_audience'   => $validated['target_audience'] ?? null,
+            'event_color'       => $validated['event_color'] ?? null,
+            'staff_comment'     => $validated['staff_comment'] ?? null,
+            'guardian_message'  => $validated['guardian_message'] ?? null,
+        ]);
 
         return response()->json([
             'success' => true,
@@ -78,16 +113,33 @@ class StaffEventController extends Controller
         }
 
         $validated = $request->validate([
-            'event_date'        => 'sometimes|date',
-            'event_name'        => 'sometimes|string|max:255',
+            'title'             => 'nullable|string|max:255',
+            'event_name'        => 'nullable|string|max:255',
+            'description'       => 'nullable|string|max:2000',
             'event_description' => 'nullable|string|max:2000',
+            'date'              => 'nullable|date',
+            'event_date'        => 'nullable|date',
             'target_audience'   => 'nullable|string|max:100',
             'event_color'       => 'nullable|string|max:20',
             'staff_comment'     => 'nullable|string|max:1000',
             'guardian_message'  => 'nullable|string|max:1000',
         ]);
 
-        $event->update($validated);
+        $updateData = [];
+        if (isset($validated['title']) || isset($validated['event_name'])) {
+            $updateData['event_name'] = $validated['title'] ?? $validated['event_name'];
+        }
+        if (isset($validated['description']) || isset($validated['event_description'])) {
+            $updateData['event_description'] = $validated['description'] ?? $validated['event_description'];
+        }
+        if (isset($validated['date']) || isset($validated['event_date'])) {
+            $updateData['event_date'] = $validated['date'] ?? $validated['event_date'];
+        }
+        foreach (['target_audience', 'event_color', 'staff_comment', 'guardian_message'] as $f) {
+            if (array_key_exists($f, $validated)) $updateData[$f] = $validated[$f];
+        }
+
+        $event->update($updateData);
 
         return response()->json([
             'success' => true,
