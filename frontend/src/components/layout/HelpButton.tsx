@@ -43,6 +43,50 @@ export function HelpButton() {
   const [searchQuery, setSearchQuery] = useState('');
   const panelRef = useRef<HTMLDivElement>(null);
 
+  // Drag state for the toggle button
+  const [btnPos, setBtnPos] = useState<{ x: number; y: number } | null>(null);
+  const dragRef = useRef<{ startX: number; startY: number; startBtnX: number; startBtnY: number; dragging: boolean } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startBtnX: rect.left,
+      startBtnY: rect.top,
+      dragging: false,
+    };
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }, []);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!dragRef.current) return;
+    const dx = e.clientX - dragRef.current.startX;
+    const dy = e.clientY - dragRef.current.startY;
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+      dragRef.current.dragging = true;
+    }
+    if (dragRef.current.dragging) {
+      const newX = dragRef.current.startBtnX + dx;
+      const newY = dragRef.current.startBtnY + dy;
+      // Clamp to viewport
+      const size = 56;
+      const x = Math.max(0, Math.min(window.innerWidth - size, newX));
+      const y = Math.max(0, Math.min(window.innerHeight - size, newY));
+      setBtnPos({ x, y });
+    }
+  }, []);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    if (dragRef.current && !dragRef.current.dragging) {
+      // It was a click, not a drag
+      togglePanel();
+    }
+    dragRef.current = null;
+  }, [togglePanel]);
+
   const pathname = usePathname();
   const { user } = useAuthStore();
   const userType = (user?.user_type ?? 'staff') as UserType;
@@ -187,12 +231,16 @@ export function HelpButton() {
 
   return (
     <>
-      {/* Toggle Button */}
+      {/* Toggle Button (draggable) */}
       <button
+        ref={btnRef}
         data-help-toggle
-        onClick={togglePanel}
-        className={`fixed bottom-24 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br ${accentGradient} text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-95 lg:bottom-6 lg:right-6 lg:h-14 lg:w-14`}
-        aria-label="ヘルプを開く"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        className={`fixed z-50 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br ${accentGradient} text-white shadow-lg transition-shadow hover:shadow-xl lg:h-14 lg:w-14 touch-none select-none cursor-grab active:cursor-grabbing`}
+        style={btnPos ? { left: btnPos.x, top: btnPos.y, right: 'auto', bottom: 'auto' } : { bottom: '6rem', right: '1rem' }}
+        aria-label="ヘルプを開く（ドラッグで移動可能）"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -213,12 +261,15 @@ export function HelpButton() {
       {/* Panel */}
       <div
         ref={panelRef}
-        className={`fixed bottom-40 right-4 z-50 flex w-[360px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-300 lg:bottom-24 lg:right-6 ${
+        className={`fixed z-50 flex w-[360px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-300 ${
           isOpen
             ? 'pointer-events-auto translate-y-0 scale-100 opacity-100'
             : 'pointer-events-none translate-y-4 scale-95 opacity-0'
         }`}
-        style={{ height: isOpen ? '480px' : '0', maxHeight: 'calc(100vh - 200px)' }}
+        style={btnPos
+          ? { left: Math.min(btnPos.x, window.innerWidth - 380), bottom: `${window.innerHeight - btnPos.y + 16}px`, height: isOpen ? '480px' : '0', maxHeight: 'calc(100vh - 200px)' }
+          : { bottom: '10rem', right: '1rem', height: isOpen ? '480px' : '0', maxHeight: 'calc(100vh - 200px)' }
+        }
       >
         {/* Header */}
         <div
