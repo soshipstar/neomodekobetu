@@ -183,6 +183,7 @@ Route::prefix('staff')
         // --- 週間計画 ---
         Route::get('/weekly-plans', [App\Http\Controllers\Staff\WeeklyPlanController::class, 'index']);
         Route::post('/weekly-plans', [App\Http\Controllers\Staff\WeeklyPlanController::class, 'store']);
+        Route::get('/weekly-plans/{studentId}', [App\Http\Controllers\Staff\WeeklyPlanController::class, 'show'])->where('studentId', '[0-9]+');
         Route::put('/weekly-plans/{plan}', [App\Http\Controllers\Staff\WeeklyPlanController::class, 'update']);
         Route::get('/weekly-plans/{plan}/pdf', [App\Http\Controllers\Staff\WeeklyPlanController::class, 'pdf']);
 

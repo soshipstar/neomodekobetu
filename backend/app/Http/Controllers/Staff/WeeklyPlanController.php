@@ -43,6 +43,38 @@ class WeeklyPlanController extends Controller
     }
 
     /**
+     * 特定生徒の週間計画詳細を取得
+     */
+    public function show(Request $request, int $studentId): JsonResponse
+    {
+        $user = $request->user();
+
+        $query = WeeklyPlan::with(['creator:id,full_name', 'comments.user:id,full_name', 'submissions']);
+
+        if ($user->classroom_id) {
+            $query->where('classroom_id', $user->classroom_id);
+        }
+
+        if ($request->filled('week_start_date')) {
+            $query->where('week_start_date', $request->week_start_date);
+        }
+
+        $plan = $query->orderByDesc('week_start_date')->first();
+
+        if (! $plan) {
+            return response()->json([
+                'success' => true,
+                'data'    => null,
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => $plan,
+        ]);
+    }
+
+    /**
      * 週間計画を新規作成
      */
     public function store(Request $request): JsonResponse
