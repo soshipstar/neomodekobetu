@@ -312,6 +312,7 @@ export default function WeeklyPlansPage() {
   // -----------------------------------------------------------------------
 
   // Student list with plan status for the selected week
+  // Note: weekly_plans is per-classroom, not per-student. We show the classroom plan for each student.
   const { data: studentsWithPlans, isLoading: isLoadingList } = useQuery({
     queryKey: ['staff', 'weekly-plans', 'list', weekStartStr],
     queryFn: async () => {
@@ -320,28 +321,31 @@ export default function WeeklyPlansPage() {
       const studentsPayload = studentsRes.data?.data;
       const studentList: Student[] = Array.isArray(studentsPayload) ? studentsPayload : [];
 
-      // Fetch plans for this week
+      // Fetch classroom plan for this week
       const plansRes = await api.get(`/api/staff/weekly-plans?week_start_date=${weekStartStr}&per_page=200`);
       const plansPayload = plansRes.data?.data;
       const planList = Array.isArray(plansPayload) ? plansPayload :
         (plansPayload?.data && Array.isArray(plansPayload.data)) ? plansPayload.data : [];
 
-      // Merge: each student with their plan (if any)
+      // The classroom plan (first match)
+      const classroomPlan = planList.length > 0 ? planList[0] : null;
+
+      // Each student gets the same classroom plan
       return studentList.map((student) => ({
         student,
-        plan: planList.find((p: any) => p.student_id === student.id) ?? null,
+        plan: classroomPlan ? { ...classroomPlan, student_id: student.id } : null,
       })) as StudentWithPlan[];
     },
   });
 
-  // Detail for selected student
+  // Detail for selected student (uses classroom-level plan)
   const { data: planDetail, isLoading: isLoadingDetail } = useQuery({
-    queryKey: ['staff', 'weekly-plans', 'detail', selectedStudentId, weekStartStr],
+    queryKey: ['staff', 'weekly-plans', 'detail', weekStartStr],
     queryFn: async () => {
-      const res = await api.get<{ data: WeeklyPlanDetail }>(
-        `/api/staff/weekly-plans/${selectedStudentId}?week_start_date=${weekStartStr}`
-      );
-      return res.data.data;
+      const res = await api.get(`/api/staff/weekly-plans?week_start_date=${weekStartStr}&per_page=1`);
+      const payload = res.data?.data;
+      const plans = Array.isArray(payload) ? payload : (payload?.data && Array.isArray(payload.data) ? payload.data : []);
+      return plans.length > 0 ? plans[0] as WeeklyPlanDetail : null;
     },
     enabled: !!selectedStudentId,
   });
