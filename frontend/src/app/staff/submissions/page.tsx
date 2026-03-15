@@ -48,8 +48,11 @@ export default function SubmissionsPage() {
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ['staff', 'submissions'],
     queryFn: async () => {
-      const res = await api.get<{ data: SubmissionRequest[] }>('/api/staff/submissions');
-      return res.data.data;
+      const res = await api.get('/api/staff/submissions?per_page=200');
+      const payload = res.data?.data;
+      if (Array.isArray(payload)) return payload as SubmissionRequest[];
+      if (payload?.data && Array.isArray(payload.data)) return payload.data as SubmissionRequest[];
+      return [] as SubmissionRequest[];
     },
   });
 

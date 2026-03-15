@@ -86,8 +86,11 @@ export default function SubmissionManagementPage() {
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ['staff', 'submission-management', filterStatus],
     queryFn: async () => {
-      const res = await api.get<{ data: SubmissionRequest[] }>(`/api/staff/submissions?status=${filterStatus}`);
-      return res.data.data;
+      const res = await api.get(`/api/staff/submissions?status=${filterStatus}&per_page=200`);
+      const payload = res.data?.data;
+      if (Array.isArray(payload)) return payload as SubmissionRequest[];
+      if (payload?.data && Array.isArray(payload.data)) return payload.data as SubmissionRequest[];
+      return [] as SubmissionRequest[];
     },
   });
 

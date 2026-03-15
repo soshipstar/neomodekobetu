@@ -196,7 +196,7 @@ export default function WorkDiaryPage() {
                     return (
                       <div key={key}>
                         <h4 className="text-xs font-semibold text-[var(--neutral-foreground-3)] uppercase tracking-wider mb-1">{label}</h4>
-                        <p className="whitespace-pre-wrap text-sm text-[var(--neutral-foreground-2)]">{value}</p>
+                        <p className="whitespace-pre-wrap text-sm text-[var(--neutral-foreground-2)]">{value.replace(/\\r\\n|\\n|\\r/g, '\n').replace(/\r\n|\r/g, '\n')}</p>
                       </div>
                     );
                   })}
