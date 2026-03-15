@@ -4,6 +4,7 @@ COPY package*.json ./
 RUN npm install
 COPY . .
 ENV NEXT_PUBLIC_API_URL=https://kiduri.xyz/api
+ENV NEXT_PUBLIC_BACKEND_URL=https://kiduri.xyz
 ENV NEXT_PUBLIC_WS_HOST=kiduri.xyz
 ENV NEXT_PUBLIC_WS_PORT=443
 RUN npm run build
