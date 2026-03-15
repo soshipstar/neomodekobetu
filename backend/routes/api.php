@@ -130,6 +130,10 @@ Route::prefix('staff')
         });
 
         // --- 生徒管理 ---
+        // --- 待機児童 ---
+        Route::get('/waiting-list', [App\Http\Controllers\Admin\WaitingListController::class, 'index']);
+        Route::put('/waiting-list/{student}', [App\Http\Controllers\Admin\WaitingListController::class, 'update']);
+
         Route::get('/students', [App\Http\Controllers\Staff\StudentController::class, 'index']);
         Route::post('/students', [App\Http\Controllers\Staff\StudentController::class, 'store']);
         Route::get('/students/guardians', [App\Http\Controllers\Staff\StudentController::class, 'guardians']);
