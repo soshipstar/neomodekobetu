@@ -302,7 +302,7 @@ class SupportPlanController extends Controller
             ->setPaper('a4', 'portrait')
             ->setOption('isRemoteEnabled', true)
             ->setOption('isFontSubsettingEnabled', true)
-            ->setOption('defaultFont', 'DejaVu Sans');
+            ->setOption('defaultFont', 'ipag');
 
         $filename = 'support_plan_' . ($plan->student->student_name ?? $plan->id) . '.pdf';
 

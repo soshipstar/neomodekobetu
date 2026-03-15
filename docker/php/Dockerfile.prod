@@ -35,9 +35,12 @@ RUN apt-get update && apt-get install -y fonts-ipafont-gothic fonts-ipafont-minc
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y nodejs
 
-# Storage directories
-RUN mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache storage/logs bootstrap/cache \
+# Storage directories (including DomPDF font cache)
+RUN mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache storage/logs bootstrap/cache storage/fonts \
     && chown -R www-data:www-data storage bootstrap/cache
+
+# Pre-copy IPA Gothic font to DomPDF font cache
+RUN cp /usr/share/fonts/opentype/ipafont-gothic/ipag.ttf storage/fonts/ipag.ttf 2>/dev/null || true
 
 # Entrypoint script (handles storage:link, migrations, optimize on every container start)
 COPY docker/php/entrypoint.prod.sh /usr/local/bin/entrypoint.sh

@@ -69,6 +69,16 @@ interface DailyRoutine {
 }
 
 // ---------------------------------------------------------------------------
+// Helpers – normalise escaped newlines coming from the API
+// ---------------------------------------------------------------------------
+
+/** Replace literal "\r\n" / "\n" / "\r" sequences (escaped) and real \r with \n */
+function nl(text: string | null | undefined): string {
+  if (!text) return '';
+  return text.replace(/\\r\\n|\\n|\\r/g, '\n').replace(/\r\n|\r/g, '\n');
+}
+
+// ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
@@ -409,7 +419,7 @@ function Section({ title, content }: { title: string; content: string }) {
     <div className="mt-3">
       <div className="text-xs font-semibold text-[var(--brand-80)] mb-0.5">{title}</div>
       <div className="text-sm text-[var(--neutral-foreground-2)] whitespace-pre-wrap line-clamp-4">
-        {content}
+        {nl(content)}
       </div>
     </div>
   );
@@ -933,7 +943,7 @@ function SupportPlanFormModal({
                       <div className="flex-1 min-w-0">
                         <div className="font-medium truncate">{item.name}</div>
                         {item.content && (
-                          <div className="text-xs text-[var(--neutral-foreground-3)] truncate">{item.content}</div>
+                          <div className="text-xs text-[var(--neutral-foreground-3)] truncate">{nl(item.content)}</div>
                         )}
                       </div>
                       <span className="shrink-0 rounded bg-[var(--neutral-background-3)] px-2 py-0.5 text-[10px]">
@@ -1298,13 +1308,13 @@ function PastPlanCard({
           </div>
           {plan.activity_purpose && (
             <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
-              <strong>目的:</strong> {plan.activity_purpose.substring(0, 100)}
+              <strong>目的:</strong> {nl(plan.activity_purpose).substring(0, 100)}
               {plan.activity_purpose.length > 100 ? '...' : ''}
             </p>
           )}
           {plan.activity_content && (
             <p className="mt-0.5 text-xs text-[var(--neutral-foreground-3)]">
-              <strong>内容:</strong> {plan.activity_content.substring(0, 100)}
+              <strong>内容:</strong> {nl(plan.activity_content).substring(0, 100)}
               {plan.activity_content.length > 100 ? '...' : ''}
             </p>
           )}

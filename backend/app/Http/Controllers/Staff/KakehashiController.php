@@ -142,7 +142,7 @@ class KakehashiController extends Controller
             ->setPaper('a4', 'portrait')
             ->setOption('isRemoteEnabled', true)
             ->setOption('isFontSubsettingEnabled', true)
-            ->setOption('defaultFont', 'DejaVu Sans');
+            ->setOption('defaultFont', 'ipag');
 
         $filename = 'kakehashi_' . ($period->student->student_name ?? $period->id) . '_' . $period->start_date . '.pdf';
 
