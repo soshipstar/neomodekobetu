@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SchoolHolidayActivity;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SchoolHolidayActivityController extends Controller
 {
@@ -35,6 +36,48 @@ class SchoolHolidayActivityController extends Controller
         return response()->json([
             'success' => true,
             'data'    => $activities,
+        ]);
+    }
+
+    /**
+     * 月単位で学校休業日活動を一括保存（旧システム互換）
+     */
+    public function batch(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $classroomId = $user->classroom_id;
+
+        $validated = $request->validate([
+            'year'            => 'required|integer',
+            'month'           => 'required|integer|min:1|max:12',
+            'activity_dates'  => 'present|array',
+            'activity_dates.*' => 'date',
+        ]);
+
+        $y = $validated['year'];
+        $m = $validated['month'];
+        $startDate = sprintf('%04d-%02d-01', $y, $m);
+        $endDate = date('Y-m-t', strtotime($startDate));
+
+        DB::transaction(function () use ($classroomId, $startDate, $endDate, $validated, $user) {
+            // この月の既存レコードを削除
+            SchoolHolidayActivity::where('classroom_id', $classroomId)
+                ->whereBetween('activity_date', [$startDate, $endDate])
+                ->delete();
+
+            // 新しいレコードを挿入
+            foreach ($validated['activity_dates'] as $date) {
+                SchoolHolidayActivity::create([
+                    'activity_date' => $date,
+                    'classroom_id'  => $classroomId,
+                    'created_by'    => $user->id,
+                ]);
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => '保存しました。',
         ]);
     }
 

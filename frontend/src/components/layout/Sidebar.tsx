@@ -103,7 +103,7 @@ const staffNav: NavItem[] = [
   { type: 'link', label: '保護者登録・変更', href: '/staff/guardians', icon: UserCog },
   { type: 'link', label: '待機児童管理', href: '/staff/waiting-list', icon: Hourglass },
   { type: 'link', label: '利用日一括変更', href: '/staff/additional-usage', icon: CalendarPlus },
-  { type: 'link', label: '学校休業日設定', href: '/staff/school-holiday-activities', icon: Calendar },
+  { type: 'link', label: '学校休業日活動設定', href: '/staff/school-holiday-activities', icon: Calendar },
   { type: 'link', label: '休日設定', href: '/staff/holidays', icon: CalendarOff },
   { type: 'link', label: '日課設定', href: '/staff/daily-routines', icon: Clock },
   { type: 'link', label: 'タグ設定', href: '/staff/tag-settings', icon: Settings },

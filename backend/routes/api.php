@@ -228,6 +228,7 @@ Route::prefix('staff')
 
         // --- 学校休業日活動 ---
         Route::get('/school-holiday-activities', [App\Http\Controllers\Staff\SchoolHolidayActivityController::class, 'index']);
+        Route::post('/school-holiday-activities/batch', [App\Http\Controllers\Staff\SchoolHolidayActivityController::class, 'batch']);
         Route::post('/school-holiday-activities', [App\Http\Controllers\Staff\SchoolHolidayActivityController::class, 'store']);
         Route::put('/school-holiday-activities/{activity}', [App\Http\Controllers\Staff\SchoolHolidayActivityController::class, 'update']);
         Route::delete('/school-holiday-activities/{activity}', [App\Http\Controllers\Staff\SchoolHolidayActivityController::class, 'destroy']);
