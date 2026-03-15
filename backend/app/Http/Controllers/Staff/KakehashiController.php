@@ -24,7 +24,7 @@ class KakehashiController extends Controller
         $this->authorizeClassroom($request->user(), $student);
 
         $periods = KakehashiPeriod::where('student_id', $student->id)
-            ->with(['staffEntries', 'guardianEntries'])
+            ->with(['staffEntries', 'guardianEntries.guardian:id,full_name'])
             ->orderByDesc('start_date')
             ->get();
 

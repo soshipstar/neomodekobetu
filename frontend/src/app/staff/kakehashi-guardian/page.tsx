@@ -1,22 +1,31 @@
 'use client';
 
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { SkeletonList } from '@/components/ui/Skeleton';
+import { Skeleton, SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { Tabs } from '@/components/ui/Tabs';
 import {
-  CheckCircle2,
+  Download,
+  Printer,
+  Pencil,
+  History,
+  ChevronLeft,
   Eye,
+  EyeOff,
+  Heart,
+  Home,
+  Target,
+  Star,
+  Pin,
   User,
   Calendar,
-  Download,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import Link from 'next/link';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -27,40 +36,70 @@ interface Student {
   student_name: string;
 }
 
-interface GuardianKakehashi {
+interface GuardianEntry {
   id: number;
-  student_id: number;
-  student_name: string;
   period_id: number;
-  period_name: string;
-  submission_deadline: string;
-  guardian_name: string;
-  student_wish: string;
-  short_term_goal: string;
-  long_term_goal: string;
-  health_life: string;
-  motor_sensory: string;
-  cognitive_behavior: string;
-  language_communication: string;
-  social_relations: string;
-  is_confirmed: boolean;
-  confirmed_at: string | null;
-  submitted_at: string;
+  student_id: number;
+  guardian_id: number | null;
+  // Legacy fields
+  home_situation: string | null;
+  concerns: string | null;
+  requests: string | null;
+  // Domain-specific fields (v2)
+  student_wish: string | null;
+  home_challenges: string | null;
+  short_term_goal: string | null;
+  long_term_goal: string | null;
+  domain_health_life: string | null;
+  domain_motor_sensory: string | null;
+  domain_cognitive_behavior: string | null;
+  domain_language_communication: string | null;
+  domain_social_relations: string | null;
+  other_challenges: string | null;
+  is_submitted: boolean;
+  submitted_at: string | null;
+  is_hidden: boolean;
+  created_at: string;
+  updated_at: string;
+  // Relations
+  guardian?: { id: number; full_name: string } | null;
 }
 
-const DOMAIN_FIELDS = [
-  { key: 'health_life', label: '健康・生活' },
-  { key: 'motor_sensory', label: '運動・感覚' },
-  { key: 'cognitive_behavior', label: '認知・行動' },
-  { key: 'language_communication', label: '言語・コミュニケーション' },
-  { key: 'social_relations', label: '人間関係・社会性' },
-] as const;
+interface StaffEntry {
+  id: number;
+  is_submitted: boolean;
+  submitted_at: string | null;
+}
 
-export default function KakehashiGuardianPage() {
+interface KakehashiPeriod {
+  id: number;
+  student_id: number;
+  period_name: string;
+  start_date: string;
+  end_date: string;
+  submission_deadline: string;
+  is_active: boolean;
+  staff_entries: StaffEntry[];
+  guardian_entries: GuardianEntry[];
+}
+
+/** Normalize line breaks */
+function nl(text: string | null | undefined): string {
+  if (!text) return '';
+  return text.replace(/\\r\\n|\\n|\\r/g, '\n').replace(/\r\n|\r/g, '\n');
+}
+
+// ---------------------------------------------------------------------------
+// Main Component
+// ---------------------------------------------------------------------------
+
+export default function KakehashiGuardianViewPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
+
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
-  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [selectedPeriodId, setSelectedPeriodId] = useState<number | null>(null);
+  const [showHidden, setShowHidden] = useState(false);
 
   // Fetch students
   const { data: students = [], isLoading: loadingStudents } = useQuery({
@@ -71,187 +110,342 @@ export default function KakehashiGuardianPage() {
     },
   });
 
-  // Fetch guardian kakehashi entries
-  const { data: entries = [], isLoading: loadingEntries } = useQuery({
-    queryKey: ['staff', 'kakehashi', 'guardian-entries', selectedStudentId],
+  // Fetch periods for selected student
+  const { data: periods = [], isLoading: loadingPeriods } = useQuery({
+    queryKey: ['staff', 'kakehashi', 'periods', selectedStudentId],
     queryFn: async () => {
-      const url = selectedStudentId
-        ? `/api/staff/kakehashi/guardian-entries?student_id=${selectedStudentId}`
-        : '/api/staff/kakehashi/guardian-entries';
-      const res = await api.get<{ data: GuardianKakehashi[] }>(url);
+      const res = await api.get<{ data: KakehashiPeriod[] }>(
+        `/api/staff/students/${selectedStudentId}/kakehashi`
+      );
       return res.data.data;
     },
+    enabled: !!selectedStudentId,
   });
 
-  // Confirm mutation
-  const confirmMutation = useMutation({
-    mutationFn: (id: number) => api.post(`/api/staff/kakehashi/guardian-entries/${id}/confirm`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['staff', 'kakehashi', 'guardian-entries'] });
-      toast.success('確認しました');
-    },
-    onError: () => toast.error('確認に失敗しました'),
+  // Filtered periods that have guardian entries
+  const periodsWithGuardian = periods.filter((p) => {
+    const ge = p.guardian_entries?.[0];
+    if (!ge) return false;
+    if (!showHidden && ge.is_hidden) return false;
+    return true;
   });
+
+  const selectedPeriod = periods.find((p) => p.id === selectedPeriodId) ?? null;
+  const guardianEntry = selectedPeriod?.guardian_entries?.[0] ?? null;
+  const selectedStudent = students.find((s) => s.id === selectedStudentId);
 
   // PDF download
-  const handlePdfDownload = async (entryId: number) => {
+  const handlePdfDownload = useCallback(async (periodId: number, periodName: string) => {
     try {
-      const res = await api.get(`/api/staff/kakehashi/guardian-entries/${entryId}/pdf`, { responseType: 'blob' });
+      const res = await api.get(`/api/staff/kakehashi/${periodId}/pdf`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.download = `kakehashi_guardian_${entryId}.pdf`;
+      link.download = `${periodName}.pdf`;
       link.click();
       window.URL.revokeObjectURL(url);
     } catch {
       toast.error('PDF生成に失敗しました');
     }
-  };
+  }, [toast]);
 
-  const unconfirmed = entries.filter((e) => !e.is_confirmed);
-  const confirmed = entries.filter((e) => e.is_confirmed);
-
-  const renderEntry = (entry: GuardianKakehashi) => {
-    const isExpanded = expandedId === entry.id;
-
-    return (
-      <Card key={entry.id}>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <CardTitle className="text-base">
-                {entry.student_name} - {entry.period_name}
-              </CardTitle>
-              <Badge variant={entry.is_confirmed ? 'success' : 'warning'}>
-                {entry.is_confirmed ? '確認済み' : '未確認'}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-[var(--neutral-foreground-3)]">
-                保護者: {entry.guardian_name}
-              </span>
-              <span className="text-xs text-[var(--neutral-foreground-3)]">
-                提出: {format(new Date(entry.submitted_at), 'yyyy/MM/dd')}
-              </span>
-            </div>
-          </div>
-        </CardHeader>
-        <CardBody>
-          <button
-            className="mb-3 flex items-center gap-1 text-sm font-medium text-[var(--brand-80)] hover:text-[var(--brand-70)]"
-            onClick={() => setExpandedId(isExpanded ? null : entry.id)}
-          >
-            <Eye className="h-4 w-4" />
-            {isExpanded ? '閉じる' : '詳細を表示'}
-          </button>
-
-          {isExpanded && (
-            <div className="space-y-4 rounded-lg bg-[var(--neutral-background-2)] p-4">
-              <div className="grid gap-3 md:grid-cols-2">
-                <div>
-                  <p className="text-xs font-medium text-[var(--neutral-foreground-3)]">本人の願い</p>
-                  <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{entry.student_wish || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-[var(--neutral-foreground-3)]">短期目標</p>
-                  <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{entry.short_term_goal || '-'}</p>
-                </div>
-                <div className="md:col-span-2">
-                  <p className="text-xs font-medium text-[var(--neutral-foreground-3)]">長期目標</p>
-                  <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{entry.long_term_goal || '-'}</p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="text-sm font-semibold text-[var(--neutral-foreground-1)]">5領域</h4>
-                {DOMAIN_FIELDS.map(({ key, label }) => (
-                  <div key={key}>
-                    <p className="text-xs font-medium text-[var(--neutral-foreground-3)]">{label}</p>
-                    <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">
-                      {(entry as unknown as Record<string, string>)[key] || '-'}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="mt-3 flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => handlePdfDownload(entry.id)}>
-              <Download className="mr-1 h-4 w-4" />
-              PDF
-            </Button>
-            {!entry.is_confirmed && (
-              <Button
-                size="sm"
-                leftIcon={<CheckCircle2 className="h-4 w-4" />}
-                onClick={() => confirmMutation.mutate(entry.id)}
-                isLoading={confirmMutation.isPending}
-              >
-                確認する
-              </Button>
-            )}
-            {entry.is_confirmed && entry.confirmed_at && (
-              <span className="flex items-center gap-1 text-xs text-[var(--status-success-fg)]">
-                <CheckCircle2 className="h-3 w-3" />
-                {format(new Date(entry.confirmed_at), 'yyyy/MM/dd HH:mm')} に確認済み
-              </span>
-            )}
-          </div>
-        </CardBody>
-      </Card>
-    );
-  };
+  // Print current page
+  const handlePrint = useCallback(() => {
+    window.print();
+  }, []);
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">かけはし（保護者閲覧）</h1>
+      {/* Header with navigation tabs */}
+      <div>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">保護者入力かけはし確認</h1>
+        <p className="mt-1 text-sm text-[var(--neutral-foreground-3)]">保護者が入力したかけはしを確認</p>
+      </div>
 
-      {/* Student filter */}
+      {/* Navigation tabs */}
+      <div className="flex flex-wrap gap-2">
+        <Link href="/staff/kakehashi-guardian">
+          <Button variant="primary" size="sm" leftIcon={<Eye className="h-4 w-4" />}>
+            保護者入力かけはし確認
+          </Button>
+        </Link>
+        <Link href="/staff/kakehashi-staff">
+          <Button variant="outline" size="sm" leftIcon={<Pencil className="h-4 w-4" />}>
+            スタッフ入力
+          </Button>
+        </Link>
+      </div>
+
+      {/* Student selector */}
       <Card>
         <CardBody>
-          <label className="mb-2 block text-sm font-medium text-[var(--neutral-foreground-2)]">生徒で絞り込み</label>
-          <select
-            className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
-            value={selectedStudentId ?? ''}
-            onChange={(e) => setSelectedStudentId(e.target.value ? Number(e.target.value) : null)}
-          >
-            <option value="">すべての生徒</option>
-            {students.map((s) => (
-              <option key={s.id} value={s.id}>{s.student_name}</option>
-            ))}
-          </select>
+          <label className="mb-2 block text-sm font-medium text-[var(--neutral-foreground-2)]">
+            生徒を選択 <span className="text-[var(--status-danger-fg)]">*</span>
+          </label>
+          {loadingStudents ? (
+            <Skeleton className="h-10 w-full rounded-lg" />
+          ) : (
+            <select
+              className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
+              value={selectedStudentId ?? ''}
+              onChange={(e) => {
+                const id = e.target.value ? Number(e.target.value) : null;
+                setSelectedStudentId(id);
+                setSelectedPeriodId(null);
+              }}
+            >
+              <option value="">-- 生徒を選択してください --</option>
+              {students.map((s) => (
+                <option key={s.id} value={s.id}>{s.student_name}</option>
+              ))}
+            </select>
+          )}
         </CardBody>
       </Card>
 
-      {loadingEntries ? (
-        <SkeletonList items={3} />
-      ) : (
-        <Tabs
-          items={[
-            {
-              key: 'unconfirmed',
-              label: '未確認',
-              badge: unconfirmed.length,
-              content: unconfirmed.length === 0 ? (
-                <p className="py-8 text-center text-sm text-[var(--neutral-foreground-3)]">未確認のかけはしはありません</p>
-              ) : (
-                <div className="space-y-4">{unconfirmed.map(renderEntry)}</div>
-              ),
-            },
-            {
-              key: 'confirmed',
-              label: '確認済み',
-              badge: confirmed.length,
-              content: confirmed.length === 0 ? (
-                <p className="py-8 text-center text-sm text-[var(--neutral-foreground-3)]">確認済みのかけはしはありません</p>
-              ) : (
-                <div className="space-y-4">{confirmed.map(renderEntry)}</div>
-              ),
-            },
-          ]}
-        />
+      {/* Period selector & filter */}
+      {selectedStudentId && (
+        <Card>
+          <CardBody>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-[var(--neutral-foreground-2)]">
+                かけはし提出期限を選択 <span className="text-[var(--status-danger-fg)]">*</span>
+              </label>
+              <label className="flex items-center gap-1.5 text-xs text-[var(--neutral-foreground-3)] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showHidden}
+                  onChange={(e) => setShowHidden(e.target.checked)}
+                  className="rounded border-[var(--neutral-stroke-2)]"
+                />
+                非表示を含む
+              </label>
+            </div>
+            {loadingPeriods ? (
+              <Skeleton className="h-10 w-full rounded-lg" />
+            ) : periodsWithGuardian.length === 0 ? (
+              <p className="text-sm text-[var(--neutral-foreground-3)]">保護者が入力したかけはしはありません。</p>
+            ) : (
+              <select
+                className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
+                value={selectedPeriodId ?? ''}
+                onChange={(e) => setSelectedPeriodId(e.target.value ? Number(e.target.value) : null)}
+              >
+                <option value="">-- 期間を選択してください --</option>
+                {periodsWithGuardian.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    提出期限: {format(new Date(p.submission_deadline), 'yyyy年M月d日')} (対象期間: {format(new Date(p.start_date), 'yyyy/MM/dd')} ～ {format(new Date(p.end_date), 'yyyy/MM/dd')})
+                  </option>
+                ))}
+              </select>
+            )}
+          </CardBody>
+        </Card>
       )}
+
+      {/* Guardian entry display */}
+      {selectedPeriod && guardianEntry && (
+        <Card>
+          <CardBody>
+            {/* Meta info */}
+            <div className="mb-4 rounded-lg bg-[var(--neutral-background-3)] p-4 space-y-2 text-sm">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-[var(--neutral-foreground-3)]" />
+                <span className="font-medium">生徒:</span> {selectedStudent?.student_name}
+              </div>
+              {guardianEntry.guardian && (
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-[var(--neutral-foreground-3)]" />
+                  <span className="font-medium">保護者:</span> {guardianEntry.guardian.full_name}
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-[var(--neutral-foreground-3)]" />
+                <span className="font-medium">対象期間:</span>
+                {format(new Date(selectedPeriod.start_date), 'yyyy年MM月dd日')} ～ {format(new Date(selectedPeriod.end_date), 'yyyy年MM月dd日')}
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-[var(--neutral-foreground-3)]" />
+                <span className="font-medium">提出期限:</span>
+                {format(new Date(selectedPeriod.submission_deadline), 'yyyy年MM月dd日')}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-medium">状態:</span>
+                {guardianEntry.is_submitted ? (
+                  <Badge variant="success">
+                    提出済み
+                    {guardianEntry.submitted_at && ` （提出日時: ${format(new Date(guardianEntry.submitted_at), 'yyyy年MM月dd日 HH:mm')}）`}
+                  </Badge>
+                ) : (
+                  <Badge variant="warning">下書き</Badge>
+                )}
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="mb-6 flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={<Download className="h-4 w-4" />}
+                onClick={() => handlePdfDownload(selectedPeriod.id, selectedPeriod.period_name)}
+              >
+                PDF印刷
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={<Printer className="h-4 w-4" />}
+                onClick={handlePrint}
+              >
+                このページを印刷
+              </Button>
+            </div>
+
+            {/* Section: 本人の願い */}
+            <Section
+              icon={<Heart className="h-4 w-4" />}
+              title="本人の願い"
+              subtitle="お子様が望んでいること、なりたい姿"
+              color="var(--status-danger-fg)"
+            >
+              <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">
+                {nl(guardianEntry.student_wish || guardianEntry.home_situation) || '（未入力）'}
+              </p>
+            </Section>
+
+            {/* Section: 家庭での願い */}
+            <Section
+              icon={<Home className="h-4 w-4" />}
+              title="家庭での願い"
+              subtitle="家庭で気になっていること、取り組みたいこと"
+              color="var(--status-warning-fg)"
+            >
+              <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">
+                {nl(guardianEntry.home_challenges || guardianEntry.concerns) || '（未入力）'}
+              </p>
+            </Section>
+
+            {/* Section: 目標設定 */}
+            <Section
+              icon={<Target className="h-4 w-4" />}
+              title="目標設定"
+              subtitle=""
+              color="var(--brand-80)"
+            >
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs font-semibold text-[var(--neutral-foreground-3)] mb-1">短期目標（6か月）</p>
+                  <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">
+                    {nl(guardianEntry.short_term_goal || guardianEntry.concerns) || '（未入力）'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-[var(--neutral-foreground-3)] mb-1">長期目標（1年以上）</p>
+                  <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">
+                    {nl(guardianEntry.long_term_goal || guardianEntry.requests) || '（未入力）'}
+                  </p>
+                </div>
+              </div>
+            </Section>
+
+            {/* Section: 五領域の課題 */}
+            <Section
+              icon={<Star className="h-4 w-4" />}
+              title="五領域の課題"
+              subtitle=""
+              color="var(--status-info-fg)"
+            >
+              <div className="space-y-3">
+                <DomainItem label="健康・生活" value={guardianEntry.domain_health_life} />
+                <DomainItem label="運動・感覚" value={guardianEntry.domain_motor_sensory} />
+                <DomainItem label="認知・行動" value={guardianEntry.domain_cognitive_behavior} />
+                <DomainItem label="言語・コミュニケーション" value={guardianEntry.domain_language_communication} />
+                <DomainItem label="人間関係・社会性" value={guardianEntry.domain_social_relations} />
+              </div>
+            </Section>
+
+            {/* Section: その他の課題 */}
+            {(guardianEntry.other_challenges) && (
+              <Section
+                icon={<Pin className="h-4 w-4" />}
+                title="その他の課題"
+                subtitle="その他、お伝えしたいこと"
+                color="var(--neutral-foreground-3)"
+              >
+                <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">
+                  {nl(guardianEntry.other_challenges) || '（未入力）'}
+                </p>
+              </Section>
+            )}
+
+            {/* Hidden toggle */}
+            <div className="mt-6 border-t border-[var(--neutral-stroke-2)] pt-4">
+              <button
+                className="flex items-center gap-2 text-xs text-[var(--neutral-foreground-3)] hover:text-[var(--neutral-foreground-2)] transition-colors"
+                onClick={async () => {
+                  // Toggle hidden status (would need API endpoint)
+                  toast.info(guardianEntry.is_hidden ? 'この機能はAPIの実装が必要です' : 'この機能はAPIの実装が必要です');
+                }}
+              >
+                {guardianEntry.is_hidden ? (
+                  <><Eye className="h-4 w-4" /> この保護者用かけはしを表示</>
+                ) : (
+                  <><EyeOff className="h-4 w-4" /> この保護者用かけはしを非表示</>
+                )}
+              </button>
+            </div>
+          </CardBody>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Section component (matching old system's section style)
+// ---------------------------------------------------------------------------
+
+function Section({
+  icon,
+  title,
+  subtitle,
+  color,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  color: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mb-5">
+      <div className="flex items-center gap-2 mb-2">
+        <span style={{ color }}>{icon}</span>
+        <h3 className="text-sm font-bold text-[var(--neutral-foreground-1)]">{title}</h3>
+      </div>
+      {subtitle && (
+        <p className="text-xs text-[var(--neutral-foreground-3)] mb-2 ml-6">{subtitle}</p>
+      )}
+      <div className="ml-6 rounded-lg border border-[var(--neutral-stroke-2)] p-3 bg-[var(--neutral-background-1)]">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Domain Item
+// ---------------------------------------------------------------------------
+
+function DomainItem({ label, value }: { label: string; value: string | null }) {
+  return (
+    <div>
+      <p className="text-xs font-semibold text-[var(--neutral-foreground-3)]">{label}</p>
+      <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap mt-0.5">
+        {nl(value) || '（未入力）'}
+      </p>
     </div>
   );
 }
