@@ -21,11 +21,17 @@ return Application::configure(basePath: dirname(__DIR__))
         channels: __DIR__ . '/../routes/channels.php',
         health: '/up',
         then: function () {
-            // Broadcasting auth route
+            // Broadcasting auth route (returns 401 JSON instead of redirect to login)
             Illuminate\Support\Facades\Route::prefix('api')
-                ->middleware(['api', 'auth:sanctum'])
+                ->middleware(['api'])
                 ->group(function () {
-                    Illuminate\Support\Facades\Broadcast::routes();
+                    Illuminate\Support\Facades\Route::post('/broadcasting/auth', function (Illuminate\Http\Request $request) {
+                        $user = $request->user('sanctum');
+                        if (!$user) {
+                            return response()->json(['message' => 'Unauthenticated.'], 401);
+                        }
+                        return Illuminate\Support\Facades\Broadcast::auth($request);
+                    });
                 });
         },
     )
