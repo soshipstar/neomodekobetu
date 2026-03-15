@@ -51,6 +51,7 @@ import {
   Cog,
   BookOpenCheck,
   GraduationCap,
+  Users,
 } from 'lucide-react';
 import type { UserType } from '@/types/user';
 import type { LucideIcon } from 'lucide-react';
@@ -78,6 +79,7 @@ const staffNav: NavItem[] = [
   { type: 'divider', label: 'チャット' },
   { type: 'link', label: '保護者チャット', href: '/staff/chat', icon: MessageCircle },
   { type: 'link', label: '生徒チャット', href: '/staff/student-chats', icon: MessageSquare },
+  { type: 'link', label: 'スタッフ間チャット', href: '/staff/staff-chat', icon: Users },
   { type: 'divider', label: 'かけはし' },
   { type: 'link', label: 'かけはし（職員）', href: '/staff/kakehashi-staff', icon: Handshake },
   { type: 'link', label: 'かけはし（保護者）', href: '/staff/kakehashi-guardian', icon: BookOpen },
