@@ -138,15 +138,16 @@ export default function KobetsuPlanPage() {
   const { data: plans = [], isLoading: loadingPlans } = useQuery({
     queryKey: ['staff', 'support-plans', 'individual', selectedStudentId],
     queryFn: async () => {
-      const res = await api.get<{ data: SupportPlanSummary[] }>(`/api/staff/support-plans/individual?student_id=${selectedStudentId}`);
-      return res.data.data;
+      const res = await api.get<{ data: SupportPlanSummary[] }>(`/api/staff/students/${selectedStudentId}/support-plans`);
+      const payload = res.data?.data;
+      return Array.isArray(payload) ? payload : [];
     },
     enabled: !!selectedStudentId,
   });
 
   // Create mutation
   const createMutation = useMutation({
-    mutationFn: (data: PlanForm) => api.post('/api/staff/support-plans/individual', data),
+    mutationFn: (data: PlanForm) => api.post(`/api/staff/students/${selectedStudentId}/support-plans`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'support-plans', 'individual'] });
       toast.success('個別支援計画を作成しました');
@@ -159,7 +160,7 @@ export default function KobetsuPlanPage() {
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: ({ id, ...data }: PlanForm & { id: number }) =>
-      api.put(`/api/staff/support-plans/individual/${id}`, data),
+      api.put(`/api/staff/support-plans/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'support-plans', 'individual'] });
       toast.success('個別支援計画を更新しました');
@@ -172,7 +173,7 @@ export default function KobetsuPlanPage() {
 
   // Delete mutation
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => api.delete(`/api/staff/support-plans/individual/${id}`),
+    mutationFn: (id: number) => api.delete(`/api/staff/support-plans/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'support-plans', 'individual'] });
       toast.success('個別支援計画を削除しました');
@@ -228,7 +229,7 @@ export default function KobetsuPlanPage() {
     }
     setGenerating(true);
     try {
-      const res = await api.post<{ data: { details: PlanDetail[] } }>('/api/staff/support-plans/individual/generate', {
+      const res = await api.post<{ data: { details: PlanDetail[] } }>('/api/staff/support-plans/generate', {
         student_id: form.student_id,
       });
       setForm((prev) => ({ ...prev, details: res.data.data.details }));
@@ -243,7 +244,7 @@ export default function KobetsuPlanPage() {
   // PDF download
   const handlePdfDownload = async (planId: number) => {
     try {
-      const res = await api.get(`/api/staff/support-plans/individual/${planId}/pdf`, { responseType: 'blob' });
+      const res = await api.get(`/api/staff/support-plans/${planId}/pdf`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -264,7 +265,7 @@ export default function KobetsuPlanPage() {
   const openEditModal = async (plan: SupportPlanSummary) => {
     try {
       const res = await api.get<{ data: { plan: SupportPlanSummary; details: PlanDetail[] } }>(
-        `/api/staff/support-plans/individual/${plan.id}`
+        `/api/staff/support-plans/${plan.id}`
       );
       const { plan: planData, details } = res.data.data;
       setEditingPlan(plan);
