@@ -10,6 +10,10 @@ RUN apt-get update && apt-get install -y \
     && pecl install redis && docker-php-ext-enable redis \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Japanese fonts for DomPDF
+RUN apt-get update && apt-get install -y fonts-ipafont-gothic \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
