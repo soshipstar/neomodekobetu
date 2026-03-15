@@ -1,0 +1,102 @@
+'use client';
+
+import { useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useChat } from '@/hooks/useChat';
+import { useAuthStore } from '@/stores/authStore';
+import { ChatMessageList } from '@/components/chat/ChatMessageList';
+import { ChatInput } from '@/components/chat/ChatInput';
+import { SkeletonList } from '@/components/ui/Skeleton';
+import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
+
+export default function StaffChatRoomPage() {
+  const params = useParams();
+  const router = useRouter();
+  const roomId = Number(params.roomId);
+  const { user } = useAuthStore();
+
+  const {
+    activeRoom,
+    messages,
+    isLoadingMessages,
+    isSending,
+    fetchRooms,
+    setActiveRoom,
+    fetchMessages,
+    sendMessage,
+    markAsRead,
+    rooms,
+  } = useChat(roomId);
+
+  useEffect(() => {
+    if (rooms.length === 0) {
+      fetchRooms();
+    }
+  }, [rooms.length, fetchRooms]);
+
+  useEffect(() => {
+    if (roomId && rooms.length > 0) {
+      const room = rooms.find((r) => r.id === roomId);
+      if (room) {
+        setActiveRoom(room);
+        fetchMessages(roomId);
+        markAsRead(roomId);
+      }
+    }
+  }, [roomId, rooms, setActiveRoom, fetchMessages, markAsRead]);
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      setActiveRoom(null);
+    };
+  }, [setActiveRoom]);
+
+  const handleSend = async (message: string, attachment?: File) => {
+    await sendMessage(message, attachment);
+  };
+
+  return (
+    <div className="flex h-[calc(100vh-8rem)] flex-col lg:h-[calc(100vh-5rem)]">
+      {/* Chat header */}
+      <div className="flex items-center gap-3 border-b border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-4 py-3">
+        <Link
+          href="/staff/chat"
+          className="rounded-lg p-1 text-[var(--neutral-foreground-4)] hover:text-[var(--neutral-foreground-2)] lg:hidden"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
+        <div className="flex-1">
+          <h2 className="text-sm font-semibold text-[var(--neutral-foreground-1)]">
+            {activeRoom?.student?.student_name || 'チャット'}
+          </h2>
+          <p className="text-xs text-[var(--neutral-foreground-3)]">
+            {activeRoom?.guardian?.full_name && `保護者: ${activeRoom.guardian.full_name}`}
+          </p>
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto bg-[var(--neutral-background-2)]">
+        {isLoadingMessages ? (
+          <div className="p-4">
+            <SkeletonList items={5} />
+          </div>
+        ) : (
+          <ChatMessageList
+            messages={messages}
+            currentUserId={user?.id || 0}
+          />
+        )}
+      </div>
+
+      {/* Input */}
+      <ChatInput
+        onSend={handleSend}
+        isSending={isSending}
+        disabled={!activeRoom}
+      />
+    </div>
+  );
+}

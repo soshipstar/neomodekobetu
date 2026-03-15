@@ -1,0 +1,233 @@
+<?php
+
+namespace App\Http\Controllers\Auth;
+
+use App\Http\Controllers\Controller;
+use App\Models\Student;
+use App\Models\User;
+use App\Models\LoginAttempt;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+
+class AuthController extends Controller
+{
+    /**
+     * ログイン処理
+     * 認証情報を検証し、Sanctumトークンとユーザーデータを返す
+     * usersテーブルで認証失敗した場合、studentsテーブルにフォールバック
+     */
+    public function login(Request $request): JsonResponse
+    {
+        $request->validate([
+            'username' => 'required|string',
+            'password' => 'required|string',
+        ]);
+
+        $user = User::where('username', $request->username)->first();
+
+        if ($user && Hash::check($request->password, $user->password)) {
+            // usersテーブルで認証成功
+            return $this->handleUserLogin($request, $user);
+        }
+
+        // usersテーブルで認証失敗 -> studentsテーブルにフォールバック
+        $student = Student::where('username', $request->username)->first();
+
+        if ($student && $student->password_hash && Hash::check($request->password, $student->password_hash)) {
+            // studentsテーブルで認証成功
+            return $this->handleStudentLogin($request, $student);
+        }
+
+        // 両方で認証失敗
+        LoginAttempt::create([
+            'username'   => $request->username,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'success'    => false,
+        ]);
+
+        throw ValidationException::withMessages([
+            'username' => ['ユーザー名またはパスワードが正しくありません。'],
+        ]);
+    }
+
+    /**
+     * usersテーブルのユーザーログイン処理
+     */
+    private function handleUserLogin(Request $request, User $user): JsonResponse
+    {
+        if (! $user->is_active) {
+            throw ValidationException::withMessages([
+                'username' => ['このアカウントは無効になっています。管理者にお問い合わせください。'],
+            ]);
+        }
+
+        // ログイン試行を記録
+        LoginAttempt::create([
+            'username'   => $request->username,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'success'    => true,
+            'user_id'    => $user->id,
+        ]);
+
+        // 最終ログイン日時を更新
+        $user->update(['last_login_at' => now()]);
+
+        // 既存トークンを削除して新規発行
+        $user->tokens()->delete();
+        $token = $user->createToken('kiduri-api', [$user->user_type])->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'token' => $token,
+                'user'  => $user->load('classroom'),
+            ],
+        ]);
+    }
+
+    /**
+     * studentsテーブルの生徒ログイン処理
+     * 生徒はstudentsテーブルのusername/password_hashで認証する
+     */
+    private function handleStudentLogin(Request $request, Student $student): JsonResponse
+    {
+        // 退所済み・非アクティブチェック
+        if ($student->status === 'withdrawn' || ($student->is_active === false)) {
+            throw ValidationException::withMessages([
+                'username' => ['このアカウントは無効になっています。管理者にお問い合わせください。'],
+            ]);
+        }
+
+        // ログイン試行を記録
+        LoginAttempt::create([
+            'username'   => $request->username,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'success'    => true,
+        ]);
+
+        // 最終ログイン日時を更新
+        $student->update(['last_login_at' => now()]);
+
+        // 生徒用のレスポンスを返す
+        // 生徒はSanctumトークンを持たないため、簡易的なトークンを生成
+        // 保護者ユーザーが紐付いている場合はそのユーザーのトークンを使用
+        $guardianUser = $student->guardian;
+
+        if ($guardianUser) {
+            // 保護者ユーザーのトークンを発行（student権限付き）
+            $guardianUser->tokens()->delete();
+            $token = $guardianUser->createToken('kiduri-api', ['student'])->plainTextToken;
+
+            return response()->json([
+                'success' => true,
+                'data'    => [
+                    'token' => $token,
+                    'user'  => $guardianUser->load('classroom'),
+                    'student' => $student->load('classroom'),
+                    'login_type' => 'student',
+                ],
+            ]);
+        }
+
+        // 保護者ユーザーが紐付いていない場合
+        // studentsテーブル単独での認証（レガシー互換）
+        // 一時的なトークンIDを生成して返す
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'token' => null,
+                'student' => $student->load('classroom'),
+                'login_type' => 'student_only',
+            ],
+        ]);
+    }
+
+    /**
+     * ログアウト処理
+     * 現在のトークンを無効化する
+     */
+    public function logout(Request $request): JsonResponse
+    {
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'ログアウトしました。',
+        ]);
+    }
+
+    /**
+     * トークンリフレッシュ
+     * 現在のトークンを無効化し新しいトークンを発行する
+     */
+    public function refresh(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $user->currentAccessToken()->delete();
+
+        $token = $user->createToken('kiduri-api', [$user->user_type])->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'token' => $token,
+            ],
+        ]);
+    }
+
+    /**
+     * 認証済みユーザー情報を返す
+     */
+    public function me(Request $request): JsonResponse
+    {
+        $user = $request->user()->load(['classroom', 'students']);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $user,
+        ]);
+    }
+
+    /**
+     * パスワードリセット
+     * メールアドレスに紐づくユーザーのパスワードをリセットする
+     */
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email'    => 'required|email',
+            'token'    => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function (User $user, string $password) {
+                $user->forceFill([
+                    'password'       => Hash::make($password),
+                    'remember_token' => Str::random(60),
+                ])->save();
+            }
+        );
+
+        if ($status === Password::PASSWORD_RESET) {
+            return response()->json([
+                'success' => true,
+                'message' => 'パスワードをリセットしました。',
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'パスワードリセットに失敗しました。トークンが無効または期限切れです。',
+        ], 422);
+    }
+}

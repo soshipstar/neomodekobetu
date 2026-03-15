@@ -1,0 +1,102 @@
+{
+  "name": "KIDURI - 個別支援連絡帳",
+  "short_name": "KIDURI",
+  "description": "放課後等デイサービス向け 個別支援連絡帳システム",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "/assets/icons/icon-72x72.svg",
+      "sizes": "72x72",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-96x96.svg",
+      "sizes": "96x96",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-128x128.svg",
+      "sizes": "128x128",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-144x144.svg",
+      "sizes": "144x144",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-152x152.svg",
+      "sizes": "152x152",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-192x192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-384x384.svg",
+      "sizes": "384x384",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-512x512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "チャット",
+      "short_name": "チャット",
+      "description": "チャットを開く",
+      "url": "/guardian/chat",
+      "icons": [{ "src": "/assets/icons/icon-96x96.svg", "sizes": "96x96" }]
+    },
+    {
+      "name": "連絡帳",
+      "short_name": "連絡帳",
+      "description": "連絡帳を確認する",
+      "url": "/guardian/dashboard",
+      "icons": [{ "src": "/assets/icons/icon-96x96.svg", "sizes": "96x96" }]
+    },
+    {
+      "name": "かけはし",
+      "short_name": "かけはし",
+      "description": "かけはしを開く",
+      "url": "/guardian/kakehashi",
+      "icons": [{ "src": "/assets/icons/icon-96x96.svg", "sizes": "96x96" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/assets/icons/icon-512x512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "form_factor": "narrow",
+      "label": "KIDURI ホーム画面"
+    },
+    {
+      "src": "/assets/icons/icon-512x512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "form_factor": "wide",
+      "label": "KIDURI ダッシュボード"
+    }
+  ],
+  "categories": ["education", "productivity"]
+}

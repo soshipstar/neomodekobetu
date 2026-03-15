@@ -1,0 +1,74 @@
+'use client';
+
+import { useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import { useChat } from '@/hooks/useChat';
+import { useAuthStore } from '@/stores/authStore';
+import { ChatMessageList } from '@/components/chat/ChatMessageList';
+import { ChatInput } from '@/components/chat/ChatInput';
+import { SkeletonList } from '@/components/ui/Skeleton';
+import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
+
+export default function GuardianChatRoomPage() {
+  const params = useParams();
+  const roomId = Number(params.roomId);
+  const { user } = useAuthStore();
+
+  const {
+    activeRoom,
+    messages,
+    isLoadingMessages,
+    isSending,
+    fetchRooms,
+    setActiveRoom,
+    fetchMessages,
+    sendMessage,
+    markAsRead,
+    rooms,
+  } = useChat(roomId);
+
+  useEffect(() => {
+    if (rooms.length === 0) fetchRooms();
+  }, [rooms.length, fetchRooms]);
+
+  useEffect(() => {
+    if (roomId && rooms.length > 0) {
+      const room = rooms.find((r) => r.id === roomId);
+      if (room) {
+        setActiveRoom(room);
+        fetchMessages(roomId);
+        markAsRead(roomId);
+      }
+    }
+  }, [roomId, rooms, setActiveRoom, fetchMessages, markAsRead]);
+
+  useEffect(() => {
+    return () => { setActiveRoom(null); };
+  }, [setActiveRoom]);
+
+  return (
+    <div className="flex h-[calc(100vh-8rem)] flex-col lg:h-[calc(100vh-5rem)]">
+      <div className="flex items-center gap-3 border-b border-gray-200 bg-white px-4 py-3">
+        <Link href="/guardian/chat" className="rounded-lg p-1 text-gray-400 hover:text-gray-600 lg:hidden">
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
+        <div className="flex-1">
+          <h2 className="text-sm font-semibold text-gray-900">
+            {activeRoom?.student?.student_name || 'チャット'}
+          </h2>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto bg-gray-50">
+        {isLoadingMessages ? (
+          <div className="p-4"><SkeletonList items={5} /></div>
+        ) : (
+          <ChatMessageList messages={messages} currentUserId={user?.id || 0} />
+        )}
+      </div>
+
+      <ChatInput onSend={sendMessage} isSending={isSending} disabled={!activeRoom} />
+    </div>
+  );
+}

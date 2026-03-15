@@ -1,68 +1,13 @@
 # ============================================
-# 機密情報（絶対にコミットしない）
+# 環境変数・機密情報
 # ============================================
 .env
 .env.local
 .env.production
 .env.*.local
-config/secrets.php
 
 # ============================================
-# データベース関連（スキーマ漏洩防止）
-# ============================================
-database.sql
-*.sql.backup
-db_dump_*.sql
-
-# ============================================
-# 管理・デバッグスクリプト（本番不要）
-# ============================================
-setup_accounts.php
-generate_password.php
-debug_*.php
-investigate_*.php
-emergency_logout.php
-show_all_foreign_keys.php
-force_drop_constraint.php
-test_*.php
-check_*.php
-fix_*.php
-run_migration_*.php
-migrate_*.php
-cleanup_*.php
-delete_*.php
-update_*.php
-move_*.php
-create_*.php
-
-# admin内の管理スクリプト
-admin/migrate_*.php
-admin/fix_*.php
-admin/check_*.php
-admin/cleanup_*.php
-admin/sync_*.php
-admin/run_*.php
-
-# ============================================
-# 開発用Pythonスクリプト
-# ============================================
-*.py
-
-# ============================================
-# アップロードファイル
-# ============================================
-uploads/*
-!uploads/.gitkeep
-!uploads/.htaccess
-
-# ============================================
-# Docker
-# ============================================
-docker/mysql/data/
-mysql_data/
-
-# ============================================
-# エディタ・IDE関連
+# IDE・エディタ
 # ============================================
 .vscode/
 .idea/
@@ -72,25 +17,67 @@ mysql_data/
 .claude/
 
 # ============================================
-# OS関連
+# OS
 # ============================================
 .DS_Store
 Thumbs.db
 desktop.ini
 
 # ============================================
-# 一時・キャッシュファイル
+# 一時ファイル
 # ============================================
 *.tmp
 *.log
 *.cache
 *.bak
-*.backup
 
 # ============================================
-# ドキュメント（開発用）
+# Backend (Laravel)
 # ============================================
-*_REPORT.md
-CLEANUP_*.md
-SETUP_*.md
-OPENAI_*.md
+backend/vendor/
+backend/node_modules/
+backend/.env
+backend/storage/*.key
+backend/storage/framework/cache/data/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/bootstrap/cache/*
+backend/public/hot
+backend/public/storage
+
+# ============================================
+# Frontend (Next.js)
+# ============================================
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env.local
+
+# ============================================
+# Analytics (Python)
+# ============================================
+analytics/__pycache__/
+analytics/.venv/
+analytics/*.pyc
+
+# ============================================
+# Docker
+# ============================================
+docker/postgres/data/
+docker/redis/data/
+
+# ============================================
+# Uploads
+# ============================================
+uploads/*
+!uploads/.gitkeep
+
+# ============================================
+# Legacy (excluded from deploy)
+# ============================================
+_legacy_php/
+_kobetudb.sql
+migrate_mysql_to_pg.py
+migrate_support_plans.py
+migration_output.sql
+post_migration_fixes.sql

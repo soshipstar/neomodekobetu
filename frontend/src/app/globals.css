@@ -1,0 +1,188 @@
+@import "tailwindcss";
+
+/* =========================================================================
+   Fluent 2 Design System Tokens
+   ========================================================================= */
+
+:root {
+  /* Fluent 2 Brand colors (Blue ramp) */
+  --brand-10: #061724;
+  --brand-20: #082338;
+  --brand-30: #0a2e4a;
+  --brand-40: #0c3b5e;
+  --brand-50: #0e4775;
+  --brand-60: #0f548c;
+  --brand-70: #115ea3;
+  --brand-80: #0f6cbd;
+  --brand-90: #2886de;
+  --brand-100: #479ef5;
+  --brand-110: #62abf5;
+  --brand-120: #77b7f7;
+  --brand-130: #96c6fa;
+  --brand-140: #b4d6fa;
+  --brand-150: #cfe4fa;
+  --brand-160: #ebf3fc;
+
+  /* Fluent 2 Neutral colors */
+  --neutral-foreground-1: #242424;
+  --neutral-foreground-2: #424242;
+  --neutral-foreground-3: #616161;
+  --neutral-foreground-4: #707070;
+  --neutral-foreground-disabled: #bdbdbd;
+  --neutral-background-1: #ffffff;
+  --neutral-background-2: #fafafa;
+  --neutral-background-3: #f5f5f5;
+  --neutral-background-4: #f0f0f0;
+  --neutral-background-5: #e0e0e0;
+  --neutral-stroke-1: #d1d1d1;
+  --neutral-stroke-2: #e0e0e0;
+  --neutral-stroke-3: #f0f0f0;
+
+  /* Fluent 2 Semantic colors */
+  --status-success-bg: #dff6dd;
+  --status-success-fg: #0e700e;
+  --status-warning-bg: #fff1d6;
+  --status-warning-fg: #835b00;
+  --status-danger-bg: #fde7e9;
+  --status-danger-fg: #b10e1c;
+  --status-info-bg: #ebf3fc;
+  --status-info-fg: #0f548c;
+
+  /* Fluent 2 Shadows */
+  --shadow-2: 0px 1px 2px rgba(0, 0, 0, 0.14), 0px 0px 2px rgba(0, 0, 0, 0.12);
+  --shadow-4: 0px 2px 4px rgba(0, 0, 0, 0.14), 0px 0px 2px rgba(0, 0, 0, 0.12);
+  --shadow-8: 0px 4px 8px rgba(0, 0, 0, 0.14), 0px 0px 2px rgba(0, 0, 0, 0.12);
+  --shadow-16: 0px 8px 16px rgba(0, 0, 0, 0.14), 0px 0px 2px rgba(0, 0, 0, 0.12);
+  --shadow-28: 0px 14px 28px rgba(0, 0, 0, 0.14), 0px 0px 8px rgba(0, 0, 0, 0.12);
+  --shadow-64: 0px 32px 64px rgba(0, 0, 0, 0.24), 0px 0px 8px rgba(0, 0, 0, 0.12);
+
+  /* Fluent 2 Radii */
+  --radius-none: 0px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+  --radius-circular: 9999px;
+
+  /* Fluent 2 Spacing */
+  --spacing-xxs: 2px;
+  --spacing-xs: 4px;
+  --spacing-s: 6px;
+  --spacing-m: 8px;
+  --spacing-l: 12px;
+  --spacing-xl: 16px;
+  --spacing-xxl: 20px;
+  --spacing-xxxl: 24px;
+
+  /* Mapped theme tokens */
+  --background: var(--neutral-background-2);
+  --foreground: var(--neutral-foreground-1);
+  --primary: var(--brand-80);
+  --primary-light: var(--brand-160);
+  --primary-dark: var(--brand-70);
+  --accent: #f59e0b;
+  --success: var(--status-success-fg);
+  --warning: var(--status-warning-fg);
+  --danger: var(--status-danger-fg);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-light: var(--primary-light);
+  --color-primary-dark: var(--primary-dark);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-noto-sans-jp), "Segoe UI Variable", "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  min-height: 100dvh;
+  font-size: 14px;
+}
+
+/* Fluent 2 scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--neutral-stroke-1);
+  border-radius: var(--radius-circular);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--neutral-foreground-3);
+}
+
+/* Fluent 2 focus visible */
+:focus-visible {
+  outline: 2px solid var(--brand-80);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}
+
+/* Japanese typography improvements */
+p, li, td, th, label {
+  word-break: break-all;
+  overflow-wrap: break-word;
+}
+
+/* Mobile safe area */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+}
+
+/* Fluent 2 animation curves */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chat-bubble-enter {
+  animation: slideIn 0.25s cubic-bezier(0.33, 0, 0.67, 1);
+}
+
+/* Fluent 2 card hover elevation transition */
+.fluent-card {
+  transition: box-shadow 0.15s cubic-bezier(0.33, 0, 0.67, 1);
+}
+.fluent-card:hover {
+  box-shadow: var(--shadow-8);
+}
