@@ -535,7 +535,7 @@ function SupportPlanFormModal({
   };
 
   // Schedule helpers
-  const usedTime = scheduleItems.reduce((s, item) => s + item.duration, 0);
+  const usedTime = scheduleItems.reduce((s, item) => s + (Number(item.duration) || 0), 0);
   const remainingTime = form.total_duration - usedTime;
 
   const addRoutine = (routine: DailyRoutine) => {
@@ -546,7 +546,7 @@ function SupportPlanFormModal({
         routineId: routine.id,
         name: routine.routine_name,
         content: routine.routine_content || '',
-        duration: routine.scheduled_time || 15,
+        duration: Number(routine.scheduled_time) || 15,
       },
     ]);
   };

@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\IndividualSupportPlan;
 use App\Models\Student;
 use App\Models\SupportPlanDetail;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use OpenAI\Laravel\Facades\OpenAI;
 
@@ -285,19 +287,26 @@ class SupportPlanController extends Controller
     /**
      * PDF を生成して返す
      */
-    public function pdf(Request $request, IndividualSupportPlan $plan): JsonResponse
+    public function pdf(Request $request, IndividualSupportPlan $plan)
     {
         $this->authorizeClassroom($request->user(), $plan->student);
 
         $plan->load(['student.classroom', 'details', 'creator']);
 
-        // PDF生成はDompdf等のパッケージに委譲
-        // ここではデータを返し、フロントエンド側でPDF生成する方式も可
-        return response()->json([
-            'success' => true,
-            'data'    => $plan,
-            'message' => 'PDF生成用のデータを返しました。',
-        ]);
+        $pdf = Pdf::loadView('pdf.support-plan', [
+            'plan'      => $plan,
+            'student'   => $plan->student,
+            'classroom' => $plan->student->classroom ?? null,
+            'details'   => $plan->details->sortBy('sort_order'),
+        ])
+            ->setPaper('a4', 'portrait')
+            ->setOption('isRemoteEnabled', true)
+            ->setOption('isFontSubsettingEnabled', true)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        $filename = 'support_plan_' . ($plan->student->student_name ?? $plan->id) . '.pdf';
+
+        return $pdf->download($filename);
     }
 
     /**
