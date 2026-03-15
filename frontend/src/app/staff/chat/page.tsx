@@ -357,7 +357,17 @@ function RoomItem({
           <p className="text-[10px] text-[var(--neutral-foreground-4)] truncate">
             {typeof room.last_message === 'string'
               ? truncate(room.last_message, 25)
-              : truncate(room.last_message.message || '', 25)}
+              : (() => {
+                  const msg = room.last_message;
+                  const prefix = msg.message_type === 'absence_notification' ? '【欠席】'
+                    : msg.message_type === 'meeting_request' ? '【面談】'
+                    : msg.message_type === 'meeting_counter' ? '【面談】'
+                    : msg.message_type === 'meeting_confirmed' ? '【面談確定】'
+                    : msg.message_type === 'broadcast' ? '【一斉】'
+                    : msg.message_type === 'event_registration' ? '【イベント】'
+                    : '';
+                  return truncate(prefix + (msg.message || ''), 25);
+                })()}
           </p>
         )}
       </div>

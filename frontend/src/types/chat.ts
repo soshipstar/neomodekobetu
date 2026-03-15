@@ -1,7 +1,7 @@
 import type { User, Student } from './user';
 
 export type SenderType = 'guardian' | 'staff' | 'admin';
-export type MessageType = 'normal' | 'absence_notification' | 'event_registration';
+export type MessageType = 'normal' | 'absence_notification' | 'event_registration' | 'meeting_request' | 'meeting_counter' | 'meeting_confirmed' | 'broadcast';
 
 export interface ChatRoom {
   id: number;
