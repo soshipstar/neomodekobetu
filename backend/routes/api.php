@@ -151,6 +151,7 @@ Route::prefix('staff')
 
         // --- かけはし ---
         Route::get('/students/{student}/kakehashi', [App\Http\Controllers\Staff\KakehashiController::class, 'index']);
+        Route::post('/kakehashi/generate', [App\Http\Controllers\Staff\KakehashiController::class, 'generate']);
         Route::post('/kakehashi/{period}', [App\Http\Controllers\Staff\KakehashiController::class, 'store']);
         Route::put('/kakehashi/{period}', [App\Http\Controllers\Staff\KakehashiController::class, 'update']);
         Route::get('/kakehashi/{period}/pdf', [App\Http\Controllers\Staff\KakehashiController::class, 'pdf']);

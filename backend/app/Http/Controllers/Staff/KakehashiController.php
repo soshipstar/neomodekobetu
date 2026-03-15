@@ -3,11 +3,15 @@
 namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
+use App\Models\AiGenerationLog;
 use App\Models\KakehashiPeriod;
 use App\Models\KakehashiStaff;
 use App\Models\Student;
+use App\Models\StudentRecord;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use OpenAI\Laravel\Facades\OpenAI;
 
 class KakehashiController extends Controller
 {
@@ -131,6 +135,123 @@ class KakehashiController extends Controller
             'success' => true,
             'data'    => $period,
         ]);
+    }
+
+    /**
+     * かけはし内容をAI生成（期間内の連絡帳データを参照）
+     */
+    public function generate(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'period_id'  => 'required|exists:kakehashi_periods,id',
+        ]);
+
+        $student = Student::with('classroom')->findOrFail($validated['student_id']);
+        $this->authorizeClassroom($request->user(), $student);
+
+        $period = KakehashiPeriod::findOrFail($validated['period_id']);
+
+        // 期間内の連絡帳データを取得
+        $records = StudentRecord::where('student_id', $student->id)
+            ->whereHas('dailyRecord', function ($q) use ($period) {
+                $q->whereBetween('record_date', [$period->start_date, $period->end_date]);
+            })
+            ->with('dailyRecord:id,record_date,activity_name')
+            ->orderBy('id')
+            ->get();
+
+        $recordsText = $records->map(function ($r) {
+            $date = $r->dailyRecord->record_date ?? '';
+            $parts = ["[{$date}]"];
+            if ($r->domain1) $parts[] = "{$r->domain1}: {$r->domain1_content}";
+            if ($r->domain2) $parts[] = "{$r->domain2}: {$r->domain2_content}";
+            if ($r->daily_note) $parts[] = "メモ: {$r->daily_note}";
+            return implode(' / ', $parts);
+        })->implode("\n");
+
+        // 前回のかけはしを取得
+        $previousEntry = KakehashiStaff::where('student_id', $student->id)
+            ->where('period_id', '!=', $period->id)
+            ->whereHas('period', function ($q) use ($period) {
+                $q->where('end_date', '<', $period->start_date);
+            })
+            ->orderByDesc('created_at')
+            ->first();
+
+        $previousText = '';
+        if ($previousEntry) {
+            $previousText = "【前回のかけはし】\n"
+                . "・本人の願い: {$previousEntry->student_wish}\n"
+                . "・短期目標: {$previousEntry->short_term_goal}\n"
+                . "・長期目標: {$previousEntry->long_term_goal}\n\n";
+        }
+
+        try {
+            $response = OpenAI::chat()->create([
+                'model'    => 'gpt-4o',
+                'messages' => [
+                    [
+                        'role'    => 'system',
+                        'content' => 'あなたは放課後等デイサービスの児童発達支援管理責任者です。'
+                            . 'かけはし（個別支援計画の架け橋書類）の職員記入欄を作成します。'
+                            . '児童の連絡帳データに基づき、5領域ごとの支援内容を具体的に記述してください。'
+                            . 'JSON形式のみで回答してください。',
+                    ],
+                    [
+                        'role'    => 'user',
+                        'content' => "【児童名】{$student->student_name}\n"
+                            . "【教室】" . ($student->classroom->classroom_name ?? '') . "\n"
+                            . "【かけはし期間】{$period->start_date} ～ {$period->end_date}\n\n"
+                            . $previousText
+                            . "【期間内の連絡帳記録（{$records->count()}件）】\n"
+                            . ($recordsText ?: '（記録なし）') . "\n\n"
+                            . "以下のJSON形式で出力してください:\n"
+                            . "{\n"
+                            . "  \"student_wish\": \"本人の願い（児童本人が望んでいること）\",\n"
+                            . "  \"short_term_goal\": \"短期目標（今期6ヶ月の具体的目標）\",\n"
+                            . "  \"long_term_goal\": \"長期目標（1年以上の長期的な目標）\",\n"
+                            . "  \"health_life\": \"健康・生活 領域の支援内容\",\n"
+                            . "  \"motor_sensory\": \"運動・感覚 領域の支援内容\",\n"
+                            . "  \"cognitive_behavior\": \"認知・行動 領域の支援内容\",\n"
+                            . "  \"language_communication\": \"言語・コミュニケーション 領域の支援内容\",\n"
+                            . "  \"social_relations\": \"人間関係・社会性 領域の支援内容\"\n"
+                            . "}",
+                    ],
+                ],
+                'response_format'       => ['type' => 'json_object'],
+                'temperature'           => 0.6,
+                'max_completion_tokens' => 3000,
+            ]);
+
+            $content = $response->choices[0]->message->content;
+            $result = json_decode($content, true);
+
+            // ログ保存
+            try {
+                AiGenerationLog::create([
+                    'user_id'       => $request->user()->id,
+                    'model'         => 'gpt-4o',
+                    'prompt_type'   => 'kakehashi',
+                    'input_tokens'  => $response->usage->promptTokens ?? null,
+                    'output_tokens' => $response->usage->completionTokens ?? null,
+                    'student_id'    => $student->id,
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('Failed to log AI generation', ['error' => $e->getMessage()]);
+            }
+
+            return response()->json([
+                'success'      => true,
+                'data'         => $result ?? [],
+                'record_count' => $records->count(),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'AI生成中にエラーが発生しました: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     private function authorizeClassroom($user, Student $student): void
