@@ -83,10 +83,10 @@ export default function AdditionalUsagePage() {
 
   // Save batch mutation
   const saveMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       const changeList = Object.values(changes);
-      if (changeList.length === 0) return Promise.resolve({ data: { success: true } });
-      return api.post('/api/staff/additional-usage/batch', {
+      if (changeList.length === 0) return;
+      await api.post('/api/staff/additional-usage/batch', {
         student_id: selectedStudentId,
         changes: changeList,
       });
