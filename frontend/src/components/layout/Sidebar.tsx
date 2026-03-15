@@ -51,7 +51,6 @@ import {
   Cog,
   BookOpenCheck,
   GraduationCap,
-  Users,
 } from 'lucide-react';
 import type { UserType } from '@/types/user';
 import type { LucideIcon } from 'lucide-react';
