@@ -300,6 +300,7 @@ Route::prefix('staff')
 
         // --- スタッフ間チャット ---
         Route::prefix('staff-chat')->group(function () {
+            Route::get('/staff-list', [App\Http\Controllers\Staff\StaffChatController::class, 'staffList']);
             Route::get('/rooms', [App\Http\Controllers\Staff\StaffChatController::class, 'rooms']);
             Route::post('/rooms', [App\Http\Controllers\Staff\StaffChatController::class, 'createRoom']);
             Route::get('/rooms/{room}/messages', [App\Http\Controllers\Staff\StaffChatController::class, 'messages']);

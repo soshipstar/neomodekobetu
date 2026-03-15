@@ -16,6 +16,27 @@ use Illuminate\Support\Facades\Storage;
 class StaffChatController extends Controller
 {
     /**
+     * 同教室のスタッフ一覧を返す（チャットルーム作成用）
+     */
+    public function staffList(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $classroomId = $user->classroom_id;
+
+        $staff = User::where('classroom_id', $classroomId)
+            ->where('id', '!=', $user->id)
+            ->where('is_active', true)
+            ->select('id', 'full_name')
+            ->orderBy('full_name')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $staff,
+        ]);
+    }
+
+    /**
      * スタッフチャットルーム一覧を取得
      * 最新メッセージ、未読数、メンバー名を含む
      */

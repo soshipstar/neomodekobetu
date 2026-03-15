@@ -650,23 +650,13 @@ function CreateRoomModal({
     setGroupName('');
     setMode('direct');
     api
-      .get('/api/staff/staff-chat/rooms', { params: { staff_list: true } })
+      .get('/api/staff/staff-chat/staff-list')
       .then((res) => {
-        // Try to get staff list from various response shapes
-        const data = res.data?.staff || res.data?.data || [];
+        const data = res.data?.data || res.data || [];
         setStaffMembers(Array.isArray(data) ? data : []);
       })
       .catch(() => {
-        // Fallback: try dedicated staff endpoint
-        api
-          .get('/api/staff/users')
-          .then((res) => {
-            const data = res.data?.data || res.data || [];
-            setStaffMembers(Array.isArray(data) ? data : []);
-          })
-          .catch(() => {
-            toast.error('スタッフ一覧の取得に失敗しました');
-          });
+        toast.error('スタッフ一覧の取得に失敗しました');
       })
       .finally(() => setIsLoading(false));
   }, [isOpen, toast]);
