@@ -26,7 +26,8 @@ class StaffChatController extends Controller
         $staff = User::where('classroom_id', $classroomId)
             ->where('id', '!=', $user->id)
             ->where('is_active', true)
-            ->select('id', 'full_name')
+            ->whereIn('user_type', ['staff', 'admin'])
+            ->select('id', 'full_name', 'user_type')
             ->orderBy('full_name')
             ->get();
 
