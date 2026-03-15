@@ -64,17 +64,25 @@ class StaffChatController extends Controller
 
         $data = $rooms->map(function ($room) use ($latestMessages, $unreadCounts, $user) {
             $latest = $latestMessages->get($room->id);
-            $memberNames = $room->members
+            $otherMembers = $room->members
                 ->where('user_id', '!=', $user->id)
-                ->map(fn ($m) => $m->user->full_name ?? '')
+                ->map(fn ($m) => [
+                    'id'        => $m->user->id ?? $m->user_id,
+                    'full_name' => $m->user->full_name ?? '',
+                ])
                 ->values()
                 ->toArray();
+
+            $displayName = $room->room_type === 'group' && $room->room_name
+                ? $room->room_name
+                : implode('、', array_column($otherMembers, 'full_name'));
 
             return [
                 'id'              => $room->id,
                 'room_type'       => $room->room_type,
                 'room_name'       => $room->room_name,
-                'member_names'    => $memberNames,
+                'display_name'    => $displayName ?: '不明',
+                'members'         => $otherMembers,
                 'member_count'    => $room->members->count(),
                 'unread_count'    => $unreadCounts[$room->id] ?? 0,
                 'last_message'    => $latest ? $latest->message : null,
@@ -147,9 +155,25 @@ class StaffChatController extends Controller
                 ->first();
 
             if ($existingRoom) {
+                $existingRoom->load('members.user:id,full_name');
+                $partner = $existingRoom->members
+                    ->where('user_id', '!=', $user->id)
+                    ->map(fn ($m) => ['id' => $m->user->id ?? $m->user_id, 'full_name' => $m->user->full_name ?? ''])
+                    ->values()->toArray();
+
                 return response()->json([
                     'success' => true,
-                    'data'    => $existingRoom,
+                    'data'    => [
+                        'id'              => $existingRoom->id,
+                        'room_type'       => $existingRoom->room_type,
+                        'room_name'       => $existingRoom->room_name,
+                        'display_name'    => implode('、', array_column($partner, 'full_name')) ?: '不明',
+                        'members'         => $partner,
+                        'member_count'    => $existingRoom->members->count(),
+                        'unread_count'    => 0,
+                        'last_message'    => null,
+                        'last_message_at' => null,
+                    ],
                     'message' => '既存のルームを返却しました。',
                 ]);
             }
@@ -180,9 +204,32 @@ class StaffChatController extends Controller
 
         $room->load('members.user:id,full_name');
 
+        $otherMembers = $room->members
+            ->where('user_id', '!=', $user->id)
+            ->map(fn ($m) => [
+                'id'        => $m->user->id ?? $m->user_id,
+                'full_name' => $m->user->full_name ?? '',
+            ])
+            ->values()
+            ->toArray();
+
+        $displayName = $room->room_type === 'group' && $room->room_name
+            ? $room->room_name
+            : implode('、', array_column($otherMembers, 'full_name'));
+
         return response()->json([
             'success' => true,
-            'data'    => $room,
+            'data'    => [
+                'id'              => $room->id,
+                'room_type'       => $room->room_type,
+                'room_name'       => $room->room_name,
+                'display_name'    => $displayName ?: '不明',
+                'members'         => $otherMembers,
+                'member_count'    => $room->members->count(),
+                'unread_count'    => 0,
+                'last_message'    => null,
+                'last_message_at' => null,
+            ],
             'message' => 'チャットルームを作成しました。',
         ], 201);
     }
@@ -227,9 +274,24 @@ class StaffChatController extends Controller
             );
         }
 
+        $data = $messages->map(function ($msg) {
+            return [
+                'id'                       => $msg->id,
+                'room_id'                  => $msg->room_id,
+                'sender_id'                => $msg->sender_id,
+                'sender_name'              => $msg->sender->full_name ?? '不明',
+                'message'                  => $msg->message,
+                'attachment_path'          => $msg->attachment_path,
+                'attachment_original_name' => $msg->attachment_original_name,
+                'attachment_size'          => $msg->attachment_size,
+                'is_deleted'               => $msg->is_deleted,
+                'created_at'               => $msg->created_at,
+            ];
+        });
+
         return response()->json([
             'success' => true,
-            'data'    => $messages,
+            'data'    => $data,
         ]);
     }
 
