@@ -1,9 +1,20 @@
 #!/usr/bin/env python3
 """
 Convert MySQL dump (data-only) INSERT statements to PostgreSQL-compatible format.
+Supports classroom-level selective sync to allow phased migration.
 
 Usage:
-  python convert_mysql_to_pg.py [input_file] [output_file]
+  # Full sync (all classrooms) - DANGEROUS: overwrites narZE data
+  python convert_mysql_to_pg.py --full
+
+  # Sync only specified classrooms (default: all except narZE/classroom 2)
+  python convert_mysql_to_pg.py
+  python convert_mysql_to_pg.py --sync-classrooms 1,3,4,5
+
+  # Custom input/output files
+  python convert_mysql_to_pg.py --input dump.sql --output pg_data.sql
+
+Protected classroom (narZE, id=2) is never overwritten unless --full is used.
 
 Handles:
   - Table name mapping (MySQL -> Laravel PG)
@@ -12,10 +23,12 @@ Handles:
   - MySQL syntax cleanup (backticks, comments, LOCK/UNLOCK)
   - NULL constraint fixes
   - Sequence reset
+  - Classroom-level selective sync
 """
 import re
 import sys
 import os
+import argparse
 
 # Table name mapping: MySQL -> PostgreSQL (Laravel)
 TABLE_MAP = {
@@ -333,9 +346,234 @@ def convert_insert(insert_stmt, mysql_table, pg_table):
     return f'INSERT INTO "{pg_table}" ({pg_cols}) VALUES {pg_values};'
 
 
-def convert_mysql_to_pg(input_file, output_file):
+# ============================================================
+# Classroom-aware sync configuration
+# ============================================================
+
+# narZE classroom ID - protected by default
+PROTECTED_CLASSROOM = 2
+
+# Tables with direct classroom_id column
+TABLES_WITH_CLASSROOM_ID = {
+    'activity_support_plans', 'activity_types', 'classroom_capacity',
+    'classroom_tags', 'daily_records', 'daily_routines', 'events',
+    'holidays', 'individual_support_plans', 'meeting_requests',
+    'monitoring_records', 'newsletter_settings', 'newsletters',
+    'school_holiday_activities', 'student_interviews',
+    'students', 'users', 'weekly_plans', 'work_diaries',
+}
+
+# Tables linked via student_id (need student list to filter)
+TABLES_VIA_STUDENT = {
+    'absence_notifications',  # student_id
+    'additional_usages',      # student_id -> created_by(user)
+    'chat_rooms',             # student_id
+    'integrated_notes',       # student_id
+    'kakehashi_periods',      # student_id
+    'kakehashi_guardian',     # student_id
+    'kakehashi_staff',        # student_id
+    'student_chat_rooms',     # student_id
+    'student_submissions',    # student_id
+    'student_records',        # via daily_record_id -> daily_records
+}
+
+# Tables linked via other foreign keys
+TABLES_VIA_FK = {
+    'chat_messages': ('room_id', 'chat_rooms'),           # room_id -> chat_rooms
+    'chat_message_staff_reads': ('message_id', 'chat_messages'),
+    'chat_room_pins': ('room_id', 'chat_rooms'),
+    'event_registrations': ('event_id', 'events'),
+    'support_plan_details': ('plan_id', 'individual_support_plans'),
+    'monitoring_details': ('monitoring_id', 'monitoring_records'),
+    'send_history': ('integrated_note_id', 'integrated_notes'),
+    'weekly_plan_comments': ('plan_id', 'weekly_plans'),
+    'weekly_plan_submissions': ('weekly_plan_id', 'weekly_plans'),
+    'student_chat_messages': ('room_id', 'student_chat_rooms'),
+}
+
+# Tables that are shared/global (sync with ON CONFLICT DO NOTHING)
+SHARED_TABLES = {
+    'classrooms',
+    'facility_evaluation_periods', 'facility_evaluation_questions',
+    'facility_evaluation_summaries', 'facility_guardian_evaluations',
+    'facility_guardian_evaluation_answers', 'facility_staff_evaluations',
+    'facility_staff_evaluation_answers',
+}
+
+
+def build_student_classroom_map(inserts):
+    """Pre-scan the dump to build student_id -> classroom_id mapping."""
+    student_map = {}
+    for stmt in inserts:
+        if not stmt.startswith("INSERT INTO `students`"):
+            continue
+        match = re.match(r"INSERT INTO `students` \((.+?)\) VALUES\s*(.*)", stmt, re.DOTALL)
+        if not match:
+            continue
+        cols = [c.strip().strip('`') for c in match.group(1).split(',')]
+        if 'id' not in cols or 'classroom_id' not in cols:
+            continue
+        id_idx = cols.index('id')
+        cl_idx = cols.index('classroom_id')
+        for t in parse_values(match.group(2).rstrip(';').rstrip()):
+            vals = parse_tuple_values(t)
+            try:
+                sid = int(vals[id_idx])
+                cid_val = vals[cl_idx]
+                cid = int(cid_val) if cid_val != 'NULL' else None
+                student_map[sid] = cid
+            except (ValueError, IndexError):
+                pass
+    return student_map
+
+
+def build_parent_id_map(inserts, parent_mysql_table, filter_ids, filter_col='student_id'):
+    """Build set of IDs from a parent table that match filter_ids on filter_col."""
+    matching_ids = set()
+    for stmt in inserts:
+        if not stmt.startswith(f"INSERT INTO `{parent_mysql_table}`"):
+            continue
+        match = re.match(r"INSERT INTO `\w+` \((.+?)\) VALUES\s*(.*)", stmt, re.DOTALL)
+        if not match:
+            continue
+        cols = [c.strip().strip('`') for c in match.group(1).split(',')]
+        if 'id' not in cols or filter_col not in cols:
+            continue
+        id_idx = cols.index('id')
+        fk_idx = cols.index(filter_col)
+        for t in parse_values(match.group(2).rstrip(';').rstrip()):
+            vals = parse_tuple_values(t)
+            try:
+                row_id = int(vals[id_idx])
+                fk_val = int(vals[fk_idx]) if vals[fk_idx] != 'NULL' else None
+                if fk_val in filter_ids:
+                    matching_ids.add(row_id)
+            except (ValueError, IndexError):
+                pass
+    return matching_ids
+
+
+def convert_insert_filtered(insert_stmt, mysql_table, pg_table, sync_classrooms,
+                           mode='full', student_map=None, allowed_ids=None):
+    """Convert INSERT with optional classroom filtering.
+
+    mode:
+      'full'      - no filtering, insert all rows
+      'classroom'  - filter by classroom_id column
+      'student'    - filter by student_id (using student_map)
+      'shared'     - use ON CONFLICT DO NOTHING
+      'by_ids'     - filter by id column (pre-computed allowed IDs)
+    """
+    match = re.match(r"INSERT INTO `(\w+)` \((.+?)\) VALUES\s*(.*)", insert_stmt, re.DOTALL)
+    if not match:
+        return None
+
+    cols_str = match.group(2)
+    values_part = match.group(3).rstrip(';').rstrip()
+    cols = [c.strip().strip('`') for c in cols_str.split(',')]
+
+    strip = set(STRIP_COLUMNS.get(mysql_table, []))
+    bool_cols = set(BOOLEAN_COLUMNS.get(mysql_table, []))
+    renames = RENAME_COLUMNS.get(mysql_table, {})
+
+    for old_col, new_col in renames.items():
+        if new_col is None:
+            strip.add(old_col)
+
+    strip_indices = {i for i, c in enumerate(cols) if c in strip}
+    bool_indices = {i for i, c in enumerate(cols) if c in bool_cols}
+
+    # Find filter column index
+    filter_col_idx = None
+    if mode == 'classroom' and 'classroom_id' in cols:
+        filter_col_idx = cols.index('classroom_id')
+    elif mode == 'student' and 'student_id' in cols:
+        filter_col_idx = cols.index('student_id')
+    elif mode == 'by_ids' and 'id' in cols:
+        filter_col_idx = cols.index('id')
+
+    new_cols = []
+    for i, c in enumerate(cols):
+        if i in strip_indices:
+            continue
+        if c in renames and renames[c] is not None:
+            new_cols.append(renames[c])
+        else:
+            new_cols.append(c)
+
+    tuples = parse_values(values_part)
+    new_tuples = []
+
+    for t in tuples:
+        vals = parse_tuple_values(t)
+
+        # Apply filter
+        if filter_col_idx is not None and sync_classrooms is not None:
+            try:
+                filter_val = int(vals[filter_col_idx]) if vals[filter_col_idx] != 'NULL' else None
+            except (ValueError, IndexError):
+                filter_val = None
+
+            if mode == 'classroom':
+                if filter_val not in sync_classrooms:
+                    continue  # Skip this row
+            elif mode == 'student':
+                if student_map and filter_val is not None:
+                    student_classroom = student_map.get(filter_val)
+                    if student_classroom not in sync_classrooms:
+                        continue
+                elif filter_val is None:
+                    continue
+            elif mode == 'by_ids':
+                if allowed_ids is not None and filter_val not in allowed_ids:
+                    continue
+
+        new_vals = []
+        for i, v in enumerate(vals):
+            if i in strip_indices:
+                continue
+            if i in bool_indices:
+                if v == '0':
+                    v = 'false'
+                elif v == '1':
+                    v = 'true'
+            col_name = new_cols[len(new_vals)] if len(new_vals) < len(new_cols) else None
+            if col_name == 'status' and i < len(cols) and cols[i] == 'is_draft':
+                if v == '1' or v == 'true':
+                    v = "'draft'"
+                else:
+                    v = "'published'"
+            new_vals.append(v)
+
+        new_tuples.append('(' + ','.join(new_vals) + ')')
+
+    if not new_tuples:
+        return None
+
+    pg_cols = ','.join(f'"{c}"' for c in new_cols)
+    pg_values = ','.join(new_tuples)
+
+    if mode == 'shared':
+        return f'INSERT INTO "{pg_table}" ({pg_cols}) VALUES {pg_values} ON CONFLICT DO NOTHING;'
+    else:
+        return f'INSERT INTO "{pg_table}" ({pg_cols}) VALUES {pg_values};'
+
+
+def convert_mysql_to_pg(input_file, output_file, sync_classrooms=None, full_mode=False):
+    """
+    Convert MySQL dump to PostgreSQL.
+
+    sync_classrooms: list of classroom IDs to sync (None = all except protected)
+    full_mode: if True, overwrite ALL data including protected classrooms
+    """
     with open(input_file, 'r', encoding='utf-8') as f:
         content = f.read()
+
+    # Default: sync all except narZE (classroom 2)
+    if sync_classrooms is None and not full_mode:
+        sync_classrooms = [1, 3, 4, 5]
+
+    selective = sync_classrooms is not None and not full_mode
 
     # Extract INSERT statements
     lines = content.split('\n')
@@ -344,12 +582,10 @@ def convert_mysql_to_pg(input_file, output_file):
     in_insert = False
 
     for line in lines:
-        # Skip MySQL-specific lines
         if line.startswith('/*!') or line.startswith('LOCK TABLES') or line.startswith('UNLOCK TABLES'):
             continue
         if line.startswith('INSERT INTO'):
             if line.rstrip().endswith(';'):
-                # Single-line INSERT (most common in mysqldump --no-create-info)
                 inserts.append(line)
             else:
                 in_insert = True
@@ -365,19 +601,63 @@ def convert_mysql_to_pg(input_file, output_file):
     output.append("-- ============================================================")
     output.append("-- Converted from MySQL dump to PostgreSQL")
     output.append("-- Auto-generated by convert_mysql_to_pg.py")
+    if selective:
+        output.append(f"-- Selective sync: classrooms {sync_classrooms}")
+        output.append(f"-- Protected: classroom {PROTECTED_CLASSROOM} (narZE)")
+    else:
+        output.append("-- FULL sync mode (all classrooms)")
     output.append("-- ============================================================")
     output.append("")
     output.append("SET session_replication_role = 'replica';")
     output.append("")
 
-    # Truncate all target tables
     all_pg_tables = sorted(set(TABLE_MAP.values()))
-    for t in all_pg_tables:
-        output.append(f"TRUNCATE TABLE {t} CASCADE;")
-    output.append("")
+
+    if selective:
+        classroom_ids = ','.join(str(c) for c in sync_classrooms)
+        classroom_set = set(sync_classrooms)
+
+        # Pre-build student->classroom mapping from the dump
+        output.append("-- Pre-scanning dump for student-classroom mapping...")
+        student_map = build_student_classroom_map(inserts)
+        sync_student_ids = {sid for sid, cid in student_map.items() if cid in classroom_set}
+        print(f"  Students in sync classrooms: {len(sync_student_ids)}")
+
+        # Step 1: Delete existing data for sync classrooms
+        output.append(f"-- Step 1: Delete existing data for classrooms {list(sync_classrooms)}")
+        output.append("")
+
+        # Delete FK-dependent tables first
+        for table, (fk_col, parent) in TABLES_VIA_FK.items():
+            pg_table = TABLE_MAP.get(table, table)
+            parent_pg = TABLE_MAP.get(parent, parent)
+            if parent in TABLES_WITH_CLASSROOM_ID:
+                output.append(f'DELETE FROM "{pg_table}" WHERE "{fk_col}" IN (SELECT id FROM "{parent_pg}" WHERE classroom_id IN ({classroom_ids}));')
+            elif parent in TABLES_VIA_STUDENT:
+                output.append(f'DELETE FROM "{pg_table}" WHERE "{fk_col}" IN (SELECT id FROM "{parent_pg}" WHERE student_id IN (SELECT id FROM students WHERE classroom_id IN ({classroom_ids})));')
+        output.append("")
+
+        for table in TABLES_VIA_STUDENT:
+            pg_table = TABLE_MAP.get(table, table)
+            output.append(f'DELETE FROM "{pg_table}" WHERE student_id IN (SELECT id FROM students WHERE classroom_id IN ({classroom_ids}));')
+        output.append("")
+
+        for table in TABLES_WITH_CLASSROOM_ID:
+            pg_table = TABLE_MAP.get(table, table)
+            output.append(f'DELETE FROM "{pg_table}" WHERE classroom_id IN ({classroom_ids});')
+        output.append("")
+
+        output.append(f"-- Step 2: Insert filtered data (only classrooms {list(sync_classrooms)})")
+        output.append("")
+    else:
+        # Full mode: truncate everything
+        for t in all_pg_tables:
+            output.append(f"TRUNCATE TABLE {t} CASCADE;")
+        output.append("")
 
     converted_count = 0
     skipped_count = 0
+    filtered_count = 0
     error_tables = []
 
     for insert_stmt in inserts:
@@ -396,23 +676,41 @@ def convert_mysql_to_pg(input_file, output_file):
             skipped_count += 1
             continue
 
+        # Determine sync mode for this table
+        if selective:
+            if mysql_table in SHARED_TABLES or pg_table in SHARED_TABLES:
+                mode = 'shared'
+            elif mysql_table in TABLES_WITH_CLASSROOM_ID:
+                mode = 'classroom'
+            elif mysql_table in TABLES_VIA_STUDENT:
+                mode = 'student'
+            else:
+                mode = 'shared'  # Unknown tables: insert with ON CONFLICT
+        else:
+            mode = 'full'
+
         try:
-            converted = convert_insert(insert_stmt, mysql_table, pg_table)
+            converted = convert_insert_filtered(
+                insert_stmt, mysql_table, pg_table, classroom_set if selective else None,
+                mode=mode,
+                student_map=student_map if selective else None,
+            )
             if converted:
-                # Fix MySQL '0000-00-00' dates -> NULL
                 converted = converted.replace("'0000-00-00'", "NULL")
                 converted = converted.replace("'0000-00-00 00:00:00'", "NULL")
                 output.append(converted)
                 output.append("")
                 converted_count += 1
             else:
-                output.append(f"-- FAILED TO PARSE: {mysql_table}")
-                error_tables.append(mysql_table)
+                if selective and mode in ('classroom', 'student'):
+                    filtered_count += 1  # All rows filtered out - normal
+                else:
+                    output.append(f"-- FAILED TO PARSE: {mysql_table}")
+                    error_tables.append(mysql_table)
         except Exception as e:
             output.append(f"-- ERROR converting {mysql_table}: {e}")
             error_tables.append(mysql_table)
 
-    # Reset all sequences
     output.append("")
     output.append("-- Reset sequences")
     for pg_table in all_pg_tables:
@@ -429,15 +727,32 @@ def convert_mysql_to_pg(input_file, output_file):
     with open(output_file, 'w', encoding='utf-8', newline='\n') as f:
         f.write('\n'.join(output))
 
+    print(f"Mode: {'FULL' if full_mode else f'Selective (classrooms: {sync_classrooms})'}")
     print(f"Converted: {converted_count} INSERT statements")
     print(f"Skipped: {skipped_count}")
+    if selective:
+        print(f"Filtered out (no matching rows): {filtered_count}")
     if error_tables:
         print(f"Errors: {error_tables}")
     print(f"Output: {output_file}")
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Convert MySQL dump to PostgreSQL with classroom-level sync')
+    parser.add_argument('--input', '-i', help='Input MySQL dump file')
+    parser.add_argument('--output', '-o', help='Output PostgreSQL file')
+    parser.add_argument('--sync-classrooms', '-c', help='Comma-separated classroom IDs to sync (default: 1,3,4,5)')
+    parser.add_argument('--full', action='store_true', help='Full sync - overwrite ALL data including narZE')
+    args = parser.parse_args()
+
     tmp = os.environ.get('TEMP', os.environ.get('TMP', '/tmp'))
-    input_f = sys.argv[1] if len(sys.argv) > 1 else os.path.join(tmp, 'latest_production_data.sql')
-    output_f = sys.argv[2] if len(sys.argv) > 2 else os.path.join(tmp, 'pg_production_data.sql')
-    convert_mysql_to_pg(input_f, output_f)
+    input_f = args.input or os.path.join(tmp, 'latest_production_data.sql')
+    output_f = args.output or os.path.join(tmp, 'pg_production_data.sql')
+
+    sync_classrooms = None
+    if args.sync_classrooms:
+        sync_classrooms = [int(x) for x in args.sync_classrooms.split(',')]
+    elif not args.full:
+        sync_classrooms = [1, 3, 4, 5]  # Default: all except narZE(2)
+
+    convert_mysql_to_pg(input_f, output_f, sync_classrooms=sync_classrooms, full_mode=args.full)
