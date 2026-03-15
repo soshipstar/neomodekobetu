@@ -19,7 +19,7 @@ WORKDIR /var/www/html
 COPY backend/ .
 
 # Ensure required directories exist before composer
-RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache
+RUN mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache storage/logs bootstrap/cache
 
 # Install dependencies (no dev)
 RUN composer install --no-dev --optimize-autoloader --no-interaction
@@ -36,7 +36,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y nodejs
 
 # Storage directories
-RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache \
+RUN mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
 
 # Entrypoint script (handles storage:link, migrations, optimize on every container start)
