@@ -131,7 +131,11 @@ Route::prefix('staff')
 
         // --- 生徒管理 ---
         Route::get('/students', [App\Http\Controllers\Staff\StudentController::class, 'index']);
+        Route::post('/students', [App\Http\Controllers\Staff\StudentController::class, 'store']);
+        Route::get('/students/guardians', [App\Http\Controllers\Staff\StudentController::class, 'guardians']);
         Route::get('/students/{student}', [App\Http\Controllers\Staff\StudentController::class, 'show']);
+        Route::put('/students/{student}', [App\Http\Controllers\Staff\StudentController::class, 'update']);
+        Route::delete('/students/{student}', [App\Http\Controllers\Staff\StudentController::class, 'destroy']);
 
         // --- 支援計画 ---
         Route::get('/students/{student}/support-plans', [App\Http\Controllers\Staff\SupportPlanController::class, 'index']);
