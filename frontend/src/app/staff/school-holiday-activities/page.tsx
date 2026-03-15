@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardBody } from '@/components/ui/Card';
@@ -67,8 +67,11 @@ export default function SchoolHolidayActivitiesPage() {
   });
 
   // Initialize checked dates from fetched data
-  useMemo(() => {
-    const dates = new Set(activities.map((a) => a.activity_date));
+  useEffect(() => {
+    const dates = new Set(activities.map((a) => {
+      const d = a.activity_date;
+      return typeof d === 'string' ? d.split('T')[0] : d;
+    }));
     setCheckedDates(dates);
     setInitialized(true);
   }, [activities]);
