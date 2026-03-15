@@ -147,43 +147,45 @@ export default function AdditionalUsagePage() {
   const toggleDay = useCallback((day: number) => {
     if (!monthData) return;
     const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const currentStatus = getDayStatus(day);
+
+    // Determine original state from monthData
     const dayOfWeek = new Date(year, month - 1, day).getDay();
     const dayKey = DAY_KEYS[dayOfWeek];
-    const isRegular = monthData.schedule[dayKey] ?? false;
-    const isAdditional = monthData.additional_dates.includes(dateStr);
-    const isCancelled = monthData.cancelled_dates.includes(dateStr);
+    const origRegular = monthData.schedule[dayKey] ?? false;
+    const origAdditional = monthData.additional_dates.includes(dateStr);
+    const origCancelled = monthData.cancelled_dates.includes(dateStr);
 
-    // Remove existing change for this date
     const newChanges = { ...changes };
 
-    if (isRegular && !isCancelled) {
-      // Regular day, currently active → cancel
+    // Toggle based on CURRENT displayed status
+    if (currentStatus === 'regular') {
+      // Currently showing as regular → cancel it
       newChanges[dateStr] = { date: dateStr, action: 'cancel' };
-    } else if (isRegular && isCancelled) {
-      // Regular day, currently cancelled → restore
+    } else if (currentStatus === 'cancelled') {
+      // Currently cancelled → restore it
       newChanges[dateStr] = { date: dateStr, action: 'restore' };
-    } else if (isAdditional) {
-      // Additional day → remove
+    } else if (currentStatus === 'additional') {
+      // Currently additional → remove it
       newChanges[dateStr] = { date: dateStr, action: 'remove' };
     } else {
-      // Not scheduled → add
+      // Currently none → add
       newChanges[dateStr] = { date: dateStr, action: 'add' };
     }
 
-    // If change would revert to original state, remove it
-    if (changes[dateStr]) {
-      const prev = changes[dateStr].action;
-      const next = newChanges[dateStr].action;
-      if ((prev === 'cancel' && next === 'restore') ||
-          (prev === 'restore' && next === 'cancel') ||
-          (prev === 'add' && next === 'remove') ||
-          (prev === 'remove' && next === 'add')) {
-        delete newChanges[dateStr];
-      }
+    // If change reverts to original state, remove it (no-op)
+    const action = newChanges[dateStr]?.action;
+    if (
+      (action === 'cancel' && origCancelled) ||
+      (action === 'restore' && origRegular && !origCancelled) ||
+      (action === 'remove' && !origAdditional) ||
+      (action === 'add' && origAdditional)
+    ) {
+      delete newChanges[dateStr];
     }
 
     setChanges(newChanges);
-  }, [monthData, changes, year, month]);
+  }, [monthData, changes, year, month, getDayStatus]);
 
   const goToPrevMonth = () => {
     if (month === 1) { setYear(year - 1); setMonth(12); }
@@ -328,13 +330,12 @@ export default function AdditionalUsagePage() {
                                   <Badge variant="danger" className="text-[9px] px-1.5 py-0">キャンセル</Badge>
                                 )}
 
-                                {/* Checkbox */}
+                                {/* Checkbox (visual only, toggle via td click) */}
                                 <input
                                   type="checkbox"
                                   checked={isChecked}
-                                  onChange={() => toggleDay(day)}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="rounded border-[var(--neutral-stroke-2)] mt-1"
+                                  readOnly
+                                  className="rounded border-[var(--neutral-stroke-2)] mt-1 pointer-events-none"
                                 />
                               </div>
                             </td>
