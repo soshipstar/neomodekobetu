@@ -298,7 +298,7 @@ export default function StaffDashboardPage() {
   }, [attendance]);
 
   const totalAttendance = Array.isArray(attendance) ? attendance.length : 0;
-  const absentCount = attendance.filter((s) => s.is_absent).length;
+  const absentCount = (Array.isArray(attendance) ? attendance : []).filter((s) => s.is_absent).length;
 
   // ---------------------------------------------------------------------------
   // Render
