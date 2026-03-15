@@ -399,6 +399,25 @@ class SupportPlanController extends Controller
     }
 
     /**
+     * 個別支援計画を削除
+     */
+    public function destroy(Request $request, IndividualSupportPlan $plan): JsonResponse
+    {
+        $plan->load('student');
+        if ($plan->student) {
+            $this->authorizeClassroom($request->user(), $plan->student);
+        }
+
+        $plan->details()->delete();
+        $plan->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => '個別支援計画を削除しました。',
+        ]);
+    }
+
+    /**
      * 教室アクセス権限チェック
      */
     private function authorizeClassroom($user, Student $student): void

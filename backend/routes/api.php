@@ -139,6 +139,7 @@ Route::prefix('staff')
         Route::put('/students/{student}/support-plans/{plan}', [App\Http\Controllers\Staff\SupportPlanController::class, 'updateNested']); // (#31,39) nested alias
         Route::post('/students/{student}/support-plans/ai-generate', [App\Http\Controllers\Staff\SupportPlanController::class, 'generateAiForStudent']); // (#32)
         Route::put('/support-plans/{plan}', [App\Http\Controllers\Staff\SupportPlanController::class, 'update']);
+        Route::delete('/support-plans/{plan}', [App\Http\Controllers\Staff\SupportPlanController::class, 'destroy']);
         Route::post('/support-plans/{plan}/generate-ai', [App\Http\Controllers\Staff\SupportPlanController::class, 'generateAi']);
         Route::post('/support-plans/{plan}/sign', [App\Http\Controllers\Staff\SupportPlanController::class, 'sign']);
         Route::get('/support-plans/{plan}/pdf', [App\Http\Controllers\Staff\SupportPlanController::class, 'pdf']);
