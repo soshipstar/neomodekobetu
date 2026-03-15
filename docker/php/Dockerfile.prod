@@ -27,6 +27,10 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 # OPcache config for production
 RUN echo "opcache.enable=1\nopcache.memory_consumption=256\nopcache.max_accelerated_files=20000\nopcache.validate_timestamps=0" > /usr/local/etc/php/conf.d/opcache-prod.ini
 
+# Japanese fonts for DomPDF
+RUN apt-get update && apt-get install -y fonts-ipafont-gothic fonts-ipafont-mincho \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Node.js (for PDF generation)
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y nodejs

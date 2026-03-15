@@ -8,10 +8,11 @@ use App\Models\KakehashiPeriod;
 use App\Models\KakehashiStaff;
 use App\Models\Student;
 use App\Models\StudentRecord;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use OpenAI\Laravel\Facades\OpenAI;
+use OpenAI;
 
 class KakehashiController extends Controller
 {
@@ -121,9 +122,9 @@ class KakehashiController extends Controller
     }
 
     /**
-     * かけはし PDF データを返す
+     * かけはし PDF をダウンロード
      */
-    public function pdf(Request $request, KakehashiPeriod $period): JsonResponse
+    public function pdf(Request $request, KakehashiPeriod $period)
     {
         $period->load(['student.classroom', 'staffEntries', 'guardianEntries']);
 
@@ -131,10 +132,21 @@ class KakehashiController extends Controller
             $this->authorizeClassroom($request->user(), $period->student);
         }
 
-        return response()->json([
-            'success' => true,
-            'data'    => $period,
-        ]);
+        $pdf = Pdf::loadView('pdf.kakehashi', [
+            'period'          => $period,
+            'student'         => $period->student,
+            'classroom'       => $period->student->classroom ?? null,
+            'staffEntries'    => $period->staffEntries,
+            'guardianEntries' => $period->guardianEntries,
+        ])
+            ->setPaper('a4', 'portrait')
+            ->setOption('isRemoteEnabled', true)
+            ->setOption('isFontSubsettingEnabled', true)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        $filename = 'kakehashi_' . ($period->student->student_name ?? $period->id) . '_' . $period->start_date . '.pdf';
+
+        return $pdf->download($filename);
     }
 
     /**
@@ -188,7 +200,16 @@ class KakehashiController extends Controller
         }
 
         try {
-            $response = OpenAI::chat()->create([
+            $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
+            if (empty($apiKey)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'OpenAI APIキーが設定されていません。管理者に連絡してください。',
+                ], 422);
+            }
+
+            $client = OpenAI::client($apiKey);
+            $response = $client->chat()->create([
                 'model'    => 'gpt-4o',
                 'messages' => [
                     [
