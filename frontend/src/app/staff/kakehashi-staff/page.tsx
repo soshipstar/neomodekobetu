@@ -112,25 +112,21 @@ export default function KakehashiStaffPage() {
     },
   });
 
-  // Fetch periods for selected student
-  const { data: periods = [] } = useQuery({
+  // Fetch periods (with staff/guardian entries) for selected student
+  const { data: periodsRaw = [], isLoading: loadingEntries } = useQuery({
     queryKey: ['staff', 'kakehashi', 'periods', selectedStudentId],
     queryFn: async () => {
-      const res = await api.get<{ data: KakehashiPeriod[] }>(`/api/staff/kakehashi/periods?student_id=${selectedStudentId}`);
+      const res = await api.get<{ data: (KakehashiPeriod & { staff_entries?: KakehashiStaff[]; guardian_entries?: unknown[] })[] }>(
+        `/api/staff/students/${selectedStudentId}/kakehashi`
+      );
       return res.data.data;
     },
     enabled: !!selectedStudentId,
   });
 
-  // Fetch kakehashi entries for selected student
-  const { data: entries = [], isLoading: loadingEntries } = useQuery({
-    queryKey: ['staff', 'kakehashi', 'entries', selectedStudentId],
-    queryFn: async () => {
-      const res = await api.get<{ data: KakehashiStaff[] }>(`/api/staff/kakehashi?student_id=${selectedStudentId}`);
-      return res.data.data;
-    },
-    enabled: !!selectedStudentId,
-  });
+  // Extract periods and entries from the combined response
+  const periods: KakehashiPeriod[] = periodsRaw.map(({ staff_entries, guardian_entries, ...period }) => period);
+  const entries: KakehashiStaff[] = periodsRaw.flatMap((p) => p.staff_entries ?? []);
 
   // Create mutation
   const createMutation = useMutation({

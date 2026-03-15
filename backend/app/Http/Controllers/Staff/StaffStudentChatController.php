@@ -45,10 +45,12 @@ class StaffStudentChatController extends Controller
 
             return [
                 'id'              => $room->id,
-                'student'         => $room->student,
+                'student_id'      => $room->student_id,
+                'student_name'    => $room->student?->student_name ?? '不明',
                 'last_message'    => $lastMessage ? $lastMessage->message : null,
                 'last_message_at' => $room->last_message_at,
                 'unread_count'    => $unreadCount,
+                'is_active'       => (bool) ($room->student?->is_active ?? false),
             ];
         });
 
