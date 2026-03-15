@@ -132,6 +132,7 @@ Route::prefix('staff')
         // --- 生徒管理 ---
         // --- 待機児童 ---
         Route::get('/waiting-list', [App\Http\Controllers\Admin\WaitingListController::class, 'index']);
+        Route::get('/waiting-list/summary', [App\Http\Controllers\Admin\WaitingListController::class, 'summary']);
         Route::put('/waiting-list/{student}', [App\Http\Controllers\Admin\WaitingListController::class, 'update']);
 
         Route::get('/students', [App\Http\Controllers\Staff\StudentController::class, 'index']);

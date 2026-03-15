@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardBody } from '@/components/ui/Card';
@@ -8,23 +8,28 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { UserPlus, Calendar, Pencil, CheckCircle2 } from 'lucide-react';
+import { UserPlus, CheckCircle2, Users, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 
 // ---------------------------------------------------------------------------
-// Types
+// Types & Constants
 // ---------------------------------------------------------------------------
 
 const DAYS = [
-  { key: 'desired_monday', label: '月' },
-  { key: 'desired_tuesday', label: '火' },
-  { key: 'desired_wednesday', label: '水' },
-  { key: 'desired_thursday', label: '木' },
-  { key: 'desired_friday', label: '金' },
-  { key: 'desired_saturday', label: '土' },
-  { key: 'desired_sunday', label: '日' },
+  { key: 'desired_monday', label: '月', day: 'monday' },
+  { key: 'desired_tuesday', label: '火', day: 'tuesday' },
+  { key: 'desired_wednesday', label: '水', day: 'wednesday' },
+  { key: 'desired_thursday', label: '木', day: 'thursday' },
+  { key: 'desired_friday', label: '金', day: 'friday' },
+  { key: 'desired_saturday', label: '土', day: 'saturday' },
+  { key: 'desired_sunday', label: '日', day: 'sunday' },
 ] as const;
+
+const DAY_LABELS: Record<string, string> = {
+  monday: '月', tuesday: '火', wednesday: '水', thursday: '木',
+  friday: '金', saturday: '土', sunday: '日',
+};
 
 interface WaitingStudent {
   id: number;
@@ -46,10 +51,26 @@ interface WaitingStudent {
   created_at: string;
 }
 
+interface DaySummary {
+  day: string;
+  waiting_count: number;
+  active_count: number;
+}
+
+interface Summary {
+  days: DaySummary[];
+  total_waiting: number;
+}
+
+// ---------------------------------------------------------------------------
+// Main Component
+// ---------------------------------------------------------------------------
+
 export default function WaitingListPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
 
+  // Fetch waiting students
   const { data: students = [], isLoading } = useQuery({
     queryKey: ['staff', 'waiting-list'],
     queryFn: async () => {
@@ -59,13 +80,29 @@ export default function WaitingListPage() {
     },
   });
 
-  // Enroll (waiting → active)
+  // Fetch summary (day-by-day counts)
+  const { data: summary } = useQuery({
+    queryKey: ['staff', 'waiting-list', 'summary'],
+    queryFn: async () => {
+      const res = await api.get<{ data: Summary }>('/api/staff/waiting-list/summary');
+      return res.data.data;
+    },
+  });
+
+  // Total desired days across all waiting students
+  const totalDesiredDays = useMemo(() => {
+    return students.reduce((sum, s) => {
+      return sum + DAYS.filter(d => s[d.key as keyof WaitingStudent]).length;
+    }, 0);
+  }, [students]);
+
+  // Enroll mutation
   const enrollMutation = useMutation({
     mutationFn: (id: number) => api.put(`/api/staff/waiting-list/${id}`, { status: 'active' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'waiting-list'] });
       queryClient.invalidateQueries({ queryKey: ['staff', 'students'] });
-      toast.success('入所処理しました（希望曜日が参加予定にコピーされました）');
+      toast.success('入所処理しました（希望曜日が参加予定曜日にコピーされました）');
     },
     onError: () => toast.error('入所処理に失敗しました'),
   });
@@ -84,6 +121,91 @@ export default function WaitingListPage() {
         </Link>
       </div>
 
+      {/* ================================================================= */}
+      {/* Summary Cards                                                     */}
+      {/* ================================================================= */}
+      {summary && (
+        <div className="space-y-3">
+          {/* Top-level stats */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <Card>
+              <CardBody>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100">
+                    <Clock className="h-5 w-5 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-[var(--neutral-foreground-1)]">{summary.total_waiting}</p>
+                    <p className="text-xs text-[var(--neutral-foreground-3)]">待機児童数</p>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+                    <Users className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-[var(--neutral-foreground-1)]">
+                      {summary.days.reduce((s, d) => s + d.active_count, 0) > 0
+                        ? Math.round(summary.days.reduce((s, d) => s + d.active_count, 0) / summary.days.filter(d => d.active_count > 0).length)
+                        : 0}
+                    </p>
+                    <p className="text-xs text-[var(--neutral-foreground-3)]">平均利用者数/日</p>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
+                    <Clock className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-[var(--neutral-foreground-1)]">{totalDesiredDays}</p>
+                    <p className="text-xs text-[var(--neutral-foreground-3)]">合計待機日数</p>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+
+          {/* Day-by-day breakdown */}
+          <Card>
+            <CardBody>
+              <h3 className="text-sm font-semibold text-[var(--neutral-foreground-2)] mb-3">曜日別 利用者数・待機数</h3>
+              <div className="grid grid-cols-7 gap-2">
+                {summary.days.map((d) => (
+                  <div key={d.day} className="rounded-lg border border-[var(--neutral-stroke-2)] p-3 text-center">
+                    <p className="text-sm font-bold text-[var(--neutral-foreground-1)] mb-2">
+                      {DAY_LABELS[d.day] || d.day}
+                    </p>
+                    <div className="space-y-1.5">
+                      <div>
+                        <p className="text-lg font-bold text-blue-600">{d.active_count}</p>
+                        <p className="text-[9px] text-[var(--neutral-foreground-4)]">利用者</p>
+                      </div>
+                      <div className="border-t border-[var(--neutral-stroke-3)] pt-1.5">
+                        <p className={`text-lg font-bold ${d.waiting_count > 0 ? 'text-orange-600' : 'text-[var(--neutral-foreground-4)]'}`}>
+                          {d.waiting_count}
+                        </p>
+                        <p className="text-[9px] text-[var(--neutral-foreground-4)]">待機</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+      )}
+
+      {/* ================================================================= */}
+      {/* Waiting Students Table                                            */}
+      {/* ================================================================= */}
       {isLoading ? (
         <div className="space-y-2">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}</div>
       ) : students.length === 0 ? (

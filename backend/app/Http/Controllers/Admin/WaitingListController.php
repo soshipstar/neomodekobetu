@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Student;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class WaitingListController extends Controller
 {
@@ -54,6 +53,47 @@ class WaitingListController extends Controller
         return response()->json([
             'success' => true,
             'data'    => $data,
+        ]);
+    }
+
+    /**
+     * 曜日別の待機数・在籍利用者数サマリーを返す
+     */
+    public function summary(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $classroomId = $user->classroom_id;
+
+        $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+        $result = [];
+
+        foreach ($days as $day) {
+            $waitingQuery = Student::where('status', 'waiting');
+            $activeQuery = Student::where('status', 'active')->where('is_active', true);
+
+            if ($classroomId) {
+                $waitingQuery->where('classroom_id', $classroomId);
+                $activeQuery->where('classroom_id', $classroomId);
+            }
+
+            $result[] = [
+                'day'            => $day,
+                'waiting_count'  => (clone $waitingQuery)->where("desired_{$day}", true)->count(),
+                'active_count'   => (clone $activeQuery)->where("scheduled_{$day}", true)->count(),
+            ];
+        }
+
+        // 合計
+        $totalWaiting = Student::where('status', 'waiting')
+            ->when($classroomId, fn ($q) => $q->where('classroom_id', $classroomId))
+            ->count();
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'days'          => $result,
+                'total_waiting' => $totalWaiting,
+            ],
         ]);
     }
 
