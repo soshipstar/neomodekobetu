@@ -78,14 +78,6 @@ export function HelpButton() {
     }
   }, []);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const handlePointerUp = useCallback((e: React.PointerEvent) => {
-    if (dragRef.current && !dragRef.current.dragging) {
-      // It was a click, not a drag
-      togglePanel();
-    }
-    dragRef.current = null;
-  }, [togglePanel]);
 
   const pathname = usePathname();
   const { user } = useAuthStore();
@@ -113,6 +105,13 @@ export function HelpButton() {
       return !prev;
     });
   }, [defaultCategoryId]);
+
+  const handlePointerUp = useCallback((_e: React.PointerEvent) => {
+    if (dragRef.current && !dragRef.current.dragging) {
+      togglePanel();
+    }
+    dragRef.current = null;
+  }, [togglePanel]);
 
   // Close panel on outside click
   useEffect(() => {
