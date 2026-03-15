@@ -315,14 +315,22 @@ export default function WeeklyPlansPage() {
   const { data: studentsWithPlans, isLoading: isLoadingList } = useQuery({
     queryKey: ['staff', 'weekly-plans', 'list', weekStartStr],
     queryFn: async () => {
-      const res = await api.get(
-        `/api/staff/weekly-plans?week_start_date=${weekStartStr}&per_page=200`
-      );
-      // Handle paginated response: res.data.data may be { data: [...], ... } or [...]
-      const payload = res.data?.data;
-      if (Array.isArray(payload)) return payload as StudentWithPlan[];
-      if (payload?.data && Array.isArray(payload.data)) return payload.data as StudentWithPlan[];
-      return [] as StudentWithPlan[];
+      // Fetch students
+      const studentsRes = await api.get('/api/staff/students');
+      const studentsPayload = studentsRes.data?.data;
+      const studentList: Student[] = Array.isArray(studentsPayload) ? studentsPayload : [];
+
+      // Fetch plans for this week
+      const plansRes = await api.get(`/api/staff/weekly-plans?week_start_date=${weekStartStr}&per_page=200`);
+      const plansPayload = plansRes.data?.data;
+      const planList = Array.isArray(plansPayload) ? plansPayload :
+        (plansPayload?.data && Array.isArray(plansPayload.data)) ? plansPayload.data : [];
+
+      // Merge: each student with their plan (if any)
+      return studentList.map((student) => ({
+        student,
+        plan: planList.find((p: any) => p.student_id === student.id) ?? null,
+      })) as StudentWithPlan[];
     },
   });
 

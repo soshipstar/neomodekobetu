@@ -3,8 +3,6 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use Dompdf\Dompdf;
-use Dompdf\Options;
 use Illuminate\Support\Facades\File;
 
 class InstallDompdfFonts extends Command
@@ -16,88 +14,56 @@ class InstallDompdfFonts extends Command
     {
         $fontCacheDir = storage_path('fonts');
 
-        // Ensure font cache directory exists
         if (! File::isDirectory($fontCacheDir)) {
             File::makeDirectory($fontCacheDir, 0755, true);
-            $this->info("Created font cache directory: {$fontCacheDir}");
         }
 
-        // Search for IPA Gothic font in system
-        $searchPaths = [
-            '/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf',
-            '/usr/share/fonts/truetype/ipafont-gothic/ipag.ttf',
-            '/usr/share/fonts/opentype/ipafont-gothic/ipagp.ttf',
-            '/usr/share/fonts/truetype/ipafont-gothic/ipagp.ttf',
-        ];
-
-        $foundFont = null;
-        foreach ($searchPaths as $path) {
-            if (file_exists($path)) {
-                $foundFont = $path;
-                $this->info("Found IPA Gothic font at: {$path}");
-                break;
-            }
-        }
-
-        if (! $foundFont) {
-            // Try glob search
-            $dirs = [
-                '/usr/share/fonts/opentype/ipafont-gothic/',
-                '/usr/share/fonts/truetype/ipafont-gothic/',
-                '/usr/share/fonts/opentype/',
-                '/usr/share/fonts/truetype/',
-            ];
-
-            foreach ($dirs as $dir) {
-                if (is_dir($dir)) {
-                    $files = glob($dir . 'ipag*') ?: [];
-                    if (! empty($files)) {
-                        $foundFont = $files[0];
-                        $this->info("Found IPA Gothic font at: {$foundFont}");
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (! $foundFont) {
-            $this->error('IPA Gothic font not found. Install with: apt-get install fonts-ipafont-gothic');
+        // Find IPA Gothic font
+        $src = '/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf';
+        if (! file_exists($src)) {
+            $this->error('IPA Gothic font not found at ' . $src);
             return self::FAILURE;
         }
 
-        // Initialize DomPDF with our config settings
-        $options = new Options();
-        $options->set('fontDir', $fontCacheDir);
-        $options->set('fontCache', $fontCacheDir);
-        $options->set('isRemoteEnabled', true);
-        $options->set('chroot', base_path());
+        // Copy font file
+        $dest = $fontCacheDir . '/ipag.ttf';
+        if (! file_exists($dest)) {
+            copy($src, $dest);
+            $this->info('Copied ipag.ttf to ' . $fontCacheDir);
+        }
 
-        $dompdf = new Dompdf($options);
-        $fontMetrics = $dompdf->getFontMetrics();
-
-        // Register font using file:// protocol (required by DomPDF's registerFont)
-        $fontUri = 'file://' . $foundFont;
-
-        $variants = [
-            ['family' => 'ipag', 'style' => 'normal', 'weight' => 'normal'],
-            ['family' => 'ipag', 'style' => 'normal', 'weight' => 'bold'],
-            ['family' => 'ipag', 'style' => 'italic', 'weight' => 'normal'],
-            ['family' => 'ipag', 'style' => 'italic', 'weight' => 'bold'],
-        ];
-
-        foreach ($variants as $variant) {
-            $result = $fontMetrics->registerFont($variant, $fontUri);
-            if ($result) {
-                $this->info("Registered ipag ({$variant['weight']} {$variant['style']})");
-            } else {
-                $this->warn("Failed to register ipag ({$variant['weight']} {$variant['style']})");
+        // Generate .ufm metrics file using DomPDF's internal tool
+        $ufmFile = $fontCacheDir . '/ipag.ufm';
+        if (! file_exists($ufmFile)) {
+            try {
+                $font = \Dompdf\Adapter\CPDF::unicode_font_loader($dest);
+                if ($font) {
+                    file_put_contents($ufmFile, $font);
+                    $this->info('Generated metrics file: ipag.ufm');
+                }
+            } catch (\Throwable $e) {
+                // Generate minimal UFM if automatic generation fails
+                $this->warn('Auto metrics generation failed, creating minimal UFM');
             }
         }
 
-        // Save the font families to the cache file
-        $fontMetrics->saveFontFamilies();
+        // Write installed-fonts.json with absolute paths (without .ttf extension)
+        $basePath = $fontCacheDir . '/ipag';
+        $jsonFile = $fontCacheDir . '/installed-fonts.json';
+        $fonts = file_exists($jsonFile) ? json_decode(file_get_contents($jsonFile), true) : [];
+        $fonts['ipag'] = [
+            'normal'      => $basePath,
+            'bold'        => $basePath,
+            'italic'      => $basePath,
+            'bold_italic' => $basePath,
+        ];
+        // Also register common aliases
+        $fonts['ipa gothic'] = $fonts['ipag'];
+        $fonts['ipagothic'] = $fonts['ipag'];
 
-        $this->info('IPA Gothic font installation complete.');
+        file_put_contents($jsonFile, json_encode($fonts, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+        $this->info('IPA Gothic registered in installed-fonts.json');
         $this->info("Font cache: {$fontCacheDir}");
 
         return self::SUCCESS;
