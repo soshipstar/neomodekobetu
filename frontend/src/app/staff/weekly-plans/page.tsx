@@ -315,10 +315,14 @@ export default function WeeklyPlansPage() {
   const { data: studentsWithPlans, isLoading: isLoadingList } = useQuery({
     queryKey: ['staff', 'weekly-plans', 'list', weekStartStr],
     queryFn: async () => {
-      const res = await api.get<{ data: StudentWithPlan[] }>(
-        `/api/staff/weekly-plans?week_start_date=${weekStartStr}`
+      const res = await api.get(
+        `/api/staff/weekly-plans?week_start_date=${weekStartStr}&per_page=200`
       );
-      return res.data.data;
+      // Handle paginated response: res.data.data may be { data: [...], ... } or [...]
+      const payload = res.data?.data;
+      if (Array.isArray(payload)) return payload as StudentWithPlan[];
+      if (payload?.data && Array.isArray(payload.data)) return payload.data as StudentWithPlan[];
+      return [] as StudentWithPlan[];
     },
   });
 
