@@ -41,6 +41,36 @@ class StaffGuardianController extends Controller
     }
 
     /**
+     * 保護者詳細を取得（マニュアル印刷用にpassword_plain含む）
+     */
+    public function show(Request $request, User $guardian): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($guardian->user_type !== 'guardian') {
+            return response()->json(['success' => false, 'message' => '保護者ではありません。'], 422);
+        }
+
+        if ($user->classroom_id && $guardian->classroom_id !== $user->classroom_id) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
+        $guardian->load('students:id,student_name,guardian_id');
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'id'             => $guardian->id,
+                'full_name'      => $guardian->full_name,
+                'username'       => $guardian->username,
+                'email'          => $guardian->email,
+                'password_plain' => $guardian->password_plain ?? null,
+                'students'       => $guardian->students,
+            ],
+        ]);
+    }
+
+    /**
      * 保護者を作成
      */
     public function store(Request $request): JsonResponse
@@ -55,13 +85,14 @@ class StaffGuardianController extends Controller
         ]);
 
         $guardian = User::create([
-            'classroom_id' => $user->classroom_id,
-            'username'     => $validated['username'],
-            'password'     => Hash::make($validated['password']),
-            'full_name'    => $validated['full_name'],
-            'email'        => $validated['email'] ?? null,
-            'user_type'    => 'guardian',
-            'is_active'    => true,
+            'classroom_id'  => $user->classroom_id,
+            'username'      => $validated['username'],
+            'password'      => Hash::make($validated['password']),
+            'password_plain' => $validated['password'],
+            'full_name'     => $validated['full_name'],
+            'email'         => $validated['email'] ?? null,
+            'user_type'     => 'guardian',
+            'is_active'     => true,
         ]);
 
         return response()->json([
@@ -94,6 +125,7 @@ class StaffGuardianController extends Controller
         ]);
 
         if (isset($validated['password'])) {
+            $validated['password_plain'] = $validated['password'];
             $validated['password'] = Hash::make($validated['password']);
         } else {
             unset($validated['password']);

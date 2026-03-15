@@ -270,6 +270,7 @@ Route::prefix('staff')
         // --- 保護者管理（スタッフレベル） ---
         Route::get('/guardians', [App\Http\Controllers\Staff\StaffGuardianController::class, 'index']);
         Route::post('/guardians', [App\Http\Controllers\Staff\StaffGuardianController::class, 'store']);
+        Route::get('/guardians/{guardian}', [App\Http\Controllers\Staff\StaffGuardianController::class, 'show']);
         Route::put('/guardians/{guardian}', [App\Http\Controllers\Staff\StaffGuardianController::class, 'update']);
 
         // --- 未確認連絡帳 ---
