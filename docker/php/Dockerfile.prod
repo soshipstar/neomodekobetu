@@ -18,6 +18,9 @@ WORKDIR /var/www/html
 # Copy backend code
 COPY backend/ .
 
+# Ensure required directories exist before composer
+RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache
+
 # Install dependencies (no dev)
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
