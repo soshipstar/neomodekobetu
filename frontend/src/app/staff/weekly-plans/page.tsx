@@ -631,7 +631,9 @@ export default function WeeklyPlansPage() {
   // -----------------------------------------------------------------------
 
   const renderDetailView = () => {
-    if (!planDetail) return null;
+    if (!planDetail || !planDetail.id) return (
+      <Card><CardBody><p className="py-8 text-center text-sm text-[var(--neutral-foreground-4)]">この週の計画データはありません</p></CardBody></Card>
+    );
 
     const plan = planDetail;
     const hasPlan = !!plan.id;
