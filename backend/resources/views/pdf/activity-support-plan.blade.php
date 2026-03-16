@@ -69,8 +69,12 @@
             min-height: 30px;
             margin-bottom: 10px;
             white-space: pre-wrap;
-            font-size: 9pt;
-            line-height: 1.5;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            font-size: 8pt;
+            line-height: 1.4;
+            max-width: 100%;
+            overflow: hidden;
         }
 
         .schedule-table {
@@ -86,6 +90,9 @@
             padding: 3px 5px;
             text-align: left;
             vertical-align: top;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            font-size: 7.5pt;
         }
 
         .schedule-table th {
