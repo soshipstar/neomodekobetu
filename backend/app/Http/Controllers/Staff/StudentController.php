@@ -99,13 +99,17 @@ class StudentController extends Controller
             $gradeLevel = self::calculateGradeLevel($validated['birth_date'], $validated['grade_adjustment'] ?? 0);
         }
 
+        // Remove password from validated (stored separately as password_hash)
+        $password = $validated['password'] ?? null;
+        unset($validated['password']);
+
         $student = Student::create(array_merge($validated, [
             'classroom_id'    => $classroomId,
             'grade_level'     => $gradeLevel,
             'status'          => $validated['status'] ?? 'active',
             'is_active'       => ($validated['status'] ?? 'active') === 'active',
-            'password_hash'   => !empty($validated['password']) ? Hash::make($validated['password']) : null,
-            'password_plain'  => $validated['password'] ?? null,
+            'password_hash'   => $password ? Hash::make($password) : null,
+            'password_plain'  => $password,
         ]));
 
         return response()->json([
