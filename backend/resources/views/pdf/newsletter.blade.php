@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>{{ $newsletter->title ?? '施設通信' }} - PDF</title>
     <style>
-        @font-face { font-family: "ipag"; src: url("file:///var/www/html/storage/fonts/ipag.ttf"); font-weight: normal; font-style: normal; }
+        
         @page {
             size: A4 portrait;
             margin: 10mm;
@@ -17,7 +17,7 @@
         }
 
         body {
-            font-family: ipag, 'IPA Gothic', 'IPAGothic', sans-serif;
+            font-family: 'IPA Gothic', 'IPAGothic', 'Noto Sans JP', sans-serif;
             font-size: 10pt;
             line-height: 1.6;
             color: #333;

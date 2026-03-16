@@ -6,8 +6,8 @@ use App\Models\IndividualSupportPlan;
 use App\Models\KakehashiPeriod;
 use App\Models\MonitoringRecord;
 use App\Models\Newsletter;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\View;
 
 class PdfGenerationService
 {
@@ -21,18 +21,14 @@ class PdfGenerationService
     {
         $plan->load(['student', 'classroom', 'details', 'creator']);
 
-        $pdf = Pdf::loadView('pdf.support-plan', [
+        $html = View::make('pdf.support-plan', [
             'plan' => $plan,
             'student' => $plan->student,
             'classroom' => $plan->classroom,
             'details' => $plan->details->sortBy('sort_order'),
-        ])
-            ->setPaper('a4', 'portrait')
-            ->setOption('isRemoteEnabled', true)
-            ->setOption('isFontSubsettingEnabled', true)
-            ->setOption('defaultFont', 'ipag');
+        ])->render();
 
-        return $this->storePdf($pdf, 'support-plans', "plan_{$plan->id}_{$plan->student_id}");
+        return $this->storePdf($html, 'support-plans', "plan_{$plan->id}_{$plan->student_id}");
     }
 
     /**
@@ -45,19 +41,15 @@ class PdfGenerationService
     {
         $record->load(['plan.details', 'student', 'classroom', 'details', 'creator']);
 
-        $pdf = Pdf::loadView('pdf.monitoring', [
+        $html = View::make('pdf.monitoring', [
             'record' => $record,
             'plan' => $record->plan,
             'student' => $record->student,
             'classroom' => $record->classroom,
             'details' => $record->details,
-        ])
-            ->setPaper('a4', 'portrait')
-            ->setOption('isRemoteEnabled', true)
-            ->setOption('isFontSubsettingEnabled', true)
-            ->setOption('defaultFont', 'ipag');
+        ])->render();
 
-        return $this->storePdf($pdf, 'monitoring', "monitoring_{$record->id}_{$record->student_id}");
+        return $this->storePdf($html, 'monitoring', "monitoring_{$record->id}_{$record->student_id}");
     }
 
     /**
@@ -70,19 +62,15 @@ class PdfGenerationService
     {
         $period->load(['student.classroom', 'staffEntries', 'guardianEntries']);
 
-        $pdf = Pdf::loadView('pdf.kakehashi', [
+        $html = View::make('pdf.kakehashi', [
             'period' => $period,
             'student' => $period->student,
             'classroom' => $period->student->classroom,
             'staffEntries' => $period->staffEntries,
             'guardianEntries' => $period->guardianEntries,
-        ])
-            ->setPaper('a4', 'portrait')
-            ->setOption('isRemoteEnabled', true)
-            ->setOption('isFontSubsettingEnabled', true)
-            ->setOption('defaultFont', 'ipag');
+        ])->render();
 
-        return $this->storePdf($pdf, 'kakehashi', "kakehashi_{$period->id}_{$period->student_id}");
+        return $this->storePdf($html, 'kakehashi', "kakehashi_{$period->id}_{$period->student_id}");
     }
 
     /**
@@ -95,17 +83,13 @@ class PdfGenerationService
     {
         $newsletter->load(['classroom']);
 
-        $pdf = Pdf::loadView('pdf.newsletter', [
+        $html = View::make('pdf.newsletter', [
             'newsletter' => $newsletter,
             'classroom' => $newsletter->classroom,
-        ])
-            ->setPaper('a4', 'portrait')
-            ->setOption('isRemoteEnabled', true)
-            ->setOption('isFontSubsettingEnabled', true)
-            ->setOption('defaultFont', 'ipag');
+        ])->render();
 
         return $this->storePdf(
-            $pdf,
+            $html,
             'newsletters',
             "newsletter_{$newsletter->id}_{$newsletter->year}_{$newsletter->month}"
         );
@@ -114,12 +98,13 @@ class PdfGenerationService
     /**
      * Store the generated PDF to the configured disk and return its path.
      */
-    private function storePdf(object $pdf, string $directory, string $basename): string
+    private function storePdf(string $html, string $directory, string $basename): string
     {
         $filename = "{$basename}_" . now()->format('YmdHis') . '.pdf';
         $path = "pdf/{$directory}/{$filename}";
 
-        Storage::disk('s3')->put($path, $pdf->output());
+        $pdfBinary = PuppeteerPdfService::htmlToPdf($html);
+        Storage::disk('s3')->put($path, $pdfBinary);
 
         return $path;
     }

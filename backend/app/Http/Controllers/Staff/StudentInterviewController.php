@@ -5,10 +5,9 @@ namespace App\Http\Controllers\Staff;
 use App\Http\Controllers\Controller;
 use App\Models\Student;
 use App\Models\StudentInterview;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\PuppeteerPdfService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 
 class StudentInterviewController extends Controller
 {
@@ -163,7 +162,7 @@ class StudentInterviewController extends Controller
     /**
      * 面接記録をPDF出力
      */
-    public function pdf(Request $request, StudentInterview $interview): Response
+    public function pdf(Request $request, StudentInterview $interview)
     {
         $interview->load(['student', 'interviewer:id,full_name']);
 
@@ -171,21 +170,12 @@ class StudentInterviewController extends Controller
             abort(403, 'アクセス権限がありません。');
         }
 
-        $pdf = Pdf::loadView('pdf.student-interview', [
-            'interview' => $interview,
-            'student' => $interview->student,
-        ])
-            ->setPaper('a4', 'portrait')
-            ->setOption('isRemoteEnabled', true)
-            ->setOption('isFontSubsettingEnabled', true)
-            ->setOption('defaultFont', 'ipag');
-
         $filename = "student_interview_{$interview->id}.pdf";
 
-        return new Response($pdf->output(), 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-        ]);
+        return PuppeteerPdfService::download('pdf.student-interview', [
+            'interview' => $interview,
+            'student' => $interview->student,
+        ], $filename);
     }
 
     private function authorizeClassroom($user, Student $student): void

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>週間計画表 - {{ $weekStartFormatted }}〜{{ $weekEndFormatted }}</title>
     <style>
-        @font-face { font-family: "ipag"; src: url("file:///var/www/html/storage/fonts/ipag.ttf"); font-weight: normal; font-style: normal; }
+        
         @page {
             size: A4 portrait;
             margin: 8mm;
@@ -17,7 +17,7 @@
         }
 
         body {
-            font-family: ipag, 'IPA Gothic', 'IPAGothic', sans-serif;
+            font-family: 'IPA Gothic', 'IPAGothic', 'Noto Sans JP', sans-serif;
             font-size: 9pt;
             line-height: 1.3;
             color: #333;

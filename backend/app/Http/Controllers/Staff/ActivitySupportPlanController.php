@@ -6,10 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivitySupportPlan;
 use App\Models\AiGenerationLog;
 use App\Models\DailyRecord;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\PuppeteerPdfService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use OpenAI\Laravel\Facades\OpenAI;
@@ -234,7 +233,7 @@ class ActivitySupportPlanController extends Controller
     /**
      * 支援案をPDF出力
      */
-    public function pdf(Request $request, ActivitySupportPlan $plan): Response
+    public function pdf(Request $request, ActivitySupportPlan $plan)
     {
         $user = $request->user();
 
@@ -276,27 +275,14 @@ class ActivitySupportPlanController extends Controller
             $dayOfWeekLabel = implode('、', $dows);
         }
 
-        $pdf = Pdf::loadView('pdf.activity-support-plan', [
+        $filename = "activity_support_plan_{$plan->id}.pdf";
+
+        return PuppeteerPdfService::download('pdf.activity-support-plan', [
             'plan' => $plan,
             'planTypeLabel' => $planTypeLabel,
             'targetGradeLabel' => $targetGradeLabel,
             'dayOfWeekLabel' => $dayOfWeekLabel,
-        ])
-            ->setPaper('a4', 'portrait')
-            ->setOption('isRemoteEnabled', true)
-            ->setOption('isFontSubsettingEnabled', true)
-            ->setOption('defaultFont', 'ipag')
-            ->setOption('margin_top', 15)
-            ->setOption('margin_bottom', 15)
-            ->setOption('margin_left', 18)
-            ->setOption('margin_right', 18);
-
-        $filename = "activity_support_plan_{$plan->id}.pdf";
-
-        return new Response($pdf->output(), 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-        ]);
+        ], $filename);
     }
 
     /**

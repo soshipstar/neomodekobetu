@@ -31,9 +31,17 @@ RUN echo "opcache.enable=1\nopcache.memory_consumption=256\nopcache.max_accelera
 RUN apt-get update && apt-get install -y fonts-ipafont-gothic fonts-ipafont-mincho \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Node.js (for PDF generation)
+# Node.js + Puppeteer for PDF generation
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
-    && apt-get install -y nodejs
+    && apt-get install -y nodejs \
+    && apt-get install -y chromium \
+       libatk-bridge2.0-0 libatk1.0-0 libcups2 libdbus-1-3 libdrm2 \
+       libgbm1 libgtk-3-0 libnspr4 libnss3 libxcomposite1 libxdamage1 \
+       libxrandr2 libxshmfence1 xdg-utils \
+    && npm install -g puppeteer@latest \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # Storage directories (including DomPDF font cache)
 RUN mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache storage/logs bootstrap/cache storage/fonts \

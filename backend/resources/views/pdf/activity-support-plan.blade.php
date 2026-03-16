@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>支援案 - {{ $plan->activity_name }}</title>
     <style>
-        @font-face { font-family: "ipag"; src: url("file:///var/www/html/storage/fonts/ipag.ttf"); font-weight: normal; font-style: normal; }
+        
         @page {
             size: A4 portrait;
             margin: 15mm 18mm;
@@ -17,7 +17,7 @@
         }
 
         body {
-            font-family: ipag, 'IPA Gothic', 'IPAGothic', sans-serif;
+            font-family: 'IPA Gothic', 'IPAGothic', 'Noto Sans JP', sans-serif;
             font-size: 8.5pt;
             line-height: 1.35;
             color: #222;

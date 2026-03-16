@@ -5,10 +5,9 @@ namespace App\Http\Controllers\Staff;
 use App\Http\Controllers\Controller;
 use App\Models\WeeklyPlan;
 use App\Models\WeeklyPlanComment;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\PuppeteerPdfService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 
 class WeeklyPlanController extends Controller
 {
@@ -128,7 +127,7 @@ class WeeklyPlanController extends Controller
     /**
      * 週間計画をPDF出力
      */
-    public function pdf(Request $request, WeeklyPlan $plan): Response
+    public function pdf(Request $request, WeeklyPlan $plan)
     {
         $user = $request->user();
 
@@ -148,24 +147,15 @@ class WeeklyPlanController extends Controller
         $weekEndFormatted = $weekEnd->format('n月j日');
         $submitFormatted = $submitDate->format('n月j日');
 
-        $pdf = Pdf::loadView('pdf.weekly-plan', [
+        $filename = "weekly_plan_{$plan->id}_{$weekStart->format('Ymd')}.pdf";
+
+        return PuppeteerPdfService::download('pdf.weekly-plan', [
             'plan' => $plan,
             'content' => $content,
             'submissions' => $plan->submissions,
             'weekStartFormatted' => $weekStartFormatted,
             'weekEndFormatted' => $weekEndFormatted,
             'submitFormatted' => $submitFormatted,
-        ])
-            ->setPaper('a4', 'portrait')
-            ->setOption('isRemoteEnabled', true)
-            ->setOption('isFontSubsettingEnabled', true)
-            ->setOption('defaultFont', 'ipag');
-
-        $filename = "weekly_plan_{$plan->id}_{$weekStart->format('Ymd')}.pdf";
-
-        return new Response($pdf->output(), 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-        ]);
+        ], $filename);
     }
 }

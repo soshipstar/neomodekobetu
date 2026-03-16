@@ -8,7 +8,7 @@ use App\Models\KakehashiPeriod;
 use App\Models\KakehashiStaff;
 use App\Models\Student;
 use App\Models\StudentRecord;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\PuppeteerPdfService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -132,21 +132,15 @@ class KakehashiController extends Controller
             $this->authorizeClassroom($request->user(), $period->student);
         }
 
-        $pdf = Pdf::loadView('pdf.kakehashi', [
+        $filename = 'kakehashi_' . ($period->student->student_name ?? $period->id) . '_' . $period->start_date . '.pdf';
+
+        return PuppeteerPdfService::download('pdf.kakehashi', [
             'period'          => $period,
             'student'         => $period->student,
             'classroom'       => $period->student->classroom ?? null,
             'staffEntries'    => $period->staffEntries,
             'guardianEntries' => $period->guardianEntries,
-        ])
-            ->setPaper('a4', 'portrait')
-            ->setOption('isRemoteEnabled', true)
-            ->setOption('isFontSubsettingEnabled', true)
-            ->setOption('defaultFont', 'ipag');
-
-        $filename = 'kakehashi_' . ($period->student->student_name ?? $period->id) . '_' . $period->start_date . '.pdf';
-
-        return $pdf->download($filename);
+        ], $filename);
     }
 
     /**
