@@ -944,15 +944,16 @@ export default function KobetsuPlanPage() {
                           {/* 計画案PDF */}
                           <td className={tdClass}>
                             {status !== 'draft' ? (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handlePdfDownload(plan.id, 'proposal')}
-                                title="計画案PDFをダウンロード"
-                              >
-                                <Download className="h-3.5 w-3.5" />
-                                <span className="ml-1 text-xs">計画案</span>
-                              </Button>
+                              <a href={`/staff/kobetsu-plan/${plan.id}/preview`} target="_blank" rel="noopener noreferrer">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  title="計画案プレビュー"
+                                >
+                                  <FileText className="h-3.5 w-3.5" />
+                                  <span className="ml-1 text-xs">計画案</span>
+                                </Button>
+                              </a>
                             ) : (
                               <span className="text-xs text-[var(--neutral-foreground-3)]">-</span>
                             )}
@@ -961,15 +962,16 @@ export default function KobetsuPlanPage() {
                           {/* 正式版PDF */}
                           <td className={tdClass}>
                             {status === 'official' ? (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handlePdfDownload(plan.id, 'official')}
-                                title="正式版PDFをダウンロード"
-                              >
-                                <Download className="h-3.5 w-3.5" />
+                              <a href={`/staff/kobetsu-plan/${plan.id}/preview?type=official`} target="_blank" rel="noopener noreferrer">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  title="正式版プレビュー"
+                                >
+                                <FileText className="h-3.5 w-3.5" />
                                 <span className="ml-1 text-xs">正式版</span>
-                              </Button>
+                                </Button>
+                              </a>
                             ) : (
                               <span className="text-xs text-[var(--neutral-foreground-3)]">-</span>
                             )}
