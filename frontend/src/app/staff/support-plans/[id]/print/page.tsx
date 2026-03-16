@@ -60,36 +60,63 @@ export default function SupportPlanPrintPage() {
       <div className="mx-auto max-w-4xl bg-white print:max-w-none print:m-0">
         <style>{`
           @media print {
-            body { margin: 0; padding: 0; font-size: 9pt; }
+            body { margin: 0; padding: 0; }
             .print\\:hidden { display: none !important; }
             @page { size: A4 portrait; margin: 15mm 18mm; }
           }
+          .pp { font-family: 'Hiragino Kaku Gothic Pro', 'Noto Sans JP', sans-serif; color: #333; line-height: 1.5; }
+          .pp-header { text-align: center; margin-bottom: 20px; }
+          .pp-header h1 { font-size: 18pt; font-weight: 700; color: #1a1a1a; letter-spacing: 4pt; border-bottom: 3px double #1a1a1a; display: inline-block; padding-bottom: 4px; }
+          .pp-header-sub { font-size: 9pt; color: #888; margin-top: 4px; }
+          .pp-meta { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+          .pp-meta td { padding: 5px 10px; font-size: 10pt; border: 1px solid #ccc; }
+          .pp-meta .lbl { background: #f8f9fa; font-weight: 600; color: #555; width: 15%; white-space: nowrap; }
+          .pp-tags { margin-bottom: 12px; }
+          .pp-tag { display: inline-block; background: #e9ecef; color: #495057; padding: 2px 10px; border-radius: 12px; font-size: 9pt; margin: 0 4px 4px 0; }
+          .pp-sec { margin-bottom: 16px; page-break-inside: avoid; }
+          .pp-sec-head { font-size: 11pt; font-weight: 700; color: #2c3e50; border-left: 4px solid #3498db; padding: 4px 0 4px 10px; margin-bottom: 6px; background: #f8f9fa; }
+          .pp-sec-body { font-size: 10pt; line-height: 1.7; padding: 10px 14px; border: 1px solid #dee2e6; border-radius: 4px; background: #fff; white-space: pre-wrap; word-wrap: break-word; }
+          .pp-sched { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 9.5pt; }
+          .pp-sched th { background: #2c3e50; color: #fff; font-weight: 600; padding: 6px 8px; text-align: center; }
+          .pp-sched td { border: 1px solid #dee2e6; padding: 6px 8px; vertical-align: top; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
+          .pp-sched .routine { background: #fff8e1; }
+          .pp-sched .main { background: #e3f2fd; }
+          .pp-footer { margin-top: 20px; text-align: right; font-size: 8pt; color: #aaa; }
         `}</style>
 
-        <div style={{ fontFamily: 'sans-serif', color: '#222', lineHeight: 1.35 }}>
+        <div className="pp">
           {/* Header */}
-          <div style={{ textAlign: 'center', borderBottom: '2.5px solid #2c3e50', paddingBottom: '8px', marginBottom: '12px' }}>
-            <h1 style={{ fontSize: '14pt', color: '#2c3e50', margin: 0, letterSpacing: '2pt' }}>活動支援案</h1>
-            <p style={{ fontSize: '7pt', color: '#777', marginTop: '2px' }}>放課後等デイサービス 活動計画書</p>
+          <div className="pp-header">
+            <h1>活動支援案</h1>
+            <div className="pp-header-sub">放課後等デイサービス 活動計画書</div>
           </div>
 
           {/* Meta */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10px', fontSize: '9pt' }}>
+          <table className="pp-meta">
             <tbody>
               <tr>
-                <td style={{ padding: '3px 6px', border: '0.5px solid #aaa', fontWeight: 'bold', background: '#f5f6f8', width: '18%' }}>活動名</td>
-                <td style={{ padding: '3px 6px', border: '0.5px solid #aaa' }}>{plan.activity_name}</td>
-                <td style={{ padding: '3px 6px', border: '0.5px solid #aaa', fontWeight: 'bold', background: '#f5f6f8', width: '18%' }}>活動日</td>
-                <td style={{ padding: '3px 6px', border: '0.5px solid #aaa' }}>{plan.activity_date || ''}</td>
+                <td className="lbl">活動名</td>
+                <td>{plan.activity_name}</td>
+                <td className="lbl">活動日</td>
+                <td>{plan.activity_date || ''}</td>
               </tr>
               <tr>
-                <td style={{ padding: '3px 6px', border: '0.5px solid #aaa', fontWeight: 'bold', background: '#f5f6f8' }}>総活動時間</td>
-                <td style={{ padding: '3px 6px', border: '0.5px solid #aaa' }}>{plan.total_duration}分</td>
-                <td style={{ padding: '3px 6px', border: '0.5px solid #aaa', fontWeight: 'bold', background: '#f5f6f8' }}>作成者</td>
-                <td style={{ padding: '3px 6px', border: '0.5px solid #aaa' }}>{plan.staff?.full_name || ''}</td>
+                <td className="lbl">総活動時間</td>
+                <td>{plan.total_duration}分</td>
+                <td className="lbl">作成者</td>
+                <td>{plan.staff?.full_name || ''}</td>
               </tr>
             </tbody>
           </table>
+
+          {/* Tags */}
+          {plan.tags && (
+            <div className="pp-tags">
+              {plan.tags.split(',').map((tag: string, i: number) => (
+                <span key={i} className="pp-tag">{tag.trim()}</span>
+              ))}
+            </div>
+          )}
 
           {/* Sections */}
           {[
@@ -97,36 +124,34 @@ export default function SupportPlanPrintPage() {
             { title: '活動の内容', content: plan.activity_content },
             { title: '五領域への配慮', content: plan.five_domains_consideration },
           ].map((s) => s.content ? (
-            <div key={s.title} style={{ marginBottom: '8px' }}>
-              <div style={{ background: '#34495e', color: 'white', padding: '3px 8px', fontWeight: 'bold', fontSize: '9pt' }}>{s.title}</div>
-              <div style={{ border: '0.5px solid #aaa', borderTop: 'none', padding: '6px 8px', fontSize: '9pt', lineHeight: 1.35, whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
-                {nl(s.content)}
-              </div>
+            <div key={s.title} className="pp-sec">
+              <div className="pp-sec-head">{s.title}</div>
+              <div className="pp-sec-body">{nl(s.content)}</div>
             </div>
           ) : null)}
 
           {/* Schedule */}
           {schedule.length > 0 && (
-            <div style={{ marginBottom: '8px' }}>
-              <div style={{ background: '#34495e', color: 'white', padding: '3px 8px', fontWeight: 'bold', fontSize: '9pt' }}>活動スケジュール</div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8pt' }}>
+            <div className="pp-sec">
+              <div className="pp-sec-head">活動スケジュール</div>
+              <table className="pp-sched">
                 <thead>
-                  <tr style={{ background: '#ecf0f1' }}>
-                    <th style={{ border: '0.5px solid #888', padding: '2px 4px', width: '4%' }}>No</th>
-                    <th style={{ border: '0.5px solid #888', padding: '2px 4px', width: '10%' }}>種別</th>
-                    <th style={{ border: '0.5px solid #888', padding: '2px 4px', width: '22%' }}>活動名</th>
-                    <th style={{ border: '0.5px solid #888', padding: '2px 4px', width: '8%' }}>時間</th>
-                    <th style={{ border: '0.5px solid #888', padding: '2px 4px', width: '56%' }}>内容</th>
+                  <tr>
+                    <th style={{ width: '30px' }}>No</th>
+                    <th style={{ width: '70px' }}>種別</th>
+                    <th>活動名</th>
+                    <th style={{ width: '50px' }}>時間</th>
+                    <th>内容</th>
                   </tr>
                 </thead>
                 <tbody>
                   {schedule.map((item: any, i: number) => (
-                    <tr key={i} style={{ background: item.type === 'routine' ? '#fef9e7' : '#eaf2f8' }}>
-                      <td style={{ border: '0.5px solid #888', padding: '2px 4px', textAlign: 'center' }}>{i + 1}</td>
-                      <td style={{ border: '0.5px solid #888', padding: '2px 4px', textAlign: 'center' }}>{item.type === 'routine' ? '毎日の支援' : '主活動'}</td>
-                      <td style={{ border: '0.5px solid #888', padding: '2px 4px' }}>{item.name || ''}</td>
-                      <td style={{ border: '0.5px solid #888', padding: '2px 4px', textAlign: 'center' }}>{item.duration || ''}分</td>
-                      <td style={{ border: '0.5px solid #888', padding: '2px 4px', whiteSpace: 'pre-wrap', wordWrap: 'break-word', fontSize: '7.5pt', lineHeight: 1.25 }}>{nl(item.content)}</td>
+                    <tr key={i} className={item.type === 'routine' ? 'routine' : 'main'}>
+                      <td style={{ textAlign: 'center' }}>{i + 1}</td>
+                      <td style={{ textAlign: 'center' }}>{item.type === 'routine' ? '毎日の支援' : '主活動'}</td>
+                      <td>{item.name || ''}</td>
+                      <td style={{ textAlign: 'center' }}>{item.duration || ''}分</td>
+                      <td>{nl(item.content)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -134,16 +159,15 @@ export default function SupportPlanPrintPage() {
             </div>
           )}
 
+          {/* Other notes */}
           {plan.other_notes && (
-            <div style={{ marginBottom: '8px' }}>
-              <div style={{ background: '#34495e', color: 'white', padding: '3px 8px', fontWeight: 'bold', fontSize: '9pt' }}>その他の注意点</div>
-              <div style={{ border: '0.5px solid #aaa', borderTop: 'none', padding: '6px 8px', fontSize: '9pt', lineHeight: 1.35, whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
-                {nl(plan.other_notes)}
-              </div>
+            <div className="pp-sec">
+              <div className="pp-sec-head">その他の注意点</div>
+              <div className="pp-sec-body">{nl(plan.other_notes)}</div>
             </div>
           )}
 
-          <div style={{ textAlign: 'center', marginTop: '12px', paddingTop: '4px', borderTop: '0.5px solid #ccc', fontSize: '7pt', color: '#999' }}>
+          <div className="pp-footer">
             出力日時: {new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}
           </div>
         </div>
