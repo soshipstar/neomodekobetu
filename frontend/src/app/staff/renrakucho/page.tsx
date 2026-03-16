@@ -92,6 +92,12 @@ const DOMAIN_LABELS: Record<string, string> = {
 
 const DOMAIN_KEYS = Object.keys(DOMAIN_LABELS) as Array<keyof typeof DOMAIN_LABELS>;
 
+/** Normalize escaped newlines from API */
+function nl(text: string | null | undefined): string {
+  if (!text) return '';
+  return text.replace(/\\r\\n|\\n|\\r/g, '\n').replace(/\r\n|\r/g, '\n');
+}
+
 const GRADE_LABELS: Record<string, string> = {
   preschool: '未就学',
   elementary: '小学生',
@@ -305,12 +311,12 @@ export default function RenrakuchoPage() {
   const handleSelectStudent = (rec: StudentRecord) => {
     setEditingStudentId(rec.student_id);
     setStudentFormData({
-      health_life: rec.health_life || '',
-      motor_sensory: rec.motor_sensory || '',
-      cognitive_behavior: rec.cognitive_behavior || '',
-      language_communication: rec.language_communication || '',
-      social_relations: rec.social_relations || '',
-      notes: rec.notes || '',
+      health_life: nl(rec.health_life),
+      motor_sensory: nl(rec.motor_sensory),
+      cognitive_behavior: nl(rec.cognitive_behavior),
+      language_communication: nl(rec.language_communication),
+      social_relations: nl(rec.social_relations),
+      notes: nl(rec.notes),
     });
   };
 
