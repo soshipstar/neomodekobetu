@@ -101,6 +101,18 @@ class StudentInterviewController extends Controller
     }
 
     /**
+     * 面接記録の詳細を取得
+     */
+    public function showSingle(Request $request, StudentInterview $interview): JsonResponse
+    {
+        if ($request->user()->classroom_id && $interview->classroom_id !== $request->user()->classroom_id) {
+            abort(403);
+        }
+        $interview->load(['student:id,student_name', 'interviewer:id,full_name']);
+        return response()->json(['success' => true, 'data' => $interview]);
+    }
+
+    /**
      * 面接記録を更新
      */
     public function update(Request $request, StudentInterview $interview): JsonResponse

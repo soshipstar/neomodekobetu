@@ -336,8 +336,9 @@ export default function StudentInterviewsPage() {
                   <div className="flex gap-1">
                     <Button variant="outline" size="sm" leftIcon={<Download className="h-4 w-4" />}
                       onClick={() => handlePdf(selectedInterview.id)}>PDF</Button>
-                    <Button variant="outline" size="sm" leftIcon={<Printer className="h-4 w-4" />}
-                      onClick={() => window.print()}>印刷</Button>
+                    <a href={`/staff/student-interviews/${selectedInterview.id}/print`} target="_blank" rel="noopener noreferrer">
+                      <Button variant="outline" size="sm" leftIcon={<Printer className="h-4 w-4" />}>印刷プレビュー</Button>
+                    </a>
                     <Button variant="outline" size="sm" leftIcon={<Pencil className="h-4 w-4" />}
                       onClick={() => openEdit(selectedInterview)}>編集</Button>
                     <Button variant="ghost" size="sm"

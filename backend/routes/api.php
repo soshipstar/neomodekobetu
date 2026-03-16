@@ -214,6 +214,7 @@ Route::prefix('staff')
         Route::get('/student-interviews', [App\Http\Controllers\Staff\StudentInterviewController::class, 'list']);
         Route::post('/students/{student}/interview', [App\Http\Controllers\Staff\StudentInterviewController::class, 'store']);
         Route::get('/students/{student}/interviews', [App\Http\Controllers\Staff\StudentInterviewController::class, 'index']);
+        Route::get('/student-interviews/{interview}', [App\Http\Controllers\Staff\StudentInterviewController::class, 'showSingle']);
         Route::put('/student-interviews/{interview}', [App\Http\Controllers\Staff\StudentInterviewController::class, 'update']);
         Route::delete('/student-interviews/{interview}', [App\Http\Controllers\Staff\StudentInterviewController::class, 'destroy']);
         Route::get('/student-interviews/{interview}/pdf', [App\Http\Controllers\Staff\StudentInterviewController::class, 'pdf']);

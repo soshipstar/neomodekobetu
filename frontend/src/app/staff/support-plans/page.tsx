@@ -28,6 +28,7 @@ import {
   X,
   Loader2,
   Download,
+  Printer,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -405,6 +406,11 @@ function PlanCard({
           <Button size="sm" variant="outline" onClick={() => onPdfDownload(plan)} leftIcon={<Download className="h-3.5 w-3.5" />}>
             PDF
           </Button>
+          <a href={`/staff/support-plans/${plan.id}/print`} target="_blank" rel="noopener noreferrer">
+            <Button size="sm" variant="outline" leftIcon={<Printer className="h-3.5 w-3.5" />}>
+              印刷
+            </Button>
+          </a>
           <Button size="sm" variant="danger" onClick={() => onDelete(plan)} leftIcon={<Trash2 className="h-3.5 w-3.5" />}>
             削除
           </Button>
