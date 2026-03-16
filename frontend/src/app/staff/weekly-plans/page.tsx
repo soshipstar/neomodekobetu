@@ -602,13 +602,15 @@ export default function WeeklyPlansPage() {
                         評価済み
                       </Badge>
                     )}
-                    <p className="mt-2 text-xs text-[var(--neutral-foreground-4)]">
-                      最終更新: {formatDateTime(plan.updated_at)}
-                    </p>
+                    {plan.updated_at && (
+                      <p className="mt-2 text-xs text-[var(--neutral-foreground-4)]">
+                        最終更新: {formatDateTime(plan.updated_at)}
+                      </p>
+                    )}
                   </>
                 ) : (
                   <>
-                    <Badge variant="danger" dot>
+                    <Badge variant="default" dot>
                       計画なし
                     </Badge>
                     <p className="mt-2 text-xs text-[var(--neutral-foreground-4)]">
