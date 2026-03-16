@@ -4,195 +4,164 @@
     <meta charset="UTF-8">
     <title>支援案 - {{ $plan->activity_name }}</title>
     <style>
-        
-        @page {
-            size: A4 portrait;
-            margin: 15mm 18mm;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'IPA Gothic', 'IPAGothic', 'Noto Sans JP', sans-serif;
-            font-size: 8.5pt;
-            line-height: 1.35;
-            color: #222;
-        }
-
-        /* ヘッダー */
-        .header {
-            text-align: center;
-            margin-bottom: 8px;
-            padding-bottom: 6px;
-            border-bottom: 2.5px solid #2c3e50;
-        }
-
-        .header h1 {
-            font-size: 14pt;
-            letter-spacing: 2pt;
-            color: #2c3e50;
-            margin: 0;
-        }
-
-        .header-sub {
-            font-size: 7pt;
-            color: #777;
-            margin-top: 2px;
-        }
-
-        /* メタ情報テーブル */
-        .meta-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 8px;
-        }
-
-        .meta-table td {
-            padding: 2.5px 6px;
-            font-size: 8pt;
-            border: 0.5px solid #aaa;
-            line-height: 1.3;
-        }
-
-        .meta-label {
-            font-weight: bold;
-            background: #f5f6f8;
-            width: 18%;
-            color: #444;
-        }
-
-        /* セクション */
-        .section {
-            margin-bottom: 6px;
-        }
-
-        .section-title {
-            background: #34495e;
-            color: white;
-            padding: 3px 8px;
-            font-weight: bold;
-            font-size: 8.5pt;
-            margin-bottom: 0;
-            letter-spacing: 0.5pt;
-        }
-
-        .section-content {
-            padding: 4px 8px;
-            border: 0.5px solid #aaa;
-            border-top: none;
-            font-size: 8pt;
-            line-height: 1.3;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-        }
-
-        .section-content p {
-            margin: 0;
-            padding: 0;
-        }
-
-        /* スケジュールテーブル */
-        .schedule-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 6px;
-        }
-
-        .schedule-table th,
-        .schedule-table td {
-            border: 0.5px solid #888;
-            padding: 2px 4px;
-            text-align: left;
-            vertical-align: top;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            font-size: 7.5pt;
-            line-height: 1.25;
-        }
-
-        .schedule-table th {
-            background: #ecf0f1;
-            font-weight: bold;
-            text-align: center;
-            font-size: 7.5pt;
+            font-family: 'IPA Gothic', 'IPAGothic', 'Hiragino Kaku Gothic Pro', 'Noto Sans JP', sans-serif;
+            font-size: 10pt;
+            line-height: 1.5;
             color: #333;
         }
 
-        .schedule-table .routine-row {
-            background: #fef9e7;
+        /* ── ヘッダー ── */
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 18pt;
+            font-weight: 700;
+            color: #1a1a1a;
+            letter-spacing: 4pt;
+            border-bottom: 3px double #1a1a1a;
+            display: inline-block;
+            padding-bottom: 4px;
+        }
+        .header-sub {
+            font-size: 9pt;
+            color: #888;
+            margin-top: 4px;
         }
 
-        .schedule-table .main-row {
-            background: #eaf2f8;
+        /* ── メタ情報 ── */
+        .meta {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+        }
+        .meta td {
+            padding: 5px 10px;
+            font-size: 9.5pt;
+            border: 1px solid #ccc;
+            vertical-align: middle;
+        }
+        .meta .lbl {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #555;
+            width: 15%;
+            white-space: nowrap;
         }
 
-        /* タグ */
-        .tag-list {
-            margin-bottom: 6px;
-            font-size: 7.5pt;
+        /* ── タグ ── */
+        .tags {
+            margin-bottom: 12px;
         }
-
         .tag {
             display: inline-block;
-            background: #e8ecef;
-            padding: 1px 6px;
-            border-radius: 2px;
-            font-size: 7pt;
-            margin-right: 3px;
-            color: #555;
+            background: #e9ecef;
+            color: #495057;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 8.5pt;
+            margin: 0 4px 4px 0;
         }
 
-        /* フッター */
-        .footer {
+        /* ── セクション ── */
+        .section {
+            margin-bottom: 14px;
+            page-break-inside: avoid;
+        }
+        .section-head {
+            font-size: 11pt;
+            font-weight: 700;
+            color: #2c3e50;
+            border-left: 4px solid #3498db;
+            padding: 4px 0 4px 10px;
+            margin-bottom: 6px;
+            background: #f8f9fa;
+        }
+        .section-body {
+            font-size: 9.5pt;
+            line-height: 1.6;
+            padding: 8px 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            background: #fff;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        /* ── スケジュール ── */
+        .sched {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 14px;
+            font-size: 9pt;
+        }
+        .sched th {
+            background: #2c3e50;
+            color: #fff;
+            font-weight: 600;
+            padding: 6px 8px;
             text-align: center;
-            margin-top: 10px;
-            padding-top: 4px;
-            border-top: 0.5px solid #ccc;
-            font-size: 6.5pt;
-            color: #999;
+            font-size: 8.5pt;
+        }
+        .sched td {
+            border: 1px solid #dee2e6;
+            padding: 5px 8px;
+            vertical-align: top;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .sched .routine { background: #fff8e1; }
+        .sched .main    { background: #e3f2fd; }
+        .sched .no-col  { text-align: center; width: 30px; }
+        .sched .type-col { text-align: center; width: 70px; }
+        .sched .time-col { text-align: center; width: 50px; }
+
+        /* ── フッター ── */
+        .footer {
+            margin-top: 20px;
+            text-align: right;
+            font-size: 8pt;
+            color: #aaa;
         }
     </style>
 </head>
 <body>
+
     <div class="header">
         <h1>活動支援案</h1>
         <div class="header-sub">放課後等デイサービス 活動計画書</div>
     </div>
 
     {{-- メタ情報 --}}
-    <table class="meta-table">
+    <table class="meta">
         <tr>
-            <td class="meta-label">活動名</td>
+            <td class="lbl">活動名</td>
             <td>{{ $plan->activity_name }}</td>
-            <td class="meta-label">活動日</td>
+            <td class="lbl">活動日</td>
             <td>{{ $plan->activity_date ? $plan->activity_date->format('Y年m月d日') : '' }}</td>
         </tr>
         <tr>
-            <td class="meta-label">種別</td>
+            <td class="lbl">種別</td>
             <td>{{ $planTypeLabel }}</td>
-            <td class="meta-label">対象学年</td>
+            <td class="lbl">対象学年</td>
             <td>{{ $targetGradeLabel ?: '全学年' }}</td>
         </tr>
         <tr>
-            <td class="meta-label">総活動時間</td>
+            <td class="lbl">総活動時間</td>
             <td>{{ $plan->total_duration }}分</td>
-            <td class="meta-label">曜日</td>
-            <td>{{ $dayOfWeekLabel ?: '-' }}</td>
-        </tr>
-        <tr>
-            <td class="meta-label">作成者</td>
-            <td colspan="3">{{ $plan->staff->full_name ?? '' }}</td>
+            <td class="lbl">作成者</td>
+            <td>{{ $plan->staff->full_name ?? '' }}</td>
         </tr>
     </table>
 
     {{-- タグ --}}
     @if ($plan->tags)
-    <div class="tag-list">
-        <strong>タグ：</strong>
+    <div class="tags">
         @foreach (explode(',', $plan->tags) as $tag)
             <span class="tag">{{ trim($tag) }}</span>
         @endforeach
@@ -202,49 +171,49 @@
     {{-- 活動の目的 --}}
     @if ($plan->activity_purpose)
     <div class="section">
-        <div class="section-title">活動の目的</div>
-        <div class="section-content">{{ $plan->activity_purpose }}</div>
+        <div class="section-head">活動の目的</div>
+        <div class="section-body">{{ $plan->activity_purpose }}</div>
     </div>
     @endif
 
     {{-- 活動の内容 --}}
     @if ($plan->activity_content)
     <div class="section">
-        <div class="section-title">活動の内容</div>
-        <div class="section-content">{{ $plan->activity_content }}</div>
+        <div class="section-head">活動の内容</div>
+        <div class="section-body">{{ $plan->activity_content }}</div>
     </div>
     @endif
 
     {{-- 五領域への配慮 --}}
     @if ($plan->five_domains_consideration)
     <div class="section">
-        <div class="section-title">五領域への配慮</div>
-        <div class="section-content">{{ $plan->five_domains_consideration }}</div>
+        <div class="section-head">五領域への配慮</div>
+        <div class="section-body">{{ $plan->five_domains_consideration }}</div>
     </div>
     @endif
 
     {{-- 活動スケジュール --}}
     @if ($plan->activity_schedule && count($plan->activity_schedule) > 0)
     <div class="section">
-        <div class="section-title">活動スケジュール</div>
-        <table class="schedule-table">
+        <div class="section-head">活動スケジュール</div>
+        <table class="sched">
             <thead>
                 <tr>
-                    <th style="width: 4%;">No</th>
-                    <th style="width: 10%;">種別</th>
-                    <th style="width: 22%;">活動名</th>
-                    <th style="width: 8%;">時間</th>
-                    <th style="width: 56%;">内容</th>
+                    <th class="no-col">No</th>
+                    <th class="type-col">種別</th>
+                    <th>活動名</th>
+                    <th class="time-col">時間</th>
+                    <th>内容</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($plan->activity_schedule as $i => $item)
                 @php $isRoutine = ($item['type'] ?? '') === 'routine'; @endphp
-                <tr class="{{ $isRoutine ? 'routine-row' : 'main-row' }}">
-                    <td style="text-align: center;">{{ $i + 1 }}</td>
-                    <td style="text-align: center;">{{ $isRoutine ? '毎日の支援' : '主活動' }}</td>
+                <tr class="{{ $isRoutine ? 'routine' : 'main' }}">
+                    <td class="no-col">{{ $i + 1 }}</td>
+                    <td class="type-col">{{ $isRoutine ? '毎日の支援' : '主活動' }}</td>
                     <td>{{ $item['name'] ?? '' }}</td>
-                    <td style="text-align: center;">{{ $item['duration'] ?? '' }}分</td>
+                    <td class="time-col">{{ $item['duration'] ?? '' }}分</td>
                     <td>{{ $item['content'] ?? '' }}</td>
                 </tr>
                 @endforeach
@@ -256,13 +225,14 @@
     {{-- その他 --}}
     @if ($plan->other_notes)
     <div class="section">
-        <div class="section-title">その他の注意点</div>
-        <div class="section-content">{{ $plan->other_notes }}</div>
+        <div class="section-head">その他の注意点</div>
+        <div class="section-body">{{ $plan->other_notes }}</div>
     </div>
     @endif
 
     <div class="footer">
         出力日時: {{ now()->format('Y/m/d H:i') }}
     </div>
+
 </body>
 </html>
