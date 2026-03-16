@@ -561,12 +561,13 @@ export default function RenrakuchoPage() {
                     <Edit3 className="h-4 w-4" />
                   </Button>
                   <Button
-                    variant="subtle"
+                    variant="outline"
                     size="sm"
-                    title="保護者に送信"
+                    title="統合・送信"
                     onClick={() => handleOpenSendModal(activity.id)}
                   >
-                    <Send className="h-4 w-4" />
+                    <Send className="h-4 w-4 mr-1" />
+                    <span className="text-xs">統合</span>
                   </Button>
                   <Button
                     variant="ghost"
@@ -970,12 +971,12 @@ export default function RenrakuchoPage() {
       <Modal
         isOpen={showSendModal}
         onClose={() => setShowSendModal(false)}
-        title="保護者へ送信"
+        title="連絡帳の統合・送信"
         size="full"
       >
         <div className="space-y-4">
           <p className="text-xs text-[var(--neutral-foreground-3)]">
-            各生徒の連絡帳文を確認・編集して送信してください。AIボタンで5領域の観察記録から統合文を自動生成できます。
+            5領域の観察記録から統合文を生成し、確認・編集後に保護者へ送信します。AIボタンで自動生成できます。
           </p>
 
           {studentRecords
@@ -1020,7 +1021,7 @@ export default function RenrakuchoPage() {
                       onChange={(e) =>
                         setSendNotes((prev) => ({ ...prev, [studentId]: e.target.value }))
                       }
-                      placeholder="送信する連絡帳文を入力..."
+                      placeholder="統合文を入力またはAIで生成..."
                       className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] placeholder-[var(--neutral-foreground-4)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
                     />
                   </CardBody>
