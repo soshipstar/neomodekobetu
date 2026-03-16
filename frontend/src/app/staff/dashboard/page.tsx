@@ -43,11 +43,18 @@ interface DashboardSummary {
   facility_evaluation_incomplete: boolean;
 }
 
+interface MeetingInfo {
+  date: string;
+  student_name: string;
+  guardian_name: string;
+  purpose: string;
+}
+
 interface CalendarData {
   activity_dates: string[];   // YYYY-MM-DD
   holiday_dates: string[];    // YYYY-MM-DD
   event_dates: { date: string; label: string; color: string }[];
-  meeting_dates: string[];    // YYYY-MM-DD
+  meeting_dates: MeetingInfo[] | string[];
 }
 
 interface Activity {
@@ -285,7 +292,25 @@ export default function StaffDashboardPage() {
     });
     return m;
   }, [calendar]);
-  const meetingDateSet = useMemo(() => new Set(calendar.meeting_dates), [calendar]);
+  const meetingDateMap = useMemo(() => {
+    const m = new Map<string, MeetingInfo[]>();
+    if (Array.isArray(calendar.meeting_dates)) {
+      calendar.meeting_dates.forEach((item) => {
+        if (typeof item === 'string') {
+          // Legacy format (just date string)
+          const arr = m.get(item) || [];
+          arr.push({ date: item, student_name: '', guardian_name: '', purpose: '' });
+          m.set(item, arr);
+        } else {
+          // New format with details
+          const arr = m.get(item.date) || [];
+          arr.push(item);
+          m.set(item.date, arr);
+        }
+      });
+    }
+    return m;
+  }, [calendar]);
 
   // Group attendance by grade
   const attendanceByGrade = useMemo(() => {
@@ -397,7 +422,8 @@ export default function StaffDashboardPage() {
                           const isHoliday = holidayDateSet.has(dateStr);
                           const hasActivity = activityDateSet.has(dateStr);
                           const eventInfos = eventDateMap.get(dateStr);
-                          const hasMeeting = meetingDateSet.has(dateStr);
+                          const meetingInfos = meetingDateMap.get(dateStr);
+                          const hasMeeting = !!meetingInfos && meetingInfos.length > 0;
                           const isSunday = di === 0;
                           const isSaturday = di === 6;
 
@@ -432,17 +458,26 @@ export default function StaffDashboardPage() {
                                   {hasActivity && (
                                     <span className="h-1.5 w-1.5 rounded-full bg-[var(--status-success-fg)]" title="活動あり" />
                                   )}
-                                  {hasMeeting && (
-                                    <span className="h-1.5 w-1.5 rounded-full bg-[var(--status-warning-fg)]" title="面談" />
-                                  )}
                                 </div>
+                                {/* Meeting labels */}
+                                {meetingInfos && meetingInfos.map((mi, mi_i) => (
+                                  <div
+                                    key={`m-${mi_i}`}
+                                    className="mt-0.5 w-full truncate rounded px-0.5 text-[8px] leading-tight text-white lg:text-[9px]"
+                                    style={{ backgroundColor: '#f59e0b' }}
+                                    title={`面談: ${mi.student_name}（${mi.guardian_name}）${mi.purpose ? ' - ' + mi.purpose : ''}`}
+                                  >
+                                    面談:{mi.student_name || '未定'}
+                                  </div>
+                                ))}
                                 {/* Event labels */}
                                 {eventInfos && eventInfos.map((ev, ei) => (
                                   <div
                                     key={ei}
-                                    className="mt-0.5 w-full truncate rounded px-0.5 text-[8px] leading-tight text-white lg:text-[9px]"
+                                    className="mt-0.5 w-full truncate rounded px-0.5 text-[8px] leading-tight text-white lg:text-[9px] cursor-pointer hover:opacity-80"
                                     style={{ backgroundColor: ev.color || '#6366f1' }}
                                     title={ev.label}
+                                    onClick={(e) => { e.stopPropagation(); setSelectedDate(dateStr); }}
                                   >
                                     {ev.label}
                                   </div>
@@ -465,7 +500,7 @@ export default function StaffDashboardPage() {
                   <span className="h-2 w-2 rounded-full bg-[#6366f1]" /> イベント
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full bg-[var(--status-warning-fg)]" /> 面談
+                  <span className="h-2 w-2 rounded-full bg-[#f59e0b]" /> 面談
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="inline-block h-3 w-3 rounded bg-[var(--status-danger-bg)] border border-[var(--status-danger-fg)]" /> 祝日
@@ -560,6 +595,36 @@ export default function StaffDashboardPage() {
                           style={{ backgroundColor: ev.color || '#6366f1' }}
                         />
                         <span className="font-medium text-[var(--neutral-foreground-1)]">{ev.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardBody>
+              </Card>
+            );
+          })()}
+
+          {/* ---------- Meetings for selected date ---------- */}
+          {(() => {
+            const selectedMeetings = meetingDateMap.get(selectedDate);
+            if (!selectedMeetings || selectedMeetings.length === 0) return null;
+            return (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{selectedDate.replace(/-/g, '/')} の面談</CardTitle>
+                </CardHeader>
+                <CardBody>
+                  <div className="space-y-2">
+                    {selectedMeetings.map((mi, i) => (
+                      <div key={i} className="flex items-center gap-3 rounded-lg border border-[var(--neutral-stroke-2)] p-3">
+                        <span className="h-3 w-3 shrink-0 rounded-full bg-[var(--status-warning-fg)]" />
+                        <div>
+                          <span className="font-medium text-[var(--neutral-foreground-1)]">
+                            {mi.student_name}（保護者: {mi.guardian_name || '未定'}）
+                          </span>
+                          {mi.purpose && (
+                            <p className="text-xs text-[var(--neutral-foreground-3)] mt-0.5">{mi.purpose}</p>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>

@@ -322,14 +322,19 @@ class DashboardController extends Controller
             ->values()
             ->toArray();
 
-        // --- 面談確定日 ---
+        // --- 面談確定日（相手情報付き） ---
         $meetingDates = MeetingRequest::where('classroom_id', $classroomId)
             ->where('status', 'confirmed')
             ->whereNotNull('confirmed_date')
             ->whereBetween('confirmed_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
-            ->pluck('confirmed_date')
-            ->map(fn ($d) => Carbon::parse($d)->toDateString())
-            ->unique()
+            ->with(['student:id,student_name', 'guardian:id,full_name'])
+            ->get()
+            ->map(fn ($m) => [
+                'date'          => Carbon::parse($m->confirmed_date)->toDateString(),
+                'student_name'  => $m->student->student_name ?? '',
+                'guardian_name' => $m->guardian->full_name ?? '',
+                'purpose'       => $m->purpose ?? '',
+            ])
             ->values()
             ->toArray();
 
