@@ -576,7 +576,9 @@ export default function WeeklyPlansPage() {
 
     return (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {studentsWithPlans.map(({ student, plan }) => (
+        {studentsWithPlans.map(({ student, plan }) => {
+          if (!student || !student.id) return null;
+          return (
           <Card
             key={student.id}
             className="cursor-pointer transition-all hover:-translate-y-1 hover:shadow-lg"
@@ -588,7 +590,7 @@ export default function WeeklyPlansPage() {
                   <User className="h-5 w-5" />
                 </div>
                 <span className="text-base font-semibold text-[var(--neutral-foreground-1)]">
-                  {student.student_name}
+                  {student.student_name || '不明'}
                 </span>
               </div>
               <div>
@@ -621,7 +623,8 @@ export default function WeeklyPlansPage() {
               </div>
             </CardBody>
           </Card>
-        ))}
+          );
+        })}
       </div>
     );
   };
