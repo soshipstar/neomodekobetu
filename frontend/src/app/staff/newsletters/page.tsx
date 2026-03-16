@@ -248,7 +248,7 @@ export default function NewslettersPage() {
                 )}
               </div>
               <textarea
-                value={(form as Record<string, unknown>)[key] as string || ''}
+                value={form[key as keyof NewsletterForm] as string || ''}
                 onChange={(e) => updateField(key, e.target.value)}
                 className={inputCls} rows={4}
               />
