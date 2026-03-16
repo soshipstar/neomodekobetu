@@ -8,40 +8,40 @@
 
         body {
             font-family: 'IPA Gothic', 'IPAGothic', 'Hiragino Kaku Gothic Pro', 'Noto Sans JP', sans-serif;
-            font-size: 10pt;
-            line-height: 1.5;
+            font-size: 8.5pt;
+            line-height: 1.35;
             color: #333;
         }
 
         /* ── ヘッダー ── */
         .header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 8px;
         }
         .header h1 {
-            font-size: 18pt;
+            font-size: 14pt;
             font-weight: 700;
             color: #1a1a1a;
-            letter-spacing: 4pt;
-            border-bottom: 3px double #1a1a1a;
+            letter-spacing: 3pt;
+            border-bottom: 2px double #1a1a1a;
             display: inline-block;
-            padding-bottom: 4px;
+            padding-bottom: 2px;
         }
         .header-sub {
-            font-size: 9pt;
-            color: #888;
-            margin-top: 4px;
+            font-size: 7pt;
+            color: #999;
+            margin-top: 2px;
         }
 
         /* ── メタ情報 ── */
         .meta {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 16px;
+            margin-bottom: 8px;
         }
         .meta td {
-            padding: 5px 10px;
-            font-size: 9.5pt;
+            padding: 2px 6px;
+            font-size: 8pt;
             border: 1px solid #ccc;
             vertical-align: middle;
         }
@@ -49,44 +49,43 @@
             background: #f8f9fa;
             font-weight: 600;
             color: #555;
-            width: 15%;
+            width: 14%;
             white-space: nowrap;
         }
 
         /* ── タグ ── */
         .tags {
-            margin-bottom: 12px;
+            margin-bottom: 6px;
         }
         .tag {
             display: inline-block;
             background: #e9ecef;
             color: #495057;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-size: 8.5pt;
-            margin: 0 4px 4px 0;
+            padding: 1px 7px;
+            border-radius: 10px;
+            font-size: 7pt;
+            margin: 0 3px 2px 0;
         }
 
         /* ── セクション ── */
         .section {
-            margin-bottom: 14px;
-            page-break-inside: avoid;
+            margin-bottom: 6px;
         }
         .section-head {
-            font-size: 11pt;
+            font-size: 8.5pt;
             font-weight: 700;
             color: #2c3e50;
-            border-left: 4px solid #3498db;
-            padding: 4px 0 4px 10px;
-            margin-bottom: 6px;
+            border-left: 3px solid #3498db;
+            padding: 2px 0 2px 8px;
+            margin-bottom: 2px;
             background: #f8f9fa;
         }
         .section-body {
-            font-size: 9.5pt;
-            line-height: 1.6;
-            padding: 8px 12px;
+            font-size: 8pt;
+            line-height: 1.35;
+            padding: 4px 8px;
             border: 1px solid #dee2e6;
-            border-radius: 4px;
+            border-radius: 3px;
             background: #fff;
             word-wrap: break-word;
         }
@@ -95,22 +94,22 @@
         .sched {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 14px;
-            font-size: 9pt;
+            margin-bottom: 6px;
+            font-size: 7.5pt;
         }
         .sched th {
             background: #2c3e50;
             color: #fff;
             font-weight: 600;
-            padding: 6px 8px;
+            padding: 3px 4px;
             text-align: center;
-            font-size: 8.5pt;
+            font-size: 7.5pt;
         }
         .sched td {
             border: 1px solid #dee2e6;
-            padding: 5px 8px;
+            padding: 2px 4px;
             vertical-align: top;
-            line-height: 1.4;
+            line-height: 1.25;
             white-space: pre-wrap;
             word-wrap: break-word;
         }
@@ -122,9 +121,9 @@
 
         /* ── フッター ── */
         .footer {
-            margin-top: 20px;
+            margin-top: 8px;
             text-align: right;
-            font-size: 8pt;
+            font-size: 7pt;
             color: #aaa;
         }
     </style>
