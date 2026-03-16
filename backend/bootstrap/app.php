@@ -57,6 +57,34 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        // エラーをDBに記録
+        $exceptions->report(function (\Throwable $e) {
+            try {
+                if ($e instanceof \Illuminate\Auth\AuthenticationException) return;
+                if ($e instanceof \Symfony\Component\Routing\Exception\RouteNotFoundException) return;
+                if ($e instanceof \Illuminate\Validation\ValidationException) return;
+                if ($e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) return;
+
+                $request = request();
+                \App\Models\ErrorLog::create([
+                    'level'           => 'error',
+                    'message'         => mb_substr($e->getMessage(), 0, 2000),
+                    'exception_class' => get_class($e),
+                    'file'            => $e->getFile(),
+                    'line'            => $e->getLine(),
+                    'trace'           => array_slice(array_map(fn ($t) => ($t['file'] ?? '') . ':' . ($t['line'] ?? ''), $e->getTrace()), 0, 10),
+                    'url'             => $request?->fullUrl(),
+                    'method'          => $request?->method(),
+                    'user_id'         => $request?->user()?->id,
+                    'ip_address'      => $request?->ip(),
+                    'user_agent'      => mb_substr($request?->userAgent() ?? '', 0, 500),
+                    'request_data'    => array_slice($request?->all() ?? [], 0, 20),
+                ]);
+            } catch (\Throwable $logError) {
+                // DB記録失敗は無視（無限ループ防止）
+            }
+        });
+
         // JSON APIレスポンスのエラーフォーマット
         $exceptions->shouldRenderJsonWhen(function ($request, $e) {
             return $request->is('api/*') || $request->expectsJson();

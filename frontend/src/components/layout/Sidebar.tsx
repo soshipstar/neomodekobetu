@@ -18,6 +18,7 @@ import {
   UserCheck,
   BookOpen,
   Building2,
+  AlertTriangle,
   Settings,
   Star,
   BarChart3,
@@ -150,6 +151,8 @@ const adminNav: NavItem[] = [
   { type: 'link', label: '教室管理', href: '/admin/classrooms', icon: Building2, visibility: 'master_only' },
   { type: 'link', label: '管理者アカウント', href: '/admin/admin-accounts', icon: Shield, visibility: 'master_only' },
   { type: 'link', label: 'スタッフアカウント', href: '/admin/staff-accounts', icon: BadgeCheck, visibility: 'master_only' },
+  { type: 'divider', label: 'システム' },
+  { type: 'link', label: 'エラーログ', href: '/admin/error-logs', icon: AlertTriangle },
 ];
 
 function getNavItems(userType: UserType): NavItem[] {

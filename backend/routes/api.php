@@ -51,6 +51,10 @@ Route::prefix('admin')
 
         // 監査ログ
         Route::get('/audit-logs', [App\Http\Controllers\Admin\AuditLogController::class, 'index']);
+        Route::get('/error-logs', [App\Http\Controllers\Admin\ErrorLogController::class, 'index']);
+        Route::get('/error-logs/summary', [App\Http\Controllers\Admin\ErrorLogController::class, 'summary']);
+        Route::get('/error-logs/{errorLog}', [App\Http\Controllers\Admin\ErrorLogController::class, 'show']);
+        Route::delete('/error-logs/cleanup', [App\Http\Controllers\Admin\ErrorLogController::class, 'cleanup']);
 
         // --- イベント管理 ---
         Route::apiResource('events', App\Http\Controllers\Admin\EventController::class);
