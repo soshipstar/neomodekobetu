@@ -15,12 +15,15 @@ class NewsletterSetting extends Model
         'calendar_format',
         'ai_instructions',
         'custom_sections',
+        'default_requests',
+        'default_others',
     ];
 
     protected function casts(): array
     {
         return [
             'display_settings' => 'array',
+            'ai_instructions' => 'array',
             'custom_sections' => 'array',
             'updated_at' => 'datetime',
         ];

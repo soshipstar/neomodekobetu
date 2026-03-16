@@ -47,16 +47,19 @@ class NewsletterController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'year'             => 'required|integer|min:2020|max:2100',
-            'month'            => 'required|integer|min:1|max:12',
-            'title'            => 'required|string|max:255',
-            'greeting'         => 'nullable|string',
-            'event_calendar'   => 'nullable|string',
-            'event_details'    => 'nullable|string',
-            'weekly_reports'   => 'nullable|string',
-            'event_results'    => 'nullable|string',
-            'requests'         => 'nullable|string',
-            'others'           => 'nullable|string',
+            'year'              => 'required|integer|min:2020|max:2100',
+            'month'             => 'required|integer|min:1|max:12',
+            'title'             => 'required|string|max:255',
+            'greeting'          => 'nullable|string',
+            'event_calendar'    => 'nullable|string',
+            'event_details'     => 'nullable|string',
+            'weekly_reports'    => 'nullable|string',
+            'weekly_intro'      => 'nullable|string',
+            'event_results'     => 'nullable|string',
+            'requests'          => 'nullable|string',
+            'others'            => 'nullable|string',
+            'elementary_report' => 'nullable|string',
+            'junior_report'     => 'nullable|string',
         ]);
 
         $newsletter = Newsletter::create(array_merge($validated, [
@@ -91,14 +94,17 @@ class NewsletterController extends Controller
     public function update(Request $request, Newsletter $newsletter): JsonResponse
     {
         $validated = $request->validate([
-            'title'            => 'sometimes|required|string|max:255',
-            'greeting'         => 'nullable|string',
-            'event_calendar'   => 'nullable|string',
-            'event_details'    => 'nullable|string',
-            'weekly_reports'   => 'nullable|string',
-            'event_results'    => 'nullable|string',
-            'requests'         => 'nullable|string',
-            'others'           => 'nullable|string',
+            'title'             => 'sometimes|required|string|max:255',
+            'greeting'          => 'nullable|string',
+            'event_calendar'    => 'nullable|string',
+            'event_details'     => 'nullable|string',
+            'weekly_reports'    => 'nullable|string',
+            'weekly_intro'      => 'nullable|string',
+            'event_results'     => 'nullable|string',
+            'requests'          => 'nullable|string',
+            'others'            => 'nullable|string',
+            'elementary_report' => 'nullable|string',
+            'junior_report'     => 'nullable|string',
         ]);
 
         $newsletter->update($validated);

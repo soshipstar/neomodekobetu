@@ -182,6 +182,8 @@ Route::prefix('staff')
         Route::post('/renrakucho/{record}/generate-integrated', [App\Http\Controllers\Staff\RenrakuchoController::class, 'generateIntegrated']);
 
         // --- お便り ---
+        Route::get('/newsletter-settings', [App\Http\Controllers\Staff\NewsletterSettingController::class, 'show']);
+        Route::put('/newsletter-settings', [App\Http\Controllers\Staff\NewsletterSettingController::class, 'update']);
         Route::apiResource('newsletters', App\Http\Controllers\Staff\NewsletterController::class);
         Route::post('/newsletters/{newsletter}/generate-ai', [App\Http\Controllers\Staff\NewsletterController::class, 'generateAi']);
         Route::post('/newsletters/{newsletter}/publish', [App\Http\Controllers\Staff\NewsletterController::class, 'publish']);
