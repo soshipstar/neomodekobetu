@@ -181,6 +181,7 @@ export default function KobetsuPlanPage() {
   const [view, setView] = useState<'list' | 'editor'>('list');
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
   const [editingPlanId, setEditingPlanId] = useState<number | null>(null);
+  const [isReadOnly, setIsReadOnly] = useState(false);
   const [form, setForm] = useState<PlanForm>(emptyForm());
   const [generating, setGenerating] = useState(false);
 
@@ -208,9 +209,17 @@ export default function KobetsuPlanPage() {
 
   // ------ Mutations ------
 
+  // Map form fields to API fields
+  const formToApi = (data: PlanForm) => ({
+    ...data,
+    life_intention: data.guardian_wish,
+    consent_name: data.manager_name,
+    guardian_signature: data.guardian_signature_text,
+  });
+
   const createMutation = useMutation({
     mutationFn: (data: PlanForm) =>
-      api.post(`/api/staff/students/${selectedStudentId}/support-plans`, data),
+      api.post(`/api/staff/students/${selectedStudentId}/support-plans`, formToApi(data)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'support-plans', 'individual'] });
       toast.success('個別支援計画を作成しました');
@@ -221,7 +230,7 @@ export default function KobetsuPlanPage() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, ...data }: PlanForm & { id: number }) =>
-      api.put(`/api/staff/support-plans/${id}`, data),
+      api.put(`/api/staff/support-plans/${id}`, formToApi(data)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'support-plans', 'individual'] });
       toast.success('個別支援計画を更新しました');
@@ -274,36 +283,41 @@ export default function KobetsuPlanPage() {
 
   const openCreate = () => {
     setEditingPlanId(null);
+    setIsReadOnly(false);
     setForm(emptyForm());
     setView('editor');
   };
 
   const openEdit = useCallback(async (planId: number) => {
     try {
-      const res = await api.get<{ data: PlanFullData }>(`/api/staff/support-plans/${planId}`);
+      const res = await api.get<{ data: any }>(`/api/staff/support-plans/${planId}`);
       const p = res.data.data;
+      const dt = (v: string | null) => v ? v.split('T')[0] : '';
       setEditingPlanId(planId);
       setForm({
-        created_date: p.created_date || new Date().toISOString().split('T')[0],
-        guardian_wish: nl(p.guardian_wish),
+        created_date: dt(p.created_date) || new Date().toISOString().split('T')[0],
+        guardian_wish: nl(p.life_intention || p.guardian_wish),
         overall_policy: nl(p.overall_policy),
         long_term_goal: nl(p.long_term_goal),
-        long_term_goal_date: p.long_term_goal_date || '',
+        long_term_goal_date: dt(p.long_term_goal_date),
         short_term_goal: nl(p.short_term_goal),
-        short_term_goal_date: p.short_term_goal_date || '',
-        manager_name: p.manager_name || '',
-        consent_date: p.consent_date || '',
-        guardian_signature_text: p.guardian_signature_text || '',
+        short_term_goal_date: dt(p.short_term_goal_date),
+        manager_name: p.consent_name || p.manager_name || '',
+        consent_date: dt(p.consent_date),
+        guardian_signature_text: p.guardian_signature || p.guardian_signature_text || '',
         details: p.details && p.details.length > 0
-          ? p.details.map((d) => ({
+          ? p.details.map((d: any) => ({
               ...d,
-              support_goal: nl(d.support_goal),
+              support_goal: nl(d.support_goal || d.goal),
               support_content: nl(d.support_content),
               staff_organization: nl(d.staff_organization),
               notes: nl(d.notes),
+              achievement_date: dt(d.achievement_date),
             }))
           : DEFAULT_DETAILS.map((d) => ({ ...d })),
       });
+      // Track if plan is official (read-only)
+      setIsReadOnly(p.is_official === true || p.status === 'official');
       setView('editor');
     } catch {
       toast.error('計画の読み込みに失敗しました');
@@ -451,7 +465,7 @@ export default function KobetsuPlanPage() {
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">
-            {editingPlanId ? '個別支援計画を編集' : '個別支援計画を作成'}
+            {isReadOnly ? '個別支援計画（閲覧）' : editingPlanId ? '個別支援計画を編集' : '個別支援計画を作成'}
           </h1>
           {selectedStudent && (
             <span className="text-sm text-[var(--neutral-foreground-3)]">
@@ -460,6 +474,13 @@ export default function KobetsuPlanPage() {
           )}
         </div>
 
+        {isReadOnly && (
+          <div className="rounded-lg bg-amber-50 border border-amber-300 p-3 text-sm text-amber-800">
+            この計画は署名済み（正式版）のため、編集できません。内容の閲覧のみ可能です。
+          </div>
+        )}
+
+        <fieldset disabled={isReadOnly} className="disabled:opacity-75">
         <form onSubmit={handleSaveDraft} className="space-y-8">
           {/* ============================================================= */}
           {/* Section A: Basic Info */}
@@ -827,6 +848,7 @@ export default function KobetsuPlanPage() {
             </CardBody>
           </Card>
         </form>
+        </fieldset>
       </div>
     );
   }
@@ -890,6 +912,20 @@ export default function KobetsuPlanPage() {
                     </tr>
                   </thead>
                   <tbody>
+                    {/* New plan row - always at top */}
+                    <tr className="hover:bg-[var(--neutral-background-2)] bg-[var(--brand-160)]">
+                      <td className={tdClass}>-</td>
+                      <td className={tdClass}>-</td>
+                      <td className={tdClass}>
+                        <Button variant="primary" size="sm" leftIcon={<Plus className="h-4 w-4" />} onClick={openCreate}>
+                          新規作成
+                        </Button>
+                      </td>
+                      <td className={tdClass}>-</td>
+                      <td className={tdClass}>-</td>
+                      <td className={tdClass}>-</td>
+                    </tr>
+
                     {plans.length === 0 && (
                       <tr>
                         <td colSpan={6} className="py-8 text-center text-sm text-[var(--neutral-foreground-3)]">
@@ -991,18 +1027,7 @@ export default function KobetsuPlanPage() {
                       );
                     })}
 
-                    {/* New plan row */}
-                    <tr className="hover:bg-[var(--neutral-background-2)]">
-                      <td colSpan={6} className={tdClass}>
-                        <Button
-                          variant="subtle"
-                          size="sm"
-                          leftIcon={<Plus className="h-4 w-4" />}
-                          onClick={openCreate}
-                        >
-                          新規作成
-                        </Button>
-                      </td>
+                    {/* (New plan row moved to top of tbody) */}
                     </tr>
                   </tbody>
                 </table>
