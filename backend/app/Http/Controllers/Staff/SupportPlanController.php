@@ -536,6 +536,163 @@ class SupportPlanController extends Controller
     }
 
     /**
+     * 下書き → 確認依頼（proposal）に変更
+     */
+    public function publish(Request $request, IndividualSupportPlan $plan): JsonResponse
+    {
+        $plan->load('student');
+        $this->authorizeClassroom($request->user(), $plan->student);
+
+        if ($plan->status !== 'draft') {
+            return response()->json([
+                'success' => false,
+                'message' => '下書き状態の計画のみ確認依頼に変更できます。',
+            ], 422);
+        }
+
+        $plan->update([
+            'status'   => 'submitted',
+            'is_draft' => false,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $plan->fresh('details'),
+            'message' => '確認依頼として公開しました。',
+        ]);
+    }
+
+    /**
+     * 正式版に変更
+     */
+    public function makeOfficial(Request $request, IndividualSupportPlan $plan): JsonResponse
+    {
+        $plan->load('student');
+        $this->authorizeClassroom($request->user(), $plan->student);
+
+        if ($plan->status === 'official') {
+            return response()->json([
+                'success' => false,
+                'message' => 'すでに正式版です。',
+            ], 422);
+        }
+
+        $plan->update([
+            'status'      => 'official',
+            'is_official' => true,
+            'is_draft'    => false,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $plan->fresh('details'),
+            'message' => '正式版として確定しました。',
+        ]);
+    }
+
+    /**
+     * 計画の根拠データ（かけはし・モニタリング・目標比較）を返す
+     */
+    public function basis(Request $request, IndividualSupportPlan $plan): JsonResponse
+    {
+        $plan->load('student');
+        $this->authorizeClassroom($request->user(), $plan->student);
+
+        $studentId = $plan->student_id;
+        $planDate = $plan->created_date;
+
+        // -----------------------------------------------------------------
+        // 1. かけはし期間（submission_deadline <= plan.created_date で最も近いもの）
+        // -----------------------------------------------------------------
+        $kakehashiPeriod = \App\Models\KakehashiPeriod::where('student_id', $studentId)
+            ->when($planDate, function ($q) use ($planDate) {
+                $q->where('submission_deadline', '<=', $planDate);
+            })
+            ->with(['guardianEntries', 'staffEntries'])
+            ->orderByDesc('submission_deadline')
+            ->first();
+
+        $guardianKakehashi = null;
+        $staffKakehashi = null;
+
+        if ($kakehashiPeriod) {
+            $ge = $kakehashiPeriod->guardianEntries->first();
+            if ($ge) {
+                $guardianKakehashi = [
+                    'student_wish'                => $ge->student_wish,
+                    'home_challenges'             => $ge->home_challenges,
+                    'short_term_goal'             => $ge->short_term_goal,
+                    'long_term_goal'              => $ge->long_term_goal,
+                    'domain_health_life'          => $ge->domain_health_life,
+                    'domain_motor_sensory'        => $ge->domain_motor_sensory,
+                    'domain_cognitive_behavior'   => $ge->domain_cognitive_behavior,
+                    'domain_language_communication' => $ge->domain_language_communication,
+                    'domain_social_relations'     => $ge->domain_social_relations,
+                    'is_submitted'                => $ge->is_submitted,
+                ];
+            }
+
+            $se = $kakehashiPeriod->staffEntries->first();
+            if ($se) {
+                $staffKakehashi = [
+                    'student_wish'             => $se->student_wish,
+                    'short_term_goal'          => $se->short_term_goal,
+                    'long_term_goal'           => $se->long_term_goal,
+                    'health_life'              => $se->health_life,
+                    'motor_sensory'            => $se->motor_sensory,
+                    'cognitive_behavior'       => $se->cognitive_behavior,
+                    'language_communication'   => $se->language_communication,
+                    'social_relations'         => $se->social_relations,
+                    'is_submitted'             => $se->is_submitted,
+                ];
+            }
+        }
+
+        // -----------------------------------------------------------------
+        // 2. 最新モニタリング
+        // -----------------------------------------------------------------
+        $latestMonitoring = \App\Models\MonitoringRecord::where('student_id', $studentId)
+            ->with('details')
+            ->orderByDesc('monitoring_date')
+            ->first();
+
+        // -----------------------------------------------------------------
+        // 3. 目標比較（保護者/スタッフ/計画の目標を並べる）
+        // -----------------------------------------------------------------
+        $goalComparison = [
+            'guardian' => [
+                'short_term_goal' => $guardianKakehashi['short_term_goal'] ?? null,
+                'long_term_goal'  => $guardianKakehashi['long_term_goal'] ?? null,
+            ],
+            'staff' => [
+                'short_term_goal' => $staffKakehashi['short_term_goal'] ?? null,
+                'long_term_goal'  => $staffKakehashi['long_term_goal'] ?? null,
+            ],
+            'plan' => [
+                'short_term_goal' => $plan->short_term_goal,
+                'long_term_goal'  => $plan->long_term_goal,
+            ],
+        ];
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'kakehashi_period'    => $kakehashiPeriod ? [
+                    'id'                  => $kakehashiPeriod->id,
+                    'period_name'         => $kakehashiPeriod->period_name,
+                    'start_date'          => $kakehashiPeriod->start_date?->toDateString(),
+                    'end_date'            => $kakehashiPeriod->end_date?->toDateString(),
+                    'submission_deadline' => $kakehashiPeriod->submission_deadline?->toDateString(),
+                ] : null,
+                'guardian_kakehashi'  => $guardianKakehashi,
+                'staff_kakehashi'     => $staffKakehashi,
+                'latest_monitoring'   => $latestMonitoring,
+                'goal_comparison'     => $goalComparison,
+            ],
+        ]);
+    }
+
+    /**
      * 教室アクセス権限チェック
      */
     private function authorizeClassroom($user, Student $student): void
