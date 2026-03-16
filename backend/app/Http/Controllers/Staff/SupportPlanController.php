@@ -34,6 +34,23 @@ class SupportPlanController extends Controller
     }
 
     /**
+     * 支援計画の詳細を取得
+     */
+    public function show(Request $request, IndividualSupportPlan $plan): JsonResponse
+    {
+        $plan->load(['student', 'details' => fn ($q) => $q->orderBy('sort_order'), 'creator:id,full_name']);
+
+        if ($plan->student) {
+            $this->authorizeClassroom($request->user(), $plan->student);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => $plan,
+        ]);
+    }
+
+    /**
      * 支援計画を新規作成
      */
     public function store(Request $request, Student $student): JsonResponse
