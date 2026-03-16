@@ -285,7 +285,11 @@ class ActivitySupportPlanController extends Controller
             ->setPaper('a4', 'portrait')
             ->setOption('isRemoteEnabled', true)
             ->setOption('isFontSubsettingEnabled', true)
-            ->setOption('defaultFont', 'ipag');
+            ->setOption('defaultFont', 'ipag')
+            ->setOption('margin_top', 15)
+            ->setOption('margin_bottom', 15)
+            ->setOption('margin_left', 18)
+            ->setOption('margin_right', 18);
 
         $filename = "activity_support_plan_{$plan->id}.pdf";
 
