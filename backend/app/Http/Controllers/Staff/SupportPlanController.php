@@ -169,68 +169,186 @@ class SupportPlanController extends Controller
     {
         $this->authorizeClassroom($request->user(), $plan->student);
 
-        $plan->load(['student', 'details']);
+        $plan->load(['student.classroom', 'details']);
         $student = $plan->student;
 
-        // 過去の面接記録や連絡帳から情報を取得
-        $interviews = $student->interviews()
-            ->orderByDesc('interview_date')
-            ->limit(5)
-            ->get();
+        // ===================================================================
+        // 1. かけはしデータ（保護者・職員）を取得 ← 旧システム準拠
+        // ===================================================================
+        $latestPeriod = \App\Models\KakehashiPeriod::where('student_id', $student->id)
+            ->with(['staffEntries', 'guardianEntries'])
+            ->orderByDesc('start_date')
+            ->first();
 
-        $records = $student->dailyRecords()
-            ->with('dailyRecord')
+        $guardianText = '';
+        $staffText = '';
+
+        if ($latestPeriod) {
+            $ge = $latestPeriod->guardianEntries->first();
+            if ($ge && $ge->is_submitted) {
+                $guardianText = "【保護者かけはし】\n"
+                    . "・本人の願い: {$ge->student_wish}\n"
+                    . "・家庭での願い: {$ge->home_challenges}\n"
+                    . "・【重要】短期目標: {$ge->short_term_goal}\n"
+                    . "・【重要】長期目標: {$ge->long_term_goal}\n"
+                    . "・健康・生活: {$ge->domain_health_life}\n"
+                    . "・運動・感覚: {$ge->domain_motor_sensory}\n"
+                    . "・認知・行動: {$ge->domain_cognitive_behavior}\n"
+                    . "・言語・コミュニケーション: {$ge->domain_language_communication}\n"
+                    . "・人間関係・社会性: {$ge->domain_social_relations}\n\n";
+            }
+
+            $se = $latestPeriod->staffEntries->first();
+            if ($se && $se->is_submitted) {
+                $staffText = "【スタッフかけはし】\n"
+                    . "・本人の願い: {$se->student_wish}\n"
+                    . "・【重要】短期目標: {$se->short_term_goal}\n"
+                    . "・【重要】長期目標: {$se->long_term_goal}\n"
+                    . "・健康・生活: {$se->health_life}\n"
+                    . "・運動・感覚: {$se->motor_sensory}\n"
+                    . "・認知・行動: {$se->cognitive_behavior}\n"
+                    . "・言語・コミュニケーション: {$se->language_communication}\n"
+                    . "・人間関係・社会性: {$se->social_relations}\n\n";
+            }
+        }
+
+        // ===================================================================
+        // 2. 最新モニタリングデータ
+        // ===================================================================
+        $monitoringText = '';
+        $latestMonitoring = \App\Models\MonitoringRecord::where('student_id', $student->id)
+            ->with('details')
+            ->orderByDesc('monitoring_date')
+            ->first();
+
+        if ($latestMonitoring) {
+            $monitoringText = "【最新モニタリング（{$latestMonitoring->monitoring_date}）】\n"
+                . "総合所見: {$latestMonitoring->overall_comment}\n";
+            foreach ($latestMonitoring->details ?? [] as $md) {
+                $monitoringText .= "・{$md->category}: 達成度={$md->achievement_status} {$md->monitoring_comment}\n";
+            }
+            $monitoringText .= "\n";
+        }
+
+        // ===================================================================
+        // 3. 連絡帳データ（直近30件）
+        // ===================================================================
+        $records = \App\Models\StudentRecord::where('student_id', $student->id)
+            ->with('dailyRecord:id,record_date,activity_name')
             ->orderByDesc('id')
-            ->limit(20)
+            ->limit(30)
             ->get();
 
-        $interviewText = $interviews->map(fn ($i) => "[{$i->interview_date}] {$i->interview_content}")->implode("\n");
         $recordsText = $records->map(function ($r) {
             $date = $r->dailyRecord->record_date ?? '';
-            $parts = [];
-            if ($r->health_life) $parts[] = "健康・生活: {$r->health_life}";
-            if ($r->motor_sensory) $parts[] = "運動・感覚: {$r->motor_sensory}";
-            if ($r->cognitive_behavior) $parts[] = "認知・行動: {$r->cognitive_behavior}";
-            if ($r->language_communication) $parts[] = "言語・コミュニケーション: {$r->language_communication}";
-            if ($r->social_relations) $parts[] = "人間関係・社会性: {$r->social_relations}";
-            return "[{$date}] " . implode(' / ', $parts);
+            $parts = ["[{$date}]"];
+            if ($r->domain1) $parts[] = "{$r->domain1}: {$r->domain1_content}";
+            if ($r->domain2) $parts[] = "{$r->domain2}: {$r->domain2_content}";
+            if ($r->daily_note) $parts[] = "メモ: {$r->daily_note}";
+            return implode(' / ', $parts);
         })->implode("\n");
 
+        // ===================================================================
+        // 4. 前回の支援計画
+        // ===================================================================
+        $prevPlan = $student->supportPlans()
+            ->with('details')
+            ->where('id', '!=', $plan->id)
+            ->orderByDesc('created_date')
+            ->first();
+
+        $prevPlanText = '';
+        if ($prevPlan) {
+            $prevPlanText = "【前回の支援計画】\n"
+                . "・本人の願い: {$prevPlan->life_intention}\n"
+                . "・支援方針: {$prevPlan->overall_policy}\n"
+                . "・長期目標: {$prevPlan->long_term_goal}\n"
+                . "・短期目標: {$prevPlan->short_term_goal}\n\n";
+        }
+
+        // ===================================================================
+        // 5. GPTプロンプト構築（旧システム準拠）
+        // ===================================================================
         try {
-            $response = OpenAI::chat()->create([
+            $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
+            if (empty($apiKey)) {
+                return response()->json(['success' => false, 'message' => 'OpenAI APIキーが設定されていません。'], 422);
+            }
+
+            $client = \OpenAI::client($apiKey);
+            $response = $client->chat()->create([
                 'model'    => 'gpt-4o',
                 'messages' => [
                     [
                         'role'    => 'system',
-                        'content' => 'あなたは児童発達支援施設の児童発達支援管理責任者です。個別支援計画書の作成を支援します。',
+                        'content' => 'あなたは放課後等デイサービスの児童発達支援管理責任者です。'
+                            . '個別支援計画書の作成を支援します。JSON形式のみで回答してください。',
                     ],
                     [
                         'role'    => 'user',
-                        'content' => "以下の情報をもとに、個別支援計画書の支援目標と支援内容を提案してください。\n\n"
+                        'content' => "以下の情報をもとに個別支援計画書を作成してください。\n\n"
                             . "【児童名】{$student->student_name}\n"
-                            . "【面接記録】\n{$interviewText}\n\n"
-                            . "【連絡帳記録（5領域）】\n{$recordsText}\n\n"
-                            . "5領域（健康・生活、運動・感覚、認知・行動、言語・コミュニケーション、人間関係・社会性）ごとに"
-                            . "支援目標と支援内容を提案してください。\n"
-                            . "JSON形式で出力してください: [{\"domain\": \"...\", \"current_status\": \"...\", \"goal\": \"...\", \"support_content\": \"...\"}]",
+                            . "【教室】" . ($student->classroom->classroom_name ?? '') . "\n\n"
+                            . $guardianText
+                            . $staffText
+                            . $monitoringText
+                            . $prevPlanText
+                            . "【連絡帳記録（直近{$records->count()}件）】\n"
+                            . ($recordsText ?: '（記録なし）') . "\n\n"
+                            . "【重要なルール】\n"
+                            . "1. 短期目標・長期目標は、保護者かけはしとスタッフかけはしの目標の文言を最大限考慮し、整合性・連続性を保つこと\n"
+                            . "2. 目標文に「1年後には」「半年後に」「○ヶ月後」等の時間表現を含めないこと（日付は別管理）\n"
+                            . "3. 支援内容は200-300文字で、具体的な手順・頻度・教材・段階的アプローチを含めること\n"
+                            . "4. 支援目標は100-120文字で、施設での具体的な到達目標（行動レベル）を記述すること\n\n"
+                            . "以下のJSON形式で出力してください:\n"
+                            . "{\n"
+                            . "  \"life_intention\": \"利用児及び家族の生活に対する意向（100-200文字）\",\n"
+                            . "  \"overall_policy\": \"総合的な援助の方針（150-250文字）\",\n"
+                            . "  \"long_term_goal\": \"長期目標（100-150文字、時間表現なし）\",\n"
+                            . "  \"short_term_goal\": \"短期目標（100-150文字、時間表現なし）\",\n"
+                            . "  \"details\": [\n"
+                            . "    {\"category\": \"本人支援\", \"sub_category\": \"健康・生活\", \"support_goal\": \"...\", \"support_content\": \"...\"},\n"
+                            . "    {\"category\": \"本人支援\", \"sub_category\": \"運動・感覚\", \"support_goal\": \"...\", \"support_content\": \"...\"},\n"
+                            . "    {\"category\": \"本人支援\", \"sub_category\": \"認知・行動\", \"support_goal\": \"...\", \"support_content\": \"...\"},\n"
+                            . "    {\"category\": \"本人支援\", \"sub_category\": \"言語・コミュニケーション\", \"support_goal\": \"...\", \"support_content\": \"...\"},\n"
+                            . "    {\"category\": \"本人支援\", \"sub_category\": \"人間関係・社会性\", \"support_goal\": \"...\", \"support_content\": \"...\"},\n"
+                            . "    {\"category\": \"家族支援\", \"sub_category\": \"家族支援\", \"support_goal\": \"...\", \"support_content\": \"...\"},\n"
+                            . "    {\"category\": \"地域支援\", \"sub_category\": \"地域連携\", \"support_goal\": \"...\", \"support_content\": \"...\"}\n"
+                            . "  ]\n"
+                            . "}",
                     ],
                 ],
-                'temperature'           => 0.5,
-                'max_completion_tokens' => 2000,
+                'response_format'       => ['type' => 'json_object'],
+                'temperature'           => 0.7,
+                'max_completion_tokens' => 4000,
             ]);
 
             $content = $response->choices[0]->message->content;
+            $result = json_decode($content, true);
 
-            // Markdownコードブロックを除去
-            if (preg_match('/```(?:json)?\s*([\s\S]*?)\s*```/', $content, $matches)) {
-                $content = trim($matches[1]);
+            // ログ保存
+            try {
+                \App\Models\AiGenerationLog::create([
+                    'user_id'       => $request->user()->id,
+                    'model'         => 'gpt-4o',
+                    'prompt_type'   => 'support_plan',
+                    'input_tokens'  => $response->usage->promptTokens ?? null,
+                    'output_tokens' => $response->usage->completionTokens ?? null,
+                    'student_id'    => $student->id,
+                ]);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('AI log failed: ' . $e->getMessage());
             }
 
-            $suggestions = json_decode($content, true);
-
             return response()->json([
-                'success' => true,
-                'data'    => $suggestions ?? $content,
+                'success'      => true,
+                'data'         => $result ?? [],
+                'sources'      => [
+                    'kakehashi'  => !empty($guardianText) || !empty($staffText),
+                    'monitoring' => !empty($monitoringText),
+                    'records'    => $records->count(),
+                    'prev_plan'  => !empty($prevPlanText),
+                ],
             ]);
         } catch (\Exception $e) {
             return response()->json([
