@@ -1027,8 +1027,7 @@ export default function KobetsuPlanPage() {
                       );
                     })}
 
-                    {/* (New plan row moved to top of tbody) */}
-                    </tr>
+                    {/* (New plan row is at top of tbody) */}
                   </tbody>
                 </table>
               </div>
