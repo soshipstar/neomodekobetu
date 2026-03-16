@@ -312,12 +312,15 @@ class DashboardController extends Controller
         $eventDates = DB::table('events')
             ->where('classroom_id', $classroomId)
             ->whereBetween('event_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
-            ->select('event_date', 'event_name', 'event_color')
             ->get()
             ->map(fn ($e) => [
-                'date'  => Carbon::parse($e->event_date)->toDateString(),
-                'label' => $e->event_name,
-                'color' => $e->event_color ?? null,
+                'date'             => Carbon::parse($e->event_date)->toDateString(),
+                'label'            => $e->event_name,
+                'color'            => $e->event_color ?? null,
+                'description'      => $e->event_description ?? null,
+                'staff_comment'    => $e->staff_comment ?? null,
+                'guardian_message' => $e->guardian_message ?? null,
+                'target_audience'  => $e->target_audience ?? null,
             ])
             ->values()
             ->toArray();
