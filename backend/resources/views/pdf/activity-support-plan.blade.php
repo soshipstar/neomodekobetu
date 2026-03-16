@@ -88,7 +88,6 @@
             border: 1px solid #dee2e6;
             border-radius: 4px;
             background: #fff;
-            white-space: pre-wrap;
             word-wrap: break-word;
         }
 
@@ -172,7 +171,7 @@
     @if ($plan->activity_purpose)
     <div class="section">
         <div class="section-head">活動の目的</div>
-        <div class="section-body">{{ $plan->activity_purpose }}</div>
+        <div class="section-body">{!! nl2br(e($plan->activity_purpose)) !!}</div>
     </div>
     @endif
 
@@ -180,7 +179,7 @@
     @if ($plan->activity_content)
     <div class="section">
         <div class="section-head">活動の内容</div>
-        <div class="section-body">{{ $plan->activity_content }}</div>
+        <div class="section-body">{!! nl2br(e($plan->activity_content)) !!}</div>
     </div>
     @endif
 
@@ -188,7 +187,7 @@
     @if ($plan->five_domains_consideration)
     <div class="section">
         <div class="section-head">五領域への配慮</div>
-        <div class="section-body">{{ $plan->five_domains_consideration }}</div>
+        <div class="section-body">{!! nl2br(e($plan->five_domains_consideration)) !!}</div>
     </div>
     @endif
 
@@ -214,7 +213,7 @@
                     <td class="type-col">{{ $isRoutine ? '毎日の支援' : '主活動' }}</td>
                     <td>{{ $item['name'] ?? '' }}</td>
                     <td class="time-col">{{ $item['duration'] ?? '' }}分</td>
-                    <td>{{ $item['content'] ?? '' }}</td>
+                    <td>{!! nl2br(e($item['content'] ?? '')) !!}</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -226,7 +225,7 @@
     @if ($plan->other_notes)
     <div class="section">
         <div class="section-head">その他の注意点</div>
-        <div class="section-body">{{ $plan->other_notes }}</div>
+        <div class="section-body">{!! nl2br(e($plan->other_notes)) !!}</div>
     </div>
     @endif
 
