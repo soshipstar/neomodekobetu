@@ -366,34 +366,44 @@ class RenrakuchoController extends Controller
         $notes = $studentRecord->notes ?? '';
 
         $prompt = <<<PROMPT
-あなたは放課後等デイサービスの連絡帳作成アシスタントです。
-以下の活動記録と5領域の観察メモから、保護者向けの連絡帳文を作成してください。
+以下の活動記録と5領域の観察メモ、個別メモから、保護者向けの連絡帳文を作成してください。
 
 【活動名】{$activityName}
 【本日の活動（共通）】{$commonActivity}
 【児童名】{$student->student_name}
-【個別メモ】{$notes}
 
 【5領域の観察記録】
 {$domainText}
 
-以下の要件に従って作成してください：
-- 保護者が読んで嬉しくなるような、温かみのある文章
-- 具体的なエピソードを含める
-- 200〜400文字程度
-- 5領域の観察を自然に統合した文章にする
-- 敬体（ですます調）で書く
+【個別メモ（スタッフの観察メモ）】
+{$notes}
+
+【重要なルール】
+1. 5領域の観察記録と個別メモの内容を自然に統合した文章を作成すること
+2. 領域のラベル（【健康・生活】等）は文章中に含めないこと
+3. 個別メモの原文をそのまま使わず、保護者向けに丁寧にまとめ直すこと
+4. 保護者が読んで嬉しくなるような、温かみのある文章にすること
+5. 具体的なエピソードを含めること
+6. 200〜400文字程度にすること
+7. 敬体（ですます調）で書くこと
+8. お子様の頑張りや成長を中心に伝えること
 PROMPT;
 
         try {
-            $response = \OpenAI\Laravel\Facades\OpenAI::chat()->create([
-                'model'    => config('services.openai.model', 'gpt-5'),
+            $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
+            if (empty($apiKey)) {
+                return response()->json(['success' => false, 'message' => 'OpenAI APIキーが未設定です。'], 422);
+            }
+
+            $client = \OpenAI::client($apiKey);
+            $response = $client->chat()->create([
+                'model'    => 'gpt-4o',
                 'messages' => [
-                    ['role' => 'system', 'content' => 'あなたは放課後等デイサービスの連絡帳作成アシスタントです。'],
+                    ['role' => 'system', 'content' => 'あなたは放課後等デイサービスの連絡帳作成アシスタントです。保護者に日々のお子様の様子をお伝えする温かい文章を書きます。'],
                     ['role' => 'user', 'content' => $prompt],
                 ],
                 'temperature' => 0.7,
-                'max_tokens'  => 800,
+                'max_completion_tokens' => 800,
             ]);
 
             $content = $response->choices[0]->message->content ?? '';
