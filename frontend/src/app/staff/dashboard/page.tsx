@@ -169,6 +169,11 @@ async function fetchAttendance(date: string): Promise<{ activities: Activity[]; 
 // Helpers
 // ---------------------------------------------------------------------------
 
+function nl(text: string | null | undefined): string {
+  if (!text) return '';
+  return text.replace(/\\r\\n|\\n|\\r/g, '\n').replace(/\r\n|\r/g, '\n');
+}
+
 function formatDate(y: number, m: number, d: number): string {
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
@@ -509,6 +514,81 @@ export default function StaffDashboardPage() {
             </CardBody>
           </Card>
 
+          {/* ---------- Events for selected date (immediately below calendar) ---------- */}
+          {(() => {
+            const selectedEvents = eventDateMap.get(selectedDate);
+            if (!selectedEvents || selectedEvents.length === 0) return null;
+            return (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{selectedDate.replace(/-/g, '/')} のイベント</CardTitle>
+                </CardHeader>
+                <CardBody>
+                  <div className="space-y-3">
+                    {selectedEvents.map((ev: any, i: number) => (
+                      <div key={i} className="rounded-lg border border-[var(--neutral-stroke-2)] p-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: ev.color || '#6366f1' }} />
+                          <span className="font-semibold text-[var(--neutral-foreground-1)]">{ev.label}</span>
+                          {ev.target_audience && (
+                            <span className="text-[10px] rounded-full bg-[var(--neutral-background-3)] px-2 py-0.5 text-[var(--neutral-foreground-3)]">
+                              {ev.target_audience === 'all' ? '全員' : ev.target_audience}
+                            </span>
+                          )}
+                        </div>
+                        {ev.description && (
+                          <p className="text-sm text-[var(--neutral-foreground-2)] whitespace-pre-wrap mb-2">{nl(ev.description)}</p>
+                        )}
+                        {ev.guardian_message && (
+                          <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 mb-2">
+                            <p className="text-[10px] font-semibold text-blue-600 mb-1">保護者向けメッセージ</p>
+                            <p className="text-sm text-blue-900 whitespace-pre-wrap">{nl(ev.guardian_message)}</p>
+                          </div>
+                        )}
+                        {ev.staff_comment && (
+                          <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
+                            <p className="text-[10px] font-semibold text-amber-600 mb-1">スタッフメモ（内部用）</p>
+                            <p className="text-sm text-amber-900 whitespace-pre-wrap">{nl(ev.staff_comment)}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardBody>
+              </Card>
+            );
+          })()}
+
+          {/* ---------- Meetings for selected date ---------- */}
+          {(() => {
+            const selectedMeetings = meetingDateMap.get(selectedDate);
+            if (!selectedMeetings || selectedMeetings.length === 0) return null;
+            return (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{selectedDate.replace(/-/g, '/')} の面談</CardTitle>
+                </CardHeader>
+                <CardBody>
+                  <div className="space-y-2">
+                    {selectedMeetings.map((mi, i) => (
+                      <div key={i} className="flex items-center gap-3 rounded-lg border border-[var(--neutral-stroke-2)] p-3">
+                        <span className="h-3 w-3 shrink-0 rounded-full bg-[var(--status-warning-fg)]" />
+                        <div>
+                          <span className="font-medium text-[var(--neutral-foreground-1)]">
+                            {mi.student_name}（保護者: {mi.guardian_name || '未定'}）
+                          </span>
+                          {mi.purpose && (
+                            <p className="text-xs text-[var(--neutral-foreground-3)] mt-0.5">{nl(mi.purpose)}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardBody>
+              </Card>
+            );
+          })()}
+
           {/* ---------- Activity list for selected date ---------- */}
           <Card>
             <CardHeader>
@@ -577,83 +657,6 @@ export default function StaffDashboardPage() {
             </CardBody>
           </Card>
 
-          {/* ---------- Events for selected date ---------- */}
-          {(() => {
-            const selectedEvents = eventDateMap.get(selectedDate);
-            if (!selectedEvents || selectedEvents.length === 0) return null;
-            return (
-              <Card>
-                <CardHeader>
-                  <CardTitle>{selectedDate.replace(/-/g, '/')} のイベント</CardTitle>
-                </CardHeader>
-                <CardBody>
-                  <div className="space-y-3">
-                    {selectedEvents.map((ev: any, i: number) => (
-                      <div key={i} className="rounded-lg border border-[var(--neutral-stroke-2)] p-4">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span
-                            className="h-3 w-3 shrink-0 rounded-full"
-                            style={{ backgroundColor: ev.color || '#6366f1' }}
-                          />
-                          <span className="font-semibold text-[var(--neutral-foreground-1)]">{ev.label}</span>
-                          {ev.target_audience && (
-                            <span className="text-[10px] rounded-full bg-[var(--neutral-background-3)] px-2 py-0.5 text-[var(--neutral-foreground-3)]">
-                              {ev.target_audience === 'all' ? '全員' : ev.target_audience}
-                            </span>
-                          )}
-                        </div>
-                        {ev.description && (
-                          <p className="text-sm text-[var(--neutral-foreground-2)] whitespace-pre-wrap mb-2">{ev.description}</p>
-                        )}
-                        {ev.guardian_message && (
-                          <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 mb-2">
-                            <p className="text-[10px] font-semibold text-blue-600 mb-1">保護者向けメッセージ</p>
-                            <p className="text-sm text-blue-900 whitespace-pre-wrap">{ev.guardian_message}</p>
-                          </div>
-                        )}
-                        {ev.staff_comment && (
-                          <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
-                            <p className="text-[10px] font-semibold text-amber-600 mb-1">スタッフメモ（内部用）</p>
-                            <p className="text-sm text-amber-900 whitespace-pre-wrap">{ev.staff_comment}</p>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </CardBody>
-              </Card>
-            );
-          })()}
-
-          {/* ---------- Meetings for selected date ---------- */}
-          {(() => {
-            const selectedMeetings = meetingDateMap.get(selectedDate);
-            if (!selectedMeetings || selectedMeetings.length === 0) return null;
-            return (
-              <Card>
-                <CardHeader>
-                  <CardTitle>{selectedDate.replace(/-/g, '/')} の面談</CardTitle>
-                </CardHeader>
-                <CardBody>
-                  <div className="space-y-2">
-                    {selectedMeetings.map((mi, i) => (
-                      <div key={i} className="flex items-center gap-3 rounded-lg border border-[var(--neutral-stroke-2)] p-3">
-                        <span className="h-3 w-3 shrink-0 rounded-full bg-[var(--status-warning-fg)]" />
-                        <div>
-                          <span className="font-medium text-[var(--neutral-foreground-1)]">
-                            {mi.student_name}（保護者: {mi.guardian_name || '未定'}）
-                          </span>
-                          {mi.purpose && (
-                            <p className="text-xs text-[var(--neutral-foreground-3)] mt-0.5">{mi.purpose}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardBody>
-              </Card>
-            );
-          })()}
         </div>
 
         {/* ---------- Right column ---------- */}
