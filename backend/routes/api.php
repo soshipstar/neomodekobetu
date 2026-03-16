@@ -161,6 +161,7 @@ Route::prefix('staff')
         Route::get('/students/{student}/monitoring', [App\Http\Controllers\Staff\MonitoringController::class, 'index']);
         Route::post('/students/{student}/monitoring', [App\Http\Controllers\Staff\MonitoringController::class, 'store']);
         Route::put('/monitoring/{monitoring}', [App\Http\Controllers\Staff\MonitoringController::class, 'update']);
+        Route::post('/monitoring/generate', [App\Http\Controllers\Staff\MonitoringController::class, 'generate']);
         Route::post('/monitoring/{monitoring}/generate-ai', [App\Http\Controllers\Staff\MonitoringController::class, 'generateAi']);
 
         // --- かけはし ---
