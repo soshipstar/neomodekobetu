@@ -506,7 +506,7 @@ export default function StaffDashboardPage() {
                   {activities.map((act) => (
                     <Link
                       key={act.id}
-                      href={`/staff/renrakucho?record=${act.id}`}
+                      href={`/staff/renrakucho?date=${selectedDate}&record=${act.id}`}
                       className="block rounded-lg border border-[var(--neutral-stroke-2)] p-4 hover:shadow-[var(--shadow-4)] transition-shadow"
                     >
                       <div className="flex items-start justify-between">

@@ -20,7 +20,7 @@ class StaffStudentChatController extends Controller
         $user = $request->user();
         $classroomId = $user->classroom_id;
 
-        $query = StudentChatRoom::with('student:id,student_name,classroom_id');
+        $query = StudentChatRoom::with('student:id,student_name,classroom_id,is_active,status');
 
         if ($classroomId) {
             $query->whereHas('student', function ($q) use ($classroomId) {

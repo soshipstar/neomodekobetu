@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -113,7 +114,9 @@ export default function RenrakuchoPage() {
   const toast = useToast();
 
   // --- Date navigation ---
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const searchParams = useSearchParams();
+  const initialDate = searchParams.get('date') ? new Date(searchParams.get('date')!) : new Date();
+  const [selectedDate, setSelectedDate] = useState(initialDate);
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
   const dateLabelFull = format(selectedDate, 'yyyy年M月d日(E)', { locale: ja });
 
