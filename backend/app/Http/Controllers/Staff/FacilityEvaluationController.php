@@ -15,14 +15,8 @@ class FacilityEvaluationController extends Controller
      */
     public function periods(Request $request): JsonResponse
     {
-        $user = $request->user();
-        $query = DB::table('facility_evaluation_periods');
-
-        if ($user->classroom_id) {
-            $query->where('classroom_id', $user->classroom_id);
-        }
-
-        $periods = $query->orderByDesc('fiscal_year')
+        $periods = DB::table('facility_evaluation_periods')
+            ->orderByDesc('fiscal_year')
             ->orderByDesc('created_at')
             ->get();
 
