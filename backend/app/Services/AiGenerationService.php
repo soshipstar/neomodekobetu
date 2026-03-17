@@ -8,8 +8,6 @@ use App\Models\MonitoringRecord;
 use App\Models\Student;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use OpenAI\Laravel\Facades\OpenAI;
-
 class AiGenerationService
 {
     /**
@@ -27,7 +25,7 @@ class AiGenerationService
 
         $startTime = microtime(true);
 
-        $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = OpenAI::client($apiKey); $response = $client->chat()->create([
+        $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
             'model' => config('services.openai.model', 'gpt-5'),
             'messages' => [
                 [
@@ -68,7 +66,7 @@ class AiGenerationService
 
         $startTime = microtime(true);
 
-        $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = OpenAI::client($apiKey); $response = $client->chat()->create([
+        $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
             'model' => config('services.openai.model', 'gpt-5'),
             'messages' => [
                 [
@@ -111,7 +109,7 @@ class AiGenerationService
 
         $startTime = microtime(true);
 
-        $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = OpenAI::client($apiKey); $response = $client->chat()->create([
+        $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
             'model' => config('services.openai.model', 'gpt-5'),
             'messages' => [
                 [
@@ -146,7 +144,7 @@ class AiGenerationService
      */
     public function generateEmbedding(string $text): array
     {
-        $response = $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = OpenAI::client($apiKey); $response = $client->embeddings()->create([
+        $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->embeddings()->create([
             'model' => config('services.openai.embedding_model', 'text-embedding-3-small'),
             'input' => $text,
         ]);

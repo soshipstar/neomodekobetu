@@ -12,8 +12,6 @@ use App\Models\StudentRecord;
 use App\Models\VectorEmbedding;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use OpenAI\Laravel\Facades\OpenAI;
-
 class AiGenerationController extends Controller
 {
     /**
@@ -61,7 +59,7 @@ class AiGenerationController extends Controller
         })->implode("\n\n");
 
         try {
-            $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = OpenAI::client($apiKey); $response = $client->chat()->create([
+            $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
                 'model'    => 'gpt-4o',
                 'messages' => [
                     [
@@ -155,7 +153,7 @@ class AiGenerationController extends Controller
         $detailsText = $details->map(fn ($d) => "- [{$d->category}/{$d->sub_category}] 目標: {$d->support_goal} / 内容: {$d->support_content}")->implode("\n");
 
         try {
-            $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = OpenAI::client($apiKey); $response = $client->chat()->create([
+            $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
                 'model'    => 'gpt-4o',
                 'messages' => [
                     [
@@ -228,7 +226,7 @@ class AiGenerationController extends Controller
         $label = $sectionLabels[$validated['section']] ?? $validated['section'];
 
         try {
-            $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = OpenAI::client($apiKey); $response = $client->chat()->create([
+            $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
                 'model'    => 'gpt-4o',
                 'messages' => [
                     [
@@ -286,7 +284,7 @@ class AiGenerationController extends Controller
 
         try {
             // クエリのembeddingを生成
-            $embeddingResponse = $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = OpenAI::client($apiKey); $response = $client->embeddings()->create([
+            $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $embeddingResponse = $client->embeddings()->create([
                 'model' => 'text-embedding-3-small',
                 'input' => $validated['query'],
             ]);
@@ -360,7 +358,7 @@ class AiGenerationController extends Controller
         })->implode("\n");
 
         try {
-            $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = OpenAI::client($apiKey); $response = $client->chat()->create([
+            $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
                 'model'    => 'gpt-4o',
                 'messages' => [
                     [

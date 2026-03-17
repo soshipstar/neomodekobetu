@@ -6,8 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Newsletter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use OpenAI\Laravel\Facades\OpenAI;
-
 class NewsletterController extends Controller
 {
     /**
@@ -160,7 +158,7 @@ class NewsletterController extends Controller
         $sectionLabel = $sectionLabels[$section] ?? $section;
 
         try {
-            $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = OpenAI::client($apiKey); $response = $client->chat()->create([
+            $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
                 'model'    => 'gpt-4o',
                 'messages' => [
                     [

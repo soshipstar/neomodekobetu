@@ -12,8 +12,6 @@ use App\Services\PuppeteerPdfService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use OpenAI;
-
 class KakehashiController extends Controller
 {
     /**
@@ -202,7 +200,7 @@ class KakehashiController extends Controller
                 ], 422);
             }
 
-            $client = OpenAI::client($apiKey);
+            $client = \OpenAI::client($apiKey);
             $response = $client->chat()->create([
                 'model'    => 'gpt-4o',
                 'messages' => [
