@@ -52,6 +52,7 @@ import {
   Cog,
   BookOpenCheck,
   GraduationCap,
+  MailWarning,
 } from 'lucide-react';
 import type { UserType } from '@/types/user';
 import type { LucideIcon } from 'lucide-react';
@@ -98,6 +99,7 @@ const staffNav: NavItem[] = [
   { type: 'link', label: 'イベント', href: '/staff/events', icon: PartyPopper },
   { type: 'divider', label: '記録・日誌' },
   { type: 'link', label: '連絡帳', href: '/staff/renrakucho', icon: ClipboardList },
+  { type: 'link', label: '未確認連絡帳', href: '/staff/unconfirmed-notes', icon: MailWarning },
   { type: 'link', label: '業務日誌', href: '/staff/work-diary', icon: PenTool },
   { type: 'divider', label: '管理・設定' },
   { type: 'link', label: '生徒登録・変更', href: '/staff/students', icon: Users },
