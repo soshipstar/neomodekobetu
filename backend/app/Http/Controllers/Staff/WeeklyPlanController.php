@@ -33,7 +33,7 @@ class WeeklyPlanController extends Controller
         }
 
         $plans = $query->orderByDesc('week_start_date')
-            ->paginate($request->integer('per_page', 20));
+            ->get();
 
         return response()->json([
             'success' => true,

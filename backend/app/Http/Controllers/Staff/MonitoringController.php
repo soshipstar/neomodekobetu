@@ -10,8 +10,6 @@ use App\Models\StudentRecord;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use OpenAI;
-
 class MonitoringController extends Controller
 {
     /**

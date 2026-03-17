@@ -36,7 +36,7 @@ class StaffSubmissionController extends Controller
             $query->where('is_completed', $request->boolean('is_completed'));
         }
 
-        $submissions = $query->orderByDesc('created_at')->paginate($request->input('per_page', 20));
+        $submissions = $query->orderByDesc('created_at')->get();
 
         return response()->json([
             'success' => true,

@@ -10,8 +10,6 @@ use App\Services\PuppeteerPdfService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use OpenAI\Laravel\Facades\OpenAI;
-
 class SupportPlanController extends Controller
 {
     /**
@@ -65,11 +63,17 @@ class SupportPlanController extends Controller
             'consent_date'       => 'nullable|date',
             'status'             => 'nullable|string|in:draft,submitted,official',
             'details'            => 'nullable|array',
-            'details.*.domain'           => 'nullable|string',
-            'details.*.current_status'   => 'nullable|string',
-            'details.*.goal'             => 'nullable|string',
-            'details.*.support_content'  => 'nullable|string',
+            'details.*.domain'             => 'nullable|string',
+            'details.*.current_status'     => 'nullable|string',
+            'details.*.goal'               => 'nullable|string',
+            'details.*.support_content'    => 'nullable|string',
             'details.*.achievement_status' => 'nullable|string',
+            'details.*.category'           => 'nullable|string',
+            'details.*.sub_category'       => 'nullable|string',
+            'details.*.achievement_date'   => 'nullable|date',
+            'details.*.staff_organization' => 'nullable|string',
+            'details.*.notes'              => 'nullable|string',
+            'details.*.priority'           => 'nullable|integer',
         ]);
 
         $plan = DB::transaction(function () use ($request, $student, $validated) {
@@ -103,6 +107,12 @@ class SupportPlanController extends Controller
                         'goal'               => $detail['goal'] ?? '',
                         'support_content'    => $detail['support_content'] ?? '',
                         'achievement_status' => $detail['achievement_status'] ?? null,
+                        'category'           => $detail['category'] ?? null,
+                        'sub_category'       => $detail['sub_category'] ?? null,
+                        'achievement_date'   => $detail['achievement_date'] ?? null,
+                        'staff_organization' => $detail['staff_organization'] ?? null,
+                        'notes'              => $detail['notes'] ?? null,
+                        'priority'           => $detail['priority'] ?? 0,
                     ]);
                 }
             }
@@ -133,11 +143,17 @@ class SupportPlanController extends Controller
             'consent_date'       => 'nullable|date',
             'status'             => 'nullable|string|in:draft,submitted,official',
             'details'            => 'nullable|array',
-            'details.*.domain'           => 'nullable|string',
-            'details.*.current_status'   => 'nullable|string',
-            'details.*.goal'             => 'nullable|string',
-            'details.*.support_content'  => 'nullable|string',
+            'details.*.domain'             => 'nullable|string',
+            'details.*.current_status'     => 'nullable|string',
+            'details.*.goal'               => 'nullable|string',
+            'details.*.support_content'    => 'nullable|string',
             'details.*.achievement_status' => 'nullable|string',
+            'details.*.category'           => 'nullable|string',
+            'details.*.sub_category'       => 'nullable|string',
+            'details.*.achievement_date'   => 'nullable|date',
+            'details.*.staff_organization' => 'nullable|string',
+            'details.*.notes'              => 'nullable|string',
+            'details.*.priority'           => 'nullable|integer',
         ]);
 
         DB::transaction(function () use ($plan, $validated) {
@@ -166,6 +182,12 @@ class SupportPlanController extends Controller
                         'goal'               => $detail['goal'] ?? '',
                         'support_content'    => $detail['support_content'] ?? '',
                         'achievement_status' => $detail['achievement_status'] ?? null,
+                        'category'           => $detail['category'] ?? null,
+                        'sub_category'       => $detail['sub_category'] ?? null,
+                        'achievement_date'   => $detail['achievement_date'] ?? null,
+                        'staff_organization' => $detail['staff_organization'] ?? null,
+                        'notes'              => $detail['notes'] ?? null,
+                        'priority'           => $detail['priority'] ?? 0,
                     ]);
                 }
             }
@@ -438,6 +460,122 @@ class SupportPlanController extends Controller
     }
 
     /**
+     * CSV エクスポート（旧 kobetsu_plan_export.php 互換）
+     *
+     * UTF-8 BOM 付き CSV で出力。ヘッダ行 + 計画メタ情報 + 7行明細テーブル。
+     */
+    public function export(Request $request, IndividualSupportPlan $plan)
+    {
+        $plan->load(['student', 'details' => fn ($q) => $q->orderBy('sort_order')]);
+
+        if ($plan->student) {
+            $this->authorizeClassroom($request->user(), $plan->student);
+        }
+
+        $studentName = $plan->student->student_name ?? $plan->student_name ?? 'unknown';
+        $createdDate = $plan->created_date ? date('Ymd', strtotime($plan->created_date)) : date('Ymd');
+        $filename = "個別支援計画書_{$studentName}_{$createdDate}.csv";
+
+        $callback = function () use ($plan, $studentName) {
+            $output = fopen('php://output', 'w');
+
+            // UTF-8 BOM
+            fwrite($output, "\xEF\xBB\xBF");
+
+            // メタ情報
+            fputcsv($output, ['種別', '項目名', '値']);
+            fputcsv($output, ['タイトル', '個別支援計画書', '']);
+            fputcsv($output, ['対象者名', $studentName, '']);
+            fputcsv($output, ['作成年月日', $plan->created_date ? date('Y年m月d日', strtotime($plan->created_date)) : '', '']);
+            fputcsv($output, ['']);
+
+            fputcsv($output, ['利用児及び家族の生活に対する意向', $plan->life_intention ?? '', '']);
+            fputcsv($output, ['']);
+
+            fputcsv($output, ['総合的な支援の方針', $plan->overall_policy ?? '', '']);
+            fputcsv($output, ['']);
+
+            // 長期目標
+            $longTermDate = $plan->long_term_goal_date
+                ? date('Y年m月d日', strtotime($plan->long_term_goal_date))
+                : '';
+            fputcsv($output, ['長期目標', $longTermDate, '']);
+            fputcsv($output, ['長期目標内容', $plan->long_term_goal ?? '', '']);
+            fputcsv($output, ['']);
+
+            // 短期目標
+            $shortTermDate = $plan->short_term_goal_date
+                ? date('Y年m月d日', strtotime($plan->short_term_goal_date))
+                : '';
+            fputcsv($output, ['短期目標', $shortTermDate, '']);
+            fputcsv($output, ['短期目標内容', $plan->short_term_goal ?? '', '']);
+            fputcsv($output, ['']);
+
+            // 明細テーブルヘッダ
+            fputcsv($output, [
+                '項目',
+                '支援目標（具体的な到達目標）',
+                '支援内容（内容・支援の提供上のポイント・5領域との関連性等）',
+                '達成時期',
+                '担当者／提供機関',
+                '留意事項',
+                '優先順位',
+            ]);
+
+            // 明細データ
+            foreach ($plan->details as $detail) {
+                $category = $detail->category ?? $detail->domain ?? '';
+                if ($detail->sub_category) {
+                    $category .= "\n" . $detail->sub_category;
+                }
+
+                $achievementDate = '';
+                if ($detail->achievement_date) {
+                    $achievementDate = date('Y/m/d', strtotime($detail->achievement_date));
+                }
+
+                fputcsv($output, [
+                    $category,
+                    $detail->goal ?? $detail->support_goal ?? '',
+                    $detail->support_content ?? '',
+                    $achievementDate,
+                    $detail->staff_organization ?? '',
+                    $detail->notes ?? '',
+                    $detail->priority ?? '',
+                ]);
+            }
+
+            fputcsv($output, ['']);
+
+            // 注記
+            fputcsv($output, [
+                'Note',
+                '※5領域の視点：「健康・生活」「運動・感覚」「認知・行動」「言語・コミュニケーション」「人間関係・社会性」',
+                '',
+            ]);
+            fputcsv($output, ['']);
+
+            // 同意欄
+            fputcsv($output, ['ラベル', '値']);
+            fputcsv($output, ['管理責任者氏名', $plan->manager_name ?? '']);
+
+            $consentDateStr = '';
+            if ($plan->consent_date) {
+                $consentDateStr = date('Y年m月d日', strtotime($plan->consent_date));
+            }
+            fputcsv($output, ['同意日', $consentDateStr]);
+            fputcsv($output, ['保護者署名', $plan->guardian_signature ? '（署名済み）' : '']);
+
+            fclose($output);
+        };
+
+        return response()->stream($callback, 200, [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
+    /**
      * 生徒IDとプランIDを指定して支援計画を更新（ネストルート用）
      */
     public function updateNested(Request $request, Student $student, IndividualSupportPlan $plan): JsonResponse
@@ -484,7 +622,7 @@ class SupportPlanController extends Controller
             })->implode("\n");
 
         try {
-            $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = OpenAI::client($apiKey); $response = $client->chat()->create([
+            $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
                 'model'    => 'gpt-4o',
                 'messages' => [
                     [
