@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -28,6 +29,15 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
+        // AU-003: IP単位のレート制限（5回/15分）
+        $throttleKey = 'login:' . $request->ip();
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            throw ValidationException::withMessages([
+                'username' => ["ログイン試行回数が上限を超えました。{$seconds}秒後に再試行してください。"],
+            ]);
+        }
+
         $user = User::where('username', $request->username)->first();
 
         if ($user && Hash::check($request->password, $user->password)) {
@@ -44,6 +54,8 @@ class AuthController extends Controller
         }
 
         // 両方で認証失敗
+        RateLimiter::hit($throttleKey, 900); // 15分間
+
         LoginAttempt::create([
             'username'   => $request->username,
             'ip_address' => $request->ip(),
@@ -66,6 +78,9 @@ class AuthController extends Controller
                 'username' => ['このアカウントは無効になっています。管理者にお問い合わせください。'],
             ]);
         }
+
+        // レート制限リセット
+        RateLimiter::clear('login:' . $request->ip());
 
         // ログイン試行を記録
         LoginAttempt::create([
@@ -104,6 +119,9 @@ class AuthController extends Controller
                 'username' => ['このアカウントは無効になっています。管理者にお問い合わせください。'],
             ]);
         }
+
+        // レート制限リセット
+        RateLimiter::clear('login:' . $request->ip());
 
         // ログイン試行を記録
         LoginAttempt::create([
