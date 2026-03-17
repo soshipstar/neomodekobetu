@@ -10,6 +10,7 @@ class SupportPlanDetail extends Model
     protected $fillable = [
         'plan_id',
         'domain',
+        'category',
         'current_status',
         'goal',
         'support_content',
