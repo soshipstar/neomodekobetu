@@ -101,15 +101,15 @@ STRIP_COLUMNS = {
     'chat_messages': ['meeting_request_id', 'attachment_path', 'attachment_original_name', 'attachment_size', 'attachment_type'],
     'students': ['hide_initial_monitoring_by', 'hide_initial_monitoring_at'],
     'monitoring_records': ['hidden_by', 'hidden_at'],
-    'individual_support_plans': ['hidden_by', 'hidden_at', 'source_period_id', 'target_period_start', 'target_period_end', 'plan_number', 'guardian_signature_image', 'guardian_signature_date', 'staff_signature_image', 'staff_signature_date', 'guardian_review_comment_at'],
+    'individual_support_plans': ['hidden_by', 'hidden_at', 'source_period_id', 'target_period_start', 'target_period_end', 'plan_number'],
     'kakehashi_guardian': ['hidden_by', 'hidden_at'],
     'kakehashi_staff': ['hidden_by', 'hidden_at'],
     'classrooms': ['service_type', 'target_grades'],
     'event_registrations': ['registered_at', 'notes'],
-    'facility_evaluation_periods': ['classroom_id', 'guardian_eval_start_date', 'guardian_eval_end_date', 'staff_eval_start_date', 'staff_eval_end_date', 'self_eval_created_date', 'publish_date'],
+    'facility_evaluation_periods': ['guardian_eval_start_date', 'guardian_eval_end_date', 'staff_eval_start_date', 'staff_eval_end_date', 'self_eval_created_date', 'publish_date'],
     'individual_support_plan_details': ['row_order'],
     'submission_requests': ['attachment_path', 'attachment_original_name', 'attachment_size'],
-    'meeting_requests': ['guardian_counter_date1', 'guardian_counter_date2', 'guardian_counter_date3', 'staff_counter_date1', 'staff_counter_date2', 'staff_counter_date3', 'candidate_date1', 'candidate_date2', 'candidate_date3'],
+    'meeting_requests': ['guardian_counter_date1', 'guardian_counter_date2', 'guardian_counter_date3', 'staff_counter_date1', 'staff_counter_date2', 'staff_counter_date3'],
     'weekly_plans': ['evaluated_by_type', 'evaluated_by_id', 'created_by_type'],
     'monitoring_records': ['hidden_by', 'hidden_at', 'guardian_signature_image', 'guardian_signature_date', 'staff_signature_image', 'staff_signature_date'],
     'newsletters': ['report_start_date', 'report_end_date', 'schedule_start_date', 'schedule_end_date'],
@@ -215,6 +215,25 @@ RENAME_COLUMNS = {
 }
 
 
+# Column transformations: combine multiple MySQL columns into a single PG column.
+# Format: { mysql_table: { pg_column_name: [source_col1, source_col2, ...] } }
+# Source columns are read, non-NULL values are collected into a JSON array,
+# and the result is inserted as the pg_column_name value.
+# Source columns are automatically added to STRIP_COLUMNS.
+TRANSFORM_COLUMNS = {
+    'meeting_requests': {
+        'candidate_dates': ['candidate_date1', 'candidate_date2', 'candidate_date3'],
+    },
+}
+
+# Auto-strip transform source columns
+for _tbl, _transforms in TRANSFORM_COLUMNS.items():
+    for _pg_col, _src_cols in _transforms.items():
+        if _tbl not in STRIP_COLUMNS:
+            STRIP_COLUMNS[_tbl] = []
+        STRIP_COLUMNS[_tbl].extend(_src_cols)
+
+
 def parse_values(values_str):
     """Parse a comma-separated VALUES string respecting quoted strings and nested parens."""
     tuples = []
@@ -275,6 +294,26 @@ def parse_tuple_values(tuple_str):
     return vals
 
 
+def build_transform_value(vals, cols, transform_src_cols):
+    """Build a JSONB array value from multiple source columns, filtering NULLs."""
+    json_items = []
+    for src_col in transform_src_cols:
+        if src_col in cols:
+            idx = cols.index(src_col)
+            if idx < len(vals):
+                v = vals[idx]
+                # Only include non-NULL values
+                if v != 'NULL' and v.upper() != 'NULL':
+                    # Strip surrounding quotes if present
+                    if v.startswith("'") and v.endswith("'"):
+                        json_items.append('"' + v[1:-1] + '"')
+                    else:
+                        json_items.append('"' + v + '"')
+    if not json_items:
+        return 'NULL'
+    return "'[" + ','.join(json_items) + "]'"
+
+
 def convert_insert(insert_stmt, mysql_table, pg_table):
     """Convert a single INSERT statement from MySQL to PostgreSQL."""
     # Parse the INSERT INTO ... (...) VALUES ... structure
@@ -291,6 +330,7 @@ def convert_insert(insert_stmt, mysql_table, pg_table):
     strip = set(STRIP_COLUMNS.get(mysql_table, []))
     bool_cols = set(BOOLEAN_COLUMNS.get(mysql_table, []))
     renames = RENAME_COLUMNS.get(mysql_table, {})
+    transforms = TRANSFORM_COLUMNS.get(mysql_table, {})
 
     # Columns renamed to None should also be stripped
     for old_col, new_col in renames.items():
@@ -310,6 +350,11 @@ def convert_insert(insert_stmt, mysql_table, pg_table):
             new_cols.append(renames[c])
         else:
             new_cols.append(c)
+
+    # Add transform target columns
+    for pg_col in transforms:
+        if pg_col not in new_cols:
+            new_cols.append(pg_col)
 
     # Parse all value tuples
     tuples = parse_values(values_part)
@@ -337,6 +382,11 @@ def convert_insert(insert_stmt, mysql_table, pg_table):
                 else:
                     v = "'published'"
             new_vals.append(v)
+
+        # Append transformed column values
+        for pg_col, src_cols in transforms.items():
+            transform_val = build_transform_value(vals, cols, src_cols)
+            new_vals.append(transform_val)
 
         new_tuples.append('(' + ','.join(new_vals) + ')')
 
@@ -476,6 +526,7 @@ def convert_insert_filtered(insert_stmt, mysql_table, pg_table, sync_classrooms,
     strip = set(STRIP_COLUMNS.get(mysql_table, []))
     bool_cols = set(BOOLEAN_COLUMNS.get(mysql_table, []))
     renames = RENAME_COLUMNS.get(mysql_table, {})
+    transforms = TRANSFORM_COLUMNS.get(mysql_table, {})
 
     for old_col, new_col in renames.items():
         if new_col is None:
@@ -501,6 +552,11 @@ def convert_insert_filtered(insert_stmt, mysql_table, pg_table, sync_classrooms,
             new_cols.append(renames[c])
         else:
             new_cols.append(c)
+
+    # Add transform target columns
+    for pg_col in transforms:
+        if pg_col not in new_cols:
+            new_cols.append(pg_col)
 
     tuples = parse_values(values_part)
     new_tuples = []
@@ -545,6 +601,11 @@ def convert_insert_filtered(insert_stmt, mysql_table, pg_table, sync_classrooms,
                 else:
                     v = "'published'"
             new_vals.append(v)
+
+        # Append transformed column values
+        for pg_col, src_cols in transforms.items():
+            transform_val = build_transform_value(vals, cols, src_cols)
+            new_vals.append(transform_val)
 
         new_tuples.append('(' + ','.join(new_vals) + ')')
 
