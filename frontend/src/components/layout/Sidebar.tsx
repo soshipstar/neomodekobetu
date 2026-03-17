@@ -119,6 +119,7 @@ const staffNav: NavItem[] = [
 const guardianNav: NavItem[] = [
   { type: 'link', label: 'ダッシュボード', href: '/guardian/dashboard', icon: Home },
   { type: 'link', label: '連絡帳一覧', href: '/guardian/notes', icon: BookOpen },
+  { type: 'link', label: '連絡帳検索', href: '/guardian/communication-logs', icon: FolderOpen },
   { type: 'link', label: 'チャット', href: '/guardian/chat', icon: MessageCircle },
   { type: 'link', label: '週間計画表', href: '/guardian/weekly-plans', icon: ClipboardList },
   { type: 'link', label: 'かけはし入力', href: '/guardian/kakehashi', icon: Handshake },
