@@ -112,7 +112,8 @@ class NotificationService
         string $chatUrl,
         string $facilityName = '',
     ): void {
-        $subject = "【新着メッセージ】チャットに新しいメッセージがあります";
+        $displayName = $facilityName ?: config('app.name', 'きづり');
+        $subject = "【{$displayName}】チャットに新しいメッセージがあります";
 
         $this->sendEmailNotification($recipient, $subject, 'chat-notification', [
             'recipientName' => $recipient->full_name,

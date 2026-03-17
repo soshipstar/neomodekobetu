@@ -231,4 +231,50 @@ class NewsletterController extends Controller
             'data'    => $newsletter,
         ]);
     }
+
+    /**
+     * お便り PDF プレビューデータを返す（POST）
+     * 保存前のデータからPDFプレビュー用のデータを生成する
+     */
+    public function pdfPreview(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'year'              => 'required|integer|min:2020|max:2100',
+            'month'             => 'required|integer|min:1|max:12',
+            'title'             => 'required|string|max:255',
+            'greeting'          => 'nullable|string',
+            'event_calendar'    => 'nullable|string',
+            'event_details'     => 'nullable|string',
+            'weekly_reports'    => 'nullable|string',
+            'weekly_intro'      => 'nullable|string',
+            'event_results'     => 'nullable|string',
+            'requests'          => 'nullable|string',
+            'others'            => 'nullable|string',
+            'elementary_report' => 'nullable|string',
+            'junior_report'     => 'nullable|string',
+        ]);
+
+        $user = $request->user();
+
+        // 保存せずにプレビュー用のデータを組み立て
+        $previewData = array_merge($validated, [
+            'id'            => null,
+            'classroom_id'  => $user->classroom_id,
+            'created_by'    => $user->id,
+            'is_published'  => false,
+            'preview_mode'  => true,
+            'classroom'     => $user->classroom_id
+                ? \App\Models\Classroom::find($user->classroom_id)
+                : null,
+            'creator'       => [
+                'id'        => $user->id,
+                'full_name' => $user->full_name,
+            ],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $previewData,
+        ]);
+    }
 }
