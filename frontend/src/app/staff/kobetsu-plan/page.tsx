@@ -215,6 +215,12 @@ export default function KobetsuPlanPage() {
     life_intention: data.guardian_wish,
     consent_name: data.manager_name,
     guardian_signature: data.guardian_signature_text,
+    details: data.details.map((d) => ({
+      ...d,
+      goal: d.support_goal,
+      category: d.category,
+      domain: d.sub_category,
+    })),
   });
 
   const createMutation = useMutation({
@@ -308,6 +314,8 @@ export default function KobetsuPlanPage() {
         details: p.details && p.details.length > 0
           ? p.details.map((d: any) => ({
               ...d,
+              category: d.category || '',
+              sub_category: d.sub_category || d.domain || '',
               support_goal: nl(d.support_goal || d.goal),
               support_content: nl(d.support_content),
               staff_organization: nl(d.staff_organization),
