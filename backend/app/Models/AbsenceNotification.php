@@ -17,6 +17,7 @@ class AbsenceNotification extends Model
         'makeup_request_date',
         'makeup_status',
         'makeup_approved_by',
+        'makeup_approved_at',
         'makeup_note',
     ];
 
@@ -25,6 +26,7 @@ class AbsenceNotification extends Model
         return [
             'absence_date' => 'date',
             'makeup_request_date' => 'date',
+            'makeup_approved_at' => 'datetime',
         ];
     }
 

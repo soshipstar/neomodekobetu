@@ -104,14 +104,20 @@ VALUE_MAPPINGS = {
             'event_registration': 'text',
         },
     },
+    'individual_support_plans': {
+        'is_draft': {
+            '0': 'published',
+            '1': 'draft',
+        },
+    },
 }
 
 # Columns that exist in MySQL but NOT in PG (will be stripped from INSERT)
 STRIP_COLUMNS = {
     'users': ['remember_token'],
     'chat_messages': ['meeting_request_id', 'attachment_path', 'attachment_original_name', 'attachment_size', 'attachment_type'],
-    'students': ['hide_initial_monitoring_by', 'hide_initial_monitoring_at'],
-    'monitoring_records': ['hidden_by', 'hidden_at'],
+    'students': ['hide_initial_monitoring_by', 'hide_initial_monitoring_at', 'last_login'],
+    'monitoring_records': ['hidden_by', 'hidden_at', 'guardian_signature_image', 'guardian_signature_date', 'staff_signature_image', 'staff_signature_date'],
     'individual_support_plans': ['hidden_by', 'hidden_at', 'source_period_id', 'target_period_start', 'target_period_end', 'plan_number'],
     'kakehashi_guardian': ['hidden_by', 'hidden_at'],
     'kakehashi_staff': ['hidden_by', 'hidden_at'],
@@ -122,13 +128,12 @@ STRIP_COLUMNS = {
     'submission_requests': ['attachment_path', 'attachment_original_name', 'attachment_size'],
     'meeting_requests': ['guardian_counter_date1', 'guardian_counter_date2', 'guardian_counter_date3', 'staff_counter_date1', 'staff_counter_date2', 'staff_counter_date3'],
     'weekly_plans': ['evaluated_by_type', 'evaluated_by_id', 'created_by_type'],
-    'monitoring_records': ['hidden_by', 'hidden_at', 'guardian_signature_image', 'guardian_signature_date', 'staff_signature_image', 'staff_signature_date'],
     'newsletters': ['report_start_date', 'report_end_date', 'schedule_start_date', 'schedule_end_date'],
     'weekly_plan_submissions': ['completed_by_type', 'completed_by_id'],
     'weekly_plan_comments': ['commenter_type'],
     'student_chat_messages': ['attachment_path', 'attachment_original_name', 'attachment_size'],
-    'students': ['hide_initial_monitoring_by', 'hide_initial_monitoring_at', 'last_login'],
     'newsletter_settings': ['show_facility_name', 'show_logo', 'show_greeting', 'show_event_calendar', 'show_event_details', 'show_weekly_reports', 'show_weekly_intro', 'show_event_results', 'show_requests', 'show_others', 'show_elementary_report', 'show_junior_report', 'show_custom_section', 'calendar_format', 'default_requests', 'default_others', 'greeting_instructions', 'event_details_instructions', 'weekly_reports_instructions', 'weekly_intro_instructions', 'event_results_instructions', 'elementary_report_instructions', 'junior_report_instructions', 'custom_section_title', 'custom_section_content'],
+    'student_records': ['domain1', 'domain1_content', 'domain2', 'domain2_content'],
 }
 
 # Columns that are boolean in PG but integer in MySQL
@@ -144,7 +149,7 @@ BOOLEAN_COLUMNS = {
                  'scheduled_monday', 'scheduled_tuesday', 'scheduled_wednesday',
                  'scheduled_thursday', 'scheduled_friday', 'scheduled_saturday', 'scheduled_sunday'],
     'chat_messages': ['is_read', 'is_deleted'],
-    'individual_support_plans': ['is_draft', 'guardian_confirmed', 'is_hidden', 'is_official'],
+    'individual_support_plans': ['guardian_confirmed', 'is_hidden', 'is_official'],  # is_draft handled by VALUE_MAPPINGS
     'support_plan_details': [],
     'monitoring_records': ['is_draft', 'guardian_confirmed', 'is_hidden', 'is_official'],
     'monitoring_details': [],
@@ -154,11 +159,7 @@ BOOLEAN_COLUMNS = {
     'kakehashi_staff': ['is_submitted', 'is_hidden', 'guardian_confirmed'],
     'integrated_notes': ['is_sent', 'guardian_confirmed'],
     'newsletters': [],
-    'newsletter_settings': ['show_facility_name', 'show_logo', 'show_greeting',
-                           'show_event_calendar', 'show_event_details',
-                           'show_weekly_reports', 'show_weekly_intro',
-                           'show_event_results', 'show_requests', 'show_others',
-                           'show_elementary_report', 'show_junior_report', 'show_custom_section'],
+    'newsletter_settings': [],  # show_* columns already in STRIP_COLUMNS
     'facility_evaluation_questions': ['is_active'],
     'facility_guardian_evaluations': ['is_submitted'],
     'facility_staff_evaluations': ['is_submitted'],
@@ -196,10 +197,7 @@ RENAME_COLUMNS = {
     # monitoring_records has is_draft column (no rename needed)
     'student_records': {
         'daily_note': 'notes',
-        'domain1': 'health_life',
-        'domain1_content': 'motor_sensory',
-        'domain2': 'cognitive_behavior',
-        'domain2_content': 'language_communication',
+        # domain1/domain2 routing handled by transform_student_record()
     },
     'students': {
         'last_login': 'last_login_at',
@@ -239,6 +237,39 @@ TRANSFORM_COLUMNS = {
 
 # Domain key names that should never appear as actual values in student_records
 DOMAIN_KEY_NAMES = {'health_life', 'motor_sensory', 'cognitive_behavior', 'language_communication', 'social_relations'}
+
+# D-006: Domain columns in PG student_records (order matters for transform)
+STUDENT_RECORD_DOMAIN_COLS = ['health_life', 'motor_sensory', 'cognitive_behavior', 'language_communication', 'social_relations']
+
+
+def transform_student_record(vals, cols):
+    """D-006: Transform student_records domain1/domain2 routing.
+
+    MySQL: domain1 (domain name) + domain1_content (text), domain2 + domain2_content
+    PG: health_life, motor_sensory, cognitive_behavior, language_communication, social_relations
+    Routes content to the correct PG column based on domain1/domain2 value.
+    """
+    domain_values = {col: 'NULL' for col in STUDENT_RECORD_DOMAIN_COLS}
+
+    d1_idx = cols.index('domain1') if 'domain1' in cols else None
+    d1c_idx = cols.index('domain1_content') if 'domain1_content' in cols else None
+    d2_idx = cols.index('domain2') if 'domain2' in cols else None
+    d2c_idx = cols.index('domain2_content') if 'domain2_content' in cols else None
+
+    if d1_idx is not None and d1c_idx is not None:
+        domain1_name = vals[d1_idx].strip("'")
+        domain1_content = vals[d1c_idx]
+        if domain1_name in STUDENT_RECORD_DOMAIN_COLS and domain1_content != 'NULL':
+            domain_values[domain1_name] = domain1_content
+
+    if d2_idx is not None and d2c_idx is not None:
+        domain2_name = vals[d2_idx].strip("'")
+        domain2_content = vals[d2c_idx]
+        if domain2_name in STUDENT_RECORD_DOMAIN_COLS and domain2_content != 'NULL':
+            domain_values[domain2_name] = domain2_content
+
+    return domain_values
+
 
 # Post-migration SQL to fix data integrity issues
 POST_MIGRATION_SQL = [
@@ -399,6 +430,13 @@ def convert_insert(insert_stmt, mysql_table, pg_table):
         if pg_col not in new_cols:
             new_cols.append(pg_col)
 
+    # D-006: Add domain columns for student_records transform
+    needs_domain_transform = (mysql_table == 'student_records')
+    if needs_domain_transform:
+        for dc in STUDENT_RECORD_DOMAIN_COLS:
+            if dc not in new_cols:
+                new_cols.append(dc)
+
     # Parse all value tuples
     tuples = parse_values(values_part)
 
@@ -417,13 +455,7 @@ def convert_insert(insert_stmt, mysql_table, pg_table):
                     v = 'false'
                 elif v == '1':
                     v = 'true'
-            # Special: is_draft -> status conversion
             col_name = new_cols[len(new_vals)] if len(new_vals) < len(new_cols) else None
-            if col_name == 'status' and i < len(cols) and cols[i] == 'is_draft':
-                if v == '1' or v == 'true':
-                    v = "'draft'"
-                else:
-                    v = "'published'"
             # D-001: Sanitize text values (fix literal \r\n)
             v = sanitize_text_value(v)
             # D-002: NULL out domain key name contamination in student_records
@@ -440,6 +472,12 @@ def convert_insert(insert_stmt, mysql_table, pg_table):
         for pg_col, src_cols in transforms.items():
             transform_val = build_transform_value(vals, cols, src_cols)
             new_vals.append(transform_val)
+
+        # D-006: Transform domain columns for student_records
+        if needs_domain_transform:
+            domain_vals = transform_student_record(vals, cols)
+            for dc in STUDENT_RECORD_DOMAIN_COLS:
+                new_vals.append(domain_vals[dc])
 
         new_tuples.append('(' + ','.join(new_vals) + ')')
 
@@ -613,6 +651,13 @@ def convert_insert_filtered(insert_stmt, mysql_table, pg_table, sync_classrooms,
         if pg_col not in new_cols:
             new_cols.append(pg_col)
 
+    # D-006: Add domain columns for student_records transform
+    needs_domain_transform = (mysql_table == 'student_records')
+    if needs_domain_transform:
+        for dc in STUDENT_RECORD_DOMAIN_COLS:
+            if dc not in new_cols:
+                new_cols.append(dc)
+
     tuples = parse_values(values_part)
     new_tuples = []
 
@@ -650,17 +695,12 @@ def convert_insert_filtered(insert_stmt, mysql_table, pg_table, sync_classrooms,
                 elif v == '1':
                     v = 'true'
             col_name = new_cols[len(new_vals)] if len(new_vals) < len(new_cols) else None
-            if col_name == 'status' and i < len(cols) and cols[i] == 'is_draft':
-                if v == '1' or v == 'true':
-                    v = "'draft'"
-                else:
-                    v = "'published'"
             # D-001: Sanitize text values (fix literal \r\n)
             v = sanitize_text_value(v)
             # D-002: NULL out domain key name contamination in student_records
             if mysql_table == 'student_records' and col_name:
                 v = sanitize_domain_value(v, col_name)
-            # S-004: Apply value mappings (e.g. message_type: normal→text)
+            # S-004/D-009: Apply value mappings
             if i in val_map_indices:
                 stripped = v.strip("'")
                 if stripped in val_map_indices[i]:
@@ -671,6 +711,12 @@ def convert_insert_filtered(insert_stmt, mysql_table, pg_table, sync_classrooms,
         for pg_col, src_cols in transforms.items():
             transform_val = build_transform_value(vals, cols, src_cols)
             new_vals.append(transform_val)
+
+        # D-006: Transform domain columns for student_records
+        if needs_domain_transform:
+            domain_vals = transform_student_record(vals, cols)
+            for dc in STUDENT_RECORD_DOMAIN_COLS:
+                new_vals.append(domain_vals[dc])
 
         new_tuples.append('(' + ','.join(new_vals) + ')')
 
