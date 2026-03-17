@@ -7,6 +7,7 @@ use App\Models\MonitoringDetail;
 use App\Models\MonitoringRecord;
 use App\Models\Student;
 use App\Models\StudentRecord;
+use App\Services\PuppeteerPdfService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -133,6 +134,28 @@ class MonitoringController extends Controller
             'data'    => $monitoring->fresh('details'),
             'message' => 'モニタリング記録を更新しました。',
         ]);
+    }
+
+    /**
+     * モニタリング記録 PDF をダウンロード
+     */
+    public function pdf(Request $request, MonitoringRecord $monitoring)
+    {
+        $monitoring->load(['student.classroom', 'details', 'plan.details', 'creator']);
+
+        if ($monitoring->student) {
+            $this->authorizeClassroom($request->user(), $monitoring->student);
+        }
+
+        $filename = 'monitoring_' . ($monitoring->student->student_name ?? $monitoring->id) . '_' . $monitoring->monitoring_date->format('Y-m-d') . '.pdf';
+
+        return PuppeteerPdfService::download('pdf.monitoring', [
+            'record'    => $monitoring,
+            'student'   => $monitoring->student,
+            'classroom' => $monitoring->student->classroom ?? null,
+            'plan'      => $monitoring->plan,
+            'details'   => $monitoring->details,
+        ], $filename);
     }
 
     /**

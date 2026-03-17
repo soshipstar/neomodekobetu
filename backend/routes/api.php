@@ -168,6 +168,7 @@ Route::prefix('staff')
         Route::put('/monitoring/{monitoring}', [App\Http\Controllers\Staff\MonitoringController::class, 'update']);
         Route::post('/monitoring/generate', [App\Http\Controllers\Staff\MonitoringController::class, 'generate']);
         Route::post('/monitoring/{monitoring}/generate-ai', [App\Http\Controllers\Staff\MonitoringController::class, 'generateAi']);
+        Route::get('/monitoring/{monitoring}/pdf', [App\Http\Controllers\Staff\MonitoringController::class, 'pdf']);
 
         // --- かけはし ---
         Route::get('/students/{student}/kakehashi', [App\Http\Controllers\Staff\KakehashiController::class, 'index']);
@@ -529,4 +530,5 @@ Route::middleware('auth:sanctum')->group(function () {
     // ファイルアップロード
     Route::post('/upload', [App\Http\Controllers\Api\FileUploadController::class, 'store']);
     Route::delete('/upload/{file}', [App\Http\Controllers\Api\FileUploadController::class, 'destroy']);
+    Route::get('/download/{path}', [App\Http\Controllers\Api\FileUploadController::class, 'download'])->where('path', '.*');
 });

@@ -7,6 +7,7 @@ use App\Models\ActivitySupportPlan;
 use App\Models\DailyRecord;
 use App\Models\Event;
 use App\Models\Newsletter;
+use App\Services\PuppeteerPdfService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -310,15 +311,17 @@ class NewsletterController extends Controller
     }
 
     /**
-     * お便り PDF データを返す
+     * お便り PDF をダウンロード
      */
-    public function pdf(Request $request, Newsletter $newsletter): JsonResponse
+    public function pdf(Request $request, Newsletter $newsletter)
     {
         $newsletter->load(['classroom', 'creator:id,full_name']);
 
-        return response()->json([
-            'success' => true,
-            'data'    => $newsletter,
-        ]);
+        $filename = 'newsletter_' . $newsletter->year . '_' . $newsletter->month . '_' . ($newsletter->title ?? $newsletter->id) . '.pdf';
+
+        return PuppeteerPdfService::download('pdf.newsletter', [
+            'newsletter' => $newsletter,
+            'classroom'  => $newsletter->classroom,
+        ], $filename);
     }
 }
