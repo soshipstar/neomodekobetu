@@ -45,7 +45,7 @@ class SupportPlanController extends Controller
         }
 
         $request->validate([
-            'comment' => 'present|string|max:2000',
+            'comment' => 'present|nullable|string|max:2000',
         ]);
 
         $plan->update([

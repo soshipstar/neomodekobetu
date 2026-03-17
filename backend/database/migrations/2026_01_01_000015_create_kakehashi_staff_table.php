@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('period_id')->constrained('kakehashi_periods')->cascadeOnDelete();
             $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
-            $table->foreignId('staff_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('staff_id')->nullable()->constrained('users')->nullOnDelete();
             $table->text('student_wish')->nullable()->comment('児童の意思');
             $table->text('short_term_goal')->nullable();
             $table->text('long_term_goal')->nullable();

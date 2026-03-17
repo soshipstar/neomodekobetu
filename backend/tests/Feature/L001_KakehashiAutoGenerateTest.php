@@ -81,7 +81,7 @@ class L001_KakehashiAutoGenerateTest extends TestCase
         Carbon::setTestNow(Carbon::parse('2026-07-01'));
 
         $classroom = Classroom::create([
-            'name' => 'Test Classroom',
+            'classroom_name' => 'Test Classroom',
             'is_active' => true,
         ]);
 
@@ -154,7 +154,7 @@ class L001_KakehashiAutoGenerateTest extends TestCase
         Carbon::setTestNow(Carbon::parse('2025-08-20'));
 
         $classroom = Classroom::create([
-            'name' => 'Test Classroom',
+            'classroom_name' => 'Test Classroom',
             'is_active' => true,
         ]);
 
@@ -182,7 +182,7 @@ class L001_KakehashiAutoGenerateTest extends TestCase
         Carbon::setTestNow(Carbon::parse('2025-08-20'));
 
         $classroom = Classroom::create([
-            'name' => 'Test Classroom',
+            'classroom_name' => 'Test Classroom',
             'is_active' => true,
         ]);
 

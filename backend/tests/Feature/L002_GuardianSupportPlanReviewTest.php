@@ -20,7 +20,7 @@ class L002_GuardianSupportPlanReviewTest extends TestCase
     public function test_guardian_can_submit_review_comment(): void
     {
         $classroom = Classroom::create([
-            'name' => 'Test Classroom',
+            'classroom_name' => 'Test Classroom',
             'is_active' => true,
         ]);
 
@@ -68,7 +68,7 @@ class L002_GuardianSupportPlanReviewTest extends TestCase
     public function test_guardian_can_approve_with_empty_comment(): void
     {
         $classroom = Classroom::create([
-            'name' => 'Test Classroom',
+            'classroom_name' => 'Test Classroom',
             'is_active' => true,
         ]);
 
@@ -115,7 +115,7 @@ class L002_GuardianSupportPlanReviewTest extends TestCase
     public function test_guardian_cannot_review_other_students_plan(): void
     {
         $classroom = Classroom::create([
-            'name' => 'Test Classroom',
+            'classroom_name' => 'Test Classroom',
             'is_active' => true,
         ]);
 

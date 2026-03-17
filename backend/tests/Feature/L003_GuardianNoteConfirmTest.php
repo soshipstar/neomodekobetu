@@ -14,15 +14,19 @@ class L003_GuardianNoteConfirmTest extends TestCase
 {
     use RefreshDatabase;
 
-    /**
-     * Test guardian can confirm a note.
-     * POST /api/guardian/notes/{id}/confirm -> 200
-     * Assert DB: guardian_confirmed = true, guardian_confirmed_at is not null
-     */
-    public function test_guardian_can_confirm_note(): void
+    private function createTestData(): array
     {
         $classroom = Classroom::create([
-            'name' => 'Test Classroom',
+            'classroom_name' => 'Test Classroom',
+            'is_active' => true,
+        ]);
+
+        $staff = User::create([
+            'username' => 'staff_test',
+            'password' => bcrypt('password'),
+            'full_name' => 'Test Staff',
+            'user_type' => 'staff',
+            'classroom_id' => $classroom->id,
             'is_active' => true,
         ]);
 
@@ -42,15 +46,31 @@ class L003_GuardianNoteConfirmTest extends TestCase
             'is_active' => true,
         ]);
 
+        $dailyRecord = DailyRecord::create([
+            'record_date' => now()->toDateString(),
+            'staff_id' => $staff->id,
+            'classroom_id' => $classroom->id,
+            'activity_name' => 'Test Activity',
+            'common_activity' => 'Test common activity',
+        ]);
+
+        return compact('classroom', 'staff', 'guardian', 'student', 'dailyRecord');
+    }
+
+    public function test_guardian_can_confirm_note(): void
+    {
+        $data = $this->createTestData();
+
         $note = IntegratedNote::create([
-            'student_id' => $student->id,
+            'daily_record_id' => $data['dailyRecord']->id,
+            'student_id' => $data['student']->id,
             'integrated_content' => 'Test note content',
             'is_sent' => true,
             'sent_at' => now(),
             'guardian_confirmed' => false,
         ]);
 
-        $response = $this->actingAs($guardian, 'sanctum')
+        $response = $this->actingAs($data['guardian'], 'sanctum')
             ->postJson("/api/guardian/notes/{$note->id}/confirm");
 
         $response->assertStatus(200);
@@ -61,122 +81,66 @@ class L003_GuardianNoteConfirmTest extends TestCase
         $this->assertNotNull($note->guardian_confirmed_at);
     }
 
-    /**
-     * Test guardian cannot confirm note belonging to another student.
-     */
     public function test_guardian_cannot_confirm_other_students_note(): void
     {
-        $classroom = Classroom::create([
-            'name' => 'Test Classroom',
-            'is_active' => true,
-        ]);
-
-        $guardian = User::create([
-            'username' => 'guardian_test',
-            'password' => bcrypt('password'),
-            'full_name' => 'Test Guardian',
-            'user_type' => 'guardian',
-            'classroom_id' => $classroom->id,
-            'is_active' => true,
-        ]);
+        $data = $this->createTestData();
 
         $otherGuardian = User::create([
             'username' => 'other_guardian',
             'password' => bcrypt('password'),
             'full_name' => 'Other Guardian',
             'user_type' => 'guardian',
-            'classroom_id' => $classroom->id,
+            'classroom_id' => $data['classroom']->id,
             'is_active' => true,
         ]);
 
-        $student = Student::create([
-            'classroom_id' => $classroom->id,
+        $otherStudent = Student::create([
+            'classroom_id' => $data['classroom']->id,
             'student_name' => 'Other Student',
             'guardian_id' => $otherGuardian->id,
             'is_active' => true,
         ]);
 
         $note = IntegratedNote::create([
-            'student_id' => $student->id,
+            'daily_record_id' => $data['dailyRecord']->id,
+            'student_id' => $otherStudent->id,
             'integrated_content' => 'Test note content',
             'is_sent' => true,
             'sent_at' => now(),
             'guardian_confirmed' => false,
         ]);
 
-        $response = $this->actingAs($guardian, 'sanctum')
+        $response = $this->actingAs($data['guardian'], 'sanctum')
             ->postJson("/api/guardian/notes/{$note->id}/confirm");
 
         $response->assertStatus(403);
     }
 
-    /**
-     * Test guardian cannot confirm unsent note.
-     */
     public function test_guardian_cannot_confirm_unsent_note(): void
     {
-        $classroom = Classroom::create([
-            'name' => 'Test Classroom',
-            'is_active' => true,
-        ]);
-
-        $guardian = User::create([
-            'username' => 'guardian_test',
-            'password' => bcrypt('password'),
-            'full_name' => 'Test Guardian',
-            'user_type' => 'guardian',
-            'classroom_id' => $classroom->id,
-            'is_active' => true,
-        ]);
-
-        $student = Student::create([
-            'classroom_id' => $classroom->id,
-            'student_name' => 'Test Student',
-            'guardian_id' => $guardian->id,
-            'is_active' => true,
-        ]);
+        $data = $this->createTestData();
 
         $note = IntegratedNote::create([
-            'student_id' => $student->id,
+            'daily_record_id' => $data['dailyRecord']->id,
+            'student_id' => $data['student']->id,
             'integrated_content' => 'Test note content',
             'is_sent' => false,
             'guardian_confirmed' => false,
         ]);
 
-        $response = $this->actingAs($guardian, 'sanctum')
+        $response = $this->actingAs($data['guardian'], 'sanctum')
             ->postJson("/api/guardian/notes/{$note->id}/confirm");
 
         $response->assertStatus(422);
     }
 
-    /**
-     * Test guardian cannot double-confirm.
-     */
     public function test_guardian_cannot_double_confirm(): void
     {
-        $classroom = Classroom::create([
-            'name' => 'Test Classroom',
-            'is_active' => true,
-        ]);
-
-        $guardian = User::create([
-            'username' => 'guardian_test',
-            'password' => bcrypt('password'),
-            'full_name' => 'Test Guardian',
-            'user_type' => 'guardian',
-            'classroom_id' => $classroom->id,
-            'is_active' => true,
-        ]);
-
-        $student = Student::create([
-            'classroom_id' => $classroom->id,
-            'student_name' => 'Test Student',
-            'guardian_id' => $guardian->id,
-            'is_active' => true,
-        ]);
+        $data = $this->createTestData();
 
         $note = IntegratedNote::create([
-            'student_id' => $student->id,
+            'daily_record_id' => $data['dailyRecord']->id,
+            'student_id' => $data['student']->id,
             'integrated_content' => 'Test note content',
             'is_sent' => true,
             'sent_at' => now(),
@@ -184,7 +148,7 @@ class L003_GuardianNoteConfirmTest extends TestCase
             'guardian_confirmed_at' => now(),
         ]);
 
-        $response = $this->actingAs($guardian, 'sanctum')
+        $response = $this->actingAs($data['guardian'], 'sanctum')
             ->postJson("/api/guardian/notes/{$note->id}/confirm");
 
         $response->assertStatus(422);

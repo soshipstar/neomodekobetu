@@ -33,7 +33,7 @@ class L004_MonitoringAutoCopyTest extends TestCase
     public function test_monitoring_auto_copies_support_plan_details(): void
     {
         $classroom = Classroom::create([
-            'name' => 'Test Classroom',
+            'classroom_name' => 'Test Classroom',
             'is_active' => true,
         ]);
 
@@ -112,7 +112,7 @@ class L004_MonitoringAutoCopyTest extends TestCase
     public function test_monitoring_not_duplicated(): void
     {
         $classroom = Classroom::create([
-            'name' => 'Test Classroom',
+            'classroom_name' => 'Test Classroom',
             'is_active' => true,
         ]);
 
@@ -155,7 +155,7 @@ class L004_MonitoringAutoCopyTest extends TestCase
     public function test_monitoring_skipped_without_plan(): void
     {
         $classroom = Classroom::create([
-            'name' => 'Test Classroom',
+            'classroom_name' => 'Test Classroom',
             'is_active' => true,
         ]);
 
