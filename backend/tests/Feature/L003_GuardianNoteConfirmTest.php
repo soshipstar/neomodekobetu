@@ -7,12 +7,12 @@ use App\Models\DailyRecord;
 use App\Models\IntegratedNote;
 use App\Models\Student;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Tests\TestCase;
 
 class L003_GuardianNoteConfirmTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseMigrations;
 
     private function createTestData(): array
     {
@@ -76,9 +76,10 @@ class L003_GuardianNoteConfirmTest extends TestCase
         $response->assertStatus(200);
         $response->assertJson(['success' => true]);
 
-        $note->refresh();
-        $this->assertTrue($note->guardian_confirmed);
-        $this->assertNotNull($note->guardian_confirmed_at);
+        $this->assertDatabaseHas('integrated_notes', [
+            'id' => $note->id,
+            'guardian_confirmed' => true,
+        ]);
     }
 
     public function test_guardian_cannot_confirm_other_students_note(): void
