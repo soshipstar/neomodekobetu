@@ -95,6 +95,18 @@ SKIP_TABLES = {
     'training_records',
 }
 
+# Value mappings: { table: { column: { old_value: new_value } } }
+# Used to convert old-format enum/string values to new-format during migration.
+VALUE_MAPPINGS = {
+    'chat_messages': {
+        'message_type': {
+            'normal': 'text',
+            'absence_notification': 'text',
+            'event_registration': 'text',
+        },
+    },
+}
+
 # Columns that exist in MySQL but NOT in PG (will be stripped from INSERT)
 STRIP_COLUMNS = {
     'users': ['remember_token'],
@@ -291,6 +303,7 @@ def convert_insert(insert_stmt, mysql_table, pg_table):
     strip = set(STRIP_COLUMNS.get(mysql_table, []))
     bool_cols = set(BOOLEAN_COLUMNS.get(mysql_table, []))
     renames = RENAME_COLUMNS.get(mysql_table, {})
+    val_mappings = VALUE_MAPPINGS.get(mysql_table, {})
 
     # Columns renamed to None should also be stripped
     for old_col, new_col in renames.items():
@@ -300,6 +313,8 @@ def convert_insert(insert_stmt, mysql_table, pg_table):
     # Find indices to remove
     strip_indices = {i for i, c in enumerate(cols) if c in strip}
     bool_indices = {i for i, c in enumerate(cols) if c in bool_cols}
+    # Build column->index mapping for value mappings
+    val_map_indices = {i: val_mappings[c] for i, c in enumerate(cols) if c in val_mappings}
 
     # Build new column list with renames applied
     new_cols = []
@@ -336,6 +351,11 @@ def convert_insert(insert_stmt, mysql_table, pg_table):
                     v = "'draft'"
                 else:
                     v = "'published'"
+            # Apply value mappings (e.g., message_type: normal -> text)
+            if i in val_map_indices:
+                stripped = v.strip("'")
+                if stripped in val_map_indices[i]:
+                    v = f"'{val_map_indices[i][stripped]}'"
             new_vals.append(v)
 
         new_tuples.append('(' + ','.join(new_vals) + ')')
@@ -476,6 +496,7 @@ def convert_insert_filtered(insert_stmt, mysql_table, pg_table, sync_classrooms,
     strip = set(STRIP_COLUMNS.get(mysql_table, []))
     bool_cols = set(BOOLEAN_COLUMNS.get(mysql_table, []))
     renames = RENAME_COLUMNS.get(mysql_table, {})
+    val_mappings = VALUE_MAPPINGS.get(mysql_table, {})
 
     for old_col, new_col in renames.items():
         if new_col is None:
@@ -483,6 +504,7 @@ def convert_insert_filtered(insert_stmt, mysql_table, pg_table, sync_classrooms,
 
     strip_indices = {i for i, c in enumerate(cols) if c in strip}
     bool_indices = {i for i, c in enumerate(cols) if c in bool_cols}
+    val_map_indices = {i: val_mappings[c] for i, c in enumerate(cols) if c in val_mappings}
 
     # Find filter column index
     filter_col_idx = None
@@ -544,6 +566,11 @@ def convert_insert_filtered(insert_stmt, mysql_table, pg_table, sync_classrooms,
                     v = "'draft'"
                 else:
                     v = "'published'"
+            # Apply value mappings (e.g., message_type: normal -> text)
+            if i in val_map_indices:
+                stripped = v.strip("'")
+                if stripped in val_map_indices[i]:
+                    v = f"'{val_map_indices[i][stripped]}'"
             new_vals.append(v)
 
         new_tuples.append('(' + ','.join(new_vals) + ')')
