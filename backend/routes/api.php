@@ -338,6 +338,14 @@ Route::prefix('staff')
             Route::get('/rooms/{room}/members', [App\Http\Controllers\Staff\StaffChatController::class, 'members']);
         });
 
+        // --- お知らせ ---
+        Route::get('/announcements', [App\Http\Controllers\Staff\AnnouncementController::class, 'index']);
+        Route::post('/announcements', [App\Http\Controllers\Staff\AnnouncementController::class, 'store']);
+        Route::put('/announcements/{announcement}', [App\Http\Controllers\Staff\AnnouncementController::class, 'update']);
+        Route::delete('/announcements/{announcement}', [App\Http\Controllers\Staff\AnnouncementController::class, 'destroy']);
+        Route::post('/announcements/{announcement}/publish', [App\Http\Controllers\Staff\AnnouncementController::class, 'publish']);
+        Route::post('/announcements/{announcement}/unpublish', [App\Http\Controllers\Staff\AnnouncementController::class, 'unpublish']);
+
         // --- プロフィール ---
         Route::get('/profile', [App\Http\Controllers\Staff\StaffProfileController::class, 'show']);
         Route::put('/profile', [App\Http\Controllers\Staff\StaffProfileController::class, 'update']);
@@ -418,6 +426,10 @@ Route::prefix('guardian')
 
         // --- 連絡帳一覧・検索 (SC-008) ---
         Route::get('/communication-logs', [App\Http\Controllers\Guardian\CommunicationLogController::class, 'index']);
+
+        // --- お知らせ ---
+        Route::get('/announcements', [App\Http\Controllers\Guardian\AnnouncementController::class, 'index']);
+        Route::post('/announcements/{announcement}/read', [App\Http\Controllers\Guardian\AnnouncementController::class, 'markRead']);
 
         // --- プロフィール ---
         Route::get('/profile', [App\Http\Controllers\Guardian\GuardianProfileController::class, 'show']);
