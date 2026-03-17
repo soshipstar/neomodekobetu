@@ -62,6 +62,30 @@ class FileUploadController extends Controller
     }
 
     /**
+     * ファイルをダウンロード
+     */
+    public function download(Request $request, string $path)
+    {
+        // パスのトラバーサル攻撃を防止
+        $path = ltrim($path, '/');
+        if (str_contains($path, '..')) {
+            return response()->json([
+                'success' => false,
+                'message' => '不正なパスです。',
+            ], 400);
+        }
+
+        if (! Storage::disk('public')->exists($path)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'ファイルが見つかりません。',
+            ], 404);
+        }
+
+        return Storage::disk('public')->download($path);
+    }
+
+    /**
      * ファイルを削除
      */
     public function destroy(Request $request, string $file): JsonResponse

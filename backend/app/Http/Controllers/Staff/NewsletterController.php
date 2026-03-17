@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
 use App\Models\Newsletter;
+use App\Services\PuppeteerPdfService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenAI\Laravel\Facades\OpenAI;
@@ -220,15 +221,17 @@ class NewsletterController extends Controller
     }
 
     /**
-     * お便り PDF データを返す
+     * お便り PDF をダウンロード
      */
-    public function pdf(Request $request, Newsletter $newsletter): JsonResponse
+    public function pdf(Request $request, Newsletter $newsletter)
     {
         $newsletter->load(['classroom', 'creator:id,full_name']);
 
-        return response()->json([
-            'success' => true,
-            'data'    => $newsletter,
-        ]);
+        $filename = 'newsletter_' . $newsletter->year . '_' . $newsletter->month . '_' . ($newsletter->title ?? $newsletter->id) . '.pdf';
+
+        return PuppeteerPdfService::download('pdf.newsletter', [
+            'newsletter' => $newsletter,
+            'classroom'  => $newsletter->classroom,
+        ], $filename);
     }
 }
