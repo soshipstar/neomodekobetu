@@ -30,7 +30,7 @@ class AutoGenerateKakehashiPeriodJob implements ShouldQueue
     {
         Log::info('Starting auto-generation of Kakehashi periods');
 
-        $kakehashiService->autoGeneratePeriods();
+        $kakehashiService->autoGenerateNextKakehashiPeriods();
 
         Log::info('Auto-generation of Kakehashi periods complete');
     }

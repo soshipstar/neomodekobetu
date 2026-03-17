@@ -45,12 +45,12 @@ class SupportPlanController extends Controller
         }
 
         $request->validate([
-            'comment' => 'required|string|max:2000',
+            'comment' => 'present|string|max:2000',
         ]);
 
         $plan->update([
-            'guardian_review_comment' => $request->comment,
-            'guardian_reviewed_at'    => now(),
+            'guardian_review_comment'    => $request->comment,
+            'guardian_review_comment_at' => now(),
         ]);
 
         return response()->json([
