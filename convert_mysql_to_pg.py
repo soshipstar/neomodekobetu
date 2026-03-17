@@ -226,12 +226,42 @@ TRANSFORM_COLUMNS = {
     },
 }
 
+# Domain key names that should never appear as actual values in student_records
+DOMAIN_KEY_NAMES = {'health_life', 'motor_sensory', 'cognitive_behavior', 'language_communication', 'social_relations'}
+
+# Post-migration SQL to fix data integrity issues
+POST_MIGRATION_SQL = [
+    # D-003: Derive classroom_id for daily_records from staff's classroom
+    'UPDATE daily_records dr SET classroom_id = u.classroom_id FROM users u WHERE u.id = dr.staff_id AND dr.classroom_id IS NULL;',
+]
+
 # Auto-strip transform source columns
 for _tbl, _transforms in TRANSFORM_COLUMNS.items():
     for _pg_col, _src_cols in _transforms.items():
         if _tbl not in STRIP_COLUMNS:
             STRIP_COLUMNS[_tbl] = []
         STRIP_COLUMNS[_tbl].extend(_src_cols)
+
+
+def sanitize_text_value(v):
+    """Sanitize a quoted string value: fix literal \\r\\n sequences."""
+    if v.startswith("'") and v.endswith("'"):
+        inner = v[1:-1]
+        # Replace literal \r\n (4 chars: backslash r backslash n) with actual newline
+        inner = inner.replace('\\r\\n', '\n')
+        # Replace remaining literal \r with empty
+        inner = inner.replace('\\r', '')
+        v = "'" + inner + "'"
+    return v
+
+
+def sanitize_domain_value(v, col_name):
+    """D-002: NULL out domain column values that are just domain key names."""
+    if col_name in DOMAIN_KEY_NAMES and v.startswith("'") and v.endswith("'"):
+        inner = v[1:-1]
+        if inner in DOMAIN_KEY_NAMES:
+            return 'NULL'
+    return v
 
 
 def parse_values(values_str):
@@ -381,6 +411,11 @@ def convert_insert(insert_stmt, mysql_table, pg_table):
                     v = "'draft'"
                 else:
                     v = "'published'"
+            # D-001: Sanitize text values (fix literal \r\n)
+            v = sanitize_text_value(v)
+            # D-002: NULL out domain key name contamination in student_records
+            if mysql_table == 'student_records' and col_name:
+                v = sanitize_domain_value(v, col_name)
             new_vals.append(v)
 
         # Append transformed column values
@@ -600,6 +635,11 @@ def convert_insert_filtered(insert_stmt, mysql_table, pg_table, sync_classrooms,
                     v = "'draft'"
                 else:
                     v = "'published'"
+            # D-001: Sanitize text values (fix literal \r\n)
+            v = sanitize_text_value(v)
+            # D-002: NULL out domain key name contamination in student_records
+            if mysql_table == 'student_records' and col_name:
+                v = sanitize_domain_value(v, col_name)
             new_vals.append(v)
 
         # Append transformed column values
@@ -783,6 +823,11 @@ def convert_mysql_to_pg(input_file, output_file, sync_classrooms=None, full_mode
             f"END IF; END $$;"
         )
 
+    output.append("")
+    # D-003: Post-migration fixes
+    output.append("-- Post-migration data integrity fixes")
+    for sql in POST_MIGRATION_SQL:
+        output.append(sql)
     output.append("")
     output.append("SET session_replication_role = 'origin';")
 
