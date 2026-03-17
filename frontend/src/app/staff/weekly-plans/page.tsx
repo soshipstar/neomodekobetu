@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
+import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -11,30 +11,28 @@ import {
   ChevronLeft,
   ChevronRight,
   Calendar,
-  FileText,
+  CheckCircle,
+  User,
 } from 'lucide-react';
-import { format, addWeeks, startOfWeek } from 'date-fns';
+import { format, addWeeks, startOfWeek, addDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import Link from 'next/link';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-interface WeeklyPlan {
+interface Student {
   id: number;
-  classroom_id: number;
-  week_start_date: string;
-  plan_content: Record<string, unknown> | null;
-  status: string;
-  created_by: number | null;
-  creator?: { id: number; full_name: string } | null;
-  created_at: string;
-  updated_at: string;
+  student_name: string;
 }
 
-function nl(t: string | null | undefined): string {
-  if (!t) return '';
-  return t.replace(/\\r\\n|\\n|\\r/g, '\n').replace(/\r\n|\r/g, '\n');
+interface WeeklyPlan {
+  id: number;
+  student_id: number;
+  week_start_date: string;
+  weekly_goal: string | null;
+  updated_at: string;
 }
 
 function getWeekStart(date: Date): Date {
@@ -48,103 +46,160 @@ function getWeekStart(date: Date): Date {
 export default function WeeklyPlansPage() {
   const [weekOffset, setWeekOffset] = useState(0);
 
-  const currentWeekStart = useMemo(() => {
-    const base = getWeekStart(new Date());
-    return addWeeks(base, weekOffset);
-  }, [weekOffset]);
+  const weekStart = useMemo(() => addWeeks(getWeekStart(new Date()), weekOffset), [weekOffset]);
+  const weekEnd = addDays(weekStart, 6);
+  const weekStartStr = format(weekStart, 'yyyy-MM-dd');
 
-  const weekStartStr = format(currentWeekStart, 'yyyy-MM-dd');
-  const weekEndStr = format(addWeeks(currentWeekStart, 1), 'yyyy-MM-dd');
-  const weekLabel = `${format(currentWeekStart, 'yyyy年M月d日', { locale: ja })} 〜 ${format(addWeeks(currentWeekStart, 0), 'M月d日', { locale: ja })}週`;
+  const weekLabel = `${format(weekStart, 'M/d', { locale: ja })} 〜 ${format(weekEnd, 'M/d', { locale: ja })}`;
+  const yearMonth = format(weekStart, 'yyyy年M月', { locale: ja });
 
-  // Fetch all plans (recent)
-  const { data: plans = [], isLoading } = useQuery({
+  // Fetch students
+  const { data: students = [], isLoading: loadingStudents } = useQuery({
+    queryKey: ['staff', 'students-for-weekly'],
+    queryFn: async () => {
+      const res = await api.get('/api/staff/students');
+      const p = res.data?.data;
+      return Array.isArray(p) ? p as Student[] : [];
+    },
+  });
+
+  // Fetch plans for this week
+  const { data: plans = [], isLoading: loadingPlans } = useQuery({
     queryKey: ['staff', 'weekly-plans', weekStartStr],
     queryFn: async () => {
       const res = await api.get('/api/staff/weekly-plans', {
-        params: { per_page: 50 },
+        params: { week_start_date: weekStartStr, per_page: 200 },
       });
-      const payload = res.data?.data;
-      if (Array.isArray(payload)) return payload as WeeklyPlan[];
-      if (payload?.data && Array.isArray(payload.data)) return payload.data as WeeklyPlan[];
+      const p = res.data?.data;
+      if (Array.isArray(p)) return p as WeeklyPlan[];
+      if (p?.data && Array.isArray(p.data)) return p.data as WeeklyPlan[];
       return [] as WeeklyPlan[];
     },
   });
 
-  // Group plans by week
-  const plansByWeek = useMemo(() => {
-    const map: Record<string, WeeklyPlan[]> = {};
-    plans.forEach((p) => {
-      const week = p.week_start_date?.split('T')[0] || '';
-      if (!map[week]) map[week] = [];
-      map[week].push(p);
-    });
+  // Map student_id → plan
+  const planByStudent = useMemo(() => {
+    const map: Record<number, WeeklyPlan> = {};
+    plans.forEach((p) => { if (p.student_id) map[p.student_id] = p; });
     return map;
   }, [plans]);
 
-  const sortedWeeks = Object.keys(plansByWeek).sort().reverse();
+  const isLoading = loadingStudents || loadingPlans;
+  const isCurrentWeek = weekOffset === 0;
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">週間計画</h1>
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">生徒週間計画表</h1>
+        <p className="text-sm text-[var(--neutral-foreground-3)]">各生徒の週間計画を確認</p>
       </div>
 
-      <p className="text-sm text-[var(--neutral-foreground-3)]">
-        教室の週間計画一覧（{plans.length}件）
-      </p>
+      {/* Week Navigation */}
+      <Card>
+        <CardBody>
+          <div className="flex items-center justify-between">
+            <Button variant="outline" size="sm" leftIcon={<ChevronLeft className="h-4 w-4" />}
+              onClick={() => setWeekOffset(weekOffset - 1)}>
+              前の週
+            </Button>
 
-      {/* Plan list */}
+            <div className="text-center">
+              <p className="text-xs text-[var(--neutral-foreground-3)]">{yearMonth}</p>
+              <p className="text-lg font-bold text-[var(--neutral-foreground-1)]">{weekLabel}</p>
+              {isCurrentWeek && (
+                <Badge variant="info">今週</Badge>
+              )}
+            </div>
+
+            <Button variant="outline" size="sm" disabled={weekOffset >= 1}
+              onClick={() => setWeekOffset(weekOffset + 1)}>
+              次の週
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+
+          {!isCurrentWeek && (
+            <div className="mt-3 text-center">
+              <Button variant="ghost" size="sm" leftIcon={<Calendar className="h-4 w-4" />}
+                onClick={() => setWeekOffset(0)}>
+                今週に戻る
+              </Button>
+            </div>
+          )}
+        </CardBody>
+      </Card>
+
+      {/* Student Grid */}
       {isLoading ? (
-        <div className="space-y-3">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}</div>
-      ) : plans.length === 0 ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-28 rounded-lg" />)}
+        </div>
+      ) : students.length === 0 ? (
         <Card>
           <CardBody>
             <div className="py-12 text-center text-[var(--neutral-foreground-4)]">
-              <FileText className="mx-auto mb-3 h-12 w-12" />
-              <p className="text-sm">週間計画がありません</p>
+              <User className="mx-auto mb-3 h-12 w-12" />
+              <p>生徒が登録されていません</p>
             </div>
           </CardBody>
         </Card>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-[var(--neutral-stroke-2)]">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)]">
-                <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">ID</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">対象週</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">状態</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">内容</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">更新日</th>
-              </tr>
-            </thead>
-            <tbody>
-              {plans.map((plan) => {
-                const weekDate = plan.week_start_date?.split('T')[0] || '';
-                const hasContent = plan.plan_content && Object.keys(plan.plan_content).length > 0;
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {students.map((student) => {
+            const plan = planByStudent[student.id];
+            const hasPlan = !!plan;
 
-                return (
-                  <tr key={plan.id} className="border-b border-[var(--neutral-stroke-3)] hover:bg-[var(--neutral-background-3)]">
-                    <td className="px-3 py-2 text-[var(--neutral-foreground-4)]">{plan.id}</td>
-                    <td className="px-3 py-2 font-medium text-[var(--neutral-foreground-1)]">
-                      {weekDate ? format(new Date(weekDate), 'yyyy/MM/dd', { locale: ja }) : '-'}〜
-                    </td>
-                    <td className="px-3 py-2">
-                      <Badge variant={plan.status === 'published' ? 'success' : 'warning'}>
-                        {plan.status === 'published' ? '公開済み' : '下書き'}
-                      </Badge>
-                    </td>
-                    <td className="px-3 py-2 text-xs text-[var(--neutral-foreground-3)]">
-                      {hasContent ? '内容あり' : '未入力'}
-                    </td>
-                    <td className="px-3 py-2 text-xs text-[var(--neutral-foreground-3)]">
-                      {plan.updated_at ? format(new Date(plan.updated_at), 'yyyy/MM/dd HH:mm') : '-'}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+            return (
+              <Link
+                key={student.id}
+                href={`/staff/weekly-plans/${student.id}?date=${weekStartStr}`}
+              >
+                <Card className="cursor-pointer transition-all hover:-translate-y-1 hover:shadow-lg h-full">
+                  <CardBody>
+                    {/* Header */}
+                    <div className="flex items-center gap-3 border-b border-[var(--neutral-stroke-2)] pb-3 mb-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-purple-100 text-purple-600">
+                        <User className="h-5 w-5" />
+                      </div>
+                      <span className="text-base font-semibold text-[var(--neutral-foreground-1)]">
+                        {student.student_name}
+                      </span>
+                    </div>
+
+                    {/* Status */}
+                    <div>
+                      {hasPlan ? (
+                        <>
+                          <Badge variant="success" dot>
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            計画あり
+                          </Badge>
+                          {plan.updated_at && (
+                            <p className="mt-2 text-xs text-[var(--neutral-foreground-4)]">
+                              最終更新: {format(new Date(plan.updated_at), 'M/d HH:mm', { locale: ja })}
+                            </p>
+                          )}
+                          {plan.weekly_goal && (
+                            <p className="mt-1 text-xs text-[var(--neutral-foreground-3)] line-clamp-2">
+                              目標: {plan.weekly_goal}
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <Badge variant="default" dot>計画なし</Badge>
+                          <p className="mt-2 text-xs text-[var(--neutral-foreground-4)]">
+                            この週の計画はまだ作成されていません
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </CardBody>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

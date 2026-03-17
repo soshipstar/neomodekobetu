@@ -110,7 +110,7 @@ STRIP_COLUMNS = {
     'individual_support_plan_details': ['row_order'],
     'submission_requests': ['attachment_path', 'attachment_original_name', 'attachment_size'],
     'meeting_requests': ['guardian_counter_date1', 'guardian_counter_date2', 'guardian_counter_date3', 'staff_counter_date1', 'staff_counter_date2', 'staff_counter_date3', 'candidate_date1', 'candidate_date2', 'candidate_date3'],
-    'weekly_plans': ['weekly_goal', 'shared_goal', 'must_do', 'should_do', 'want_to_do', 'weekly_goal_achievement', 'weekly_goal_comment', 'shared_goal_achievement', 'shared_goal_comment', 'must_do_achievement', 'must_do_comment', 'should_do_achievement', 'should_do_comment', 'want_to_do_achievement', 'want_to_do_comment', 'daily_achievement', 'overall_comment', 'evaluated_at', 'evaluated_by_type', 'evaluated_by_id', 'plan_data', 'created_by_type', 'created_by_id'],
+    'weekly_plans': ['evaluated_by_type', 'evaluated_by_id', 'created_by_type'],
     'monitoring_records': ['hidden_by', 'hidden_at', 'guardian_signature_image', 'guardian_signature_date', 'staff_signature_image', 'staff_signature_date'],
     'newsletters': ['report_start_date', 'report_end_date', 'schedule_start_date', 'schedule_end_date'],
     'weekly_plan_submissions': ['completed_by_type', 'completed_by_id'],
@@ -198,7 +198,8 @@ RENAME_COLUMNS = {
         'commenter_id': 'user_id',
     },
     'weekly_plans': {
-        'student_id': 'classroom_id',
+        # student_id is now kept as-is (was incorrectly mapped to classroom_id)
+        'created_by_id': 'created_by',
     },
     'student_chat_rooms': {
         'updated_at': None,
