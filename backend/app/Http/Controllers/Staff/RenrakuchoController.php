@@ -69,6 +69,7 @@ class RenrakuchoController extends Controller
             'record_date'       => 'required|date',
             'activity_name'     => 'required|string|max:255',
             'common_activity'   => 'required|string',
+            'support_plan_id'   => 'nullable|integer|exists:activity_support_plans,id',
             'students'          => 'required|array|min:1',
             'students.*.id'                        => 'required|exists:students,id',
             'students.*.health_life'               => 'nullable|string',
@@ -86,6 +87,7 @@ class RenrakuchoController extends Controller
                 'classroom_id'    => $request->user()->classroom_id,
                 'activity_name'   => $validated['activity_name'],
                 'common_activity' => $validated['common_activity'],
+                'support_plan_id' => $validated['support_plan_id'] ?? null,
             ]);
 
             foreach ($validated['students'] as $studentData) {

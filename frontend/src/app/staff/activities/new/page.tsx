@@ -75,6 +75,11 @@ export default function NewActivityPage() {
   const [commonActivity, setCommonActivity] = useState('');
   const [students, setStudents] = useState<StudentFormData[]>([]);
   const [saving, setSaving] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
+
+  // Support plans
+  const [supportPlans, setSupportPlans] = useState<any[]>([]);
+  const [loadingPlans, setLoadingPlans] = useState(false);
 
   // Student picker modal
   const [showStudentPicker, setShowStudentPicker] = useState(false);
@@ -117,6 +122,34 @@ export default function NewActivityPage() {
   useEffect(() => {
     fetchStudents();
   }, [fetchStudents]);
+
+  // Fetch support plans
+  useEffect(() => {
+    setLoadingPlans(true);
+    api.get('/api/staff/activity-support-plans', { params: { per_page: 100 } })
+      .then((res) => {
+        const p = res.data?.data;
+        setSupportPlans(Array.isArray(p) ? p : []);
+      })
+      .catch(() => setSupportPlans([]))
+      .finally(() => setLoadingPlans(false));
+  }, []);
+
+  // Handle support plan selection
+  const handleSelectPlan = (planId: string) => {
+    if (!planId) {
+      setSelectedPlanId(null);
+      return;
+    }
+    const plan = supportPlans.find((p: any) => p.id === Number(planId));
+    if (plan) {
+      setSelectedPlanId(plan.id);
+      setActivityName(plan.activity_name || '');
+      setCommonActivity(
+        [plan.activity_purpose, plan.activity_content].filter(Boolean).join('\n\n') || ''
+      );
+    }
+  };
 
   // Add students to form
   const addStudent = (student: Student) => {
@@ -199,6 +232,7 @@ export default function NewActivityPage() {
         record_date: dateParam,
         activity_name: activityName,
         common_activity: commonActivity,
+        support_plan_id: selectedPlanId || undefined,
         students: students.map((s) => ({
           id: s.id,
           daily_note: s.daily_note,
@@ -251,6 +285,28 @@ export default function NewActivityPage() {
           <CardTitle>活動情報</CardTitle>
         </CardHeader>
         <CardBody className="space-y-4">
+          {/* Support Plan Selector */}
+          <div>
+            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-1)]">
+              支援案から作成（任意）
+            </label>
+            <select
+              value={selectedPlanId ?? ''}
+              onChange={(e) => handleSelectPlan(e.target.value)}
+              className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
+            >
+              <option value="">支援案を選択しない（手動入力）</option>
+              {supportPlans.map((plan: any) => (
+                <option key={plan.id} value={plan.id}>
+                  {plan.activity_name} {plan.activity_date ? `(${plan.activity_date})` : ''} {plan.tags ? `[${plan.tags}]` : ''}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">
+              支援案を選択すると、活動名と内容が自動入力されます
+            </p>
+          </div>
+
           <div>
             <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-1)]">
               活動名 <span className="text-[var(--status-danger-fg)]">*</span>
