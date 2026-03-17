@@ -17,18 +17,20 @@ import { CheckCircle, PenLine, MessageSquare } from 'lucide-react';
 interface ExtendedSupportPlan extends SupportPlan {
   guardian_confirmed?: boolean;
   guardian_confirmed_at?: string | null;
+  guardian_signature?: string | null;
   guardian_signature_image?: string | null;
   guardian_signature_date?: string | null;
   staff_signature_image?: string | null;
   staff_signer_name?: string | null;
   staff_signature_date?: string | null;
   guardian_review_comment?: string | null;
+  guardian_reviewed_at?: string | null;
   is_official?: boolean;
   is_draft?: boolean;
 }
 
 const statusLabels: Record<string, string> = {
-  draft: '下書き', review: 'レビュー中', approved: '承認済', active: '有効', archived: 'アーカイブ',
+  draft: '下書き', submitted: '提出済み', review: 'レビュー中', approved: '承認済', active: '有効', archived: 'アーカイブ',
 };
 
 export default function GuardianSupportPlanPage() {
@@ -49,23 +51,36 @@ export default function GuardianSupportPlanPage() {
     },
   });
 
-  // Confirm with signature mutation
-  const confirmMutation = useMutation({
-    mutationFn: async (data: { id: number; guardian_signature?: string }) =>
-      api.post(`/api/guardian/support-plans/${data.id}/confirm`, data),
+  // Sign (confirm with signature) mutation - calls POST /api/guardian/support-plans/{id}/sign
+  const signMutation = useMutation({
+    mutationFn: async (data: { id: number; signature: string }) =>
+      api.post(`/api/guardian/support-plans/${data.id}/sign`, { signature: data.signature }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['guardian', 'support-plans'] });
       toast.success('確認・署名が完了しました');
       setConfirmModal(false);
       setConfirmingPlan(null);
     },
-    onError: () => toast.error('確認に失敗しました'),
+    onError: () => toast.error('署名に失敗しました'),
   });
 
-  // Submit review comment mutation
+  // Review (approve without changes) mutation - calls POST /api/guardian/support-plans/{id}/review
+  const approveMutation = useMutation({
+    mutationFn: async (data: { id: number; comment: string }) =>
+      api.post(`/api/guardian/support-plans/${data.id}/review`, { comment: data.comment }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['guardian', 'support-plans'] });
+      toast.success('承認しました');
+      setConfirmModal(false);
+      setConfirmingPlan(null);
+    },
+    onError: () => toast.error('承認に失敗しました'),
+  });
+
+  // Submit review comment mutation - calls POST /api/guardian/support-plans/{id}/review
   const commentMutation = useMutation({
-    mutationFn: async (data: { id: number; review_comment: string }) =>
-      api.post(`/api/guardian/support-plans/${data.id}/review-comment`, data),
+    mutationFn: async (data: { id: number; comment: string }) =>
+      api.post(`/api/guardian/support-plans/${data.id}/review`, { comment: data.comment }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['guardian', 'support-plans'] });
       toast.success('コメントを送信しました');
@@ -84,13 +99,18 @@ export default function GuardianSupportPlanPage() {
     setConfirmModal(true);
   };
 
-  const handleConfirm = () => {
+  const handleSign = () => {
     if (!confirmingPlan) return;
-    const payload: { id: number; guardian_signature?: string } = { id: confirmingPlan.id };
-    if (guardianSigRef.current && !guardianSigRef.current.isEmpty()) {
-      payload.guardian_signature = guardianSigRef.current.toDataURL();
+    if (!guardianSigRef.current || guardianSigRef.current.isEmpty()) {
+      toast.error('署名を記入してください');
+      return;
     }
-    confirmMutation.mutate(payload);
+    signMutation.mutate({ id: confirmingPlan.id, signature: guardianSigRef.current.toDataURL() });
+  };
+
+  const handleApprove = () => {
+    if (!confirmingPlan) return;
+    approveMutation.mutate({ id: confirmingPlan.id, comment: '変更なし（承認）' });
   };
 
   const handleSubmitComment = () => {
@@ -98,7 +118,7 @@ export default function GuardianSupportPlanPage() {
       toast.error('コメントを入力してください');
       return;
     }
-    commentMutation.mutate({ id: confirmingPlan.id, review_comment: reviewComment });
+    commentMutation.mutate({ id: confirmingPlan.id, comment: reviewComment });
   };
 
   if (isLoading) {
@@ -109,27 +129,42 @@ export default function GuardianSupportPlanPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">個別支援計画</h1>
 
+      {/* Pending review banner */}
+      {plans && plans.some((p) => !p.is_draft && !p.guardian_review_comment && !p.guardian_signature) && (
+        <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-3 text-sm text-yellow-700">
+          確認待ちの個別支援計画があります。内容をご確認のうえ、承認またはコメントの送信をお願いします。
+        </div>
+      )}
+
       {plans && plans.length > 0 ? (
         <div className="space-y-4">
           {plans.map((plan) => {
             const ext = plan as ExtendedSupportPlan;
-            const canConfirm = !ext.is_draft && !ext.guardian_confirmed;
+            const hasReviewed = !!ext.guardian_review_comment || !!ext.guardian_reviewed_at;
+            const hasSigned = !!ext.guardian_signature || !!ext.guardian_signature_image;
+            const canReview = !ext.is_draft && !hasReviewed && !hasSigned;
             return (
               <Card key={plan.id}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <CardTitle>
                         {plan.student?.student_name} - {formatDate(plan.plan_period_start ?? '')} ~ {formatDate(plan.plan_period_end ?? '')}
                       </CardTitle>
                       <Badge variant={plan.status === 'active' ? 'primary' : plan.status === 'approved' ? 'success' : 'default'}>
-                        {statusLabels[plan.status]}
+                        {statusLabels[plan.status] || plan.status}
                       </Badge>
-                      {ext.guardian_confirmed && (
-                        <Badge variant="success">確認済み</Badge>
+                      {hasSigned && (
+                        <Badge variant="success" dot>署名済み</Badge>
+                      )}
+                      {hasReviewed && !hasSigned && (
+                        <Badge variant="info" dot>レビュー済み</Badge>
+                      )}
+                      {canReview && (
+                        <Badge variant="warning" dot>確認待ち</Badge>
                       )}
                     </div>
-                    {canConfirm && (
+                    {canReview && (
                       <Button size="sm" onClick={() => openConfirmModal(ext)} leftIcon={<PenLine className="h-4 w-4" />}>
                         内容を確認する
                       </Button>
@@ -137,29 +172,75 @@ export default function GuardianSupportPlanPage() {
                   </div>
                 </CardHeader>
                 <CardBody>
-                  {plan.overall_policy && <p className="mb-3 text-sm text-gray-600">{plan.overall_policy}</p>}
+                  {/* Plan details in read-only mode */}
+                  {plan.life_intention && (
+                    <div className="mb-3 rounded-lg bg-purple-50 p-3">
+                      <p className="text-xs font-medium text-purple-700">本人の生活に対する意向</p>
+                      <p className="text-sm text-purple-900">{plan.life_intention}</p>
+                    </div>
+                  )}
+                  {plan.overall_policy && (
+                    <div className="mb-3 rounded-lg bg-gray-50 p-3">
+                      <p className="text-xs font-medium text-gray-600">総合的な援助の方針</p>
+                      <p className="text-sm text-gray-800">{plan.overall_policy}</p>
+                    </div>
+                  )}
                   {plan.guardian_wish && (
                     <div className="mb-3 rounded-lg bg-blue-50 p-3">
                       <p className="text-xs font-medium text-blue-700">保護者の願い</p>
                       <p className="text-sm text-blue-900">{plan.guardian_wish}</p>
                     </div>
                   )}
+                  {plan.long_term_goal && (
+                    <div className="mb-3 rounded-lg bg-green-50 p-3">
+                      <p className="text-xs font-medium text-green-700">長期目標</p>
+                      <p className="text-sm text-green-900">{plan.long_term_goal}</p>
+                    </div>
+                  )}
+                  {plan.short_term_goal && (
+                    <div className="mb-3 rounded-lg bg-amber-50 p-3">
+                      <p className="text-xs font-medium text-amber-700">短期目標</p>
+                      <p className="text-sm text-amber-900">{plan.short_term_goal}</p>
+                    </div>
+                  )}
                   {plan.details && plan.details.length > 0 && (
                     <div className="space-y-2">
+                      <p className="text-xs font-medium text-gray-500">支援内容</p>
                       {plan.details.map((detail) => (
                         <div key={detail.id} className="rounded-lg border border-gray-100 p-3">
                           <p className="text-xs font-medium text-gray-500">
                             {DOMAIN_LABELS[detail.domain as Domain] || detail.domain}
                           </p>
-                          <p className="text-sm text-gray-700">{detail.short_term_goal}</p>
-                          <p className="mt-1 text-xs text-gray-500">{detail.support_content}</p>
+                          {detail.current_status && (
+                            <p className="text-xs text-gray-500 mt-1">現状: {detail.current_status}</p>
+                          )}
+                          {detail.short_term_goal && (
+                            <p className="text-sm text-gray-700 mt-1">短期目標: {detail.short_term_goal}</p>
+                          )}
+                          {detail.support_content && (
+                            <p className="mt-1 text-xs text-gray-500">支援内容: {detail.support_content}</p>
+                          )}
+                          {detail.achievement_criteria && (
+                            <p className="mt-1 text-xs text-gray-400">達成基準: {detail.achievement_criteria}</p>
+                          )}
                         </div>
                       ))}
                     </div>
                   )}
 
+                  {/* Review comment display */}
+                  {ext.guardian_review_comment && (
+                    <div className="mt-3 rounded-lg bg-orange-50 p-3">
+                      <p className="text-xs font-medium text-orange-700">保護者コメント</p>
+                      <p className="text-sm text-orange-900 whitespace-pre-wrap">{ext.guardian_review_comment}</p>
+                      {ext.guardian_reviewed_at && (
+                        <p className="mt-1 text-xs text-orange-500">{formatDate(ext.guardian_reviewed_at)} に送信</p>
+                      )}
+                    </div>
+                  )}
+
                   {/* Signature display */}
-                  {(ext.staff_signature_image || ext.guardian_signature_image) && (
+                  {(ext.staff_signature_image || ext.guardian_signature_image || ext.guardian_signature) && (
                     <div className="mt-4 flex flex-wrap gap-4 border-t border-gray-200 pt-4">
                       {ext.staff_signature_image && (
                         <SignaturePad
@@ -170,10 +251,10 @@ export default function GuardianSupportPlanPage() {
                           height={80}
                         />
                       )}
-                      {ext.guardian_signature_image && (
+                      {(ext.guardian_signature_image || ext.guardian_signature) && (
                         <SignaturePad
                           readOnly
-                          initialValue={ext.guardian_signature_image}
+                          initialValue={ext.guardian_signature_image || ext.guardian_signature || ''}
                           label={`保護者署名${ext.guardian_signature_date ? ` - ${ext.guardian_signature_date}` : ''}`}
                           width={200}
                           height={80}
@@ -182,12 +263,20 @@ export default function GuardianSupportPlanPage() {
                     </div>
                   )}
 
-                  {/* Confirmed status */}
-                  {ext.guardian_confirmed && ext.guardian_confirmed_at && (
+                  {/* Reviewed / signed status */}
+                  {hasSigned && ext.guardian_signature_date && (
                     <div className="mt-3 flex items-center gap-2 rounded-lg bg-green-50 p-3">
                       <CheckCircle className="h-4 w-4 text-green-600" />
                       <span className="text-sm text-green-700">
-                        {formatDate(ext.guardian_confirmed_at)} に確認済み
+                        {ext.guardian_signature_date} に署名済み
+                      </span>
+                    </div>
+                  )}
+                  {hasReviewed && !hasSigned && ext.guardian_reviewed_at && (
+                    <div className="mt-3 flex items-center gap-2 rounded-lg bg-blue-50 p-3">
+                      <CheckCircle className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm text-blue-700">
+                        {formatDate(ext.guardian_reviewed_at)} にレビュー済み
                       </span>
                     </div>
                   )}
@@ -200,7 +289,7 @@ export default function GuardianSupportPlanPage() {
         <Card><CardBody><p className="py-8 text-center text-sm text-gray-500">個別支援計画がありません</p></CardBody></Card>
       )}
 
-      {/* Confirm + Signature Modal */}
+      {/* Confirm + Review Modal */}
       <Modal
         isOpen={confirmModal}
         onClose={() => { setConfirmModal(false); setConfirmingPlan(null); setCommentMode(false); }}
@@ -208,17 +297,72 @@ export default function GuardianSupportPlanPage() {
         size="lg"
       >
         <div className="space-y-5">
+          {/* Plan details in read-only mode within the modal */}
+          {confirmingPlan && (
+            <div className="max-h-[40vh] overflow-y-auto space-y-3 rounded-lg border border-gray-200 p-4 bg-gray-50">
+              <h3 className="text-sm font-semibold text-gray-700">
+                {confirmingPlan.student?.student_name} - {formatDate(confirmingPlan.plan_period_start ?? '')} ~ {formatDate(confirmingPlan.plan_period_end ?? '')}
+              </h3>
+              {confirmingPlan.life_intention && (
+                <div>
+                  <p className="text-xs font-medium text-purple-700">本人の生活に対する意向</p>
+                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{confirmingPlan.life_intention}</p>
+                </div>
+              )}
+              {confirmingPlan.overall_policy && (
+                <div>
+                  <p className="text-xs font-medium text-gray-600">総合的な援助の方針</p>
+                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{confirmingPlan.overall_policy}</p>
+                </div>
+              )}
+              {confirmingPlan.guardian_wish && (
+                <div>
+                  <p className="text-xs font-medium text-blue-700">保護者の願い</p>
+                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{confirmingPlan.guardian_wish}</p>
+                </div>
+              )}
+              {confirmingPlan.long_term_goal && (
+                <div>
+                  <p className="text-xs font-medium text-green-700">長期目標</p>
+                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{confirmingPlan.long_term_goal}</p>
+                </div>
+              )}
+              {confirmingPlan.short_term_goal && (
+                <div>
+                  <p className="text-xs font-medium text-amber-700">短期目標</p>
+                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{confirmingPlan.short_term_goal}</p>
+                </div>
+              )}
+              {confirmingPlan.details && confirmingPlan.details.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-gray-600">支援内容</p>
+                  {confirmingPlan.details.map((detail) => (
+                    <div key={detail.id} className="rounded border border-gray-200 bg-white p-2">
+                      <p className="text-xs font-medium text-gray-500">
+                        {DOMAIN_LABELS[detail.domain as Domain] || detail.domain}
+                      </p>
+                      {detail.current_status && <p className="text-xs text-gray-600">現状: {detail.current_status}</p>}
+                      {detail.short_term_goal && <p className="text-sm text-gray-700">目標: {detail.short_term_goal}</p>}
+                      {detail.support_content && <p className="text-xs text-gray-500">支援: {detail.support_content}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {!commentMode ? (
             <>
               <p className="text-sm text-gray-600">
-                計画の内容をご確認いただき、問題がなければ署名のうえ確認ボタンを押してください。
-                変更を希望される場合は「変更希望コメントを送る」を選択してください。
+                計画の内容をご確認ください。問題がなければ「変更なし（承認）」を押してください。
+                署名をご希望の場合は署名欄に記入のうえ「署名して確認」を押してください。
+                変更を希望される場合は「コメントを送る」を選択してください。
               </p>
 
-              {/* Guardian electronic signature */}
+              {/* Guardian electronic signature (optional) */}
               <SignaturePad
                 ref={guardianSigRef}
-                label="保護者署名"
+                label="保護者署名（任意）"
                 width={400}
                 height={150}
               />
@@ -230,18 +374,26 @@ export default function GuardianSupportPlanPage() {
                   onClick={() => setCommentMode(true)}
                   leftIcon={<MessageSquare className="h-4 w-4" />}
                 >
-                  変更希望コメントを送る
+                  コメントを送る
                 </Button>
                 <div className="flex gap-2">
                   <Button variant="secondary" onClick={() => { setConfirmModal(false); setConfirmingPlan(null); }}>
                     キャンセル
                   </Button>
                   <Button
-                    onClick={handleConfirm}
-                    isLoading={confirmMutation.isPending}
+                    variant="outline"
+                    onClick={handleApprove}
+                    isLoading={approveMutation.isPending}
                     leftIcon={<CheckCircle className="h-4 w-4" />}
                   >
-                    内容を確認しました
+                    変更なし（承認）
+                  </Button>
+                  <Button
+                    onClick={handleSign}
+                    isLoading={signMutation.isPending}
+                    leftIcon={<PenLine className="h-4 w-4" />}
+                  >
+                    署名して確認
                   </Button>
                 </div>
               </div>
