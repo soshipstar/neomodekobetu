@@ -18,7 +18,8 @@ class UnconfirmedNoteController extends Controller
         $classroomId = $user->classroom_id;
 
         $query = IntegratedNote::with([
-            'student:id,student_name,classroom_id',
+            'student:id,student_name,classroom_id,guardian_id',
+            'student.guardian:id,full_name',
             'dailyRecord:id,record_date,activity_name',
         ]);
 
