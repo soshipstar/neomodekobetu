@@ -157,6 +157,7 @@ Route::prefix('staff')
         Route::post('/support-plans/{plan}/generate-ai', [App\Http\Controllers\Staff\SupportPlanController::class, 'generateAi']);
         Route::post('/support-plans/{plan}/sign', [App\Http\Controllers\Staff\SupportPlanController::class, 'sign']);
         Route::get('/support-plans/{plan}/pdf', [App\Http\Controllers\Staff\SupportPlanController::class, 'pdf']);
+        Route::get('/support-plans/{plan}/export', [App\Http\Controllers\Staff\SupportPlanController::class, 'export']);
         Route::post('/support-plans/{plan}/publish', [App\Http\Controllers\Staff\SupportPlanController::class, 'publish']);
         Route::post('/support-plans/{plan}/make-official', [App\Http\Controllers\Staff\SupportPlanController::class, 'makeOfficial']);
         Route::get('/support-plans/{plan}/basis', [App\Http\Controllers\Staff\SupportPlanController::class, 'basis']);
