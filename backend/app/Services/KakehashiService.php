@@ -598,9 +598,11 @@ class KakehashiService
                     ->get();
 
                 // 各明細に対してモニタリング明細を作成（評価欄は空白）
+                // plan_detail_id を設定して元の支援計画明細とリンク
                 foreach ($planDetails as $index => $detail) {
                     MonitoringDetail::create([
                         'monitoring_id' => $monitoring->id,
+                        'plan_detail_id' => $detail->id,
                         'domain' => $detail->domain ?? '',
                         'achievement_level' => null,
                         'comment' => null,
