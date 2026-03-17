@@ -52,6 +52,7 @@ import {
   Cog,
   BookOpenCheck,
   GraduationCap,
+  Bell,
 } from 'lucide-react';
 import type { UserType } from '@/types/user';
 import type { LucideIcon } from 'lucide-react';
@@ -93,6 +94,7 @@ const staffNav: NavItem[] = [
   { type: 'link', label: '生徒提出物', href: '/staff/submissions', icon: FileCheck },
   { type: 'link', label: '提出物管理', href: '/staff/submission-management', icon: FolderOpen },
   { type: 'divider', label: '情報発信' },
+  { type: 'link', label: 'お知らせ', href: '/staff/announcements', icon: Bell },
   { type: 'link', label: '施設通信', href: '/staff/newsletters', icon: Megaphone },
   { type: 'link', label: '施設通信設定', href: '/staff/newsletter-settings', icon: Cog },
   { type: 'link', label: 'イベント', href: '/staff/events', icon: PartyPopper },
@@ -121,6 +123,7 @@ const guardianNav: NavItem[] = [
   { type: 'link', label: '週間計画表', href: '/guardian/weekly-plans', icon: ClipboardList },
   { type: 'link', label: 'かけはし入力', href: '/guardian/kakehashi', icon: Handshake },
   { type: 'link', label: 'かけはし履歴', href: '/guardian/kakehashi-history', icon: Clock },
+  { type: 'link', label: 'お知らせ', href: '/guardian/announcements', icon: Bell },
   { type: 'link', label: '施設通信', href: '/guardian/newsletters', icon: Megaphone },
   { type: 'link', label: '個別支援計画書', href: '/guardian/support-plan', icon: FileText },
   { type: 'link', label: 'モニタリング表', href: '/guardian/monitoring', icon: Clipboard },
