@@ -160,7 +160,7 @@ class NewsletterController extends Controller
         $sectionLabel = $sectionLabels[$section] ?? $section;
 
         try {
-            $response = OpenAI::chat()->create([
+            $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = OpenAI::client($apiKey); $response = $client->chat()->create([
                 'model'    => 'gpt-4o',
                 'messages' => [
                     [

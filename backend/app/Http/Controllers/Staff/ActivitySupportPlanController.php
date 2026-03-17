@@ -11,7 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use OpenAI\Laravel\Facades\OpenAI;
+use OpenAI;
 
 class ActivitySupportPlanController extends Controller
 {
@@ -318,8 +318,10 @@ class ActivitySupportPlanController extends Controller
         try {
             $startTime = microtime(true);
 
-            $response = OpenAI::chat()->create([
-                'model' => config('services.openai.model', 'gpt-5'),
+            $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
+            $client = OpenAI::client($apiKey);
+            $response = $client->chat()->create([
+                'model' => 'gpt-4o',
                 'messages' => [
                     [
                         'role' => 'system',
@@ -425,8 +427,10 @@ class ActivitySupportPlanController extends Controller
         try {
             $startTime = microtime(true);
 
-            $response = OpenAI::chat()->create([
-                'model' => config('services.openai.model', 'gpt-5'),
+            $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
+            $client = OpenAI::client($apiKey);
+            $response = $client->chat()->create([
+                'model' => 'gpt-4o',
                 'messages' => [
                     [
                         'role' => 'system',

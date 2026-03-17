@@ -27,7 +27,7 @@ class AiGenerationService
 
         $startTime = microtime(true);
 
-        $response = OpenAI::chat()->create([
+        $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = OpenAI::client($apiKey); $response = $client->chat()->create([
             'model' => config('services.openai.model', 'gpt-5'),
             'messages' => [
                 [
@@ -68,7 +68,7 @@ class AiGenerationService
 
         $startTime = microtime(true);
 
-        $response = OpenAI::chat()->create([
+        $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = OpenAI::client($apiKey); $response = $client->chat()->create([
             'model' => config('services.openai.model', 'gpt-5'),
             'messages' => [
                 [
@@ -111,7 +111,7 @@ class AiGenerationService
 
         $startTime = microtime(true);
 
-        $response = OpenAI::chat()->create([
+        $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = OpenAI::client($apiKey); $response = $client->chat()->create([
             'model' => config('services.openai.model', 'gpt-5'),
             'messages' => [
                 [
@@ -146,7 +146,7 @@ class AiGenerationService
      */
     public function generateEmbedding(string $text): array
     {
-        $response = OpenAI::embeddings()->create([
+        $response = $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = OpenAI::client($apiKey); $response = $client->embeddings()->create([
             'model' => config('services.openai.embedding_model', 'text-embedding-3-small'),
             'input' => $text,
         ]);
