@@ -415,6 +415,9 @@ Route::prefix('guardian')
         Route::get('/notes/{date}', [App\Http\Controllers\Guardian\GuardianNoteController::class, 'byDate']);
         Route::post('/notes/{note}/confirm', [App\Http\Controllers\Guardian\GuardianNoteController::class, 'confirm']);
 
+        // --- 連絡帳一覧・検索 (SC-008) ---
+        Route::get('/communication-logs', [App\Http\Controllers\Guardian\CommunicationLogController::class, 'index']);
+
         // --- プロフィール ---
         Route::get('/profile', [App\Http\Controllers\Guardian\GuardianProfileController::class, 'show']);
         Route::put('/profile', [App\Http\Controllers\Guardian\GuardianProfileController::class, 'update']);
