@@ -7,6 +7,7 @@ use App\Models\AbsenceNotification;
 use App\Models\IndividualSupportPlan;
 use App\Models\MeetingRequest;
 use App\Models\MonitoringRecord;
+use App\Models\SubmissionRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -81,6 +82,35 @@ class PendingTaskController extends Controller
             ];
         }
 
+        // 4. 未完了の提出物リクエスト
+        $pendingSubmissions = SubmissionRequest::with('student:id,student_name')
+            ->whereHas('student', function ($q) use ($classroomId) {
+                if ($classroomId) {
+                    $q->where('classroom_id', $classroomId);
+                }
+            })
+            ->where('is_completed', false)
+            ->where(function ($q) {
+                $q->whereNull('due_date')
+                  ->orWhere('due_date', '>=', now());
+            })
+            ->orderByDesc('created_at')
+            ->get();
+
+        foreach ($pendingSubmissions as $submission) {
+            $tasks[] = [
+                'type'       => 'submission_request',
+                'label'      => '提出物未提出',
+                'detail'     => $submission->student->student_name . 'さんの「' . $submission->title . '」が未提出です。',
+                'student'    => $submission->student->student_name,
+                'id'         => $submission->id,
+                'created_at' => $submission->created_at,
+            ];
+        }
+
+        // 提出物リクエスト件数サマリ
+        $submissionCount = $pendingSubmissions->count();
+
         // 日付順でソート
         usort($tasks, fn ($a, $b) => strcmp($b['created_at'] ?? '', $a['created_at'] ?? ''));
 
@@ -88,6 +118,12 @@ class PendingTaskController extends Controller
             'success' => true,
             'data'    => $tasks,
             'count'   => count($tasks),
+            'summary' => [
+                'makeup_requests'     => $pendingMakeups->count(),
+                'meeting_counters'    => $counterMeetings->count(),
+                'draft_plans'         => $draftPlans->count(),
+                'submission_requests' => $submissionCount,
+            ],
         ]);
     }
 

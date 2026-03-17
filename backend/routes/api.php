@@ -194,6 +194,7 @@ Route::prefix('staff')
         Route::post('/newsletters/{newsletter}/generate-ai', [App\Http\Controllers\Staff\NewsletterController::class, 'generateAi']);
         Route::post('/newsletters/{newsletter}/publish', [App\Http\Controllers\Staff\NewsletterController::class, 'publish']);
         Route::get('/newsletters/{newsletter}/pdf', [App\Http\Controllers\Staff\NewsletterController::class, 'pdf']);
+        Route::post('/newsletters/pdf-preview', [App\Http\Controllers\Staff\NewsletterController::class, 'pdfPreview']);
 
         // --- 面談 ---
         Route::apiResource('meetings', App\Http\Controllers\Staff\MeetingController::class)
