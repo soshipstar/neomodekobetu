@@ -3,7 +3,11 @@
 namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivitySupportPlan;
+use App\Models\DailyRecord;
+use App\Models\Event;
 use App\Models\Newsletter;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 class NewsletterController extends Controller
@@ -135,7 +139,7 @@ class NewsletterController extends Controller
     }
 
     /**
-     * AI でお便り内容を生成
+     * AI でお便り内容を生成（活動記録・イベント・支援案の文脈データ付き）
      */
     public function generateAi(Request $request, Newsletter $newsletter): JsonResponse
     {
@@ -157,20 +161,25 @@ class NewsletterController extends Controller
 
         $sectionLabel = $sectionLabels[$section] ?? $section;
 
+        // Build rich context from database
+        $richContext = $this->buildRichContext($newsletter);
+
         try {
             $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
                 'model'    => 'gpt-4o',
                 'messages' => [
                     [
                         'role'    => 'system',
-                        'content' => '児童発達支援施設のスタッフとして、保護者向けのお便りの文章を作成します。温かみがあり、丁寧な表現を心がけてください。',
+                        'content' => '児童発達支援施設のスタッフとして、保護者向けのお便りの文章を作成します。温かみがあり、丁寧な表現を心がけてください。'
+                            . '以下の教室情報や活動データを参考にして、具体的で臨場感のある文章を書いてください。',
                     ],
                     [
                         'role'    => 'user',
                         'content' => "{$newsletter->year}年{$newsletter->month}月号のお便り「{$newsletter->title}」の"
                             . "「{$sectionLabel}」セクションの文章を生成してください。\n\n"
-                            . ($context ? "参考情報：{$context}\n\n" : '')
-                            . "適切な文章を生成してください。HTMLタグは使わず、プレーンテキストで出力してください。",
+                            . ($richContext ? "{$richContext}\n\n" : '')
+                            . ($context ? "【スタッフからの補足情報】{$context}\n\n" : '')
+                            . "上記の情報を踏まえて適切な文章を生成してください。HTMLタグは使わず、プレーンテキストで出力してください。",
                     ],
                 ],
                 'temperature'           => 0.7,
@@ -192,6 +201,89 @@ class NewsletterController extends Controller
                 'message' => 'AI生成中にエラーが発生しました: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * お便りの年月・教室に基づいてAI生成用の文脈データを構築する
+     */
+    private function buildRichContext(Newsletter $newsletter): string
+    {
+        $classroomId = $newsletter->classroom_id;
+        if (!$classroomId) {
+            return '';
+        }
+
+        $parts = [];
+
+        // 期間の開始・終了日を算出
+        $periodStart = Carbon::create($newsletter->year, $newsletter->month, 1)->startOfMonth();
+        $periodEnd = $periodStart->copy()->endOfMonth();
+
+        // 【教室情報】
+        $newsletter->loadMissing('classroom');
+        $classroom = $newsletter->classroom;
+        if ($classroom) {
+            $studentCount = $classroom->students()->count();
+            $parts[] = "【教室情報】{$classroom->classroom_name}、在籍{$studentCount}名";
+        }
+
+        // 【期間の活動記録】
+        $dailyRecords = DailyRecord::where('classroom_id', $classroomId)
+            ->whereBetween('record_date', [$periodStart, $periodEnd])
+            ->orderBy('record_date')
+            ->get(['record_date', 'activity_name', 'common_activity']);
+
+        if ($dailyRecords->isNotEmpty()) {
+            $lines = ['【期間の活動記録】'];
+            foreach ($dailyRecords as $record) {
+                $date = $record->record_date->format('n/j');
+                $activity = $record->activity_name ?? '';
+                $common = $record->common_activity ?? '';
+                $detail = collect([$activity, $common])->filter()->implode(' - ');
+                if ($detail) {
+                    $lines[] = "- {$date}: {$detail}";
+                }
+            }
+            if (count($lines) > 1) {
+                $parts[] = implode("\n", $lines);
+            }
+        }
+
+        // 【今後のイベント】 (当月以降のイベント)
+        $events = Event::where('classroom_id', $classroomId)
+            ->where('event_date', '>=', $periodStart)
+            ->where('event_date', '<=', $periodEnd->copy()->addMonth())
+            ->orderBy('event_date')
+            ->get(['event_date', 'event_name']);
+
+        if ($events->isNotEmpty()) {
+            $lines = ['【今後のイベント】'];
+            foreach ($events as $event) {
+                $date = $event->event_date->format('n/j');
+                $lines[] = "- {$date}: {$event->event_name}";
+            }
+            $parts[] = implode("\n", $lines);
+        }
+
+        // 【活動支援案のテーマ】
+        $supportPlans = ActivitySupportPlan::where('classroom_id', $classroomId)
+            ->whereBetween('activity_date', [$periodStart, $periodEnd])
+            ->orderBy('activity_date')
+            ->get(['activity_name', 'activity_purpose']);
+
+        if ($supportPlans->isNotEmpty()) {
+            $themes = $supportPlans->map(function ($plan) {
+                $name = $plan->activity_name ?? '';
+                $purpose = $plan->activity_purpose ?? '';
+                return collect([$name, $purpose])->filter()->implode('（') . ($purpose ? '）' : '');
+            })->filter()->implode('、');
+
+            if ($themes) {
+                $parts[] = "【活動支援案のテーマ】{$themes}";
+            }
+        }
+
+        return implode("\n\n", $parts);
     }
 
     /**
