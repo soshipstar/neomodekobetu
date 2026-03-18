@@ -297,7 +297,7 @@ export default function NewActivityPage() {
             >
               <option value="">支援案を選択しない（手動入力）</option>
               {supportPlans
-                .filter((plan: any) => plan.activity_date === dateParam)
+                .filter((plan: any) => plan.activity_date && plan.activity_date.startsWith(dateParam))
                 .map((plan: any) => (
                 <option key={plan.id} value={plan.id}>
                   {plan.activity_name} {plan.tags ? `[${plan.tags}]` : ''}
