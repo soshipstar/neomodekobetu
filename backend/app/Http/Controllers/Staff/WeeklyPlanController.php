@@ -101,8 +101,27 @@ class WeeklyPlanController extends Controller
     public function update(Request $request, WeeklyPlan $plan): JsonResponse
     {
         $validated = $request->validate([
-            'plan_content'    => 'nullable|array',
-            'comment'         => 'nullable|string', // コメント追加用
+            'plan_content'              => 'nullable|array',
+            'weekly_goal'               => 'nullable|string',
+            'shared_goal'               => 'nullable|string',
+            'must_do'                   => 'nullable|string',
+            'should_do'                 => 'nullable|string',
+            'want_to_do'               => 'nullable|string',
+            'plan_data'                 => 'nullable|array',
+            'weekly_goal_achievement'   => 'nullable|integer|min:0|max:5',
+            'weekly_goal_comment'       => 'nullable|string',
+            'shared_goal_achievement'   => 'nullable|integer|min:0|max:5',
+            'shared_goal_comment'       => 'nullable|string',
+            'must_do_achievement'       => 'nullable|integer|min:0|max:5',
+            'must_do_comment'           => 'nullable|string',
+            'should_do_achievement'     => 'nullable|integer|min:0|max:5',
+            'should_do_comment'         => 'nullable|string',
+            'want_to_do_achievement'    => 'nullable|integer|min:0|max:5',
+            'want_to_do_comment'        => 'nullable|string',
+            'daily_achievement'         => 'nullable|array',
+            'overall_comment'           => 'nullable|string',
+            'evaluated_at'              => 'nullable|date',
+            'comment'                   => 'nullable|string', // コメント追加用
         ]);
 
         // コメントは別途保存
