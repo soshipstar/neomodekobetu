@@ -43,8 +43,11 @@ interface KakehashiStaffEntry {
   cognitive_behavior: string;
   language_communication: string;
   social_relations: string;
+  other_challenges: string;
   is_submitted: boolean;
   submitted_at: string | null;
+  guardian_confirmed: boolean;
+  guardian_confirmed_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -78,6 +81,7 @@ interface KakehashiForm {
   cognitive_behavior: string;
   language_communication: string;
   social_relations: string;
+  other_challenges: string;
 }
 
 const DOMAIN_FIELDS = [
@@ -99,6 +103,7 @@ const emptyForm: KakehashiForm = {
   cognitive_behavior: '',
   language_communication: '',
   social_relations: '',
+  other_challenges: '',
 };
 
 /** Normalize line breaks for display */
@@ -178,7 +183,7 @@ export default function KakehashiStaffPage() {
         student_id: selectedStudentId,
         period_id: periodId,
       });
-      setForm(res.data.data);
+      setForm(prev => ({ ...prev, ...res.data.data }));
       toast.success(`AI生成完了（連絡帳${res.data.record_count}件を参照）`);
     } catch {
       toast.error('AI生成に失敗しました');
@@ -215,6 +220,7 @@ export default function KakehashiStaffPage() {
         cognitive_behavior: nl(entry.cognitive_behavior),
         language_communication: nl(entry.language_communication),
         social_relations: nl(entry.social_relations),
+        other_challenges: nl(entry.other_challenges),
       });
     } else {
       setForm(emptyForm);
@@ -401,6 +407,17 @@ export default function KakehashiStaffPage() {
                             </div>
                           ))}
 
+                          {/* Other challenges */}
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">その他の課題</label>
+                            <textarea
+                              value={form.other_challenges}
+                              onChange={(e) => updateField('other_challenges', e.target.value)}
+                              className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
+                              rows={2}
+                            />
+                          </div>
+
                           {/* Action buttons */}
                           <div className="flex items-center justify-between border-t border-[var(--neutral-stroke-2)] pt-4">
                             <Button
@@ -502,6 +519,28 @@ export default function KakehashiStaffPage() {
                                   </div>
                                 ))}
                               </div>
+
+                              {/* Other challenges */}
+                              {entry.other_challenges && (
+                                <div className="rounded-lg bg-[var(--neutral-background-3)] p-3 mt-2">
+                                  <p className="text-xs font-medium text-[var(--neutral-foreground-3)] mb-1">その他の課題</p>
+                                  <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{nl(entry.other_challenges)}</p>
+                                </div>
+                              )}
+
+                              {/* Guardian confirmation status */}
+                              {entry.is_submitted && (
+                                <div className="flex items-center gap-2 mt-2">
+                                  <Badge variant={entry.guardian_confirmed ? 'success' : 'warning'}>
+                                    {entry.guardian_confirmed ? '保護者確認済み' : '保護者未確認'}
+                                  </Badge>
+                                  {entry.guardian_confirmed && entry.guardian_confirmed_at && (
+                                    <span className="text-xs text-[var(--neutral-foreground-4)]">
+                                      {format(new Date(entry.guardian_confirmed_at), 'yyyy/MM/dd HH:mm')}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
 
                               {/* Guardian entry summary if exists */}
                               {guardianEntry && guardianEntry.is_submitted && (

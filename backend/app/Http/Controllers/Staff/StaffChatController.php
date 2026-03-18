@@ -8,9 +8,11 @@ use App\Models\StaffChatMessage;
 use App\Models\StaffChatRead;
 use App\Models\StaffChatRoom;
 use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class StaffChatController extends Controller
@@ -374,6 +376,36 @@ class StaffChatController extends Controller
         });
 
         $message->load('sender:id,full_name');
+
+        // 他のメンバーにプッシュ通知を送信
+        try {
+            $notificationService = app(NotificationService::class);
+            $senderName = $user->full_name ?? 'スタッフ';
+            $messagePreview = $request->message
+                ? mb_substr($request->message, 0, 50)
+                : '添付ファイルが送信されました';
+            $frontendUrl = rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/');
+
+            $memberUserIds = $room->members()
+                ->where('user_id', '!=', $user->id)
+                ->pluck('user_id');
+
+            $recipients = User::whereIn('id', $memberUserIds)
+                ->where('is_active', true)
+                ->get();
+
+            foreach ($recipients as $recipient) {
+                $notificationService->notify(
+                    $recipient,
+                    'staff_chat',
+                    "【スタッフチャット】{$senderName}さんからメッセージ",
+                    $messagePreview,
+                    ['url' => "{$frontendUrl}/staff/staff-chat?room_id={$room->id}"]
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Staff chat push notification error: ' . $e->getMessage());
+        }
 
         return response()->json([
             'success'    => true,
