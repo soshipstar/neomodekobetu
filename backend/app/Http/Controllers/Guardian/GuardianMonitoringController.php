@@ -65,10 +65,19 @@ class GuardianMonitoringController extends Controller
             return response()->json(['success' => false, 'message' => '既に確認済みです。'], 422);
         }
 
-        $record->update([
+        $updateData = [
             'guardian_confirmed'    => true,
             'guardian_confirmed_at' => now(),
-        ]);
+        ];
+
+        if ($request->filled('guardian_signature_image')) {
+            $updateData['guardian_signature'] = $request->guardian_signature_image;
+        }
+        if ($request->filled('guardian_signature_date')) {
+            $updateData['guardian_signature_date'] = $request->guardian_signature_date;
+        }
+
+        $record->update($updateData);
 
         return response()->json([
             'success' => true,

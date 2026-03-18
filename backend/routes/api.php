@@ -436,6 +436,7 @@ Route::prefix('guardian')
         // --- 週間計画 ---
         Route::get('/weekly-plans', [App\Http\Controllers\Guardian\GuardianWeeklyPlanController::class, 'index']);
         Route::get('/weekly-plans/{plan}', [App\Http\Controllers\Guardian\GuardianWeeklyPlanController::class, 'show']);
+        Route::post('/weekly-plans/{plan}/comments', [App\Http\Controllers\Guardian\GuardianWeeklyPlanController::class, 'addComment']);
 
         // --- モニタリング ---
         Route::get('/monitoring', [App\Http\Controllers\Guardian\GuardianMonitoringController::class, 'index']);

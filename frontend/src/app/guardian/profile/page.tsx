@@ -6,7 +6,6 @@ import api from '@/lib/api';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Badge } from '@/components/ui/Badge';
 import { useToast } from '@/components/ui/Toast';
 import { User, Lock, Save, Users } from 'lucide-react';
 
@@ -15,16 +14,15 @@ interface GuardianProfile {
   full_name: string;
   email: string | null;
   username: string;
-  phone: string | null;
   students: { id: number; student_name: string; grade_level: string }[];
-  classroom_name: string;
+  classroom?: { id: number; classroom_name: string } | null;
   last_login_at: string | null;
 }
 
 export default function GuardianProfilePage() {
   const queryClient = useQueryClient();
   const toast = useToast();
-  const [profileForm, setProfileForm] = useState({ full_name: '', email: '', phone: '' });
+  const [profileForm, setProfileForm] = useState({ full_name: '', email: '' });
   const [passwordForm, setPasswordForm] = useState({ current_password: '', new_password: '', new_password_confirmation: '' });
 
   const { data: profile, isLoading } = useQuery({
@@ -37,7 +35,7 @@ export default function GuardianProfilePage() {
 
   useEffect(() => {
     if (profile) {
-      setProfileForm({ full_name: profile.full_name, email: profile.email || '', phone: profile.phone || '' });
+      setProfileForm({ full_name: profile.full_name, email: profile.email || '' });
     }
   }, [profile]);
 
@@ -119,11 +117,10 @@ export default function GuardianProfilePage() {
           </div>
           <div className="rounded-lg bg-gray-50 p-3">
             <p className="text-sm text-gray-500">所属事業所</p>
-            <p className="font-medium text-gray-900">{profile?.classroom_name}</p>
+            <p className="font-medium text-gray-900">{profile?.classroom?.classroom_name ?? '未設定'}</p>
           </div>
           <Input label="氏名" value={profileForm.full_name} onChange={(e) => setProfileForm({ ...profileForm, full_name: e.target.value })} required />
           <Input label="メールアドレス" type="email" value={profileForm.email} onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })} />
-          <Input label="電話番号" value={profileForm.phone} onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })} />
           <div className="flex justify-end">
             <Button type="submit" isLoading={updateProfileMutation.isPending} leftIcon={<Save className="h-4 w-4" />}>保存</Button>
           </div>

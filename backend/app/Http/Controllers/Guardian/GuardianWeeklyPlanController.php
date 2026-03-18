@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Guardian;
 
 use App\Http\Controllers\Controller;
 use App\Models\WeeklyPlan;
+use App\Models\WeeklyPlanComment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -54,5 +55,36 @@ class GuardianWeeklyPlanController extends Controller
             'success' => true,
             'data'    => $plan,
         ]);
+    }
+
+    /**
+     * 週間計画にコメントを追加
+     */
+    public function addComment(Request $request, WeeklyPlan $plan): JsonResponse
+    {
+        $user = $request->user();
+        $classroomIds = $user->students()->pluck('classroom_id')->unique()->toArray();
+
+        if (! in_array($plan->classroom_id, $classroomIds)) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
+        $validated = $request->validate([
+            'comment' => 'required|string|max:2000',
+        ]);
+
+        $comment = WeeklyPlanComment::create([
+            'plan_id' => $plan->id,
+            'user_id' => $user->id,
+            'comment' => $validated['comment'],
+        ]);
+
+        $comment->load('user:id,full_name');
+
+        return response()->json([
+            'success' => true,
+            'data'    => $comment,
+            'message' => 'コメントを投稿しました。',
+        ], 201);
     }
 }

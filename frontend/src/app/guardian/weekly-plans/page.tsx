@@ -1,37 +1,43 @@
 'use client';
 
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
 import { SkeletonList } from '@/components/ui/Skeleton';
-import { format, startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
+import { useToast } from '@/components/ui/Toast';
+import { format, startOfWeek, addWeeks, subWeeks, addDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Calendar, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Send } from 'lucide-react';
 
 interface WeeklyPlan {
   id: number;
-  week_start: string;
-  week_end: string;
-  student_name: string;
-  status: 'draft' | 'published';
-  days: DayPlan[];
-  staff_comment: string | null;
+  classroom_id: number;
+  student_id: number | null;
+  week_start_date: string;
+  plan_data: Record<string, string> | null;
+  plan_content: Record<string, string> | null;
+  weekly_goal: string | null;
+  shared_goal: string | null;
+  must_do: string | null;
+  should_do: string | null;
+  want_to_do: string | null;
+  overall_comment: string | null;
+  status: string;
+  classroom?: { id: number; classroom_name: string };
+  comments?: WeeklyPlanComment[];
+  created_at: string;
+  updated_at: string;
 }
 
-interface DayPlan {
-  date: string;
-  day_label: string;
-  activities: Activity[];
-  is_scheduled: boolean;
-}
-
-interface Activity {
-  time: string;
-  name: string;
-  description: string | null;
+interface WeeklyPlanComment {
+  id: number;
+  plan_id: number;
+  user_id: number;
+  comment: string;
+  created_at: string;
+  user?: { id: number; full_name: string };
 }
 
 interface StudentOption {
@@ -39,11 +45,16 @@ interface StudentOption {
   student_name: string;
 }
 
+const DAY_LABELS = ['月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日', '日曜日'];
+
 export default function GuardianWeeklyPlansPage() {
+  const queryClient = useQueryClient();
+  const toast = useToast();
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [selectedStudent, setSelectedStudent] = useState('');
+  const [comment, setComment] = useState('');
 
-  const weekStart = format(startOfWeek(currentWeek, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+  const weekStartDate = format(startOfWeek(currentWeek, { weekStartsOn: 1 }), 'yyyy-MM-dd');
 
   const { data: students = [] } = useQuery({
     queryKey: ['guardian', 'students'],
@@ -55,27 +66,81 @@ export default function GuardianWeeklyPlansPage() {
 
   const studentId = selectedStudent || students[0]?.id?.toString() || '';
 
-  const { data: plan, isLoading } = useQuery({
-    queryKey: ['guardian', 'weekly-plans', studentId, weekStart],
+  // Fetch weekly plans for the week
+  const { data: plansResponse, isLoading } = useQuery({
+    queryKey: ['guardian', 'weekly-plans', studentId, weekStartDate],
     queryFn: async () => {
-      const res = await api.get<{ data: WeeklyPlan }>(`/api/guardian/students/${studentId}/weekly-plans`, {
-        params: { week_start: weekStart },
-      });
+      const params: Record<string, string> = { week_start_date: weekStartDate };
+      // Try student-specific route first, fallback to general
+      if (studentId) {
+        try {
+          const res = await api.get<{ data: WeeklyPlan | WeeklyPlan[] | { data: WeeklyPlan[] } }>(`/api/guardian/students/${studentId}/weekly-plans`, { params });
+          return res.data.data;
+        } catch {
+          // fallback
+        }
+      }
+      const res = await api.get<{ data: WeeklyPlan | WeeklyPlan[] | { data: WeeklyPlan[] } }>('/api/guardian/weekly-plans', { params });
       return res.data.data;
     },
     enabled: !!studentId,
   });
 
+  // Normalize to single plan
+  const plan: WeeklyPlan | null = useMemo(() => {
+    if (!plansResponse) return null;
+    if (Array.isArray(plansResponse)) return plansResponse[0] ?? null;
+    if (typeof plansResponse === 'object' && 'data' in plansResponse && Array.isArray((plansResponse as { data: WeeklyPlan[] }).data)) {
+      return ((plansResponse as { data: WeeklyPlan[] }).data)[0] ?? null;
+    }
+    return plansResponse as WeeklyPlan;
+  }, [plansResponse]);
+
+  // Fetch plan detail with comments when plan exists
+  const { data: planDetail } = useQuery({
+    queryKey: ['guardian', 'weekly-plans', 'detail', plan?.id],
+    queryFn: async () => {
+      const res = await api.get<{ data: WeeklyPlan }>(`/api/guardian/weekly-plans/${plan!.id}`);
+      return res.data.data;
+    },
+    enabled: !!plan?.id,
+  });
+
+  const activePlan = planDetail ?? plan;
+  const planData = activePlan?.plan_data ?? activePlan?.plan_content ?? {};
+  const comments = activePlan?.comments ?? [];
+
+  // Comment mutation
+  const commentMutation = useMutation({
+    mutationFn: async (data: { plan_id: number; comment: string }) => {
+      return api.post(`/api/guardian/weekly-plans/${data.plan_id}/comments`, { comment: data.comment });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['guardian', 'weekly-plans'] });
+      toast.success('コメントを投稿しました');
+      setComment('');
+    },
+    onError: () => toast.error('コメントの投稿に失敗しました'),
+  });
+
+  const handleSubmitComment = () => {
+    if (!activePlan?.id || !comment.trim()) {
+      toast.error('コメントを入力してください');
+      return;
+    }
+    commentMutation.mutate({ plan_id: activePlan.id, comment: comment.trim() });
+  };
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">週間計画</h1>
+      <h1 className="text-2xl font-bold text-gray-900">週間計画表</h1>
 
       {/* Student selector */}
       {students.length > 1 && (
         <select
           value={selectedStudent || students[0]?.id}
           onChange={(e) => setSelectedStudent(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm"
         >
           {students.map((s) => (
             <option key={s.id} value={s.id}>{s.student_name}</option>
@@ -84,28 +149,26 @@ export default function GuardianWeeklyPlansPage() {
       )}
 
       {/* Week navigation */}
-      <div className="flex items-center justify-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => setCurrentWeek(subWeeks(currentWeek, 1))}>
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <div className="text-center">
-          <p className="text-lg font-semibold">
-            {format(startOfWeek(currentWeek, { weekStartsOn: 1 }), 'M月d日', { locale: ja })}
-            {' - '}
-            {format(endOfWeek(currentWeek, { weekStartsOn: 1 }), 'M月d日', { locale: ja })}
-          </p>
+      <div className="flex items-center justify-between rounded-lg bg-white px-4 py-3 shadow-sm">
+        <h2 className="text-sm font-semibold text-gray-900">
+          {format(new Date(weekStartDate), 'yyyy年M月d日', { locale: ja })}の週
+        </h2>
+        <div className="flex gap-2">
+          <Button variant="secondary" size="sm" onClick={() => setCurrentWeek(subWeeks(currentWeek, 1))}>
+            <ChevronLeft className="h-4 w-4" /> 前週
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setCurrentWeek(new Date())}>
+            今週
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => setCurrentWeek(addWeeks(currentWeek, 1))}>
+            次週 <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => setCurrentWeek(addWeeks(currentWeek, 1))}>
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => setCurrentWeek(new Date())}>
-          今週
-        </Button>
       </div>
 
       {isLoading ? (
         <SkeletonList items={5} />
-      ) : !plan ? (
+      ) : !activePlan ? (
         <Card>
           <div className="py-12 text-center">
             <Calendar className="mx-auto h-12 w-12 text-gray-300" />
@@ -114,69 +177,148 @@ export default function GuardianWeeklyPlansPage() {
         </Card>
       ) : (
         <>
-          {plan.status === 'draft' && (
-            <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-3 text-sm text-yellow-700">
-              この週の計画はまだ作成中です。確定後に公開されます。
-            </div>
-          )}
-
-          {plan.staff_comment && (
+          {/* Goals section */}
+          {(activePlan.weekly_goal || activePlan.shared_goal || activePlan.must_do || activePlan.should_do || activePlan.want_to_do) && (
             <Card>
-              <div className="flex items-start gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 shrink-0">
-                  <span className="text-xs font-bold text-blue-600">S</span>
+              <CardBody>
+                <h3 className="mb-3 text-sm font-semibold text-gray-700">目標</h3>
+                <div className="space-y-2">
+                  {activePlan.weekly_goal && (
+                    <div className="rounded-lg bg-purple-50 p-3">
+                      <p className="text-xs font-medium text-purple-600">週間目標</p>
+                      <p className="text-sm text-gray-800 whitespace-pre-wrap">{activePlan.weekly_goal}</p>
+                    </div>
+                  )}
+                  {activePlan.shared_goal && (
+                    <div className="rounded-lg bg-blue-50 p-3">
+                      <p className="text-xs font-medium text-blue-600">共有目標</p>
+                      <p className="text-sm text-gray-800 whitespace-pre-wrap">{activePlan.shared_goal}</p>
+                    </div>
+                  )}
+                  {activePlan.must_do && (
+                    <div className="rounded-lg bg-red-50 p-3">
+                      <p className="text-xs font-medium text-red-600">やるべきこと</p>
+                      <p className="text-sm text-gray-800 whitespace-pre-wrap">{activePlan.must_do}</p>
+                    </div>
+                  )}
+                  {activePlan.should_do && (
+                    <div className="rounded-lg bg-amber-50 p-3">
+                      <p className="text-xs font-medium text-amber-600">やったほうがいいこと</p>
+                      <p className="text-sm text-gray-800 whitespace-pre-wrap">{activePlan.should_do}</p>
+                    </div>
+                  )}
+                  {activePlan.want_to_do && (
+                    <div className="rounded-lg bg-green-50 p-3">
+                      <p className="text-xs font-medium text-green-600">やりたいこと</p>
+                      <p className="text-sm text-gray-800 whitespace-pre-wrap">{activePlan.want_to_do}</p>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">スタッフからのコメント</p>
-                  <p className="mt-1 text-sm text-gray-600 whitespace-pre-wrap">{plan.staff_comment}</p>
-                </div>
-              </div>
+              </CardBody>
             </Card>
           )}
 
-          {/* Day plans */}
-          <div className="space-y-3">
-            {plan.days.map((day) => (
-              <Card key={day.date} className={!day.is_scheduled ? 'opacity-50' : ''}>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-full ${day.is_scheduled ? 'bg-blue-100' : 'bg-gray-100'}`}>
-                    <span className={`text-sm font-bold ${day.is_scheduled ? 'text-blue-600' : 'text-gray-400'}`}>
-                      {day.day_label}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      {format(new Date(day.date), 'M月d日(E)', { locale: ja })}
-                    </p>
-                    {!day.is_scheduled && <Badge variant="default">通所なし</Badge>}
-                  </div>
-                </div>
+          {/* Day-by-day plan table */}
+          <Card>
+            <CardBody>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[500px] border-collapse">
+                  <thead>
+                    <tr>
+                      <th className="border border-gray-200 bg-gray-50 px-4 py-2 text-left text-sm font-semibold text-gray-700" style={{ width: 100 }}>
+                        曜日
+                      </th>
+                      <th className="border border-gray-200 bg-gray-50 px-4 py-2 text-left text-sm font-semibold text-gray-700">
+                        計画・目標
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {DAY_LABELS.map((dayLabel, index) => {
+                      const dayKey = `day_${index}`;
+                      const content = planData[dayKey] ?? '';
+                      const date = format(addDays(new Date(weekStartDate), index), 'M/d');
+                      return (
+                        <tr key={dayKey}>
+                          <td className="border border-gray-200 px-4 py-3 align-top">
+                            <p className="text-sm font-semibold text-purple-600">{dayLabel}</p>
+                            <p className="text-xs text-gray-400">{date}</p>
+                          </td>
+                          <td className="border border-gray-200 px-4 py-3 align-top">
+                            {content ? (
+                              <p className="whitespace-pre-wrap text-sm text-gray-800">{content}</p>
+                            ) : (
+                              <p className="text-sm italic text-gray-400">計画なし</p>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </CardBody>
+          </Card>
 
-                {day.is_scheduled && day.activities.length > 0 && (
-                  <div className="space-y-2 ml-13">
-                    {day.activities.map((activity, i) => (
-                      <div key={i} className="flex items-start gap-3 rounded-lg bg-gray-50 p-3">
-                        <div className="flex items-center gap-1 shrink-0 text-sm text-gray-500">
-                          <Clock className="h-3 w-3" />
-                          {activity.time}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{activity.name}</p>
-                          {activity.description && (
-                            <p className="text-sm text-gray-500">{activity.description}</p>
-                          )}
-                        </div>
+          {/* Overall comment */}
+          {activePlan.overall_comment && (
+            <Card>
+              <CardBody>
+                <h3 className="mb-2 text-sm font-semibold text-gray-700">総合コメント</h3>
+                <p className="whitespace-pre-wrap text-sm text-gray-800">{activePlan.overall_comment}</p>
+              </CardBody>
+            </Card>
+          )}
+
+          {/* Comments section */}
+          <Card>
+            <CardBody>
+              <h3 className="mb-4 text-sm font-semibold text-gray-700">コメント</h3>
+
+              {comments.length === 0 ? (
+                <p className="py-4 text-center text-sm text-gray-400">まだコメントはありません</p>
+              ) : (
+                <div className="mb-4 space-y-3">
+                  {comments.map((c) => (
+                    <div key={c.id} className="rounded-lg border-l-4 border-purple-500 bg-gray-50 p-3">
+                      <div className="mb-1 flex items-center justify-between">
+                        <span className="text-sm font-semibold text-purple-600">
+                          {c.user?.full_name ?? '不明'}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {format(new Date(c.created_at), 'yyyy/M/d HH:mm', { locale: ja })}
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                )}
+                      <p className="whitespace-pre-wrap text-sm text-gray-700">{c.comment}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-                {day.is_scheduled && day.activities.length === 0 && (
-                  <p className="text-sm text-gray-500 ml-13">活動の詳細はまだありません</p>
-                )}
-              </Card>
-            ))}
-          </div>
+              {/* Comment form */}
+              <div className="border-t border-gray-200 pt-4">
+                <textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="コメントを入力..."
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  rows={3}
+                  required
+                />
+                <div className="mt-2 flex justify-end">
+                  <Button
+                    size="sm"
+                    onClick={handleSubmitComment}
+                    isLoading={commentMutation.isPending}
+                    disabled={!comment.trim()}
+                    leftIcon={<Send className="h-4 w-4" />}
+                  >
+                    コメントを投稿
+                  </Button>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
         </>
       )}
     </div>
