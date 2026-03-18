@@ -319,8 +319,7 @@ class SupportPlanController extends Controller
                 'messages' => [
                     [
                         'role'    => 'system',
-                        'content' => 'あなたは放課後等デイサービスの児童発達支援管理責任者です。'
-                            . '個別支援計画書の作成を支援します。JSON形式のみで回答してください。',
+                        'content' => 'あなたは児童発達支援の専門家です。個別支援計画書を作成する際は、具体的で実践可能な支援内容を詳細に記述してください。抽象的な表現は避け、現場のスタッフが実際に使用できる具体的な手順、頻度、環境設定、段階的なアプローチを含めてください。',
                     ],
                     [
                         'role'    => 'user',
@@ -333,17 +332,20 @@ class SupportPlanController extends Controller
                             . $prevPlanText
                             . "【連絡帳記録（直近{$records->count()}件）】\n"
                             . ($recordsText ?: '（記録なし）') . "\n\n"
-                            . "【重要なルール】\n"
-                            . "1. 短期目標・長期目標は、保護者かけはしとスタッフかけはしの目標の文言を最大限考慮し、整合性・連続性を保つこと\n"
-                            . "2. 目標文に「1年後には」「半年後に」「○ヶ月後」等の時間表現を含めないこと（日付は別管理）\n"
-                            . "3. 支援内容は200-300文字で、具体的な手順・頻度・教材・段階的アプローチを含めること\n"
-                            . "4. 支援目標は100-120文字で、施設での具体的な到達目標（行動レベル）を記述すること\n\n"
+                            . "【重要な指示】\n"
+                            . "- 【最重要】個別支援計画の短期目標・長期目標は、保護者かけはしとスタッフかけはしの短期目標・長期目標の文言を最大限考慮し、それらとの整合性・連続性を保ちながら作成してください\n"
+                            . "- かけはしで設定された目標を土台として、施設での具体的な支援場面に落とし込んだ目標を記述してください\n"
+                            . "- 各項目について、具体的かつ詳細に記述してください\n"
+                            . "- 支援目標は、観察可能で測定可能な行動として明確に記述してください\n"
+                            . "- 支援内容は、具体的な支援方法、頻度、場面、使用する教材・環境設定などを詳しく記載してください\n"
+                            . "- 各領域の支援内容は最低150文字以上、できれば200-300文字程度で詳しく記述してください\n"
+                            . "- 留意事項には、配慮すべき点、成功のためのポイント、予想される困難と対処法などを記載してください\n\n"
                             . "以下のJSON形式で出力してください:\n"
                             . "{\n"
-                            . "  \"life_intention\": \"利用児及び家族の生活に対する意向（100-200文字）\",\n"
-                            . "  \"overall_policy\": \"総合的な援助の方針（150-250文字）\",\n"
-                            . "  \"long_term_goal\": \"長期目標（100-150文字、時間表現なし）\",\n"
-                            . "  \"short_term_goal\": \"短期目標（100-150文字、時間表現なし）\",\n"
+                            . "  \"life_intention\": \"利用児及び家族の生活に対する意向（保護者と本人の願いを踏まえた詳細な記述。100-200文字程度）\",\n"
+                            . "  \"overall_policy\": \"総合的な支援の方針（本人・家族の意向を受けて、どのような方針で支援するか。強み・課題・環境を踏まえた総合的な方針を150-250文字程度で記述）\",\n"
+                            . "  \"long_term_goal\": \"【最重要】長期目標の内容（上記の保護者かけはしとスタッフかけはしの長期目標の文言を最大限考慮し、それらの目標と整合性を保ちながら、施設での支援を通じて到達してほしい具体的な姿を記述。観察可能な行動として100-150文字程度で記述。期間を含めた表現は使用しないこと）\",\n"
+                            . "  \"short_term_goal\": \"【最重要】短期目標の内容（上記の保護者かけはしとスタッフかけはしの短期目標の文言を最大限考慮し、それらの目標と整合性を保ちながら、施設での支援を通じて到達してほしい具体的な姿を記述。観察可能な行動として100-150文字程度で記述。期間を含めた表現は使用しないこと）\",\n"
                             . "  \"details\": [\n"
                             . "    {\"category\": \"本人支援\", \"sub_category\": \"健康・生活\", \"support_goal\": \"...\", \"support_content\": \"...\"},\n"
                             . "    {\"category\": \"本人支援\", \"sub_category\": \"運動・感覚\", \"support_goal\": \"...\", \"support_content\": \"...\"},\n"
@@ -353,11 +355,19 @@ class SupportPlanController extends Controller
                             . "    {\"category\": \"家族支援\", \"sub_category\": \"家族支援\", \"support_goal\": \"...\", \"support_content\": \"...\"},\n"
                             . "    {\"category\": \"地域支援\", \"sub_category\": \"地域連携\", \"support_goal\": \"...\", \"support_content\": \"...\"}\n"
                             . "  ]\n"
-                            . "}",
+                            . "}\n\n"
+                            . "【注意事項】\n"
+                            . "- 必ず有効なJSON形式で出力してください\n"
+                            . "- 【最重要】個別支援計画の長期目標・短期目標は、保護者かけはしとスタッフかけはしで既に設定された長期目標・短期目標の内容を最大限尊重し、それらの表現や意図を引き継ぎながら、施設での具体的な支援場面に適した形で記述してください\n"
+                            . "- かけはしの目標で使われているキーワードや表現をできるだけ活かしてください\n"
+                            . "- 【重要】五領域については、必ず施設内で実施できる支援内容を記述してください。家庭での取り組みは含めないでください\n"
+                            . "- 支援内容は具体的な手順、頻度、使用する道具・環境、段階的なアプローチを含めてください\n"
+                            . "- 抽象的な表現ではなく、実際に現場で実践できる具体的な内容を記述してください\n"
+                            . "- 【重要】長期目標・短期目標・支援目標には「1年後には」「半年後には」「○ヶ月後」「いつまでに」などの期間を含めた表現は絶対に使用しないでください",
                     ],
                 ],
                 'response_format'       => ['type' => 'json_object'],
-                'temperature'           => 0.7,
+                'temperature'           => 0.8,
                 'max_completion_tokens' => 4000,
             ]);
 
@@ -838,6 +848,269 @@ class SupportPlanController extends Controller
                 'goal_comparison'     => $goalComparison,
             ],
         ]);
+    }
+
+    /**
+     * 個別支援計画の根拠文書（全体所感）をAI生成（レガシー準拠）
+     */
+    public function generateBasis(Request $request, IndividualSupportPlan $plan): JsonResponse
+    {
+        $plan->load('student');
+        $this->authorizeClassroom($request->user(), $plan->student);
+
+        $studentId = $plan->student_id;
+        $studentName = $plan->student_name ?: $plan->student->student_name;
+        $planDate = $plan->created_date;
+
+        // かけはし期間（submission_deadline <= plan.created_date で最も近いもの）
+        $kakehashiPeriod = \App\Models\KakehashiPeriod::where('student_id', $studentId)
+            ->when($planDate, fn ($q) => $q->where('submission_deadline', '<=', $planDate))
+            ->orderByDesc('submission_deadline')
+            ->first();
+
+        // 保護者かけはしデータ
+        $guardianKakehashi = null;
+        if ($kakehashiPeriod) {
+            $guardianKakehashi = \App\Models\KakehashiGuardian::where('student_id', $studentId)
+                ->where('period_id', $kakehashiPeriod->id)
+                ->orderByDesc('submitted_at')
+                ->first();
+        }
+
+        // スタッフかけはしデータ
+        $staffKakehashi = null;
+        if ($kakehashiPeriod) {
+            $staffKakehashi = \App\Models\KakehashiStaff::where('student_id', $studentId)
+                ->where('period_id', $kakehashiPeriod->id)
+                ->orderByDesc('submitted_at')
+                ->first();
+        }
+
+        // 直近のモニタリング
+        $latestMonitoring = \App\Models\MonitoringRecord::where('student_id', $studentId)
+            ->when($planDate, fn ($q) => $q->where('monitoring_date', '<=', $planDate))
+            ->with('details.planDetail')
+            ->orderByDesc('monitoring_date')
+            ->first();
+
+        // プロンプト構築（レガシー準拠）
+        $prompt = "あなたは児童発達支援・放課後等デイサービスの専門家です。\n";
+        $prompt .= "以下のデータに基づいて、この個別支援計画に対する「全体所感」を作成してください。\n";
+        $prompt .= "保護者に向けて、計画がどのような考えに基づいて作成されたかを説明する文書です。\n\n";
+
+        $prompt .= "【重要な指示】\n";
+        $prompt .= "- 保護者に分かりやすい丁寧な言葉で説明してください\n";
+        $prompt .= "- 保護者・スタッフからのかけはしの内容を踏まえた説明をしてください\n";
+        $prompt .= "- 計画の目標がどのように本人・家族の願いを反映しているか説明してください\n";
+        $prompt .= "- お子様の強みや成長の可能性についても触れてください\n";
+        $prompt .= "- 600〜1000文字程度でまとめてください\n\n";
+
+        $prompt .= "【生徒名】\n" . $studentName . "\n\n";
+
+        $prompt .= "【個別支援計画の内容】\n";
+        $prompt .= "作成日: " . ($plan->created_date ?? '') . "\n";
+        $prompt .= "利用児及び家族の意向: " . ($plan->life_intention ?? '（未記入）') . "\n";
+        $prompt .= "総合的な支援の方針: " . ($plan->overall_policy ?? '（未記入）') . "\n";
+        $prompt .= "長期目標: " . ($plan->long_term_goal ?? '（未記入）') . "\n";
+        $prompt .= "短期目標: " . ($plan->short_term_goal ?? '（未記入）') . "\n\n";
+
+        if ($guardianKakehashi) {
+            $prompt .= "【保護者からのかけはし（提出日: " . ($guardianKakehashi->submitted_at ?? '不明') . "）】\n";
+            $prompt .= "本人の願い: " . ($guardianKakehashi->student_wish ?? '') . "\n";
+            $prompt .= "家庭での願い: " . ($guardianKakehashi->home_challenges ?? '') . "\n";
+            $prompt .= "短期目標: " . ($guardianKakehashi->short_term_goal ?? '') . "\n";
+            $prompt .= "長期目標: " . ($guardianKakehashi->long_term_goal ?? '') . "\n";
+            $prompt .= "健康・生活: " . ($guardianKakehashi->domain_health_life ?? '') . "\n";
+            $prompt .= "運動・感覚: " . ($guardianKakehashi->domain_motor_sensory ?? '') . "\n";
+            $prompt .= "認知・行動: " . ($guardianKakehashi->domain_cognitive_behavior ?? '') . "\n";
+            $prompt .= "言語・コミュニケーション: " . ($guardianKakehashi->domain_language_communication ?? '') . "\n";
+            $prompt .= "人間関係・社会性: " . ($guardianKakehashi->domain_social_relations ?? '') . "\n\n";
+        }
+
+        if ($staffKakehashi) {
+            $prompt .= "【スタッフからのかけはし（提出日: " . ($staffKakehashi->submitted_at ?? '不明') . "）】\n";
+            $prompt .= "本人の願い: " . ($staffKakehashi->student_wish ?? '') . "\n";
+            $prompt .= "短期目標: " . ($staffKakehashi->short_term_goal ?? '') . "\n";
+            $prompt .= "長期目標: " . ($staffKakehashi->long_term_goal ?? '') . "\n";
+            $prompt .= "健康・生活: " . ($staffKakehashi->health_life ?? '') . "\n";
+            $prompt .= "運動・感覚: " . ($staffKakehashi->motor_sensory ?? '') . "\n";
+            $prompt .= "認知・行動: " . ($staffKakehashi->cognitive_behavior ?? '') . "\n";
+            $prompt .= "言語・コミュニケーション: " . ($staffKakehashi->language_communication ?? '') . "\n";
+            $prompt .= "人間関係・社会性: " . ($staffKakehashi->social_relations ?? '') . "\n\n";
+        }
+
+        if ($latestMonitoring) {
+            $prompt .= "【直近のモニタリング（実施日: " . $latestMonitoring->monitoring_date . "）】\n";
+            $prompt .= "総合所見: " . ($latestMonitoring->overall_comment ?? '') . "\n";
+            foreach ($latestMonitoring->details ?? [] as $md) {
+                $category = $md->planDetail->category ?? '';
+                $subCategory = $md->planDetail->sub_category ?? '';
+                if ($category || $subCategory) {
+                    $prompt .= $category . " - " . $subCategory . ": " . ($md->achievement_status ?? '') . " / " . ($md->monitoring_comment ?? '') . "\n";
+                }
+            }
+            $prompt .= "\n";
+        }
+
+        $prompt .= "上記のデータを踏まえて、この個別支援計画がどのような根拠に基づいて作成されたかを説明する文書を作成してください。\n";
+        $prompt .= "見出しをつけず、自然な文章で記述してください。";
+
+        try {
+            $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
+            if (empty($apiKey)) {
+                return response()->json(['success' => false, 'message' => 'OpenAI APIキーが設定されていません。'], 422);
+            }
+
+            $client = \OpenAI::client($apiKey);
+            $response = $client->chat()->create([
+                'model'    => 'gpt-4o',
+                'messages' => [
+                    [
+                        'role'    => 'system',
+                        'content' => 'あなたは児童発達支援・放課後等デイサービスの専門家です。保護者に対して丁寧で分かりやすい説明を行います。',
+                    ],
+                    [
+                        'role'    => 'user',
+                        'content' => $prompt,
+                    ],
+                ],
+                'temperature'           => 0.7,
+                'max_completion_tokens' => 2000,
+            ]);
+
+            $basisContent = $response->choices[0]->message->content;
+
+            // データベースに保存
+            $plan->update([
+                'basis_content'      => $basisContent,
+                'basis_generated_at' => now(),
+            ]);
+
+            // ログ保存
+            try {
+                \App\Models\AiGenerationLog::create([
+                    'user_id'       => $request->user()->id,
+                    'model'         => 'gpt-4o',
+                    'prompt_type'   => 'basis',
+                    'input_tokens'  => $response->usage->promptTokens ?? null,
+                    'output_tokens' => $response->usage->completionTokens ?? null,
+                    'student_id'    => $studentId,
+                ]);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('AI log failed: ' . $e->getMessage());
+            }
+
+            return response()->json([
+                'success' => true,
+                'data'    => [
+                    'basis_content'      => $basisContent,
+                    'basis_generated_at' => $plan->basis_generated_at,
+                ],
+                'message' => '全体所感を生成しました。',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => '全体所感の生成に失敗しました: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * 面談記録から「本人の願い」をAI生成（レガシー準拠）
+     */
+    public function generateWishFromInterview(Request $request, Student $student): JsonResponse
+    {
+        $this->authorizeClassroom($request->user(), $student);
+
+        // 6か月以内の面談記録を取得（児童の願いがあるもの）
+        $sixMonthsAgo = now()->subMonths(6)->toDateString();
+        $interviews = \App\Models\StudentInterview::where('student_id', $student->id)
+            ->where('interview_date', '>=', $sixMonthsAgo)
+            ->whereNotNull('child_wish')
+            ->where('child_wish', '!=', '')
+            ->orderByDesc('interview_date')
+            ->limit(5)
+            ->get();
+
+        if ($interviews->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => '6か月以内に「児童の願い」が記録された面談記録がありません。',
+            ], 422);
+        }
+
+        // 面談記録の「児童の願い」を集約
+        $wishesText = '';
+        foreach ($interviews as $interview) {
+            $date = date('Y年m月d日', strtotime($interview->interview_date));
+            $wishesText .= "【{$date}の面談】\n";
+            $wishesText .= $interview->child_wish . "\n\n";
+        }
+
+        $prompt = "あなたは発達支援・特別支援教育の専門スタッフです。以下は生徒との面談記録から抜粋した「児童の願い」です。これらの内容を整理・統合して、個別支援計画に記載する「本人の願い」として200〜300文字程度でまとめてください。\n\n";
+        $prompt .= "【生徒名】\n" . $student->student_name . "\n\n";
+        $prompt .= "【面談記録からの「児童の願い」】\n" . $wishesText . "\n";
+        $prompt .= "【作成の指針】\n";
+        $prompt .= "- 複数の面談記録がある場合は、共通するテーマや一貫した願いを中心にまとめる\n";
+        $prompt .= "- 児童の言葉や表現をできるだけ活かしながら、読みやすく整理する\n";
+        $prompt .= "- 抽象的すぎる表現は避け、具体的な願いや目標として記述する\n";
+        $prompt .= "- 肯定的で前向きな表現を心がける\n";
+        $prompt .= "- 「〜したい」「〜になりたい」「〜ができるようになりたい」などの表現を使う\n";
+        $prompt .= "- 本人の気持ちや希望を尊重した内容にする\n\n";
+        $prompt .= "「本人の願い」を200〜300文字程度の文章で記述してください（JSON不要、テキストのみ）：";
+
+        try {
+            $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
+            if (empty($apiKey)) {
+                return response()->json(['success' => false, 'message' => 'OpenAI APIキーが設定されていません。'], 422);
+            }
+
+            $client = \OpenAI::client($apiKey);
+            $response = $client->chat()->create([
+                'model'    => 'gpt-4o',
+                'messages' => [
+                    [
+                        'role'    => 'system',
+                        'content' => 'あなたは発達支援・特別支援教育の専門スタッフです。',
+                    ],
+                    [
+                        'role'    => 'user',
+                        'content' => $prompt,
+                    ],
+                ],
+                'temperature'           => 0.7,
+                'max_completion_tokens' => 600,
+            ]);
+
+            $generatedWish = trim($response->choices[0]->message->content);
+
+            // ログ保存
+            try {
+                \App\Models\AiGenerationLog::create([
+                    'user_id'       => $request->user()->id,
+                    'model'         => 'gpt-4o',
+                    'prompt_type'   => 'wish_from_interview',
+                    'input_tokens'  => $response->usage->promptTokens ?? null,
+                    'output_tokens' => $response->usage->completionTokens ?? null,
+                    'student_id'    => $student->id,
+                ]);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('AI log failed: ' . $e->getMessage());
+            }
+
+            return response()->json([
+                'success' => true,
+                'data'    => [
+                    'wish' => $generatedWish,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'AI生成中にエラーが発生しました: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**

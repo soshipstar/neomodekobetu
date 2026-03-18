@@ -161,6 +161,8 @@ Route::prefix('staff')
         Route::post('/support-plans/{plan}/publish', [App\Http\Controllers\Staff\SupportPlanController::class, 'publish']);
         Route::post('/support-plans/{plan}/make-official', [App\Http\Controllers\Staff\SupportPlanController::class, 'makeOfficial']);
         Route::get('/support-plans/{plan}/basis', [App\Http\Controllers\Staff\SupportPlanController::class, 'basis']);
+        Route::post('/support-plans/{plan}/generate-basis', [App\Http\Controllers\Staff\SupportPlanController::class, 'generateBasis']);
+        Route::post('/students/{student}/generate-wish', [App\Http\Controllers\Staff\SupportPlanController::class, 'generateWishFromInterview']);
 
         // --- モニタリング ---
         Route::get('/students/{student}/monitoring', [App\Http\Controllers\Staff\MonitoringController::class, 'index']);
@@ -504,8 +506,6 @@ Route::prefix('ai')
         Route::post('/generate/support-plan', [App\Http\Controllers\Api\AiGenerationController::class, 'generateSupportPlan']);
         Route::post('/generate/monitoring', [App\Http\Controllers\Api\AiGenerationController::class, 'generateMonitoring']);
         Route::post('/generate/newsletter', [App\Http\Controllers\Api\AiGenerationController::class, 'generateNewsletter']);
-        Route::post('/similar-cases', [App\Http\Controllers\Api\AiGenerationController::class, 'similarCases']);
-        Route::post('/analyze/student-progress', [App\Http\Controllers\Api\AiGenerationController::class, 'analyzeStudentProgress']);
     });
 
 // ==========================================================================

@@ -136,22 +136,6 @@ class AiGenerationService
         return $content;
     }
 
-    /**
-     * Generate a text embedding vector using OpenAI embeddings API.
-     *
-     * @param  string  $text
-     * @return array  Float vector
-     */
-    public function generateEmbedding(string $text): array
-    {
-        $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->embeddings()->create([
-            'model' => config('services.openai.embedding_model', 'text-embedding-3-small'),
-            'input' => $text,
-        ]);
-
-        return $response->embeddings[0]->embedding;
-    }
-
     // =========================================================================
     // Private helpers
     // =========================================================================

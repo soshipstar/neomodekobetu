@@ -319,7 +319,7 @@ class ActivitySupportPlanController extends Controller
             $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
             $client = \OpenAI::client($apiKey);
             $response = $client->chat()->create([
-                'model' => 'gpt-4o',
+                'model' => 'gpt-4o-mini',
                 'messages' => [
                     [
                         'role' => 'system',
@@ -331,7 +331,6 @@ class ActivitySupportPlanController extends Controller
                     ],
                 ],
                 'response_format' => ['type' => 'json_object'],
-                'temperature' => 0.7,
                 'max_tokens' => 2000,
             ]);
 
@@ -428,7 +427,7 @@ class ActivitySupportPlanController extends Controller
             $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
             $client = \OpenAI::client($apiKey);
             $response = $client->chat()->create([
-                'model' => 'gpt-4o',
+                'model' => 'gpt-4o-mini',
                 'messages' => [
                     [
                         'role' => 'system',
@@ -440,7 +439,6 @@ class ActivitySupportPlanController extends Controller
                     ],
                 ],
                 'response_format' => ['type' => 'json_object'],
-                'temperature' => 0.7,
                 'max_tokens' => 3000,
             ]);
 

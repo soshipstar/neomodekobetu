@@ -174,6 +174,52 @@ class KakehashiController extends Controller
             return implode(' / ', $parts);
         })->implode("\n");
 
+        // 面談記録を取得（直近5か月、レガシー準拠）
+        $fiveMonthsAgo = (clone $period->start_date)->subMonths(5);
+        $interviewRecords = \App\Models\StudentInterview::where('student_id', $student->id)
+            ->where('interview_date', '>=', $fiveMonthsAgo->toDateString())
+            ->where('interview_date', '<', $period->start_date->toDateString())
+            ->orderByDesc('interview_date')
+            ->limit(10)
+            ->get();
+
+        $interviewSummary = '';
+        if ($interviewRecords->isNotEmpty()) {
+            $schoolNotes = [];
+            $homeNotes = [];
+            $troubleNotes = [];
+            $childWishes = [];
+
+            foreach ($interviewRecords as $interview) {
+                $date = date('Y年m月d日', strtotime($interview->interview_date));
+                if ($interview->check_school && !empty($interview->check_school_note)) {
+                    $schoolNotes[] = "【{$date}】" . $interview->check_school_note;
+                }
+                if ($interview->check_home && !empty($interview->check_home_note)) {
+                    $homeNotes[] = "【{$date}】" . $interview->check_home_note;
+                }
+                if ($interview->check_troubles && !empty($interview->check_troubles_note)) {
+                    $troubleNotes[] = "【{$date}】" . $interview->check_troubles_note;
+                }
+                if (!empty($interview->child_wish)) {
+                    $childWishes[] = "【{$date}】" . $interview->child_wish;
+                }
+            }
+
+            if (!empty($schoolNotes)) {
+                $interviewSummary .= "\n■ 学校での様子\n" . implode("\n", array_slice($schoolNotes, 0, 5)) . "\n";
+            }
+            if (!empty($homeNotes)) {
+                $interviewSummary .= "\n■ 家庭での様子\n" . implode("\n", array_slice($homeNotes, 0, 5)) . "\n";
+            }
+            if (!empty($troubleNotes)) {
+                $interviewSummary .= "\n■ 困りごと・悩み\n" . implode("\n", array_slice($troubleNotes, 0, 5)) . "\n";
+            }
+            if (!empty($childWishes)) {
+                $interviewSummary .= "\n■ 児童の願い\n" . implode("\n", array_slice($childWishes, 0, 5)) . "\n";
+            }
+        }
+
         // 前回のかけはしを取得
         $previousEntry = KakehashiStaff::where('student_id', $student->id)
             ->where('period_id', '!=', $period->id)
@@ -217,6 +263,7 @@ class KakehashiController extends Controller
                             . "【教室】" . ($student->classroom->classroom_name ?? '') . "\n"
                             . "【かけはし期間】{$period->start_date} ～ {$period->end_date}\n\n"
                             . $previousText
+                            . (!empty(trim($interviewSummary)) ? "【面談記録からの情報】\n" . $interviewSummary . "\n\n" : '')
                             . "【期間内の連絡帳記録（{$records->count()}件）】\n"
                             . ($recordsText ?: '（記録なし）') . "\n\n"
                             . "以下のJSON形式で出力してください:\n"

@@ -171,8 +171,7 @@ class NewsletterController extends Controller
                 'messages' => [
                     [
                         'role'    => 'system',
-                        'content' => '児童発達支援施設のスタッフとして、保護者向けのお便りの文章を作成します。温かみがあり、丁寧な表現を心がけてください。'
-                            . '以下の教室情報や活動データを参考にして、具体的で臨場感のある文章を書いてください。',
+                        'content' => 'あなたは個別支援教育の経験豊富な教員です。保護者に向けて温かく丁寧で、参加したくなるような魅力的な文章を書きます。専門用語は避け、分かりやすい表現を心がけます。',
                     ],
                     [
                         'role'    => 'user',
@@ -184,7 +183,7 @@ class NewsletterController extends Controller
                     ],
                 ],
                 'temperature'           => 0.7,
-                'max_completion_tokens' => 1000,
+                'max_completion_tokens' => 1500,
             ]);
 
             $generatedText = $response->choices[0]->message->content;
