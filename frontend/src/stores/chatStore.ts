@@ -10,7 +10,9 @@ interface ChatState {
   isLoadingRooms: boolean;
   isLoadingMessages: boolean;
   isSending: boolean;
+  apiPrefix: string; // '/api/staff' or '/api/guardian'
 
+  setApiPrefix: (prefix: string) => void;
   fetchRooms: () => Promise<void>;
   setActiveRoom: (room: ChatRoom | null) => void;
   fetchMessages: (roomId: number) => Promise<void>;
@@ -28,11 +30,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
   isLoadingRooms: false,
   isLoadingMessages: false,
   isSending: false,
+  apiPrefix: '/api/staff', // default for backward compatibility
+
+  setApiPrefix: (prefix: string) => {
+    set({ apiPrefix: prefix });
+  },
 
   fetchRooms: async () => {
     set({ isLoadingRooms: true });
     try {
-      const response = await api.get('/api/staff/chat/rooms');
+      const { apiPrefix } = get();
+      const response = await api.get(`${apiPrefix}/chat/rooms`);
       const payload = response.data?.data ?? response.data;
       const rooms: ChatRoom[] = Array.isArray(payload) ? payload : [];
       const unreadCounts: Record<number, number> = {};
@@ -52,7 +60,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   fetchMessages: async (roomId: number) => {
     set({ isLoadingMessages: true });
     try {
-      const response = await api.get<{ data: ChatMessage[] }>(`/api/staff/chat/rooms/${roomId}/messages`);
+      const { apiPrefix } = get();
+      const response = await api.get<{ data: ChatMessage[] }>(`${apiPrefix}/chat/rooms/${roomId}/messages`);
       set({ messages: response.data.data, isLoadingMessages: false });
     } catch {
       set({ isLoadingMessages: false });
@@ -62,13 +71,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
   sendMessage: async (roomId: number, message: string, attachment?: File) => {
     set({ isSending: true });
     try {
+      const { apiPrefix } = get();
       const formData = new FormData();
       formData.append('message', message);
       formData.append('room_id', String(roomId));
       if (attachment) {
         formData.append('attachment', attachment);
       }
-      const response = await api.post<{ data: ChatMessage }>(`/api/staff/chat/rooms/${roomId}/messages`, formData);
+      const response = await api.post<{ data: ChatMessage }>(`${apiPrefix}/chat/rooms/${roomId}/messages`, formData);
       const newMessage = response.data.data;
       set((state) => ({
         messages: [...state.messages, newMessage],
@@ -81,7 +91,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   markAsRead: async (roomId: number) => {
     try {
-      await api.post(`/api/staff/chat/rooms/${roomId}/read`);
+      const { apiPrefix } = get();
+      await api.post(`${apiPrefix}/chat/rooms/${roomId}/read`);
       set((state) => ({
         unreadCounts: { ...state.unreadCounts, [roomId]: 0 },
       }));

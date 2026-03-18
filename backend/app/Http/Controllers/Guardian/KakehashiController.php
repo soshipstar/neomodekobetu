@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\KakehashiGuardian;
 use App\Models\KakehashiPeriod;
 use App\Models\KakehashiStaff;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class KakehashiController extends Controller
 {
@@ -129,19 +131,137 @@ class KakehashiController extends Controller
     }
 
     /**
-     * かけはし履歴一覧（historyエイリアス - indexと同内容）
+     * かけはし履歴一覧 (legacy kakehashi_history.php と同等)
+     * 提出済みのスタッフ・保護者かけはしのみ返す
      */
     public function history(Request $request): JsonResponse
     {
-        return $this->index($request);
+        $user = $request->user();
+        $studentId = $request->input('student_id');
+
+        // student_id が指定されていない場合は最初の生徒を使う
+        $students = $user->students()->active()->get(['id', 'student_name']);
+        if (!$studentId && $students->isNotEmpty()) {
+            $studentId = $students->first()->id;
+        }
+
+        $studentIds = $students->pluck('id')->toArray();
+
+        if (!$studentId || !in_array((int) $studentId, $studentIds)) {
+            return response()->json([
+                'success' => true,
+                'data'    => [],
+            ]);
+        }
+
+        $history = DB::table('kakehashi_periods as kp')
+            ->leftJoin('kakehashi_staff as ks', function ($join) {
+                $join->on('kp.id', '=', 'ks.period_id')
+                     ->on('ks.student_id', '=', 'kp.student_id');
+            })
+            ->leftJoin('kakehashi_guardian as kg', function ($join) {
+                $join->on('kp.id', '=', 'kg.period_id')
+                     ->on('kg.student_id', '=', 'kp.student_id');
+            })
+            ->where('kp.student_id', $studentId)
+            ->where('kp.is_active', true)
+            ->where(function ($q) {
+                $q->where('ks.is_submitted', true)
+                  ->orWhere('kg.is_submitted', true);
+            })
+            ->select([
+                'kp.id as period_id',
+                'kp.period_name',
+                'kp.start_date',
+                'kp.end_date',
+                'kp.submission_deadline',
+                'ks.id as staff_kakehashi_id',
+                'ks.is_submitted as staff_submitted',
+                'ks.submitted_at as staff_submitted_at',
+                'ks.guardian_confirmed as staff_guardian_confirmed',
+                'ks.guardian_confirmed_at as staff_guardian_confirmed_at',
+                'kg.id as guardian_kakehashi_id',
+                'kg.is_submitted as guardian_submitted',
+                'kg.submitted_at as guardian_submitted_at',
+            ])
+            ->orderByDesc('kp.submission_deadline')
+            ->get()
+            ->map(function ($item) {
+                $item->staff_submitted = (bool) $item->staff_submitted;
+                $item->guardian_submitted = (bool) $item->guardian_submitted;
+                $item->staff_guardian_confirmed = (bool) $item->staff_guardian_confirmed;
+                return $item;
+            });
+
+        return response()->json([
+            'success' => true,
+            'data'    => $history,
+        ]);
     }
 
     /**
      * かけはし履歴詳細（期間IDで取得）
+     * type=guardian or type=staff で保護者/スタッフの記入内容を返す
      */
     public function historyDetail(Request $request, KakehashiPeriod $period): JsonResponse
     {
-        return $this->show($request, $period);
+        $user = $request->user();
+        $studentIds = $user->students()->pluck('id')->toArray();
+        $studentId = $request->input('student_id', $period->student_id);
+
+        if (!in_array((int) $studentId, $studentIds)) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
+        $type = $request->input('type', 'guardian');
+
+        $data = [
+            'period_id' => $period->id,
+            'period_name' => $period->period_name,
+            'start_date' => $period->start_date,
+            'end_date' => $period->end_date,
+            'submission_deadline' => $period->submission_deadline,
+        ];
+
+        if ($type === 'guardian') {
+            $entry = KakehashiGuardian::where('period_id', $period->id)
+                ->where('student_id', $studentId)
+                ->first();
+
+            if ($entry) {
+                $data['guardian_student_wish'] = $entry->student_wish;
+                $data['guardian_home_challenges'] = $entry->home_challenges;
+                $data['guardian_short_term_goal'] = $entry->short_term_goal;
+                $data['guardian_long_term_goal'] = $entry->long_term_goal;
+                $data['guardian_domain_health_life'] = $entry->domain_health_life;
+                $data['guardian_domain_motor_sensory'] = $entry->domain_motor_sensory;
+                $data['guardian_domain_cognitive_behavior'] = $entry->domain_cognitive_behavior;
+                $data['guardian_domain_language_communication'] = $entry->domain_language_communication;
+                $data['guardian_domain_social_relations'] = $entry->domain_social_relations;
+                $data['guardian_other_challenges'] = $entry->other_challenges;
+            }
+        } else {
+            $entry = KakehashiStaff::where('period_id', $period->id)
+                ->where('student_id', $studentId)
+                ->first();
+
+            if ($entry) {
+                $data['staff_student_wish'] = $entry->student_wish;
+                $data['staff_short_term_goal'] = $entry->short_term_goal;
+                $data['staff_long_term_goal'] = $entry->long_term_goal;
+                $data['staff_health_life'] = $entry->health_life;
+                $data['staff_motor_sensory'] = $entry->motor_sensory;
+                $data['staff_cognitive_behavior'] = $entry->cognitive_behavior;
+                $data['staff_language_communication'] = $entry->language_communication;
+                $data['staff_social_relations'] = $entry->social_relations;
+                $data['staff_other_challenges'] = $entry->other_challenges;
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => $data,
+        ]);
     }
 
     /**

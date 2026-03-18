@@ -395,8 +395,13 @@ Route::prefix('guardian')
         Route::get('/students/{student}/weekly-plans', [App\Http\Controllers\Guardian\GuardianWeeklyPlanController::class, 'index']);
 
         // チャット
+        Route::get('/chat/rooms', [App\Http\Controllers\Guardian\ChatController::class, 'rooms']);
         Route::get('/chat/rooms/{room}/messages', [App\Http\Controllers\Guardian\ChatController::class, 'messages']);
         Route::post('/chat/rooms/{room}/messages', [App\Http\Controllers\Guardian\ChatController::class, 'sendMessage']);
+        Route::post('/chat/rooms/{room}/read', [App\Http\Controllers\Guardian\ChatController::class, 'markAsRead']);
+        Route::post('/chat/rooms/{room}/absence', [App\Http\Controllers\Guardian\ChatController::class, 'sendAbsenceNotification']);
+        Route::post('/chat/rooms/{room}/event-registration', [App\Http\Controllers\Guardian\ChatController::class, 'sendEventRegistration']);
+        Route::post('/chat/rooms/{room}/meeting-request', [App\Http\Controllers\Guardian\ChatController::class, 'sendMeetingRequest']);
 
         // 支援計画
         Route::get('/support-plans', [App\Http\Controllers\Guardian\SupportPlanController::class, 'index']);
