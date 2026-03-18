@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DailyRoutine;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DailyRoutineController extends Controller
 {
@@ -22,6 +23,8 @@ class DailyRoutineController extends Controller
         if ($classroomId) {
             $query->where('classroom_id', $classroomId);
         }
+
+        $query->where('is_active', true);
 
         $routines = $query->orderBy('sort_order')->get();
 
@@ -141,6 +144,54 @@ class DailyRoutineController extends Controller
         return response()->json([
             'success' => true,
             'message' => '削除しました。',
+        ]);
+    }
+
+    /**
+     * デイリールーティンを一括保存（レガシー互換）
+     * 既存のルーティーンを全て削除して再作成する
+     */
+    public function batchSave(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $classroomId = $user->classroom_id;
+
+        if (!$classroomId) {
+            return response()->json(['success' => false, 'message' => '教室が設定されていません。'], 422);
+        }
+
+        $validated = $request->validate([
+            'routines'              => 'present|array|max:10',
+            'routines.*.name'       => 'required|string|max:100',
+            'routines.*.content'    => 'nullable|string|max:500',
+            'routines.*.time'       => 'nullable|string|max:20',
+            'routines.*.sort_order' => 'nullable|integer',
+        ]);
+
+        DB::transaction(function () use ($classroomId, $validated) {
+            // 既存のルーティーンを削除
+            DailyRoutine::where('classroom_id', $classroomId)->delete();
+
+            // 新しいルーティーンを追加（最大10個）
+            $sortOrder = 1;
+            foreach ($validated['routines'] as $routine) {
+                if (!empty(trim($routine['name'])) && $sortOrder <= 10) {
+                    DailyRoutine::create([
+                        'classroom_id'    => $classroomId,
+                        'sort_order'      => $sortOrder,
+                        'routine_name'    => trim($routine['name']),
+                        'routine_content' => trim($routine['content'] ?? ''),
+                        'scheduled_time'  => trim($routine['time'] ?? ''),
+                        'is_active'       => true,
+                    ]);
+                    $sortOrder++;
+                }
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => '毎日の支援を保存しました。',
         ]);
     }
 

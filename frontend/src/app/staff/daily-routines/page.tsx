@@ -1,33 +1,39 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Badge } from '@/components/ui/Badge';
-import { Modal } from '@/components/ui/Modal';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { Plus, Pencil, Trash2, Clock, GripVertical } from 'lucide-react';
+import { Save } from 'lucide-react';
 
 interface DailyRoutine {
-  id: number;
+  id: number | null;
   name: string;
-  start_time: string;
-  end_time: string;
   description: string | null;
+  scheduled_time: string | null;
   sort_order: number;
   is_active: boolean;
 }
 
+interface RoutineSlot {
+  id: number | null;
+  name: string;
+  content: string;
+  time: string;
+  filled: boolean;
+}
+
+const MAX_ROUTINES = 10;
+const INITIAL_SLOTS = 5;
+
 export default function DailyRoutinesPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingRoutine, setEditingRoutine] = useState<DailyRoutine | null>(null);
-  const [form, setForm] = useState({ name: '', start_time: '09:00', end_time: '09:30', description: '', is_active: true });
+  const [slots, setSlots] = useState<RoutineSlot[]>([]);
+  const [initialized, setInitialized] = useState(false);
 
   const { data: routines = [], isLoading } = useQuery({
     queryKey: ['staff', 'daily-routines'],
@@ -37,142 +43,245 @@ export default function DailyRoutinesPage() {
     },
   });
 
+  // Initialize slots from fetched routines
+  useEffect(() => {
+    if (isLoading) return;
+
+    const activeRoutines = routines.filter((r) => r.is_active);
+    const count = Math.max(INITIAL_SLOTS, activeRoutines.length);
+    const newSlots: RoutineSlot[] = [];
+
+    for (let i = 0; i < count; i++) {
+      const routine = activeRoutines[i];
+      if (routine) {
+        newSlots.push({
+          id: routine.id,
+          name: routine.name || '',
+          content: routine.description || '',
+          time: routine.scheduled_time || '',
+          filled: !!(routine.name && routine.name.trim()),
+        });
+      } else {
+        newSlots.push({
+          id: null,
+          name: '',
+          content: '',
+          time: '',
+          filled: false,
+        });
+      }
+    }
+
+    setSlots(newSlots);
+    setInitialized(true);
+  }, [routines, isLoading]);
+
   const saveMutation = useMutation({
-    mutationFn: async (data: typeof form) => {
-      if (editingRoutine) return api.put(`/api/staff/daily-routines/${editingRoutine.id}`, data);
-      return api.post('/api/staff/daily-routines', data);
+    mutationFn: async (slotsToSave: RoutineSlot[]) => {
+      // Filter to only non-empty slots and send as batch
+      const routinesToSave = slotsToSave
+        .filter((s) => s.name.trim() !== '')
+        .map((s, index) => ({
+          name: s.name.trim(),
+          content: s.content.trim(),
+          time: s.time.trim(),
+          sort_order: index + 1,
+        }));
+
+      return api.post('/api/staff/daily-routines/batch-save', {
+        routines: routinesToSave,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'daily-routines'] });
-      toast.success(editingRoutine ? 'ルーティンを更新しました' : 'ルーティンを追加しました');
-      closeModal();
+      toast.success('毎日の支援を保存しました');
     },
     onError: () => toast.error('保存に失敗しました'),
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => api.delete(`/api/staff/daily-routines/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['staff', 'daily-routines'] });
-      toast.success('ルーティンを削除しました');
+  const updateSlot = useCallback(
+    (index: number, field: keyof RoutineSlot, value: string) => {
+      setSlots((prev) => {
+        const updated = [...prev];
+        updated[index] = { ...updated[index], [field]: value };
+        updated[index].filled = updated[index].name.trim() !== '';
+        return updated;
+      });
     },
-    onError: () => toast.error('削除に失敗しました'),
-  });
+    []
+  );
 
-  const reorderMutation = useMutation({
-    mutationFn: (ids: number[]) => api.post('/api/staff/daily-routines/reorder', { routine_ids: ids }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['staff', 'daily-routines'] }),
-    onError: () => toast.error('並び替えに失敗しました'),
-  });
-
-  const closeModal = () => {
-    setModalOpen(false);
-    setEditingRoutine(null);
-    setForm({ name: '', start_time: '09:00', end_time: '09:30', description: '', is_active: true });
-  };
-
-  const openEdit = (routine: DailyRoutine) => {
-    setEditingRoutine(routine);
-    setForm({
-      name: routine.name,
-      start_time: routine.start_time,
-      end_time: routine.end_time,
-      description: routine.description || '',
-      is_active: routine.is_active,
+  const clearSlot = useCallback((index: number) => {
+    if (!confirm(`毎日の支援 ${index + 1} をクリアしますか？`)) return;
+    setSlots((prev) => {
+      const updated = [...prev];
+      updated[index] = { id: null, name: '', content: '', time: '', filled: false };
+      return updated;
     });
-    setModalOpen(true);
-  };
+  }, []);
 
-  const handleDragEnd = (fromIndex: number, toIndex: number) => {
-    const reordered = [...routines];
-    const [removed] = reordered.splice(fromIndex, 1);
-    reordered.splice(toIndex, 0, removed);
-    reorderMutation.mutate(reordered.map((r) => r.id));
+  const addSlot = useCallback(() => {
+    if (slots.length >= MAX_ROUTINES) {
+      toast.error('最大10個まで登録できます');
+      return;
+    }
+    setSlots((prev) => [
+      ...prev,
+      { id: null, name: '', content: '', time: '', filled: false },
+    ]);
+  }, [slots.length, toast]);
+
+  const handleSave = () => {
+    saveMutation.mutate(slots);
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">日課設定</h1>
-        <Button onClick={() => { setEditingRoutine(null); setForm({ name: '', start_time: '09:00', end_time: '09:30', description: '', is_active: true }); setModalOpen(true); }} leftIcon={<Plus className="h-4 w-4" />}>
-          日課を追加
-        </Button>
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">
+            毎日の支援設定
+          </h1>
+          <p className="mt-1 text-sm text-[var(--neutral-foreground-3)]">
+            ルーティーン活動を登録して支援案作成時に引用できます
+          </p>
+        </div>
       </div>
 
-      {/* Timeline View */}
       <Card>
         <CardHeader>
-          <CardTitle>1日のスケジュール</CardTitle>
-          <p className="text-sm text-[var(--neutral-foreground-3)]">{routines.length}件の日課</p>
+          <CardTitle>毎日の支援</CardTitle>
         </CardHeader>
 
-        {isLoading ? (
-          <SkeletonList items={6} />
-        ) : routines.length === 0 ? (
-          <p className="py-8 text-center text-sm text-[var(--neutral-foreground-3)]">日課が設定されていません</p>
+        {/* Info box */}
+        <div className="mx-4 mb-4 rounded-none border-l-4 border-[var(--status-info-fg)] bg-[var(--status-info-bg)] p-4 text-sm text-[var(--neutral-foreground-2)]">
+          毎日行うルーティーン活動を最大10個まで登録できます。
+          <br />
+          登録した内容は、支援案作成時に「毎日の支援を引用」から簡単に追加できます。
+        </div>
+
+        {isLoading || !initialized ? (
+          <SkeletonList items={5} />
         ) : (
-          <div className="relative space-y-0">
-            {routines.map((routine, index) => (
+          <div className="space-y-3 px-4 pb-4">
+            {slots.map((slot, index) => (
               <div
-                key={routine.id}
-                className={`flex items-stretch gap-4 ${!routine.is_active ? 'opacity-50' : ''}`}
+                key={index}
+                className={`rounded-lg border-2 p-4 transition-colors ${
+                  slot.filled
+                    ? 'border-[var(--status-success-fg)] bg-[var(--status-success-bg)]'
+                    : 'border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] hover:border-[var(--brand-80)]'
+                }`}
               >
-                {/* Timeline line */}
-                <div className="flex flex-col items-center w-16 shrink-0">
-                  <span className="text-xs font-medium text-[var(--neutral-foreground-3)] whitespace-nowrap">{routine.start_time}</span>
-                  <div className="flex-1 w-px bg-[var(--brand-160)] my-1" />
-                  <span className="text-xs font-medium text-[var(--neutral-foreground-3)] whitespace-nowrap">{routine.end_time}</span>
+                {/* Header */}
+                <div className="mb-3 flex items-center gap-3">
+                  <div
+                    className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-white ${
+                      slot.filled ? 'bg-[var(--status-success-fg)]' : 'bg-[var(--brand-80)]'
+                    }`}
+                  >
+                    {index + 1}
+                  </div>
+                  <div className="flex-1 font-semibold text-[var(--neutral-foreground-1)]">
+                    毎日の支援 {index + 1}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => clearSlot(index)}
+                    className="rounded bg-[var(--status-danger-fg)] px-3 py-1 text-xs font-medium text-white hover:opacity-80"
+                  >
+                    クリア
+                  </button>
                 </div>
 
-                {/* Content */}
-                <div className="flex-1 flex items-center justify-between rounded-lg border border-[var(--neutral-stroke-2)] p-4 mb-2 hover:shadow-[var(--shadow-4)] transition-shadow">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand-160)]">
-                      <Clock className="h-5 w-5 text-[var(--brand-80)]" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-[var(--neutral-foreground-1)]">{routine.name}</h3>
-                      {routine.description && <p className="text-sm text-[var(--neutral-foreground-3)]">{routine.description}</p>}
+                {/* Form fields */}
+                <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-[1fr_150px]">
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-[var(--neutral-foreground-3)]">
+                      活動名
+                    </label>
+                    <input
+                      type="text"
+                      value={slot.name}
+                      onChange={(e) => updateSlot(index, 'name', e.target.value)}
+                      placeholder="例: おやつの時間、帰りの会"
+                      className="w-full rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-[var(--neutral-foreground-3)]">
+                      実施時間
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={slot.time}
+                        onChange={(e) => updateSlot(index, 'time', e.target.value)}
+                        placeholder="30"
+                        min={1}
+                        max={480}
+                        className="w-20 rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+                      />
+                      <span className="text-sm font-semibold text-[var(--neutral-foreground-1)]">
+                        分
+                      </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {!routine.is_active && <Badge variant="default">無効</Badge>}
-                    <Button variant="ghost" size="sm" onClick={() => openEdit(routine)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => { if (confirm('削除しますか？')) deleteMutation.mutate(routine.id); }}>
-                      <Trash2 className="h-4 w-4 text-[var(--status-danger-fg)]" />
-                    </Button>
-                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-[var(--neutral-foreground-3)]">
+                    活動内容
+                  </label>
+                  <textarea
+                    value={slot.content}
+                    onChange={(e) => updateSlot(index, 'content', e.target.value)}
+                    placeholder="活動の具体的な内容を記入してください"
+                    rows={3}
+                    className="w-full resize-y rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+                  />
                 </div>
               </div>
             ))}
+
+            {/* Routine count */}
+            <p className="text-center text-xs text-[var(--neutral-foreground-3)]">
+              現在 {slots.length} / {MAX_ROUTINES} 件
+            </p>
+
+            {/* Add button */}
+            <button
+              type="button"
+              onClick={addSlot}
+              disabled={slots.length >= MAX_ROUTINES}
+              className="w-full rounded-md bg-[var(--status-info-fg)] py-3 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              + 毎日の支援を追加
+            </button>
+
+            {/* Action buttons */}
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => {
+                  queryClient.invalidateQueries({ queryKey: ['staff', 'daily-routines'] });
+                }}
+              >
+                キャンセル
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleSave}
+                isLoading={saveMutation.isPending}
+                leftIcon={<Save className="h-4 w-4" />}
+              >
+                保存する
+              </Button>
+            </div>
           </div>
         )}
       </Card>
-
-      {/* Add/Edit Modal */}
-      <Modal isOpen={modalOpen} onClose={closeModal} title={editingRoutine ? '日課を編集' : '日課を追加'}>
-        <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(form); }} className="space-y-4">
-          <Input label="日課名" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required placeholder="例: 朝の会、昼食" />
-          <div className="grid grid-cols-2 gap-4">
-            <Input label="開始時間" type="time" value={form.start_time} onChange={(e) => setForm({ ...form, start_time: e.target.value })} required />
-            <Input label="終了時間" type="time" value={form.end_time} onChange={(e) => setForm({ ...form, end_time: e.target.value })} required />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">説明（任意）</label>
-            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] px-3 py-2 text-sm" rows={2} />
-          </div>
-          <label className="flex items-center gap-2">
-            <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="rounded border-[var(--neutral-stroke-2)]" />
-            <span className="text-sm text-[var(--neutral-foreground-2)]">有効にする</span>
-          </label>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="secondary" type="button" onClick={closeModal}>キャンセル</Button>
-            <Button type="submit" isLoading={saveMutation.isPending}>保存</Button>
-          </div>
-        </form>
-      </Modal>
     </div>
   );
 }

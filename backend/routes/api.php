@@ -331,6 +331,7 @@ Route::prefix('staff')
         Route::put('/daily-routines/{routine}', [App\Http\Controllers\Staff\DailyRoutineController::class, 'update']);
         Route::delete('/daily-routines/{routine}', [App\Http\Controllers\Staff\DailyRoutineController::class, 'destroy']);
         Route::post('/daily-routines/reorder', [App\Http\Controllers\Staff\DailyRoutineController::class, 'reorder']); // (#26)
+        Route::post('/daily-routines/batch-save', [App\Http\Controllers\Staff\DailyRoutineController::class, 'batchSave']);
 
         // --- 一括登録 ---
         Route::post('/bulk-register/parse', [App\Http\Controllers\Staff\BulkRegisterController::class, 'parse']);
