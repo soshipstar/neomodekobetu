@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
+import { SignaturePad, type SignaturePadRef } from '@/components/ui/SignaturePad';
 import {
   Plus,
   Pencil,
@@ -83,7 +84,8 @@ interface PlanFullData {
   short_term_goal_date: string;
   manager_name: string;
   consent_date: string;
-  guardian_signature_text: string;
+  guardian_signature: string;
+  staff_signature: string;
   signature_status: string;
   details: SupportPlanDetail[];
 }
@@ -98,7 +100,6 @@ interface PlanForm {
   short_term_goal_date: string;
   manager_name: string;
   consent_date: string;
-  guardian_signature_text: string;
   details: SupportPlanDetail[];
 }
 
@@ -126,7 +127,6 @@ const emptyForm = (): PlanForm => ({
   short_term_goal_date: '',
   manager_name: '',
   consent_date: '',
-  guardian_signature_text: '',
   details: DEFAULT_DETAILS.map((d) => ({ ...d })),
 });
 
@@ -185,6 +185,14 @@ export default function KobetsuPlanPage() {
   const [form, setForm] = useState<PlanForm>(emptyForm());
   const [generating, setGenerating] = useState(false);
 
+  // Signature pad refs
+  const staffSigRef = useRef<SignaturePadRef>(null);
+  const guardianSigRef = useRef<SignaturePadRef>(null);
+
+  // Existing signature images (loaded from backend for read-only display)
+  const [existingStaffSig, setExistingStaffSig] = useState<string | undefined>(undefined);
+  const [existingGuardianSig, setExistingGuardianSig] = useState<string | undefined>(undefined);
+
   // ------ Data fetching ------
 
   const { data: students = [], isLoading: loadingStudents } = useQuery({
@@ -214,7 +222,6 @@ export default function KobetsuPlanPage() {
     ...data,
     life_intention: data.guardian_wish,
     consent_name: data.manager_name,
-    guardian_signature: data.guardian_signature_text,
   });
 
   const createMutation = useMutation({
@@ -269,7 +276,7 @@ export default function KobetsuPlanPage() {
   });
 
   const signMutation = useMutation({
-    mutationFn: (data: { id: number; guardian_signature_text: string; consent_date: string; manager_name: string }) =>
+    mutationFn: (data: { id: number; staff_signature: string; staff_signer_name: string; guardian_signature?: string }) =>
       api.post(`/api/staff/support-plans/${data.id}/sign`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'support-plans', 'individual'] });
@@ -285,6 +292,8 @@ export default function KobetsuPlanPage() {
     setEditingPlanId(null);
     setIsReadOnly(false);
     setForm(emptyForm());
+    setExistingStaffSig(undefined);
+    setExistingGuardianSig(undefined);
     setView('editor');
   };
 
@@ -304,7 +313,6 @@ export default function KobetsuPlanPage() {
         short_term_goal_date: dt(p.short_term_goal_date),
         manager_name: p.consent_name || p.manager_name || '',
         consent_date: dt(p.consent_date),
-        guardian_signature_text: p.guardian_signature || p.guardian_signature_text || '',
         details: p.details && p.details.length > 0
           ? p.details.map((d: any) => ({
               ...d,
@@ -316,6 +324,9 @@ export default function KobetsuPlanPage() {
             }))
           : DEFAULT_DETAILS.map((d) => ({ ...d })),
       });
+      // Load existing signature images
+      setExistingStaffSig(p.staff_signature || undefined);
+      setExistingGuardianSig(p.guardian_signature || undefined);
       // Track if plan is official (read-only)
       setIsReadOnly(p.is_official === true || p.status === 'official');
       setView('editor');
@@ -343,12 +354,23 @@ export default function KobetsuPlanPage() {
 
   const handleSign = () => {
     if (!editingPlanId) return;
-    signMutation.mutate({
+    if (!staffSigRef.current || staffSigRef.current.isEmpty()) {
+      toast.error('職員の署名を記入してください');
+      return;
+    }
+    if (!form.manager_name.trim()) {
+      toast.error('管理責任者氏名を入力してください');
+      return;
+    }
+    const payload: { id: number; staff_signature: string; staff_signer_name: string; guardian_signature?: string } = {
       id: editingPlanId,
-      guardian_signature_text: form.guardian_signature_text,
-      consent_date: form.consent_date,
-      manager_name: form.manager_name,
-    });
+      staff_signature: staffSigRef.current.toDataURL(),
+      staff_signer_name: form.manager_name,
+    };
+    if (guardianSigRef.current && !guardianSigRef.current.isEmpty()) {
+      payload.guardian_signature = guardianSigRef.current.toDataURL();
+    }
+    signMutation.mutate(payload);
   };
 
   const handleAIGenerate = async () => {
@@ -736,31 +758,46 @@ export default function KobetsuPlanPage() {
               <CardTitle>D. 同意・署名</CardTitle>
             </CardHeader>
             <CardBody>
-              <div className="grid gap-4 md:grid-cols-2">
-                <Input
-                  label="管理責任者氏名"
-                  value={form.manager_name}
-                  onChange={(e) => setForm({ ...form, manager_name: e.target.value })}
-                  placeholder="管理責任者名を入力..."
-                />
-                <Input
-                  label="同意日"
-                  type="date"
-                  value={form.consent_date}
-                  onChange={(e) => setForm({ ...form, consent_date: e.target.value })}
-                />
-                <Input
-                  label="保護者署名（テキスト）"
-                  value={form.guardian_signature_text}
-                  onChange={(e) => setForm({ ...form, guardian_signature_text: e.target.value })}
-                  placeholder="保護者名を入力..."
-                />
-                <div>
-                  <label className={labelClass}>署名状況</label>
-                  <div className="flex items-center gap-2 rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-2)] px-3 py-2 text-sm text-[var(--neutral-foreground-3)]">
-                    {form.guardian_signature_text
-                      ? `署名済み: ${form.guardian_signature_text}`
-                      : '未署名'}
+              <div className="space-y-6">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Input
+                    label="管理責任者氏名"
+                    value={form.manager_name}
+                    onChange={(e) => setForm({ ...form, manager_name: e.target.value })}
+                    placeholder="管理責任者名を入力..."
+                  />
+                  <Input
+                    label="同意日"
+                    type="date"
+                    value={form.consent_date}
+                    onChange={(e) => setForm({ ...form, consent_date: e.target.value })}
+                  />
+                </div>
+
+                {/* Signature pads */}
+                <div className="grid gap-6 md:grid-cols-2">
+                  {/* Staff signature */}
+                  <div>
+                    <SignaturePad
+                      ref={staffSigRef}
+                      label="職員署名（署名してください）"
+                      readOnly={isReadOnly}
+                      initialValue={existingStaffSig}
+                      width={400}
+                      height={150}
+                    />
+                  </div>
+
+                  {/* Guardian signature */}
+                  <div>
+                    <SignaturePad
+                      ref={guardianSigRef}
+                      label="保護者署名（署名してください）"
+                      readOnly={isReadOnly}
+                      initialValue={existingGuardianSig}
+                      width={400}
+                      height={150}
+                    />
                   </div>
                 </div>
               </div>
