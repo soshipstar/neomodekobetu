@@ -69,7 +69,7 @@ const PRIORITY_VARIANT: Record<string, 'info' | 'warning' | 'danger'> = {
 
 export default function StaffAnnouncementsPage() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
+  const toast = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<AnnouncementForm>(emptyForm());
