@@ -181,9 +181,28 @@ class StaffStudentChatController extends Controller
 
     /**
      * メッセージを削除（論理削除）
+     * 自分が送信したメッセージのみ削除可能（レガシー互換）
      */
     public function deleteMessage(Request $request, StudentChatMessage $message): JsonResponse
     {
+        $user = $request->user();
+
+        // 生徒が送信したメッセージはスタッフ側から削除不可
+        if ($message->sender_type !== 'staff') {
+            return response()->json([
+                'success' => false,
+                'message' => '削除権限がありません。',
+            ], 403);
+        }
+
+        // 自分が送信したメッセージかチェック
+        if ($message->sender_id !== $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => '削除権限がありません。',
+            ], 403);
+        }
+
         $message->update(['is_deleted' => true]);
 
         return response()->json([
