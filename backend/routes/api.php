@@ -463,7 +463,9 @@ Route::prefix('student')
         // 提出物
         Route::get('/submissions', [App\Http\Controllers\Student\SubmissionController::class, 'index']);
         Route::post('/submissions', [App\Http\Controllers\Student\SubmissionController::class, 'store']);
-        Route::post('/submissions/{submissionRequest}/submit', [App\Http\Controllers\Student\SubmissionController::class, 'submit']); // (#40)
+        Route::post('/submissions/complete', [App\Http\Controllers\Student\SubmissionController::class, 'complete']);
+        Route::post('/submissions/uncomplete', [App\Http\Controllers\Student\SubmissionController::class, 'uncomplete']);
+        Route::delete('/submissions/{id}', [App\Http\Controllers\Student\SubmissionController::class, 'destroy']);
 
         // --- 週間計画 ---
         Route::get('/weekly-plans', [App\Http\Controllers\Student\StudentWeeklyPlanController::class, 'index']);

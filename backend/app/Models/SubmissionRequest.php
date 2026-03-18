@@ -60,4 +60,10 @@ class SubmissionRequest extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    /** @return BelongsTo<ChatRoom, self> */
+    public function chatRoom(): BelongsTo
+    {
+        return $this->belongsTo(ChatRoom::class, 'room_id');
+    }
 }
