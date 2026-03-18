@@ -13,6 +13,8 @@ class Holiday extends Model
         'classroom_id',
         'holiday_date',
         'holiday_name',
+        'holiday_type',
+        'created_by',
     ];
 
     protected function casts(): array

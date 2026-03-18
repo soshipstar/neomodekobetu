@@ -40,6 +40,12 @@ class Event extends Model
         return $this->belongsTo(Classroom::class);
     }
 
+    /** @return BelongsTo<User, self> */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
     /** @return HasMany<EventRegistration> */
     public function registrations(): HasMany
     {
