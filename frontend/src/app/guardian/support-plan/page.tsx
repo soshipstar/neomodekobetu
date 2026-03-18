@@ -122,17 +122,17 @@ export default function GuardianSupportPlanPage() {
   };
 
   if (isLoading) {
-    return <div className="space-y-4"><h1 className="text-2xl font-bold text-gray-900">個別支援計画</h1><SkeletonCard /><SkeletonCard /></div>;
+    return <div className="space-y-4"><h1 className="text-2xl font-bold text-gray-900">個別支援計画書</h1><SkeletonCard /><SkeletonCard /></div>;
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">個別支援計画</h1>
+      <h1 className="text-2xl font-bold text-gray-900">個別支援計画書</h1>
 
       {/* Pending review banner */}
       {plans && plans.some((p) => !p.is_draft && !p.guardian_review_comment && !p.guardian_signature) && (
         <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-3 text-sm text-yellow-700">
-          確認待ちの個別支援計画があります。内容をご確認のうえ、承認またはコメントの送信をお願いします。
+          確認待ちの個別支援計画書があります。内容をご確認のうえ、承認またはコメントの送信をお願いします。
         </div>
       )}
 
@@ -286,14 +286,14 @@ export default function GuardianSupportPlanPage() {
           })}
         </div>
       ) : (
-        <Card><CardBody><p className="py-8 text-center text-sm text-gray-500">個別支援計画がありません</p></CardBody></Card>
+        <Card><CardBody><p className="py-8 text-center text-sm text-gray-500">個別支援計画書がありません</p></CardBody></Card>
       )}
 
       {/* Confirm + Review Modal */}
       <Modal
         isOpen={confirmModal}
         onClose={() => { setConfirmModal(false); setConfirmingPlan(null); setCommentMode(false); }}
-        title="個別支援計画の確認"
+        title="個別支援計画書の確認"
         size="lg"
       >
         <div className="space-y-5">

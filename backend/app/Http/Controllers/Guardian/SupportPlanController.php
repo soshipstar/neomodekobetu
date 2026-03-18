@@ -84,9 +84,12 @@ class SupportPlanController extends Controller
         }
 
         $plan->update([
-            'guardian_signature'      => $request->signature,
-            'guardian_signature_date' => now()->toDateString(),
-            'guardian_reviewed_at'    => now(),
+            'guardian_signature'       => $request->signature,
+            'guardian_signature_image' => $request->signature,
+            'guardian_signature_date'  => now()->toDateString(),
+            'guardian_confirmed'       => true,
+            'guardian_confirmed_at'    => now(),
+            'guardian_reviewed_at'     => now(),
         ]);
 
         return response()->json([
