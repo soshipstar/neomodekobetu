@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Staff;
 use App\Http\Controllers\Controller;
 use App\Models\AbsenceNotification;
 use App\Models\AdditionalUsage;
+use App\Models\ChatMessage;
+use App\Models\ChatRoom;
 use App\Models\Student;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class AdditionalUsageController extends Controller
@@ -118,7 +121,9 @@ class AdditionalUsageController extends Controller
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
-        DB::transaction(function () use ($validated, $user) {
+        $cancelledDates = [];
+
+        DB::transaction(function () use ($validated, $user, $student, &$cancelledDates) {
             foreach ($validated['changes'] as $change) {
                 $date = $change['date'];
                 $studentId = $validated['student_id'];
@@ -142,6 +147,7 @@ class AdditionalUsageController extends Controller
                             ['student_id' => $studentId, 'absence_date' => $date],
                             ['reason' => 'スタッフによるキャンセル', 'makeup_status' => 'none']
                         );
+                        $cancelledDates[] = $date;
                         break;
 
                     case 'restore':
@@ -149,6 +155,30 @@ class AdditionalUsageController extends Controller
                             ->where('absence_date', $date)
                             ->delete();
                         break;
+                }
+            }
+
+            // Send chat notifications for cancelled dates
+            if (! empty($cancelledDates)) {
+                $room = ChatRoom::where('student_id', $student->id)->first();
+
+                if ($room) {
+                    $dayOfWeekMap = ['日', '月', '火', '水', '木', '金', '土'];
+
+                    foreach ($cancelledDates as $date) {
+                        $dateObj = Carbon::parse($date);
+                        $dateStr = $dateObj->format('n月j日');
+                        $dayOfWeek = $dayOfWeekMap[(int) $dateObj->format('w')];
+
+                        ChatMessage::create([
+                            'room_id'     => $room->id,
+                            'sender_id'   => $user->id,
+                            'sender_type' => 'staff',
+                            'message'     => "【利用日変更】{$student->student_name}さんの{$dateStr}({$dayOfWeek})の利用がキャンセルされました。",
+                        ]);
+                    }
+
+                    $room->update(['last_message_at' => now()]);
                 }
             }
         });

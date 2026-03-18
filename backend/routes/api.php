@@ -205,6 +205,7 @@ Route::prefix('staff')
         // --- 出欠 ---
         Route::get('/attendance', [App\Http\Controllers\Staff\AttendanceController::class, 'index']);
         Route::put('/absence/{absence}/makeup', [App\Http\Controllers\Staff\AttendanceController::class, 'approveMakeup']);
+        Route::put('/absence/{absence}/note', [App\Http\Controllers\Staff\AttendanceController::class, 'updateMakeupNote']);
 
         // --- 週間計画 ---
         Route::get('/weekly-plans', [App\Http\Controllers\Staff\WeeklyPlanController::class, 'index']);

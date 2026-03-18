@@ -132,4 +132,34 @@ class AttendanceController extends Controller
             'message' => $action === 'approve' ? '承認しました。' : '却下しました。',
         ]);
     }
+
+    /**
+     * 振替メモを更新（ステータス変更なし）
+     */
+    public function updateMakeupNote(Request $request, AbsenceNotification $absence): JsonResponse
+    {
+        $user = $request->user();
+
+        // 教室アクセス権チェック
+        if ($user->classroom_id) {
+            $absence->load('student');
+            if ($absence->student->classroom_id !== $user->classroom_id) {
+                return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+            }
+        }
+
+        $validated = $request->validate([
+            'makeup_note' => 'required|string|max:500',
+        ]);
+
+        $absence->update([
+            'makeup_note' => $validated['makeup_note'],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $absence->fresh(),
+            'message' => 'メモを保存しました。',
+        ]);
+    }
 }
