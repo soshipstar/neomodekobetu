@@ -21,6 +21,7 @@ class Event extends Model
         'staff_comment',
         'guardian_message',
         'created_by',
+        'max_capacity',
     ];
 
     protected function casts(): array

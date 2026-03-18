@@ -298,6 +298,7 @@ Route::prefix('staff')
         Route::post('/events', [App\Http\Controllers\Staff\StaffEventController::class, 'store']);
         Route::put('/events/{event}', [App\Http\Controllers\Staff\StaffEventController::class, 'update']);
         Route::delete('/events/{event}', [App\Http\Controllers\Staff\StaffEventController::class, 'destroy']);
+        Route::post('/events/{event}/register', [App\Http\Controllers\Staff\StaffEventController::class, 'register']);
         Route::get('/events/{event}/registrations', [App\Http\Controllers\Staff\StaffEventController::class, 'registrations']); // (#24)
 
         // --- 休日（スタッフレベル） ---

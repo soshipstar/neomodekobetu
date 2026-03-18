@@ -49,7 +49,7 @@ class StaffEventController extends Controller
             'start_time'         => null,
             'end_time'           => null,
             'location'           => null,
-            'capacity'           => null,
+            'capacity'           => $e->max_capacity,
             'registration_count' => $e->registrations_count ?? 0,
             'is_published'       => true,
             'event_color'        => $e->event_color,
@@ -80,6 +80,7 @@ class StaffEventController extends Controller
             'event_color'       => 'nullable|string|max:20',
             'staff_comment'     => 'nullable|string|max:1000',
             'guardian_message'  => 'nullable|string|max:1000',
+            'max_capacity'     => 'nullable|integer|min:1',
         ]);
 
         $event = Event::create([
@@ -92,6 +93,7 @@ class StaffEventController extends Controller
             'event_color'       => $validated['event_color'] ?? null,
             'staff_comment'     => $validated['staff_comment'] ?? null,
             'guardian_message'  => $validated['guardian_message'] ?? null,
+            'max_capacity'     => $validated['max_capacity'] ?? null,
         ]);
 
         return response()->json([
@@ -123,6 +125,7 @@ class StaffEventController extends Controller
             'event_color'       => 'nullable|string|max:20',
             'staff_comment'     => 'nullable|string|max:1000',
             'guardian_message'  => 'nullable|string|max:1000',
+            'max_capacity'     => 'nullable|integer|min:1',
         ]);
 
         $updateData = [];
@@ -135,7 +138,7 @@ class StaffEventController extends Controller
         if (isset($validated['date']) || isset($validated['event_date'])) {
             $updateData['event_date'] = $validated['date'] ?? $validated['event_date'];
         }
-        foreach (['target_audience', 'event_color', 'staff_comment', 'guardian_message'] as $f) {
+        foreach (['target_audience', 'event_color', 'staff_comment', 'guardian_message', 'max_capacity'] as $f) {
             if (array_key_exists($f, $validated)) $updateData[$f] = $validated[$f];
         }
 
@@ -165,6 +168,50 @@ class StaffEventController extends Controller
             'success' => true,
             'message' => '削除しました。',
         ]);
+    }
+
+    /**
+     * イベントに参加登録（定員チェック付き）
+     */
+    public function register(Request $request, Event $event): JsonResponse
+    {
+        $validated = $request->validate([
+            'student_id'  => 'required|exists:students,id',
+            'guardian_id' => 'nullable|exists:users,id',
+            'notes'       => 'nullable|string|max:1000',
+        ]);
+
+        // Capacity check
+        if ($event->max_capacity !== null) {
+            $currentCount = $event->registrations()
+                ->where('status', 'registered')
+                ->count();
+
+            if ($currentCount >= $event->max_capacity) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'このイベントは定員に達しています。',
+                ], 422);
+            }
+        }
+
+        $registration = EventRegistration::updateOrCreate(
+            [
+                'event_id'   => $event->id,
+                'student_id' => $validated['student_id'],
+            ],
+            [
+                'guardian_id' => $validated['guardian_id'] ?? null,
+                'status'      => 'registered',
+                'notes'       => $validated['notes'] ?? null,
+            ]
+        );
+
+        return response()->json([
+            'success' => true,
+            'data'    => $registration,
+            'message' => '参加登録しました。',
+        ], 201);
     }
 
     /**

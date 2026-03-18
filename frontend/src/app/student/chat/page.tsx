@@ -59,8 +59,8 @@ export default function StudentChatPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] flex-col lg:h-[calc(100vh-5rem)]">
-      <div className="border-b border-gray-200 bg-white px-4 py-3">
+    <div className="flex h-[calc(100vh-6rem)] flex-col sm:h-[calc(100vh-7rem)] lg:h-[calc(100vh-5rem)]">
+      <div className="border-b border-gray-200 bg-white px-3 py-2 sm:px-4 sm:py-3">
         <h2 className="text-sm font-semibold text-gray-900">チャット</h2>
       </div>
       <div className="flex-1 overflow-y-auto bg-gray-50">
