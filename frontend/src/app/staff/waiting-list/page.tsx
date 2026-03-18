@@ -1,14 +1,13 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { UserPlus, CheckCircle2, Users, Clock } from 'lucide-react';
+import { UserPlus, CheckCircle2, Users, Clock, Settings, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 
@@ -17,13 +16,13 @@ import Link from 'next/link';
 // ---------------------------------------------------------------------------
 
 const DAYS = [
-  { key: 'desired_monday', label: '月', day: 'monday' },
-  { key: 'desired_tuesday', label: '火', day: 'tuesday' },
-  { key: 'desired_wednesday', label: '水', day: 'wednesday' },
-  { key: 'desired_thursday', label: '木', day: 'thursday' },
-  { key: 'desired_friday', label: '金', day: 'friday' },
-  { key: 'desired_saturday', label: '土', day: 'saturday' },
-  { key: 'desired_sunday', label: '日', day: 'sunday' },
+  { key: 'desired_monday', label: '月', day: 'monday', dow: 1 },
+  { key: 'desired_tuesday', label: '火', day: 'tuesday', dow: 2 },
+  { key: 'desired_wednesday', label: '水', day: 'wednesday', dow: 3 },
+  { key: 'desired_thursday', label: '木', day: 'thursday', dow: 4 },
+  { key: 'desired_friday', label: '金', day: 'friday', dow: 5 },
+  { key: 'desired_saturday', label: '土', day: 'saturday', dow: 6 },
+  { key: 'desired_sunday', label: '日', day: 'sunday', dow: 0 },
 ] as const;
 
 const DAY_LABELS: Record<string, string> = {
@@ -31,10 +30,27 @@ const DAY_LABELS: Record<string, string> = {
   friday: '金', saturday: '土', sunday: '日',
 };
 
+const DAY_LONG_LABELS: Record<string, string> = {
+  monday: '月曜日', tuesday: '火曜日', wednesday: '水曜日', thursday: '木曜日',
+  friday: '金曜日', saturday: '土曜日', sunday: '日曜日',
+};
+
+const GRADE_LABELS: Record<string, string> = {
+  preschool: '未就学',
+  elementary: '小学生',
+  elementary_1: '小1', elementary_2: '小2', elementary_3: '小3',
+  elementary_4: '小4', elementary_5: '小5', elementary_6: '小6',
+  junior_high: '中学生',
+  junior_high_1: '中1', junior_high_2: '中2', junior_high_3: '中3',
+  high_school: '高校生',
+  high_school_1: '高1', high_school_2: '高2', high_school_3: '高3',
+};
+
 interface WaitingStudent {
   id: number;
   student_name: string;
   birth_date: string | null;
+  grade_level: string | null;
   guardian_name: string;
   guardian_email: string | null;
   desired_start_date: string | null;
@@ -55,11 +71,24 @@ interface DaySummary {
   day: string;
   waiting_count: number;
   active_count: number;
+  max_capacity: number;
+  is_open: boolean;
+  available: number;
+}
+
+interface DayStudentEntry {
+  id: number;
+  student_name: string;
+  grade_level: string | null;
+  status?: string;
+  desired_start_date?: string | null;
+  guardian_name: string;
 }
 
 interface Summary {
   days: DaySummary[];
   total_waiting: number;
+  day_students: Record<string, { enrolled: DayStudentEntry[]; waiting: DayStudentEntry[] }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -69,6 +98,9 @@ interface Summary {
 export default function WaitingListPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const [selectedDay, setSelectedDay] = useState<string>('monday');
+  const [showCapacitySettings, setShowCapacitySettings] = useState(false);
+  const [capacityForm, setCapacityForm] = useState<Record<number, { max_capacity: number; is_open: boolean }>>({});
 
   // Fetch waiting students
   const { data: students = [], isLoading } = useQuery({
@@ -80,7 +112,7 @@ export default function WaitingListPage() {
     },
   });
 
-  // Fetch summary (day-by-day counts)
+  // Fetch summary (day-by-day counts + capacity + day student lists)
   const { data: summary } = useQuery({
     queryKey: ['staff', 'waiting-list', 'summary'],
     queryFn: async () => {
@@ -89,12 +121,16 @@ export default function WaitingListPage() {
     },
   });
 
-  // Total desired days across all waiting students
-  const totalDesiredDays = useMemo(() => {
-    return students.reduce((sum, s) => {
-      return sum + DAYS.filter(d => s[d.key as keyof WaitingStudent]).length;
-    }, 0);
-  }, [students]);
+  // Initialize capacity form from summary data
+  const initCapacityForm = useCallback(() => {
+    if (!summary) return;
+    const form: Record<number, { max_capacity: number; is_open: boolean }> = {};
+    for (const d of summary.days) {
+      const dow = DAYS.find(dd => dd.day === d.day)?.dow ?? 0;
+      form[dow] = { max_capacity: d.max_capacity, is_open: d.is_open };
+    }
+    setCapacityForm(form);
+  }, [summary]);
 
   // Enroll mutation
   const enrollMutation = useMutation({
@@ -102,17 +138,54 @@ export default function WaitingListPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'waiting-list'] });
       queryClient.invalidateQueries({ queryKey: ['staff', 'students'] });
-      toast.success('入所処理しました（希望曜日が参加予定曜日にコピーされました）');
+      toast.success('入所処理しました（希望曜日が利用曜日に自動設定されました）');
     },
     onError: () => toast.error('入所処理に失敗しました'),
   });
+
+  // Save capacity mutation
+  const capacityMutation = useMutation({
+    mutationFn: (capacities: { day_of_week: number; max_capacity: number; is_open: boolean }[]) =>
+      api.put('/api/staff/waiting-list-capacity', { capacities }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['staff', 'waiting-list', 'summary'] });
+      toast.success('営業日・定員設定を更新しました');
+      setShowCapacitySettings(false);
+    },
+    onError: () => toast.error('設定の保存に失敗しました'),
+  });
+
+  // Group students by desired_start_date (legacy behavior)
+  const groupedStudents = useMemo(() => {
+    const groups: Record<string, WaitingStudent[]> = {};
+    for (const s of students) {
+      const dateKey = s.desired_start_date || '9999-99-99';
+      if (!groups[dateKey]) groups[dateKey] = [];
+      groups[dateKey].push(s);
+    }
+    // Sort keys chronologically
+    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+  }, [students]);
+
+  const handleSaveCapacity = () => {
+    const capacities = Object.entries(capacityForm).map(([dow, val]) => ({
+      day_of_week: Number(dow),
+      max_capacity: val.max_capacity,
+      is_open: val.is_open,
+    }));
+    capacityMutation.mutate(capacities);
+  };
+
+  // Selected day detail data
+  const selectedDaySummary = summary?.days.find(d => d.day === selectedDay);
+  const selectedDayStudents = summary?.day_students?.[selectedDay];
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">待機児童管理</h1>
-          <p className="text-sm text-[var(--neutral-foreground-3)]">待機中の児童一覧（{students.length}名）</p>
+          <p className="text-sm text-[var(--neutral-foreground-3)]">空き状況の確認と待機児童の管理</p>
         </div>
         <Link href="/staff/students">
           <Button variant="outline" size="sm" leftIcon={<UserPlus className="h-4 w-4" />}>
@@ -122,81 +195,251 @@ export default function WaitingListPage() {
       </div>
 
       {/* ================================================================= */}
-      {/* Summary Cards                                                     */}
+      {/* Capacity Settings (営業日・定員設定)                               */}
       {/* ================================================================= */}
-      {summary && (
-        <div className="space-y-3">
-          {/* Top-level stats */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <Card>
-              <CardBody>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100">
-                    <Clock className="h-5 w-5 text-orange-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-[var(--neutral-foreground-1)]">{summary.total_waiting}</p>
-                    <p className="text-xs text-[var(--neutral-foreground-3)]">待機児童数</p>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-            <Card>
-              <CardBody>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
-                    <Users className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-[var(--neutral-foreground-1)]">
-                      {summary.days.reduce((s, d) => s + d.active_count, 0) > 0
-                        ? Math.round(summary.days.reduce((s, d) => s + d.active_count, 0) / summary.days.filter(d => d.active_count > 0).length)
-                        : 0}
-                    </p>
-                    <p className="text-xs text-[var(--neutral-foreground-3)]">平均利用者数/日</p>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-            <Card>
-              <CardBody>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
-                    <Clock className="h-5 w-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-[var(--neutral-foreground-1)]">{totalDesiredDays}</p>
-                    <p className="text-xs text-[var(--neutral-foreground-3)]">合計待機日数</p>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
+      <Card>
+        <CardBody>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-[var(--neutral-foreground-2)]">営業日・定員設定</h3>
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<Settings className="h-3.5 w-3.5" />}
+              onClick={() => { setShowCapacitySettings(!showCapacitySettings); if (!showCapacitySettings) initCapacityForm(); }}
+            >
+              {showCapacitySettings ? '閉じる' : '設定変更'}
+            </Button>
           </div>
-
-          {/* Day-by-day breakdown */}
-          <Card>
-            <CardBody>
-              <h3 className="text-sm font-semibold text-[var(--neutral-foreground-2)] mb-3">曜日別 利用者数・待機数</h3>
-              <div className="grid grid-cols-7 gap-2">
-                {summary.days.map((d) => (
-                  <div key={d.day} className="rounded-lg border border-[var(--neutral-stroke-2)] p-3 text-center">
-                    <p className="text-sm font-bold text-[var(--neutral-foreground-1)] mb-2">
-                      {DAY_LABELS[d.day] || d.day}
+          {showCapacitySettings && (
+            <div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
+                {DAYS.map(({ label, dow, day }) => (
+                  <div key={day} className="rounded-lg border border-[var(--neutral-stroke-2)] p-3 text-center">
+                    <p className={`text-sm font-bold mb-2 ${day === 'sunday' ? 'text-red-500' : day === 'saturday' ? 'text-blue-500' : 'text-[var(--neutral-foreground-1)]'}`}>
+                      {DAY_LONG_LABELS[day]}
                     </p>
-                    <div className="space-y-1.5">
-                      <div>
-                        <p className="text-lg font-bold text-blue-600">{d.active_count}</p>
-                        <p className="text-[9px] text-[var(--neutral-foreground-4)]">利用者</p>
-                      </div>
-                      <div className="border-t border-[var(--neutral-stroke-3)] pt-1.5">
-                        <p className={`text-lg font-bold ${d.waiting_count > 0 ? 'text-orange-600' : 'text-[var(--neutral-foreground-4)]'}`}>
-                          {d.waiting_count}
-                        </p>
-                        <p className="text-[9px] text-[var(--neutral-foreground-4)]">待機</p>
-                      </div>
+                    <label className="flex items-center justify-center gap-1.5 text-xs mb-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={capacityForm[dow]?.is_open ?? true}
+                        onChange={(e) => setCapacityForm(prev => ({
+                          ...prev,
+                          [dow]: { ...prev[dow], is_open: e.target.checked },
+                        }))}
+                      />
+                      営業日
+                    </label>
+                    <div>
+                      <label className="text-[10px] text-[var(--neutral-foreground-3)]">定員</label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={capacityForm[dow]?.max_capacity ?? 10}
+                        onChange={(e) => setCapacityForm(prev => ({
+                          ...prev,
+                          [dow]: { ...prev[dow], max_capacity: Number(e.target.value) },
+                        }))}
+                        className="w-16 mx-auto block rounded border border-[var(--neutral-stroke-2)] px-2 py-1 text-center text-sm"
+                      />
+                      <span className="text-[10px] text-[var(--neutral-foreground-3)]">名</span>
                     </div>
                   </div>
                 ))}
+              </div>
+              <div className="text-right">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<Save className="h-3.5 w-3.5" />}
+                  onClick={handleSaveCapacity}
+                  isLoading={capacityMutation.isPending}
+                >
+                  設定を保存
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardBody>
+      </Card>
+
+      {/* ================================================================= */}
+      {/* Day-by-day availability (曜日別 空き状況)                          */}
+      {/* ================================================================= */}
+      {summary && (
+        <Card>
+          <CardBody>
+            <h3 className="text-sm font-semibold text-[var(--neutral-foreground-2)] mb-1">曜日別 空き状況</h3>
+            <p className="text-[10px] text-[var(--neutral-foreground-4)] mb-3">カードをクリックすると、その曜日の利用者一覧が表示されます</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 mb-4">
+              {summary.days.map((d) => {
+                const isOpen = d.is_open;
+                const isFull = isOpen && d.available === 0;
+                const isSelected = d.day === selectedDay;
+                return (
+                  <div
+                    key={d.day}
+                    onClick={() => setSelectedDay(d.day)}
+                    className={`rounded-lg border-2 p-3 text-center cursor-pointer transition-all hover:shadow-md ${
+                      !isOpen
+                        ? 'border-[var(--neutral-stroke-3)] opacity-60 bg-[var(--neutral-background-3)]'
+                        : isFull
+                          ? 'border-red-300 bg-red-50'
+                          : 'border-green-300 bg-green-50'
+                    } ${isSelected ? 'ring-2 ring-[var(--brand-80)] ring-offset-1' : ''}`}
+                  >
+                    <p className={`text-lg font-bold mb-1 ${
+                      d.day === 'sunday' ? 'text-red-500' : d.day === 'saturday' ? 'text-blue-500' : 'text-[var(--neutral-foreground-1)]'
+                    }`}>
+                      {DAY_LABELS[d.day]}
+                    </p>
+                    {isOpen ? (
+                      <>
+                        <p className="text-[10px] text-[var(--neutral-foreground-3)]">
+                          利用中: {d.active_count} / {d.max_capacity}名
+                        </p>
+                        <p className={`text-sm font-bold mt-1 px-2 py-0.5 rounded inline-block ${
+                          d.available > 0 ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                        }`}>
+                          {d.available > 0 ? `空き${d.available}名` : '満員'}
+                        </p>
+                        {d.waiting_count > 0 && (
+                          <p className="text-xs text-orange-500 mt-1 font-medium">待機 {d.waiting_count}名</p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-sm font-bold mt-1 px-2 py-0.5 rounded inline-block bg-gray-400 text-white">休業日</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Day tabs */}
+            <div className="flex flex-wrap gap-1 mb-3 border-t border-[var(--neutral-stroke-3)] pt-3">
+              {DAYS.map(({ day, label }) => (
+                <button
+                  key={day}
+                  onClick={() => setSelectedDay(day)}
+                  className={`px-3 py-1.5 rounded-lg border-2 text-sm font-semibold transition-all ${
+                    selectedDay === day
+                      ? 'bg-[var(--brand-80)] text-white border-[var(--brand-80)]'
+                      : `border-[var(--neutral-stroke-3)] bg-[var(--neutral-background-3)] hover:border-[var(--brand-80)] ${
+                        day === 'sunday' ? 'text-red-500' : day === 'saturday' ? 'text-blue-500' : ''
+                      }`
+                  }`}
+                >
+                  {DAY_LONG_LABELS[day]}
+                </button>
+              ))}
+            </div>
+
+            {/* Day detail content */}
+            {selectedDaySummary && (
+              <div>
+                {!selectedDaySummary.is_open ? (
+                  <p className="text-center py-6 text-[var(--neutral-foreground-4)]">この曜日は休業日です</p>
+                ) : (
+                  <>
+                    <h4 className="text-sm font-semibold mb-2">
+                      {DAY_LONG_LABELS[selectedDay]}の利用者 ({selectedDayStudents?.enrolled.length ?? 0}名)
+                    </h4>
+                    {selectedDayStudents && selectedDayStudents.enrolled.length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 mb-3">
+                        {selectedDayStudents.enrolled.map((s) => (
+                          <div key={s.id} className="bg-[var(--neutral-background-3)] px-3 py-2 rounded-lg text-sm">
+                            <span className="font-semibold">{s.student_name}</span>
+                            {s.status === 'trial' && (
+                              <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-600">体験</span>
+                            )}
+                            {s.status === 'short_term' && (
+                              <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-600">短期</span>
+                            )}
+                            <p className="text-xs text-[var(--neutral-foreground-3)]">
+                              {GRADE_LABELS[s.grade_level || ''] || s.grade_level || '-'}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-[var(--neutral-foreground-4)] py-3">利用者がいません</p>
+                    )}
+
+                    {selectedDayStudents && selectedDayStudents.waiting.length > 0 && (
+                      <div className="border-t border-dashed border-[var(--neutral-stroke-3)] pt-3 mt-3">
+                        <h4 className="text-sm font-semibold text-orange-500 mb-2">
+                          待機中 ({selectedDayStudents.waiting.length}名)
+                        </h4>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                          {selectedDayStudents.waiting.map((s) => (
+                            <div key={s.id} className="bg-[var(--neutral-background-3)] px-3 py-2 rounded-lg text-sm border-l-[3px] border-orange-400">
+                              <span className="font-semibold">{s.student_name}</span>
+                              <p className="text-xs text-[var(--neutral-foreground-3)]">
+                                {GRADE_LABELS[s.grade_level || ''] || s.grade_level || '-'}
+                                {s.desired_start_date && (
+                                  <> / 希望: {format(new Date(s.desired_start_date), 'M/d')}</>
+                                )}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </CardBody>
+        </Card>
+      )}
+
+      {/* ================================================================= */}
+      {/* Summary Stats                                                     */}
+      {/* ================================================================= */}
+      {summary && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <Card>
+            <CardBody>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100">
+                  <Clock className="h-5 w-5 text-orange-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-[var(--neutral-foreground-1)]">{summary.total_waiting}</p>
+                  <p className="text-xs text-[var(--neutral-foreground-3)]">待機児童数</p>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+          <Card>
+            <CardBody>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+                  <Users className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-[var(--neutral-foreground-1)]">
+                    {summary.days.filter(d => d.is_open).reduce((s, d) => s + d.active_count, 0) > 0
+                      ? Math.round(summary.days.filter(d => d.is_open).reduce((s, d) => s + d.active_count, 0) / summary.days.filter(d => d.is_open).length)
+                      : 0}
+                  </p>
+                  <p className="text-xs text-[var(--neutral-foreground-3)]">平均利用者数/日</p>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+          <Card>
+            <CardBody>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-[var(--neutral-foreground-1)]">
+                    {summary.days.filter(d => d.is_open && d.available > 0).length}
+                  </p>
+                  <p className="text-xs text-[var(--neutral-foreground-3)]">空きのある曜日数</p>
+                </div>
               </div>
             </CardBody>
           </Card>
@@ -204,84 +447,128 @@ export default function WaitingListPage() {
       )}
 
       {/* ================================================================= */}
-      {/* Waiting Students Table                                            */}
+      {/* Waiting Students List (入所希望日別一覧)                           */}
       {/* ================================================================= */}
-      {isLoading ? (
-        <div className="space-y-2">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}</div>
-      ) : students.length === 0 ? (
-        <Card>
-          <CardBody>
+      <Card>
+        <CardBody>
+          <h3 className="text-base font-semibold text-[var(--neutral-foreground-1)] mb-3">
+            待機児童一覧 ({students.length}名)
+          </h3>
+
+          {isLoading ? (
+            <div className="space-y-2">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}</div>
+          ) : students.length === 0 ? (
             <div className="py-12 text-center text-[var(--neutral-foreground-4)]">
               <UserPlus className="mx-auto mb-3 h-12 w-12" />
-              <p className="text-sm">待機児童はいません</p>
+              <p className="text-sm">現在、待機児童はいません。</p>
               <p className="mt-1 text-xs">生徒管理ページで状態を「待機」にすると、ここに表示されます</p>
             </div>
-          </CardBody>
-        </Card>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-[var(--neutral-stroke-2)]">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)]">
-                <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">児童名</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">保護者</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">希望開始日</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">希望曜日</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">備考</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">登録日</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {students.map((s) => (
-                <tr key={s.id} className="border-b border-[var(--neutral-stroke-3)] hover:bg-[var(--neutral-background-3)]">
-                  <td className="px-3 py-2 font-medium text-[var(--neutral-foreground-1)]">{s.student_name}</td>
-                  <td className="px-3 py-2 text-[var(--neutral-foreground-2)]">{s.guardian_name}</td>
-                  <td className="px-3 py-2 text-[var(--neutral-foreground-2)]">
-                    {s.desired_start_date ? format(new Date(s.desired_start_date), 'yyyy/MM/dd') : '-'}
-                  </td>
-                  <td className="px-3 py-2">
-                    <div className="flex gap-1">
-                      {DAYS.map(({ key, label }) => (
-                        <span
-                          key={key}
-                          className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${
-                            s[key as keyof WaitingStudent]
-                              ? 'bg-[var(--brand-80)] text-white'
-                              : 'bg-[var(--neutral-background-3)] text-[var(--neutral-foreground-4)]'
-                          }`}
-                        >
-                          {label}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-3 py-2 text-xs text-[var(--neutral-foreground-3)] max-w-[200px] truncate">
-                    {s.waiting_notes || '-'}
-                  </td>
-                  <td className="px-3 py-2 text-xs text-[var(--neutral-foreground-3)]">
-                    {format(new Date(s.created_at), 'yyyy/MM/dd')}
-                  </td>
-                  <td className="px-3 py-2">
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      leftIcon={<CheckCircle2 className="h-3.5 w-3.5" />}
-                      onClick={() => {
-                        if (confirm(`${s.student_name}を入所させますか？希望曜日が参加予定曜日にコピーされます。`))
-                          enrollMutation.mutate(s.id);
-                      }}
-                      isLoading={enrollMutation.isPending}
-                    >
-                      入所
-                    </Button>
-                  </td>
-                </tr>
+          ) : (
+            <>
+              {/* 曜日別待機人数サマリー */}
+              {summary && (
+                <div className="mb-4">
+                  <h4 className="text-xs font-semibold text-[var(--neutral-foreground-3)] mb-2">曜日別待機人数</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                    {summary.days.map((d) => (
+                      <div
+                        key={d.day}
+                        className={`rounded-lg bg-[var(--neutral-background-3)] p-2 text-center ${!d.is_open ? 'opacity-50' : ''}`}
+                      >
+                        <p className={`text-sm font-bold mb-0.5 ${
+                          d.day === 'sunday' ? 'text-red-500' : d.day === 'saturday' ? 'text-blue-500' : ''
+                        }`}>
+                          {DAY_LABELS[d.day]}
+                        </p>
+                        {d.is_open ? (
+                          d.waiting_count > 0 ? (
+                            <p className="text-lg font-bold text-orange-500">{d.waiting_count}名</p>
+                          ) : (
+                            <p className="text-xs text-[var(--neutral-foreground-4)]">待機なし</p>
+                          )
+                        ) : (
+                          <p className="text-xs text-[var(--neutral-foreground-4)]">休業日</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 入所希望日別一覧 (legacy grouped display) */}
+              <h4 className="text-xs font-semibold text-[var(--neutral-foreground-3)] mb-2">入所希望日別一覧</h4>
+              {groupedStudents.map(([dateKey, groupStudents]) => (
+                <div key={dateKey} className="mb-4 rounded-lg border border-[var(--neutral-stroke-2)] overflow-hidden">
+                  {/* Group header */}
+                  <div className="bg-orange-500 text-white px-3 py-2 text-sm font-semibold">
+                    {dateKey === '9999-99-99'
+                      ? '入所希望日 未定'
+                      : `${format(new Date(dateKey), 'yyyy年M月d日')} 入所希望`}
+                    <span className="ml-2 opacity-80">({groupStudents.length}名)</span>
+                  </div>
+                  <div className="p-3 space-y-2">
+                    {groupStudents.map((s) => (
+                      <div
+                        key={s.id}
+                        className="flex flex-wrap items-center gap-3 py-2 border-b border-[var(--neutral-stroke-3)] last:border-b-0"
+                      >
+                        {/* Name + grade */}
+                        <div className="min-w-[120px]">
+                          <p className="font-semibold text-sm text-[var(--neutral-foreground-1)]">{s.student_name}</p>
+                          <p className="text-xs text-[var(--neutral-foreground-3)]">
+                            {GRADE_LABELS[s.grade_level || ''] || s.grade_level || '-'}
+                          </p>
+                        </div>
+                        {/* Desired weekly count */}
+                        <div className="min-w-[80px]">
+                          {s.desired_weekly_count ? (
+                            <span className="bg-blue-500 text-white px-2 py-0.5 rounded text-xs font-semibold">
+                              週{s.desired_weekly_count}回
+                            </span>
+                          ) : (
+                            <span className="text-xs text-[var(--neutral-foreground-4)]">回数未定</span>
+                          )}
+                        </div>
+                        {/* Desired days */}
+                        <div className="flex gap-1 flex-1">
+                          {DAYS.map(({ key, label }) =>
+                            s[key as keyof WaitingStudent] ? (
+                              <span key={key} className="bg-[var(--brand-80)] text-white px-2 py-0.5 rounded text-xs font-medium">
+                                {label}
+                              </span>
+                            ) : null
+                          )}
+                        </div>
+                        {/* Notes */}
+                        {s.waiting_notes && (
+                          <div className="basis-full text-xs text-[var(--neutral-foreground-3)] pl-1 mt-0.5">
+                            備考: {s.waiting_notes}
+                          </div>
+                        )}
+                        {/* Admit button */}
+                        <div>
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            leftIcon={<CheckCircle2 className="h-3.5 w-3.5" />}
+                            onClick={() => {
+                              if (confirm(`${s.student_name}さんを入所させますか？\n希望曜日が利用曜日に自動設定されます。`))
+                                enrollMutation.mutate(s.id);
+                            }}
+                            isLoading={enrollMutation.isPending}
+                          >
+                            入所
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+            </>
+          )}
+        </CardBody>
+      </Card>
     </div>
   );
 }
