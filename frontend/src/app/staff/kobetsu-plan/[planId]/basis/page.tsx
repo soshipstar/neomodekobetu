@@ -1,13 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { useParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { ChevronLeft, Printer, FileText } from 'lucide-react';
+import { useToast } from '@/components/ui/Toast';
+import { ChevronLeft, Printer, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -30,6 +32,8 @@ interface BasisData {
     long_term_goal: string | null;
     life_intention: string | null;
     overall_policy: string | null;
+    basis_content: string | null;
+    basis_generated_at: string | null;
     student?: { id: number; student_name: string };
   };
   kakehashi_period: {
@@ -67,6 +71,11 @@ interface BasisData {
     overall_comment: string | null;
     details: { category: string; sub_category: string; achievement_status: string; monitoring_comment: string }[];
   } | null;
+  latest_monitoring?: {
+    monitoring_date: string;
+    overall_comment: string | null;
+    details: { category: string; sub_category: string; achievement_status: string; monitoring_comment: string }[];
+  } | null;
 }
 
 const ACHIEVEMENT_LABELS: Record<string, { label: string; color: string }> = {
@@ -80,12 +89,32 @@ const ACHIEVEMENT_LABELS: Record<string, { label: string; color: string }> = {
 export default function PlanBasisPage() {
   const params = useParams();
   const planId = params.planId as string;
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const [generating, setGenerating] = useState(false);
 
   const { data: basis, isLoading } = useQuery({
     queryKey: ['staff', 'support-plan-basis', planId],
     queryFn: async () => {
       const res = await api.get<{ data: BasisData }>(`/api/staff/support-plans/${planId}/basis`);
       return res.data.data;
+    },
+  });
+
+  const generateBasisMutation = useMutation({
+    mutationFn: async () => {
+      setGenerating(true);
+      const res = await api.post(`/api/staff/support-plans/${planId}/generate-basis`);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['staff', 'support-plan-basis', planId] });
+      toast.success('全体所感を生成しました');
+      setGenerating(false);
+    },
+    onError: () => {
+      toast.error('全体所感の生成に失敗しました');
+      setGenerating(false);
     },
   });
 
@@ -100,7 +129,9 @@ export default function PlanBasisPage() {
 
   if (!basis) return <div className="p-8 text-center">データが見つかりません</div>;
 
-  const { plan, kakehashi_period, guardian_kakehashi, staff_kakehashi, monitoring } = basis;
+  const { plan, kakehashi_period, guardian_kakehashi, staff_kakehashi } = basis;
+  // Support both field names from API
+  const monitoring = basis.monitoring || basis.latest_monitoring;
 
   return (
     <div className="space-y-4 print:space-y-3">
@@ -117,7 +148,18 @@ export default function PlanBasisPage() {
         <Link href="/staff/kobetsu-plan">
           <Button variant="ghost" size="sm" leftIcon={<ChevronLeft className="h-4 w-4" />}>個別支援計画に戻る</Button>
         </Link>
-        <Button leftIcon={<Printer className="h-4 w-4" />} onClick={() => window.print()}>印刷</Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            leftIcon={<Sparkles className="h-4 w-4" />}
+            onClick={() => generateBasisMutation.mutate()}
+            isLoading={generating}
+          >
+            {plan.basis_content ? '全体所感を再生成' : '全体所感をAI生成'}
+          </Button>
+          <Button leftIcon={<Printer className="h-4 w-4" />} onClick={() => window.print()}>印刷</Button>
+        </div>
       </div>
 
       <div className="text-center border-b-2 border-[var(--neutral-foreground-1)] pb-2 mb-4">
@@ -127,6 +169,27 @@ export default function PlanBasisPage() {
           {kakehashi_period && ` ・ 対象期間: ${formatDate(kakehashi_period.start_date)} ～ ${formatDate(kakehashi_period.end_date)}`}
         </p>
       </div>
+
+      {/* ============================================================== */}
+      {/* Section 0: AI-generated Basis Content (全体所感) */}
+      {/* ============================================================== */}
+      {plan.basis_content && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">全体所感</CardTitle>
+            {plan.basis_generated_at && (
+              <span className="text-xs text-[var(--neutral-foreground-3)]">
+                生成日時: {formatDate(plan.basis_generated_at)}
+              </span>
+            )}
+          </CardHeader>
+          <CardBody>
+            <div className="rounded-lg bg-[var(--neutral-background-3)] p-4">
+              <p className="text-sm whitespace-pre-wrap leading-relaxed">{nl(plan.basis_content)}</p>
+            </div>
+          </CardBody>
+        </Card>
+      )}
 
       {/* ============================================================== */}
       {/* Section 1: Goal Comparison */}
@@ -216,7 +279,7 @@ export default function PlanBasisPage() {
                   <p className="text-sm whitespace-pre-wrap">{nl(monitoring.overall_comment)}</p>
                 </div>
               )}
-              {monitoring.details.length > 0 && (
+              {monitoring.details && monitoring.details.length > 0 && (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm border-collapse">
                     <thead>

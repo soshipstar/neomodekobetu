@@ -217,11 +217,12 @@ export default function KobetsuPlanPage() {
 
   // ------ Mutations ------
 
-  // Map form fields to API fields
+  // Map form fields to API fields (legacy compat: life_intention, consent_name, manager_name)
   const formToApi = (data: PlanForm) => ({
     ...data,
     life_intention: data.guardian_wish,
     consent_name: data.manager_name,
+    manager_name: data.manager_name,
   });
 
   const createMutation = useMutation({
@@ -383,17 +384,36 @@ export default function KobetsuPlanPage() {
       const endpoint = editingPlanId
         ? `/api/staff/support-plans/${editingPlanId}/generate-ai`
         : '/api/staff/support-plans/generate-ai';
-      const res = await api.post<{ data: { details: SupportPlanDetail[]; long_term_goal?: string; short_term_goal?: string; overall_policy?: string } }>(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const res = await api.post<{ data: any }>(
         endpoint,
         { student_id: selectedStudentId }
       );
       const aiData = res.data.data;
       setForm((prev) => ({
         ...prev,
-        details: aiData.details || prev.details,
-        long_term_goal: aiData.long_term_goal || prev.long_term_goal,
-        short_term_goal: aiData.short_term_goal || prev.short_term_goal,
+        guardian_wish: aiData.life_intention || prev.guardian_wish,
         overall_policy: aiData.overall_policy || prev.overall_policy,
+        long_term_goal: aiData.long_term_goal_text || aiData.long_term_goal || prev.long_term_goal,
+        short_term_goal: aiData.short_term_goal_text || aiData.short_term_goal || prev.short_term_goal,
+        created_date: aiData.created_date || prev.created_date,
+        long_term_goal_date: aiData.long_term_goal_date || prev.long_term_goal_date,
+        short_term_goal_date: aiData.short_term_goal_date || prev.short_term_goal_date,
+        consent_date: aiData.consent_date || prev.consent_date,
+        details: aiData.details && aiData.details.length > 0
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ? aiData.details.map((d: any, i: number) => ({
+              category: d.category || '',
+              sub_category: d.sub_category || '',
+              support_goal: d.support_goal || d.goal || '',
+              support_content: d.support_content || '',
+              achievement_date: d.achievement_date || prev.details[i]?.achievement_date || '',
+              staff_organization: d.staff_organization || prev.details[i]?.staff_organization || '',
+              notes: d.notes || '',
+              priority: d.priority ?? (i + 1),
+              sort_order: i + 1,
+            }))
+          : prev.details,
       }));
       toast.success('AI生成が完了しました');
     } catch {
@@ -423,7 +443,7 @@ export default function KobetsuPlanPage() {
   const handleCsvExport = async () => {
     if (!editingPlanId) return;
     try {
-      const res = await api.get(`/api/staff/support-plans/${editingPlanId}/csv`, {
+      const res = await api.get(`/api/staff/support-plans/${editingPlanId}/export`, {
         responseType: 'blob',
       });
       const url = window.URL.createObjectURL(new Blob([res.data]));
