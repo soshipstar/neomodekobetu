@@ -7,6 +7,7 @@ use App\Models\Student;
 use App\Models\StudentChatMessage;
 use App\Models\StudentChatRoom;
 use App\Services\NotificationService;
+use App\Traits\ResolvesStudent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Log;
 
 class ChatController extends Controller
 {
+    use ResolvesStudent;
     /**
      * 生徒のチャットメッセージ一覧を取得
      */
@@ -142,13 +144,5 @@ class ChatController extends Controller
         ], 201);
     }
 
-    /**
-     * リクエストユーザーに紐づく生徒を取得
-     */
-    private function getStudent(Request $request): ?Student
-    {
-        $user = $request->user();
-
-        return Student::where('username', $user->username)->first();
-    }
+    // getStudent() は ResolvesStudent トレイトで提供
 }

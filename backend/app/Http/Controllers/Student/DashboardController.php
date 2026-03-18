@@ -6,21 +6,22 @@ use App\Http\Controllers\Controller;
 use App\Models\Student;
 use App\Models\StudentChatMessage;
 use App\Models\SubmissionRequest;
+use App\Traits\ResolvesStudent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
+    use ResolvesStudent;
+
     /**
      * 生徒ダッシュボード情報を返す
      */
     public function index(Request $request): JsonResponse
     {
-        $user = $request->user();
-
         // 生徒情報を取得（ユーザーに紐づく生徒レコード）
-        $student = Student::where('username', $user->username)->first();
+        $student = $this->getStudent($request);
 
         if (! $student) {
             return response()->json([

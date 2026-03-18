@@ -11,6 +11,9 @@ import {
   Users,
   BookOpen,
   Menu,
+  Calendar,
+  FileText,
+  ClipboardList,
 } from 'lucide-react';
 import { useUiStore } from '@/stores/uiStore';
 import type { UserType } from '@/types/user';
@@ -51,6 +54,9 @@ function getMobileNavItems(userType: UserType, chatUnread: number): MobileNavIte
       return [
         { label: 'ホーム', href: '/student/dashboard', icon: LayoutDashboard },
         { label: 'チャット', href: '/student/chat', icon: MessageCircle, badge: chatUnread },
+        { label: '計画', href: '/student/weekly-plans', icon: ClipboardList },
+        { label: '提出物', href: '/student/submissions', icon: FileText },
+        { label: 'スケジュール', href: '/student/schedule', icon: Calendar },
       ];
   }
 }

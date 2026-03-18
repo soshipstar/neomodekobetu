@@ -147,7 +147,7 @@ const studentNav: NavItem[] = [
   { type: 'link', label: '週間計画', href: '/student/weekly-plans', icon: ClipboardList },
   { type: 'link', label: '提出物', href: '/student/submissions', icon: FileCheck },
   { type: 'link', label: 'スケジュール', href: '/student/schedule', icon: Calendar },
-  { type: 'link', label: 'パスワード変更', href: '/student/change-password', icon: Lock },
+  { type: 'link', label: 'パスワード変更', href: '/student/profile', icon: Lock },
 ];
 
 const adminNav: NavItem[] = [

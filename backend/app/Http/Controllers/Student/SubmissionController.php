@@ -8,12 +8,14 @@ use App\Models\Student;
 use App\Models\StudentSubmission;
 use App\Models\SubmissionRequest;
 use App\Models\WeeklyPlanSubmission;
+use App\Traits\ResolvesStudent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class SubmissionController extends Controller
 {
+    use ResolvesStudent;
     /**
      * 提出物一覧を取得（3ソース統合: weekly_plan, guardian_chat, student）
      */
@@ -290,10 +292,5 @@ class SubmissionController extends Controller
         return response()->json(['success' => true, 'message' => '削除しました。']);
     }
 
-    private function getStudent(Request $request): ?Student
-    {
-        $user = $request->user();
-
-        return Student::where('username', $user->username)->first();
-    }
+    // getStudent() は ResolvesStudent トレイトで提供
 }

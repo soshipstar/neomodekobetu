@@ -52,8 +52,12 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     if (error.response?.status === 401) {
       removeToken();
-      if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/login')) {
-        window.location.href = '/auth/login';
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('login_type');
+        localStorage.removeItem('student_info');
+        if (!window.location.pathname.includes('/auth/login')) {
+          window.location.href = '/auth/login';
+        }
       }
     }
     return Promise.reject(error);
