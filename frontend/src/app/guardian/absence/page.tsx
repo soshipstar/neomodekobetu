@@ -16,7 +16,7 @@ import { formatDate } from '@/lib/utils';
 import { Send, Calendar } from 'lucide-react';
 
 const absenceFormSchema = z.object({
-  student_id: z.number({ required_error: 'お子様を選択してください' }),
+  student_id: z.number({ error: 'お子様を選択してください' }),
   absence_date: z.string().min(1, '日付を入力してください'),
   reason: z.string().min(1, '理由を入力してください'),
   makeup_request: z.boolean().optional(),
