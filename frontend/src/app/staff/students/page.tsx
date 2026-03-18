@@ -17,6 +17,8 @@ import {
   Pencil,
   Search,
   UserX,
+  Trash2,
+  Printer,
   Calendar,
   Info,
 } from 'lucide-react';
@@ -38,6 +40,9 @@ interface Student {
   guardian_id: number | null;
   guardian?: { id: number; full_name: string; email?: string } | null;
   username: string | null;
+  is_active: boolean;
+  withdrawal_date: string | null;
+  created_at: string | null;
   scheduled_monday: boolean;
   scheduled_tuesday: boolean;
   scheduled_wednesday: boolean;
@@ -45,6 +50,16 @@ interface Student {
   scheduled_friday: boolean;
   scheduled_saturday: boolean;
   scheduled_sunday: boolean;
+  desired_start_date: string | null;
+  desired_weekly_count: number | null;
+  desired_monday: boolean;
+  desired_tuesday: boolean;
+  desired_wednesday: boolean;
+  desired_thursday: boolean;
+  desired_friday: boolean;
+  desired_saturday: boolean;
+  desired_sunday: boolean;
+  waiting_notes: string | null;
 }
 
 interface Guardian {
@@ -61,6 +76,7 @@ interface StudentForm {
   support_plan_start_type: string;
   guardian_id: string;
   status: string;
+  withdrawal_date: string;
   username: string;
   password: string;
   scheduled_monday: boolean;
@@ -70,6 +86,16 @@ interface StudentForm {
   scheduled_friday: boolean;
   scheduled_saturday: boolean;
   scheduled_sunday: boolean;
+  desired_start_date: string;
+  desired_weekly_count: string;
+  desired_monday: boolean;
+  desired_tuesday: boolean;
+  desired_wednesday: boolean;
+  desired_thursday: boolean;
+  desired_friday: boolean;
+  desired_saturday: boolean;
+  desired_sunday: boolean;
+  waiting_notes: string;
 }
 
 const emptyForm: StudentForm = {
@@ -80,6 +106,7 @@ const emptyForm: StudentForm = {
   support_plan_start_type: 'current',
   guardian_id: '',
   status: 'active',
+  withdrawal_date: '',
   username: '',
   password: '',
   scheduled_monday: false,
@@ -89,10 +116,20 @@ const emptyForm: StudentForm = {
   scheduled_friday: false,
   scheduled_saturday: false,
   scheduled_sunday: false,
+  desired_start_date: '',
+  desired_weekly_count: '',
+  desired_monday: false,
+  desired_tuesday: false,
+  desired_wednesday: false,
+  desired_thursday: false,
+  desired_friday: false,
+  desired_saturday: false,
+  desired_sunday: false,
+  waiting_notes: '',
 };
 
 const GRADE_LABELS: Record<string, string> = {
-  preschool: '未就学',
+  preschool: '未就学児',
   elementary_1: '小学1年生', elementary_2: '小学2年生', elementary_3: '小学3年生',
   elementary_4: '小学4年生', elementary_5: '小学5年生', elementary_6: '小学6年生',
   junior_high_1: '中学1年生', junior_high_2: '中学2年生', junior_high_3: '中学3年生',
@@ -100,11 +137,11 @@ const GRADE_LABELS: Record<string, string> = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  active: '在籍', waiting: '待機', withdrawn: '退所',
+  active: '在籍', trial: '体験', short_term: '短期利用', waiting: '待機', withdrawn: '退所',
 };
 
 const STATUS_VARIANTS: Record<string, 'success' | 'warning' | 'danger' | 'default'> = {
-  active: 'success', waiting: 'default', withdrawn: 'danger',
+  active: 'success', trial: 'success', short_term: 'success', waiting: 'warning', withdrawn: 'danger',
 };
 
 const DAYS = [
@@ -115,6 +152,16 @@ const DAYS = [
   { key: 'scheduled_friday', label: '金' },
   { key: 'scheduled_saturday', label: '土' },
   { key: 'scheduled_sunday', label: '日' },
+] as const;
+
+const DESIRED_DAYS = [
+  { key: 'desired_monday', label: '月' },
+  { key: 'desired_tuesday', label: '火' },
+  { key: 'desired_wednesday', label: '水' },
+  { key: 'desired_thursday', label: '木' },
+  { key: 'desired_friday', label: '金' },
+  { key: 'desired_saturday', label: '土' },
+  { key: 'desired_sunday', label: '日' },
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -140,6 +187,7 @@ export default function StudentsPage() {
       const params: Record<string, string> = {};
       if (debouncedSearch) params.search = debouncedSearch;
       if (statusFilter) params.status = statusFilter;
+      else params.status = 'all';
       const res = await api.get('/api/staff/students', { params });
       const payload = res.data?.data;
       return Array.isArray(payload) ? payload as Student[] : [];
@@ -161,8 +209,13 @@ export default function StudentsPage() {
       const payload: Record<string, unknown> = { ...data };
       if (data.guardian_id) payload.guardian_id = Number(data.guardian_id);
       else delete payload.guardian_id;
+      if (data.desired_weekly_count) payload.desired_weekly_count = Number(data.desired_weekly_count);
+      else delete payload.desired_weekly_count;
       if (!data.username) delete payload.username;
       if (!data.password) delete payload.password;
+      if (!data.withdrawal_date) delete payload.withdrawal_date;
+      if (!data.desired_start_date) delete payload.desired_start_date;
+      if (!data.waiting_notes) delete payload.waiting_notes;
       return api.post('/api/staff/students', payload);
     },
     onSuccess: () => {
@@ -179,8 +232,13 @@ export default function StudentsPage() {
     mutationFn: ({ id, ...data }: StudentForm & { id: number }) => {
       const payload: Record<string, unknown> = { ...data };
       if (data.guardian_id) payload.guardian_id = Number(data.guardian_id);
-      else delete payload.guardian_id;
+      else payload.guardian_id = null;
+      if (data.desired_weekly_count) payload.desired_weekly_count = Number(data.desired_weekly_count);
+      else payload.desired_weekly_count = null;
       if (!data.password) delete payload.password;
+      if (!data.withdrawal_date) payload.withdrawal_date = null;
+      if (!data.desired_start_date) payload.desired_start_date = null;
+      if (!data.waiting_notes) payload.waiting_notes = null;
       return api.put(`/api/staff/students/${id}`, payload);
     },
     onSuccess: () => {
@@ -192,12 +250,14 @@ export default function StudentsPage() {
     onError: (err: any) => toast.error(err.response?.data?.message || '更新に失敗しました'),
   });
 
-  // Withdraw
-  const withdrawMutation = useMutation({
+  // Delete (退所処理)
+  const deleteMutation = useMutation({
     mutationFn: (id: number) => api.delete(`/api/staff/students/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'students'] });
       toast.success('退所処理しました');
+      setEditModal(false);
+      setEditingStudent(null);
     },
     onError: () => toast.error('退所処理に失敗しました'),
   });
@@ -212,6 +272,7 @@ export default function StudentsPage() {
       support_plan_start_type: student.support_plan_start_type || 'current',
       guardian_id: student.guardian_id ? String(student.guardian_id) : '',
       status: student.status,
+      withdrawal_date: student.withdrawal_date || '',
       username: student.username || '',
       password: '',
       scheduled_monday: student.scheduled_monday,
@@ -221,12 +282,29 @@ export default function StudentsPage() {
       scheduled_friday: student.scheduled_friday,
       scheduled_saturday: student.scheduled_saturday,
       scheduled_sunday: student.scheduled_sunday,
+      desired_start_date: student.desired_start_date || '',
+      desired_weekly_count: student.desired_weekly_count ? String(student.desired_weekly_count) : '',
+      desired_monday: student.desired_monday,
+      desired_tuesday: student.desired_tuesday,
+      desired_wednesday: student.desired_wednesday,
+      desired_thursday: student.desired_thursday,
+      desired_friday: student.desired_friday,
+      desired_saturday: student.desired_saturday,
+      desired_sunday: student.desired_sunday,
+      waiting_notes: student.waiting_notes || '',
     });
     setEditModal(true);
   };
 
   const updateField = (key: string, value: string | number | boolean) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleDelete = () => {
+    if (!editingStudent) return;
+    if (confirm(`本当に「${editingStudent.student_name}」を退所処理しますか？\n\nこの操作は取り消せません。`)) {
+      deleteMutation.mutate(editingStudent.id);
+    }
   };
 
   return (
@@ -251,6 +329,8 @@ export default function StudentsPage() {
           className="rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm">
           <option value="">全ステータス</option>
           <option value="active">在籍</option>
+          <option value="trial">体験</option>
+          <option value="short_term">短期利用</option>
           <option value="waiting">待機</option>
           <option value="withdrawn">退所</option>
         </select>
@@ -273,7 +353,7 @@ export default function StudentsPage() {
                 <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">学年</th>
                 <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">保護者</th>
                 <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">状態</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">曜日</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">登録日</th>
                 <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">操作</th>
               </tr>
             </thead>
@@ -303,22 +383,13 @@ export default function StudentsPage() {
                         {STATUS_LABELS[student.status] || student.status}
                       </Badge>
                     </td>
-                    <td className="px-3 py-2 text-xs text-[var(--neutral-foreground-3)]">
-                      {DAYS.filter((d) => student[d.key as keyof Student]).map((d) => d.label).join('・') || '-'}
+                    <td className="px-3 py-2 text-[var(--neutral-foreground-2)]">
+                      {student.created_at ? format(new Date(student.created_at), 'yyyy/MM/dd') : '-'}
                     </td>
                     <td className="px-3 py-2">
-                      <div className="flex gap-1">
-                        <Button variant="outline" size="sm" onClick={() => openEdit(student)}>
-                          編集
-                        </Button>
-                        {student.status !== 'withdrawn' && (
-                          <Button variant="ghost" size="sm" onClick={() => {
-                            if (confirm(`${student.student_name}を退所処理しますか？`)) withdrawMutation.mutate(student.id);
-                          }}>
-                            <UserX className="h-3.5 w-3.5 text-[var(--status-danger-fg)]" />
-                          </Button>
-                        )}
-                      </div>
+                      <Button variant="outline" size="sm" onClick={() => openEdit(student)}>
+                        編集
+                      </Button>
                     </td>
                   </tr>
                 );
@@ -348,6 +419,8 @@ export default function StudentsPage() {
           onCancel={() => { setEditModal(false); setEditingStudent(null); }}
           isLoading={updateMutation.isPending}
           submitLabel="更新する" isNew={false}
+          onDelete={handleDelete}
+          studentId={editingStudent?.id}
         />
       </Modal>
     </div>
@@ -358,7 +431,7 @@ export default function StudentsPage() {
 // Student Form
 // ---------------------------------------------------------------------------
 
-function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel, isLoading, submitLabel, isNew }: {
+function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel, isLoading, submitLabel, isNew, onDelete, studentId }: {
   form: StudentForm;
   updateField: (key: string, value: string | number | boolean) => void;
   guardians: Guardian[];
@@ -367,8 +440,21 @@ function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel
   isLoading: boolean;
   submitLabel: string;
   isNew: boolean;
+  onDelete?: () => void;
+  studentId?: number;
 }) {
   const inputCls = 'block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]';
+
+  const handlePrintLogin = () => {
+    if (!form.username) {
+      alert('生徒用ログイン情報が設定されていません。\n\nまず、ユーザー名とパスワードを設定して保存してください。');
+      return;
+    }
+    if (studentId) {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+      window.open(`${backendUrl}/staff/student-login-print/${studentId}`, '_blank', 'width=800,height=600');
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -391,19 +477,19 @@ function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel
       <div>
         <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">学年調整</label>
         <select value={form.grade_adjustment} onChange={(e) => updateField('grade_adjustment', Number(e.target.value))} className={inputCls}>
-          <option value={-2}>-2（2学年下げる）</option>
-          <option value={-1}>-1（1学年下げる）</option>
           <option value={0}>調整なし (0)</option>
-          <option value={1}>+1（1学年上げる）</option>
-          <option value={2}>+2（2学年上げる）</option>
+          <option value={1}>1学年上 (+1)</option>
+          <option value={2}>2学年上 (+2)</option>
+          <option value={-1}>1学年下 (-1)</option>
+          <option value={-2}>2学年下 (-2)</option>
         </select>
       </div>
 
       {/* 支援開始日 */}
       <div>
-        <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">支援開始日 <span className="text-[var(--status-danger-fg)]">*</span></label>
+        <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">支援開始日 {form.status !== 'waiting' && <span className="text-[var(--status-danger-fg)]">*</span>}</label>
         <input type="date" value={form.support_start_date} onChange={(e) => updateField('support_start_date', e.target.value)}
-          className={inputCls} required />
+          className={inputCls} required={form.status !== 'waiting'} />
         <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">※かけはしの提出期限が自動で設定されます</p>
       </div>
 
@@ -412,11 +498,11 @@ function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel
         <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">個別支援計画の開始タイミング</label>
         <select value={form.support_plan_start_type} onChange={(e) => updateField('support_plan_start_type', e.target.value)} className={inputCls}>
           <option value="current">現在の期間から作成する</option>
-          <option value="next">次回の期間から開始する</option>
+          <option value="next">次回の期間から作成する</option>
         </select>
         <div className="mt-1 rounded-lg bg-[var(--neutral-background-3)] p-2.5 text-xs text-[var(--neutral-foreground-3)]">
           <p className="flex items-start gap-1"><Info className="h-3.5 w-3.5 mt-0.5 shrink-0" /><span>【新規入所の児童】「現在の期間から作成する」を選択してください。</span></p>
-          <p className="flex items-start gap-1 mt-1"><Info className="h-3.5 w-3.5 mt-0.5 shrink-0" /><span>【既に入所中の児童】既存の計画を移行する場合→「現在の期間から」、次回から開始する場合→「次回の期間から」</span></p>
+          <p className="flex items-start gap-1 mt-1"><Info className="h-3.5 w-3.5 mt-0.5 shrink-0" /><span>【既に入所中の児童】既存の計画を移行する場合 →「現在の期間から」、次回から開始する場合 →「次回の期間から」</span></p>
         </div>
       </div>
 
@@ -434,47 +520,118 @@ function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel
         <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">状態</label>
         <select value={form.status} onChange={(e) => updateField('status', e.target.value)} className={inputCls}>
           <option value="active">在籍</option>
+          <option value="trial">体験</option>
+          <option value="short_term">短期利用</option>
           <option value="waiting">待機</option>
           <option value="withdrawn">退所</option>
         </select>
       </div>
 
-      {/* 参加予定曜日 */}
-      <div>
-        <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">参加予定曜日</label>
-        <div className="flex flex-wrap gap-3">
-          {DAYS.map(({ key, label }) => (
-            <label key={key} className="flex items-center gap-1.5 cursor-pointer text-sm">
-              <input type="checkbox" checked={form[key as keyof StudentForm] as boolean}
-                onChange={(e) => updateField(key, e.target.checked)}
-                className="rounded border-[var(--neutral-stroke-2)]" />
-              {label}曜日
-            </label>
-          ))}
+      {/* 退所日（退所ステータスの場合のみ表示） */}
+      {form.status === 'withdrawn' && (
+        <div>
+          <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">退所日</label>
+          <input type="date" value={form.withdrawal_date} onChange={(e) => updateField('withdrawal_date', e.target.value)}
+            className={inputCls} />
+          <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">※退所日以降のかけはし・計画書・モニタリング表は作成されません</p>
         </div>
-      </div>
+      )}
+
+      {/* 待機児童情報（待機ステータスの場合のみ表示） */}
+      {form.status === 'waiting' && (
+        <div className="rounded-lg border-2 border-[var(--status-warning-fg)] bg-[var(--neutral-background-3)] p-4">
+          <h4 className="text-sm font-semibold text-[var(--status-warning-fg)] mb-3">待機児童情報</h4>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">入所希望日</label>
+              <input type="date" value={form.desired_start_date} onChange={(e) => updateField('desired_start_date', e.target.value)}
+                className={inputCls} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">希望利用回数（週）</label>
+              <select value={form.desired_weekly_count} onChange={(e) => updateField('desired_weekly_count', e.target.value)} className={inputCls}>
+                <option value="">選択してください</option>
+                <option value="1">週1回</option>
+                <option value="2">週2回</option>
+                <option value="3">週3回</option>
+                <option value="4">週4回</option>
+                <option value="5">週5回</option>
+              </select>
+            </div>
+          </div>
+          <div className="mt-3">
+            <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">希望曜日</label>
+            <div className="flex flex-wrap gap-3">
+              {DESIRED_DAYS.map(({ key, label }) => (
+                <label key={key} className="flex items-center gap-1.5 cursor-pointer text-sm">
+                  <input type="checkbox" checked={form[key as keyof StudentForm] as boolean}
+                    onChange={(e) => updateField(key, e.target.checked)}
+                    className="rounded border-[var(--neutral-stroke-2)]" />
+                  {label}曜日
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="mt-3">
+            <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">待機メモ</label>
+            <textarea value={form.waiting_notes} onChange={(e) => updateField('waiting_notes', e.target.value)}
+              className={inputCls} rows={2} placeholder="空き次第連絡希望、など" />
+          </div>
+        </div>
+      )}
+
+      {/* 参加予定曜日（待機ステータス以外の場合のみ表示） */}
+      {form.status !== 'waiting' && (
+        <div>
+          <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">参加予定曜日</label>
+          <div className="flex flex-wrap gap-3">
+            {DAYS.map(({ key, label }) => (
+              <label key={key} className="flex items-center gap-1.5 cursor-pointer text-sm">
+                <input type="checkbox" checked={form[key as keyof StudentForm] as boolean}
+                  onChange={(e) => updateField(key, e.target.checked)}
+                  className="rounded border-[var(--neutral-stroke-2)]" />
+                {label}曜日
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ログイン情報 */}
       {!isNew && (
         <div className="border-t border-[var(--neutral-stroke-2)] pt-4">
-          <h4 className="text-sm font-semibold text-[var(--neutral-foreground-1)] mb-3">ログイン情報</h4>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <h4 className="text-sm font-semibold text-[var(--neutral-foreground-1)] mb-3">生徒用ログイン設定</h4>
+          <div className="rounded-lg bg-[var(--neutral-background-3)] p-3 space-y-3">
             <div>
-              <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">ユーザー名</label>
-              <input value={form.username} onChange={(e) => updateField('username', e.target.value)} className={inputCls} />
+              <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">ユーザー名（半角英数字）</label>
+              <input value={form.username} onChange={(e) => updateField('username', e.target.value)}
+                className={inputCls} placeholder="例: tanaka_taro" pattern="[a-zA-Z0-9_]+" />
+              <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">※空欄の場合、ログイン不可</p>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">パスワード（変更する場合のみ）</label>
+              <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">パスワード</label>
               <input type="password" value={form.password} onChange={(e) => updateField('password', e.target.value)}
-                className={inputCls} placeholder="変更しない場合は空欄" />
+                className={inputCls} placeholder="変更する場合のみ入力" />
+              <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">※変更しない場合は空欄</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex justify-end gap-2 pt-2">
+      <div className="flex items-center gap-2 pt-2">
         <Button variant="secondary" onClick={onCancel}>キャンセル</Button>
+        {!isNew && (
+          <Button variant="outline" size="sm" onClick={handlePrintLogin} leftIcon={<Printer className="h-3.5 w-3.5" />}>
+            生徒用資料を印刷
+          </Button>
+        )}
+        <div className="flex-1" />
+        {!isNew && onDelete && (
+          <Button variant="danger" size="sm" onClick={onDelete} leftIcon={<Trash2 className="h-3.5 w-3.5" />}>
+            退所処理
+          </Button>
+        )}
         <Button onClick={onSubmit} isLoading={isLoading}>{submitLabel}</Button>
       </div>
     </div>

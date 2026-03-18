@@ -53,6 +53,7 @@ class Student extends Model
 
     protected $hidden = [
         'password_hash',
+        'password_plain',
     ];
 
     protected function casts(): array
