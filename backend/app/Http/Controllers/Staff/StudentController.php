@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Staff;
 use App\Http\Controllers\Controller;
 use App\Models\Student;
 use App\Models\User;
+use App\Services\KakehashiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class StudentController extends Controller
 {
@@ -39,12 +41,16 @@ class StudentController extends Controller
         }
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            if ($request->status === 'all') {
+                // 全ステータス
+            } else {
+                $query->where('status', $request->status);
+            }
         } else {
-            $query->active();
+            $query->where('is_active', true);
         }
 
-        $students = $query->orderBy('student_name')->get();
+        $students = $query->orderByDesc('is_active')->orderBy('student_name')->get();
 
         return response()->json([
             'success' => true,
@@ -76,12 +82,13 @@ class StudentController extends Controller
 
         $validated = $request->validate([
             'student_name'           => 'required|string|max:255',
-            'birth_date'             => 'nullable|date',
+            'birth_date'             => 'required|date',
             'grade_adjustment'       => 'nullable|integer|min:-2|max:2',
             'guardian_id'            => 'nullable|exists:users,id',
             'support_start_date'     => 'nullable|date',
             'support_plan_start_type' => 'nullable|in:current,next',
-            'status'                 => 'nullable|in:active,waiting,withdrawn',
+            'status'                 => 'nullable|in:active,trial,short_term,waiting,withdrawn',
+            'withdrawal_date'        => 'nullable|date',
             'username'               => 'nullable|string|max:100|unique:students,username',
             'password'               => 'nullable|string|min:4',
             'scheduled_monday'       => 'nullable|boolean',
@@ -91,7 +98,24 @@ class StudentController extends Controller
             'scheduled_friday'       => 'nullable|boolean',
             'scheduled_saturday'     => 'nullable|boolean',
             'scheduled_sunday'       => 'nullable|boolean',
+            'desired_start_date'     => 'nullable|date',
+            'desired_weekly_count'   => 'nullable|integer|min:1|max:5',
+            'desired_monday'         => 'nullable|boolean',
+            'desired_tuesday'        => 'nullable|boolean',
+            'desired_wednesday'      => 'nullable|boolean',
+            'desired_thursday'       => 'nullable|boolean',
+            'desired_friday'         => 'nullable|boolean',
+            'desired_saturday'       => 'nullable|boolean',
+            'desired_sunday'         => 'nullable|boolean',
+            'waiting_notes'          => 'nullable|string|max:1000',
         ]);
+
+        $status = $validated['status'] ?? 'active';
+
+        // 待機児童の場合は支援開始日が未設定なら仮の値を設定
+        if ($status === 'waiting' && empty($validated['support_start_date'])) {
+            $validated['support_start_date'] = $validated['desired_start_date'] ?? now()->toDateString();
+        }
 
         $classroomId = $user->classroom_id;
         $gradeLevel = null;
@@ -103,14 +127,31 @@ class StudentController extends Controller
         $password = $validated['password'] ?? null;
         unset($validated['password']);
 
+        // is_active: waiting と withdrawn は無効、それ以外は有効
+        $isActive = !in_array($status, ['waiting', 'withdrawn']);
+
         $student = Student::create(array_merge($validated, [
             'classroom_id'    => $classroomId,
             'grade_level'     => $gradeLevel,
-            'status'          => $validated['status'] ?? 'active',
-            'is_active'       => ($validated['status'] ?? 'active') === 'active',
+            'status'          => $status,
+            'is_active'       => $isActive,
             'password_hash'   => $password ? Hash::make($password) : null,
             'password_plain'  => $password,
         ]));
+
+        // かけはし期間の自動生成（待機児童以外、かつ「現在の期間から作成する」の場合のみ）
+        $supportPlanStartType = $validated['support_plan_start_type'] ?? 'current';
+        if ($status !== 'waiting' && !empty($validated['support_start_date']) && $supportPlanStartType === 'current') {
+            try {
+                $kakehashiService = app(KakehashiService::class);
+                $generatedPeriods = $kakehashiService->generateKakehashiPeriodsForStudent($student->id, $validated['support_start_date']);
+                Log::info("Generated " . count($generatedPeriods) . " kakehashi periods for student {$student->id}");
+            } catch (\Exception $e) {
+                Log::error("かけはし期間生成エラー: " . $e->getMessage());
+            }
+        } elseif ($status !== 'waiting' && $supportPlanStartType === 'next') {
+            Log::info("Student {$student->id} has support_plan_start_type='next'. Skipping initial kakehashi generation.");
+        }
 
         return response()->json([
             'success' => true,
@@ -133,7 +174,7 @@ class StudentController extends Controller
             'guardian_id'            => 'nullable|exists:users,id',
             'support_start_date'     => 'nullable|date',
             'support_plan_start_type' => 'nullable|in:current,next',
-            'status'                 => 'nullable|in:active,waiting,withdrawn',
+            'status'                 => 'nullable|in:active,trial,short_term,waiting,withdrawn',
             'withdrawal_date'        => 'nullable|date',
             'username'               => 'nullable|string|max:100|unique:students,username,' . $student->id,
             'password'               => 'nullable|string|min:4',
@@ -144,6 +185,16 @@ class StudentController extends Controller
             'scheduled_friday'       => 'nullable|boolean',
             'scheduled_saturday'     => 'nullable|boolean',
             'scheduled_sunday'       => 'nullable|boolean',
+            'desired_start_date'     => 'nullable|date',
+            'desired_weekly_count'   => 'nullable|integer|min:1|max:5',
+            'desired_monday'         => 'nullable|boolean',
+            'desired_tuesday'        => 'nullable|boolean',
+            'desired_wednesday'      => 'nullable|boolean',
+            'desired_thursday'       => 'nullable|boolean',
+            'desired_friday'         => 'nullable|boolean',
+            'desired_saturday'       => 'nullable|boolean',
+            'desired_sunday'         => 'nullable|boolean',
+            'waiting_notes'          => 'nullable|string|max:1000',
         ]);
 
         // 学年再計算
@@ -157,12 +208,27 @@ class StudentController extends Controller
         if (!empty($validated['password'])) {
             $validated['password_hash'] = Hash::make($validated['password']);
             $validated['password_plain'] = $validated['password'];
+        } elseif (array_key_exists('username', $validated) && empty($validated['username'])) {
+            // ユーザー名が空の場合はログイン情報をクリア
+            $validated['username'] = null;
+            $validated['password_hash'] = null;
+            $validated['password_plain'] = null;
         }
         unset($validated['password']);
 
-        // ステータス変更時のis_active同期
+        // ステータス変更時のis_active同期（waiting, withdrawnは無効）
         if (isset($validated['status'])) {
-            $validated['is_active'] = $validated['status'] === 'active';
+            $validated['is_active'] = !in_array($validated['status'], ['waiting', 'withdrawn']);
+        }
+
+        // 退所日は退所ステータスの時のみ、それ以外はNULL
+        if (isset($validated['status']) && $validated['status'] !== 'withdrawn') {
+            $validated['withdrawal_date'] = null;
+        }
+
+        // 待機児童の場合、支援開始日が未設定なら仮の値を設定
+        if (isset($validated['status']) && $validated['status'] === 'waiting' && empty($validated['support_start_date']) && empty($student->support_start_date)) {
+            $validated['support_start_date'] = $validated['desired_start_date'] ?? now()->toDateString();
         }
 
         $student->update($validated);
@@ -217,27 +283,47 @@ class StudentController extends Controller
 
     /**
      * 生年月日と学年調整値から学年区分を計算
+     *
+     * 4月1日生まれは前年度扱い（早生まれの最後）
+     * legacy: student_helper.php の calculateGradeLevel と同じロジック
      */
     public static function calculateGradeLevel(string $birthDate, int $adjustment = 0): string
     {
         $birth = Carbon::parse($birthDate);
         $now = Carbon::now();
 
-        // 4月1日基準の年齢計算（4/2生まれ以降は翌年度の扱い）
+        // 現在の年度を計算（4月1日基準）
         $fiscalYear = $now->month >= 4 ? $now->year : $now->year - 1;
-        $birthFiscalYear = $birth->month >= 4 || ($birth->month === 4 && $birth->day >= 2)
-            ? $birth->year
-            : $birth->year - 1;
 
-        $gradeNumber = $fiscalYear - $birthFiscalYear - 6 + $adjustment;
+        // 誕生年度を計算（4月2日～翌年4月1日が同じ年度）
+        // 4月1日生まれは前年度扱い（早生まれの最後）
+        if ($birth->month < 4 || ($birth->month == 4 && $birth->day == 1)) {
+            $birthFiscalYear = $birth->year - 1;
+        } else {
+            $birthFiscalYear = $birth->year;
+        }
 
-        if ($gradeNumber < 0) return 'preschool';
-        if ($gradeNumber === 0) return 'preschool';
-        if ($gradeNumber >= 1 && $gradeNumber <= 6) return 'elementary_' . $gradeNumber;
-        if ($gradeNumber >= 7 && $gradeNumber <= 9) return 'junior_high_' . ($gradeNumber - 6);
-        if ($gradeNumber >= 10 && $gradeNumber <= 12) return 'high_school_' . ($gradeNumber - 9);
+        // その年度での学年を計算
+        $gradeYear = $fiscalYear - $birthFiscalYear;
 
-        return 'high_school_3'; // 卒業生以上
+        // 学年調整を適用
+        $gradeYear += $adjustment;
+
+        // 詳細な学年を返す
+        if ($gradeYear < 7) {
+            return 'preschool';
+        } elseif ($gradeYear >= 7 && $gradeYear <= 12) {
+            $grade = $gradeYear - 6;
+            return 'elementary_' . $grade;
+        } elseif ($gradeYear >= 13 && $gradeYear <= 15) {
+            $grade = $gradeYear - 12;
+            return 'junior_high_' . $grade;
+        } elseif ($gradeYear >= 16 && $gradeYear <= 18) {
+            $grade = $gradeYear - 15;
+            return 'high_school_' . $grade;
+        } else {
+            return 'high_school_3';
+        }
     }
 
     private function authorizeClassroom($user, Student $student): void
