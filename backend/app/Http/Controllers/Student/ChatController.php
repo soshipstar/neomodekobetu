@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Student;
 use App\Models\StudentChatMessage;
 use App\Models\StudentChatRoom;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ChatController extends Controller
 {
@@ -110,6 +112,28 @@ class ChatController extends Controller
 
             return $msg;
         });
+
+        // スタッフにプッシュ通知（レガシー互換）
+        try {
+            $notificationService = app(NotificationService::class);
+            $studentName = $student->student_name ?? '生徒';
+            $notificationTitle = '【生徒チャット】' . $studentName . 'さんからメッセージがあります';
+            $notificationBody = $request->message ?: '添付ファイルが送信されました';
+
+            // staff と admin 両方に通知
+            foreach (['staff', 'admin'] as $userType) {
+                $notificationService->notifyClassroom(
+                    $student->classroom_id,
+                    $userType,
+                    'student_chat',
+                    $notificationTitle,
+                    $notificationBody,
+                    ['url' => '/staff/student-chats'],
+                );
+            }
+        } catch (\Exception $e) {
+            Log::error('Student chat push notification error: ' . $e->getMessage());
+        }
 
         return response()->json([
             'success'    => true,
