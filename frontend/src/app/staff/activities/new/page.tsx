@@ -243,7 +243,7 @@ export default function NewActivityPage() {
         })),
       });
       toast.success('活動を保存しました');
-      router.push('/staff/dashboard');
+      router.push(`/staff/renrakucho?date=${dateParam}`);
     } catch (err: unknown) {
       const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || '保存に失敗しました';
       toast.error(message);
@@ -264,7 +264,7 @@ export default function NewActivityPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link href="/staff/dashboard">
+        <Link href={`/staff/renrakucho?date=${dateParam}`}>
           <Button variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -387,7 +387,7 @@ export default function NewActivityPage() {
 
       {/* Save button */}
       <div className="flex justify-end gap-3">
-        <Link href="/staff/dashboard">
+        <Link href={`/staff/renrakucho?date=${dateParam}`}>
           <Button variant="outline">キャンセル</Button>
         </Link>
         <Button onClick={handleSave} disabled={saving}>

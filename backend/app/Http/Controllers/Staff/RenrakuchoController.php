@@ -14,6 +14,46 @@ use Illuminate\Support\Facades\DB;
 class RenrakuchoController extends Controller
 {
     /**
+     * Legacy domain1/domain2 fields to new 5-domain schema mapping helper.
+     * When the frontend sends domain1/domain1_content/domain2/domain2_content (legacy form),
+     * this maps them to the corresponding 5-domain column.
+     */
+    private function mapLegacyDomainFields(array $studentData): array
+    {
+        $domainColumns = ['health_life', 'motor_sensory', 'cognitive_behavior', 'language_communication', 'social_relations'];
+
+        if (!empty($studentData['domain1'] ?? '') && in_array($studentData['domain1'], $domainColumns)) {
+            // Initialize all domain columns to null if not already set
+            foreach ($domainColumns as $col) {
+                if (!isset($studentData[$col])) {
+                    $studentData[$col] = null;
+                }
+            }
+
+            // Map domain1
+            $domain1Key = $studentData['domain1'];
+            if (!empty($studentData['domain1_content'] ?? '')) {
+                $studentData[$domain1Key] = $studentData['domain1_content'];
+            }
+
+            // Map domain2
+            if (!empty($studentData['domain2'] ?? '') && in_array($studentData['domain2'], $domainColumns)) {
+                $domain2Key = $studentData['domain2'];
+                if (!empty($studentData['domain2_content'] ?? '')) {
+                    $studentData[$domain2Key] = $studentData['domain2_content'];
+                }
+            }
+
+            // Map daily_note to notes
+            if (isset($studentData['daily_note']) && !isset($studentData['notes'])) {
+                $studentData['notes'] = $studentData['daily_note'];
+            }
+        }
+
+        return $studentData;
+    }
+
+    /**
      * 連絡帳（日常活動記録）一覧を取得
      */
     public function index(Request $request): JsonResponse
@@ -62,6 +102,7 @@ class RenrakuchoController extends Controller
 
     /**
      * 日常活動記録を新規作成
+     * Accepts both legacy (domain1/domain2) and new (5-domain) field formats.
      */
     public function store(Request $request): JsonResponse
     {
@@ -72,12 +113,19 @@ class RenrakuchoController extends Controller
             'support_plan_id'   => 'nullable|integer|exists:activity_support_plans,id',
             'students'          => 'required|array|min:1',
             'students.*.id'                        => 'required|exists:students,id',
+            // New 5-domain fields
             'students.*.health_life'               => 'nullable|string',
             'students.*.motor_sensory'             => 'nullable|string',
             'students.*.cognitive_behavior'        => 'nullable|string',
             'students.*.language_communication'    => 'nullable|string',
             'students.*.social_relations'          => 'nullable|string',
             'students.*.notes'                     => 'nullable|string',
+            // Legacy domain1/domain2 fields
+            'students.*.daily_note'                => 'nullable|string',
+            'students.*.domain1'                   => 'nullable|string',
+            'students.*.domain1_content'           => 'nullable|string',
+            'students.*.domain2'                   => 'nullable|string',
+            'students.*.domain2_content'           => 'nullable|string',
         ]);
 
         $record = DB::transaction(function () use ($request, $validated) {
@@ -91,6 +139,9 @@ class RenrakuchoController extends Controller
             ]);
 
             foreach ($validated['students'] as $studentData) {
+                // Map legacy fields if present
+                $studentData = $this->mapLegacyDomainFields($studentData);
+
                 StudentRecord::create([
                     'daily_record_id'          => $record->id,
                     'student_id'               => $studentData['id'],
@@ -138,6 +189,12 @@ class RenrakuchoController extends Controller
             'students.*.language_communication'    => 'nullable|string',
             'students.*.social_relations'          => 'nullable|string',
             'students.*.notes'                     => 'nullable|string',
+            // Legacy domain1/domain2 fields
+            'students.*.daily_note'                => 'nullable|string',
+            'students.*.domain1'                   => 'nullable|string',
+            'students.*.domain1_content'           => 'nullable|string',
+            'students.*.domain2'                   => 'nullable|string',
+            'students.*.domain2_content'           => 'nullable|string',
         ]);
 
         DB::transaction(function () use ($record, $validated) {
@@ -147,6 +204,9 @@ class RenrakuchoController extends Controller
                 $record->studentRecords()->delete();
 
                 foreach ($validated['students'] as $studentData) {
+                    // Map legacy fields if present
+                    $studentData = $this->mapLegacyDomainFields($studentData);
+
                     StudentRecord::create([
                         'daily_record_id'          => $record->id,
                         'student_id'               => $studentData['id'],
@@ -245,6 +305,132 @@ class RenrakuchoController extends Controller
     }
 
     /**
+     * 統合内容の途中保存（下書き保存）
+     * Legacy: save_draft_integration.php
+     */
+    public function saveDraft(Request $request, DailyRecord $record): JsonResponse
+    {
+        $user = $request->user();
+        if ($user->classroom_id) {
+            $staffClassroom = $record->staff->classroom_id ?? null;
+            if ($staffClassroom !== $user->classroom_id) {
+                return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+            }
+        }
+
+        $validated = $request->validate([
+            'notes'              => 'required|array',
+            'notes.*.student_id' => 'required|exists:students,id',
+            'notes.*.content'    => 'required|string',
+        ]);
+
+        $savedCount = 0;
+
+        DB::transaction(function () use ($record, $validated, &$savedCount) {
+            foreach ($validated['notes'] as $noteData) {
+                $studentId = $noteData['student_id'];
+                $content = trim($noteData['content']);
+
+                if (empty($content)) {
+                    continue;
+                }
+
+                // Skip already sent notes
+                $existing = IntegratedNote::where('daily_record_id', $record->id)
+                    ->where('student_id', $studentId)
+                    ->first();
+
+                if ($existing && $existing->is_sent) {
+                    continue;
+                }
+
+                IntegratedNote::updateOrCreate(
+                    ['daily_record_id' => $record->id, 'student_id' => $studentId],
+                    ['integrated_content' => $content, 'is_sent' => false]
+                );
+                $savedCount++;
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => "{$savedCount}件の統合内容を途中保存しました。",
+            'saved_count' => $savedCount,
+        ]);
+    }
+
+    /**
+     * 統合内容を再生成（未送信分を削除してリセット）
+     * Legacy: regenerate_integration.php
+     */
+    public function regenerateIntegrated(Request $request, DailyRecord $record): JsonResponse
+    {
+        $user = $request->user();
+        if ($user->classroom_id) {
+            $staffClassroom = $record->staff->classroom_id ?? null;
+            if ($staffClassroom !== $user->classroom_id) {
+                return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+            }
+        }
+
+        // Delete unsent integrated notes only
+        IntegratedNote::where('daily_record_id', $record->id)
+            ->where('is_sent', false)
+            ->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => '未送信の統合内容を削除しました。新しく統合を開始できます。',
+        ]);
+    }
+
+    /**
+     * 送信済み統合内容の閲覧（保護者確認状況含む）
+     * Legacy: view_integrated.php
+     */
+    public function viewIntegrated(Request $request, DailyRecord $record): JsonResponse
+    {
+        $user = $request->user();
+        if ($user->classroom_id) {
+            $staffClassroom = $record->staff->classroom_id ?? null;
+            if ($staffClassroom !== $user->classroom_id) {
+                return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+            }
+        }
+
+        $notes = IntegratedNote::where('daily_record_id', $record->id)
+            ->with('student:id,student_name,grade_level')
+            ->orderBy('guardian_confirmed')
+            ->get();
+
+        $totalCount = $notes->count();
+        $sentCount = $notes->where('is_sent', true)->count();
+        $confirmedCount = $notes->where('guardian_confirmed', true)->count();
+        $unconfirmedCount = $sentCount - $confirmedCount;
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'activity' => [
+                    'id' => $record->id,
+                    'activity_name' => $record->activity_name,
+                    'common_activity' => $record->common_activity,
+                    'record_date' => $record->record_date->format('Y-m-d'),
+                    'staff_name' => $record->staff->full_name ?? null,
+                    'staff_id' => $record->staff_id,
+                ],
+                'notes' => $notes,
+                'summary' => [
+                    'total' => $totalCount,
+                    'sent' => $sentCount,
+                    'confirmed' => $confirmedCount,
+                    'unconfirmed' => $unconfirmedCount,
+                ],
+            ],
+        ]);
+    }
+
+    /**
      * 保護者への一括送信
      */
     public function sendToGuardians(Request $request, DailyRecord $record): JsonResponse
@@ -324,6 +510,7 @@ class RenrakuchoController extends Controller
 
     /**
      * AI統合文生成（ドメイン観察からまとめ文を生成）
+     * Legacy: integrate_activity.php + chatgpt.php generateIntegratedNote()
      */
     public function generateIntegrated(Request $request, DailyRecord $record): JsonResponse
     {
@@ -367,29 +554,50 @@ class RenrakuchoController extends Controller
         $commonActivity = $record->common_activity ?? '';
         $notes = $studentRecord->notes ?? '';
 
-        $prompt = <<<PROMPT
-以下の活動記録と5領域の観察メモ、個別メモから、保護者向けの連絡帳文を作成してください。
+        // Build prompt matching legacy style (chatgpt.php generateIntegratedNote)
+        $prompt = "あなたは個別支援教育の専門家です。以下の情報を元に、保護者に送る連絡帳として自然で読みやすい1つの文章にまとめてください。\n\n";
 
-【活動名】{$activityName}
-【本日の活動（共通）】{$commonActivity}
-【児童名】{$student->student_name}
+        // Support plan info (matching legacy)
+        if ($record->support_plan_id) {
+            $supportPlan = DB::table('activity_support_plans')->find($record->support_plan_id);
+            if ($supportPlan) {
+                $prompt .= "【支援案（事前計画）】\n";
+                if (!empty($supportPlan->activity_purpose)) {
+                    $prompt .= "・活動の目的: {$supportPlan->activity_purpose}\n";
+                }
+                if (!empty($supportPlan->activity_content)) {
+                    $prompt .= "・活動の計画内容: {$supportPlan->activity_content}\n";
+                }
+                if (!empty($supportPlan->five_domains_consideration)) {
+                    $prompt .= "・五領域への配慮: {$supportPlan->five_domains_consideration}\n";
+                }
+                if (!empty($supportPlan->other_notes)) {
+                    $prompt .= "・その他: {$supportPlan->other_notes}\n";
+                }
+                $prompt .= "\n";
+            }
+        }
 
-【5領域の観察記録】
-{$domainText}
+        $prompt .= "【活動名】\n{$activityName}\n\n";
+        $prompt .= "【本日の活動内容】\n{$commonActivity}\n\n";
 
-【個別メモ（スタッフの観察メモ）】
-{$notes}
+        if (!empty($notes)) {
+            $prompt .= "【本日の様子】\n{$notes}\n\n";
+        }
 
-【重要なルール】
-1. 5領域の観察記録と個別メモの内容を自然に統合した文章を作成すること
-2. 領域のラベル（【健康・生活】等）は文章中に含めないこと
-3. 個別メモの原文をそのまま使わず、保護者向けに丁寧にまとめ直すこと
-4. 保護者が読んで嬉しくなるような、温かみのある文章にすること
-5. 具体的なエピソードを含めること
-6. 200〜400文字程度にすること
-7. 敬体（ですます調）で書くこと
-8. お子様の頑張りや成長を中心に伝えること
-PROMPT;
+        $prompt .= "【気になったこと】\n{$domainText}\n\n";
+
+        $prompt .= "上記の情報を、保護者が読みやすいように、敬体（です・ます調）で1つの自然な文章にまとめてください。";
+        if ($record->support_plan_id) {
+            $prompt .= "支援案の目的や配慮事項を踏まえつつ、実際の活動の様子を中心に記述してください。";
+        }
+        $prompt .= "箇条書きではなく、文章として流れるように記述してください。\n\n";
+        $prompt .= "【重要な指示】\n";
+        $prompt .= "・ポジティブで前向きな表現を使用してください。\n";
+        $prompt .= "・「しかし」「ですが」「気になった点」などのネガティブな接続詞や表現は避けてください。\n";
+        $prompt .= "・課題や改善点は「次のステップとして」「さらに成長するために」「これから挑戦できること」など、成長の機会として前向きに表現してください。\n";
+        $prompt .= "・子どもの頑張りや成長、良かった点を中心に記述してください。\n";
+        $prompt .= "・保護者が読んで嬉しくなるような、温かく励みになる文章にしてください。";
 
         try {
             $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
@@ -401,11 +609,11 @@ PROMPT;
             $response = $client->chat()->create([
                 'model'    => 'gpt-4o',
                 'messages' => [
-                    ['role' => 'system', 'content' => 'あなたは放課後等デイサービスの連絡帳作成アシスタントです。保護者に日々のお子様の様子をお伝えする温かい文章を書きます。'],
+                    ['role' => 'system', 'content' => 'あなたは個別支援教育の経験豊富な教員です。保護者に向けて温かく丁寧で、前向きでポジティブな連絡帳を書きます。子どもの良い面や成長を見つけ、課題も成長の機会として前向きに伝えます。「しかし」「ですが」などのネガティブな接続詞は使わず、常にポジティブな表現を心がけます。'],
                     ['role' => 'user', 'content' => $prompt],
                 ],
                 'temperature' => 0.7,
-                'max_completion_tokens' => 800,
+                'max_completion_tokens' => 1000,
             ]);
 
             $content = $response->choices[0]->message->content ?? '';
