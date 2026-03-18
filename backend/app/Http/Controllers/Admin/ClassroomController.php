@@ -11,10 +11,27 @@ use Illuminate\Support\Facades\Storage;
 class ClassroomController extends Controller
 {
     /**
-     * 教室一覧を取得
+     * マスター管理者のみアクセス可能にする共通チェック
+     */
+    private function requireMaster(Request $request): ?JsonResponse
+    {
+        $user = $request->user();
+        if (!$user || $user->user_type !== 'admin' || !$user->is_master) {
+            return response()->json([
+                'success' => false,
+                'message' => 'マスター管理者権限が必要です。',
+            ], 403);
+        }
+        return null;
+    }
+
+    /**
+     * 教室一覧を取得（マスター管理者専用）
      */
     public function index(Request $request): JsonResponse
     {
+        if ($deny = $this->requireMaster($request)) return $deny;
+
         $query = Classroom::withCount(['students', 'users']);
 
         if ($request->filled('is_active')) {
@@ -30,10 +47,12 @@ class ClassroomController extends Controller
     }
 
     /**
-     * 教室を新規作成
+     * 教室を新規作成（マスター管理者専用）
      */
     public function store(Request $request): JsonResponse
     {
+        if ($deny = $this->requireMaster($request)) return $deny;
+
         $validated = $request->validate([
             'classroom_name' => 'required|string|max:255',
             'address'        => 'nullable|string|max:500',
@@ -59,10 +78,12 @@ class ClassroomController extends Controller
     }
 
     /**
-     * 教室詳細を取得
+     * 教室詳細を取得（マスター管理者専用）
      */
-    public function show(Classroom $classroom): JsonResponse
+    public function show(Request $request, Classroom $classroom): JsonResponse
     {
+        if ($deny = $this->requireMaster($request)) return $deny;
+
         $classroom->load(['students', 'users', 'tags', 'capacity']);
         $classroom->loadCount(['students', 'users']);
 
@@ -73,10 +94,12 @@ class ClassroomController extends Controller
     }
 
     /**
-     * 教室を更新
+     * 教室を更新（マスター管理者専用）
      */
     public function update(Request $request, Classroom $classroom): JsonResponse
     {
+        if ($deny = $this->requireMaster($request)) return $deny;
+
         $validated = $request->validate([
             'classroom_name' => 'sometimes|required|string|max:255',
             'address'        => 'nullable|string|max:500',
@@ -106,10 +129,12 @@ class ClassroomController extends Controller
     }
 
     /**
-     * 教室を削除（論理削除 = is_active を false にする）
+     * 教室を削除（マスター管理者専用、論理削除 = is_active を false にする）
      */
-    public function destroy(Classroom $classroom): JsonResponse
+    public function destroy(Request $request, Classroom $classroom): JsonResponse
     {
+        if ($deny = $this->requireMaster($request)) return $deny;
+
         // 生徒が紐づいている場合は削除不可
         if ($classroom->students()->exists()) {
             return response()->json([

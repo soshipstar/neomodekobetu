@@ -159,6 +159,7 @@ const adminNav: NavItem[] = [
   { type: 'link', label: 'タブレットユーザー', href: '/admin/tablet-accounts', icon: Tablet, visibility: 'non_master' },
   { type: 'link', label: 'イベント管理', href: '/admin/events', icon: PartyPopper, visibility: 'non_master' },
   { type: 'link', label: '休日管理', href: '/admin/holidays', icon: CalendarOff, visibility: 'non_master' },
+  { type: 'link', label: '教室基本設定', href: '/admin/settings', icon: Settings, visibility: 'non_master' },
   { type: 'link', label: '教室管理', href: '/admin/classrooms', icon: Building2, visibility: 'master_only' },
   { type: 'link', label: '管理者アカウント', href: '/admin/admin-accounts', icon: Shield, visibility: 'master_only' },
   { type: 'link', label: 'スタッフアカウント', href: '/admin/staff-accounts', icon: BadgeCheck, visibility: 'master_only' },
@@ -240,7 +241,7 @@ export function Sidebar() {
 interface SidebarContentProps {
   navItems: NavItem[];
   pathname: string;
-  user: { full_name: string; user_type: string; classroom?: { classroom_name: string; logo_path: string | null } | null };
+  user: { full_name: string; user_type: string; is_master?: boolean; classroom?: { classroom_name: string; logo_path: string | null } | null };
   collapsed?: boolean;
   onClose?: () => void;
   onToggle?: () => void;
@@ -318,7 +319,14 @@ function SidebarContent({
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto p-3">
         <ul className="space-y-0.5">
-          {navItems.map((item, index) => {
+          {navItems.filter((item) => {
+            if (item.type === 'divider') return true;
+            const vis = item.visibility ?? 'all';
+            const isMaster = user.user_type === 'admin' && !!user.is_master;
+            if (vis === 'master_only' && !isMaster) return false;
+            if (vis === 'non_master' && isMaster) return false;
+            return true;
+          }).map((item, index) => {
             if (item.type === 'divider') {
               if (collapsed) return null;
               return (

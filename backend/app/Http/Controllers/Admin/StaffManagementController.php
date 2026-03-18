@@ -16,9 +16,15 @@ class StaffManagementController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $user = $request->user();
+        $isMaster = $user->user_type === 'admin' && $user->is_master;
+
         $query = User::whereIn('user_type', ['staff', 'admin'])->with('classroom');
 
-        if ($request->filled('classroom_id')) {
+        // 通常管理者は自教室のみ
+        if (!$isMaster && $user->classroom_id) {
+            $query->where('classroom_id', $user->classroom_id);
+        } elseif ($request->filled('classroom_id')) {
             $query->where('classroom_id', $request->classroom_id);
         }
 

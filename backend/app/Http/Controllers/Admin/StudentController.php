@@ -16,9 +16,15 @@ class StudentController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $user = $request->user();
+        $isMaster = $user->user_type === 'admin' && $user->is_master;
+
         $query = Student::with(['classroom', 'guardian']);
 
-        if ($request->filled('classroom_id')) {
+        // 非マスター管理者は自教室のみ
+        if (!$isMaster && $user->classroom_id) {
+            $query->where('classroom_id', $user->classroom_id);
+        } elseif ($request->filled('classroom_id')) {
             $query->where('classroom_id', $request->classroom_id);
         }
 

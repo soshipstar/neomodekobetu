@@ -12,10 +12,27 @@ use Illuminate\Validation\Rule;
 class AdminAccountController extends Controller
 {
     /**
-     * 管理者アカウント一覧を取得
+     * マスター管理者のみアクセス可能にする共通チェック
+     */
+    private function requireMaster(Request $request): ?JsonResponse
+    {
+        $user = $request->user();
+        if (!$user || $user->user_type !== 'admin' || !$user->is_master) {
+            return response()->json([
+                'success' => false,
+                'message' => 'マスター管理者権限が必要です。',
+            ], 403);
+        }
+        return null;
+    }
+
+    /**
+     * 管理者アカウント一覧を取得（マスター管理者専用）
      */
     public function index(Request $request): JsonResponse
     {
+        if ($deny = $this->requireMaster($request)) return $deny;
+
         $query = User::where('user_type', 'admin')->with('classroom');
 
         if ($request->filled('is_active')) {
@@ -31,7 +48,7 @@ class AdminAccountController extends Controller
             });
         }
 
-        $users = $query->orderBy('full_name')->paginate($request->integer('per_page', 50));
+        $users = $query->orderByDesc('is_master')->orderBy('created_at', 'desc')->paginate($request->integer('per_page', 50));
 
         return response()->json([
             'success' => true,
@@ -40,10 +57,12 @@ class AdminAccountController extends Controller
     }
 
     /**
-     * 管理者アカウント詳細を取得
+     * 管理者アカウント詳細を取得（マスター管理者専用）
      */
-    public function show(User $user): JsonResponse
+    public function show(Request $request, User $user): JsonResponse
     {
+        if ($deny = $this->requireMaster($request)) return $deny;
+
         if ($user->user_type !== 'admin') {
             return response()->json(['success' => false, 'message' => '管理者アカウントではありません。'], 404);
         }
@@ -57,16 +76,19 @@ class AdminAccountController extends Controller
     }
 
     /**
-     * 管理者アカウントを新規作成
+     * 管理者アカウントを新規作成（マスター管理者専用）
      */
     public function store(Request $request): JsonResponse
     {
+        if ($deny = $this->requireMaster($request)) return $deny;
+
         $validated = $request->validate([
             'classroom_id' => 'nullable|exists:classrooms,id',
             'username'     => 'required|string|max:100|unique:users',
             'password'     => 'required|string|min:6',
             'full_name'    => 'required|string|max:255',
             'email'        => 'nullable|email|max:255',
+            'is_master'    => 'boolean',
             'is_active'    => 'boolean',
         ]);
 
@@ -83,10 +105,12 @@ class AdminAccountController extends Controller
     }
 
     /**
-     * 管理者アカウントを更新
+     * 管理者アカウントを更新（マスター管理者専用）
      */
     public function update(Request $request, User $user): JsonResponse
     {
+        if ($deny = $this->requireMaster($request)) return $deny;
+
         if ($user->user_type !== 'admin') {
             return response()->json(['success' => false, 'message' => '管理者アカウントではありません。'], 404);
         }
@@ -97,6 +121,7 @@ class AdminAccountController extends Controller
             'password'     => 'nullable|string|min:6',
             'full_name'    => 'sometimes|required|string|max:255',
             'email'        => 'nullable|email|max:255',
+            'is_master'    => 'boolean',
             'is_active'    => 'boolean',
         ]);
 
@@ -116,12 +141,23 @@ class AdminAccountController extends Controller
     }
 
     /**
-     * 管理者アカウントを削除（論理削除）
+     * 管理者アカウントを削除（マスター管理者専用）
+     * 自分自身は削除できない
      */
-    public function destroy(User $user): JsonResponse
+    public function destroy(Request $request, User $user): JsonResponse
     {
+        if ($deny = $this->requireMaster($request)) return $deny;
+
         if ($user->user_type !== 'admin') {
             return response()->json(['success' => false, 'message' => '管理者アカウントではありません。'], 404);
+        }
+
+        // 自分自身は削除できない
+        if ($user->id === $request->user()->id) {
+            return response()->json([
+                'success' => false,
+                'message' => '自分自身のアカウントは削除できません。',
+            ], 422);
         }
 
         $user->update(['is_active' => false]);
@@ -133,20 +169,34 @@ class AdminAccountController extends Controller
     }
 
     /**
-     * 管理者をスタッフに降格
+     * 管理者をスタッフに降格（マスター管理者専用）
+     * 自分自身は変換できない。is_masterを0にリセット。
      */
     public function convertToStaff(Request $request, User $user): JsonResponse
     {
+        if ($deny = $this->requireMaster($request)) return $deny;
+
         if ($user->user_type !== 'admin') {
             return response()->json(['success' => false, 'message' => '管理者アカウントではありません。'], 422);
         }
 
-        $user->update(['user_type' => 'staff']);
+        // 自分自身は変換できない
+        if ($user->id === $request->user()->id) {
+            return response()->json([
+                'success' => false,
+                'message' => '自分自身のアカウントは切り替えできません。',
+            ], 422);
+        }
+
+        $user->update([
+            'user_type' => 'staff',
+            'is_master' => false,
+        ]);
 
         return response()->json([
             'success' => true,
             'data'    => $user->fresh(),
-            'message' => '管理者をスタッフに変更しました。',
+            'message' => '管理者アカウントをスタッフアカウントに変換しました。',
         ]);
     }
 }

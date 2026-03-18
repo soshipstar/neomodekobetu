@@ -12,10 +12,27 @@ use Illuminate\Validation\Rule;
 class StaffAccountController extends Controller
 {
     /**
-     * スタッフアカウント一覧を取得
+     * マスター管理者のみアクセス可能にする共通チェック
+     */
+    private function requireMaster(Request $request): ?JsonResponse
+    {
+        $user = $request->user();
+        if (!$user || $user->user_type !== 'admin' || !$user->is_master) {
+            return response()->json([
+                'success' => false,
+                'message' => 'マスター管理者権限が必要です。',
+            ], 403);
+        }
+        return null;
+    }
+
+    /**
+     * スタッフアカウント一覧を取得（マスター管理者専用）
      */
     public function index(Request $request): JsonResponse
     {
+        if ($deny = $this->requireMaster($request)) return $deny;
+
         $query = User::where('user_type', 'staff')->with('classroom');
 
         if ($request->filled('classroom_id')) {
@@ -35,7 +52,7 @@ class StaffAccountController extends Controller
             });
         }
 
-        $users = $query->orderBy('full_name')->paginate($request->integer('per_page', 50));
+        $users = $query->orderBy('created_at', 'desc')->paginate($request->integer('per_page', 50));
 
         return response()->json([
             'success' => true,
@@ -44,10 +61,12 @@ class StaffAccountController extends Controller
     }
 
     /**
-     * スタッフアカウント詳細を取得
+     * スタッフアカウント詳細を取得（マスター管理者専用）
      */
-    public function show(User $user): JsonResponse
+    public function show(Request $request, User $user): JsonResponse
     {
+        if ($deny = $this->requireMaster($request)) return $deny;
+
         if ($user->user_type !== 'staff') {
             return response()->json(['success' => false, 'message' => 'スタッフアカウントではありません。'], 404);
         }
@@ -61,10 +80,12 @@ class StaffAccountController extends Controller
     }
 
     /**
-     * スタッフアカウントを新規作成
+     * スタッフアカウントを新規作成（マスター管理者専用）
      */
     public function store(Request $request): JsonResponse
     {
+        if ($deny = $this->requireMaster($request)) return $deny;
+
         $validated = $request->validate([
             'classroom_id' => 'nullable|exists:classrooms,id',
             'username'     => 'required|string|max:100|unique:users',
@@ -87,10 +108,12 @@ class StaffAccountController extends Controller
     }
 
     /**
-     * スタッフアカウントを更新
+     * スタッフアカウントを更新（マスター管理者専用）
      */
     public function update(Request $request, User $user): JsonResponse
     {
+        if ($deny = $this->requireMaster($request)) return $deny;
+
         if ($user->user_type !== 'staff') {
             return response()->json(['success' => false, 'message' => 'スタッフアカウントではありません。'], 404);
         }
@@ -120,10 +143,12 @@ class StaffAccountController extends Controller
     }
 
     /**
-     * スタッフアカウントを削除（論理削除）
+     * スタッフアカウントを削除（マスター管理者専用）
      */
-    public function destroy(User $user): JsonResponse
+    public function destroy(Request $request, User $user): JsonResponse
     {
+        if ($deny = $this->requireMaster($request)) return $deny;
+
         if ($user->user_type !== 'staff') {
             return response()->json(['success' => false, 'message' => 'スタッフアカウントではありません。'], 404);
         }
@@ -137,20 +162,26 @@ class StaffAccountController extends Controller
     }
 
     /**
-     * スタッフを管理者に昇格
+     * スタッフを管理者に昇格（マスター管理者専用）
+     * is_master=false（通常管理者）として昇格
      */
     public function convertToAdmin(Request $request, User $user): JsonResponse
     {
+        if ($deny = $this->requireMaster($request)) return $deny;
+
         if ($user->user_type !== 'staff') {
             return response()->json(['success' => false, 'message' => 'スタッフアカウントではありません。'], 422);
         }
 
-        $user->update(['user_type' => 'admin']);
+        $user->update([
+            'user_type' => 'admin',
+            'is_master' => false,
+        ]);
 
         return response()->json([
             'success' => true,
             'data'    => $user->fresh(),
-            'message' => 'スタッフを管理者に変更しました。',
+            'message' => 'スタッフアカウントを管理者アカウントに変換しました。',
         ]);
     }
 }
