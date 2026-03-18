@@ -105,11 +105,15 @@ class MeetingController extends Controller
                     $room->update(['last_message_at' => now()]);
                 }
             } else {
-                // 別日程を提案
+                // 別日程を提案 - candidate_dates JSONBに格納
+                $counterDates = array_values(array_filter([
+                    $validated['counter_date1'],
+                    $validated['counter_date2'] ?? null,
+                    $validated['counter_date3'] ?? null,
+                ]));
+
                 $meeting->update([
-                    'guardian_counter_date1'    => $validated['counter_date1'],
-                    'guardian_counter_date2'    => $validated['counter_date2'] ?? null,
-                    'guardian_counter_date3'    => $validated['counter_date3'] ?? null,
+                    'candidate_dates'          => $counterDates,
                     'guardian_counter_message'  => $validated['counter_message'] ?? null,
                     'status'                   => 'guardian_counter',
                 ]);

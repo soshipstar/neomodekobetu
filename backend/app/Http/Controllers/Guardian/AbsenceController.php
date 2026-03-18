@@ -63,11 +63,10 @@ class AbsenceController extends Controller
 
         $absence = AbsenceNotification::create([
             'student_id'          => $validated['student_id'],
-            'guardian_id'         => $user->id,
             'absence_date'        => $validated['absence_date'],
             'reason'              => $validated['reason'],
             'makeup_request_date' => $validated['makeup_request_date'] ?? null,
-            'makeup_status'       => ! empty($validated['makeup_request']) ? 'pending' : null,
+            'makeup_status'       => ! empty($validated['makeup_request']) ? 'pending' : 'none',
         ]);
 
         return response()->json([
