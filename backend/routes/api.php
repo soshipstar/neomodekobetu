@@ -301,6 +301,7 @@ Route::prefix('staff')
         Route::post('/guardians', [App\Http\Controllers\Staff\StaffGuardianController::class, 'store']);
         Route::get('/guardians/{guardian}', [App\Http\Controllers\Staff\StaffGuardianController::class, 'show']);
         Route::put('/guardians/{guardian}', [App\Http\Controllers\Staff\StaffGuardianController::class, 'update']);
+        Route::delete('/guardians/{guardian}', [App\Http\Controllers\Staff\StaffGuardianController::class, 'destroy']);
 
         // --- 未確認連絡帳 ---
         Route::get('/unconfirmed-notes', [App\Http\Controllers\Staff\UnconfirmedNoteController::class, 'index']);

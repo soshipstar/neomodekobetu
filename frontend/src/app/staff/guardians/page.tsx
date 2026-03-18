@@ -32,6 +32,7 @@ interface Guardian {
   full_name: string;
   username: string | null;
   email: string | null;
+  password_plain: string | null;
   is_active: boolean;
   students: { id: number; student_name: string }[];
   last_login_at: string | null;
@@ -46,7 +47,7 @@ interface GuardianForm {
 }
 
 function generatePassword(length = 8): string {
-  const chars = 'abcdefghijkmnpqrstuvwxyz23456789';
+  const chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let pw = '';
   for (let i = 0; i < length; i++) {
     pw += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -79,15 +80,23 @@ export default function GuardiansPage() {
     },
   });
 
-  // Save mutation
+  // Save mutation (create: only full_name + email; edit: full_name + username + email + password)
   const saveMutation = useMutation({
     mutationFn: async (data: GuardianForm) => {
       if (editingGuardian) {
-        const payload: Record<string, string> = { full_name: data.full_name, email: data.email };
+        const payload: Record<string, string> = {
+          full_name: data.full_name,
+          username: data.username,
+          email: data.email,
+        };
         if (data.password) payload.password = data.password;
         return api.put(`/api/staff/guardians/${editingGuardian.id}`, payload);
       }
-      return api.post('/api/staff/guardians', data);
+      // 新規作成: ユーザー名・パスワードはサーバー側で自動生成
+      return api.post('/api/staff/guardians', {
+        full_name: data.full_name,
+        email: data.email || undefined,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'guardians'] });
@@ -97,12 +106,12 @@ export default function GuardiansPage() {
     onError: (err: any) => toast.error(err.response?.data?.message || '保存に失敗しました'),
   });
 
-  // Delete mutation
+  // Delete mutation (実際に削除)
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => api.put(`/api/staff/guardians/${id}`, { is_active: false }),
+    mutationFn: (id: number) => api.delete(`/api/staff/guardians/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'guardians'] });
-      toast.success('保護者を無効化しました');
+      toast.success('保護者を削除しました');
       closeModal();
     },
     onError: () => toast.error('削除に失敗しました'),
@@ -127,7 +136,7 @@ export default function GuardiansPage() {
 
   const openCreate = () => {
     setEditingGuardian(null);
-    setForm({ full_name: '', email: '', username: '', password: generatePassword() });
+    setForm({ full_name: '', email: '', username: '', password: '' });
     setModalOpen(true);
   };
 
@@ -142,7 +151,8 @@ export default function GuardiansPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">保護者登録・変更</h1>
+          <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">保護者管理</h1>
+          <p className="text-sm text-[var(--neutral-foreground-4)]">保護者の登録・編集</p>
         </div>
         <Button leftIcon={<Plus className="h-4 w-4" />} onClick={openCreate}>
           保護者を追加
@@ -221,78 +231,92 @@ export default function GuardiansPage() {
           <div>
             <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">保護者氏名 <span className="text-[var(--status-danger-fg)]">*</span></label>
             <input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-              className={inputCls} required />
+              className={inputCls} required placeholder="例: 山田 花子" />
           </div>
 
           {/* メール */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">メールアドレス</label>
+            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">メールアドレス（任意）</label>
             <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className={inputCls} />
+              className={inputCls} placeholder="例: yamada@example.com" />
           </div>
 
-          {/* ログイン情報 */}
-          <div className="border-t border-[var(--neutral-stroke-2)] pt-4">
-            <h4 className="text-sm font-semibold text-[var(--neutral-foreground-1)] mb-3">ログイン情報</h4>
+          {editingGuardian ? (
+            <>
+              {/* 編集時: ログイン情報セクション */}
+              <div className="border-t border-[var(--neutral-stroke-2)] pt-4">
+                <h4 className="text-sm font-semibold text-[var(--neutral-foreground-1)] mb-3">ログイン情報</h4>
 
-            {/* ユーザー名 */}
-            <div className="mb-3">
-              <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">ログインID {!editingGuardian && <span className="text-[var(--status-danger-fg)]">*</span>}</label>
-              {editingGuardian ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-[var(--neutral-foreground-1)]">{editingGuardian.username || '（未設定）'}</span>
-                  {editingGuardian.username && (
-                    <button onClick={() => copyToClipboard(editingGuardian.username!)}
-                      className="text-[var(--neutral-foreground-4)] hover:text-[var(--neutral-foreground-2)]">
-                      <Copy className="h-3.5 w-3.5" />
-                    </button>
-                  )}
+                {/* ユーザー名（編集可能） */}
+                <div className="mb-3">
+                  <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">ログインID</label>
+                  <input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })}
+                    className={inputCls} required />
                 </div>
-              ) : (
-                <input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })}
-                  className={inputCls} required />
-              )}
-            </div>
 
-            {/* パスワード */}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">
-                {editingGuardian ? '新しいパスワード（変更する場合のみ）' : 'パスワード'}
-                {!editingGuardian && <span className="text-[var(--status-danger-fg)]"> *</span>}
-              </label>
-              <div className="flex gap-2">
-                <input
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  className={`${inputCls} flex-1`}
-                  placeholder={editingGuardian ? '変更しない場合は空欄' : ''}
-                  required={!editingGuardian}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  type="button"
-                  leftIcon={<RefreshCw className="h-3.5 w-3.5" />}
-                  onClick={() => setForm({ ...form, password: generatePassword() })}
-                >
-                  自動生成
-                </Button>
-                {form.password && (
-                  <Button variant="ghost" size="sm" type="button" onClick={() => copyToClipboard(form.password)}>
-                    <Copy className="h-3.5 w-3.5" />
-                  </Button>
-                )}
+                {/* 現在のパスワード（読み取り専用） */}
+                <div className="mb-3">
+                  <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">現在のパスワード</label>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      value={editingGuardian.password_plain || '（未設定）'}
+                      readOnly
+                      className={`${inputCls} flex-1 bg-[var(--neutral-background-3)]`}
+                    />
+                    {editingGuardian.password_plain && (
+                      <Button variant="outline" size="sm" type="button" onClick={() => copyToClipboard(editingGuardian.password_plain!)}>
+                        コピー
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* 新しいパスワード */}
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">
+                    新しいパスワード（変更する場合のみ）
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      value={form.password}
+                      onChange={(e) => setForm({ ...form, password: e.target.value })}
+                      className={`${inputCls} flex-1`}
+                      placeholder="変更しない場合は空欄"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      type="button"
+                      leftIcon={<RefreshCw className="h-3.5 w-3.5" />}
+                      onClick={() => setForm({ ...form, password: generatePassword() })}
+                    >
+                      自動生成
+                    </Button>
+                    {form.password && (
+                      <Button variant="ghost" size="sm" type="button" onClick={() => copyToClipboard(form.password)}>
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                  <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">8文字以上で設定してください</p>
+                </div>
               </div>
-              <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">8文字以上で設定してください</p>
+            </>
+          ) : (
+            /* 新規作成時: 自動生成の説明 */
+            <div className="rounded-lg bg-[var(--neutral-background-3)] p-3">
+              <p className="text-sm text-[var(--neutral-foreground-3)]">
+                ログインID・パスワードは自動生成されます。登録後に編集画面で変更できます。
+              </p>
             </div>
-          </div>
+          )}
 
           {/* Actions */}
           <div className="flex items-center justify-between pt-2">
             <div>
-              {editingGuardian && editingGuardian.is_active && (
+              {editingGuardian && (
                 <Button variant="ghost" size="sm" onClick={() => {
-                  if (confirm(`${editingGuardian.full_name}を無効化しますか？`))
+                  if (confirm(`本当に「${editingGuardian.full_name}」を削除しますか？\n\nこの操作は取り消せません。関連する生徒との紐付けも解除されます。`))
                     deleteMutation.mutate(editingGuardian.id);
                 }}>
                   <Trash2 className="h-4 w-4 text-[var(--status-danger-fg)]" />
