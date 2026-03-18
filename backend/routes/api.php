@@ -269,6 +269,8 @@ Route::prefix('staff')
         Route::put('/tag-settings/{tag}', [App\Http\Controllers\Staff\TagSettingController::class, 'update']);
         Route::delete('/tag-settings/{tag}', [App\Http\Controllers\Staff\TagSettingController::class, 'destroy']);
         Route::post('/tag-settings/reorder', [App\Http\Controllers\Staff\TagSettingController::class, 'reorder']); // (#27)
+        Route::post('/tag-settings/batch', [App\Http\Controllers\Staff\TagSettingController::class, 'batch']);
+        Route::post('/tag-settings/reset', [App\Http\Controllers\Staff\TagSettingController::class, 'reset']);
 
         // --- 非表示ドキュメント ---
         Route::get('/hidden-documents', [App\Http\Controllers\Staff\HiddenDocumentController::class, 'index']);

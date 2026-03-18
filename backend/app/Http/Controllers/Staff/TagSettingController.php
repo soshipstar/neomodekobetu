@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ClassroomTag;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class TagSettingController extends Controller
 {
@@ -145,6 +146,82 @@ class TagSettingController extends Controller
         return response()->json([
             'success' => true,
             'message' => '並び替えを保存しました。',
+        ]);
+    }
+
+    /**
+     * タグを一括保存（レガシー互換: 全削除→再挿入）
+     */
+    public function batch(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $classroomId = $user->classroom_id;
+
+        if (!$classroomId) {
+            return response()->json(['success' => false, 'message' => '教室が設定されていません。'], 400);
+        }
+
+        $validated = $request->validate([
+            'tags'   => 'required|array',
+            'tags.*' => 'string|max:50',
+        ]);
+
+        DB::transaction(function () use ($classroomId, $validated) {
+            ClassroomTag::where('classroom_id', $classroomId)->delete();
+
+            $sortOrder = 1;
+            foreach ($validated['tags'] as $tagName) {
+                $tagName = trim($tagName);
+                if ($tagName !== '') {
+                    ClassroomTag::create([
+                        'classroom_id' => $classroomId,
+                        'tag_name'     => $tagName,
+                        'sort_order'   => $sortOrder,
+                        'is_active'    => true,
+                    ]);
+                    $sortOrder++;
+                }
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'タグ設定を保存しました。',
+        ]);
+    }
+
+    /**
+     * デフォルトタグにリセット
+     */
+    public function reset(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $classroomId = $user->classroom_id;
+
+        if (!$classroomId) {
+            return response()->json(['success' => false, 'message' => '教室が設定されていません。'], 400);
+        }
+
+        $defaultTags = ['動画', '食', '学習', 'イベント', 'その他'];
+
+        DB::transaction(function () use ($classroomId, $defaultTags) {
+            ClassroomTag::where('classroom_id', $classroomId)->delete();
+
+            $sortOrder = 1;
+            foreach ($defaultTags as $tagName) {
+                ClassroomTag::create([
+                    'classroom_id' => $classroomId,
+                    'tag_name'     => $tagName,
+                    'sort_order'   => $sortOrder,
+                    'is_active'    => true,
+                ]);
+                $sortOrder++;
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'デフォルトタグにリセットしました。',
         ]);
     }
 }
