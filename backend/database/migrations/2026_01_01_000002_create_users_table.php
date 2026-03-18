@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('username', 50)->unique();
             $table->string('password', 255);
             $table->string('full_name', 100);
-            $table->string('user_type', 20)->default('staff')->comment('admin, staff, guardian, tablet_user');
+            $table->string('user_type', 20)->default('staff')->comment('admin, staff, guardian, tablet, student');
             $table->boolean('is_master')->default(false);
             $table->string('email', 100)->nullable();
             $table->boolean('is_active')->default(true);
@@ -26,7 +26,7 @@ return new class extends Migration
         });
 
         // CHECK constraint for user_type
-        DB::statement("ALTER TABLE users ADD CONSTRAINT users_user_type_check CHECK (user_type IN ('admin', 'staff', 'guardian', 'tablet_user'))");
+        DB::statement("ALTER TABLE users ADD CONSTRAINT users_user_type_check CHECK (user_type IN ('admin', 'staff', 'guardian', 'tablet', 'student'))");
     }
 
     public function down(): void

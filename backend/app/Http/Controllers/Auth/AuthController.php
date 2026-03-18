@@ -155,13 +155,27 @@ class AuthController extends Controller
             ]);
         }
 
-        // 保護者ユーザーが紐付いていない場合
-        // studentsテーブル単独での認証（レガシー互換）
-        // 一時的なトークンIDを生成して返す
+        // AU-009: 保護者ユーザーが紐付いていない場合
+        // 生徒用の仮Userレコードを作成してトークンを発行
+        $studentUser = User::firstOrCreate(
+            ['username' => 'student_' . $student->id],
+            [
+                'password'     => $student->password_hash ?? bcrypt('student_' . $student->id),
+                'full_name'    => $student->student_name,
+                'user_type'    => 'student',
+                'classroom_id' => $student->classroom_id,
+                'is_active'    => true,
+            ]
+        );
+
+        $studentUser->tokens()->delete();
+        $token = $studentUser->createToken('kiduri-api', ['student'])->plainTextToken;
+
         return response()->json([
             'success' => true,
             'data'    => [
-                'token' => null,
+                'token' => $token,
+                'user'  => $studentUser->load('classroom'),
                 'student' => $student->load('classroom'),
                 'login_type' => 'student_only',
             ],

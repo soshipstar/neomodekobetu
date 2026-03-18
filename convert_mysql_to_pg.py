@@ -110,6 +110,11 @@ VALUE_MAPPINGS = {
             '1': 'draft',
         },
     },
+    'users': {
+        'user_type': {
+            'tablet_user': 'tablet',
+        },
+    },
 }
 
 # Columns that exist in MySQL but NOT in PG (will be stripped from INSERT)
