@@ -13,6 +13,7 @@ return new class extends Migration
             $table->string('username', 100);
             $table->string('ip_address', 45);
             $table->string('user_agent', 500)->nullable();
+            $table->foreignId('user_id')->nullable();
             $table->boolean('success')->default(false);
             $table->timestampTz('attempted_at')->useCurrent();
 
