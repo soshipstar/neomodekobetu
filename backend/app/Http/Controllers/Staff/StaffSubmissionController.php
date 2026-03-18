@@ -24,6 +24,7 @@ class StaffSubmissionController extends Controller
         $query = SubmissionRequest::with([
             'student:id,student_name',
             'guardian:id,full_name',
+            'creator:id,full_name',
         ]);
 
         if ($classroomId) {
@@ -40,11 +41,54 @@ class StaffSubmissionController extends Controller
             $query->where('is_completed', $request->boolean('is_completed'));
         }
 
-        $submissions = $query->orderByDesc('created_at')->get();
+        $submissions = $query
+            ->orderBy('is_completed')
+            ->orderBy('due_date')
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(function ($sub) {
+                return [
+                    'id'                       => $sub->id,
+                    'student_id'               => $sub->student_id,
+                    'student_name'             => $sub->student?->student_name ?? '',
+                    'guardian_name'            => $sub->guardian?->full_name ?? '',
+                    'created_by_name'          => $sub->creator?->full_name ?? '',
+                    'title'                    => $sub->title,
+                    'description'              => $sub->description,
+                    'due_date'                 => $sub->due_date?->toDateString(),
+                    'is_completed'             => $sub->is_completed,
+                    'completed_at'             => $sub->completed_at?->toIso8601String(),
+                    'completed_note'           => $sub->completed_note,
+                    'attachment_path'          => $sub->attachment_path,
+                    'attachment_original_name' => $sub->attachment_original_name,
+                    'attachment_size'          => $sub->attachment_size,
+                    'created_at'               => $sub->created_at->toIso8601String(),
+                ];
+            });
+
+        // 統計
+        $allForStats = SubmissionRequest::query();
+        if ($classroomId) {
+            $allForStats->whereHas('student', function ($q) use ($classroomId) {
+                $q->where('classroom_id', $classroomId);
+            });
+        }
+        $statsRaw = $allForStats->selectRaw("
+            COUNT(*) as total,
+            SUM(CASE WHEN is_completed = false THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN is_completed = true AND completed_at >= NOW() - INTERVAL '1 month' THEN 1 ELSE 0 END) as completed,
+            SUM(CASE WHEN is_completed = false AND due_date < CURRENT_DATE THEN 1 ELSE 0 END) as overdue
+        ")->first();
 
         return response()->json([
             'success' => true,
             'data'    => $submissions,
+            'stats'   => [
+                'total'     => (int) $statsRaw->total,
+                'pending'   => (int) $statsRaw->pending,
+                'completed' => (int) $statsRaw->completed,
+                'overdue'   => (int) $statsRaw->overdue,
+            ],
         ]);
     }
 
@@ -53,7 +97,7 @@ class StaffSubmissionController extends Controller
      */
     public function show(Request $request, SubmissionRequest $submissionRequest): JsonResponse
     {
-        $submissionRequest->load(['student:id,student_name', 'guardian:id,full_name']);
+        $submissionRequest->load(['student:id,student_name', 'guardian:id,full_name', 'creator:id,full_name']);
 
         return response()->json([
             'success' => true,
@@ -136,8 +180,15 @@ class StaffSubmissionController extends Controller
             'completed_note' => 'nullable|string|max:1000',
         ]);
 
+        // 完了にする場合
         if (isset($validated['is_completed']) && $validated['is_completed'] && ! $submissionRequest->is_completed) {
             $validated['completed_at'] = now();
+        }
+
+        // 未提出に戻す場合
+        if (isset($validated['is_completed']) && ! $validated['is_completed'] && $submissionRequest->is_completed) {
+            $validated['completed_at'] = null;
+            $validated['completed_note'] = null;
         }
 
         $submissionRequest->update($validated);

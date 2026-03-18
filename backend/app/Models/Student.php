@@ -171,6 +171,18 @@ class Student extends Model
         return $this->hasMany(AdditionalUsage::class);
     }
 
+    /** @return HasMany<SubmissionRequest> */
+    public function submissionRequests(): HasMany
+    {
+        return $this->hasMany(SubmissionRequest::class);
+    }
+
+    /** @return HasMany<StudentSubmission> */
+    public function studentSubmissions(): HasMany
+    {
+        return $this->hasMany(StudentSubmission::class);
+    }
+
     // =========================================================================
     // Scopes
     // =========================================================================
