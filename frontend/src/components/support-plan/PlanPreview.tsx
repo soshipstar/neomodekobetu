@@ -1,6 +1,6 @@
 'use client';
 
-import { formatDate } from '@/lib/utils';
+import { formatDate, nl } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
 import { DOMAIN_LABELS, type Domain, type SupportPlan } from '@/types/support-plan';
 
@@ -57,13 +57,13 @@ export function PlanPreview({ plan }: PlanPreviewProps) {
         {plan.student_wish && (
           <div className="rounded-lg border border-gray-200 p-4">
             <h4 className="mb-2 text-sm font-semibold text-gray-700">本人の願い</h4>
-            <p className="text-sm text-gray-600 whitespace-pre-wrap">{plan.student_wish}</p>
+            <p className="text-sm text-gray-600 whitespace-pre-wrap">{nl(plan.student_wish)}</p>
           </div>
         )}
         {plan.guardian_wish && (
           <div className="rounded-lg border border-gray-200 p-4">
             <h4 className="mb-2 text-sm font-semibold text-gray-700">保護者の願い</h4>
-            <p className="text-sm text-gray-600 whitespace-pre-wrap">{plan.guardian_wish}</p>
+            <p className="text-sm text-gray-600 whitespace-pre-wrap">{nl(plan.guardian_wish)}</p>
           </div>
         )}
       </div>
@@ -72,7 +72,7 @@ export function PlanPreview({ plan }: PlanPreviewProps) {
       {plan.overall_policy && (
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
           <h4 className="mb-2 text-sm font-semibold text-blue-800">総合的な支援方針</h4>
-          <p className="text-sm text-blue-900 whitespace-pre-wrap">{plan.overall_policy}</p>
+          <p className="text-sm text-blue-900 whitespace-pre-wrap">{nl(plan.overall_policy)}</p>
         </div>
       )}
 
@@ -93,24 +93,24 @@ export function PlanPreview({ plan }: PlanPreviewProps) {
                 <tbody>
                   <tr className="border-b border-gray-200">
                     <th className="bg-gray-50/50 px-4 py-2 text-left font-medium text-gray-600 w-32">ニーズ</th>
-                    <td className="px-4 py-2 text-gray-900 whitespace-pre-wrap">{detail.needs}</td>
+                    <td className="px-4 py-2 text-gray-900 whitespace-pre-wrap">{nl(detail.needs)}</td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <th className="bg-gray-50/50 px-4 py-2 text-left font-medium text-gray-600">長期目標</th>
-                    <td className="px-4 py-2 text-gray-900 whitespace-pre-wrap">{detail.long_term_goal}</td>
+                    <td className="px-4 py-2 text-gray-900 whitespace-pre-wrap">{nl(detail.long_term_goal)}</td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <th className="bg-gray-50/50 px-4 py-2 text-left font-medium text-gray-600">短期目標</th>
-                    <td className="px-4 py-2 text-gray-900 whitespace-pre-wrap">{detail.short_term_goal}</td>
+                    <td className="px-4 py-2 text-gray-900 whitespace-pre-wrap">{nl(detail.short_term_goal)}</td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <th className="bg-gray-50/50 px-4 py-2 text-left font-medium text-gray-600">支援内容</th>
-                    <td className="px-4 py-2 text-gray-900 whitespace-pre-wrap">{detail.support_content}</td>
+                    <td className="px-4 py-2 text-gray-900 whitespace-pre-wrap">{nl(detail.support_content)}</td>
                   </tr>
                   {detail.achievement_criteria && (
                     <tr>
                       <th className="bg-gray-50/50 px-4 py-2 text-left font-medium text-gray-600">達成基準</th>
-                      <td className="px-4 py-2 text-gray-900 whitespace-pre-wrap">{detail.achievement_criteria}</td>
+                      <td className="px-4 py-2 text-gray-900 whitespace-pre-wrap">{nl(detail.achievement_criteria)}</td>
                     </tr>
                   )}
                 </tbody>

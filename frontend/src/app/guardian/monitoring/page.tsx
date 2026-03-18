@@ -10,7 +10,7 @@ import { Modal } from '@/components/ui/Modal';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { SignaturePad, type SignaturePadRef } from '@/components/ui/SignaturePad';
-import { formatDate } from '@/lib/utils';
+import { formatDate, nl } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { ClipboardList, CheckCircle, ChevronDown, ChevronUp, PenLine } from 'lucide-react';
@@ -280,13 +280,13 @@ export default function GuardianMonitoringPage() {
                                       {pd.sub_category && <><br /><span className="text-xs text-gray-400">{pd.sub_category}</span></>}
                                     </td>
                                     <td className="border border-gray-200 px-3 py-2 align-top whitespace-pre-wrap">
-                                      {pd.support_goal}
+                                      {nl(pd.support_goal)}
                                     </td>
                                     <td className="border border-gray-200 px-3 py-2 align-top">
                                       {md ? achievementBadge(md.achievement_status) : null}
                                     </td>
                                     <td className="border border-gray-200 px-3 py-2 align-top whitespace-pre-wrap">
-                                      {md?.monitoring_comment || ''}
+                                      {nl(md?.monitoring_comment) || ''}
                                     </td>
                                   </tr>
                                 );
@@ -309,13 +309,13 @@ export default function GuardianMonitoringPage() {
                             <div className="rounded-lg border-l-4 border-purple-500 bg-gray-50 p-3">
                               <h5 className="text-sm font-semibold text-purple-700 mb-2">長期目標</h5>
                               {record.plan?.long_term_goal_text && (
-                                <p className="mb-2 rounded bg-white p-2 text-sm text-gray-800 whitespace-pre-wrap">{record.plan.long_term_goal_text}</p>
+                                <p className="mb-2 rounded bg-white p-2 text-sm text-gray-800 whitespace-pre-wrap">{nl(record.plan.long_term_goal_text)}</p>
                               )}
                               {record.long_term_goal_achievement && (
                                 <p className="text-sm"><span className="font-medium text-gray-500">達成状況: </span><Badge variant="default">{record.long_term_goal_achievement}</Badge></p>
                               )}
                               {record.long_term_goal_comment && (
-                                <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">{record.long_term_goal_comment}</p>
+                                <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">{nl(record.long_term_goal_comment)}</p>
                               )}
                             </div>
                           )}
@@ -323,13 +323,13 @@ export default function GuardianMonitoringPage() {
                             <div className="rounded-lg border-l-4 border-green-500 bg-gray-50 p-3">
                               <h5 className="text-sm font-semibold text-green-700 mb-2">短期目標</h5>
                               {record.plan?.short_term_goal_text && (
-                                <p className="mb-2 rounded bg-white p-2 text-sm text-gray-800 whitespace-pre-wrap">{record.plan.short_term_goal_text}</p>
+                                <p className="mb-2 rounded bg-white p-2 text-sm text-gray-800 whitespace-pre-wrap">{nl(record.plan.short_term_goal_text)}</p>
                               )}
                               {record.short_term_goal_achievement && (
                                 <p className="text-sm"><span className="font-medium text-gray-500">達成状況: </span><Badge variant="default">{record.short_term_goal_achievement}</Badge></p>
                               )}
                               {record.short_term_goal_comment && (
-                                <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">{record.short_term_goal_comment}</p>
+                                <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">{nl(record.short_term_goal_comment)}</p>
                               )}
                             </div>
                           )}
@@ -342,7 +342,7 @@ export default function GuardianMonitoringPage() {
                       <div>
                         <h4 className="mb-2 text-sm font-semibold text-green-700 border-b-2 border-green-600 pb-1">総合コメント</h4>
                         <div className="rounded-lg bg-blue-50 p-3">
-                          <p className="text-sm text-gray-700 whitespace-pre-wrap">{record.overall_comment}</p>
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap">{nl(record.overall_comment)}</p>
                         </div>
                       </div>
                     )}

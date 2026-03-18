@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { nl } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -175,7 +176,7 @@ export default function StudentSubmissionsPage() {
 
           {sub.description && (
             <p className="mt-2 text-sm text-[var(--neutral-foreground-2)] leading-relaxed whitespace-pre-wrap">
-              {sub.description}
+              {nl(sub.description)}
             </p>
           )}
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { nl } from '@/lib/utils';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -477,7 +478,7 @@ function SectionHeader({ icon, title, color }: { icon: React.ReactNode; title: s
 function ViewBox({ text }: { text: string }) {
   return (
     <div className="rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] p-3 text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap min-h-[60px]">
-      {text || '（未入力）'}
+      {nl(text) || '（未入力）'}
     </div>
   );
 }

@@ -6,7 +6,7 @@ import api from '@/lib/api';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { SkeletonList } from '@/components/ui/Skeleton';
-import { formatDate } from '@/lib/utils';
+import { formatDate, nl as normalizeNewlines } from '@/lib/utils';
 import { Megaphone, ArrowLeft, Printer } from 'lucide-react';
 
 interface Newsletter {
@@ -119,7 +119,7 @@ export default function GuardianNewslettersPage() {
           {/* Greeting */}
           {nl.greeting && (
             <div className="mb-5 rounded border-l-4 border-blue-500 bg-blue-50 px-5 py-3">
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-800">{nl.greeting}</p>
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-800">{normalizeNewlines(nl.greeting)}</p>
             </div>
           )}
 
@@ -127,7 +127,7 @@ export default function GuardianNewslettersPage() {
           {nl.event_calendar && (
             <Section title="今月の予定" icon="📅">
               <div className="rounded border border-gray-200 bg-gray-50 p-4">
-                <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-gray-800">{nl.event_calendar}</pre>
+                <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-gray-800">{normalizeNewlines(nl.event_calendar)}</pre>
               </div>
             </Section>
           )}
@@ -135,28 +135,28 @@ export default function GuardianNewslettersPage() {
           {/* Event Details */}
           {nl.event_details && (
             <Section title="イベント詳細" icon="📝">
-              <p className="whitespace-pre-wrap px-2 text-sm leading-relaxed text-gray-800">{nl.event_details}</p>
+              <p className="whitespace-pre-wrap px-2 text-sm leading-relaxed text-gray-800">{normalizeNewlines(nl.event_details)}</p>
             </Section>
           )}
 
           {/* Weekly Reports */}
           {nl.weekly_reports && (
             <Section title="活動紹介まとめ" icon="📖">
-              <p className="whitespace-pre-wrap px-2 text-sm leading-relaxed text-gray-800">{nl.weekly_reports}</p>
+              <p className="whitespace-pre-wrap px-2 text-sm leading-relaxed text-gray-800">{normalizeNewlines(nl.weekly_reports)}</p>
             </Section>
           )}
 
           {/* Weekly Intro */}
           {nl.weekly_intro && (
             <Section title="曜日別活動紹介" icon="📆">
-              <p className="whitespace-pre-wrap px-2 text-sm leading-relaxed text-gray-800">{nl.weekly_intro}</p>
+              <p className="whitespace-pre-wrap px-2 text-sm leading-relaxed text-gray-800">{normalizeNewlines(nl.weekly_intro)}</p>
             </Section>
           )}
 
           {/* Event Results */}
           {nl.event_results && (
             <Section title="イベント結果報告" icon="🎉">
-              <p className="whitespace-pre-wrap px-2 text-sm leading-relaxed text-gray-800">{nl.event_results}</p>
+              <p className="whitespace-pre-wrap px-2 text-sm leading-relaxed text-gray-800">{normalizeNewlines(nl.event_results)}</p>
             </Section>
           )}
 
@@ -168,7 +168,7 @@ export default function GuardianNewslettersPage() {
                   <p className="mb-2 border-b-2 border-purple-600 pb-2 text-sm font-bold text-purple-600">
                     🎒 小学生の活動
                   </p>
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-800">{nl.elementary_report}</p>
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-800">{normalizeNewlines(nl.elementary_report)}</p>
                 </div>
               )}
               {nl.junior_report && (
@@ -176,7 +176,7 @@ export default function GuardianNewslettersPage() {
                   <p className="mb-2 border-b-2 border-purple-600 pb-2 text-sm font-bold text-purple-600">
                     📚 中高生の活動
                   </p>
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-800">{nl.junior_report}</p>
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-800">{normalizeNewlines(nl.junior_report)}</p>
                 </div>
               )}
             </div>
@@ -186,7 +186,7 @@ export default function GuardianNewslettersPage() {
           {nl.requests && (
             <Section title="施設からのお願い" icon="🙏">
               <div className="rounded border border-yellow-300 bg-yellow-50 px-4 py-3">
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-800">{nl.requests}</p>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-800">{normalizeNewlines(nl.requests)}</p>
               </div>
             </Section>
           )}
@@ -195,7 +195,7 @@ export default function GuardianNewslettersPage() {
           {nl.others && (
             <Section title="その他のお知らせ" icon="📌">
               <div className="rounded border border-yellow-300 bg-yellow-50 px-4 py-3">
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-800">{nl.others}</p>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-800">{normalizeNewlines(nl.others)}</p>
               </div>
             </Section>
           )}

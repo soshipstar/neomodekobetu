@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { useToast } from '@/components/ui/Toast';
+import { nl } from '@/lib/utils';
 import {
   Trash2,
   Download,
@@ -571,12 +572,12 @@ export default function KobetsuMonitoringPage() {
                       </td>
                       <td className="border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] p-2 align-top">
                         <div className="whitespace-pre-wrap rounded bg-[var(--neutral-background-2)] p-1.5 text-xs text-[var(--neutral-foreground-3)]">
-                          {detail.support_goal || '（未設定）'}
+                          {nl(detail.support_goal) || '（未設定）'}
                         </div>
                       </td>
                       <td className="border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] p-2 align-top">
                         <div className="whitespace-pre-wrap rounded bg-[var(--neutral-background-2)] p-1.5 text-xs text-[var(--neutral-foreground-3)]">
-                          {detail.support_content || '（未設定）'}
+                          {nl(detail.support_content) || '（未設定）'}
                         </div>
                       </td>
                       <td className="border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] p-2 align-top">
@@ -641,7 +642,7 @@ export default function KobetsuMonitoringPage() {
               </h4>
               {(planData.long_term_goal_text || planData.long_term_goal) ? (
                 <div className="mb-3 whitespace-pre-wrap rounded-md bg-[var(--neutral-background-1)] p-3 text-sm leading-relaxed text-[var(--neutral-foreground-1)]">
-                  {planData.long_term_goal_text || planData.long_term_goal}
+                  {nl(planData.long_term_goal_text || planData.long_term_goal)}
                 </div>
               ) : (
                 <div className="mb-3 rounded-md bg-[var(--neutral-background-1)] p-3 text-sm italic text-[var(--neutral-foreground-3)]">
@@ -679,7 +680,7 @@ export default function KobetsuMonitoringPage() {
               </h4>
               {(planData.short_term_goal_text || planData.short_term_goal) ? (
                 <div className="mb-3 whitespace-pre-wrap rounded-md bg-[var(--neutral-background-1)] p-3 text-sm leading-relaxed text-[var(--neutral-foreground-1)]">
-                  {planData.short_term_goal_text || planData.short_term_goal}
+                  {nl(planData.short_term_goal_text || planData.short_term_goal)}
                 </div>
               ) : (
                 <div className="mb-3 rounded-md bg-[var(--neutral-background-1)] p-3 text-sm italic text-[var(--neutral-foreground-3)]">

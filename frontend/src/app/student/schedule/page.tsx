@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { nl } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -265,7 +266,7 @@ export default function StudentSchedulePage() {
                       >
                         <p className="text-sm font-medium text-green-700">{e.event_name}</p>
                         {e.event_description && (
-                          <p className="mt-1 text-xs text-green-600 whitespace-pre-wrap">{e.event_description}</p>
+                          <p className="mt-1 text-xs text-green-600 whitespace-pre-wrap">{nl(e.event_description)}</p>
                         )}
                       </div>
                     ))}

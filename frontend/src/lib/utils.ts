@@ -78,3 +78,12 @@ export function getInitials(name: string): string {
   }
   return name.slice(0, 2);
 }
+
+/**
+ * Normalize literal \n / \r\n sequences in DB text to real newlines.
+ * Use this for any text from the database that might contain escaped newlines.
+ */
+export function nl(text: string | null | undefined): string {
+  if (!text) return '';
+  return text.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\\r/g, '');
+}

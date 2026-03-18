@@ -1183,7 +1183,7 @@ export default function RenrakuchoPage() {
                     </div>
 
                     <div className="rounded-md bg-[var(--neutral-background-3)] p-3 text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap leading-relaxed mb-2">
-                      {note.integrated_content}
+                      {nl(note.integrated_content)}
                     </div>
 
                     <div className="text-xs text-[var(--neutral-foreground-3)] border-t border-[var(--neutral-stroke-3)] pt-2">

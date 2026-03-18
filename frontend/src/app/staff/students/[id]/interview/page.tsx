@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { nl } from '@/lib/utils';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -148,7 +149,7 @@ export default function StudentInterviewPage() {
                     {interview.interview_content && (
                       <div className="rounded-lg bg-[var(--neutral-background-2)] p-3">
                         <p className="text-xs font-medium text-[var(--neutral-foreground-2)]">面談内容</p>
-                        <p className="mt-1 text-sm text-[var(--neutral-foreground-2)] whitespace-pre-wrap">{interview.interview_content}</p>
+                        <p className="mt-1 text-sm text-[var(--neutral-foreground-2)] whitespace-pre-wrap">{nl(interview.interview_content)}</p>
                       </div>
                     )}
 
@@ -183,7 +184,7 @@ export default function StudentInterviewPage() {
                     {interview.other_notes && (
                       <div className="rounded-lg bg-[var(--neutral-background-2)] p-3">
                         <p className="text-xs font-medium text-[var(--neutral-foreground-2)]">その他</p>
-                        <p className="mt-1 text-sm text-[var(--neutral-foreground-2)] whitespace-pre-wrap">{interview.other_notes}</p>
+                        <p className="mt-1 text-sm text-[var(--neutral-foreground-2)] whitespace-pre-wrap">{nl(interview.other_notes)}</p>
                       </div>
                     )}
                   </div>

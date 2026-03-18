@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
-import { cn, formatRelativeTime, formatFileSize, truncate } from '@/lib/utils';
+import { cn, formatRelativeTime, formatFileSize, truncate, nl } from '@/lib/utils';
 import {
   Search,
   ChevronLeft,
@@ -395,7 +395,7 @@ export default function StaffChatPage() {
                                 <>
                                   {msg.message && (
                                     <p className="whitespace-pre-wrap break-words">
-                                      {msg.message}
+                                      {nl(msg.message)}
                                     </p>
                                   )}
                                   {msg.attachment_path && (

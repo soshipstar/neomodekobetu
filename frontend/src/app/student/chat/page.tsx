@@ -6,7 +6,7 @@ import api from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { Send, Paperclip, X, MessageCircle } from 'lucide-react';
-import { formatFileSize } from '@/lib/utils';
+import { formatFileSize, nl } from '@/lib/utils';
 
 interface StudentChatMessage {
   id: number;
@@ -138,7 +138,7 @@ export default function StudentChatPage() {
                         ? 'bg-[var(--brand-80)] text-white rounded-br-md'
                         : 'bg-[var(--neutral-background-1)] text-[var(--neutral-foreground-1)] rounded-bl-md shadow-sm'
                     }`}>
-                      {msg.message}
+                      {nl(msg.message)}
                       {msg.attachment_path && (
                         <div className={`mt-2 flex items-center gap-1 text-xs ${isSent ? 'text-white/80' : 'text-[var(--brand-80)]'}`}>
                           <Paperclip className="h-3 w-3" />

@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { cn, nl } from '@/lib/utils';
 import { ChatAttachment } from './ChatAttachment';
 import type { ChatMessage, MessageType } from '@/types/chat';
 import { AlertTriangle, Calendar, Megaphone, CalendarCheck, CalendarClock } from 'lucide-react';
@@ -107,7 +107,7 @@ export function ChatBubble({ message, isMine }: ChatBubbleProps) {
           )}
 
           {/* Message text */}
-          <p className="whitespace-pre-wrap break-words">{message.message}</p>
+          <p className="whitespace-pre-wrap break-words">{nl(message.message)}</p>
 
           {/* Attachment */}
           {message.attachment_path && (

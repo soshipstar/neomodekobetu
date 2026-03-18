@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '@/lib/api';
+import { nl } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
@@ -202,7 +203,7 @@ function DailyView({ onSwitchToCalendar, initialDate }: { onSwitchToCalendar: ()
                   <h4 className="mb-1 text-xs font-semibold text-orange-500">
                     {key === 'previous_day_review' ? '参考：前日の児童の状況' : '参考：前日の特記事項'}
                   </h4>
-                  <p className="whitespace-pre-wrap">{prevDiary!.children_special_notes}</p>
+                  <p className="whitespace-pre-wrap">{nl(prevDiary!.children_special_notes)}</p>
                 </div>
               )}
 
@@ -416,7 +417,7 @@ function CalendarView({ onSwitchToDaily }: { onSwitchToDaily: (date?: string) =>
                   <div key={key} className="mb-4">
                     <h4 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-[var(--brand-80)]">{label}</h4>
                     <div className={`whitespace-pre-wrap rounded-lg bg-[var(--neutral-background-3)] p-3 text-sm leading-relaxed ${value ? 'text-[var(--neutral-foreground-1)]' : 'italic text-[var(--neutral-foreground-4)]'}`}>
-                      {value || '記入なし'}
+                      {nl(value) || '記入なし'}
                     </div>
                   </div>
                 );

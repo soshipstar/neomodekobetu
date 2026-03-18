@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { formatDateTime } from '@/lib/utils';
+import { formatDateTime, nl } from '@/lib/utils';
 import { Plus, Pencil, Trash2, Send, EyeOff, Eye } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -389,7 +389,7 @@ export default function StaffAnnouncementsPage() {
 
                 {/* Content preview */}
                 <p className="mb-3 whitespace-pre-wrap text-sm text-[var(--neutral-foreground-2)] line-clamp-3">
-                  {a.content}
+                  {nl(a.content)}
                 </p>
 
                 {/* Actions */}

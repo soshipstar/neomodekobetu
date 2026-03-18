@@ -6,7 +6,7 @@ import api from '@/lib/api';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { SkeletonList } from '@/components/ui/Skeleton';
-import { formatDate } from '@/lib/utils';
+import { formatDate, nl } from '@/lib/utils';
 import { ChevronDown } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -120,7 +120,7 @@ export default function GuardianAnnouncementsPage() {
                 {isExpanded && (
                   <CardBody className="border-t border-[var(--neutral-stroke-2)]">
                     <p className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--neutral-foreground-1)]">
-                      {a.content}
+                      {nl(a.content)}
                     </p>
                   </CardBody>
                 )}

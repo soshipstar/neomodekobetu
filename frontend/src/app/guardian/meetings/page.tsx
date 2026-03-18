@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { nl } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -145,7 +146,7 @@ export default function GuardianMeetingsPage() {
               {detail.purpose_detail && (
                 <div className="flex gap-2">
                   <span className="min-w-[100px] text-sm font-medium text-gray-500">詳細</span>
-                  <span className="text-sm text-gray-900 whitespace-pre-wrap">{detail.purpose_detail}</span>
+                  <span className="text-sm text-gray-900 whitespace-pre-wrap">{nl(detail.purpose_detail)}</span>
                 </div>
               )}
               <div className="flex gap-2">
@@ -314,7 +315,7 @@ export default function GuardianMeetingsPage() {
                 {detail.guardian_counter_message && (
                   <div className="mt-3 rounded-lg bg-gray-50 p-3">
                     <p className="text-xs font-medium text-gray-500 mb-1">メッセージ:</p>
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{detail.guardian_counter_message}</p>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{nl(detail.guardian_counter_message)}</p>
                   </div>
                 )}
               </div>

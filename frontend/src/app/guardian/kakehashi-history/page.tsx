@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { formatDate, formatDateTime } from '@/lib/utils';
+import { formatDate, formatDateTime, nl } from '@/lib/utils';
 import {
   BookOpen,
   Calendar,
@@ -530,7 +530,7 @@ function DetailSection({
         {title}
       </h4>
       <p className="whitespace-pre-wrap text-sm text-[var(--neutral-foreground-2)]">
-        {value || '(未記入)'}
+        {nl(value) || '(未記入)'}
       </p>
     </div>
   );

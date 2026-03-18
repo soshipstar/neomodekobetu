@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
+import { nl } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -668,7 +669,7 @@ function GuardianResultsTab({ periodId }: { periodId: number }) {
                           <ul className="space-y-1">
                             {qComments.map((c, ci) => (
                               <li key={ci} className="rounded border border-[var(--neutral-stroke-3)] bg-[var(--neutral-background-1)] px-3 py-2 text-xs text-[var(--neutral-foreground-2)] whitespace-pre-wrap">
-                                {c}
+                                {nl(c)}
                               </li>
                             ))}
                           </ul>
@@ -680,7 +681,7 @@ function GuardianResultsTab({ periodId }: { periodId: number }) {
                     {q.comment_summary && (
                       <div className="mt-2 rounded-md bg-[var(--neutral-background-3)] p-3">
                         <h4 className="text-xs font-semibold text-[var(--neutral-foreground-3)] mb-1">ご意見の要約（AI）</h4>
-                        <p className="text-xs text-[var(--neutral-foreground-2)] whitespace-pre-wrap">{q.comment_summary}</p>
+                        <p className="text-xs text-[var(--neutral-foreground-2)] whitespace-pre-wrap">{nl(q.comment_summary)}</p>
                       </div>
                     )}
 

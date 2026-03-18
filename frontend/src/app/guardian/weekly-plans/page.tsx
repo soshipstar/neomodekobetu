@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { nl } from '@/lib/utils';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { SkeletonList } from '@/components/ui/Skeleton';
@@ -186,31 +187,31 @@ export default function GuardianWeeklyPlansPage() {
                   {activePlan.weekly_goal && (
                     <div className="rounded-lg bg-purple-50 p-3">
                       <p className="text-xs font-medium text-purple-600">週間目標</p>
-                      <p className="text-sm text-gray-800 whitespace-pre-wrap">{activePlan.weekly_goal}</p>
+                      <p className="text-sm text-gray-800 whitespace-pre-wrap">{nl(activePlan.weekly_goal)}</p>
                     </div>
                   )}
                   {activePlan.shared_goal && (
                     <div className="rounded-lg bg-blue-50 p-3">
                       <p className="text-xs font-medium text-blue-600">共有目標</p>
-                      <p className="text-sm text-gray-800 whitespace-pre-wrap">{activePlan.shared_goal}</p>
+                      <p className="text-sm text-gray-800 whitespace-pre-wrap">{nl(activePlan.shared_goal)}</p>
                     </div>
                   )}
                   {activePlan.must_do && (
                     <div className="rounded-lg bg-red-50 p-3">
                       <p className="text-xs font-medium text-red-600">やるべきこと</p>
-                      <p className="text-sm text-gray-800 whitespace-pre-wrap">{activePlan.must_do}</p>
+                      <p className="text-sm text-gray-800 whitespace-pre-wrap">{nl(activePlan.must_do)}</p>
                     </div>
                   )}
                   {activePlan.should_do && (
                     <div className="rounded-lg bg-amber-50 p-3">
                       <p className="text-xs font-medium text-amber-600">やったほうがいいこと</p>
-                      <p className="text-sm text-gray-800 whitespace-pre-wrap">{activePlan.should_do}</p>
+                      <p className="text-sm text-gray-800 whitespace-pre-wrap">{nl(activePlan.should_do)}</p>
                     </div>
                   )}
                   {activePlan.want_to_do && (
                     <div className="rounded-lg bg-green-50 p-3">
                       <p className="text-xs font-medium text-green-600">やりたいこと</p>
-                      <p className="text-sm text-gray-800 whitespace-pre-wrap">{activePlan.want_to_do}</p>
+                      <p className="text-sm text-gray-800 whitespace-pre-wrap">{nl(activePlan.want_to_do)}</p>
                     </div>
                   )}
                 </div>
@@ -246,7 +247,7 @@ export default function GuardianWeeklyPlansPage() {
                           </td>
                           <td className="border border-gray-200 px-4 py-3 align-top">
                             {content ? (
-                              <p className="whitespace-pre-wrap text-sm text-gray-800">{content}</p>
+                              <p className="whitespace-pre-wrap text-sm text-gray-800">{nl(content)}</p>
                             ) : (
                               <p className="text-sm italic text-gray-400">計画なし</p>
                             )}
@@ -265,7 +266,7 @@ export default function GuardianWeeklyPlansPage() {
             <Card>
               <CardBody>
                 <h3 className="mb-2 text-sm font-semibold text-gray-700">総合コメント</h3>
-                <p className="whitespace-pre-wrap text-sm text-gray-800">{activePlan.overall_comment}</p>
+                <p className="whitespace-pre-wrap text-sm text-gray-800">{nl(activePlan.overall_comment)}</p>
               </CardBody>
             </Card>
           )}
@@ -289,7 +290,7 @@ export default function GuardianWeeklyPlansPage() {
                           {format(new Date(c.created_at), 'yyyy/M/d HH:mm', { locale: ja })}
                         </span>
                       </div>
-                      <p className="whitespace-pre-wrap text-sm text-gray-700">{c.comment}</p>
+                      <p className="whitespace-pre-wrap text-sm text-gray-700">{nl(c.comment)}</p>
                     </div>
                   ))}
                 </div>

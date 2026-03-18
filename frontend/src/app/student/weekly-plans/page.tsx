@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { nl } from '@/lib/utils';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -120,7 +121,7 @@ export default function StudentWeeklyPlansPage() {
                 <label className="mb-1 block text-sm font-medium text-[var(--brand-80)]">今週の個人目標</label>
                 <div className="rounded-lg border-l-4 border-l-[var(--brand-80)] bg-[var(--neutral-background-2)] p-3">
                   <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">
-                    {plan.weekly_goal || <span className="italic text-[var(--neutral-foreground-4)]">未入力</span>}
+                    {nl(plan.weekly_goal) || <span className="italic text-[var(--neutral-foreground-4)]">未入力</span>}
                   </p>
                 </div>
               </div>
@@ -130,7 +131,7 @@ export default function StudentWeeklyPlansPage() {
                 <div>
                   <label className="mb-1 block text-sm font-medium text-green-600">みんなのめあて</label>
                   <div className="rounded-lg border-l-4 border-l-green-500 bg-green-50 p-3">
-                    <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{plan.shared_goal}</p>
+                    <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{nl(plan.shared_goal)}</p>
                   </div>
                 </div>
               )}
@@ -141,7 +142,7 @@ export default function StudentWeeklyPlansPage() {
                   <label className="mb-1 block text-xs font-medium text-red-600">やらなければならないこと</label>
                   <div className="rounded-lg border-l-4 border-l-red-400 bg-red-50/50 p-3">
                     <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">
-                      {plan.must_do || <span className="italic text-[var(--neutral-foreground-4)]">-</span>}
+                      {nl(plan.must_do) || <span className="italic text-[var(--neutral-foreground-4)]">-</span>}
                     </p>
                   </div>
                 </div>
@@ -149,7 +150,7 @@ export default function StudentWeeklyPlansPage() {
                   <label className="mb-1 block text-xs font-medium text-yellow-600">やった方がいいこと</label>
                   <div className="rounded-lg border-l-4 border-l-yellow-400 bg-yellow-50/50 p-3">
                     <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">
-                      {plan.should_do || <span className="italic text-[var(--neutral-foreground-4)]">-</span>}
+                      {nl(plan.should_do) || <span className="italic text-[var(--neutral-foreground-4)]">-</span>}
                     </p>
                   </div>
                 </div>
@@ -157,7 +158,7 @@ export default function StudentWeeklyPlansPage() {
                   <label className="mb-1 block text-xs font-medium text-blue-600">やりたいこと</label>
                   <div className="rounded-lg border-l-4 border-l-blue-400 bg-blue-50/50 p-3">
                     <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">
-                      {plan.want_to_do || <span className="italic text-[var(--neutral-foreground-4)]">-</span>}
+                      {nl(plan.want_to_do) || <span className="italic text-[var(--neutral-foreground-4)]">-</span>}
                     </p>
                   </div>
                 </div>
@@ -183,7 +184,7 @@ export default function StudentWeeklyPlansPage() {
                     </div>
                     <div className="ml-9">
                       {dayContent ? (
-                        <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{dayContent}</p>
+                        <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{nl(dayContent)}</p>
                       ) : (
                         <p className="text-sm italic text-[var(--neutral-foreground-4)]">予定なし</p>
                       )}
@@ -254,7 +255,7 @@ export default function StudentWeeklyPlansPage() {
                           {format(new Date(comment.created_at), 'M/d H:mm', { locale: ja })}
                         </span>
                       </div>
-                      <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{comment.comment}</p>
+                      <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{nl(comment.comment)}</p>
                     </div>
                   );
                 })}
@@ -267,7 +268,7 @@ export default function StudentWeeklyPlansPage() {
             <Card className="border-l-4 border-l-green-500">
               <div className="p-4">
                 <p className="text-xs font-medium text-green-600 mb-1">先生からのコメント</p>
-                <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{plan.overall_comment}</p>
+                <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{nl(plan.overall_comment)}</p>
               </div>
             </Card>
           )}

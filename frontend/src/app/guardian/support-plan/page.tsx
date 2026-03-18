@@ -10,7 +10,7 @@ import { Modal } from '@/components/ui/Modal';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { SignaturePad, type SignaturePadRef } from '@/components/ui/SignaturePad';
-import { formatDate } from '@/lib/utils';
+import { formatDate, nl } from '@/lib/utils';
 import { DOMAIN_LABELS, type Domain, type SupportPlan } from '@/types/support-plan';
 import { CheckCircle, PenLine, MessageSquare } from 'lucide-react';
 
@@ -232,7 +232,7 @@ export default function GuardianSupportPlanPage() {
                   {ext.guardian_review_comment && (
                     <div className="mt-3 rounded-lg bg-orange-50 p-3">
                       <p className="text-xs font-medium text-orange-700">保護者コメント</p>
-                      <p className="text-sm text-orange-900 whitespace-pre-wrap">{ext.guardian_review_comment}</p>
+                      <p className="text-sm text-orange-900 whitespace-pre-wrap">{nl(ext.guardian_review_comment)}</p>
                       {ext.guardian_reviewed_at && (
                         <p className="mt-1 text-xs text-orange-500">{formatDate(ext.guardian_reviewed_at)} に送信</p>
                       )}
@@ -306,31 +306,31 @@ export default function GuardianSupportPlanPage() {
               {confirmingPlan.life_intention && (
                 <div>
                   <p className="text-xs font-medium text-purple-700">本人の生活に対する意向</p>
-                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{confirmingPlan.life_intention}</p>
+                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{nl(confirmingPlan.life_intention)}</p>
                 </div>
               )}
               {confirmingPlan.overall_policy && (
                 <div>
                   <p className="text-xs font-medium text-gray-600">総合的な援助の方針</p>
-                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{confirmingPlan.overall_policy}</p>
+                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{nl(confirmingPlan.overall_policy)}</p>
                 </div>
               )}
               {confirmingPlan.guardian_wish && (
                 <div>
                   <p className="text-xs font-medium text-blue-700">保護者の願い</p>
-                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{confirmingPlan.guardian_wish}</p>
+                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{nl(confirmingPlan.guardian_wish)}</p>
                 </div>
               )}
               {confirmingPlan.long_term_goal && (
                 <div>
                   <p className="text-xs font-medium text-green-700">長期目標</p>
-                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{confirmingPlan.long_term_goal}</p>
+                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{nl(confirmingPlan.long_term_goal)}</p>
                 </div>
               )}
               {confirmingPlan.short_term_goal && (
                 <div>
                   <p className="text-xs font-medium text-amber-700">短期目標</p>
-                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{confirmingPlan.short_term_goal}</p>
+                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{nl(confirmingPlan.short_term_goal)}</p>
                 </div>
               )}
               {confirmingPlan.details && confirmingPlan.details.length > 0 && (

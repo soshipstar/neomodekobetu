@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
-import { cn, formatRelativeTime, truncate } from '@/lib/utils';
+import { cn, formatRelativeTime, truncate, nl } from '@/lib/utils';
 import {
   Search,
   ChevronLeft,
@@ -331,7 +331,7 @@ export default function StudentChatsPage() {
                                 : 'bg-[var(--neutral-background-1)] text-[var(--neutral-foreground-1)] border border-[var(--neutral-stroke-2)]'
                             )}
                           >
-                            {msg.message}
+                            {nl(msg.message)}
                             {msg.attachment_url && (
                               <a
                                 href={msg.attachment_url}

@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
+import { nl } from '@/lib/utils';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -185,7 +186,7 @@ function ViewSection({
           !hasContent ? 'italic text-gray-400' : 'text-[var(--neutral-foreground-1)]'
         }`}
       >
-        {hasContent ? content : '未記入'}
+        {hasContent ? nl(content) : '未記入'}
       </div>
     </div>
   );
@@ -217,7 +218,7 @@ function AchievementDisplay({
         {label}
       </div>
       <div className="mb-2 rounded bg-gray-50 p-2 text-sm leading-relaxed whitespace-pre-wrap">
-        {goalText}
+        {nl(goalText)}
       </div>
       <span
         className={`inline-block rounded px-3 py-1 text-xs font-bold text-white ${colorClass}`}
@@ -739,7 +740,7 @@ export default function WeeklyPlanStudentDetailPage() {
                             : 'text-[var(--neutral-foreground-1)]'
                         }`}
                       >
-                        {content?.trim() || '予定なし'}
+                        {content?.trim() ? nl(content) : '予定なし'}
                       </div>
                     </div>
                   );
@@ -886,7 +887,7 @@ export default function WeeklyPlanStudentDetailPage() {
                         週全体の総合コメント
                       </h4>
                       <p className="text-sm leading-relaxed whitespace-pre-wrap text-[var(--neutral-foreground-1)]">
-                        {plan.overall_comment}
+                        {nl(plan.overall_comment)}
                       </p>
                     </div>
                   )}
