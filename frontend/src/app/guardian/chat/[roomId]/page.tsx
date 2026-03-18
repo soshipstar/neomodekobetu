@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useChat } from '@/hooks/useChat';
+import { useChatStore } from '@/stores/chatStore';
 import { useAuthStore } from '@/stores/authStore';
 import { ChatMessageList } from '@/components/chat/ChatMessageList';
 import { ChatInput } from '@/components/chat/ChatInput';
@@ -27,6 +28,11 @@ export default function GuardianChatRoomPage() {
     markAsRead,
     rooms,
   } = useChat(roomId);
+
+  // Set guardian API prefix before fetching
+  useEffect(() => {
+    useChatStore.getState().setApiPrefix('/api/guardian');
+  }, []);
 
   useEffect(() => {
     if (rooms.length === 0) fetchRooms();

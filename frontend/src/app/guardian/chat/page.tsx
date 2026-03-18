@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useChat } from '@/hooks/useChat';
+import { useChatStore } from '@/stores/chatStore';
 import { useDebounce } from '@/hooks/useDebounce';
 import { ChatRoomList } from '@/components/chat/ChatRoomList';
 import { Input } from '@/components/ui/Input';
@@ -14,6 +15,11 @@ export default function GuardianChatListPage() {
   const { rooms, isLoadingRooms, fetchRooms, unreadCounts } = useChat();
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
+
+  // Set guardian API prefix before fetching
+  useEffect(() => {
+    useChatStore.getState().setApiPrefix('/api/guardian');
+  }, []);
 
   useEffect(() => {
     fetchRooms();

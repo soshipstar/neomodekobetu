@@ -41,9 +41,9 @@ export function ChatInput({ onSend, isSending, disabled = false }: ChatInputProp
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // 10MB limit
-      if (file.size > 10 * 1024 * 1024) {
-        alert('ファイルサイズは10MB以下にしてください');
+      // 3MB limit (legacy compatibility)
+      if (file.size > 3 * 1024 * 1024) {
+        alert('ファイルサイズは3MB以下にしてください');
         return;
       }
       setAttachment(file);
@@ -86,7 +86,7 @@ export function ChatInput({ onSend, isSending, disabled = false }: ChatInputProp
           ref={fileInputRef}
           type="file"
           className="hidden"
-          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.mp4,.mov,.mp3"
           onChange={handleFileSelect}
         />
 
