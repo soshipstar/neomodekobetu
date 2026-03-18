@@ -296,9 +296,11 @@ export default function NewActivityPage() {
               className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
             >
               <option value="">支援案を選択しない（手動入力）</option>
-              {supportPlans.map((plan: any) => (
+              {supportPlans
+                .filter((plan: any) => plan.activity_date === dateParam)
+                .map((plan: any) => (
                 <option key={plan.id} value={plan.id}>
-                  {plan.activity_name} {plan.activity_date ? `(${plan.activity_date})` : ''} {plan.tags ? `[${plan.tags}]` : ''}
+                  {plan.activity_name} {plan.tags ? `[${plan.tags}]` : ''}
                 </option>
               ))}
             </select>
@@ -389,7 +391,7 @@ export default function NewActivityPage() {
           <Button variant="outline">キャンセル</Button>
         </Link>
         <Button onClick={handleSave} disabled={saving}>
-          {saving ? '保存中...' : '確定して保存'}
+          {saving ? '保存中...' : '保存'}
         </Button>
       </div>
 
