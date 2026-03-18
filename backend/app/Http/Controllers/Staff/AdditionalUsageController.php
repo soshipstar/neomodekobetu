@@ -7,6 +7,7 @@ use App\Models\AbsenceNotification;
 use App\Models\AdditionalUsage;
 use App\Models\ChatMessage;
 use App\Models\ChatRoom;
+use App\Models\Holiday;
 use App\Models\Student;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -234,6 +235,18 @@ class AdditionalUsageController extends Controller
             'saturday'  => (bool) $student->scheduled_saturday,
         ];
 
+        // 休日
+        $classroomId = $student->classroom_id ?? $user->classroom_id;
+        $holidayDates = [];
+        if ($classroomId) {
+            $holidayDates = Holiday::where('classroom_id', $classroomId)
+                ->whereYear('holiday_date', $request->year)
+                ->whereMonth('holiday_date', $request->month)
+                ->pluck('holiday_date')
+                ->map(fn ($d) => $d->format('Y-m-d'))
+                ->toArray();
+        }
+
         return response()->json([
             'success' => true,
             'data'    => [
@@ -241,6 +254,7 @@ class AdditionalUsageController extends Controller
                 'schedule'         => $schedule,
                 'additional_dates' => $additionalDates,
                 'cancelled_dates'  => $cancelledDates,
+                'holiday_dates'    => $holidayDates,
             ],
         ]);
     }
