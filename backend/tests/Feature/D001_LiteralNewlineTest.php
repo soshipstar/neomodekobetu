@@ -42,7 +42,7 @@ class D001_LiteralNewlineTest extends TestCase
         foreach ($this->tablesToCheck as $table => $columns) {
             foreach ($columns as $column) {
                 $count = DB::table($table)
-                    ->whereRaw("\"$column\" LIKE E'%\\\\\\\\r\\\\\\\\n%'")
+                    ->whereRaw("position(chr(92) || 'r' || chr(92) || 'n' in \"$column\") > 0")
                     ->count();
 
                 if ($count > 0) {
