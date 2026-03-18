@@ -239,9 +239,9 @@ Route::prefix('staff')
         Route::delete('/student-interviews/{interview}', [App\Http\Controllers\Staff\StudentInterviewController::class, 'destroy']);
         Route::get('/student-interviews/{interview}/pdf', [App\Http\Controllers\Staff\StudentInterviewController::class, 'pdf']);
 
-        // --- 未対応タスク ---
+        // --- 未作成タスク ---
         Route::get('/pending-tasks', [App\Http\Controllers\Staff\PendingTaskController::class, 'index']);
-        Route::post('/pending-tasks/{id}/complete', [App\Http\Controllers\Staff\PendingTaskController::class, 'complete']); // (#25)
+        Route::post('/pending-tasks/toggle-hide', [App\Http\Controllers\Staff\PendingTaskController::class, 'toggleHide']);
 
         // --- 施設評価（スタッフ閲覧用） ---
         Route::get('/facility-evaluation/periods', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'periods']);
