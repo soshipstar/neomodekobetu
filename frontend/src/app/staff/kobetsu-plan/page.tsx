@@ -184,6 +184,7 @@ export default function KobetsuPlanPage() {
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [form, setForm] = useState<PlanForm>(emptyForm());
   const [generating, setGenerating] = useState(false);
+  const [generatingWish, setGeneratingWish] = useState(false);
 
   // Signature pad refs
   const staffSigRef = useRef<SignaturePadRef>(null);
@@ -423,6 +424,31 @@ export default function KobetsuPlanPage() {
     }
   };
 
+  const handleGenerateWish = async () => {
+    if (!selectedStudentId) {
+      toast.error('生徒を選択してください');
+      return;
+    }
+    setGeneratingWish(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const res = await api.post<{ data: { wish: string } }>(
+        `/api/staff/students/${selectedStudentId}/generate-wish`
+      );
+      const wish = res.data.data.wish;
+      if (wish) {
+        setForm((prev) => ({ ...prev, guardian_wish: wish }));
+        toast.success('面談記録から意向を生成しました');
+      } else {
+        toast.error('面談記録が見つかりませんでした');
+      }
+    } catch {
+      toast.error('意向の生成に失敗しました');
+    } finally {
+      setGeneratingWish(false);
+    }
+  };
+
   const handlePdfDownload = async (planId: number, type: 'proposal' | 'official' = 'proposal') => {
     try {
       const res = await api.get(`/api/staff/support-plans/${planId}/pdf`, {
@@ -544,7 +570,20 @@ export default function KobetsuPlanPage() {
                 </div>
 
                 <div>
-                  <label className={labelClass}>利用児及び家族の生活に対する意向</label>
+                  <div className="mb-1 flex items-center justify-between">
+                    <label className="text-sm font-medium text-[var(--neutral-foreground-2)]">利用児及び家族の生活に対する意向</label>
+                    {!isReadOnly && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleGenerateWish}
+                        disabled={generatingWish || !selectedStudentId}
+                      >
+                        <Sparkles className="mr-1 h-3 w-3" />
+                        {generatingWish ? '生成中...' : '面談から生成'}
+                      </Button>
+                    )}
+                  </div>
                   <textarea
                     className={textareaClass}
                     rows={4}
