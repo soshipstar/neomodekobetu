@@ -5,12 +5,12 @@ namespace Tests\Feature;
 use App\Models\Classroom;
 use App\Models\PushSubscription;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Tests\TestCase;
 
 class WebPushTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseMigrations;
 
     private Classroom $classroom;
 
