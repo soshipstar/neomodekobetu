@@ -98,10 +98,10 @@ export default function StaffAnnouncementsPage() {
     mutationFn: (data: AnnouncementForm) => api.post('/api/staff/announcements', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'announcements'] });
-      toast({ title: 'お知らせを作成しました', variant: 'success' });
+      toast.success('お知らせを作成しました');
       resetForm();
     },
-    onError: () => toast({ title: '作成に失敗しました', variant: 'error' }),
+    onError: () => toast.error('作成に失敗しました'),
   });
 
   // Update
@@ -110,10 +110,10 @@ export default function StaffAnnouncementsPage() {
       api.put(`/api/staff/announcements/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'announcements'] });
-      toast({ title: 'お知らせを更新しました', variant: 'success' });
+      toast.success('お知らせを更新しました');
       resetForm();
     },
-    onError: () => toast({ title: '更新に失敗しました', variant: 'error' }),
+    onError: () => toast.error('更新に失敗しました'),
   });
 
   // Delete
@@ -121,10 +121,10 @@ export default function StaffAnnouncementsPage() {
     mutationFn: (id: number) => api.delete(`/api/staff/announcements/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'announcements'] });
-      toast({ title: 'お知らせを削除しました', variant: 'success' });
+      toast.success('お知らせを削除しました');
       setDeleteTarget(null);
     },
-    onError: () => toast({ title: '削除に失敗しました', variant: 'error' }),
+    onError: () => toast.error('削除に失敗しました'),
   });
 
   // Publish
@@ -132,9 +132,9 @@ export default function StaffAnnouncementsPage() {
     mutationFn: (id: number) => api.post(`/api/staff/announcements/${id}/publish`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'announcements'] });
-      toast({ title: 'お知らせを公開しました', variant: 'success' });
+      toast.success('お知らせを公開しました');
     },
-    onError: () => toast({ title: '公開に失敗しました', variant: 'error' }),
+    onError: () => toast.error('公開に失敗しました'),
   });
 
   // Unpublish
@@ -142,9 +142,9 @@ export default function StaffAnnouncementsPage() {
     mutationFn: (id: number) => api.post(`/api/staff/announcements/${id}/unpublish`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'announcements'] });
-      toast({ title: 'お知らせを非公開にしました', variant: 'success' });
+      toast.success('お知らせを非公開にしました');
     },
-    onError: () => toast({ title: '非公開に失敗しました', variant: 'error' }),
+    onError: () => toast.error('非公開に失敗しました'),
   });
 
   function resetForm() {
