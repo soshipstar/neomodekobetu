@@ -16,7 +16,7 @@ class WorkDiaryController extends Controller
     {
         $user = $request->user();
 
-        $query = WorkDiary::with('creator:id,full_name');
+        $query = WorkDiary::with(['creator:id,full_name', 'updater:id,full_name']);
 
         if ($user->classroom_id) {
             $query->where('classroom_id', $user->classroom_id);
@@ -92,7 +92,7 @@ class WorkDiaryController extends Controller
      */
     public function show(Request $request, WorkDiary $diary): JsonResponse
     {
-        $diary->load('creator:id,full_name');
+        $diary->load(['creator:id,full_name', 'updater:id,full_name']);
 
         return response()->json([
             'success' => true,
