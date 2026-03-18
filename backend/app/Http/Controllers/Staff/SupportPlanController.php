@@ -60,12 +60,17 @@ class SupportPlanController extends Controller
             'overall_policy'     => 'nullable|string',
             'long_term_goal'     => 'nullable|string',
             'short_term_goal'    => 'nullable|string',
+            'long_term_goal_date'  => 'nullable|date',
+            'short_term_goal_date' => 'nullable|date',
             'consent_date'       => 'nullable|date',
+            'consent_name'       => 'nullable|string|max:255',
+            'manager_name'       => 'nullable|string|max:255',
             'status'             => 'nullable|string|in:draft,submitted,official',
             'details'            => 'nullable|array',
             'details.*.domain'             => 'nullable|string',
             'details.*.current_status'     => 'nullable|string',
             'details.*.goal'               => 'nullable|string',
+            'details.*.support_goal'       => 'nullable|string',
             'details.*.support_content'    => 'nullable|string',
             'details.*.achievement_status' => 'nullable|string',
             'details.*.category'           => 'nullable|string',
@@ -77,37 +82,44 @@ class SupportPlanController extends Controller
         ]);
 
         $plan = DB::transaction(function () use ($request, $student, $validated) {
+            $managerName = $validated['manager_name'] ?? $validated['consent_name'] ?? null;
             $plan = IndividualSupportPlan::create([
-                'student_id'     => $student->id,
-                'classroom_id'   => $student->classroom_id,
-                'student_name'   => $student->student_name,
-                'created_date'   => $validated['created_date'],
-                'life_intention' => $validated['life_intention'] ?? null,
-                'overall_policy' => $validated['overall_policy'] ?? null,
-                'long_term_goal' => $validated['long_term_goal'] ?? null,
-                'short_term_goal' => $validated['short_term_goal'] ?? null,
-                'consent_date'   => $validated['consent_date'] ?? null,
-                'status'         => $validated['status'] ?? 'draft',
-                'is_official'    => ($validated['status'] ?? 'draft') === 'official',
-                'created_by'     => $request->user()->id,
+                'student_id'          => $student->id,
+                'classroom_id'        => $student->classroom_id,
+                'student_name'        => $student->student_name,
+                'created_date'        => $validated['created_date'],
+                'life_intention'      => $validated['life_intention'] ?? null,
+                'overall_policy'      => $validated['overall_policy'] ?? null,
+                'long_term_goal'      => $validated['long_term_goal'] ?? null,
+                'short_term_goal'     => $validated['short_term_goal'] ?? null,
+                'long_term_goal_date' => $validated['long_term_goal_date'] ?? null,
+                'short_term_goal_date' => $validated['short_term_goal_date'] ?? null,
+                'consent_date'        => $validated['consent_date'] ?? null,
+                'consent_name'        => $managerName,
+                'manager_name'        => $managerName,
+                'status'              => $validated['status'] ?? 'draft',
+                'is_official'         => ($validated['status'] ?? 'draft') === 'official',
+                'created_by'          => $request->user()->id,
             ]);
 
             // 明細を保存
             if (! empty($validated['details'])) {
                 foreach ($validated['details'] as $index => $detail) {
-                    if (empty($detail['domain']) && empty($detail['goal'])) {
+                    // category or domain must have content, or support_goal/goal must have content
+                    if (empty($detail['category']) && empty($detail['domain'])
+                        && empty($detail['goal']) && empty($detail['support_goal'])) {
                         continue;
                     }
 
                     SupportPlanDetail::create([
                         'plan_id'            => $plan->id,
                         'sort_order'         => $index,
-                        'domain'             => $detail['domain'] ?? '',
+                        'domain'             => $detail['domain'] ?? $detail['category'] ?? '',
                         'current_status'     => $detail['current_status'] ?? '',
-                        'goal'               => $detail['goal'] ?? '',
+                        'goal'               => $detail['support_goal'] ?? $detail['goal'] ?? '',
                         'support_content'    => $detail['support_content'] ?? '',
                         'achievement_status' => $detail['achievement_status'] ?? null,
-                        'category'           => $detail['category'] ?? null,
+                        'category'           => $detail['category'] ?? $detail['domain'] ?? null,
                         'sub_category'       => $detail['sub_category'] ?? null,
                         'achievement_date'   => $detail['achievement_date'] ?? null,
                         'staff_organization' => $detail['staff_organization'] ?? null,
@@ -140,12 +152,17 @@ class SupportPlanController extends Controller
             'overall_policy'     => 'nullable|string',
             'long_term_goal'     => 'nullable|string',
             'short_term_goal'    => 'nullable|string',
+            'long_term_goal_date'  => 'nullable|date',
+            'short_term_goal_date' => 'nullable|date',
             'consent_date'       => 'nullable|date',
+            'consent_name'       => 'nullable|string|max:255',
+            'manager_name'       => 'nullable|string|max:255',
             'status'             => 'nullable|string|in:draft,submitted,official',
             'details'            => 'nullable|array',
             'details.*.domain'             => 'nullable|string',
             'details.*.current_status'     => 'nullable|string',
             'details.*.goal'               => 'nullable|string',
+            'details.*.support_goal'       => 'nullable|string',
             'details.*.support_content'    => 'nullable|string',
             'details.*.achievement_status' => 'nullable|string',
             'details.*.category'           => 'nullable|string',
@@ -163,6 +180,13 @@ class SupportPlanController extends Controller
                 $updateData['is_official'] = $updateData['status'] === 'official';
             }
 
+            // Map consent_name / manager_name (frontend sends consent_name)
+            if (isset($updateData['consent_name']) || isset($updateData['manager_name'])) {
+                $name = $updateData['manager_name'] ?? $updateData['consent_name'] ?? null;
+                $updateData['consent_name'] = $name;
+                $updateData['manager_name'] = $name;
+            }
+
             $plan->update($updateData);
 
             // 明細を再構築
@@ -170,19 +194,20 @@ class SupportPlanController extends Controller
                 $plan->details()->delete();
 
                 foreach ($validated['details'] as $index => $detail) {
-                    if (empty($detail['domain']) && empty($detail['goal'])) {
+                    if (empty($detail['category']) && empty($detail['domain'])
+                        && empty($detail['goal']) && empty($detail['support_goal'])) {
                         continue;
                     }
 
                     SupportPlanDetail::create([
                         'plan_id'            => $plan->id,
                         'sort_order'         => $index,
-                        'domain'             => $detail['domain'] ?? '',
+                        'domain'             => $detail['domain'] ?? $detail['category'] ?? '',
                         'current_status'     => $detail['current_status'] ?? '',
-                        'goal'               => $detail['goal'] ?? '',
+                        'goal'               => $detail['support_goal'] ?? $detail['goal'] ?? '',
                         'support_content'    => $detail['support_content'] ?? '',
                         'achievement_status' => $detail['achievement_status'] ?? null,
-                        'category'           => $detail['category'] ?? null,
+                        'category'           => $detail['category'] ?? $detail['domain'] ?? null,
                         'sub_category'       => $detail['sub_category'] ?? null,
                         'achievement_date'   => $detail['achievement_date'] ?? null,
                         'staff_organization' => $detail['staff_organization'] ?? null,
@@ -233,7 +258,8 @@ class SupportPlanController extends Controller
                     . "・運動・感覚: {$ge->domain_motor_sensory}\n"
                     . "・認知・行動: {$ge->domain_cognitive_behavior}\n"
                     . "・言語・コミュニケーション: {$ge->domain_language_communication}\n"
-                    . "・人間関係・社会性: {$ge->domain_social_relations}\n\n";
+                    . "・人間関係・社会性: {$ge->domain_social_relations}\n"
+                    . "・その他: {$ge->other_challenges}\n\n";
             }
 
             $se = $latestPeriod->staffEntries->first();
@@ -246,7 +272,8 @@ class SupportPlanController extends Controller
                     . "・運動・感覚: {$se->motor_sensory}\n"
                     . "・認知・行動: {$se->cognitive_behavior}\n"
                     . "・言語・コミュニケーション: {$se->language_communication}\n"
-                    . "・人間関係・社会性: {$se->social_relations}\n\n";
+                    . "・人間関係・社会性: {$se->social_relations}\n"
+                    . "・その他: " . ($se->other_challenges ?? '') . "\n\n";
             }
         }
 
@@ -315,7 +342,7 @@ class SupportPlanController extends Controller
 
             $client = \OpenAI::client($apiKey);
             $response = $client->chat()->create([
-                'model'    => 'gpt-4o',
+                'model'    => 'gpt-5.2',
                 'messages' => [
                     [
                         'role'    => 'system',
@@ -347,13 +374,13 @@ class SupportPlanController extends Controller
                             . "  \"long_term_goal\": \"【最重要】長期目標の内容（上記の保護者かけはしとスタッフかけはしの長期目標の文言を最大限考慮し、それらの目標と整合性を保ちながら、施設での支援を通じて到達してほしい具体的な姿を記述。観察可能な行動として100-150文字程度で記述。期間を含めた表現は使用しないこと）\",\n"
                             . "  \"short_term_goal\": \"【最重要】短期目標の内容（上記の保護者かけはしとスタッフかけはしの短期目標の文言を最大限考慮し、それらの目標と整合性を保ちながら、施設での支援を通じて到達してほしい具体的な姿を記述。観察可能な行動として100-150文字程度で記述。期間を含めた表現は使用しないこと）\",\n"
                             . "  \"details\": [\n"
-                            . "    {\"category\": \"本人支援\", \"sub_category\": \"健康・生活\", \"support_goal\": \"...\", \"support_content\": \"...\"},\n"
-                            . "    {\"category\": \"本人支援\", \"sub_category\": \"運動・感覚\", \"support_goal\": \"...\", \"support_content\": \"...\"},\n"
-                            . "    {\"category\": \"本人支援\", \"sub_category\": \"認知・行動\", \"support_goal\": \"...\", \"support_content\": \"...\"},\n"
-                            . "    {\"category\": \"本人支援\", \"sub_category\": \"言語・コミュニケーション\", \"support_goal\": \"...\", \"support_content\": \"...\"},\n"
-                            . "    {\"category\": \"本人支援\", \"sub_category\": \"人間関係・社会性\", \"support_goal\": \"...\", \"support_content\": \"...\"},\n"
-                            . "    {\"category\": \"家族支援\", \"sub_category\": \"家族支援\", \"support_goal\": \"...\", \"support_content\": \"...\"},\n"
-                            . "    {\"category\": \"地域支援\", \"sub_category\": \"地域連携\", \"support_goal\": \"...\", \"support_content\": \"...\"}\n"
+                            . "    {\"category\": \"本人支援\", \"sub_category\": \"生活習慣（健康・生活）\", \"support_goal\": \"...\", \"support_content\": \"...\", \"staff_organization\": \"保育士\\n児童指導員\", \"notes\": \"...\"},\n"
+                            . "    {\"category\": \"本人支援\", \"sub_category\": \"コミュニケーション（言語・コミュニケーション）\", \"support_goal\": \"...\", \"support_content\": \"...\", \"staff_organization\": \"保育士\\n児童指導員\", \"notes\": \"...\"},\n"
+                            . "    {\"category\": \"本人支援\", \"sub_category\": \"社会性（人間関係・社会性）\", \"support_goal\": \"...\", \"support_content\": \"...\", \"staff_organization\": \"保育士\\n児童指導員\", \"notes\": \"...\"},\n"
+                            . "    {\"category\": \"本人支援\", \"sub_category\": \"運動・感覚（運動・感覚）\", \"support_goal\": \"...\", \"support_content\": \"...\", \"staff_organization\": \"保育士\\n児童指導員\", \"notes\": \"...\"},\n"
+                            . "    {\"category\": \"本人支援\", \"sub_category\": \"学習（認知・行動）\", \"support_goal\": \"...\", \"support_content\": \"...\", \"staff_organization\": \"保育士\\n児童指導員\", \"notes\": \"...\"},\n"
+                            . "    {\"category\": \"家族支援\", \"sub_category\": \"保護者支援\", \"support_goal\": \"...\", \"support_content\": \"...\", \"staff_organization\": \"児童発達支援管理責任者\\n保育士\", \"notes\": \"...\"},\n"
+                            . "    {\"category\": \"地域支援\", \"sub_category\": \"関係機関連携\", \"support_goal\": \"...\", \"support_content\": \"...\", \"staff_organization\": \"児童発達支援管理責任者\", \"notes\": \"...\"}\n"
                             . "  ]\n"
                             . "}\n\n"
                             . "【注意事項】\n"
@@ -378,7 +405,7 @@ class SupportPlanController extends Controller
             try {
                 \App\Models\AiGenerationLog::create([
                     'user_id'       => $request->user()->id,
-                    'model'         => 'gpt-4o',
+                    'model'         => 'gpt-5.2',
                     'prompt_type'   => 'support_plan',
                     'input_tokens'  => $response->usage->promptTokens ?? null,
                     'output_tokens' => $response->usage->completionTokens ?? null,
@@ -430,7 +457,9 @@ class SupportPlanController extends Controller
         $updateData = [
             'staff_signature'      => $request->staff_signature,
             'staff_signature_date' => now()->toDateString(),
+            'staff_signer_name'    => $request->staff_signer_name,
             'is_official'          => true,
+            'is_draft'             => false,
             'status'               => 'official',
         ];
 
@@ -439,6 +468,13 @@ class SupportPlanController extends Controller
             $updateData['guardian_signature']      = $request->guardian_signature;
             $updateData['guardian_signature_date']  = now()->toDateString();
             $updateData['guardian_reviewed_at']     = now();
+            $updateData['guardian_confirmed']       = true;
+            $updateData['guardian_confirmed_at']    = now();
+        }
+
+        // Set consent_date if not already set (legacy: COALESCE(consent_date, ?))
+        if (! $plan->consent_date) {
+            $updateData['consent_date'] = now()->toDateString();
         }
 
         $plan->update($updateData);
@@ -633,7 +669,7 @@ class SupportPlanController extends Controller
 
         try {
             $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
-                'model'    => 'gpt-4o',
+                'model'    => 'gpt-5.2',
                 'messages' => [
                     [
                         'role'    => 'system',
@@ -786,6 +822,7 @@ class SupportPlanController extends Controller
                     'domain_cognitive_behavior'   => $ge->domain_cognitive_behavior,
                     'domain_language_communication' => $ge->domain_language_communication,
                     'domain_social_relations'     => $ge->domain_social_relations,
+                    'other_challenges'            => $ge->other_challenges,
                     'is_submitted'                => $ge->is_submitted,
                 ];
             }
@@ -835,6 +872,20 @@ class SupportPlanController extends Controller
         return response()->json([
             'success' => true,
             'data'    => [
+                'plan' => [
+                    'id'             => $plan->id,
+                    'created_date'   => $plan->created_date?->toDateString(),
+                    'short_term_goal' => $plan->short_term_goal,
+                    'long_term_goal'  => $plan->long_term_goal,
+                    'life_intention'  => $plan->life_intention,
+                    'overall_policy'  => $plan->overall_policy,
+                    'basis_content'   => $plan->basis_content,
+                    'basis_generated_at' => $plan->basis_generated_at,
+                    'student' => $plan->student ? [
+                        'id'           => $plan->student->id,
+                        'student_name' => $plan->student->student_name,
+                    ] : null,
+                ],
                 'kakehashi_period'    => $kakehashiPeriod ? [
                     'id'                  => $kakehashiPeriod->id,
                     'period_name'         => $kakehashiPeriod->period_name,
@@ -963,7 +1014,7 @@ class SupportPlanController extends Controller
 
             $client = \OpenAI::client($apiKey);
             $response = $client->chat()->create([
-                'model'    => 'gpt-4o',
+                'model'    => 'gpt-5.2',
                 'messages' => [
                     [
                         'role'    => 'system',
@@ -990,7 +1041,7 @@ class SupportPlanController extends Controller
             try {
                 \App\Models\AiGenerationLog::create([
                     'user_id'       => $request->user()->id,
-                    'model'         => 'gpt-4o',
+                    'model'         => 'gpt-5.2',
                     'prompt_type'   => 'basis',
                     'input_tokens'  => $response->usage->promptTokens ?? null,
                     'output_tokens' => $response->usage->completionTokens ?? null,
@@ -1068,7 +1119,7 @@ class SupportPlanController extends Controller
 
             $client = \OpenAI::client($apiKey);
             $response = $client->chat()->create([
-                'model'    => 'gpt-4o',
+                'model'    => 'gpt-5.2',
                 'messages' => [
                     [
                         'role'    => 'system',
@@ -1089,7 +1140,7 @@ class SupportPlanController extends Controller
             try {
                 \App\Models\AiGenerationLog::create([
                     'user_id'       => $request->user()->id,
-                    'model'         => 'gpt-4o',
+                    'model'         => 'gpt-5.2',
                     'prompt_type'   => 'wish_from_interview',
                     'input_tokens'  => $response->usage->promptTokens ?? null,
                     'output_tokens' => $response->usage->completionTokens ?? null,
