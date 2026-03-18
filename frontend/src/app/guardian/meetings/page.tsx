@@ -297,7 +297,7 @@ export default function GuardianMeetingsPage() {
                   スタッフからの回答をお待ちください。
                 </p>
                 <div className="space-y-3">
-                  {candidates.map((date, i) => (
+                  {candidates.map((date: string, i: number) => (
                     <div
                       key={i}
                       className="flex items-center gap-3 rounded-lg border-2 border-blue-300 p-4"
