@@ -65,7 +65,7 @@ class ActivitySupportPlanController extends Controller
         $plansData = $plans->map(function ($plan) {
             $data = $plan->toArray();
             $data['staff_name'] = $plan->staff->full_name ?? '';
-            $data['usage_count'] = 0;
+            $data['usage_count'] = DailyRecord::where('support_plan_id', $plan->id)->count();
             return $data;
         });
 
@@ -255,8 +255,8 @@ class ActivitySupportPlanController extends Controller
         ];
 
         $dayLabels = [
-            'mon' => '月', 'tue' => '火', 'wed' => '水',
-            'thu' => '木', 'fri' => '金', 'sat' => '土', 'sun' => '日',
+            'monday' => '月', 'tuesday' => '火', 'wednesday' => '水',
+            'thursday' => '木', 'friday' => '金', 'saturday' => '土', 'sunday' => '日',
         ];
 
         $planTypeLabel = $planTypeLabels[$plan->plan_type] ?? $plan->plan_type;
@@ -298,20 +298,30 @@ class ActivitySupportPlanController extends Controller
         $activityPurpose = $request->activity_purpose ?? '';
         $activityContent = $request->activity_content ?? '';
 
-        $prompt = "あなたは放課後等デイサービスの支援員です。以下の活動について、五領域への配慮を生成してください。\n\n";
-        $prompt .= "【活動名】{$activityName}\n";
-        if ($activityPurpose) {
-            $prompt .= "【活動の目的】{$activityPurpose}\n";
-        }
-        if ($activityContent) {
-            $prompt .= "【活動の内容】{$activityContent}\n";
-        }
-        $prompt .= "\n以下のJSON形式で出力してください:\n";
+        $prompt = "あなたは児童発達支援・放課後等デイサービスの支援員です。\n";
+        $prompt .= "以下の活動について、五領域への配慮とその他の注意点を生成してください。\n\n";
+        $prompt .= "【活動名】\n{$activityName}\n\n";
+        $prompt .= "【活動の目的】\n{$activityPurpose}\n\n";
+        $prompt .= "【活動の内容】\n{$activityContent}\n\n";
+        $prompt .= "以下の形式でJSON形式で出力してください。JSONのみを出力し、他の説明は不要です。\n\n";
         $prompt .= "{\n";
-        $prompt .= '  "five_domains_consideration": "【健康・生活】\n基本的な生活習慣や健康管理に関する配慮\n\n【運動・感覚】\n身体の動きや感覚の活用に関する配慮\n\n【認知・行動】\n物事の理解や問題解決、行動コントロールに関する配慮\n\n【言語・コミュニケーション】\n言葉の理解や表現に関する配慮\n\n【人間関係・社会性】\n他者との関わりやルールの理解に関する配慮",' . "\n";
-        $prompt .= '  "other_notes": "活動実施上の配慮事項・注意点"' . "\n";
+        $prompt .= '    "five_domains_consideration": "五領域への配慮を一つの文字列として記載（下記フォーマット参照）",' . "\n";
+        $prompt .= '    "other_notes": "活動を行う際の注意点、準備物、安全面での配慮など"' . "\n";
         $prompt .= "}\n\n";
-        $prompt .= "各領域は具体的かつ実践的な内容で記載してください。放課後等デイサービスの利用児童の特性を踏まえた配慮を含めてください。";
+        $prompt .= "【five_domains_considerationのフォーマット】\n";
+        $prompt .= "以下の形式で、5つの領域を改行で区切って一つの文字列として記載してください：\n\n";
+        $prompt .= "【健康・生活】\n（この活動における健康・生活面での配慮）\n\n";
+        $prompt .= "【運動・感覚】\n（この活動における運動・感覚面での配慮）\n\n";
+        $prompt .= "【認知・行動】\n（この活動における認知・行動面での配慮）\n\n";
+        $prompt .= "【言語・コミュニケーション】\n（この活動における言語・コミュニケーション面での配慮）\n\n";
+        $prompt .= "【人間関係・社会性】\n（この活動における人間関係・社会性面での配慮）\n\n";
+        $prompt .= "各領域の説明：\n";
+        $prompt .= "1. 健康・生活：基本的な生活習慣、健康管理に関すること\n";
+        $prompt .= "2. 運動・感覚：身体の動き、感覚の使い方に関すること\n";
+        $prompt .= "3. 認知・行動：物事の理解、問題解決、行動のコントロールに関すること\n";
+        $prompt .= "4. 言語・コミュニケーション：言葉の理解と表出、コミュニケーションに関すること\n";
+        $prompt .= "5. 人間関係・社会性：他者との関わり、社会的なルールの理解に関すること\n\n";
+        $prompt .= "出力は日本語で、実用的で具体的な内容にしてください。";
 
         try {
             $startTime = microtime(true);
@@ -393,14 +403,14 @@ class ActivitySupportPlanController extends Controller
             $name = $item['name'] ?? '';
             $duration = $item['duration'] ?? 15;
             $content = $item['content'] ?? '';
-            $scheduleText .= "{$num}. [{$type}] {$name}（{$duration}分）";
+            $scheduleText .= "{$num}. {$name}（{$type}）- {$duration}分";
             if ($content) {
                 $scheduleText .= "\n   内容: {$content}";
             }
             $scheduleText .= "\n";
         }
 
-        $prompt = "あなたは放課後等デイサービスの支援員です。以下の活動スケジュールに基づいて、詳細な活動内容を生成してください。\n\n";
+        $prompt = "あなたは児童発達支援・放課後等デイサービスの経験豊富な支援員です。\n以下の活動について、スケジュールと時間配分に基づいた詳細な活動内容を生成してください。\n\n";
         $prompt .= "【活動名】{$activityName}\n";
         if ($activityPurpose) {
             $prompt .= "【活動の目的】{$activityPurpose}\n";
@@ -410,16 +420,34 @@ class ActivitySupportPlanController extends Controller
             $prompt .= "【対象年齢層】{$targetGradeText}\n";
         }
         $prompt .= "\n【活動スケジュール】\n{$scheduleText}\n";
-        $prompt .= "\n以下のJSON形式で出力してください:\n";
+        $prompt .= "\n以下の形式でJSON形式で出力してください。JSONのみを出力し、他の説明は不要です。\n\n";
         $prompt .= "{\n";
-        $prompt .= '  "activity_content": "■ 詳細な活動の流れ\n\n【活動1: ○○】（○○分）\n・導入：...\n・展開：...\n・スタッフの役割と配置：...\n\n（各活動ごとに記載）\n\n■ 準備物\n・...\n・...",' . "\n";
-        $prompt .= '  "other_notes": "安全上の注意点、個別対応の配慮事項、観察ポイント"' . "\n";
+        $prompt .= '    "activity_content": "活動の内容（詳細な活動の流れと準備物）",' . "\n";
+        $prompt .= '    "other_notes": "活動時の配慮事項"' . "\n";
         $prompt .= "}\n\n";
-        $prompt .= "注意:\n";
-        $prompt .= "- 毎日の支援（ルーティーン）は簡潔に、主活動は詳しく記載してください\n";
-        $prompt .= "- 発達段階に応じた声かけの例を含めてください\n";
-        $prompt .= "- 活動の切り替え時の配慮も含めてください\n";
-        $prompt .= "- 時間配分を各活動に明記してください";
+        $prompt .= "【活動内容（activity_content）の作成ガイドライン】\n";
+        $prompt .= "1. スケジュールの順番と時間配分を厳守してください\n";
+        $prompt .= "2. タイムスケジュールの一覧表は不要です。活動の流れから始めてください\n";
+        $prompt .= "3. 以下の構成で記載してください：\n\n";
+        $prompt .= "■ 詳細な活動の流れ\n\n";
+        $prompt .= "【活動1: ○○】（○○分）\n";
+        $prompt .= "・導入：子どもたちへの声かけ、準備\n";
+        $prompt .= "・展開：具体的な活動内容\n";
+        $prompt .= "・スタッフの役割と配置\n\n";
+        $prompt .= "【活動2: ○○】（○○分）\n";
+        $prompt .= "...\n\n";
+        $prompt .= "■ 準備物\n";
+        $prompt .= "- 活動に必要な物品リスト\n\n";
+        $prompt .= "4. 「毎日の支援」はルーティーン活動なので、簡潔に記載\n";
+        $prompt .= "5. 「主活動」はメインの活動なので、詳細に記載\n";
+        $prompt .= "6. 子どもの発達段階に合わせた声かけの例を含める\n";
+        $prompt .= "7. 活動の切り替え時の工夫も記載\n\n";
+        $prompt .= "【その他（other_notes）の作成ガイドライン】\n";
+        $prompt .= "以下の内容を記載してください：\n";
+        $prompt .= "- 安全面での注意点\n";
+        $prompt .= "- 個別支援が必要な子どもへの配慮\n";
+        $prompt .= "- 活動中の見守りポイント\n\n";
+        $prompt .= "出力は日本語で、実用的で具体的な内容にしてください。";
 
         try {
             $startTime = microtime(true);
