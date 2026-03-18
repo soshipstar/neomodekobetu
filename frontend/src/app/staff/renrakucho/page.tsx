@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
-import { Input } from '@/components/ui/Input';
 import { Tabs } from '@/components/ui/Tabs';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
@@ -27,9 +26,11 @@ import {
   Edit3,
   Eye,
   FileText,
+  RefreshCw,
 } from 'lucide-react';
 import { format, addDays, subDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import Link from 'next/link';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -81,6 +82,18 @@ interface UnconfirmedNote {
   daily_record?: { id: number; record_date: string; activity_name: string };
 }
 
+interface IntegratedNoteView {
+  id: number;
+  student_id: number;
+  integrated_content: string;
+  is_sent: boolean;
+  sent_at: string | null;
+  guardian_confirmed: boolean;
+  guardian_confirmed_at: string | null;
+  created_at: string;
+  student?: Student & { grade_level?: string };
+}
+
 // Domain labels (5 areas)
 const DOMAIN_LABELS: Record<string, string> = {
   health_life: '健康・生活',
@@ -128,18 +141,11 @@ export default function RenrakuchoPage() {
 
   // --- Data ---
   const [activities, setActivities] = useState<DailyRecord[]>([]);
-  const [students, setStudents] = useState<Student[]>([]);
   const [unconfirmedNotes, setUnconfirmedNotes] = useState<UnconfirmedNote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingUnconfirmed, setIsLoadingUnconfirmed] = useState(false);
 
-  // --- Create activity modal ---
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createForm, setCreateForm] = useState({ activity_name: '', common_activity: '' });
-  const [selectedStudentIds, setSelectedStudentIds] = useState<number[]>([]);
-  const [isCreating, setIsCreating] = useState(false);
-
-  // --- Student record form modal ---
+  // --- Student record form panel ---
   const [editingActivity, setEditingActivity] = useState<DailyRecord | null>(null);
   const [studentRecords, setStudentRecords] = useState<StudentRecord[]>([]);
   const [isLoadingRecords, setIsLoadingRecords] = useState(false);
@@ -147,12 +153,26 @@ export default function RenrakuchoPage() {
   const [studentFormData, setStudentFormData] = useState<Record<string, string>>({});
   const [isSavingStudent, setIsSavingStudent] = useState(false);
 
-  // --- Send to guardians modal ---
+  // --- Send/Integrate modal ---
   const [showSendModal, setShowSendModal] = useState(false);
   const [sendActivityId, setSendActivityId] = useState<number | null>(null);
   const [sendNotes, setSendNotes] = useState<Record<number, string>>({});
+  const [sentStudentIds, setSentStudentIds] = useState<Set<number>>(new Set());
   const [isSending, setIsSending] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isGenerating, setIsGenerating] = useState<number | null>(null);
+  const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
+  const autoSaveRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // --- View integrated modal ---
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewActivityId, setViewActivityId] = useState<number | null>(null);
+  const [viewData, setViewData] = useState<{
+    activity: { id: number; activity_name: string; record_date: string; staff_name: string | null; staff_id: number };
+    notes: IntegratedNoteView[];
+    summary: { total: number; sent: number; confirmed: number; unconfirmed: number };
+  } | null>(null);
+  const [isLoadingView, setIsLoadingView] = useState(false);
 
   // --- Active tab ---
   const [activeTab, setActiveTab] = useState('activities');
@@ -175,17 +195,6 @@ export default function RenrakuchoPage() {
     }
   }, [dateStr]);
 
-  const fetchStudents = useCallback(async () => {
-    try {
-      const res = await api.get('/api/staff/students');
-      const payload = res.data?.data;
-      const items = payload?.data ?? payload;
-      setStudents(Array.isArray(items) ? items : []);
-    } catch {
-      setStudents([]);
-    }
-  }, []);
-
   const fetchUnconfirmedNotes = useCallback(async () => {
     setIsLoadingUnconfirmed(true);
     try {
@@ -206,71 +215,10 @@ export default function RenrakuchoPage() {
   }, [fetchActivities]);
 
   useEffect(() => {
-    fetchStudents();
-  }, [fetchStudents]);
-
-  useEffect(() => {
     if (activeTab === 'unconfirmed') {
       fetchUnconfirmedNotes();
     }
   }, [activeTab, fetchUnconfirmedNotes]);
-
-  // =========================================================================
-  // Create activity
-  // =========================================================================
-
-  const handleOpenCreate = () => {
-    setCreateForm({ activity_name: '', common_activity: '' });
-    setSelectedStudentIds([]);
-    setShowCreateModal(true);
-  };
-
-  const toggleStudentSelection = (id: number) => {
-    setSelectedStudentIds((prev) =>
-      prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]
-    );
-  };
-
-  const selectAllStudents = () => {
-    setSelectedStudentIds(students.map((s) => s.id));
-  };
-
-  const deselectAllStudents = () => {
-    setSelectedStudentIds([]);
-  };
-
-  const handleCreateActivity = async () => {
-    if (!createForm.activity_name.trim()) {
-      toast.warning('活動名を入力してください');
-      return;
-    }
-    if (!createForm.common_activity.trim()) {
-      toast.warning('本日の活動（共通）を入力してください');
-      return;
-    }
-    if (selectedStudentIds.length === 0) {
-      toast.warning('参加者を選択してください');
-      return;
-    }
-
-    setIsCreating(true);
-    try {
-      await api.post('/api/staff/renrakucho', {
-        record_date: dateStr,
-        activity_name: createForm.activity_name,
-        common_activity: createForm.common_activity,
-        students: selectedStudentIds.map((id) => ({ id })),
-      });
-      toast.success('活動を作成しました');
-      setShowCreateModal(false);
-      fetchActivities();
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      toast.error(msg || '作成に失敗しました');
-    } finally {
-      setIsCreating(false);
-    }
-  };
 
   // =========================================================================
   // Delete activity
@@ -329,7 +277,6 @@ export default function RenrakuchoPage() {
         ...studentFormData,
       });
       toast.success('保存しました');
-      // Refresh records
       const res = await api.get(`/api/staff/renrakucho/${editingActivity.id}/student-records`);
       setStudentRecords(res.data?.data ?? []);
       setEditingStudentId(null);
@@ -342,42 +289,144 @@ export default function RenrakuchoPage() {
   };
 
   // =========================================================================
-  // Send to guardians
+  // Send to guardians (with draft save, auto-save, Ctrl+S)
   // =========================================================================
 
-  const handleOpenSendModal = (activityId: number) => {
+  const handleOpenSendModal = async (activityId: number) => {
     setSendActivityId(activityId);
     setSendNotes({});
+    setSentStudentIds(new Set());
+    setLastSavedTime(null);
     setShowSendModal(true);
 
-    // Pre-populate send notes from student records
-    const activity = activities.find((a) => a.id === activityId);
-    if (activity) {
-      api
-        .get(`/api/staff/renrakucho/${activityId}/student-records`)
-        .then((res) => {
-          const recs: StudentRecord[] = res.data?.data ?? [];
-          const notes: Record<number, string> = {};
-          recs.forEach((r) => {
-            // Build default content from domains
-            const parts: string[] = [];
-            if (r.health_life) parts.push(`【健康・生活】${r.health_life}`);
-            if (r.motor_sensory) parts.push(`【運動・感覚】${r.motor_sensory}`);
-            if (r.cognitive_behavior) parts.push(`【認知・行動】${r.cognitive_behavior}`);
-            if (r.language_communication) parts.push(`【言語・コミュニケーション】${r.language_communication}`);
-            if (r.social_relations) parts.push(`【人間関係・社会性】${r.social_relations}`);
-            if (r.notes) parts.push(`【メモ】${r.notes}`);
-            notes[r.student_id] = parts.join('\n');
-          });
-          setSendNotes(notes);
-          // Also store student records for reference in send modal
-          setStudentRecords(recs);
-        })
-        .catch(() => {
-          /* ignore */
+    try {
+      // First load existing integrated notes (drafts or sent)
+      const viewRes = await api.get(`/api/staff/renrakucho/${activityId}/view-integrated`);
+      const existingNotes: IntegratedNoteView[] = viewRes.data?.data?.notes ?? [];
+
+      const notes: Record<number, string> = {};
+      const sentIds = new Set<number>();
+      existingNotes.forEach((n) => {
+        notes[n.student_id] = n.integrated_content;
+        if (n.is_sent) {
+          sentIds.add(n.student_id);
+        }
+      });
+
+      // Then load student records for students without existing notes
+      const recRes = await api.get(`/api/staff/renrakucho/${activityId}/student-records`);
+      const recs: StudentRecord[] = recRes.data?.data ?? [];
+      setStudentRecords(recs);
+
+      // For students without existing integrated notes, build default content
+      recs.forEach((r) => {
+        if (notes[r.student_id] === undefined) {
+          const parts: string[] = [];
+          if (r.health_life) parts.push(`【健康・生活】${r.health_life}`);
+          if (r.motor_sensory) parts.push(`【運動・感覚】${r.motor_sensory}`);
+          if (r.cognitive_behavior) parts.push(`【認知・行動】${r.cognitive_behavior}`);
+          if (r.language_communication) parts.push(`【言語・コミュニケーション】${r.language_communication}`);
+          if (r.social_relations) parts.push(`【人間関係・社会性】${r.social_relations}`);
+          if (r.notes) parts.push(`【メモ】${r.notes}`);
+          notes[r.student_id] = parts.join('\n');
+        }
+      });
+
+      setSendNotes(notes);
+      setSentStudentIds(sentIds);
+    } catch {
+      // Fallback: just load student records
+      try {
+        const recRes = await api.get(`/api/staff/renrakucho/${activityId}/student-records`);
+        const recs: StudentRecord[] = recRes.data?.data ?? [];
+        setStudentRecords(recs);
+        const notes: Record<number, string> = {};
+        recs.forEach((r) => {
+          const parts: string[] = [];
+          if (r.health_life) parts.push(`【健康・生活】${r.health_life}`);
+          if (r.motor_sensory) parts.push(`【運動・感覚】${r.motor_sensory}`);
+          if (r.cognitive_behavior) parts.push(`【認知・行動】${r.cognitive_behavior}`);
+          if (r.language_communication) parts.push(`【言語・コミュニケーション】${r.language_communication}`);
+          if (r.social_relations) parts.push(`【人間関係・社会性】${r.social_relations}`);
+          if (r.notes) parts.push(`【メモ】${r.notes}`);
+          notes[r.student_id] = parts.join('\n');
         });
+        setSendNotes(notes);
+      } catch {
+        /* ignore */
+      }
     }
   };
+
+  // Draft save function
+  const handleSaveDraft = useCallback(async (silent = false) => {
+    if (!sendActivityId) return;
+
+    const notesArray = Object.entries(sendNotes)
+      .filter(([studentId, content]) => content.trim() && !sentStudentIds.has(Number(studentId)))
+      .map(([studentId, content]) => ({
+        student_id: Number(studentId),
+        content,
+      }));
+
+    if (notesArray.length === 0) {
+      if (!silent) toast.info('保存する内容がありません');
+      return;
+    }
+
+    if (!silent) setIsSavingDraft(true);
+    try {
+      const res = await api.post(`/api/staff/renrakucho/${sendActivityId}/save-draft`, {
+        notes: notesArray,
+      });
+      const now = new Date();
+      setLastSavedTime(now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      if (!silent) {
+        toast.success(res.data?.message || '途中保存しました');
+      }
+    } catch {
+      if (!silent) toast.error('保存に失敗しました');
+    } finally {
+      if (!silent) setIsSavingDraft(false);
+    }
+  }, [sendActivityId, sendNotes, sentStudentIds, toast]);
+
+  // Auto-save every 5 minutes when send modal is open
+  useEffect(() => {
+    if (showSendModal && sendActivityId) {
+      autoSaveRef.current = setInterval(() => {
+        handleSaveDraft(true);
+      }, 5 * 60 * 1000);
+
+      return () => {
+        if (autoSaveRef.current) {
+          clearInterval(autoSaveRef.current);
+          autoSaveRef.current = null;
+        }
+      };
+    }
+    return () => {
+      if (autoSaveRef.current) {
+        clearInterval(autoSaveRef.current);
+        autoSaveRef.current = null;
+      }
+    };
+  }, [showSendModal, sendActivityId, handleSaveDraft]);
+
+  // Ctrl+S / Cmd+S shortcut for draft save
+  useEffect(() => {
+    if (!showSendModal) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        handleSaveDraft(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showSendModal, handleSaveDraft]);
 
   const handleGenerateIntegrated = async (studentId: number) => {
     if (!sendActivityId) return;
@@ -398,10 +447,32 @@ export default function RenrakuchoPage() {
     }
   };
 
+  const handleRegenerateAll = async () => {
+    if (!sendActivityId) return;
+    if (!window.confirm('未送信の統合内容を全て削除して、新しく生成しますか？')) return;
+
+    try {
+      await api.post(`/api/staff/renrakucho/${sendActivityId}/regenerate-integrated`);
+      toast.success('統合内容をリセットしました');
+      // Clear unsent notes
+      setSendNotes((prev) => {
+        const newNotes = { ...prev };
+        Object.keys(newNotes).forEach((key) => {
+          if (!sentStudentIds.has(Number(key))) {
+            delete newNotes[Number(key)];
+          }
+        });
+        return newNotes;
+      });
+    } catch {
+      toast.error('リセットに失敗しました');
+    }
+  };
+
   const handleSendToGuardians = async () => {
     if (!sendActivityId) return;
     const notesArray = Object.entries(sendNotes)
-      .filter(([, content]) => content.trim())
+      .filter(([studentId, content]) => content.trim() && !sentStudentIds.has(Number(studentId)))
       .map(([studentId, content]) => ({
         student_id: Number(studentId),
         content,
@@ -425,6 +496,25 @@ export default function RenrakuchoPage() {
       toast.error(msg || '送信に失敗しました');
     } finally {
       setIsSending(false);
+    }
+  };
+
+  // =========================================================================
+  // View integrated notes
+  // =========================================================================
+
+  const handleOpenViewModal = async (activityId: number) => {
+    setViewActivityId(activityId);
+    setShowViewModal(true);
+    setIsLoadingView(true);
+    try {
+      const res = await api.get(`/api/staff/renrakucho/${activityId}/view-integrated`);
+      setViewData(res.data?.data ?? null);
+    } catch {
+      setViewData(null);
+      toast.error('読み込みに失敗しました');
+    } finally {
+      setIsLoadingView(false);
     }
   };
 
@@ -569,6 +659,16 @@ export default function RenrakuchoPage() {
                     <Send className="h-4 w-4 mr-1" />
                     <span className="text-xs">統合</span>
                   </Button>
+                  {activity.sent_count > 0 && (
+                    <Button
+                      variant="subtle"
+                      size="sm"
+                      title="送信済み内容を閲覧"
+                      onClick={() => handleOpenViewModal(activity.id)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"
@@ -590,9 +690,11 @@ export default function RenrakuchoPage() {
               <p className="text-sm text-[var(--neutral-foreground-3)]">
                 この日の活動はまだ作成されていません
               </p>
-              <Button className="mt-4" size="sm" leftIcon={<Plus className="h-4 w-4" />} onClick={handleOpenCreate}>
-                活動を作成する
-              </Button>
+              <Link href={`/staff/activities/new?date=${dateStr}`}>
+                <Button className="mt-4" size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+                  活動を作成する
+                </Button>
+              </Link>
             </div>
           </CardBody>
         </Card>
@@ -707,9 +809,11 @@ export default function RenrakuchoPage() {
           <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">連絡帳入力</h1>
           <p className="text-sm text-[var(--neutral-foreground-3)]">日常活動の記録と保護者への連絡</p>
         </div>
-        <Button leftIcon={<Plus className="h-4 w-4" />} onClick={handleOpenCreate}>
-          活動を作成
-        </Button>
+        <Link href={`/staff/activities/new?date=${dateStr}`}>
+          <Button leftIcon={<Plus className="h-4 w-4" />}>
+            活動を作成
+          </Button>
+        </Link>
       </div>
 
       {/* Date navigation */}
@@ -736,105 +840,6 @@ export default function RenrakuchoPage() {
           },
         ]}
       />
-
-      {/* ================================================================= */}
-      {/* Create Activity Modal                                             */}
-      {/* ================================================================= */}
-      <Modal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        title="新しい活動を作成"
-        size="xl"
-      >
-        <div className="space-y-4">
-          <Input
-            label="活動名"
-            placeholder="例: 午前の活動、外出活動、制作活動など"
-            value={createForm.activity_name}
-            onChange={(e) => setCreateForm((f) => ({ ...f, activity_name: e.target.value }))}
-          />
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-1)]">
-              本日の活動（共通）
-            </label>
-            <textarea
-              rows={3}
-              placeholder="本日の活動内容を記入してください"
-              value={createForm.common_activity}
-              onChange={(e) => setCreateForm((f) => ({ ...f, common_activity: e.target.value }))}
-              className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] placeholder-[var(--neutral-foreground-4)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
-            />
-          </div>
-
-          {/* Student selection */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-[var(--neutral-foreground-1)]">
-                参加者選択 <span className="text-[var(--status-danger-fg)]">*</span>
-              </label>
-              <div className="flex gap-2">
-                <Button variant="ghost" size="sm" onClick={selectAllStudents}>
-                  全選択
-                </Button>
-                <Button variant="ghost" size="sm" onClick={deselectAllStudents}>
-                  全解除
-                </Button>
-              </div>
-            </div>
-            <p className="mb-2 text-xs text-[var(--neutral-foreground-3)]">
-              {selectedStudentIds.length}名選択中
-            </p>
-            <div className="flex flex-wrap gap-2 max-h-60 overflow-y-auto rounded-md border border-[var(--neutral-stroke-2)] p-3">
-              {students.map((student) => {
-                const isChecked = selectedStudentIds.includes(student.id);
-                return (
-                  <label
-                    key={student.id}
-                    className={`flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
-                      isChecked
-                        ? 'bg-[var(--brand-160)] text-[var(--brand-60)]'
-                        : 'bg-[var(--neutral-background-3)] text-[var(--neutral-foreground-2)] hover:bg-[var(--neutral-background-4)]'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => toggleStudentSelection(student.id)}
-                      className="h-4 w-4 rounded border-[var(--neutral-stroke-1)] accent-[var(--brand-80)]"
-                    />
-                    {student.student_name}
-                    {student.grade_level && (
-                      <Badge
-                        variant={GRADE_BADGE_VARIANT[student.grade_level] || 'default'}
-                        className="text-[10px] px-1.5"
-                      >
-                        {GRADE_LABELS[student.grade_level] || student.grade_level}
-                      </Badge>
-                    )}
-                  </label>
-                );
-              })}
-              {students.length === 0 && (
-                <p className="text-xs text-[var(--neutral-foreground-4)]">生徒が登録されていません</p>
-              )}
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2 border-t border-[var(--neutral-stroke-3)]">
-            <Button variant="secondary" onClick={() => setShowCreateModal(false)}>
-              キャンセル
-            </Button>
-            <Button
-              isLoading={isCreating}
-              leftIcon={<Plus className="h-4 w-4" />}
-              onClick={handleCreateActivity}
-            >
-              作成
-            </Button>
-          </div>
-        </div>
-      </Modal>
 
       {/* ================================================================= */}
       {/* Student Record Edit Panel (shown below activity list)             */}
@@ -966,40 +971,57 @@ export default function RenrakuchoPage() {
       )}
 
       {/* ================================================================= */}
-      {/* Send to Guardians Modal                                           */}
+      {/* Send to Guardians Modal (with draft save, auto-save, Ctrl+S)     */}
       {/* ================================================================= */}
       <Modal
         isOpen={showSendModal}
         onClose={() => setShowSendModal(false)}
-        title="連絡帳の統合・送信"
+        title="統合内容の編集"
         size="full"
       >
         <div className="space-y-4">
-          <p className="text-xs text-[var(--neutral-foreground-3)]">
-            5領域の観察記録から統合文を生成し、確認・編集後に保護者へ送信します。AIボタンで自動生成できます。
-          </p>
+          <div className="rounded-md bg-[var(--neutral-background-3)] p-3 text-xs text-[var(--neutral-foreground-3)] border-l-4 border-[var(--status-warning-fg)]">
+            <p>AIが生成した統合内容を確認・編集できます。</p>
+            <p>途中保存した内容は、次回アクセス時に続きから編集できます。</p>
+            <p>「途中保存」ボタンで下書き保存（自動保存: 5分ごと / ショートカット: Ctrl+S）</p>
+            <p>「活動内容を送信」ボタンで保護者に配信されます。</p>
+          </div>
+
+          {lastSavedTime && (
+            <p className="text-center text-xs text-[var(--neutral-foreground-3)]">
+              最終保存: {lastSavedTime}
+            </p>
+          )}
 
           {studentRecords
             .filter((r) => r.student)
             .map((rec) => {
               const studentId = rec.student_id;
               const studentName = rec.student?.student_name || '';
+              const isSent = sentStudentIds.has(studentId);
               return (
                 <Card key={studentId}>
                   <CardBody>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-semibold text-[var(--neutral-foreground-1)]">
-                        {studentName}
-                      </span>
-                      <Button
-                        variant="subtle"
-                        size="sm"
-                        isLoading={isGenerating === studentId}
-                        leftIcon={<Sparkles className="h-4 w-4" />}
-                        onClick={() => handleGenerateIntegrated(studentId)}
-                      >
-                        AI生成
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-[var(--neutral-foreground-1)]">
+                          {studentName}
+                        </span>
+                        {isSent && (
+                          <Badge variant="success">送信済み</Badge>
+                        )}
+                      </div>
+                      {!isSent && (
+                        <Button
+                          variant="subtle"
+                          size="sm"
+                          isLoading={isGenerating === studentId}
+                          leftIcon={<Sparkles className="h-4 w-4" />}
+                          onClick={() => handleGenerateIntegrated(studentId)}
+                        >
+                          AI生成
+                        </Button>
+                      )}
                     </div>
 
                     {/* Domain summary (read only) */}
@@ -1021,8 +1043,11 @@ export default function RenrakuchoPage() {
                       onChange={(e) =>
                         setSendNotes((prev) => ({ ...prev, [studentId]: e.target.value }))
                       }
+                      readOnly={isSent}
                       placeholder="統合文を入力またはAIで生成..."
-                      className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] placeholder-[var(--neutral-foreground-4)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+                      className={`block w-full rounded-md border border-[var(--neutral-stroke-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] placeholder-[var(--neutral-foreground-4)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)] ${
+                        isSent ? 'bg-[var(--neutral-background-3)]' : 'bg-[var(--neutral-background-1)]'
+                      }`}
                     />
                   </CardBody>
                 </Card>
@@ -1035,20 +1060,173 @@ export default function RenrakuchoPage() {
             </p>
           )}
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-[var(--neutral-stroke-3)]">
-            <Button variant="secondary" onClick={() => setShowSendModal(false)}>
-              キャンセル
-            </Button>
-            <Button
-              isLoading={isSending}
-              leftIcon={<Send className="h-4 w-4" />}
-              onClick={handleSendToGuardians}
-              disabled={Object.values(sendNotes).every((v) => !v.trim())}
-            >
-              保護者に送信
-            </Button>
+          <div className="flex justify-between gap-2 pt-2 border-t border-[var(--neutral-stroke-3)]">
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={<RefreshCw className="h-4 w-4" />}
+                onClick={handleRegenerateAll}
+              >
+                統合をリセット
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => setShowSendModal(false)}>
+                キャンセル
+              </Button>
+              <Button
+                variant="outline"
+                isLoading={isSavingDraft}
+                leftIcon={<Save className="h-4 w-4" />}
+                onClick={() => handleSaveDraft(false)}
+              >
+                途中保存
+              </Button>
+              <Button
+                isLoading={isSending}
+                leftIcon={<Send className="h-4 w-4" />}
+                onClick={handleSendToGuardians}
+                disabled={Object.entries(sendNotes).every(([sid, v]) => !v.trim() || sentStudentIds.has(Number(sid)))}
+              >
+                保護者に送信
+              </Button>
+            </div>
           </div>
         </div>
+      </Modal>
+
+      {/* ================================================================= */}
+      {/* View Integrated Notes Modal                                       */}
+      {/* ================================================================= */}
+      <Modal
+        isOpen={showViewModal}
+        onClose={() => setShowViewModal(false)}
+        title="送信済み内容の閲覧"
+        size="full"
+      >
+        {isLoadingView ? (
+          <SkeletonList items={3} />
+        ) : viewData ? (
+          <div className="space-y-4">
+            {/* Activity info */}
+            <Card>
+              <CardBody>
+                <p className="text-sm"><strong>活動名:</strong> {viewData.activity.activity_name}</p>
+                <p className="text-sm"><strong>記録日:</strong> {viewData.activity.record_date}</p>
+                {viewData.activity.staff_name && (
+                  <p className="text-sm"><strong>作成者:</strong> {viewData.activity.staff_name}</p>
+                )}
+              </CardBody>
+            </Card>
+
+            {/* Confirmation summary */}
+            {viewData.summary.sent > 0 && (
+              <div className="grid grid-cols-3 gap-3">
+                <Card>
+                  <CardBody>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-[var(--neutral-foreground-1)]">{viewData.summary.sent}</p>
+                      <p className="text-xs text-[var(--neutral-foreground-3)]">件送信済み</p>
+                    </div>
+                  </CardBody>
+                </Card>
+                <Card>
+                  <CardBody>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-[var(--status-success-fg)]">{viewData.summary.confirmed}</p>
+                      <p className="text-xs text-[var(--neutral-foreground-3)]">件確認済み</p>
+                    </div>
+                  </CardBody>
+                </Card>
+                {viewData.summary.unconfirmed > 0 && (
+                  <Card>
+                    <CardBody>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-[var(--status-danger-fg)]">{viewData.summary.unconfirmed}</p>
+                        <p className="text-xs text-[var(--neutral-foreground-3)]">件未確認</p>
+                      </div>
+                    </CardBody>
+                  </Card>
+                )}
+              </div>
+            )}
+
+            {/* Notes */}
+            {viewData.notes
+              .filter((n) => n.is_sent)
+              .map((note) => (
+                <Card
+                  key={note.id}
+                  className={`border-l-4 ${note.guardian_confirmed ? 'border-l-[var(--status-success-fg)]' : 'border-l-[var(--status-danger-fg)]'}`}
+                >
+                  <CardBody>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-[var(--neutral-foreground-1)]">
+                          {note.student?.student_name || '不明'}
+                        </span>
+                        {note.student?.grade_level && (
+                          <Badge variant={GRADE_BADGE_VARIANT[note.student.grade_level] || 'default'} className="text-[10px]">
+                            {GRADE_LABELS[note.student.grade_level] || note.student.grade_level}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex gap-1">
+                        <Badge variant="success">送信済み</Badge>
+                        {note.guardian_confirmed ? (
+                          <Badge variant="success">確認済み</Badge>
+                        ) : (
+                          <Badge variant="danger">未確認</Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="rounded-md bg-[var(--neutral-background-3)] p-3 text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap leading-relaxed mb-2">
+                      {note.integrated_content}
+                    </div>
+
+                    <div className="text-xs text-[var(--neutral-foreground-3)] border-t border-[var(--neutral-stroke-3)] pt-2">
+                      {note.sent_at && (
+                        <span>送信日時: {format(new Date(note.sent_at), 'yyyy年M月d日 HH:mm')}</span>
+                      )}
+                    </div>
+
+                    {note.guardian_confirmed && note.guardian_confirmed_at ? (
+                      <div className="mt-2 rounded-md bg-[rgba(var(--status-success-fg-rgb,52,199,89),0.1)] p-2 text-xs text-[var(--status-success-fg)]">
+                        <CheckCircle className="inline h-3 w-3 mr-1" />
+                        保護者確認日時: {format(new Date(note.guardian_confirmed_at), 'yyyy年M月d日 HH:mm')}
+                      </div>
+                    ) : (
+                      <div className="mt-2 rounded-md bg-[rgba(var(--status-danger-fg-rgb,255,59,48),0.1)] p-2 text-xs text-[var(--status-danger-fg)]">
+                        <AlertCircle className="inline h-3 w-3 mr-1" />
+                        まだ保護者が確認していません
+                      </div>
+                    )}
+                  </CardBody>
+                </Card>
+              ))}
+
+            {viewData.notes.filter((n) => n.is_sent).length === 0 && (
+              <Card>
+                <CardBody>
+                  <div className="py-8 text-center">
+                    <p className="text-sm text-[var(--neutral-foreground-3)]">
+                      送信済みの内容がありません
+                    </p>
+                    <p className="text-xs text-[var(--neutral-foreground-4)] mt-1">
+                      「統合内容を編集」から統合内容を編集し、保護者に送信してください。
+                    </p>
+                  </div>
+                </CardBody>
+              </Card>
+            )}
+          </div>
+        ) : (
+          <p className="py-8 text-center text-sm text-[var(--neutral-foreground-3)]">
+            データの読み込みに失敗しました
+          </p>
+        )}
       </Modal>
     </div>
   );

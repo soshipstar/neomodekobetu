@@ -192,6 +192,9 @@ Route::prefix('staff')
         Route::post('/renrakucho/{record}/student-records', [App\Http\Controllers\Staff\RenrakuchoController::class, 'storeStudentRecords']);
         Route::post('/renrakucho/{record}/send-to-guardians', [App\Http\Controllers\Staff\RenrakuchoController::class, 'sendToGuardians']);
         Route::post('/renrakucho/{record}/generate-integrated', [App\Http\Controllers\Staff\RenrakuchoController::class, 'generateIntegrated']);
+        Route::post('/renrakucho/{record}/save-draft', [App\Http\Controllers\Staff\RenrakuchoController::class, 'saveDraft']);
+        Route::post('/renrakucho/{record}/regenerate-integrated', [App\Http\Controllers\Staff\RenrakuchoController::class, 'regenerateIntegrated']);
+        Route::get('/renrakucho/{record}/view-integrated', [App\Http\Controllers\Staff\RenrakuchoController::class, 'viewIntegrated']);
 
         // --- お便り ---
         Route::get('/newsletter-settings', [App\Http\Controllers\Staff\NewsletterSettingController::class, 'show']);
