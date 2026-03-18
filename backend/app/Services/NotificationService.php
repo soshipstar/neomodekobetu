@@ -6,6 +6,7 @@ use App\Events\NotificationCreated;
 use App\Jobs\SendNotificationEmailJob;
 use App\Models\Notification;
 use App\Models\User;
+use App\Services\WebPushService;
 use Illuminate\Support\Facades\Log;
 
 class NotificationService
@@ -33,6 +34,10 @@ class NotificationService
 
         // Broadcast to the user's private WebSocket channel
         broadcast(new NotificationCreated($notification))->toOthers();
+
+        // Also send Web Push notification
+        $url = $data['url'] ?? '/';
+        $this->sendPushNotification($user, $title, $body, $url);
 
         return $notification;
     }
@@ -198,6 +203,35 @@ class NotificationService
             'actionLabel' => $actionLabel,
             'facilityName' => $facilityName ?: config('app.name', 'きづり'),
         ]);
+    }
+
+    /**
+     * Send a Web Push notification to a user.
+     *
+     * @param  User    $user
+     * @param  string  $title
+     * @param  string  $body
+     * @param  string  $url   URL to open when notification is clicked
+     * @return int     Number of push messages successfully sent
+     */
+    public function sendPushNotification(
+        User $user,
+        string $title,
+        string $body,
+        string $url = '/',
+    ): int {
+        try {
+            $webPush = app(WebPushService::class);
+
+            return $webPush->sendToUser($user->id, $title, $body, $url);
+        } catch (\Exception $e) {
+            Log::error('Push notification failed', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return 0;
+        }
     }
 
     /**
