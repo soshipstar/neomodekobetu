@@ -75,7 +75,9 @@ Route::prefix('admin')
 
         // --- 待機リスト管理 ---
         Route::get('/waiting-list', [App\Http\Controllers\Admin\WaitingListController::class, 'index']);
+        Route::get('/waiting-list/summary', [App\Http\Controllers\Admin\WaitingListController::class, 'summary']);
         Route::put('/waiting-list/{student}', [App\Http\Controllers\Admin\WaitingListController::class, 'update']);
+        Route::put('/waiting-list-capacity', [App\Http\Controllers\Admin\WaitingListController::class, 'updateCapacity']);
 
         // --- 保護者管理 ---
         Route::apiResource('guardians', App\Http\Controllers\Admin\GuardianController::class);
@@ -138,6 +140,7 @@ Route::prefix('staff')
         Route::get('/waiting-list', [App\Http\Controllers\Admin\WaitingListController::class, 'index']);
         Route::get('/waiting-list/summary', [App\Http\Controllers\Admin\WaitingListController::class, 'summary']);
         Route::put('/waiting-list/{student}', [App\Http\Controllers\Admin\WaitingListController::class, 'update']);
+        Route::put('/waiting-list-capacity', [App\Http\Controllers\Admin\WaitingListController::class, 'updateCapacity']);
 
         Route::get('/students', [App\Http\Controllers\Staff\StudentController::class, 'index']);
         Route::post('/students', [App\Http\Controllers\Staff\StudentController::class, 'store']);
