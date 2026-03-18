@@ -532,4 +532,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/upload', [App\Http\Controllers\Api\FileUploadController::class, 'store']);
     Route::delete('/upload/{file}', [App\Http\Controllers\Api\FileUploadController::class, 'destroy']);
     Route::get('/download/{path}', [App\Http\Controllers\Api\FileUploadController::class, 'download'])->where('path', '.*');
+
+    // --- Web Push通知 ---
+    Route::get('/push/vapid-key', [App\Http\Controllers\Api\PushSubscriptionController::class, 'vapidPublicKey']);
+    Route::post('/push/subscribe', [App\Http\Controllers\Api\PushSubscriptionController::class, 'subscribe']);
+    Route::post('/push/unsubscribe', [App\Http\Controllers\Api\PushSubscriptionController::class, 'unsubscribe']);
 });
