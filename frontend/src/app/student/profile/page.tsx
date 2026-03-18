@@ -156,15 +156,15 @@ export default function StudentProfilePage() {
           </CardTitle>
         </CardHeader>
         <form onSubmit={(e) => { e.preventDefault(); changePasswordMutation.mutate(passwordForm); }} className="space-y-4">
-          <Input label="いまのパスワード" type="password" value={passwordForm.current_password} onChange={(e) => setPasswordForm({ ...passwordForm, current_password: e.target.value })} required />
-          <Input label="あたらしいパスワード" type="password" value={passwordForm.new_password} onChange={(e) => setPasswordForm({ ...passwordForm, new_password: e.target.value })} required helperText="8もじいじょうでにゅうりょくしてね" />
+          <Input label="現在のパスワード" type="password" value={passwordForm.current_password} onChange={(e) => setPasswordForm({ ...passwordForm, current_password: e.target.value })} required />
+          <Input label="新しいパスワード" type="password" value={passwordForm.new_password} onChange={(e) => setPasswordForm({ ...passwordForm, new_password: e.target.value })} required helperText="6文字以上で入力してください" />
           <Input
-            label="あたらしいパスワード（もういちど）"
+            label="新しいパスワード（確認）"
             type="password"
             value={passwordForm.new_password_confirmation}
             onChange={(e) => setPasswordForm({ ...passwordForm, new_password_confirmation: e.target.value })}
             required
-            error={passwordForm.new_password_confirmation && passwordForm.new_password !== passwordForm.new_password_confirmation ? 'パスワードがあっていません' : undefined}
+            error={passwordForm.new_password_confirmation && passwordForm.new_password !== passwordForm.new_password_confirmation ? '新しいパスワードが一致しません' : undefined}
           />
           <div className="flex justify-end">
             <Button
@@ -173,7 +173,7 @@ export default function StudentProfilePage() {
               isLoading={changePasswordMutation.isPending}
               disabled={!passwordForm.current_password || !passwordForm.new_password || passwordForm.new_password !== passwordForm.new_password_confirmation}
             >
-              パスワードをかえる
+              パスワードを変更
             </Button>
           </div>
         </form>

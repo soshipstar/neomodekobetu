@@ -5,14 +5,18 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Models\WeeklyPlan;
 use App\Models\WeeklyPlanSubmission;
+use App\Traits\ResolvesStudent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class StudentWeeklyPlanController extends Controller
 {
+    use ResolvesStudent;
     /**
-     * 生徒が閲覧可能な週間計画一覧を取得
+     * 生徒が閲覧可能な週間計画を取得
+     * week_start パラメータ指定時はその週の自分の計画を返す
+     * 指定なしの場合はページネーション付き一覧を返す
      */
     public function index(Request $request): JsonResponse
     {
@@ -22,11 +26,22 @@ class StudentWeeklyPlanController extends Controller
             return response()->json(['success' => false, 'message' => '生徒情報が見つかりません。'], 404);
         }
 
-        $plans = WeeklyPlan::where('classroom_id', $student->classroom_id)
-            ->where('status', '!=', 'draft')
-            ->with(['submissions' => function ($q) use ($student) {
-                // この生徒に関連する提出物のみ
-            }])
+        // 特定の週指定がある場合、その週の計画を返す
+        if ($request->filled('week_start')) {
+            $plan = WeeklyPlan::where('student_id', $student->id)
+                ->where('week_start_date', $request->input('week_start'))
+                ->with(['submissions', 'comments.user'])
+                ->first();
+
+            return response()->json([
+                'success' => true,
+                'data'    => $plan,
+            ]);
+        }
+
+        // 一覧（自分の計画のみ）
+        $plans = WeeklyPlan::where('student_id', $student->id)
+            ->with(['submissions'])
             ->orderByDesc('week_start_date')
             ->paginate($request->input('per_page', 10));
 
@@ -124,20 +139,5 @@ class StudentWeeklyPlanController extends Controller
         ]);
     }
 
-    /**
-     * リクエストから生徒情報を取得（auth方式に依存）
-     */
-    private function getStudent(Request $request)
-    {
-        // Sanctumトークンからstudent情報を取得
-        // student認証の場合、tokenable が Student モデルの可能性がある
-        $user = $request->user();
-
-        if ($user instanceof \App\Models\Student) {
-            return $user;
-        }
-
-        // user_type=student の場合、対応するstudentレコードを探す
-        return \App\Models\Student::where('username', $user->username)->first();
-    }
+    // getStudent() は ResolvesStudent トレイトで提供
 }

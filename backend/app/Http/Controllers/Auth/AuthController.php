@@ -110,6 +110,8 @@ class AuthController extends Controller
     /**
      * studentsテーブルの生徒ログイン処理
      * 生徒はstudentsテーブルのusername/password_hashで認証する
+     * 常にuser_type='student'の専用Userレコードを作成/使用してトークンを発行する
+     * これによりCheckUserTypeミドルウェアがstudent APIルートへのアクセスを許可する
      */
     private function handleStudentLogin(Request $request, Student $student): JsonResponse
     {
@@ -134,29 +136,9 @@ class AuthController extends Controller
         // 最終ログイン日時を更新
         $student->update(['last_login_at' => now()]);
 
-        // 生徒用のレスポンスを返す
-        // 生徒はSanctumトークンを持たないため、簡易的なトークンを生成
-        // 保護者ユーザーが紐付いている場合はそのユーザーのトークンを使用
-        $guardianUser = $student->guardian;
-
-        if ($guardianUser) {
-            // 保護者ユーザーのトークンを発行（student権限付き）
-            $guardianUser->tokens()->delete();
-            $token = $guardianUser->createToken('kiduri-api', ['student'])->plainTextToken;
-
-            return response()->json([
-                'success' => true,
-                'data'    => [
-                    'token' => $token,
-                    'user'  => $guardianUser->load('classroom'),
-                    'student' => $student->load('classroom'),
-                    'login_type' => 'student',
-                ],
-            ]);
-        }
-
-        // AU-009: 保護者ユーザーが紐付いていない場合
-        // 生徒用の仮Userレコードを作成してトークンを発行
+        // 生徒用の専用Userレコードを作成/取得してトークンを発行
+        // 保護者が紐付いていてもいなくても、常にuser_type='student'のUserを使う
+        // これにより CheckUserType ミドルウェアが student API を許可する
         $studentUser = User::firstOrCreate(
             ['username' => 'student_' . $student->id],
             [
@@ -168,6 +150,12 @@ class AuthController extends Controller
             ]
         );
 
+        // 既存レコードの場合、名前や教室が変わっている可能性があるので更新
+        $studentUser->update([
+            'full_name'    => $student->student_name,
+            'classroom_id' => $student->classroom_id,
+        ]);
+
         $studentUser->tokens()->delete();
         $token = $studentUser->createToken('kiduri-api', ['student'])->plainTextToken;
 
@@ -177,7 +165,7 @@ class AuthController extends Controller
                 'token' => $token,
                 'user'  => $studentUser->load('classroom'),
                 'student' => $student->load('classroom'),
-                'login_type' => 'student_only',
+                'login_type' => 'student',
             ],
         ]);
     }

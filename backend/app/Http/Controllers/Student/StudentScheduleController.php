@@ -6,11 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\Holiday;
 use App\Models\Student;
+use App\Traits\ResolvesStudent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class StudentScheduleController extends Controller
 {
+    use ResolvesStudent;
     /**
      * 生徒のスケジュール（イベント・休日含む）を取得
      */
@@ -57,17 +59,5 @@ class StudentScheduleController extends Controller
         ]);
     }
 
-    /**
-     * リクエストから生徒情報を取得
-     */
-    private function getStudent(Request $request)
-    {
-        $user = $request->user();
-
-        if ($user instanceof Student) {
-            return $user;
-        }
-
-        return Student::where('username', $user->username)->first();
-    }
+    // getStudent() は ResolvesStudent トレイトで提供
 }

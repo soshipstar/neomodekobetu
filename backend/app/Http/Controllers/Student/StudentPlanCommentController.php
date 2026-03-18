@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Models\IndividualSupportPlan;
 use App\Models\Student;
+use App\Traits\ResolvesStudent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class StudentPlanCommentController extends Controller
 {
+    use ResolvesStudent;
     /**
      * 支援計画にコメントを追加
      */
@@ -45,17 +47,5 @@ class StudentPlanCommentController extends Controller
         ]);
     }
 
-    /**
-     * リクエストから生徒情報を取得
-     */
-    private function getStudent(Request $request)
-    {
-        $user = $request->user();
-
-        if ($user instanceof Student) {
-            return $user;
-        }
-
-        return Student::where('username', $user->username)->first();
-    }
+    // getStudent() は ResolvesStudent トレイトで提供
 }

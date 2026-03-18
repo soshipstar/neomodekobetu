@@ -21,11 +21,24 @@ export interface User {
   };
 }
 
+export interface StudentInfo {
+  id: number;
+  student_name: string;
+  username: string | null;
+  classroom_id: number;
+  classroom?: {
+    id: number;
+    classroom_name: string;
+  };
+}
+
 export interface AuthResponse {
   success: boolean;
   data: {
     token: string;
     user: User;
+    student?: StudentInfo;
+    login_type?: 'student' | 'student_only';
   };
 }
 
@@ -36,12 +49,22 @@ export interface LoginCredentials {
 
 /**
  * Login with username and password
+ * 生徒ログインの場合、login_typeとstudent情報をlocalStorageに保存
  */
-export async function login(credentials: LoginCredentials): Promise<{ user: User; token: string }> {
+export async function login(credentials: LoginCredentials): Promise<{ user: User; token: string; student?: StudentInfo; login_type?: string }> {
   const response = await api.post<AuthResponse>('/api/auth/login', credentials);
-  const { token, user } = response.data.data;
+  const { token, user, student, login_type } = response.data.data;
   setToken(token);
-  return { user, token };
+
+  // 生徒ログインの場合、student情報とlogin_typeを保存
+  if (login_type && student) {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('login_type', login_type);
+      localStorage.setItem('student_info', JSON.stringify(student));
+    }
+  }
+
+  return { user, token, student, login_type };
 }
 
 /**
@@ -52,6 +75,10 @@ export async function logout(): Promise<void> {
     await api.post('/api/auth/logout');
   } finally {
     removeToken();
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('login_type');
+      localStorage.removeItem('student_info');
+    }
   }
 }
 

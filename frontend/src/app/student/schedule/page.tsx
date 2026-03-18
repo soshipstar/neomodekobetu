@@ -3,181 +3,278 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { SkeletonList } from '@/components/ui/Skeleton';
-import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isSameDay, getDay } from 'date-fns';
-import { ja } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Calendar, Clock, MapPin } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-interface ScheduleDay {
-  date: string;
-  is_scheduled: boolean;
-  is_holiday: boolean;
-  holiday_name: string | null;
-  activities: ScheduleActivity[];
-  arrival_time: string | null;
-  departure_time: string | null;
-  is_additional: boolean;
-}
-
-interface ScheduleActivity {
+interface ScheduleEvent {
   id: number;
-  name: string;
-  start_time: string;
-  end_time: string;
-  location: string | null;
-  description: string | null;
-  type: 'routine' | 'event' | 'special';
+  event_date: string;
+  event_name: string;
+  event_description: string | null;
+  event_color: string | null;
 }
+
+interface ScheduleHoliday {
+  id: number;
+  holiday_date: string;
+  holiday_name: string;
+}
+
+interface ScheduleResponse {
+  events: ScheduleEvent[];
+  holidays: ScheduleHoliday[];
+  scheduled_days: string[];
+  year: number;
+  month: number;
+}
+
+const dayLabels = ['日', '月', '火', '水', '木', '金', '土'];
 
 export default function StudentSchedulePage() {
-  const [currentWeek, setCurrentWeek] = useState(new Date());
+  const now = new Date();
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth() + 1);
 
-  const weekStart = format(startOfWeek(currentWeek, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-  const weekEnd = format(endOfWeek(currentWeek, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-
-  const { data: schedule = [], isLoading } = useQuery({
-    queryKey: ['student', 'schedule', weekStart],
+  const { data, isLoading } = useQuery({
+    queryKey: ['student', 'schedule', year, month],
     queryFn: async () => {
-      const res = await api.get<{ data: ScheduleDay[] }>('/api/student/schedule', {
-        params: { week_start: weekStart },
+      const res = await api.get<{ data: ScheduleResponse }>('/api/student/schedule', {
+        params: { year, month },
       });
       return res.data.data;
     },
   });
 
-  const weekDays = eachDayOfInterval({
-    start: startOfWeek(currentWeek, { weekStartsOn: 1 }),
-    end: endOfWeek(currentWeek, { weekStartsOn: 1 }),
+  const goToPrevMonth = () => {
+    if (month === 1) { setYear(year - 1); setMonth(12); }
+    else { setMonth(month - 1); }
+  };
+
+  const goToNextMonth = () => {
+    if (month === 12) { setYear(year + 1); setMonth(1); }
+    else { setMonth(month + 1); }
+  };
+
+  const goToThisMonth = () => {
+    setYear(now.getFullYear());
+    setMonth(now.getMonth() + 1);
+  };
+
+  // Build calendar grid
+  const firstDay = new Date(year, month - 1, 1);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const startDayOfWeek = firstDay.getDay(); // 0=Sun
+  const today = now.getDate();
+  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1;
+
+  // Index events and holidays by day
+  const eventsByDay: Record<number, ScheduleEvent[]> = {};
+  const holidaysByDay: Record<number, ScheduleHoliday[]> = {};
+
+  data?.events?.forEach((e) => {
+    const day = new Date(e.event_date).getDate();
+    if (!eventsByDay[day]) eventsByDay[day] = [];
+    eventsByDay[day].push(e);
   });
 
-  const getScheduleForDay = (date: Date): ScheduleDay | undefined => {
-    const dateStr = format(date, 'yyyy-MM-dd');
-    return schedule.find((s) => s.date === dateStr);
+  data?.holidays?.forEach((h) => {
+    const day = new Date(h.holiday_date).getDate();
+    if (!holidaysByDay[day]) holidaysByDay[day] = [];
+    holidaysByDay[day].push(h);
+  });
+
+  // scheduled_days is array of day names like ['monday', 'tuesday', ...]
+  const scheduledDayNums = new Set<number>();
+  const dayNameToNum: Record<string, number> = {
+    sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
+    thursday: 4, friday: 5, saturday: 6,
+  };
+  data?.scheduled_days?.forEach((name) => {
+    if (dayNameToNum[name] !== undefined) scheduledDayNums.add(dayNameToNum[name]);
+  });
+
+  // Check if a day is a scheduled activity day
+  const isScheduledDay = (day: number): boolean => {
+    const date = new Date(year, month - 1, day);
+    const dow = date.getDay();
+    // Not scheduled if it's a holiday
+    if (holidaysByDay[day]) return false;
+    return scheduledDayNums.has(dow);
   };
 
-  const typeColors: Record<string, string> = {
-    routine: 'bg-blue-100 text-blue-700 border-blue-200',
-    event: 'bg-green-100 text-green-700 border-green-200',
-    special: 'bg-purple-100 text-purple-700 border-purple-200',
-  };
+  // Build calendar cells
+  const calendarCells: (number | null)[] = [];
+  for (let i = 0; i < startDayOfWeek; i++) calendarCells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) calendarCells.push(d);
+  while (calendarCells.length % 7 !== 0) calendarCells.push(null);
 
-  const typeLabels: Record<string, string> = {
-    routine: '日課',
-    event: 'イベント',
-    special: '特別活動',
-  };
+  const weeks: (number | null)[][] = [];
+  for (let i = 0; i < calendarCells.length; i += 7) {
+    weeks.push(calendarCells.slice(i, i + 7));
+  }
 
-  const scheduledDays = schedule.filter((s) => s.is_scheduled).length;
+  // Selected day detail
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+
+  const selectedEvents = selectedDay ? eventsByDay[selectedDay] || [] : [];
+  const selectedHolidays = selectedDay ? holidaysByDay[selectedDay] || [] : [];
+  const selectedIsScheduled = selectedDay ? isScheduledDay(selectedDay) : false;
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">スケジュール</h1>
+      <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">スケジュール</h1>
 
-      {/* Week navigation */}
+      {/* Month navigation */}
       <div className="flex items-center justify-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => setCurrentWeek(subWeeks(currentWeek, 1))}>
+        <Button variant="ghost" size="sm" onClick={goToPrevMonth}>
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <p className="text-lg font-semibold">
-          {format(startOfWeek(currentWeek, { weekStartsOn: 1 }), 'M月d日', { locale: ja })}
-          {' - '}
-          {format(endOfWeek(currentWeek, { weekStartsOn: 1 }), 'M月d日', { locale: ja })}
+        <p className="text-lg font-semibold text-[var(--neutral-foreground-1)]">
+          {year}年{month}月
         </p>
-        <Button variant="ghost" size="sm" onClick={() => setCurrentWeek(addWeeks(currentWeek, 1))}>
+        <Button variant="ghost" size="sm" onClick={goToNextMonth}>
           <ChevronRight className="h-4 w-4" />
         </Button>
-        <Button variant="outline" size="sm" onClick={() => setCurrentWeek(new Date())}>今週</Button>
+        <Button variant="outline" size="sm" onClick={goToThisMonth}>今月</Button>
       </div>
 
-      {/* Summary */}
-      <div className="flex justify-center gap-4">
-        <Badge variant="primary" className="px-4 py-1.5 text-sm">
-          今週の通所日: {scheduledDays}日
-        </Badge>
-      </div>
-
-      {/* Schedule */}
       {isLoading ? (
         <SkeletonList items={5} />
       ) : (
-        <div className="space-y-3">
-          {weekDays.map((day) => {
-            const daySchedule = getScheduleForDay(day);
-            const isToday = isSameDay(day, new Date());
-            const dayOfWeek = getDay(day);
-            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
-            return (
-              <Card
-                key={format(day, 'yyyy-MM-dd')}
-                className={`${isToday ? 'ring-2 ring-blue-500' : ''} ${!daySchedule?.is_scheduled && !daySchedule?.is_holiday ? 'opacity-50' : ''}`}
-              >
-                <div className="flex items-center gap-3 mb-3">
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-full ${
-                    isToday ? 'bg-blue-600 text-white' : daySchedule?.is_holiday ? 'bg-red-100' : daySchedule?.is_scheduled ? 'bg-blue-100' : 'bg-gray-100'
-                  }`}>
-                    <div className="text-center">
-                      <p className={`text-lg font-bold ${isToday ? 'text-white' : daySchedule?.is_holiday ? 'text-red-600' : ''}`}>
-                        {format(day, 'd')}
-                      </p>
-                    </div>
-                  </div>
-                  <div>
-                    <p className={`font-medium ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
-                      {format(day, 'E', { locale: ja })}曜日
-                      {isToday && <span className="ml-2 text-xs bg-blue-100 text-blue-600 rounded-full px-2 py-0.5">今日</span>}
-                    </p>
-                    <div className="flex gap-1">
-                      {daySchedule?.is_holiday && <Badge variant="danger">{daySchedule.holiday_name || 'お休み'}</Badge>}
-                      {daySchedule?.is_additional && <Badge variant="info">追加利用</Badge>}
-                      {daySchedule?.is_scheduled && !daySchedule?.is_holiday && (
-                        <span className="text-xs text-gray-500">
-                          {daySchedule.arrival_time && `${daySchedule.arrival_time}`}
-                          {daySchedule.departure_time && ` - ${daySchedule.departure_time}`}
-                        </span>
-                      )}
-                      {!daySchedule?.is_scheduled && !daySchedule?.is_holiday && (
-                        <Badge variant="default">通所なし</Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {daySchedule?.is_scheduled && daySchedule.activities.length > 0 && (
-                  <div className="space-y-2">
-                    {daySchedule.activities.map((activity) => (
-                      <div
-                        key={activity.id}
-                        className={`flex items-start gap-3 rounded-lg border p-3 ${typeColors[activity.type] || 'bg-gray-50 border-gray-200'}`}
+        <>
+          {/* Calendar grid */}
+          <Card>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr>
+                    {dayLabels.map((label, i) => (
+                      <th
+                        key={label}
+                        className={`border border-[var(--neutral-stroke-2)] p-2 text-center text-xs font-medium ${
+                          i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : 'text-[var(--neutral-foreground-2)]'
+                        }`}
                       >
-                        <div className="shrink-0 text-center">
-                          <p className="text-xs font-medium">{activity.start_time}</p>
-                          <p className="text-[10px] text-gray-400">|</p>
-                          <p className="text-xs font-medium">{activity.end_time}</p>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium">{activity.name}</p>
-                            <span className="text-[10px] opacity-75">{typeLabels[activity.type]}</span>
-                          </div>
-                          {activity.description && <p className="text-xs opacity-75">{activity.description}</p>}
-                          {activity.location && (
-                            <p className="flex items-center gap-1 text-xs opacity-75 mt-0.5">
-                              <MapPin className="h-3 w-3" />{activity.location}
-                            </p>
-                          )}
-                        </div>
+                        {label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {weeks.map((week, wi) => (
+                    <tr key={wi}>
+                      {week.map((day, di) => {
+                        if (day === null) {
+                          return <td key={di} className="border border-[var(--neutral-stroke-2)] p-1 h-16" />;
+                        }
+
+                        const isToday = isCurrentMonth && day === today;
+                        const hasHoliday = !!holidaysByDay[day];
+                        const hasEvent = !!eventsByDay[day];
+                        const scheduled = isScheduledDay(day);
+                        const isSun = di === 0;
+                        const isSat = di === 6;
+                        const isSelected = selectedDay === day;
+
+                        return (
+                          <td
+                            key={di}
+                            className={`border border-[var(--neutral-stroke-2)] p-1 h-16 align-top cursor-pointer transition-colors ${
+                              isSelected ? 'bg-[var(--brand-80)]/10' : ''
+                            } ${isToday ? 'bg-blue-50' : ''} ${hasHoliday ? 'bg-red-50/50' : ''}`}
+                            onClick={() => setSelectedDay(day === selectedDay ? null : day)}
+                          >
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span className={`text-xs font-medium leading-none ${
+                                isToday ? 'bg-[var(--brand-80)] text-white rounded-full w-6 h-6 flex items-center justify-center' : ''
+                              } ${hasHoliday || isSun ? 'text-red-500' : isSat ? 'text-blue-500' : 'text-[var(--neutral-foreground-1)]'}`}>
+                                {day}
+                              </span>
+                              <div className="flex flex-wrap justify-center gap-0.5 mt-0.5">
+                                {scheduled && !hasHoliday && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-80)]" title="通所日" />
+                                )}
+                                {hasEvent && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" title="イベント" />
+                                )}
+                                {hasHoliday && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-red-500" title="休日" />
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Legend */}
+            <div className="flex flex-wrap gap-4 px-4 py-3 border-t border-[var(--neutral-stroke-2)] text-xs text-[var(--neutral-foreground-3)]">
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-[var(--brand-80)]" /> 通所日
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-green-500" /> イベント
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-red-500" /> 休日
+              </span>
+            </div>
+          </Card>
+
+          {/* Selected day detail */}
+          {selectedDay && (
+            <Card>
+              <div className="p-4">
+                <h3 className="text-sm font-semibold text-[var(--neutral-foreground-1)] mb-3">
+                  {month}月{selectedDay}日の詳細
+                </h3>
+
+                {selectedHolidays.length > 0 && (
+                  <div className="mb-2">
+                    {selectedHolidays.map((h) => (
+                      <div key={h.id} className="flex items-center gap-2 text-sm text-red-600">
+                        <Badge variant="danger">{h.holiday_name}</Badge>
                       </div>
                     ))}
                   </div>
                 )}
-              </Card>
-            );
-          })}
-        </div>
+
+                {selectedIsScheduled && (
+                  <p className="text-sm text-[var(--neutral-foreground-2)] mb-2">
+                    <Badge variant="primary">通所日</Badge>
+                  </p>
+                )}
+
+                {!selectedIsScheduled && selectedHolidays.length === 0 && (
+                  <p className="text-sm text-[var(--neutral-foreground-3)]">通所なし</p>
+                )}
+
+                {selectedEvents.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {selectedEvents.map((e) => (
+                      <div
+                        key={e.id}
+                        className="rounded-lg border border-green-200 bg-green-50 p-3"
+                      >
+                        <p className="text-sm font-medium text-green-700">{e.event_name}</p>
+                        {e.event_description && (
+                          <p className="mt-1 text-xs text-green-600 whitespace-pre-wrap">{e.event_description}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
+        </>
       )}
     </div>
   );
