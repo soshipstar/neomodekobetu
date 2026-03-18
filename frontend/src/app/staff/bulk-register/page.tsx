@@ -9,15 +9,18 @@ import { Badge } from '@/components/ui/Badge';
 import { Table, type Column } from '@/components/ui/Table';
 import { Tabs } from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
-import { Upload, FileText, CheckCircle, AlertCircle, Download } from 'lucide-react';
+import { Upload, FileText, CheckCircle, AlertCircle, Download, Info } from 'lucide-react';
 
 interface ParsedRow {
   row_number: number;
+  guardian_name: string;
   student_name: string;
   birth_date: string;
-  grade_level: string;
-  guardian_name: string;
   guardian_email: string;
+  support_start_date: string;
+  grade_adjustment: number;
+  grade_level: string;
+  scheduled_days: string;
   status: 'valid' | 'error';
   errors: string[];
 }
@@ -28,9 +31,10 @@ interface BulkResult {
   errors: { row: number; message: string }[];
 }
 
-const csvTemplate = `生徒名,生年月日,学年,保護者名,保護者メール
-山田太郎,2015-04-01,elementary,山田花子,hanako@example.com
-鈴木一郎,2016-08-15,elementary,鈴木美子,yoshiko@example.com`;
+const csvTemplate = `保護者氏名,生徒氏名,生年月日,保護者メールアドレス,支援開始日,学年調整,月,火,水,木,金,土
+山田花子,山田太郎,2015-04-01,hanako@example.com,2025-04-01,0,1,1,1,1,1,0
+山田花子,山田次郎,2017-06-15,,,0,1,0,1,0,1,0
+鈴木美子,鈴木一郎,2016-08-15,yoshiko@example.com,2025-04-01,0,1,1,1,1,1,0`;
 
 export default function BulkRegisterPage() {
   const toast = useToast();
@@ -98,11 +102,13 @@ export default function BulkRegisterPage() {
 
   const previewColumns: Column<ParsedRow>[] = [
     { key: 'row_number', label: '行' },
-    { key: 'student_name', label: '生徒名' },
+    { key: 'guardian_name', label: '保護者氏名' },
+    { key: 'student_name', label: '生徒氏名' },
     { key: 'birth_date', label: '生年月日' },
     { key: 'grade_level', label: '学年' },
-    { key: 'guardian_name', label: '保護者名' },
-    { key: 'guardian_email', label: '保護者メール' },
+    { key: 'guardian_email', label: 'メール' },
+    { key: 'support_start_date', label: '支援開始日' },
+    { key: 'scheduled_days', label: '通所曜日' },
     {
       key: 'status',
       label: 'ステータス',
@@ -121,7 +127,10 @@ export default function BulkRegisterPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">一括登録</h1>
+      <div>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">利用者一括登録</h1>
+        <p className="mt-1 text-sm text-[var(--neutral-foreground-3)]">CSVファイルをアップロードして、保護者と生徒を一括登録できます。</p>
+      </div>
 
       {step === 'input' && (
         <>
@@ -129,7 +138,7 @@ export default function BulkRegisterPage() {
             <CardHeader>
               <CardTitle>データ入力方法を選択</CardTitle>
               <Button variant="outline" size="sm" onClick={downloadTemplate} leftIcon={<Download className="h-4 w-4" />}>
-                テンプレートCSV
+                CSVテンプレートをダウンロード
               </Button>
             </CardHeader>
 
@@ -137,22 +146,37 @@ export default function BulkRegisterPage() {
               items={[
                 {
                   key: 'csv',
-                  label: 'CSVアップロード',
+                  label: '標準フォーマット',
                   icon: <Upload className="h-4 w-4" />,
                   content: (
                     <div className="space-y-4">
+                      <div className="rounded-lg bg-[var(--neutral-background-2)] p-4">
+                        <h3 className="mb-2 text-sm font-semibold text-[var(--neutral-foreground-1)]">CSV形式について</h3>
+                        <p className="mb-2 text-xs text-[var(--neutral-foreground-3)]">
+                          以下の項目をCSV形式で準備してください。同じ保護者氏名の行は、同一保護者として複数の生徒を紐付けます。
+                        </p>
+                        <ul className="list-disc pl-5 text-xs text-[var(--neutral-foreground-3)] space-y-0.5">
+                          <li><strong>保護者氏名</strong>（必須）</li>
+                          <li><strong>生徒氏名</strong>（必須）</li>
+                          <li><strong>生年月日</strong>（必須、YYYY-MM-DD形式）</li>
+                          <li><strong>保護者メールアドレス</strong>（任意）</li>
+                          <li><strong>支援開始日</strong>（任意、YYYY-MM-DD形式）</li>
+                          <li><strong>学年調整</strong>（-2〜2、省略時は0）</li>
+                          <li><strong>通所曜日（月〜土）</strong>（1=通所、0=通所しない）</li>
+                        </ul>
+                      </div>
                       <div
                         onClick={() => fileInputRef.current?.click()}
                         className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-[var(--neutral-stroke-2)] p-12 hover:border-[var(--brand-80)] hover:bg-[var(--brand-160)] transition-colors"
                       >
                         <Upload className="h-12 w-12 text-[var(--neutral-foreground-4)]" />
                         <p className="mt-2 text-sm text-[var(--neutral-foreground-2)]">クリックしてCSVファイルを選択</p>
-                        <p className="text-xs text-[var(--neutral-foreground-4)]">または直接ドラッグ＆ドロップ</p>
+                        <p className="text-xs text-[var(--neutral-foreground-4)]">UTF-8またはShift-JIS形式のCSVファイル</p>
                       </div>
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept=".csv,.xlsx"
+                        accept=".csv"
                         onChange={handleFileUpload}
                         className="hidden"
                       />
@@ -203,14 +227,34 @@ export default function BulkRegisterPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--neutral-stroke-3)]">
-                  <tr><td className="px-3 py-2">生徒名</td><td className="px-3 py-2"><Badge variant="danger">必須</Badge></td><td className="px-3 py-2">テキスト</td><td className="px-3 py-2">山田太郎</td></tr>
-                  <tr><td className="px-3 py-2">生年月日</td><td className="px-3 py-2"><Badge variant="warning">任意</Badge></td><td className="px-3 py-2">YYYY-MM-DD</td><td className="px-3 py-2">2015-04-01</td></tr>
-                  <tr><td className="px-3 py-2">学年</td><td className="px-3 py-2"><Badge variant="danger">必須</Badge></td><td className="px-3 py-2">preschool/elementary/middle/high</td><td className="px-3 py-2">elementary</td></tr>
-                  <tr><td className="px-3 py-2">保護者名</td><td className="px-3 py-2"><Badge variant="warning">任意</Badge></td><td className="px-3 py-2">テキスト</td><td className="px-3 py-2">山田花子</td></tr>
-                  <tr><td className="px-3 py-2">保護者メール</td><td className="px-3 py-2"><Badge variant="warning">任意</Badge></td><td className="px-3 py-2">メールアドレス</td><td className="px-3 py-2">hanako@example.com</td></tr>
+                  <tr><td className="px-3 py-2">保護者氏名</td><td className="px-3 py-2"><Badge variant="danger">必須</Badge></td><td className="px-3 py-2">テキスト</td><td className="px-3 py-2">山田花子</td></tr>
+                  <tr><td className="px-3 py-2">生徒氏名</td><td className="px-3 py-2"><Badge variant="danger">必須</Badge></td><td className="px-3 py-2">テキスト</td><td className="px-3 py-2">山田太郎</td></tr>
+                  <tr><td className="px-3 py-2">生年月日</td><td className="px-3 py-2"><Badge variant="danger">必須</Badge></td><td className="px-3 py-2">YYYY-MM-DD</td><td className="px-3 py-2">2015-04-01</td></tr>
+                  <tr><td className="px-3 py-2">保護者メールアドレス</td><td className="px-3 py-2"><Badge variant="warning">任意</Badge></td><td className="px-3 py-2">メールアドレス</td><td className="px-3 py-2">hanako@example.com</td></tr>
+                  <tr><td className="px-3 py-2">支援開始日</td><td className="px-3 py-2"><Badge variant="warning">任意</Badge></td><td className="px-3 py-2">YYYY-MM-DD</td><td className="px-3 py-2">2025-04-01</td></tr>
+                  <tr><td className="px-3 py-2">学年調整</td><td className="px-3 py-2"><Badge variant="warning">任意</Badge></td><td className="px-3 py-2">-2〜2（省略時は0）</td><td className="px-3 py-2">0</td></tr>
+                  <tr><td className="px-3 py-2">通所曜日（月〜土）</td><td className="px-3 py-2"><Badge variant="warning">任意</Badge></td><td className="px-3 py-2">1=通所、0=通所しない</td><td className="px-3 py-2">1,1,1,1,1,0</td></tr>
                 </tbody>
               </table>
             </div>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                <div className="flex items-center gap-2">
+                  <Info className="h-5 w-5" />
+                  注意事項
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <ul className="list-disc pl-6 text-sm text-[var(--neutral-foreground-2)] space-y-1.5">
+              <li>ユーザー名は自動生成されます（例：guardian_001）</li>
+              <li>パスワードは8文字のランダムな英数字で自動生成されます</li>
+              <li>登録完了後、ID・パスワード一覧をPDFでダウンロードできます</li>
+              <li>同じ保護者氏名の行は、1人の保護者に複数の生徒を紐付けます</li>
+              <li>既存のユーザー名と重複しないよう、自動的に番号が振られます</li>
+            </ul>
           </Card>
         </>
       )}
@@ -218,7 +262,7 @@ export default function BulkRegisterPage() {
       {step === 'preview' && (
         <Card>
           <CardHeader>
-            <CardTitle>プレビュー</CardTitle>
+            <CardTitle>確認・プレビュー</CardTitle>
             <div className="flex gap-2">
               <Badge variant="success">{validCount}件 OK</Badge>
               {errorCount > 0 && <Badge variant="danger">{errorCount}件 エラー</Badge>}

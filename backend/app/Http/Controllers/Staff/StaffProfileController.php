@@ -72,7 +72,8 @@ class StaffProfileController extends Controller
         }
 
         $user->update([
-            'password' => Hash::make($request->new_password),
+            'password'       => Hash::make($request->new_password),
+            'password_plain' => null,
         ]);
 
         return response()->json([
