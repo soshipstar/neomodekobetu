@@ -670,7 +670,7 @@ export default function RenrakuchoPage() {
                       : '-'}
                   </p>
                   <div className="rounded-md bg-[var(--neutral-background-3)] p-3 text-xs text-[var(--neutral-foreground-2)] whitespace-pre-wrap max-h-32 overflow-y-auto">
-                    {note.integrated_content}
+                    {nl(note.integrated_content)}
                   </div>
                 </CardBody>
               </Card>

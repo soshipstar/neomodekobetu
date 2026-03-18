@@ -46,6 +46,12 @@ interface UnconfirmedNote {
 type SortField = 'sent_at' | 'student_name';
 type SortDir = 'asc' | 'desc';
 
+/** Normalize escaped newlines from API */
+function nl(text: string | null | undefined): string {
+  if (!text) return '';
+  return text.replace(/\\r\\n|\\n|\\r/g, '\n').replace(/\r\n|\r/g, '\n');
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -141,8 +147,10 @@ export default function UnconfirmedNotesPage() {
     );
   };
 
-  const truncate = (text: string, maxLen: number) =>
-    text.length > maxLen ? text.slice(0, maxLen) + '...' : text;
+  const truncate = (text: string, maxLen: number) => {
+    const cleaned = nl(text);
+    return cleaned.length > maxLen ? cleaned.slice(0, maxLen) + '...' : cleaned;
+  };
 
   // =========================================================================
   // Render

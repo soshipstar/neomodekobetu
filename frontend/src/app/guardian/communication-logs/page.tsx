@@ -12,6 +12,12 @@ import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Search, BookOpen, CheckCircle, BarChart3, X } from 'lucide-react';
 
+/** Normalize escaped newlines from API */
+function nl(text: string | null | undefined): string {
+  if (!text) return '';
+  return text.replace(/\\r\\n|\\n|\\r/g, '\n').replace(/\r\n|\r/g, '\n');
+}
+
 interface StudentOption {
   id: number;
   student_name: string;
@@ -370,7 +376,7 @@ export default function CommunicationLogsPage() {
 
                     {/* Content */}
                     <div className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">
-                      {note.integrated_content}
+                      {nl(note.integrated_content)}
                     </div>
 
                     {/* Confirmation */}

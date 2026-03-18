@@ -195,6 +195,12 @@ function getGradeLabel(grade: string): string {
   return labels[grade] ?? '';
 }
 
+/** Normalize escaped newlines from API */
+function nl(text: string | null | undefined): string {
+  if (!text) return '';
+  return text.replace(/\\r\\n|\\n|\\r/g, '\n').replace(/\r\n|\r/g, '\n');
+}
+
 // ---- Helper: build calendar grid ----
 function getCalendarDays(year: number, month: number) {
   const firstDay = new Date(year, month - 1, 1);
@@ -1056,7 +1062,7 @@ export default function GuardianDashboardPage() {
                             </span>
                           </div>
                           <p className="mb-2 whitespace-pre-wrap text-xs text-gray-600">
-                            {note.integrated_content}
+                            {nl(note.integrated_content)}
                           </p>
                           <div className="flex items-center gap-2">
                             {note.guardian_confirmed ? (
@@ -1105,7 +1111,7 @@ export default function GuardianDashboardPage() {
             <div className="mb-3">
               <h4 className="mb-1 text-sm font-medium text-gray-700">説明</h4>
               <p className="whitespace-pre-wrap text-sm text-gray-600">
-                {eventModal.description}
+                {nl(eventModal.description)}
               </p>
             </div>
           )}
@@ -1113,7 +1119,7 @@ export default function GuardianDashboardPage() {
             <div className="mb-3">
               <h4 className="mb-1 text-sm font-medium text-gray-700">保護者・生徒連絡用</h4>
               <p className="whitespace-pre-wrap text-sm text-gray-600">
-                {eventModal.guardian_message}
+                {nl(eventModal.guardian_message)}
               </p>
             </div>
           )}
@@ -1174,7 +1180,7 @@ export default function GuardianDashboardPage() {
                 詳細・ご相談内容
               </h4>
               <p className="whitespace-pre-wrap text-sm text-gray-600">
-                {meetingModal.purpose_detail}
+                {nl(meetingModal.purpose_detail)}
               </p>
             </div>
           )}
@@ -1192,7 +1198,7 @@ export default function GuardianDashboardPage() {
             </h4>
             {meetingModal.meeting_notes?.trim() ? (
               <p className="whitespace-pre-wrap text-sm text-gray-600">
-                {meetingModal.meeting_notes}
+                {nl(meetingModal.meeting_notes)}
               </p>
             ) : (
               <ul className="list-disc pl-5 text-sm leading-relaxed text-gray-600">

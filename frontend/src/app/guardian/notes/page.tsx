@@ -12,6 +12,12 @@ import { format, addDays, subDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, BookOpen, CheckCircle, Smile, Utensils, Activity } from 'lucide-react';
 
+/** Normalize escaped newlines from API */
+function nl(text: string | null | undefined): string {
+  if (!text) return '';
+  return text.replace(/\\r\\n|\\n|\\r/g, '\n').replace(/\r\n|\r/g, '\n');
+}
+
 interface DailyNote {
   id: number;
   student_name: string;
@@ -222,7 +228,7 @@ export default function GuardianNotesPage() {
             {note.staff_comment && (
               <div className="rounded-lg bg-blue-50 p-3 mb-4">
                 <p className="text-xs font-medium text-blue-600 mb-1">スタッフコメント ({note.staff_name})</p>
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">{note.staff_comment}</p>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{nl(note.staff_comment)}</p>
               </div>
             )}
 
