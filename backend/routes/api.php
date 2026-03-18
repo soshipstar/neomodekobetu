@@ -167,7 +167,10 @@ Route::prefix('staff')
         // --- モニタリング ---
         Route::get('/students/{student}/monitoring', [App\Http\Controllers\Staff\MonitoringController::class, 'index']);
         Route::post('/students/{student}/monitoring', [App\Http\Controllers\Staff\MonitoringController::class, 'store']);
+        Route::get('/monitoring/{monitoring}', [App\Http\Controllers\Staff\MonitoringController::class, 'show']);
         Route::put('/monitoring/{monitoring}', [App\Http\Controllers\Staff\MonitoringController::class, 'update']);
+        Route::delete('/monitoring/{monitoring}', [App\Http\Controllers\Staff\MonitoringController::class, 'destroy']);
+        Route::post('/monitoring/{monitoring}/sign', [App\Http\Controllers\Staff\MonitoringController::class, 'sign']);
         Route::post('/monitoring/generate', [App\Http\Controllers\Staff\MonitoringController::class, 'generate']);
         Route::post('/monitoring/{monitoring}/generate-ai', [App\Http\Controllers\Staff\MonitoringController::class, 'generateAi']);
         Route::get('/monitoring/{monitoring}/pdf', [App\Http\Controllers\Staff\MonitoringController::class, 'pdf']);

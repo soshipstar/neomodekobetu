@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
+use App\Models\IndividualSupportPlan;
 use App\Models\MonitoringDetail;
 use App\Models\MonitoringRecord;
 use App\Models\Student;
@@ -11,6 +12,7 @@ use App\Services\PuppeteerPdfService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+
 class MonitoringController extends Controller
 {
     /**
@@ -20,10 +22,15 @@ class MonitoringController extends Controller
     {
         $this->authorizeClassroom($request->user(), $student);
 
-        $records = $student->monitoringRecords()
+        $query = $student->monitoringRecords()
             ->with(['details', 'plan.details'])
-            ->orderByDesc('monitoring_date')
-            ->get();
+            ->orderByDesc('monitoring_date');
+
+        if ($request->filled('plan_id')) {
+            $query->where('plan_id', $request->input('plan_id'));
+        }
+
+        $records = $query->get();
 
         return response()->json([
             'success' => true,
@@ -32,7 +39,26 @@ class MonitoringController extends Controller
     }
 
     /**
+     * モニタリング記録詳細を取得
+     */
+    public function show(Request $request, MonitoringRecord $monitoring): JsonResponse
+    {
+        $monitoring->load(['details', 'plan.details', 'student', 'creator']);
+
+        if ($monitoring->student) {
+            $this->authorizeClassroom($request->user(), $monitoring->student);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => $monitoring,
+        ]);
+    }
+
+    /**
      * モニタリング記録を新規作成
+     * Legacy互換: plan_detail_id, achievement_level, comment, is_draft, student_name,
+     *             short_term_goal_comment, long_term_goal_comment, signature fields
      */
     public function store(Request $request, Student $student): JsonResponse
     {
@@ -43,36 +69,80 @@ class MonitoringController extends Controller
             'monitoring_date'                => 'required|date',
             'overall_comment'                => 'nullable|string',
             'short_term_goal_achievement'    => 'nullable|string',
+            'short_term_goal_comment'        => 'nullable|string',
             'long_term_goal_achievement'     => 'nullable|string',
-            'is_official'                    => 'boolean',
+            'long_term_goal_comment'         => 'nullable|string',
+            'is_draft'                       => 'nullable|boolean',
+            'staff_signature'                => 'nullable|string',
+            'staff_signature_date'           => 'nullable|date',
+            'staff_signer_name'              => 'nullable|string',
             'details'                        => 'nullable|array',
-            'details.*.domain'               => 'nullable|string',
+            'details.*.plan_detail_id'       => 'nullable|integer',
             'details.*.achievement_level'    => 'nullable|string',
             'details.*.comment'              => 'nullable|string',
+            'details.*.domain'               => 'nullable|string',
             'details.*.next_action'          => 'nullable|string',
             'details.*.sort_order'           => 'nullable|integer',
         ]);
 
-        $record = DB::transaction(function () use ($request, $student, $validated) {
+        // 計画書から生徒名を取得
+        $plan = IndividualSupportPlan::where('id', $validated['plan_id'])
+            ->where('student_id', $student->id)
+            ->firstOrFail();
+
+        // 退所日チェック
+        if ($student->withdrawal_date) {
+            $withdrawalDate = new \DateTime($student->withdrawal_date);
+            $recordDate = new \DateTime($validated['monitoring_date']);
+            if ($recordDate >= $withdrawalDate) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "退所日（{$student->withdrawal_date}）以降のモニタリング表は作成できません。",
+                ], 422);
+            }
+        }
+
+        $record = DB::transaction(function () use ($request, $student, $plan, $validated) {
+            $isDraft = $validated['is_draft'] ?? true;
+
+            // 署名データのバリデーション（data:imageで始まらない場合は無視）
+            $staffSignature = $validated['staff_signature'] ?? null;
+            if ($staffSignature && strpos($staffSignature, 'data:image') !== 0) {
+                $staffSignature = null;
+            }
+
             $record = MonitoringRecord::create([
                 'plan_id'                     => $validated['plan_id'],
                 'student_id'                  => $student->id,
+                'student_name'                => $plan->student_name ?? $student->student_name,
                 'classroom_id'                => $student->classroom_id,
                 'monitoring_date'             => $validated['monitoring_date'],
                 'overall_comment'             => $validated['overall_comment'] ?? null,
                 'short_term_goal_achievement' => $validated['short_term_goal_achievement'] ?? null,
+                'short_term_goal_comment'     => $validated['short_term_goal_comment'] ?? null,
                 'long_term_goal_achievement'  => $validated['long_term_goal_achievement'] ?? null,
-                'is_official'                 => $validated['is_official'] ?? false,
+                'long_term_goal_comment'      => $validated['long_term_goal_comment'] ?? null,
+                'is_draft'                    => $isDraft,
+                'is_official'                 => ! $isDraft,
+                'staff_signature'             => $staffSignature,
+                'staff_signature_date'        => $validated['staff_signature_date'] ?? null,
+                'staff_signer_name'           => $validated['staff_signer_name'] ?? null,
                 'created_by'                  => $request->user()->id,
             ]);
 
             if (! empty($validated['details'])) {
                 foreach ($validated['details'] as $index => $detail) {
+                    // 達成状況もコメントも空の場合はスキップ（legacy互換）
+                    if (empty($detail['achievement_level']) && empty($detail['comment'])) {
+                        continue;
+                    }
+
                     MonitoringDetail::create([
                         'monitoring_id'      => $record->id,
+                        'plan_detail_id'     => $detail['plan_detail_id'] ?? null,
+                        'achievement_level'  => $detail['achievement_level'] ?? '',
+                        'comment'            => $detail['comment'] ?? '',
                         'domain'             => $detail['domain'] ?? null,
-                        'achievement_level'  => $detail['achievement_level'] ?? null,
-                        'comment'            => $detail['comment'] ?? null,
                         'next_action'        => $detail['next_action'] ?? null,
                         'sort_order'         => $detail['sort_order'] ?? $index,
                     ]);
@@ -82,10 +152,14 @@ class MonitoringController extends Controller
             return $record;
         });
 
+        $message = $record->is_draft
+            ? 'モニタリング表を下書き保存しました。（保護者には非公開）'
+            : 'モニタリング表を提出しました。（保護者にも公開）';
+
         return response()->json([
             'success' => true,
             'data'    => $record->load('details'),
-            'message' => 'モニタリング記録を作成しました。',
+            'message' => $message,
         ], 201);
     }
 
@@ -100,28 +174,55 @@ class MonitoringController extends Controller
             'monitoring_date'                => 'sometimes|date',
             'overall_comment'                => 'nullable|string',
             'short_term_goal_achievement'    => 'nullable|string',
+            'short_term_goal_comment'        => 'nullable|string',
             'long_term_goal_achievement'     => 'nullable|string',
-            'is_official'                    => 'boolean',
+            'long_term_goal_comment'         => 'nullable|string',
+            'is_draft'                       => 'nullable|boolean',
+            'staff_signature'                => 'nullable|string',
+            'staff_signature_date'           => 'nullable|date',
+            'staff_signer_name'              => 'nullable|string',
             'details'                        => 'nullable|array',
-            'details.*.domain'               => 'nullable|string',
+            'details.*.plan_detail_id'       => 'nullable|integer',
             'details.*.achievement_level'    => 'nullable|string',
             'details.*.comment'              => 'nullable|string',
+            'details.*.domain'               => 'nullable|string',
             'details.*.next_action'          => 'nullable|string',
             'details.*.sort_order'           => 'nullable|integer',
         ]);
 
         DB::transaction(function () use ($monitoring, $validated) {
-            $monitoring->update(collect($validated)->except('details')->toArray());
+            $updateData = collect($validated)->except('details')->toArray();
+
+            // 署名データのバリデーション
+            if (isset($updateData['staff_signature'])) {
+                if (strpos($updateData['staff_signature'], 'data:image') !== 0) {
+                    unset($updateData['staff_signature']);
+                }
+            }
+
+            // is_draft -> is_official同期
+            if (isset($updateData['is_draft'])) {
+                $updateData['is_official'] = ! $updateData['is_draft'];
+            }
+
+            $monitoring->update($updateData);
 
             if (isset($validated['details'])) {
+                // 既存の明細を削除して再作成（legacy互換）
                 $monitoring->details()->delete();
 
                 foreach ($validated['details'] as $index => $detail) {
+                    // 達成状況もコメントも空の場合はスキップ
+                    if (empty($detail['achievement_level']) && empty($detail['comment'])) {
+                        continue;
+                    }
+
                     MonitoringDetail::create([
                         'monitoring_id'      => $monitoring->id,
+                        'plan_detail_id'     => $detail['plan_detail_id'] ?? null,
+                        'achievement_level'  => $detail['achievement_level'] ?? '',
+                        'comment'            => $detail['comment'] ?? '',
                         'domain'             => $detail['domain'] ?? null,
-                        'achievement_level'  => $detail['achievement_level'] ?? null,
-                        'comment'            => $detail['comment'] ?? null,
                         'next_action'        => $detail['next_action'] ?? null,
                         'sort_order'         => $detail['sort_order'] ?? $index,
                     ]);
@@ -129,10 +230,66 @@ class MonitoringController extends Controller
             }
         });
 
+        $message = $monitoring->is_draft
+            ? 'モニタリング表を下書き保存しました。（保護者には非公開）'
+            : 'モニタリング表を提出しました。（保護者にも公開）';
+
         return response()->json([
             'success' => true,
             'data'    => $monitoring->fresh('details'),
-            'message' => 'モニタリング記録を更新しました。',
+            'message' => $message,
+        ]);
+    }
+
+    /**
+     * モニタリング記録を削除
+     */
+    public function destroy(Request $request, MonitoringRecord $monitoring): JsonResponse
+    {
+        if ($monitoring->student) {
+            $this->authorizeClassroom($request->user(), $monitoring->student);
+        }
+
+        $monitoring->details()->delete();
+        $monitoring->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'モニタリング表を削除しました。',
+        ]);
+    }
+
+    /**
+     * 電子署名を保存
+     */
+    public function sign(Request $request, MonitoringRecord $monitoring): JsonResponse
+    {
+        if ($monitoring->student) {
+            $this->authorizeClassroom($request->user(), $monitoring->student);
+        }
+
+        $validated = $request->validate([
+            'staff_signature'       => 'nullable|string',
+            'staff_signer_name'     => 'nullable|string',
+            'staff_signature_date'  => 'nullable|date',
+        ]);
+
+        $updateData = [];
+
+        if (! empty($validated['staff_signature']) && strpos($validated['staff_signature'], 'data:image') === 0) {
+            $updateData['staff_signature'] = $validated['staff_signature'];
+            $updateData['staff_signer_name'] = $validated['staff_signer_name'] ?? null;
+            $updateData['staff_signature_date'] = $validated['staff_signature_date'] ?? now()->toDateString();
+        }
+
+        if (! empty($updateData)) {
+            $monitoring->update($updateData);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => $monitoring->fresh(),
+            'message' => '署名を保存しました。',
         ]);
     }
 
@@ -177,6 +334,9 @@ class MonitoringController extends Controller
             ], 422);
         }
 
+        // 特定の目標のみ生成する場合
+        $detailId = $request->input('detail_id');
+
         // 過去6ヶ月の連絡帳データを取得
         $sixMonthsAgo = now()->subMonths(6)->toDateString();
         $studentRecords = StudentRecord::where('student_id', $student->id)
@@ -192,48 +352,83 @@ class MonitoringController extends Controller
 
         $generatedEvaluations = [];
 
-        foreach ($planDetails as $detail) {
-            if (empty($detail->goal)) {
+        // 特定の目標のみの場合はフィルタリング
+        $targetDetails = $detailId
+            ? $planDetails->where('id', $detailId)
+            : $planDetails;
+
+        foreach ($targetDetails as $detail) {
+            $supportGoal = $detail->support_goal ?? $detail->goal ?? '';
+
+            if (empty($supportGoal)) {
                 $generatedEvaluations[$detail->id] = [
                     'achievement_status' => '',
-                    'monitoring_comment' => '支援目標が設定されていないため、評価を生成できません。',
+                    'monitoring_comment' => '※ 支援目標が設定されていないため、評価を生成できません。',
                 ];
                 continue;
             }
 
-            $relatedRecords = $this->getRelatedRecords($recordsByDomain, $detail->domain, $detail->domain);
+            $category = $detail->category ?? $detail->domain ?? '';
+            $subCategory = $detail->sub_category ?? '';
+            $relatedRecords = $this->getRelatedRecords($recordsByDomain, $category, $subCategory);
 
             if (empty($relatedRecords)) {
                 $generatedEvaluations[$detail->id] = [
                     'achievement_status' => '',
-                    'monitoring_comment' => '過去6ヶ月間にこの分野に関連する記録がありませんでした。',
+                    'monitoring_comment' => '※ 過去6ヶ月間にこの分野に関連する記録がありませんでした。手動で評価を入力してください。',
                 ];
                 continue;
             }
 
             // AI で評価生成
-            $recordsText = collect($relatedRecords)->map(function ($r, $i) {
-                $text = ($i + 1) . ". [{$r['date']}] 活動: {$r['activity']}";
+            $recordsText = '';
+            foreach ($relatedRecords as $index => $r) {
+                $date = date('Y/m/d', strtotime($r['date']));
+                $recordsText .= ($index + 1) . ". [{$date}] 活動: {$r['activity']}\n";
                 if (! empty($r['content'])) {
-                    $text .= "\n   記録: {$r['content']}";
+                    $recordsText .= "   この領域での記録: {$r['content']}\n";
                 }
-                return $text;
-            })->implode("\n");
+                if (! empty($r['common_activity'])) {
+                    $commonShort = mb_substr($r['common_activity'], 0, 150);
+                    $recordsText .= "   活動の様子: {$commonShort}\n";
+                }
+                if (! empty($r['note'])) {
+                    $noteShort = mb_substr($r['note'], 0, 100);
+                    $recordsText .= "   個別メモ: {$noteShort}\n";
+                }
+                $recordsText .= "\n";
+            }
+
+            $supportContent = $detail->support_content ?? '';
+            $recordCount = count($relatedRecords);
 
             try {
                 $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
                 if (empty($apiKey)) {
-                    $generatedEvaluations[$detail->id] = ['achievement_status' => '', 'monitoring_comment' => 'OpenAI APIキーが未設定です。'];
+                    $generatedEvaluations[$detail->id] = [
+                        'achievement_status' => '',
+                        'monitoring_comment' => '※ ChatGPT APIキーが設定されていないため、自動生成できません。手動で入力してください。',
+                    ];
                     continue;
                 }
 
                 $client = \OpenAI::client($apiKey);
 
-                // カテゴリ/サブカテゴリ情報（旧システム互換）
-                $category = $detail->category ?? $detail->domain ?? '';
-                $subCategory = $detail->sub_category ?? $detail->domain ?? '';
-                $supportGoal = $detail->support_goal ?? $detail->goal ?? '';
-                $supportContent = $detail->support_content ?? '';
+                $prompt = "あなたは児童発達支援施設の児童発達支援管理責任者です。\n"
+                    . "以下の支援目標に対して、過去6ヶ月間の連絡帳記録（{$recordCount}件）を分析し、モニタリング評価を行ってください。\n\n"
+                    . "【児童氏名】\n{$student->student_name}\n\n"
+                    . "【支援目標の分野】\n{$category} > {$subCategory}\n\n"
+                    . "【支援目標】\n{$supportGoal}\n\n"
+                    . "【支援内容（施設での取り組み）】\n{$supportContent}\n\n"
+                    . "【過去6ヶ月間の連絡帳記録（この分野に関する記録）】\n{$recordsText}\n\n"
+                    . "【評価の観点】\n"
+                    . "1. 上記の連絡帳記録から、支援目標に対する子どもの取り組みや変化を読み取ってください\n"
+                    . "2. 具体的なエピソードや行動を踏まえて評価してください\n"
+                    . "3. 支援内容が適切に実施されているか、効果が出ているかを判断してください\n\n"
+                    . "【出力形式】\n"
+                    . "以下の形式でJSONのみを出力してください。他の文字は一切出力しないでください。\n\n"
+                    . "{\"achievement_status\": \"達成状況（「達成」「進行中」「未着手」「継続中」「見直し必要」のいずれか）\", "
+                    . "\"monitoring_comment\": \"評価コメント（150〜200字程度。連絡帳の記録を踏まえた具体的な評価と、今後の支援の方向性を含める）\"}";
 
                 $response = $client->chat()->create([
                     'model'    => 'gpt-4o',
@@ -246,19 +441,7 @@ class MonitoringController extends Controller
                         ],
                         [
                             'role'    => 'user',
-                            'content' => "以下の支援目標に対して、過去6ヶ月間の連絡帳記録（" . count($relatedRecords) . "件）を分析し、モニタリング評価を行ってください。\n\n"
-                                . "【児童氏名】{$student->student_name}\n"
-                                . "【支援目標の分野】{$category} > {$subCategory}\n"
-                                . "【支援目標】{$supportGoal}\n"
-                                . "【支援内容（施設での取り組み）】{$supportContent}\n\n"
-                                . "【過去6ヶ月間の連絡帳記録（この分野に関する記録）】\n{$recordsText}\n\n"
-                                . "【評価の観点】\n"
-                                . "1. 上記の連絡帳記録から、支援目標に対する子どもの取り組みや変化を読み取ってください\n"
-                                . "2. 具体的なエピソードや行動を踏まえて評価してください\n"
-                                . "3. 支援内容が適切に実施されているか、効果が出ているかを判断してください\n\n"
-                                . "【出力形式】JSON only:\n"
-                                . "{\"achievement_status\": \"達成状況（「達成」「進行中」「未着手」「継続中」「見直し必要」のいずれか）\", "
-                                . "\"monitoring_comment\": \"評価コメント（150〜200字程度。連絡帳の記録を踏まえた具体的な評価と、今後の支援の方向性を含める）\"}",
+                            'content' => $prompt,
                         ],
                     ],
                     'response_format'       => ['type' => 'json_object'],
@@ -273,13 +456,13 @@ class MonitoringController extends Controller
 
                 $result = json_decode($content, true);
                 $generatedEvaluations[$detail->id] = [
-                    'achievement_status'  => $result['achievement_status'] ?? $result['achievement_level'] ?? '',
-                    'monitoring_comment'  => $result['monitoring_comment'] ?? $result['comment'] ?? $content,
+                    'achievement_status'  => $result['achievement_status'] ?? '',
+                    'monitoring_comment'  => $result['monitoring_comment'] ?? $content,
                 ];
             } catch (\Exception $e) {
                 $generatedEvaluations[$detail->id] = [
                     'achievement_status'  => '',
-                    'monitoring_comment'  => 'AI生成中にエラーが発生しました: ' . $e->getMessage(),
+                    'monitoring_comment'  => '※ AI生成中にエラーが発生しました: ' . $e->getMessage(),
                 ];
             }
         }
@@ -292,27 +475,27 @@ class MonitoringController extends Controller
 
     /**
      * フロント用: plan_id + student_id からAI評価を一括生成
-     * 既存のgenerateAi()を内部的に利用
+     * Legacy互換: detail_id指定で個別生成にも対応
      */
     public function generate(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'student_id' => 'required|exists:students,id',
             'plan_id'    => 'required|exists:individual_support_plans,id',
+            'detail_id'  => 'nullable|integer',
         ]);
 
         $student = Student::findOrFail($validated['student_id']);
         $this->authorizeClassroom($request->user(), $student);
 
-        $plan = \App\Models\IndividualSupportPlan::with('details')->findOrFail($validated['plan_id']);
+        $plan = IndividualSupportPlan::with('details')->findOrFail($validated['plan_id']);
 
         // MonitoringRecord があれば取得、なければダミーで生成
         $monitoring = MonitoringRecord::where('student_id', $student->id)
             ->where('plan_id', $plan->id)
             ->first();
 
-        if (!$monitoring) {
-            // 既存のモニタリングレコードがなくても計画の詳細からAI生成
+        if (! $monitoring) {
             $monitoring = new MonitoringRecord();
             $monitoring->student_id = $student->id;
             $monitoring->plan_id = $plan->id;
@@ -320,35 +503,17 @@ class MonitoringController extends Controller
             $monitoring->setRelation('student', $student);
         }
 
-        // generateAi を呼び出し
+        // detail_idを渡してgenerateAiを呼び出し
         $fakeRequest = Request::create('', 'POST');
         $fakeRequest->setUserResolver(fn () => $request->user());
-        $response = $this->generateAi($fakeRequest, $monitoring);
-        $evaluations = json_decode($response->getContent(), true)['data'] ?? [];
-
-        // フロント期待の形式に変換: details配列 + overall
-        $details = [];
-        foreach ($plan->details as $detail) {
-            $eval = $evaluations[$detail->id] ?? [];
-            $details[] = [
-                'id'                  => $detail->id,
-                'category'            => $detail->category ?? $detail->domain ?? '',
-                'sub_category'        => $detail->sub_category ?? '',
-                'support_goal'        => $detail->support_goal ?? $detail->goal ?? '',
-                'support_content'     => $detail->support_content ?? '',
-                'achievement_status'  => $eval['achievement_status'] ?? '',
-                'monitoring_comment'  => $eval['monitoring_comment'] ?? '',
-            ];
+        if (isset($validated['detail_id'])) {
+            $fakeRequest->merge(['detail_id' => $validated['detail_id']]);
         }
 
-        return response()->json([
-            'success' => true,
-            'data'    => [
-                'details'              => $details,
-                'overall_assessment'   => '各目標の達成状況を総合すると、全体として着実な成長が見られます。',
-                'next_plan_direction'  => '引き続き個別の課題に応じた支援を継続し、新たな目標設定を検討してください。',
-            ],
-        ]);
+        $response = $this->generateAi($fakeRequest, $monitoring);
+        $responseData = json_decode($response->getContent(), true);
+
+        return response()->json($responseData);
     }
 
     private function groupRecordsByDomain($records): array
@@ -364,17 +529,44 @@ class MonitoringController extends Controller
         $grouped = [];
 
         foreach ($records as $record) {
+            // domain1/domain2ベースのグループ化（legacy互換）
+            if (! empty($record->domain1)) {
+                $domainKey = trim($record->domain1);
+                $domain = $domainFields[$domainKey] ?? $domainKey;
+                $grouped[$domain][] = [
+                    'date'            => $record->dailyRecord->record_date ?? '',
+                    'activity'        => $record->dailyRecord->activity_name ?? '',
+                    'content'         => $record->domain1_content ?? '',
+                    'note'            => $record->notes ?? '',
+                    'common_activity' => $record->dailyRecord->common_activity ?? '',
+                ];
+            }
+
+            if (! empty($record->domain2)) {
+                $domainKey = trim($record->domain2);
+                $domain = $domainFields[$domainKey] ?? $domainKey;
+                $grouped[$domain][] = [
+                    'date'            => $record->dailyRecord->record_date ?? '',
+                    'activity'        => $record->dailyRecord->activity_name ?? '',
+                    'content'         => $record->domain2_content ?? '',
+                    'note'            => $record->notes ?? '',
+                    'common_activity' => $record->dailyRecord->common_activity ?? '',
+                ];
+            }
+
+            // 5領域カラムベースのグループ化（新システム互換）
             foreach ($domainFields as $field => $label) {
-                $content = $record->{$field};
+                $content = $record->{$field} ?? null;
                 if (empty($content)) {
                     continue;
                 }
 
                 $grouped[$label][] = [
-                    'date'     => $record->dailyRecord->record_date ?? '',
-                    'activity' => $record->dailyRecord->activity_name ?? '',
-                    'content'  => $content,
-                    'note'     => $record->notes ?? '',
+                    'date'            => $record->dailyRecord->record_date ?? '',
+                    'activity'        => $record->dailyRecord->activity_name ?? '',
+                    'content'         => $content,
+                    'note'            => $record->notes ?? '',
+                    'common_activity' => $record->dailyRecord->common_activity ?? '',
                 ];
             }
         }
@@ -388,7 +580,7 @@ class MonitoringController extends Controller
             '健康・生活' => '健康・生活', '生活習慣' => '健康・生活',
             '運動・感覚' => '運動・感覚', '運動' => '運動・感覚', '感覚' => '運動・感覚',
             '認知・行動' => '認知・行動', '学習' => '認知・行動', '認知' => '認知・行動',
-            '言語・コミュニケーション' => '言語・コミュニケーション', 'コミュニケーション' => '言語・コミュニケーション',
+            '言語・コミュニケーション' => '言語・コミュニケーション', 'コミュニケーション' => '言語・コミュニケーション', '言語' => '言語・コミュニケーション',
             '人間関係・社会性' => '人間関係・社会性', '社会性' => '人間関係・社会性', '人間関係' => '人間関係・社会性',
         ];
 
@@ -407,10 +599,21 @@ class MonitoringController extends Controller
             }
         }
 
-        // 日付でソートして最新20件
-        usort($related, fn ($a, $b) => strcmp($b['date'], $a['date']));
+        // 重複を除去
+        $unique = [];
+        $seen = [];
+        foreach ($related as $record) {
+            $key = $record['date'] . '|' . ($record['content'] ?? '');
+            if (! isset($seen[$key])) {
+                $seen[$key] = true;
+                $unique[] = $record;
+            }
+        }
 
-        return array_slice($related, 0, 20);
+        // 日付でソートして最新20件
+        usort($unique, fn ($a, $b) => strcmp($b['date'], $a['date']));
+
+        return array_slice($unique, 0, 20);
     }
 
     private function authorizeClassroom($user, Student $student): void
