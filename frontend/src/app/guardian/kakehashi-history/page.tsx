@@ -481,20 +481,20 @@ export default function GuardianKakehashiHistoryPage() {
                 </>
               ) : (
                 <>
-                  <DetailSection title="本人の願い" value={(detail as Record<string, string | undefined>).staff_student_wish} />
-                  <DetailSection title="短期目標（6か月）" value={(detail as Record<string, string | undefined>).staff_short_term_goal} />
-                  <DetailSection title="長期目標（1年以上）" value={(detail as Record<string, string | undefined>).staff_long_term_goal} />
+                  <DetailSection title="本人の願い" value={(detail as unknown as Record<string, string | undefined>).staff_student_wish} />
+                  <DetailSection title="短期目標（6か月）" value={(detail as unknown as Record<string, string | undefined>).staff_short_term_goal} />
+                  <DetailSection title="長期目標（1年以上）" value={(detail as unknown as Record<string, string | undefined>).staff_long_term_goal} />
                   <div>
                     <h4 className="mb-2 text-sm font-semibold text-[var(--neutral-foreground-1)]">五領域の課題</h4>
                     <div className="space-y-2 pl-2">
-                      <DetailSection title="健康・生活" value={(detail as Record<string, string | undefined>).staff_health_life} small />
-                      <DetailSection title="運動・感覚" value={(detail as Record<string, string | undefined>).staff_motor_sensory} small />
-                      <DetailSection title="認知・行動" value={(detail as Record<string, string | undefined>).staff_cognitive_behavior} small />
-                      <DetailSection title="言語・コミュニケーション" value={(detail as Record<string, string | undefined>).staff_language_communication} small />
-                      <DetailSection title="人間関係・社会性" value={(detail as Record<string, string | undefined>).staff_social_relations} small />
+                      <DetailSection title="健康・生活" value={(detail as unknown as Record<string, string | undefined>).staff_health_life} small />
+                      <DetailSection title="運動・感覚" value={(detail as unknown as Record<string, string | undefined>).staff_motor_sensory} small />
+                      <DetailSection title="認知・行動" value={(detail as unknown as Record<string, string | undefined>).staff_cognitive_behavior} small />
+                      <DetailSection title="言語・コミュニケーション" value={(detail as unknown as Record<string, string | undefined>).staff_language_communication} small />
+                      <DetailSection title="人間関係・社会性" value={(detail as unknown as Record<string, string | undefined>).staff_social_relations} small />
                     </div>
                   </div>
-                  <DetailSection title="その他の課題" value={(detail as Record<string, string | undefined>).staff_other_challenges} />
+                  <DetailSection title="その他の課題" value={(detail as unknown as Record<string, string | undefined>).staff_other_challenges} />
                 </>
               )}
             </div>
