@@ -3,9 +3,13 @@
 namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
+use App\Models\ChatMessage;
+use App\Models\ChatRoom;
 use App\Models\SubmissionRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class StaffSubmissionController extends Controller
 {
@@ -71,13 +75,46 @@ class StaffSubmissionController extends Controller
             'due_date'    => 'nullable|date',
         ]);
 
-        $submission = SubmissionRequest::create([
-            'student_id'  => $validated['student_id'],
-            'created_by'  => $user->id,
-            'title'       => $validated['title'],
-            'description' => $validated['description'] ?? null,
-            'due_date'    => $validated['due_date'] ?? null,
-        ]);
+        $submission = DB::transaction(function () use ($validated, $user) {
+            $submission = SubmissionRequest::create([
+                'student_id'  => $validated['student_id'],
+                'created_by'  => $user->id,
+                'title'       => $validated['title'],
+                'description' => $validated['description'] ?? null,
+                'due_date'    => $validated['due_date'] ?? null,
+            ]);
+
+            // チャットルームに提出物通知メッセージを挿入（レガシー互換）
+            $room = ChatRoom::where('student_id', $validated['student_id'])->first();
+
+            if ($room) {
+                $title = $validated['title'];
+                $description = $validated['description'] ?? '';
+                $dueDate = isset($validated['due_date'])
+                    ? Carbon::parse($validated['due_date'])->format('Y年n月j日')
+                    : '';
+
+                $notificationMessage = "【提出期限のお知らせ】\n\n件名: {$title}\n";
+                if ($description) {
+                    $notificationMessage .= "詳細: {$description}\n";
+                }
+                if ($dueDate) {
+                    $notificationMessage .= "提出期限: {$dueDate}";
+                }
+
+                ChatMessage::create([
+                    'room_id'      => $room->id,
+                    'sender_id'    => $user->id,
+                    'sender_type'  => 'staff',
+                    'message'      => $notificationMessage,
+                    'message_type' => 'normal',
+                ]);
+
+                $room->update(['last_message_at' => now()]);
+            }
+
+            return $submission;
+        });
 
         return response()->json([
             'success' => true,

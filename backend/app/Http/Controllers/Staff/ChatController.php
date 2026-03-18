@@ -69,9 +69,17 @@ class ChatController extends Controller
                 'last_message_at' => $room->last_message_at,
             ];
         })
-        ->sortByDesc(function ($room) {
-            // ピン固定を先に、その後日時順
-            return ($room['is_pinned'] ? '1_' : '0_') . ($room['last_message_at'] ?? '');
+        ->sort(function ($a, $b) {
+            // ピン留め → 未読あり → 最新メッセージ順（レガシー互換）
+            if ($a['is_pinned'] !== $b['is_pinned']) {
+                return $b['is_pinned'] <=> $a['is_pinned'];
+            }
+            $aHasUnread = $a['unread_count'] > 0 ? 1 : 0;
+            $bHasUnread = $b['unread_count'] > 0 ? 1 : 0;
+            if ($aHasUnread !== $bHasUnread) {
+                return $bHasUnread <=> $aHasUnread;
+            }
+            return ($b['last_message_at'] ?? '') <=> ($a['last_message_at'] ?? '');
         })
         ->values();
 
@@ -250,20 +258,40 @@ class ChatController extends Controller
         $classroomId = $user->classroom_id;
 
         $request->validate([
-            'message' => 'required|string|max:5000',
+            'message'    => 'required_without:attachment|nullable|string|max:5000',
+            'attachment' => 'nullable|file|max:3072', // 3MB
         ]);
+
+        // ファイルアップロード処理（1回だけ、全ルームで共有）
+        $attachmentPath = null;
+        $attachmentName = null;
+        $attachmentSize = null;
+        $attachmentMime = null;
+
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $path = $file->store('chat_attachments', 'public');
+            $attachmentPath = $path;
+            $attachmentName = $file->getClientOriginalName();
+            $attachmentSize = $file->getSize();
+            $attachmentMime = $file->getMimeType();
+        }
 
         $rooms = ChatRoom::forUser($user)->get();
         $sentCount = 0;
 
-        DB::transaction(function () use ($rooms, $user, $request, &$sentCount) {
+        DB::transaction(function () use ($rooms, $user, $request, &$sentCount, $attachmentPath, $attachmentName, $attachmentSize, $attachmentMime) {
             foreach ($rooms as $room) {
                 ChatMessage::create([
-                    'room_id'      => $room->id,
-                    'sender_id'    => $user->id,
-                    'sender_type'  => 'staff',
-                    'message'      => $request->message,
-                    'message_type' => 'broadcast',
+                    'room_id'         => $room->id,
+                    'sender_id'       => $user->id,
+                    'sender_type'     => 'staff',
+                    'message'         => $request->message ?? '',
+                    'message_type'    => 'broadcast',
+                    'attachment_path' => $attachmentPath,
+                    'attachment_name' => $attachmentName,
+                    'attachment_size' => $attachmentSize,
+                    'attachment_mime' => $attachmentMime,
                 ]);
 
                 $room->update(['last_message_at' => now()]);
