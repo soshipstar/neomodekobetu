@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Guardian;
 use App\Http\Controllers\Controller;
 use App\Models\KakehashiGuardian;
 use App\Models\KakehashiPeriod;
+use App\Models\KakehashiStaff;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -19,7 +20,7 @@ class KakehashiController extends Controller
         $studentIds = $user->students()->pluck('id');
 
         $periods = KakehashiPeriod::whereIn('student_id', $studentIds)
-            ->with(['student:id,student_name', 'guardianEntry'])
+            ->with(['student:id,student_name', 'guardianEntries'])
             ->orderByDesc('start_date')
             ->get();
 
@@ -41,7 +42,7 @@ class KakehashiController extends Controller
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
-        $period->load(['student:id,student_name', 'staffEntry', 'guardianEntry']);
+        $period->load(['student:id,student_name', 'staffEntries', 'guardianEntries']);
 
         return response()->json([
             'success' => true,
@@ -62,29 +63,61 @@ class KakehashiController extends Controller
         }
 
         $validated = $request->validate([
-            'home_health_life'            => 'nullable|string',
-            'home_motor_sensory'          => 'nullable|string',
-            'home_cognitive_behavior'     => 'nullable|string',
-            'home_language_communication' => 'nullable|string',
-            'home_social_relations'       => 'nullable|string',
-            'home_overall_comment'        => 'nullable|string',
-            'is_submitted'                => 'boolean',
+            'student_wish'               => 'nullable|string',
+            'home_challenges'            => 'nullable|string',
+            'short_term_goal'            => 'nullable|string',
+            'long_term_goal'             => 'nullable|string',
+            'domain_health_life'         => 'nullable|string',
+            'domain_motor_sensory'       => 'nullable|string',
+            'domain_cognitive_behavior'  => 'nullable|string',
+            'domain_language_communication' => 'nullable|string',
+            'domain_social_relations'    => 'nullable|string',
+            'other_challenges'           => 'nullable|string',
+            'action'                     => 'nullable|string|in:save,submit',
         ]);
 
-        $isSubmitted = $validated['is_submitted'] ?? false;
-        unset($validated['is_submitted']);
+        $action = $validated['action'] ?? 'save';
+        unset($validated['action']);
 
-        $entry = KakehashiGuardian::updateOrCreate(
-            [
-                'period_id'   => $period->id,
-                'guardian_id' => $user->id,
-            ],
-            array_merge($validated, [
-                'student_id'   => $period->student_id,
+        // Check for existing entry
+        $existing = KakehashiGuardian::where('period_id', $period->id)
+            ->where('student_id', $period->student_id)
+            ->first();
+
+        // Block editing if hidden
+        if ($existing && $existing->is_hidden) {
+            return response()->json([
+                'success' => false,
+                'message' => 'この期間は入力できません。',
+            ], 422);
+        }
+
+        // Block editing if already submitted (guardians cannot edit after submission)
+        if ($existing && $existing->is_submitted) {
+            return response()->json([
+                'success' => false,
+                'message' => '既に提出済みのため、変更できません。',
+            ], 422);
+        }
+
+        $isSubmitted = ($action === 'submit');
+
+        if ($existing) {
+            $existing->update(array_merge($validated, [
                 'is_submitted' => $isSubmitted,
                 'submitted_at' => $isSubmitted ? now() : null,
-            ])
-        );
+            ]));
+            $entry = $existing;
+        } else {
+            $entry = KakehashiGuardian::create(array_merge($validated, [
+                'period_id'    => $period->id,
+                'student_id'   => $period->student_id,
+                'guardian_id'  => $user->id,
+                'is_submitted' => $isSubmitted,
+                'submitted_at' => $isSubmitted ? now() : null,
+                'is_hidden'    => false,
+            ]));
+        }
 
         $message = $isSubmitted ? 'かけはしを提出しました。' : '下書きを保存しました。';
 
@@ -120,23 +153,40 @@ class KakehashiController extends Controller
         $studentIds = $user->students()->pluck('id')->toArray();
 
         $validated = $request->validate([
-            'period_id' => 'required|exists:kakehashi_periods,id',
+            'student_id' => 'required|exists:students,id',
+            'period_id'  => 'required|exists:kakehashi_periods,id',
         ]);
 
-        $period = KakehashiPeriod::findOrFail($validated['period_id']);
-
-        if (! in_array($period->student_id, $studentIds)) {
+        if (! in_array((int) $validated['student_id'], $studentIds)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
-        $period->update([
-            'staff_guardian_confirmed'    => true,
-            'staff_guardian_confirmed_at' => now(),
+        // Update kakehashi_staff record (matching legacy behavior)
+        $staffKakehashi = KakehashiStaff::where('student_id', $validated['student_id'])
+            ->where('period_id', $validated['period_id'])
+            ->where('is_submitted', true)
+            ->first();
+
+        if (! $staffKakehashi) {
+            return response()->json(['success' => false, 'message' => 'スタッフかけはしが見つかりません。'], 404);
+        }
+
+        if ($staffKakehashi->guardian_confirmed) {
+            return response()->json([
+                'success' => true,
+                'message' => '既に確認済みです。',
+                'already_confirmed' => true,
+            ]);
+        }
+
+        $staffKakehashi->update([
+            'guardian_confirmed'    => true,
+            'guardian_confirmed_at' => now(),
         ]);
 
         return response()->json([
             'success' => true,
-            'data'    => $period->fresh(),
+            'data'    => $staffKakehashi->fresh(),
             'message' => '確認しました。',
         ]);
     }

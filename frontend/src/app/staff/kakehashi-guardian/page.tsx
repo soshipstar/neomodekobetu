@@ -41,11 +41,6 @@ interface GuardianEntry {
   period_id: number;
   student_id: number;
   guardian_id: number | null;
-  // Legacy fields
-  home_situation: string | null;
-  concerns: string | null;
-  requests: string | null;
-  // Domain-specific fields (v2)
   student_wish: string | null;
   home_challenges: string | null;
   short_term_goal: string | null;
@@ -310,7 +305,7 @@ export default function KakehashiGuardianViewPage() {
               color="var(--status-danger-fg)"
             >
               <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">
-                {nl(guardianEntry.student_wish || guardianEntry.home_situation) || '（未入力）'}
+                {nl(guardianEntry.student_wish) || '（未入力）'}
               </p>
             </Section>
 
@@ -322,7 +317,7 @@ export default function KakehashiGuardianViewPage() {
               color="var(--status-warning-fg)"
             >
               <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">
-                {nl(guardianEntry.home_challenges || guardianEntry.concerns) || '（未入力）'}
+                {nl(guardianEntry.home_challenges) || '（未入力）'}
               </p>
             </Section>
 
@@ -337,13 +332,13 @@ export default function KakehashiGuardianViewPage() {
                 <div>
                   <p className="text-xs font-semibold text-[var(--neutral-foreground-3)] mb-1">短期目標（6か月）</p>
                   <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">
-                    {nl(guardianEntry.short_term_goal || guardianEntry.concerns) || '（未入力）'}
+                    {nl(guardianEntry.short_term_goal) || '（未入力）'}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-[var(--neutral-foreground-3)] mb-1">長期目標（1年以上）</p>
                   <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">
-                    {nl(guardianEntry.long_term_goal || guardianEntry.requests) || '（未入力）'}
+                    {nl(guardianEntry.long_term_goal) || '（未入力）'}
                   </p>
                 </div>
               </div>
@@ -366,30 +361,41 @@ export default function KakehashiGuardianViewPage() {
             </Section>
 
             {/* Section: その他の課題 */}
-            {(guardianEntry.other_challenges) && (
-              <Section
-                icon={<Pin className="h-4 w-4" />}
-                title="その他の課題"
-                subtitle="その他、お伝えしたいこと"
-                color="var(--neutral-foreground-3)"
-              >
-                <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">
-                  {nl(guardianEntry.other_challenges) || '（未入力）'}
-                </p>
-              </Section>
-            )}
+            <Section
+              icon={<Pin className="h-4 w-4" />}
+              title="その他の課題"
+              subtitle="その他、お伝えしたいこと"
+              color="var(--neutral-foreground-3)"
+            >
+              <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">
+                {nl(guardianEntry.other_challenges) || '（未入力）'}
+              </p>
+            </Section>
 
             {/* Hidden toggle */}
             <div className="mt-6 border-t border-[var(--neutral-stroke-2)] pt-4">
               <button
-                className="flex items-center gap-2 text-xs text-[var(--neutral-foreground-3)] hover:text-[var(--neutral-foreground-2)] transition-colors"
+                className={`flex items-center gap-2 text-xs transition-colors ${
+                  guardianEntry.is_hidden
+                    ? 'text-green-600 hover:text-green-700'
+                    : 'text-[var(--neutral-foreground-3)] hover:text-[var(--neutral-foreground-2)]'
+                }`}
                 onClick={async () => {
-                  // Toggle hidden status (would need API endpoint)
-                  toast.info(guardianEntry.is_hidden ? 'この機能はAPIの実装が必要です' : 'この機能はAPIの実装が必要です');
+                  const action = guardianEntry.is_hidden ? '再表示' : '非表示に';
+                  if (!guardianEntry.is_hidden && !window.confirm(`この保護者用かけはしを非表示にしてもよろしいですか？\n再表示することもできます。`)) {
+                    return;
+                  }
+                  try {
+                    await api.post(`/api/staff/kakehashi/${selectedPeriod.id}/toggle-guardian-hidden`);
+                    queryClient.invalidateQueries({ queryKey: ['staff', 'kakehashi'] });
+                    toast.success(`保護者用かけはしを${action}しました。`);
+                  } catch {
+                    toast.error('操作に失敗しました');
+                  }
                 }}
               >
                 {guardianEntry.is_hidden ? (
-                  <><Eye className="h-4 w-4" /> この保護者用かけはしを表示</>
+                  <><Eye className="h-4 w-4" /> この保護者用かけはしを再表示</>
                 ) : (
                   <><EyeOff className="h-4 w-4" /> この保護者用かけはしを非表示</>
                 )}

@@ -178,6 +178,7 @@ Route::prefix('staff')
         Route::post('/kakehashi/{period}', [App\Http\Controllers\Staff\KakehashiController::class, 'store']);
         Route::put('/kakehashi/{period}', [App\Http\Controllers\Staff\KakehashiController::class, 'update']);
         Route::get('/kakehashi/{period}/pdf', [App\Http\Controllers\Staff\KakehashiController::class, 'pdf']);
+        Route::post('/kakehashi/{period}/toggle-guardian-hidden', [App\Http\Controllers\Staff\KakehashiController::class, 'toggleGuardianHidden']);
 
         // --- 連絡帳 (日常活動記録) ---
         Route::get('/renrakucho', [App\Http\Controllers\Staff\RenrakuchoController::class, 'index']);

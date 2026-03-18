@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
 use App\Models\AiGenerationLog;
+use App\Models\KakehashiGuardian;
 use App\Models\KakehashiPeriod;
 use App\Models\KakehashiStaff;
 use App\Models\Student;
@@ -439,6 +440,42 @@ class KakehashiController extends Controller
                 'message' => 'AI生成中にエラーが発生しました: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * 保護者入力かけはしの表示/非表示を切り替え
+     */
+    public function toggleGuardianHidden(Request $request, KakehashiPeriod $period): JsonResponse
+    {
+        $period->load('student');
+
+        if (! $period->student) {
+            return response()->json(['success' => false, 'message' => '期間が見つかりません。'], 404);
+        }
+
+        $this->authorizeClassroom($request->user(), $period->student);
+
+        $entry = KakehashiGuardian::where('period_id', $period->id)
+            ->where('student_id', $period->student_id)
+            ->first();
+
+        if (! $entry) {
+            return response()->json(['success' => false, 'message' => 'かけはしが見つかりませんでした。'], 404);
+        }
+
+        $entry->update([
+            'is_hidden' => ! $entry->is_hidden,
+        ]);
+
+        $message = $entry->is_hidden
+            ? '保護者用かけはしを非表示にしました。'
+            : '保護者用かけはしを再表示しました。';
+
+        return response()->json([
+            'success' => true,
+            'data'    => $entry,
+            'message' => $message,
+        ]);
     }
 
     private function authorizeClassroom($user, Student $student): void

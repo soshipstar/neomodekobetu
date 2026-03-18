@@ -45,7 +45,18 @@ interface KakehashiHistoryItem {
   guardian_kakehashi_id: number | null;
   guardian_submitted: boolean;
   guardian_submitted_at: string | null;
-  // Detail fields (for expanded view)
+  // Detail fields (for expanded view) - legacy field names
+  guardian_student_wish?: string;
+  guardian_home_challenges?: string;
+  guardian_short_term_goal?: string;
+  guardian_long_term_goal?: string;
+  guardian_domain_health_life?: string;
+  guardian_domain_motor_sensory?: string;
+  guardian_domain_cognitive_behavior?: string;
+  guardian_domain_language_communication?: string;
+  guardian_domain_social_relations?: string;
+  guardian_other_challenges?: string;
+  // Legacy field names (kept for backward compat)
   guardian_home_observation?: string;
   guardian_concerns?: string;
   guardian_requests?: string;
@@ -452,30 +463,21 @@ export default function GuardianKakehashiHistoryPage() {
             <div className="space-y-4">
               {detailModal.type === 'guardian' ? (
                 <>
+                  <DetailSection title="本人の願い" value={detail.guardian_student_wish} />
+                  <DetailSection title="家庭での願い" value={detail.guardian_home_challenges} />
+                  <DetailSection title="短期目標（6か月）" value={detail.guardian_short_term_goal} />
+                  <DetailSection title="長期目標（1年以上）" value={detail.guardian_long_term_goal} />
                   <div>
-                    <h4 className="mb-1 text-sm font-semibold text-[var(--neutral-foreground-1)]">
-                      家庭での様子
-                    </h4>
-                    <p className="whitespace-pre-wrap text-sm text-[var(--neutral-foreground-2)]">
-                      {detail.guardian_home_observation || '(未記入)'}
-                    </p>
+                    <h4 className="mb-2 text-sm font-semibold text-[var(--neutral-foreground-1)]">五領域の課題</h4>
+                    <div className="space-y-2 pl-2">
+                      <DetailSection title="健康・生活" value={detail.guardian_domain_health_life} small />
+                      <DetailSection title="運動・感覚" value={detail.guardian_domain_motor_sensory} small />
+                      <DetailSection title="認知・行動" value={detail.guardian_domain_cognitive_behavior} small />
+                      <DetailSection title="言語・コミュニケーション" value={detail.guardian_domain_language_communication} small />
+                      <DetailSection title="人間関係・社会性" value={detail.guardian_domain_social_relations} small />
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="mb-1 text-sm font-semibold text-[var(--neutral-foreground-1)]">
-                      気になること
-                    </h4>
-                    <p className="whitespace-pre-wrap text-sm text-[var(--neutral-foreground-2)]">
-                      {detail.guardian_concerns || '(未記入)'}
-                    </p>
-                  </div>
-                  <div>
-                    <h4 className="mb-1 text-sm font-semibold text-[var(--neutral-foreground-1)]">
-                      教室への要望
-                    </h4>
-                    <p className="whitespace-pre-wrap text-sm text-[var(--neutral-foreground-2)]">
-                      {detail.guardian_requests || '(未記入)'}
-                    </p>
-                  </div>
+                  <DetailSection title="その他の課題" value={detail.guardian_other_challenges} />
                 </>
               ) : (
                 <div>
@@ -493,6 +495,35 @@ export default function GuardianKakehashiHistoryPage() {
           )}
         </Modal>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Detail Section helper for history modal
+// ---------------------------------------------------------------------------
+
+function DetailSection({
+  title,
+  value,
+  small = false,
+}: {
+  title: string;
+  value?: string | null;
+  small?: boolean;
+}) {
+  return (
+    <div>
+      <h4
+        className={`mb-1 font-semibold text-[var(--neutral-foreground-1)] ${
+          small ? 'text-xs' : 'text-sm'
+        }`}
+      >
+        {title}
+      </h4>
+      <p className="whitespace-pre-wrap text-sm text-[var(--neutral-foreground-2)]">
+        {value || '(未記入)'}
+      </p>
     </div>
   );
 }
