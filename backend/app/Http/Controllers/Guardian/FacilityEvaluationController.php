@@ -17,7 +17,7 @@ class FacilityEvaluationController extends Controller
         $user = $request->user();
         $classroomId = $user->classroom_id;
 
-        // 収集中の評価期間を取得
+        // 収集中の評価期間を取得（教室でフィルタ）
         $periodQuery = DB::table('facility_evaluation_periods')
             ->where('status', 'collecting');
 
@@ -34,12 +34,13 @@ class FacilityEvaluationController extends Controller
                     'period'     => null,
                     'evaluation' => null,
                     'questions'  => [],
+                    'answers'    => [],
                     'message'    => '現在、回答を受け付けている評価はありません。',
                 ],
             ]);
         }
 
-        // 質問一覧を取得
+        // 質問一覧を取得（保護者用のみ）
         $questions = DB::table('facility_evaluation_questions')
             ->where('question_type', 'guardian')
             ->where('is_active', true)
@@ -47,7 +48,7 @@ class FacilityEvaluationController extends Controller
             ->orderBy('question_number')
             ->get();
 
-        // 既存の回答を取得
+        // 既存の回答を取得または作成
         $evaluation = DB::table('facility_guardian_evaluations')
             ->where('period_id', $period->id)
             ->where('guardian_id', $user->id)
@@ -55,10 +56,16 @@ class FacilityEvaluationController extends Controller
 
         $answers = [];
         if ($evaluation) {
-            $answers = DB::table('facility_guardian_evaluation_answers')
+            $answerRows = DB::table('facility_guardian_evaluation_answers')
                 ->where('evaluation_id', $evaluation->id)
-                ->get()
-                ->keyBy('question_id');
+                ->get();
+            foreach ($answerRows as $a) {
+                $answers[$a->question_id] = [
+                    'question_id' => $a->question_id,
+                    'answer'      => $a->answer,
+                    'comment'     => $a->comment ?? '',
+                ];
+            }
         }
 
         return response()->json([
@@ -78,7 +85,6 @@ class FacilityEvaluationController extends Controller
     public function store(Request $request): JsonResponse
     {
         $user = $request->user();
-        $classroomId = $user->classroom_id;
 
         $validated = $request->validate([
             'period_id'              => 'required|exists:facility_evaluation_periods,id',
@@ -160,8 +166,8 @@ class FacilityEvaluationController extends Controller
         });
 
         $message = $isSubmit
-            ? 'ご回答いただきありがとうございました。'
-            : '下書きを保存しました。';
+            ? 'ご回答いただきありがとうございました。今後のサービス向上に活用させていただきます。'
+            : '下書きを保存しました。後から続きを入力できます。';
 
         return response()->json([
             'success' => true,

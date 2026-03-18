@@ -22,6 +22,12 @@ import {
   Send,
   Save,
   MessageCircle,
+  RefreshCw,
+  FileDown,
+  Globe,
+  ClipboardList,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -51,12 +57,9 @@ interface QuestionSummary {
   no_count: number;
   unknown_count: number;
   total_count: number;
-}
-
-interface Comment {
-  question_number: number;
-  question_text: string;
-  comment: string;
+  facility_comment?: string | null;
+  comment_summary?: string | null;
+  yes_percentage?: number;
 }
 
 interface ResponseStatus {
@@ -81,6 +84,16 @@ interface StaffAnswer {
   improvement_plan: string | null;
 }
 
+interface SelfSummaryItem {
+  id?: number;
+  period_id: number;
+  item_type: 'strength' | 'weakness';
+  item_number: number;
+  description: string;
+  current_efforts: string;
+  improvement_plan: string;
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -92,11 +105,10 @@ const STATUS_MAP: Record<string, { label: string; variant: 'default' | 'info' | 
   published: { label: '公表済み', variant: 'success' },
 };
 
-const ANSWER_LABELS: Record<string, string> = {
+const STAFF_ANSWER_LABELS: Record<string, string> = {
   yes: 'はい',
   neutral: 'どちらともいえない',
   no: 'いいえ',
-  unknown: 'わからない',
 };
 
 function answerColor(answer: string): string {
@@ -118,11 +130,17 @@ export default function FacilityEvaluationPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<EvaluationPeriod | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+
+  // 年度計算（4月始まり）
+  const now = new Date();
+  const currentFiscalYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+  const defaultDeadline = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
   const [createForm, setCreateForm] = useState({
-    fiscal_year: new Date().getFullYear(),
+    fiscal_year: currentFiscalYear,
     title: '',
-    guardian_deadline: '',
-    staff_deadline: '',
+    guardian_deadline: defaultDeadline,
+    staff_deadline: defaultDeadline,
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -147,10 +165,11 @@ export default function FacilityEvaluationPage() {
       await api.post('/api/staff/facility-evaluation/periods', createForm);
       toast.success('評価期間を作成しました');
       setShowCreate(false);
-      setCreateForm({ fiscal_year: new Date().getFullYear(), title: '', guardian_deadline: '', staff_deadline: '' });
+      setCreateForm({ fiscal_year: currentFiscalYear, title: '', guardian_deadline: defaultDeadline, staff_deadline: defaultDeadline });
       fetchPeriods();
-    } catch {
-      toast.error('作成に失敗しました');
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message || '作成に失敗しました';
+      toast.error(msg);
     } finally {
       setIsSaving(false);
     }
@@ -173,7 +192,7 @@ export default function FacilityEvaluationPage() {
     return (
       <PeriodDetail
         period={selectedPeriod}
-        onBack={() => setSelectedPeriod(null)}
+        onBack={() => { setSelectedPeriod(null); fetchPeriods(); }}
         onUpdateStatus={handleUpdateStatus}
       />
     );
@@ -182,7 +201,10 @@ export default function FacilityEvaluationPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">事業所評価</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">事業所評価シート</h1>
+          <p className="text-sm text-[var(--neutral-foreground-3)]">年度ごとの事業所評価アンケートを管理します</p>
+        </div>
         <Button leftIcon={<Plus className="h-4 w-4" />} onClick={() => setShowCreate(true)}>
           新規評価期間
         </Button>
@@ -197,7 +219,8 @@ export default function FacilityEvaluationPage() {
           <CardBody>
             <div className="py-8 text-center text-[var(--neutral-foreground-4)]">
               <FileText className="mx-auto h-10 w-10 mb-2" />
-              <p>評価期間がありません</p>
+              <p>評価期間がまだ作成されていません。</p>
+              <p className="text-xs mt-1">上のボタンから新しい評価期間を作成してください。</p>
             </div>
           </CardBody>
         </Card>
@@ -205,38 +228,64 @@ export default function FacilityEvaluationPage() {
         <div className="space-y-3">
           {periods.map((period) => {
             const st = STATUS_MAP[period.status] || STATUS_MAP.draft;
+            const guardianPercent = period.guardian_total > 0
+              ? Math.round((period.guardian_submitted / period.guardian_total) * 100)
+              : 0;
+            const staffPercent = period.staff_total > 0
+              ? Math.round((period.staff_submitted / period.staff_total) * 100)
+              : 0;
             return (
               <Card key={period.id}>
                 <button
                   onClick={() => setSelectedPeriod(period)}
                   className="w-full text-left p-4 hover:bg-[var(--neutral-background-3)] transition-colors rounded-lg"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-[var(--neutral-foreground-1)]">{period.title}</h3>
-                          <Badge variant={st.variant}>{st.label}</Badge>
-                        </div>
-                        <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
-                          {period.fiscal_year}年度
-                          {period.guardian_deadline && ` ・ 保護者締切: ${period.guardian_deadline}`}
-                          {period.staff_deadline && ` ・ スタッフ締切: ${period.staff_deadline}`}
-                        </p>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-[var(--neutral-foreground-1)]">{period.title}</h3>
+                      <Badge variant={st.variant}>{st.label}</Badge>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-[var(--neutral-foreground-4)]" />
+                  </div>
+
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <span className="text-xs text-[var(--neutral-foreground-3)]">保護者回答</span>
+                      <div className="font-semibold text-[var(--neutral-foreground-1)]">
+                        {period.guardian_submitted} / {period.guardian_total}件
+                      </div>
+                      <div className="mt-1 h-1.5 bg-[var(--neutral-background-4)] rounded-full overflow-hidden">
+                        <div className="h-full bg-[var(--status-success-fg)]" style={{ width: `${guardianPercent}%` }} />
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right text-xs">
-                        <div className="text-[var(--neutral-foreground-3)]">
-                          保護者: <span className="font-semibold text-[var(--neutral-foreground-1)]">{period.guardian_submitted}/{period.guardian_total}</span>
-                        </div>
-                        <div className="text-[var(--neutral-foreground-3)]">
-                          スタッフ: <span className="font-semibold text-[var(--neutral-foreground-1)]">{period.staff_submitted}/{period.staff_total}</span>
-                        </div>
+                    <div>
+                      <span className="text-xs text-[var(--neutral-foreground-3)]">スタッフ回答</span>
+                      <div className="font-semibold text-[var(--neutral-foreground-1)]">
+                        {period.staff_submitted} / {period.staff_total}件
                       </div>
-                      <ChevronRight className="h-5 w-5 text-[var(--neutral-foreground-4)]" />
+                      <div className="mt-1 h-1.5 bg-[var(--neutral-background-4)] rounded-full overflow-hidden">
+                        <div className="h-full bg-[var(--status-success-fg)]" style={{ width: `${staffPercent}%` }} />
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-xs text-[var(--neutral-foreground-3)]">保護者期限</span>
+                      <div className="font-semibold text-[var(--neutral-foreground-1)]">
+                        {period.guardian_deadline ? new Date(period.guardian_deadline).toLocaleDateString('ja-JP') : '未設定'}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-xs text-[var(--neutral-foreground-3)]">スタッフ期限</span>
+                      <div className="font-semibold text-[var(--neutral-foreground-1)]">
+                        {period.staff_deadline ? new Date(period.staff_deadline).toLocaleDateString('ja-JP') : '未設定'}
+                      </div>
                     </div>
                   </div>
+
+                  {period.status === 'collecting' && (
+                    <div className="mt-3 rounded-md bg-[var(--status-success-bg,rgba(52,199,89,0.1))] px-3 py-2 text-xs text-[var(--status-success-fg)]">
+                      保護者の画面に通知が表示されています。メニューの「事業所評価」から回答できます。
+                    </div>
+                  )}
                 </button>
               </Card>
             );
@@ -245,35 +294,41 @@ export default function FacilityEvaluationPage() {
       )}
 
       {/* Create period modal */}
-      <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="評価期間を作成">
+      <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="新しい評価期間を作成">
         <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-[var(--neutral-foreground-2)] mb-1">年度</label>
+            <select
+              value={createForm.fiscal_year}
+              onChange={(e) => setCreateForm({ ...createForm, fiscal_year: parseInt(e.target.value) })}
+              className="w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm"
+            >
+              {Array.from({ length: 7 }, (_, i) => currentFiscalYear + 1 - i).map((y) => (
+                <option key={y} value={y}>{y}年度</option>
+              ))}
+            </select>
+          </div>
           <Input
-            label="年度"
-            type="number"
-            value={createForm.fiscal_year}
-            onChange={(e) => setCreateForm({ ...createForm, fiscal_year: parseInt(e.target.value) })}
-          />
-          <Input
-            label="タイトル"
+            label="タイトル（空欄で自動生成）"
             value={createForm.title}
             onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
-            placeholder="例: 2025年度 事業所評価"
+            placeholder={`${createForm.fiscal_year}年度 事業所評価`}
           />
           <Input
-            label="保護者締切日"
+            label="保護者回答期限"
             type="date"
             value={createForm.guardian_deadline}
             onChange={(e) => setCreateForm({ ...createForm, guardian_deadline: e.target.value })}
           />
           <Input
-            label="スタッフ締切日"
+            label="スタッフ回答期限"
             type="date"
             value={createForm.staff_deadline}
             onChange={(e) => setCreateForm({ ...createForm, staff_deadline: e.target.value })}
           />
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={() => setShowCreate(false)}>キャンセル</Button>
-            <Button onClick={handleCreatePeriod} isLoading={isSaving} disabled={!createForm.title}>作成</Button>
+            <Button onClick={handleCreatePeriod} isLoading={isSaving}>作成</Button>
           </div>
         </div>
       </Modal>
@@ -286,7 +341,7 @@ export default function FacilityEvaluationPage() {
 // ---------------------------------------------------------------------------
 
 function PeriodDetail({
-  period,
+  period: initialPeriod,
   onBack,
   onUpdateStatus,
 }: {
@@ -294,11 +349,29 @@ function PeriodDetail({
   onBack: () => void;
   onUpdateStatus: (periodId: number, status: string) => Promise<void>;
 }) {
+  const toast = useToast();
+  const [period, setPeriod] = useState(initialPeriod);
   const st = STATUS_MAP[period.status] || STATUS_MAP.draft;
+
+  const handleAggregate = async () => {
+    try {
+      await api.post('/api/staff/facility-evaluation/aggregate', { period_id: period.id });
+      toast.success('集計が完了しました');
+      setPeriod((p) => ({ ...p, status: 'aggregating' }));
+    } catch {
+      toast.error('集計に失敗しました');
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!confirm('公表してよろしいですか？')) return;
+    await onUpdateStatus(period.id, 'published');
+    setPeriod((p) => ({ ...p, status: 'published' }));
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <Button variant="ghost" onClick={onBack}>← 戻る</Button>
         <div className="flex-1">
           <div className="flex items-center gap-2">
@@ -307,19 +380,19 @@ function PeriodDetail({
           </div>
         </div>
         {/* Status workflow buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {period.status === 'draft' && (
-            <Button size="sm" onClick={() => onUpdateStatus(period.id, 'collecting')}>
+            <Button size="sm" onClick={() => { onUpdateStatus(period.id, 'collecting'); setPeriod((p) => ({ ...p, status: 'collecting' })); }}>
               回答収集を開始
             </Button>
           )}
-          {period.status === 'collecting' && (
-            <Button size="sm" onClick={() => onUpdateStatus(period.id, 'aggregating')}>
-              集計開始
+          {(period.status === 'collecting' || period.status === 'aggregating') && (
+            <Button size="sm" variant="outline" onClick={handleAggregate} leftIcon={<RefreshCw className="h-3.5 w-3.5" />}>
+              {period.status === 'aggregating' ? '再集計' : '集計開始'}
             </Button>
           )}
           {period.status === 'aggregating' && (
-            <Button size="sm" onClick={() => onUpdateStatus(period.id, 'published')}>
+            <Button size="sm" onClick={handlePublish} leftIcon={<Globe className="h-3.5 w-3.5" />}>
               公表する
             </Button>
           )}
@@ -336,21 +409,21 @@ function PeriodDetail({
           },
           {
             key: 'guardian-results',
-            label: '保護者評価結果',
+            label: '保護者評価（別紙4）',
             icon: <BarChart3 className="h-4 w-4" />,
             content: <GuardianResultsTab periodId={period.id} />,
           },
           {
             key: 'staff-results',
-            label: 'スタッフ自己評価',
+            label: 'スタッフ自己評価（別紙5）',
             icon: <FileText className="h-4 w-4" />,
             content: <StaffSelfEvaluationTab periodId={period.id} />,
           },
           {
-            key: 'comments',
-            label: 'コメント一覧',
-            icon: <MessageCircle className="h-4 w-4" />,
-            content: <CommentsTab periodId={period.id} />,
+            key: 'self-summary',
+            label: '自己評価総括表（別紙3）',
+            icon: <ClipboardList className="h-4 w-4" />,
+            content: <SelfEvaluationSummaryTab periodId={period.id} />,
           },
         ]}
       />
@@ -381,10 +454,13 @@ function ResponseStatusTab({ periodId }: { periodId: number }) {
     return <div className="space-y-2">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-10 w-full rounded" />)}</div>;
   }
 
+  const guardianSubmitted = data.guardian_responses.filter((r) => r.is_submitted).length;
+  const staffSubmitted = data.staff_responses.filter((r) => r.is_submitted).length;
+
   const renderList = (items: ResponseStatus[], nameKey: 'guardian_name' | 'staff_name') => (
     <div className="space-y-1">
-      {items.map((item) => (
-        <div key={item.id} className="flex items-center justify-between rounded-lg border border-[var(--neutral-stroke-3)] px-3 py-2">
+      {items.map((item, index) => (
+        <div key={`${item.id}-${index}`} className="flex items-center justify-between rounded-lg border border-[var(--neutral-stroke-3)] px-3 py-2">
           <span className="text-sm text-[var(--neutral-foreground-2)]">
             {item[nameKey] || '不明'}
           </span>
@@ -418,7 +494,7 @@ function ResponseStatusTab({ periodId }: { periodId: number }) {
         <CardHeader>
           <CardTitle className="text-base">保護者回答状況</CardTitle>
           <Badge variant="info">
-            {data.guardian_responses.filter((r) => r.is_submitted).length}/{data.guardian_responses.length}
+            {guardianSubmitted}/{data.guardian_responses.length}
           </Badge>
         </CardHeader>
         <CardBody>{renderList(data.guardian_responses, 'guardian_name')}</CardBody>
@@ -427,7 +503,7 @@ function ResponseStatusTab({ periodId }: { periodId: number }) {
         <CardHeader>
           <CardTitle className="text-base">スタッフ回答状況</CardTitle>
           <Badge variant="info">
-            {data.staff_responses.filter((r) => r.is_submitted).length}/{data.staff_responses.length}
+            {staffSubmitted}/{data.staff_responses.length}
           </Badge>
         </CardHeader>
         <CardBody>{renderList(data.staff_responses, 'staff_name')}</CardBody>
@@ -437,25 +513,52 @@ function ResponseStatusTab({ periodId }: { periodId: number }) {
 }
 
 // ---------------------------------------------------------------------------
-// Guardian Results Tab
+// Guardian Results Tab (with facility comments, individual comments, percentages)
 // ---------------------------------------------------------------------------
 
 function GuardianResultsTab({ periodId }: { periodId: number }) {
+  const toast = useToast();
   const [summary, setSummary] = useState<QuestionSummary[]>([]);
   const [totalRespondents, setTotalRespondents] = useState(0);
+  const [commentsByQuestion, setCommentsByQuestion] = useState<Record<number, string[]>>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [facilityComments, setFacilityComments] = useState<Record<number, string>>({});
+  const [expandedComments, setExpandedComments] = useState<Record<number, boolean>>({});
 
-  useEffect(() => {
+  const fetchData = useCallback(() => {
     setIsLoading(true);
     api.get('/api/staff/facility-evaluation/summary', { params: { period_id: periodId } })
       .then((res) => {
         const d = res.data?.data;
-        setSummary(Array.isArray(d?.summary) ? d.summary : []);
+        const summaryData = Array.isArray(d?.summary) ? d.summary : [];
+        setSummary(summaryData);
         setTotalRespondents(d?.total_respondents ?? 0);
+        setCommentsByQuestion(d?.comments_by_question || {});
+        // Initialize facility comments
+        const fc: Record<number, string> = {};
+        summaryData.forEach((q: QuestionSummary) => {
+          fc[q.question_id] = q.facility_comment || '';
+        });
+        setFacilityComments(fc);
       })
       .catch(() => {})
       .finally(() => setIsLoading(false));
   }, [periodId]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const saveFacilityComment = async (questionId: number) => {
+    try {
+      await api.post('/api/staff/facility-evaluation/facility-comment', {
+        period_id: periodId,
+        question_id: questionId,
+        facility_comment: facilityComments[questionId] || '',
+      });
+      toast.success('事業所コメントを保存しました');
+    } catch {
+      toast.error('保存に失敗しました');
+    }
+  };
 
   if (isLoading) {
     return <div className="space-y-2">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full rounded" />)}</div>;
@@ -482,63 +585,118 @@ function GuardianResultsTab({ periodId }: { periodId: number }) {
       <div className="text-sm text-[var(--neutral-foreground-3)]">
         回答者数: <span className="font-semibold text-[var(--neutral-foreground-1)]">{totalRespondents}名</span>
       </div>
+
       {Object.entries(categories).map(([category, questions]) => (
         <Card key={category}>
-          <CardHeader>
-            <CardTitle className="text-base">{category}</CardTitle>
-          </CardHeader>
+          <div className="bg-[var(--brand-primary,#7c3aed)] text-white px-5 py-3 font-semibold text-base">
+            {category}
+          </div>
           <CardBody>
-            <div className="space-y-4">
+            <div className="space-y-6">
               {questions.map((q) => {
+                const totalExcludeUnknown = q.yes_count + q.neutral_count + q.no_count;
                 const total = q.total_count || 1;
+                const yesPercent = totalExcludeUnknown > 0 ? Math.round((q.yes_count / totalExcludeUnknown) * 100) : 0;
+                const neutralPercent = totalExcludeUnknown > 0 ? Math.round((q.neutral_count / totalExcludeUnknown) * 100) : 0;
+                const noPercent = totalExcludeUnknown > 0 ? Math.round((q.no_count / totalExcludeUnknown) * 100) : 0;
+                const qComments = commentsByQuestion[q.question_id] || [];
+                const isExpanded = expandedComments[q.question_id] || false;
+
                 return (
-                  <div key={q.question_id} className="border-b border-[var(--neutral-stroke-3)] pb-3 last:border-0 last:pb-0">
+                  <div key={q.question_id} className="border-b border-[var(--neutral-stroke-3)] pb-4 last:border-0 last:pb-0">
                     <p className="text-sm text-[var(--neutral-foreground-2)] mb-2">
-                      <span className="font-semibold">Q{q.question_number}.</span> {q.question_text}
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[var(--brand-primary,#7c3aed)] text-white text-xs font-semibold mr-2">
+                        {q.question_number}
+                      </span>
+                      {q.question_text}
                     </p>
-                    <div className="flex gap-1 h-6 rounded overflow-hidden">
+
+                    {/* Bar chart */}
+                    <div className="flex gap-1 h-6 rounded overflow-hidden mb-2">
                       {q.yes_count > 0 && (
                         <div
                           className="flex items-center justify-center text-[10px] text-white font-medium"
                           style={{ width: `${(q.yes_count / total) * 100}%`, backgroundColor: 'var(--status-success-fg)' }}
-                          title={`はい: ${q.yes_count}`}
-                        >
-                          {q.yes_count}
-                        </div>
+                        >{q.yes_count}</div>
                       )}
                       {q.neutral_count > 0 && (
                         <div
                           className="flex items-center justify-center text-[10px] text-white font-medium"
                           style={{ width: `${(q.neutral_count / total) * 100}%`, backgroundColor: 'var(--status-warning-fg)' }}
-                          title={`どちらともいえない: ${q.neutral_count}`}
-                        >
-                          {q.neutral_count}
-                        </div>
+                        >{q.neutral_count}</div>
                       )}
                       {q.no_count > 0 && (
                         <div
                           className="flex items-center justify-center text-[10px] text-white font-medium"
                           style={{ width: `${(q.no_count / total) * 100}%`, backgroundColor: 'var(--status-danger-fg)' }}
-                          title={`いいえ: ${q.no_count}`}
-                        >
-                          {q.no_count}
-                        </div>
-                      )}
-                      {q.unknown_count > 0 && (
-                        <div
-                          className="flex items-center justify-center text-[10px] text-white font-medium"
-                          style={{ width: `${(q.unknown_count / total) * 100}%`, backgroundColor: 'var(--neutral-foreground-4)' }}
-                          title={`わからない: ${q.unknown_count}`}
-                        >
-                          {q.unknown_count}
-                        </div>
+                        >{q.no_count}</div>
                       )}
                     </div>
-                    <div className="mt-1 flex gap-3 text-[10px] text-[var(--neutral-foreground-3)]">
-                      <span>はい: {q.yes_count}</span>
-                      <span>どちらとも: {q.neutral_count}</span>
-                      <span>いいえ: {q.no_count}</span>
-                      <span>わからない: {q.unknown_count}</span>
+
+                    {/* Counts with percentages */}
+                    <div className="flex flex-wrap gap-3 text-xs text-[var(--neutral-foreground-3)]">
+                      <span className="flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: 'var(--status-success-fg)' }} />
+                        はい: {q.yes_count} ({yesPercent}%)
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: 'var(--status-warning-fg)' }} />
+                        どちらとも: {q.neutral_count} ({neutralPercent}%)
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: 'var(--status-danger-fg)' }} />
+                        いいえ: {q.no_count} ({noPercent}%)
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 rounded-full bg-gray-400" />
+                        わからない: {q.unknown_count}
+                      </span>
+                    </div>
+
+                    {/* Individual comments */}
+                    {qComments.length > 0 && (
+                      <div className="mt-3 rounded-md border-l-3 border-[var(--status-info-fg,#3b82f6)] bg-[rgba(59,130,246,0.04)] p-3">
+                        <button
+                          className="flex items-center gap-1 text-xs font-semibold text-[var(--status-info-fg,#3b82f6)] mb-2"
+                          onClick={() => setExpandedComments((prev) => ({ ...prev, [q.question_id]: !prev[q.question_id] }))}
+                        >
+                          <MessageCircle className="h-3.5 w-3.5" />
+                          ご意見 ({qComments.length}件)
+                          {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                        </button>
+                        {isExpanded && (
+                          <ul className="space-y-1">
+                            {qComments.map((c, ci) => (
+                              <li key={ci} className="rounded border border-[var(--neutral-stroke-3)] bg-[var(--neutral-background-1)] px-3 py-2 text-xs text-[var(--neutral-foreground-2)] whitespace-pre-wrap">
+                                {c}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+
+                    {/* AI comment summary */}
+                    {q.comment_summary && (
+                      <div className="mt-2 rounded-md bg-[var(--neutral-background-3)] p-3">
+                        <h4 className="text-xs font-semibold text-[var(--neutral-foreground-3)] mb-1">ご意見の要約（AI）</h4>
+                        <p className="text-xs text-[var(--neutral-foreground-2)] whitespace-pre-wrap">{q.comment_summary}</p>
+                      </div>
+                    )}
+
+                    {/* Facility comment */}
+                    <div className="mt-2 rounded-md bg-[var(--neutral-background-3)] p-3">
+                      <h4 className="text-xs font-semibold text-[var(--neutral-foreground-3)] mb-1">事業所コメント</h4>
+                      <textarea
+                        value={facilityComments[q.question_id] || ''}
+                        onChange={(e) => setFacilityComments((prev) => ({ ...prev, [q.question_id]: e.target.value }))}
+                        placeholder="事業所からの回答・改善策を入力"
+                        className="block w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-2 py-1.5 text-xs text-[var(--neutral-foreground-1)]"
+                        rows={2}
+                      />
+                      <div className="mt-1 flex gap-1">
+                        <Button size="sm" onClick={() => saveFacilityComment(q.question_id)}>保存</Button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -552,7 +710,7 @@ function GuardianResultsTab({ periodId }: { periodId: number }) {
 }
 
 // ---------------------------------------------------------------------------
-// Staff Self-Evaluation Tab
+// Staff Self-Evaluation Tab (yes/neutral/no only, improvement_plan required for no)
 // ---------------------------------------------------------------------------
 
 function StaffSelfEvaluationTab({ periodId }: { periodId: number }) {
@@ -598,9 +756,18 @@ function StaffSelfEvaluationTab({ periodId }: { periodId: number }) {
         improvement_plan: a.improvement_plan || null,
       }));
 
-    if (submit && answersList.length < questions.length) {
-      toast.error('すべての質問に回答してください');
-      return;
+    if (submit) {
+      if (answersList.length < questions.length) {
+        toast.error('すべての質問に回答してください');
+        return;
+      }
+      // Check improvement_plan required for 'no'
+      const missingImprovement = answersList.filter((a) => a.answer === 'no' && !a.improvement_plan?.trim());
+      if (missingImprovement.length > 0) {
+        toast.error('「いいえ」と回答した質問には改善計画を入力してください');
+        return;
+      }
+      if (!confirm('提出すると修正できなくなります。提出してよろしいですか？')) return;
     }
 
     setIsSaving(true);
@@ -610,10 +777,11 @@ function StaffSelfEvaluationTab({ periodId }: { periodId: number }) {
         answers: answersList,
         submit,
       });
-      toast.success(submit ? '自己評価を提出しました' : '途中保存しました');
+      toast.success(submit ? '自己評価を提出しました' : '下書きを保存しました');
       if (submit) setIsSubmitted(true);
-    } catch {
-      toast.error('保存に失敗しました');
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message || '保存に失敗しました';
+      toast.error(msg);
     } finally {
       setIsSaving(false);
     }
@@ -642,17 +810,21 @@ function StaffSelfEvaluationTab({ periodId }: { periodId: number }) {
   return (
     <div className="space-y-4">
       {isSubmitted && (
-        <div className="rounded-lg bg-[var(--status-success-bg)] px-4 py-3 text-sm text-[var(--status-success-fg)] flex items-center gap-2">
+        <div className="rounded-lg bg-[var(--status-info-bg,rgba(59,130,246,0.1))] border border-[var(--status-info-fg,#3b82f6)] px-4 py-3 text-sm text-[var(--status-info-fg,#3b82f6)] text-center flex items-center justify-center gap-2">
           <CheckCircle2 className="h-4 w-4" />
           自己評価は提出済みです
         </div>
       )}
 
+      <p className="text-sm text-[var(--neutral-foreground-3)]">
+        各項目について、現在の事業所の状況を評価してください
+      </p>
+
       {Object.entries(categories).map(([category, qs]) => (
         <Card key={category}>
-          <CardHeader>
-            <CardTitle className="text-base">{category}</CardTitle>
-          </CardHeader>
+          <div className="bg-[var(--brand-primary,#7c3aed)] text-white px-5 py-3 font-semibold text-base">
+            {category}
+          </div>
           <CardBody>
             <div className="space-y-6">
               {qs.map((q) => {
@@ -660,10 +832,15 @@ function StaffSelfEvaluationTab({ periodId }: { periodId: number }) {
                 return (
                   <div key={q.id} className="border-b border-[var(--neutral-stroke-3)] pb-4 last:border-0 last:pb-0">
                     <p className="text-sm font-medium text-[var(--neutral-foreground-1)] mb-2">
-                      Q{q.question_number}. {q.question_text}
+                      <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--brand-primary,#7c3aed)] text-white text-xs font-semibold mr-2">
+                        {q.question_number}
+                      </span>
+                      {q.question_text}
                     </p>
+
+                    {/* Staff only gets yes/neutral/no (no "unknown") */}
                     <div className="flex flex-wrap gap-2 mb-2">
-                      {(['yes', 'neutral', 'no', 'unknown'] as const).map((opt) => (
+                      {(['yes', 'neutral', 'no'] as const).map((opt) => (
                         <button
                           key={opt}
                           onClick={() => !isSubmitted && updateAnswer(q.id, 'answer', opt)}
@@ -672,29 +849,45 @@ function StaffSelfEvaluationTab({ periodId }: { periodId: number }) {
                             current?.answer === opt
                               ? 'text-white border-transparent'
                               : 'border-[var(--neutral-stroke-2)] text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-3)]'
-                          }`}
+                          } ${isSubmitted ? 'opacity-60 cursor-not-allowed' : ''}`}
                           style={current?.answer === opt ? { backgroundColor: answerColor(opt) } : undefined}
                         >
-                          {ANSWER_LABELS[opt]}
+                          {STAFF_ANSWER_LABELS[opt]}
                         </button>
                       ))}
                     </div>
-                    <textarea
-                      placeholder="コメント（任意）"
-                      value={current?.comment || ''}
-                      onChange={(e) => updateAnswer(q.id, 'comment', e.target.value)}
-                      disabled={isSubmitted}
-                      className="mb-1 block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-xs text-[var(--neutral-foreground-1)] disabled:opacity-60"
-                      rows={2}
-                    />
-                    <textarea
-                      placeholder="改善計画（任意）"
-                      value={current?.improvement_plan || ''}
-                      onChange={(e) => updateAnswer(q.id, 'improvement_plan', e.target.value)}
-                      disabled={isSubmitted}
-                      className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-xs text-[var(--neutral-foreground-1)] disabled:opacity-60"
-                      rows={2}
-                    />
+
+                    <div className="mb-1">
+                      <label className="block text-xs text-[var(--neutral-foreground-3)] mb-0.5">
+                        工夫している点・課題や改善すべき点
+                      </label>
+                      <textarea
+                        placeholder="任意で記入してください"
+                        value={current?.comment || ''}
+                        onChange={(e) => updateAnswer(q.id, 'comment', e.target.value)}
+                        disabled={isSubmitted}
+                        className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-xs text-[var(--neutral-foreground-1)] disabled:opacity-60"
+                        rows={2}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs text-[var(--neutral-foreground-3)] mb-0.5">
+                        改善計画（いいえの場合は必須）
+                      </label>
+                      <textarea
+                        placeholder="改善計画を記入してください"
+                        value={current?.improvement_plan || ''}
+                        onChange={(e) => updateAnswer(q.id, 'improvement_plan', e.target.value)}
+                        disabled={isSubmitted}
+                        className={`block w-full rounded-lg border bg-[var(--neutral-background-1)] px-3 py-1.5 text-xs text-[var(--neutral-foreground-1)] disabled:opacity-60 ${
+                          current?.answer === 'no' && !current?.improvement_plan?.trim()
+                            ? 'border-red-500'
+                            : 'border-[var(--neutral-stroke-2)]'
+                        }`}
+                        rows={2}
+                      />
+                    </div>
                   </div>
                 );
               })}
@@ -706,7 +899,7 @@ function StaffSelfEvaluationTab({ periodId }: { periodId: number }) {
       {!isSubmitted && (
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => handleSave(false)} isLoading={isSaving} leftIcon={<Save className="h-4 w-4" />}>
-            途中保存
+            下書き保存
           </Button>
           <Button onClick={() => handleSave(true)} isLoading={isSaving} leftIcon={<Send className="h-4 w-4" />}>
             提出する
@@ -718,47 +911,249 @@ function StaffSelfEvaluationTab({ periodId }: { periodId: number }) {
 }
 
 // ---------------------------------------------------------------------------
-// Comments Tab
+// Self-Evaluation Summary Tab (別紙3)
 // ---------------------------------------------------------------------------
 
-function CommentsTab({ periodId }: { periodId: number }) {
-  const [comments, setComments] = useState<Comment[]>([]);
+function SelfEvaluationSummaryTab({ periodId }: { periodId: number }) {
+  const toast = useToast();
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [selfSummaryItems, setSelfSummaryItems] = useState<SelfSummaryItem[]>([]);
+  const [staffRespondents, setStaffRespondents] = useState(0);
+  const [staffSummary, setStaffSummary] = useState<QuestionSummary[]>([]);
+
+  // Initialize 3 strengths and 3 weaknesses
+  const initItems = (): SelfSummaryItem[] => {
+    const items: SelfSummaryItem[] = [];
+    for (let i = 1; i <= 3; i++) {
+      items.push({ period_id: periodId, item_type: 'strength', item_number: i, description: '', current_efforts: '', improvement_plan: '' });
+      items.push({ period_id: periodId, item_type: 'weakness', item_number: i, description: '', current_efforts: '', improvement_plan: '' });
+    }
+    return items;
+  };
 
   useEffect(() => {
     setIsLoading(true);
-    api.get('/api/staff/facility-evaluation/summary', { params: { period_id: periodId } })
+    api.get('/api/staff/facility-evaluation/self-summary', { params: { period_id: periodId } })
       .then((res) => {
         const d = res.data?.data;
-        setComments(Array.isArray(d?.comments) ? d.comments : []);
+        setStaffRespondents(d?.staff_respondents ?? 0);
+        setStaffSummary(Array.isArray(d?.summary) ? d.summary : []);
+
+        const serverItems = Array.isArray(d?.self_summary_items) ? d.self_summary_items : [];
+        const items = initItems();
+        // Merge server data into initialized items
+        serverItems.forEach((si: SelfSummaryItem) => {
+          const idx = items.findIndex(
+            (item) => item.item_type === si.item_type && item.item_number === si.item_number
+          );
+          if (idx >= 0) {
+            items[idx] = { ...items[idx], ...si };
+          }
+        });
+        setSelfSummaryItems(items);
       })
-      .catch(() => {})
+      .catch(() => {
+        setSelfSummaryItems(initItems());
+      })
       .finally(() => setIsLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [periodId]);
 
+  const updateItem = (itemType: 'strength' | 'weakness', itemNumber: number, field: keyof SelfSummaryItem, value: string) => {
+    setSelfSummaryItems((prev) =>
+      prev.map((item) =>
+        item.item_type === itemType && item.item_number === itemNumber
+          ? { ...item, [field]: value }
+          : item
+      )
+    );
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await api.post('/api/staff/facility-evaluation/self-summary', {
+        period_id: periodId,
+        items: selfSummaryItems.map((item) => ({
+          item_type: item.item_type,
+          item_number: item.item_number,
+          description: item.description,
+          current_efforts: item.current_efforts,
+          improvement_plan: item.improvement_plan,
+        })),
+      });
+      toast.success('自己評価総括表を保存しました');
+    } catch {
+      toast.error('保存に失敗しました');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   if (isLoading) {
-    return <div className="space-y-2">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-10 w-full rounded" />)}</div>;
+    return <div className="space-y-2">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 w-full rounded" />)}</div>;
   }
 
-  if (comments.length === 0) {
-    return (
-      <div className="py-8 text-center text-[var(--neutral-foreground-4)]">
-        <MessageCircle className="mx-auto h-10 w-10 mb-2" />
-        <p>コメントはありません</p>
-      </div>
-    );
-  }
+  const strengths = selfSummaryItems.filter((i) => i.item_type === 'strength').sort((a, b) => a.item_number - b.item_number);
+  const weaknesses = selfSummaryItems.filter((i) => i.item_type === 'weakness').sort((a, b) => a.item_number - b.item_number);
 
   return (
-    <div className="space-y-3">
-      {comments.map((c, i) => (
-        <div key={i} className="rounded-lg border border-[var(--neutral-stroke-2)] p-3">
-          <p className="text-xs font-semibold text-[var(--neutral-foreground-3)] mb-1">
-            Q{c.question_number}. {c.question_text}
-          </p>
-          <p className="text-sm text-[var(--neutral-foreground-2)]">{c.comment}</p>
-        </div>
-      ))}
+    <div className="space-y-6">
+      {/* Meta info */}
+      <Card>
+        <CardBody>
+          <div className="space-y-1 text-sm">
+            <div className="flex gap-4">
+              <span className="text-[var(--neutral-foreground-3)] min-w-[150px]">従業者評価回答数</span>
+              <span className="text-[var(--neutral-foreground-1)]">{staffRespondents}件</span>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* Staff results summary (brief) */}
+      {staffSummary.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">スタッフ自己評価集計結果</CardTitle>
+          </CardHeader>
+          <CardBody>
+            <div className="space-y-3">
+              {(() => {
+                const cats: Record<string, QuestionSummary[]> = {};
+                staffSummary.forEach((q) => {
+                  if (!cats[q.category]) cats[q.category] = [];
+                  cats[q.category].push(q);
+                });
+                return Object.entries(cats).map(([category, qs]) => {
+                  const totalYes = qs.reduce((s, q) => s + q.yes_count, 0);
+                  const totalNeutral = qs.reduce((s, q) => s + q.neutral_count, 0);
+                  const totalNo = qs.reduce((s, q) => s + q.no_count, 0);
+                  return (
+                    <div key={category} className="flex items-center gap-3 text-xs">
+                      <span className="min-w-[120px] font-medium text-[var(--neutral-foreground-2)]">{category}</span>
+                      <Badge variant="success">○ {totalYes}</Badge>
+                      <Badge variant="warning">△ {totalNeutral}</Badge>
+                      <Badge variant="default">× {totalNo}</Badge>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </CardBody>
+        </Card>
+      )}
+
+      {/* Strengths */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base text-[var(--status-success-fg)]">
+            事業所の強み（より強化・充実を図ることが期待されること）
+          </CardTitle>
+        </CardHeader>
+        <CardBody>
+          <div className="space-y-4">
+            {strengths.map((item) => (
+              <div key={item.item_number} className="rounded-lg border border-[var(--neutral-stroke-3)] p-4">
+                <div className="font-semibold text-sm text-[var(--neutral-foreground-1)] mb-3">{item.item_number}</div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs text-[var(--neutral-foreground-3)] mb-1">事業所の強みだと思われること</label>
+                    <textarea
+                      value={item.description}
+                      onChange={(e) => updateItem('strength', item.item_number, 'description', e.target.value)}
+                      placeholder="強みの内容を入力"
+                      className="block w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm"
+                      rows={2}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-[var(--neutral-foreground-3)] mb-1">工夫していることや意識的に行っている取組等</label>
+                      <textarea
+                        value={item.current_efforts}
+                        onChange={(e) => updateItem('strength', item.item_number, 'current_efforts', e.target.value)}
+                        placeholder="現在の取組を入力"
+                        className="block w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm"
+                        rows={2}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-[var(--neutral-foreground-3)] mb-1">さらに充実を図るための取組等</label>
+                      <textarea
+                        value={item.improvement_plan}
+                        onChange={(e) => updateItem('strength', item.item_number, 'improvement_plan', e.target.value)}
+                        placeholder="今後の取組を入力"
+                        className="block w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm"
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* Weaknesses */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base text-[var(--status-warning-fg)]">
+            事業所の弱み（事業所の課題や改善が必要だと思われること）
+          </CardTitle>
+        </CardHeader>
+        <CardBody>
+          <div className="space-y-4">
+            {weaknesses.map((item) => (
+              <div key={item.item_number} className="rounded-lg border border-[var(--neutral-stroke-3)] p-4">
+                <div className="font-semibold text-sm text-[var(--neutral-foreground-1)] mb-3">{item.item_number}</div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs text-[var(--neutral-foreground-3)] mb-1">事業所の弱みだと思われること</label>
+                    <textarea
+                      value={item.description}
+                      onChange={(e) => updateItem('weakness', item.item_number, 'description', e.target.value)}
+                      placeholder="課題・弱みの内容を入力"
+                      className="block w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm"
+                      rows={2}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-[var(--neutral-foreground-3)] mb-1">事業所として考えている課題の要因等</label>
+                      <textarea
+                        value={item.current_efforts}
+                        onChange={(e) => updateItem('weakness', item.item_number, 'current_efforts', e.target.value)}
+                        placeholder="課題の要因を入力"
+                        className="block w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm"
+                        rows={2}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-[var(--neutral-foreground-3)] mb-1">改善に向けて必要な取組や工夫が必要な点等</label>
+                      <textarea
+                        value={item.improvement_plan}
+                        onChange={(e) => updateItem('weakness', item.item_number, 'improvement_plan', e.target.value)}
+                        placeholder="改善策を入力"
+                        className="block w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm"
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardBody>
+      </Card>
+
+      <div className="flex justify-center">
+        <Button onClick={handleSave} isLoading={isSaving} leftIcon={<Save className="h-4 w-4" />}>
+          自己評価総括表を保存
+        </Button>
+      </div>
     </div>
   );
 }

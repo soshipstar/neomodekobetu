@@ -252,8 +252,11 @@ Route::prefix('staff')
         Route::get('/facility-evaluation/responses', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'responses']);
         Route::get('/facility-evaluation/responses/{evaluation}/pdf', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'responsePdf']);
         Route::get('/facility-evaluation/self-summary', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'selfSummary']);
+        Route::post('/facility-evaluation/self-summary', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'saveSelfSummary']);
         Route::get('/facility-evaluation/staff-evaluation', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'staffEvaluation']);
         Route::post('/facility-evaluation/staff-evaluation', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'saveStaffEvaluation']);
+        Route::post('/facility-evaluation/aggregate', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'aggregate']);
+        Route::post('/facility-evaluation/facility-comment', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'saveFacilityComment']);
 
         // --- 学校休業日活動 ---
         Route::get('/school-holiday-activities', [App\Http\Controllers\Staff\SchoolHolidayActivityController::class, 'index']);
