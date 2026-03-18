@@ -810,14 +810,14 @@ function NotificationGrid({ summary }: { summary: DashboardSummary }) {
       icon: <ClipboardList className="h-4 w-4 text-[var(--status-success-fg)]" />,
       label: '未確認連絡帳',
       count: summary.unconfirmed_renrakucho,
-      href: '/staff/renrakucho',
+      href: '/staff/unconfirmed-notes',
     },
     {
       borderColor: 'border-l-[var(--brand-80)]',
       icon: <FileText className="h-4 w-4 text-[var(--brand-80)]" />,
       label: '個別支援計画期限',
       count: summary.plan_deadlines.overdue + summary.plan_deadlines.urgent,
-      href: '/staff/kobetsu-plan',
+      href: '/staff/pending-tasks',
       detail:
         summary.plan_deadlines.overdue > 0 || summary.plan_deadlines.urgent > 0
           ? `期限超過: ${summary.plan_deadlines.overdue}件 / 緊急: ${summary.plan_deadlines.urgent}件`
@@ -828,7 +828,7 @@ function NotificationGrid({ summary }: { summary: DashboardSummary }) {
       icon: <Clock className="h-4 w-4 text-[var(--status-info-fg)]" />,
       label: 'モニタリング期限',
       count: summary.monitoring_deadlines.overdue + summary.monitoring_deadlines.urgent,
-      href: '/staff/kobetsu-monitoring',
+      href: '/staff/pending-tasks',
       detail:
         summary.monitoring_deadlines.overdue > 0 || summary.monitoring_deadlines.urgent > 0
           ? `期限超過: ${summary.monitoring_deadlines.overdue}件 / 緊急: ${summary.monitoring_deadlines.urgent}件`
@@ -839,7 +839,7 @@ function NotificationGrid({ summary }: { summary: DashboardSummary }) {
       icon: <AlertTriangle className="h-4 w-4 text-[var(--status-warning-fg)]" />,
       label: 'かけはし期限',
       count: summary.kakehashi_deadlines.guardian_pending + summary.kakehashi_deadlines.staff_pending,
-      href: '/staff/kakehashi-staff',
+      href: '/staff/pending-tasks',
       detail:
         summary.kakehashi_deadlines.guardian_pending > 0 || summary.kakehashi_deadlines.staff_pending > 0
           ? `保護者: ${summary.kakehashi_deadlines.guardian_pending}件 / 職員: ${summary.kakehashi_deadlines.staff_pending}件`
@@ -850,7 +850,7 @@ function NotificationGrid({ summary }: { summary: DashboardSummary }) {
       icon: <FileText className="h-4 w-4 text-[var(--status-danger-fg)]" />,
       label: '未提出提出物',
       count: summary.unsubmitted_documents,
-      href: '/staff/submissions',
+      href: '/staff/submission-management',
     },
   ];
 
