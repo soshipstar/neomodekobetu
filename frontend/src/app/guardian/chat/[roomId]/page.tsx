@@ -48,13 +48,13 @@ export default function GuardianChatRoomPage() {
   }, [setActiveRoom]);
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] flex-col lg:h-[calc(100vh-5rem)]">
-      <div className="flex items-center gap-3 border-b border-gray-200 bg-white px-4 py-3">
+    <div className="flex h-[calc(100vh-6rem)] flex-col sm:h-[calc(100vh-7rem)] lg:h-[calc(100vh-5rem)]">
+      <div className="flex items-center gap-2 border-b border-gray-200 bg-white px-3 py-2 sm:gap-3 sm:px-4 sm:py-3">
         <Link href="/guardian/chat" className="rounded-lg p-1 text-gray-400 hover:text-gray-600 lg:hidden">
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <div className="flex-1">
-          <h2 className="text-sm font-semibold text-gray-900">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-sm font-semibold text-gray-900 truncate">
             {activeRoom?.student?.student_name || 'チャット'}
           </h2>
         </div>

@@ -47,6 +47,7 @@ class EventController extends Controller
             'event_color'       => 'nullable|string|max:20',
             'staff_comment'     => 'nullable|string|max:1000',
             'guardian_message'  => 'nullable|string|max:1000',
+            'max_capacity'     => 'nullable|integer|min:1',
         ]);
 
         $event = Event::create($validated);
@@ -85,6 +86,7 @@ class EventController extends Controller
             'event_color'       => 'nullable|string|max:20',
             'staff_comment'     => 'nullable|string|max:1000',
             'guardian_message'  => 'nullable|string|max:1000',
+            'max_capacity'     => 'nullable|integer|min:1',
         ]);
 
         $event->update($validated);
