@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardBody } from '@/components/ui/Card';
@@ -36,6 +36,7 @@ interface MonthData {
   schedule: Record<string, boolean>;
   additional_dates: string[];
   cancelled_dates: string[];
+  holiday_dates: string[];
 }
 
 interface Change {
@@ -69,6 +70,13 @@ export default function AdditionalUsagePage() {
     },
   });
 
+  // Auto-select first student when students load (legacy behavior)
+  useEffect(() => {
+    if (students.length > 0 && selectedStudentId === null) {
+      setSelectedStudentId(students[0].id);
+    }
+  }, [students, selectedStudentId]);
+
   // Fetch month data for selected student
   const { data: monthData, isLoading: loadingMonth } = useQuery({
     queryKey: ['staff', 'additional-usage', 'student-month', selectedStudentId, year, month],
@@ -99,6 +107,12 @@ export default function AdditionalUsagePage() {
     onError: () => toast.error('保存に失敗しました'),
   });
 
+  // Today's date string for highlighting
+  const todayStr = useMemo(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  }, []);
+
   // Build calendar grid
   const calendarGrid = useMemo(() => {
     const firstDay = new Date(year, month - 1, 1).getDay();
@@ -116,10 +130,20 @@ export default function AdditionalUsagePage() {
     return rows;
   }, [year, month]);
 
+  // Check if a date is a holiday
+  const isHoliday = useCallback((day: number): boolean => {
+    if (!monthData?.holiday_dates) return false;
+    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return monthData.holiday_dates.includes(dateStr);
+  }, [monthData, year, month]);
+
   // Determine day status
-  const getDayStatus = useCallback((day: number): 'regular' | 'additional' | 'cancelled' | 'none' => {
+  const getDayStatus = useCallback((day: number): 'regular' | 'additional' | 'cancelled' | 'holiday' | 'none' => {
     if (!monthData) return 'none';
     const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+    // Holiday takes precedence - no checkbox interaction
+    if (isHoliday(day)) return 'holiday';
 
     // Check pending changes first
     if (changes[dateStr]) {
@@ -141,11 +165,14 @@ export default function AdditionalUsagePage() {
     if (isAdditional) return 'additional';
     if (isRegular) return 'regular';
     return 'none';
-  }, [monthData, changes, year, month]);
+  }, [monthData, changes, year, month, isHoliday]);
 
   // Toggle day checkbox
   const toggleDay = useCallback((day: number) => {
     if (!monthData) return;
+    // Don't allow toggling on holidays
+    if (isHoliday(day)) return;
+
     const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     const currentStatus = getDayStatus(day);
 
@@ -160,16 +187,16 @@ export default function AdditionalUsagePage() {
 
     // Toggle based on CURRENT displayed status
     if (currentStatus === 'regular') {
-      // Currently showing as regular → cancel it
+      // Currently showing as regular -> cancel it
       newChanges[dateStr] = { date: dateStr, action: 'cancel' };
     } else if (currentStatus === 'cancelled') {
-      // Currently cancelled → restore it
+      // Currently cancelled -> restore it
       newChanges[dateStr] = { date: dateStr, action: 'restore' };
     } else if (currentStatus === 'additional') {
-      // Currently additional → remove it
+      // Currently additional -> remove it
       newChanges[dateStr] = { date: dateStr, action: 'remove' };
     } else {
-      // Currently none → add
+      // Currently none -> add
       newChanges[dateStr] = { date: dateStr, action: 'add' };
     }
 
@@ -185,7 +212,7 @@ export default function AdditionalUsagePage() {
     }
 
     setChanges(newChanges);
-  }, [monthData, changes, year, month, getDayStatus]);
+  }, [monthData, changes, year, month, getDayStatus, isHoliday]);
 
   const goToPrevMonth = () => {
     if (month === 1) { setYear(year - 1); setMonth(12); }
@@ -227,7 +254,6 @@ export default function AdditionalUsagePage() {
               setChanges({});
             }}
           >
-            <option value="">-- 生徒を選択してください --</option>
             {students.map((s) => (
               <option key={s.id} value={s.id}>{s.student_name}</option>
             ))}
@@ -291,24 +317,29 @@ export default function AdditionalUsagePage() {
                     {calendarGrid.map((week, wi) => (
                       <tr key={wi}>
                         {week.map((day, di) => {
-                          if (day === null) return <td key={di} className="border border-[var(--neutral-stroke-3)] p-1" />;
+                          if (day === null) return <td key={di} className="border border-[var(--neutral-stroke-3)] p-1 bg-[var(--neutral-background-2)]" />;
 
                           const status = getDayStatus(day);
-                          const isChecked = status === 'regular' || status === 'additional';
                           const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                           const hasChange = !!changes[dateStr];
+                          const isToday = dateStr === todayStr;
                           const isSunday = di === 0;
                           const isSaturday = di === 6;
+                          const dayIsHoliday = status === 'holiday';
+                          const isChecked = status === 'regular' || status === 'additional';
 
                           return (
                             <td
                               key={di}
-                              className={`border border-[var(--neutral-stroke-3)] p-2 align-top cursor-pointer transition-colors ${
+                              className={`border border-[var(--neutral-stroke-3)] p-2 align-top transition-colors ${
+                                dayIsHoliday ? 'bg-red-50/70' :
                                 hasChange ? 'bg-yellow-50 ring-2 ring-inset ring-yellow-400' :
                                 status === 'cancelled' ? 'bg-red-50' :
                                 status === 'additional' ? 'bg-green-50' :
-                                status === 'regular' ? 'bg-blue-50' :
+                                status === 'regular' ? 'bg-blue-100' :
                                 ''
+                              } ${isToday ? 'ring-2 ring-inset ring-green-500' : ''} ${
+                                dayIsHoliday ? 'cursor-default' : 'cursor-pointer'
                               }`}
                               onClick={() => toggleDay(day)}
                             >
@@ -319,7 +350,10 @@ export default function AdditionalUsagePage() {
                                   'text-[var(--neutral-foreground-2)]'
                                 }`}>{day}</span>
 
-                                {/* Status label */}
+                                {/* Status labels */}
+                                {dayIsHoliday && (
+                                  <Badge variant="danger" className="text-[9px] px-1.5 py-0">休日</Badge>
+                                )}
                                 {status === 'regular' && (
                                   <Badge variant="info" className="text-[9px] px-1.5 py-0">通常</Badge>
                                 )}
@@ -330,13 +364,15 @@ export default function AdditionalUsagePage() {
                                   <Badge variant="danger" className="text-[9px] px-1.5 py-0">キャンセル</Badge>
                                 )}
 
-                                {/* Checkbox (visual only, toggle via td click) */}
-                                <input
-                                  type="checkbox"
-                                  checked={isChecked}
-                                  readOnly
-                                  className="rounded border-[var(--neutral-stroke-2)] mt-1 pointer-events-none"
-                                />
+                                {/* Checkbox (hidden on holidays, matching legacy) */}
+                                {!dayIsHoliday && (
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    readOnly
+                                    className="rounded border-[var(--neutral-stroke-2)] mt-1 pointer-events-none"
+                                  />
+                                )}
                               </div>
                             </td>
                           );
@@ -349,13 +385,13 @@ export default function AdditionalUsagePage() {
                 {/* Legend */}
                 <div className="mt-4 flex flex-wrap gap-4 text-xs text-[var(--neutral-foreground-3)]">
                   <span className="flex items-center gap-1">
-                    <span className="inline-block h-3 w-3 rounded bg-blue-100 border border-blue-300" /> 通常利用日
+                    <span className="inline-block h-3 w-3 rounded bg-blue-200 border border-blue-300" /> 通常利用日
                   </span>
                   <span className="flex items-center gap-1">
                     <span className="inline-block h-3 w-3 rounded bg-green-100 border border-green-300" /> 追加利用
                   </span>
                   <span className="flex items-center gap-1">
-                    <span className="inline-block h-3 w-3 rounded bg-red-100 border border-red-300" /> キャンセル
+                    <span className="inline-block h-3 w-3 rounded bg-red-100 border border-red-300" /> キャンセル / 休日
                   </span>
                   <span className="flex items-center gap-1">
                     <span className="inline-block h-3 w-3 rounded bg-yellow-50 ring-2 ring-yellow-400" /> 未保存の変更
