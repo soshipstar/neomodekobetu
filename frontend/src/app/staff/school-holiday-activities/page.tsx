@@ -173,7 +173,7 @@ export default function SchoolHolidayActivitiesPage() {
               <span className="inline-block h-3 w-3 rounded bg-red-100 border border-red-400" /> 休日（選択不可）
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="inline-block h-3 w-3 rounded bg-green-50 border border-green-300" /> 平日活動
+              <span className="inline-block h-3 w-3 rounded bg-white border border-gray-300" /> 平日活動
             </span>
           </div>
         </CardBody>
@@ -234,7 +234,7 @@ export default function SchoolHolidayActivitiesPage() {
                               ? 'bg-red-50 cursor-not-allowed'
                               : isChecked
                                 ? 'bg-blue-50 cursor-pointer hover:bg-blue-100'
-                                : 'bg-green-50 cursor-pointer hover:bg-green-100'
+                                : 'bg-white cursor-pointer hover:bg-gray-50'
                           }`}
                           onClick={() => !isHoliday && toggleDate(dateStr)}
                         >
@@ -254,14 +254,17 @@ export default function SchoolHolidayActivitiesPage() {
                               </>
                             ) : (
                               <>
-                                <input
-                                  type="checkbox"
-                                  checked={isChecked}
-                                  readOnly
-                                  className="rounded border-[var(--neutral-stroke-2)] pointer-events-none"
-                                />
-                                <span className={`text-[8px] font-medium ${
-                                  isChecked ? 'text-blue-700' : 'text-green-700'
+                                <div className="flex items-center gap-1">
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    readOnly
+                                    className="rounded border-[var(--neutral-stroke-2)] pointer-events-none"
+                                  />
+                                  <span className="text-[10px] text-[var(--neutral-foreground-3)] hidden sm:inline">休業日活動</span>
+                                </div>
+                                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+                                  isChecked ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
                                 }`}>
                                   {isChecked ? '休業日活動' : '平日活動'}
                                 </span>
