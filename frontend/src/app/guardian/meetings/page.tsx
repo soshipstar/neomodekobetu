@@ -180,7 +180,7 @@ export default function GuardianMeetingsPage() {
                     </p>
                   )}
                   <div className="space-y-3">
-                    {candidates.map((date, i) => (
+                    {candidates.map((date: string, i: number) => (
                       <label
                         key={i}
                         className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-colors ${
