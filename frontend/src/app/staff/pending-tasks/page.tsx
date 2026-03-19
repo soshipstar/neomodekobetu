@@ -329,9 +329,7 @@ export default function PendingTasksPage() {
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2">
                                 <Link
-                                  href={plan.status_code === 'needs_confirm'
-                                    ? `/staff/kobetsu-plan/${plan.plan_id}`
-                                    : `/staff/kobetsu-plan/new?student_id=${plan.student_id}${plan.plan_id ? `&plan_id=${plan.plan_id}` : ''}`}
+                                  href={`/staff/kobetsu-plan?student_id=${plan.student_id}${plan.plan_id ? `&plan_id=${plan.plan_id}` : ''}`}
                                   className="rounded-md bg-[var(--neutral-background-3)] px-3 py-1.5 text-xs font-medium text-[var(--neutral-foreground-1)] hover:bg-[var(--neutral-background-4)]"
                                 >
                                   {plan.status_code === 'needs_confirm' ? '確認依頼' : '計画書を作成'}
@@ -402,7 +400,7 @@ export default function PendingTasksPage() {
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2">
                                 <Link
-                                  href={`/staff/monitoring/new?student_id=${mon.student_id}${mon.monitoring_id ? `&monitoring_id=${mon.monitoring_id}` : ''}`}
+                                  href={`/staff/kobetsu-monitoring?student_id=${mon.student_id}`}
                                   className="rounded-md bg-[var(--neutral-background-3)] px-3 py-1.5 text-xs font-medium text-[var(--neutral-foreground-1)] hover:bg-[var(--neutral-background-4)]"
                                 >
                                   {mon.status_code === 'needs_confirm' ? '確認依頼' : 'モニタリング作成'}
@@ -484,7 +482,7 @@ export default function PendingTasksPage() {
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2">
                                 <Link
-                                  href={`/staff/kakehashi/guardian?student_id=${kak.student_id}&period_id=${kak.period_id}`}
+                                  href={`/staff/kakehashi-guardian?student_id=${kak.student_id}&period_id=${kak.period_id}`}
                                   className="rounded-md bg-[var(--neutral-background-3)] px-3 py-1.5 text-xs font-medium text-[var(--neutral-foreground-1)] hover:bg-[var(--neutral-background-4)]"
                                 >
                                   確認・催促
@@ -554,7 +552,7 @@ export default function PendingTasksPage() {
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2">
                                 <Link
-                                  href={`/staff/kakehashi/staff?student_id=${kak.student_id}&period_id=${kak.period_id}`}
+                                  href={`/staff/kakehashi-staff?student_id=${kak.student_id}&period_id=${kak.period_id}`}
                                   className="rounded-md bg-[var(--neutral-background-3)] px-3 py-1.5 text-xs font-medium text-[var(--neutral-foreground-1)] hover:bg-[var(--neutral-background-4)]"
                                 >
                                   {kak.status_code === 'needs_confirm' ? '確認依頼' : kak.status_code === 'draft' ? '編集する' : '作成する'}
