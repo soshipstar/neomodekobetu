@@ -71,7 +71,7 @@ class DashboardController extends Controller
         // ==============================
         // 未読チャットメッセージ (per-room)
         // ==============================
-        $unreadChatMessages = ChatRoom::where('guardian_id', $guardianId)
+        $unreadChatMessages = ChatRoom::where('chat_rooms.guardian_id', $guardianId)
             ->join('students', 'chat_rooms.student_id', '=', 'students.id')
             ->selectRaw('chat_rooms.id as room_id, students.student_name')
             ->selectRaw('(SELECT COUNT(*) FROM chat_messages WHERE chat_messages.room_id = chat_rooms.id AND chat_messages.sender_type = \'staff\' AND chat_messages.is_read = false AND (chat_messages.is_deleted = false OR chat_messages.is_deleted IS NULL)) as unread_count')
