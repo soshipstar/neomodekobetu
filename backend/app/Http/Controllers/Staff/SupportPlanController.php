@@ -824,6 +824,7 @@ class SupportPlanController extends Controller
                     'domain_social_relations'     => $ge->domain_social_relations,
                     'other_challenges'            => $ge->other_challenges,
                     'is_submitted'                => $ge->is_submitted,
+                    'submitted_at'                => $ge->submitted_at,
                 ];
             }
 
@@ -838,7 +839,9 @@ class SupportPlanController extends Controller
                     'cognitive_behavior'       => $se->cognitive_behavior,
                     'language_communication'   => $se->language_communication,
                     'social_relations'         => $se->social_relations,
+                    'other_challenges'         => $se->other_challenges,
                     'is_submitted'             => $se->is_submitted,
+                    'submitted_at'             => $se->submitted_at,
                 ];
             }
         }
@@ -847,7 +850,8 @@ class SupportPlanController extends Controller
         // 2. 最新モニタリング
         // -----------------------------------------------------------------
         $latestMonitoring = \App\Models\MonitoringRecord::where('student_id', $studentId)
-            ->with('details')
+            ->when($planDate, fn ($q) => $q->where('monitoring_date', '<=', $planDate))
+            ->with('details.planDetail')
             ->orderByDesc('monitoring_date')
             ->first();
 
@@ -895,7 +899,16 @@ class SupportPlanController extends Controller
                 ] : null,
                 'guardian_kakehashi'  => $guardianKakehashi,
                 'staff_kakehashi'     => $staffKakehashi,
-                'latest_monitoring'   => $latestMonitoring,
+                'latest_monitoring'   => $latestMonitoring ? [
+                    'monitoring_date'  => $latestMonitoring->monitoring_date,
+                    'overall_comment'  => $latestMonitoring->overall_comment,
+                    'details'          => $latestMonitoring->details->map(fn ($md) => [
+                        'category'           => $md->planDetail->category ?? $md->domain ?? '',
+                        'sub_category'       => $md->planDetail->sub_category ?? '',
+                        'achievement_status' => $md->achievement_level ?? '',
+                        'monitoring_comment' => $md->comment ?? '',
+                    ])->values()->all(),
+                ] : null,
                 'goal_comparison'     => $goalComparison,
             ],
         ]);
