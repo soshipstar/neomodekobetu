@@ -9,8 +9,8 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
 import { useToast } from '@/components/ui/Toast';
-import { Plus, Trash2, GripVertical } from 'lucide-react';
-import { DOMAIN_LABELS, type Domain, type SupportPlan } from '@/types/support-plan';
+import { Plus, Trash2 } from 'lucide-react';
+import type { SupportPlan } from '@/types/support-plan';
 
 interface PlanFormProps {
   studentId: number;
@@ -19,7 +19,15 @@ interface PlanFormProps {
   onCancel: () => void;
 }
 
-const domainOptions = Object.entries(DOMAIN_LABELS) as [Domain, string][];
+const DEFAULT_DETAILS = [
+  { category: '本人支援', sub_category: '生活習慣（健康・生活）', staff_organization: '保育士\n児童指導員' },
+  { category: '本人支援', sub_category: 'コミュニケーション（言語・コミュニケーション）', staff_organization: '保育士\n児童指導員' },
+  { category: '本人支援', sub_category: '社会性（人間関係・社会性）', staff_organization: '保育士\n児童指導員' },
+  { category: '本人支援', sub_category: '運動・感覚（運動・感覚）', staff_organization: '保育士\n児童指導員' },
+  { category: '本人支援', sub_category: '学習（認知・行動）', staff_organization: '保育士\n児童指導員' },
+  { category: '家族支援', sub_category: '保護者支援', staff_organization: '児童発達支援管理責任者\n保育士' },
+  { category: '地域支援', sub_category: '関係機関連携', staff_organization: '児童発達支援管理責任者' },
+];
 
 export function PlanForm({ studentId, existingPlan, onSuccess, onCancel }: PlanFormProps) {
   const toast = useToast();
@@ -35,40 +43,51 @@ export function PlanForm({ studentId, existingPlan, onSuccess, onCancel }: PlanF
     defaultValues: existingPlan
       ? {
           student_id: studentId,
-          plan_period_start: existingPlan.plan_period_start ?? '',
-          plan_period_end: existingPlan.plan_period_end ?? '',
-          status: (['draft', 'review', 'approved', 'active', 'archived'].includes(existingPlan.status) ? existingPlan.status : 'draft') as 'draft' | 'review' | 'approved' | 'active' | 'archived',
-          disability_type: existingPlan.disability_type ?? '',
-          disability_class: existingPlan.disability_class ?? '',
-          student_wish: existingPlan.student_wish ?? '',
-          guardian_wish: existingPlan.guardian_wish ?? '',
+          created_date: existingPlan.created_date ?? new Date().toISOString().split('T')[0],
+          life_intention: existingPlan.life_intention ?? '',
           overall_policy: existingPlan.overall_policy ?? '',
+          long_term_goal: existingPlan.long_term_goal ?? '',
+          long_term_goal_date: existingPlan.long_term_goal_date ?? '',
+          short_term_goal: existingPlan.short_term_goal ?? '',
+          short_term_goal_date: existingPlan.short_term_goal_date ?? '',
+          consent_date: existingPlan.consent_date ?? '',
+          manager_name: existingPlan.manager_name ?? '',
+          status: (['draft', 'submitted', 'official'].includes(existingPlan.status) ? existingPlan.status : 'draft') as 'draft' | 'submitted' | 'official',
           details: existingPlan.details?.map((d) => ({
-            domain: d.domain,
-            needs: d.needs ?? '',
-            long_term_goal: d.long_term_goal ?? '',
-            short_term_goal: d.short_term_goal ?? '',
+            category: d.category ?? '',
+            sub_category: d.sub_category ?? '',
+            domain: d.domain ?? '',
+            support_goal: d.support_goal ?? d.goal ?? '',
             support_content: d.support_content ?? '',
-            achievement_criteria: d.achievement_criteria ?? '',
-            priority: d.priority ?? 3,
+            achievement_date: d.achievement_date ?? '',
+            staff_organization: d.staff_organization ?? '',
+            notes: d.notes ?? '',
+            priority: d.priority ?? undefined,
           })) ?? [],
         }
       : {
           student_id: studentId,
-          plan_period_start: '',
-          plan_period_end: '',
+          created_date: new Date().toISOString().split('T')[0],
+          life_intention: '',
+          overall_policy: '',
+          long_term_goal: '',
+          long_term_goal_date: '',
+          short_term_goal: '',
+          short_term_goal_date: '',
+          consent_date: '',
+          manager_name: '',
           status: 'draft',
-          details: [
-            {
-              domain: 'health_life',
-              needs: '',
-              long_term_goal: '',
-              short_term_goal: '',
-              support_content: '',
-              achievement_criteria: '',
-              priority: 3,
-            },
-          ],
+          details: DEFAULT_DETAILS.map((d) => ({
+            category: d.category,
+            sub_category: d.sub_category,
+            domain: '',
+            support_goal: '',
+            support_content: '',
+            achievement_date: '',
+            staff_organization: d.staff_organization,
+            notes: '',
+            priority: undefined,
+          })),
         },
   });
 
@@ -92,63 +111,89 @@ export function PlanForm({ studentId, existingPlan, onSuccess, onCancel }: PlanF
     onError: () => toast.error('保存に失敗しました'),
   });
 
+  const textareaClass = 'block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20';
+  const inputClass = 'block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20';
+
   return (
     <form onSubmit={handleSubmit((data) => mutation.mutate(data))} className="space-y-6">
       {/* Basic Info */}
       <div className="grid gap-4 sm:grid-cols-2">
         <Input
-          label="計画期間（開始）"
+          label="作成年月日"
           type="date"
-          error={errors.plan_period_start?.message}
-          {...register('plan_period_start')}
+          {...register('created_date')}
         />
-        <Input
-          label="計画期間（終了）"
-          type="date"
-          error={errors.plan_period_end?.message}
-          {...register('plan_period_end')}
-        />
+        <div />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Input label="障害種別" {...register('disability_type')} />
-        <Input label="障害等級" {...register('disability_class')} />
-      </div>
-
+      {/* Life Intention */}
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">本人の願い</label>
+        <label className="mb-1 block text-sm font-medium text-gray-700">利用児及び家族の生活に対する意向</label>
         <textarea
-          {...register('student_wish')}
-          className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-          rows={3}
-          placeholder="本人の願いを入力..."
+          {...register('life_intention')}
+          className={textareaClass}
+          rows={4}
+          placeholder="利用児及び家族の生活に対する意向を入力..."
         />
       </div>
 
+      {/* Overall Policy */}
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">保護者の願い</label>
-        <textarea
-          {...register('guardian_wish')}
-          className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-          rows={3}
-          placeholder="保護者の願いを入力..."
-        />
-      </div>
-
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">総合的な支援方針</label>
+        <label className="mb-1 block text-sm font-medium text-gray-700">総合的な支援の方針</label>
         <textarea
           {...register('overall_policy')}
-          className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          className={textareaClass}
           rows={4}
-          placeholder="総合的な支援方針を入力..."
+          placeholder="総合的な支援の方針を入力..."
         />
       </div>
 
-      {/* Support Details by Domain */}
+      {/* Long-term Goal (plan-level) */}
+      <Card>
+        <CardBody>
+          <h3 className="mb-3 text-lg font-semibold text-blue-700">長期目標</h3>
+          <div className="mb-3 flex items-center gap-3">
+            <span className="text-sm font-medium text-gray-700">達成時期</span>
+            <input
+              type="date"
+              {...register('long_term_goal_date')}
+              className={inputClass + ' max-w-[200px]'}
+            />
+          </div>
+          <textarea
+            {...register('long_term_goal')}
+            className={textareaClass}
+            rows={4}
+            placeholder="長期目標を入力..."
+          />
+        </CardBody>
+      </Card>
+
+      {/* Short-term Goal (plan-level) */}
+      <Card>
+        <CardBody>
+          <h3 className="mb-3 text-lg font-semibold text-blue-700">短期目標</h3>
+          <div className="mb-3 flex items-center gap-3">
+            <span className="text-sm font-medium text-gray-700">達成時期</span>
+            <input
+              type="date"
+              {...register('short_term_goal_date')}
+              className={inputClass + ' max-w-[200px]'}
+            />
+          </div>
+          <textarea
+            {...register('short_term_goal')}
+            className={textareaClass}
+            rows={4}
+            placeholder="短期目標を入力..."
+          />
+        </CardBody>
+      </Card>
+
+      {/* Support Details Table */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">支援領域</h3>
+          <h3 className="text-lg font-semibold text-gray-900">支援目標及び具体的な支援内容等</h3>
           <Button
             type="button"
             variant="outline"
@@ -156,17 +201,19 @@ export function PlanForm({ studentId, existingPlan, onSuccess, onCancel }: PlanF
             leftIcon={<Plus className="h-4 w-4" />}
             onClick={() =>
               append({
-                domain: 'health_life',
-                needs: '',
-                long_term_goal: '',
-                short_term_goal: '',
+                category: '',
+                sub_category: '',
+                domain: '',
+                support_goal: '',
                 support_content: '',
-                achievement_criteria: '',
-                priority: 3,
+                achievement_date: '',
+                staff_organization: '',
+                notes: '',
+                priority: undefined,
               })
             }
           >
-            領域を追加
+            行を追加
           </Button>
         </div>
 
@@ -174,117 +221,120 @@ export function PlanForm({ studentId, existingPlan, onSuccess, onCancel }: PlanF
           <p className="text-sm text-red-600">{errors.details.root.message}</p>
         )}
 
-        {fields.map((field, index) => (
-          <Card key={field.id} className="relative">
-            <CardBody>
-              <div className="absolute right-4 top-4 flex items-center gap-2">
-                <GripVertical className="h-4 w-4 text-gray-300" />
-                {fields.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => remove(index)}
-                    className="rounded p-1 text-gray-400 hover:text-red-500"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-
-              <div className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">領域</label>
-                    <select
-                      {...register(`details.${index}.domain`)}
-                      className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
-                    >
-                      {domainOptions.map(([value, label]) => (
-                        <option key={value} value={value}>{label}</option>
-                      ))}
-                    </select>
-                    {errors.details?.[index]?.domain && (
-                      <p className="mt-1 text-sm text-red-600">{errors.details[index].domain?.message}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">優先度 (1-5)</label>
-                    <select
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="bg-blue-600 text-white">
+                <th className="border border-blue-600 px-2 py-2 text-left" style={{ width: '80px' }}>項目</th>
+                <th className="border border-blue-600 px-2 py-2 text-left" style={{ width: '200px' }}>支援目標</th>
+                <th className="border border-blue-600 px-2 py-2 text-left" style={{ width: '300px' }}>支援内容</th>
+                <th className="border border-blue-600 px-2 py-2 text-left" style={{ width: '90px' }}>達成時期</th>
+                <th className="border border-blue-600 px-2 py-2 text-left" style={{ width: '110px' }}>担当者/提供機関</th>
+                <th className="border border-blue-600 px-2 py-2 text-left" style={{ width: '140px' }}>留意事項</th>
+                <th className="border border-blue-600 px-2 py-2 text-center" style={{ width: '50px' }}>優先</th>
+                <th className="border border-blue-600 px-2 py-2 text-center" style={{ width: '30px' }} />
+              </tr>
+            </thead>
+            <tbody>
+              {fields.map((field, index) => (
+                <tr key={field.id} className="border border-gray-300">
+                  <td className="border border-gray-300 p-1 align-top">
+                    <input
+                      type="text"
+                      {...register(`details.${index}.category`)}
+                      placeholder="項目"
+                      className="mb-1 block w-full rounded border border-gray-300 px-1 py-1 text-xs"
+                    />
+                    <textarea
+                      {...register(`details.${index}.sub_category`)}
+                      rows={2}
+                      placeholder="サブカテゴリ"
+                      className="block w-full rounded border border-gray-300 px-1 py-1 text-xs"
+                    />
+                  </td>
+                  <td className="border border-gray-300 p-1 align-top">
+                    <textarea
+                      {...register(`details.${index}.support_goal`)}
+                      rows={3}
+                      className="block w-full rounded border border-gray-300 px-1 py-1 text-xs"
+                    />
+                  </td>
+                  <td className="border border-gray-300 p-1 align-top">
+                    <textarea
+                      {...register(`details.${index}.support_content`)}
+                      rows={3}
+                      className="block w-full rounded border border-gray-300 px-1 py-1 text-xs"
+                    />
+                  </td>
+                  <td className="border border-gray-300 p-1 align-top">
+                    <input
+                      type="date"
+                      {...register(`details.${index}.achievement_date`)}
+                      className="block w-full rounded border border-gray-300 px-1 py-1 text-xs"
+                    />
+                  </td>
+                  <td className="border border-gray-300 p-1 align-top">
+                    <textarea
+                      {...register(`details.${index}.staff_organization`)}
+                      rows={3}
+                      className="block w-full rounded border border-gray-300 px-1 py-1 text-xs"
+                    />
+                  </td>
+                  <td className="border border-gray-300 p-1 align-top">
+                    <textarea
+                      {...register(`details.${index}.notes`)}
+                      rows={3}
+                      className="block w-full rounded border border-gray-300 px-1 py-1 text-xs"
+                    />
+                  </td>
+                  <td className="border border-gray-300 p-1 align-top text-center">
+                    <input
+                      type="number"
                       {...register(`details.${index}.priority`, { valueAsNumber: true })}
-                      className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
-                    >
-                      {[1, 2, 3, 4, 5].map((v) => (
-                        <option key={v} value={v}>{v}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+                      min={1}
+                      max={10}
+                      className="block w-full rounded border border-gray-300 px-1 py-1 text-center text-xs"
+                    />
+                  </td>
+                  <td className="border border-gray-300 p-1 align-top text-center">
+                    {fields.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => remove(index)}
+                        className="rounded p-1 text-gray-400 hover:text-red-500"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">ニーズ</label>
-                  <textarea
-                    {...register(`details.${index}.needs`)}
-                    className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    rows={2}
-                    placeholder="ニーズを入力..."
-                  />
-                  {errors.details?.[index]?.needs && (
-                    <p className="mt-1 text-sm text-red-600">{errors.details[index].needs?.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">長期目標</label>
-                  <textarea
-                    {...register(`details.${index}.long_term_goal`)}
-                    className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    rows={2}
-                    placeholder="長期目標を入力..."
-                  />
-                  {errors.details?.[index]?.long_term_goal && (
-                    <p className="mt-1 text-sm text-red-600">{errors.details[index].long_term_goal?.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">短期目標</label>
-                  <textarea
-                    {...register(`details.${index}.short_term_goal`)}
-                    className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    rows={2}
-                    placeholder="短期目標を入力..."
-                  />
-                  {errors.details?.[index]?.short_term_goal && (
-                    <p className="mt-1 text-sm text-red-600">{errors.details[index].short_term_goal?.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">支援内容・方法</label>
-                  <textarea
-                    {...register(`details.${index}.support_content`)}
-                    className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    rows={3}
-                    placeholder="支援内容・方法を入力..."
-                  />
-                  {errors.details?.[index]?.support_content && (
-                    <p className="mt-1 text-sm text-red-600">{errors.details[index].support_content?.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">達成基準（任意）</label>
-                  <textarea
-                    {...register(`details.${index}.achievement_criteria`)}
-                    className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    rows={2}
-                    placeholder="達成基準を入力..."
-                  />
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        ))}
+        <div className="rounded-md border-l-4 border-orange-400 bg-orange-50 p-3 text-sm text-gray-700">
+          <strong>※ 5領域の視点：</strong>「健康・生活」「運動・感覚」「認知・行動」「言語・コミュニケーション」「人間関係・社会性」
+        </div>
       </div>
+
+      {/* Consent Section */}
+      <Card>
+        <CardBody>
+          <h3 className="mb-3 text-lg font-semibold text-blue-700">同意</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input
+              label="管理責任者氏名"
+              {...register('manager_name')}
+            />
+            <Input
+              label="同意日"
+              type="date"
+              {...register('consent_date')}
+            />
+          </div>
+        </CardBody>
+      </Card>
 
       {/* Actions */}
       <div className="flex items-center justify-end gap-3 border-t border-gray-200 pt-4">

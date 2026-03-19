@@ -34,25 +34,35 @@ export type StudentFormData = z.input<typeof studentSchema>;
 // ===== Support Plan =====
 
 export const supportPlanDetailSchema = z.object({
-  domain: z.string().min(1, '領域を選択してください'),
-  needs: z.string().min(1, 'ニーズを入力してください'),
-  long_term_goal: z.string().min(1, '長期目標を入力してください'),
-  short_term_goal: z.string().min(1, '短期目標を入力してください'),
-  support_content: z.string().min(1, '支援内容を入力してください'),
-  achievement_criteria: z.string().optional(),
-  priority: z.number().min(1).max(5).optional().default(3),
+  category: z.string().optional(),
+  sub_category: z.string().optional(),
+  domain: z.string().optional(),
+  support_goal: z.string().optional(),
+  support_content: z.string().optional(),
+  achievement_date: z.string().optional(),
+  staff_organization: z.string().optional(),
+  notes: z.string().optional(),
+  priority: z.number().min(1).max(10).optional(),
 });
 
 export const supportPlanSchema = z.object({
   student_id: z.number(),
-  plan_period_start: z.string().min(1, '開始日を入力してください'),
-  plan_period_end: z.string().min(1, '終了日を入力してください'),
-  status: z.enum(['draft', 'review', 'approved', 'active', 'archived']).optional().default('draft'),
+  created_date: z.string().optional(),
+  plan_period_start: z.string().optional(),
+  plan_period_end: z.string().optional(),
+  status: z.enum(['draft', 'submitted', 'official']).optional().default('draft'),
   disability_type: z.string().optional(),
   disability_class: z.string().optional(),
   student_wish: z.string().optional(),
   guardian_wish: z.string().optional(),
+  life_intention: z.string().optional(),
   overall_policy: z.string().optional(),
+  long_term_goal: z.string().optional(),
+  long_term_goal_date: z.string().optional(),
+  short_term_goal: z.string().optional(),
+  short_term_goal_date: z.string().optional(),
+  consent_date: z.string().optional(),
+  manager_name: z.string().optional(),
   details: z.array(supportPlanDetailSchema).min(1, '少なくとも1つの支援領域を追加してください'),
 });
 

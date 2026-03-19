@@ -9,6 +9,7 @@ use App\Models\KakehashiPeriod;
 use App\Models\KakehashiStaff;
 use App\Models\MonitoringRecord;
 use App\Models\Student;
+use App\Services\KakehashiService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,6 +28,14 @@ class PendingTaskController extends Controller
         $classroomId = $user->classroom_id;
         $today = Carbon::today();
         $oneMonthLater = Carbon::today()->addMonth();
+
+        // かけはし期間の自動生成（Legacy: pending_tasks.php の autoGenerateNextKakehashiPeriods と同等）
+        try {
+            app(KakehashiService::class)->autoGenerateNextKakehashiPeriods();
+        } catch (\Exception $e) {
+            // 自動生成失敗してもタスク一覧は返す
+            \Log::warning('Auto-generate kakehashi periods failed: ' . $e->getMessage());
+        }
 
         // 1. 個別支援計画書タスク
         $planTasks = $this->getPlanTasks($classroomId, $today, $oneMonthLater);

@@ -13,6 +13,13 @@ function nl(t: string | null | undefined): string {
   return t.replace(/\\r\\n|\\n|\\r/g, '\n').replace(/\r\n|\r/g, '\n');
 }
 
+function formatDateJa(dateStr: string | null | undefined): string {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+}
+
 export default function SupportPlanPrintPage() {
   const params = useParams();
   const id = params.id as string;
@@ -20,7 +27,7 @@ export default function SupportPlanPrintPage() {
   const { data: plan, isLoading } = useQuery({
     queryKey: ['staff', 'support-plan-print', id],
     queryFn: async () => {
-      const res = await api.get(`/api/staff/activity-support-plans/${id}`);
+      const res = await api.get(`/api/staff/support-plans/${id}`);
       return res.data?.data;
     },
   });
@@ -29,27 +36,27 @@ export default function SupportPlanPrintPage() {
     return <div className="mx-auto max-w-4xl p-8 space-y-4"><Skeleton className="h-8 w-64" /><Skeleton className="h-60 w-full" /></div>;
   }
 
-  if (!plan) return <div className="p-8 text-center">支援案が見つかりません</div>;
+  if (!plan) return <div className="p-8 text-center">個別支援計画書が見つかりません</div>;
 
   const handlePdf = async () => {
     try {
-      const res = await api.get(`/api/staff/activity-support-plans/${id}/pdf`, { responseType: 'blob' });
+      const res = await api.get(`/api/staff/support-plans/${id}/pdf`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.download = `support_plan_${id}.pdf`;
+      link.download = `kobetsu_plan_${id}.pdf`;
       link.click();
       window.URL.revokeObjectURL(url);
     } catch { /* ignore */ }
   };
 
-  const schedule = Array.isArray(plan.activity_schedule) ? plan.activity_schedule : [];
+  const details = Array.isArray(plan.details) ? plan.details : [];
 
   return (
     <>
       <div className="print:hidden mb-4 flex items-center justify-between">
         <Link href="/staff/support-plans">
-          <Button variant="ghost" size="sm" leftIcon={<ChevronLeft className="h-4 w-4" />}>支援案一覧に戻る</Button>
+          <Button variant="ghost" size="sm" leftIcon={<ChevronLeft className="h-4 w-4" />}>計画書一覧に戻る</Button>
         </Link>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" leftIcon={<Download className="h-4 w-4" />} onClick={handlePdf}>PDFダウンロード</Button>
@@ -57,115 +64,172 @@ export default function SupportPlanPrintPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-4xl bg-white print:max-w-none print:m-0">
+      <div className="mx-auto max-w-5xl bg-white print:max-w-none print:m-0">
         <style>{`
           @media print {
             body { margin: 0; padding: 0; }
             .print\\:hidden { display: none !important; }
-            @page { size: A4 portrait; margin: 15mm 18mm; }
+            @page { size: A3 landscape; margin: 8mm; }
           }
-          .pp { font-family: 'Hiragino Kaku Gothic Pro', 'Noto Sans JP', sans-serif; color: #333; line-height: 1.5; }
-          .pp-header { text-align: center; margin-bottom: 20px; }
-          .pp-header h1 { font-size: 18pt; font-weight: 700; color: #1a1a1a; letter-spacing: 4pt; border-bottom: 3px double #1a1a1a; display: inline-block; padding-bottom: 4px; }
-          .pp-header-sub { font-size: 9pt; color: #888; margin-top: 4px; }
-          .pp-meta { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-          .pp-meta td { padding: 5px 10px; font-size: 10pt; border: 1px solid #ccc; }
-          .pp-meta .lbl { background: #f8f9fa; font-weight: 600; color: #555; width: 15%; white-space: nowrap; }
-          .pp-tags { margin-bottom: 12px; }
-          .pp-tag { display: inline-block; background: #e9ecef; color: #495057; padding: 2px 10px; border-radius: 12px; font-size: 9pt; margin: 0 4px 4px 0; }
-          .pp-sec { margin-bottom: 16px; page-break-inside: avoid; }
-          .pp-sec-head { font-size: 11pt; font-weight: 700; color: #2c3e50; border-left: 4px solid #3498db; padding: 4px 0 4px 10px; margin-bottom: 6px; background: #f8f9fa; }
-          .pp-sec-body { font-size: 10pt; line-height: 1.7; padding: 10px 14px; border: 1px solid #dee2e6; border-radius: 4px; background: #fff; white-space: pre-wrap; word-wrap: break-word; }
-          .pp-sched { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 9.5pt; }
-          .pp-sched th { background: #2c3e50; color: #fff; font-weight: 600; padding: 6px 8px; text-align: center; }
-          .pp-sched td { border: 1px solid #dee2e6; padding: 6px 8px; vertical-align: top; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
-          .pp-sched .routine { background: #fff8e1; }
-          .pp-sched .main { background: #e3f2fd; }
+          .pp { font-family: 'MS Gothic', 'Noto Sans JP', monospace; color: #333; line-height: 1.3; font-size: 10pt; }
+          .pp-header { text-align: center; margin-bottom: 10px; border-bottom: 2px solid #1a1a1a; padding-bottom: 8px; }
+          .pp-header h1 { font-size: 18pt; font-weight: 700; margin: 0; }
+          .pp-meta { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 10pt; }
+          .pp-meta-item { margin-right: 15px; }
+          .pp-meta-label { font-weight: bold; display: inline; }
+          .pp-two-col { display: flex; gap: 15px; margin-bottom: 15px; }
+          .pp-two-col > div { flex: 1; }
+          .pp-sec { margin-bottom: 15px; page-break-inside: avoid; }
+          .pp-sec-head { background: #4a5568; color: white; padding: 5px 10px; font-weight: bold; font-size: 12pt; margin-bottom: 8px; }
+          .pp-sec-body { padding: 8px; border: 1px solid #ccc; min-height: 50px; white-space: pre-wrap; word-wrap: break-word; font-size: 10pt; line-height: 1.5; }
+          .pp-goal-header { display: flex; align-items: center; margin-bottom: 5px; }
+          .pp-goal-title { font-weight: bold; margin-right: 10px; }
+          .pp-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 9pt; }
+          .pp-table th, .pp-table td { border: 1px solid #333; padding: 4px 6px; text-align: left; vertical-align: top; }
+          .pp-table th { background: #e2e8f0; font-weight: bold; text-align: center; }
+          .pp-table td { white-space: pre-wrap; min-height: 40px; line-height: 1.5; }
+          .cat-honin { background: #f7fafc; }
+          .cat-kazoku { background: #dbeafe; }
+          .cat-chiiki { background: #d1fae5; }
+          .pp-sig { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 10px; border-top: 1px solid #333; }
+          .pp-sig-center { display: flex; gap: 30px; flex: 1; justify-content: center; align-items: center; }
+          .pp-sig-item { display: flex; align-items: center; gap: 10px; }
+          .pp-sig-label { font-weight: bold; font-size: 10pt; white-space: nowrap; }
+          .pp-sig-content { display: flex; align-items: center; gap: 5px; border-bottom: 1px solid #333; min-width: 150px; padding: 3px 5px; }
+          .pp-sig-img { max-height: 40px; max-width: 120px; }
+          .pp-sig-name { font-size: 9pt; }
+          .pp-issuer { text-align: right; min-width: 200px; }
+          .pp-issuer-name { font-size: 11pt; font-weight: bold; }
+          .pp-issuer-details { font-size: 9pt; color: #333; }
           .pp-footer { margin-top: 20px; text-align: right; font-size: 8pt; color: #aaa; }
         `}</style>
 
         <div className="pp">
           {/* Header */}
           <div className="pp-header">
-            <h1>活動支援案</h1>
-            <div className="pp-header-sub">放課後等デイサービス 活動計画書</div>
+            <h1>個別支援計画書</h1>
           </div>
 
           {/* Meta */}
-          <table className="pp-meta">
-            <tbody>
-              <tr>
-                <td className="lbl">活動名</td>
-                <td>{plan.activity_name}</td>
-                <td className="lbl">活動日</td>
-                <td>{plan.activity_date || ''}</td>
-              </tr>
-              <tr>
-                <td className="lbl">総活動時間</td>
-                <td>{plan.total_duration}分</td>
-                <td className="lbl">作成者</td>
-                <td>{plan.staff?.full_name || ''}</td>
-              </tr>
-            </tbody>
-          </table>
-
-          {/* Tags */}
-          {plan.tags && (
-            <div className="pp-tags">
-              {plan.tags.split(',').map((tag: string, i: number) => (
-                <span key={i} className="pp-tag">{tag.trim()}</span>
-              ))}
+          <div className="pp-meta">
+            <div className="pp-meta-item">
+              <span className="pp-meta-label">児童氏名：</span>
+              <span>{plan.student_name || plan.student?.student_name || ''}</span>
             </div>
-          )}
-
-          {/* Sections */}
-          {[
-            { title: '活動の目的', content: plan.activity_purpose },
-            { title: '活動の内容', content: plan.activity_content },
-            { title: '五領域への配慮', content: plan.five_domains_consideration },
-          ].map((s) => s.content ? (
-            <div key={s.title} className="pp-sec">
-              <div className="pp-sec-head">{s.title}</div>
-              <div className="pp-sec-body">{nl(s.content)}</div>
+            <div className="pp-meta-item">
+              <span className="pp-meta-label">同意日：</span>
+              <span>{formatDateJa(plan.consent_date)}</span>
             </div>
-          ) : null)}
+          </div>
 
-          {/* Schedule */}
-          {schedule.length > 0 && (
+          {/* Life Intention & Overall Policy (2-column) */}
+          <div className="pp-two-col">
             <div className="pp-sec">
-              <div className="pp-sec-head">活動スケジュール</div>
-              <table className="pp-sched">
+              <div className="pp-sec-head">利用児及び家族の生活に対する意向</div>
+              <div className="pp-sec-body">{nl(plan.life_intention)}</div>
+            </div>
+            <div className="pp-sec">
+              <div className="pp-sec-head">総合的な支援の方針</div>
+              <div className="pp-sec-body">{nl(plan.overall_policy)}</div>
+            </div>
+          </div>
+
+          {/* Long-term & Short-term Goals (2-column) */}
+          <div className="pp-two-col">
+            <div className="pp-sec">
+              <div className="pp-sec-head">長期目標</div>
+              <div className="pp-goal-header">
+                <span className="pp-goal-title">達成時期：</span>
+                <span>{formatDateJa(plan.long_term_goal_date)}</span>
+              </div>
+              <div className="pp-sec-body">{nl(plan.long_term_goal)}</div>
+            </div>
+            <div className="pp-sec">
+              <div className="pp-sec-head">短期目標</div>
+              <div className="pp-goal-header">
+                <span className="pp-goal-title">達成時期：</span>
+                <span>{formatDateJa(plan.short_term_goal_date)}</span>
+              </div>
+              <div className="pp-sec-body">{nl(plan.short_term_goal)}</div>
+            </div>
+          </div>
+
+          {/* Support Details Table */}
+          {details.length > 0 && (
+            <div className="pp-sec">
+              <div className="pp-sec-head">支援内容</div>
+              <table className="pp-table">
                 <thead>
                   <tr>
-                    <th style={{ width: '30px' }}>No</th>
-                    <th style={{ width: '70px' }}>種別</th>
-                    <th>活動名</th>
-                    <th style={{ width: '50px' }}>時間</th>
-                    <th>内容</th>
+                    <th style={{ width: '8%' }}>項目</th>
+                    <th style={{ width: '18%' }}>支援目標</th>
+                    <th style={{ width: '32%' }}>支援内容</th>
+                    <th style={{ width: '8%' }}>達成時期</th>
+                    <th style={{ width: '12%' }}>担当者/<br />提供機関</th>
+                    <th style={{ width: '16%' }}>留意事項</th>
+                    <th style={{ width: '6%' }}>優先順位</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {schedule.map((item: any, i: number) => (
-                    <tr key={i} className={item.type === 'routine' ? 'routine' : 'main'}>
-                      <td style={{ textAlign: 'center' }}>{i + 1}</td>
-                      <td style={{ textAlign: 'center' }}>{item.type === 'routine' ? '毎日の支援' : '主活動'}</td>
-                      <td>{item.name || ''}</td>
-                      <td style={{ textAlign: 'center' }}>{item.duration || ''}分</td>
-                      <td>{nl(item.content)}</td>
-                    </tr>
-                  ))}
+                  {details.map((detail: any, i: number) => {
+                    const cat = detail.category || '';
+                    const catClass = cat.includes('家族') ? 'cat-kazoku' : cat.includes('地域') ? 'cat-chiiki' : 'cat-honin';
+                    return (
+                      <tr key={i} className={catClass}>
+                        <td>{nl(detail.sub_category || detail.domain || '')}</td>
+                        <td>{nl(detail.support_goal || detail.goal || '')}</td>
+                        <td>{nl(detail.support_content || '')}</td>
+                        <td>{detail.achievement_date ? formatDateJa(detail.achievement_date).replace(/年|月/g, '/').replace(/日/, '') : ''}</td>
+                        <td>{nl(detail.staff_organization || '')}</td>
+                        <td>{nl(detail.notes || '')}</td>
+                        <td style={{ textAlign: 'center' }}>{detail.priority ?? ''}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           )}
 
-          {/* Other notes */}
-          {plan.other_notes && (
-            <div className="pp-sec">
-              <div className="pp-sec-head">その他の注意点</div>
-              <div className="pp-sec-body">{nl(plan.other_notes)}</div>
+          {/* Signature Footer */}
+          <div className="pp-sig">
+            <div className="pp-sig-center">
+              <div className="pp-sig-item">
+                <div className="pp-sig-label">児童発達支援管理責任者</div>
+                <div className="pp-sig-content">
+                  {plan.staff_signature_image ? (
+                    <>
+                      <img src={plan.staff_signature_image} alt="職員署名" className="pp-sig-img" />
+                      {(plan.staff_signer_name || plan.manager_name) && (
+                        <div className="pp-sig-name">({plan.staff_signer_name || plan.manager_name})</div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="pp-sig-name">{plan.manager_name || ''}</div>
+                  )}
+                </div>
+              </div>
+              <div className="pp-sig-item">
+                <div className="pp-sig-label">保護者署名</div>
+                <div className="pp-sig-content">
+                  {plan.guardian_signature_image ? (
+                    <img src={plan.guardian_signature_image} alt="保護者署名" className="pp-sig-img" />
+                  ) : (
+                    <div className="pp-sig-name">{plan.guardian_signature || ''}</div>
+                  )}
+                </div>
+              </div>
             </div>
-          )}
+            {plan.student?.classroom && (
+              <div className="pp-issuer">
+                <div className="pp-issuer-name">{plan.student.classroom.classroom_name || ''}</div>
+                <div className="pp-issuer-details">
+                  {plan.student.classroom.address && <>〒{plan.student.classroom.address}</>}
+                  {plan.student.classroom.phone && <><br />TEL: {plan.student.classroom.phone}</>}
+                </div>
+              </div>
+            )}
+          </div>
 
           <div className="pp-footer">
             出力日時: {new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}
