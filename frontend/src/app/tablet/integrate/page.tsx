@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -27,7 +27,11 @@ interface IntegrateData {
   participants: Participant[];
 }
 
-export default function TabletIntegratePage() {
+export default function TabletIntegratePageWrapper() {
+  return <Suspense fallback={<div className="p-8 text-center">読み込み中...</div>}><TabletIntegratePage /></Suspense>;
+}
+
+function TabletIntegratePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToast();

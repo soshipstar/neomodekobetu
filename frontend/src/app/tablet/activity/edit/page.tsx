@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -36,7 +36,11 @@ interface ActivityRecord {
   }>;
 }
 
-export default function TabletActivityEditPage() {
+export default function TabletActivityEditPageWrapper() {
+  return <Suspense fallback={<div className="p-8 text-center">読み込み中...</div>}><TabletActivityEditPage /></Suspense>;
+}
+
+function TabletActivityEditPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToast();

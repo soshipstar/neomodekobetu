@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -89,7 +89,11 @@ function recordToDomainForm(sr: ActivityRecord['student_records'][number]): Pick
   };
 }
 
-export default function TabletRenrakuchoPage() {
+export default function TabletRenrakuchoPageWrapper() {
+  return <Suspense fallback={<div className="p-8 text-center">読み込み中...</div>}><TabletRenrakuchoPage /></Suspense>;
+}
+
+function TabletRenrakuchoPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToast();
