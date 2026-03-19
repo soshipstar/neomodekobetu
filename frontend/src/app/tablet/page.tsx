@@ -1,187 +1,210 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { Badge } from '@/components/ui/Badge';
-import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { LogIn, LogOut, Search } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth, getDay, getDaysInMonth, addMonths, subMonths, isSameDay, isToday } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
-interface TabletStudent {
+interface ActivityRecord {
   id: number;
-  student_name: string;
-  grade_level: string;
-  status: 'not_arrived' | 'present' | 'departed';
-  arrival_time: string | null;
-  departure_time: string | null;
-  photo_url: string | null;
+  activity_name: string;
+  common_activity: string | null;
+  record_date: string;
+  participant_count: number;
+  staff: { id: number; full_name: string } | null;
+  student_records: Array<{
+    id: number;
+    student_id: number;
+    student: { id: number; student_name: string };
+  }>;
 }
 
-const gradeLabels: Record<string, string> = {
-  preschool: '未就学',
-  elementary: '小学',
-  middle: '中学',
-  high: '高校',
-};
-
-const statusConfig: Record<string, { text: string; color: string; bgColor: string }> = {
-  not_arrived: { text: '未来所', color: 'text-gray-600', bgColor: 'bg-gray-100 border-gray-200' },
-  present: { text: '来所中', color: 'text-green-700', bgColor: 'bg-green-50 border-green-200' },
-  departed: { text: '退所済', color: 'text-blue-700', bgColor: 'bg-blue-50 border-blue-200' },
-};
+const DAY_HEADERS = ['日', '月', '火', '水', '木', '金', '土'];
 
 export default function TabletHomePage() {
   const queryClient = useQueryClient();
   const toast = useToast();
-  const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [calendarMonth, setCalendarMonth] = useState(new Date());
 
-  const { data: students = [], isLoading } = useQuery({
-    queryKey: ['tablet', 'students'],
+  const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
+  const calYear = calendarMonth.getFullYear();
+  const calMonth = calendarMonth.getMonth() + 1;
+
+  // 活動一覧
+  const { data: activities = [], isLoading } = useQuery({
+    queryKey: ['tablet', 'activities', selectedDateStr],
     queryFn: async () => {
-      const res = await api.get<{ data: TabletStudent[] }>('/api/tablet/students');
+      const res = await api.get<{ data: ActivityRecord[] }>(`/api/tablet/activities/${selectedDateStr}`);
       return res.data.data;
     },
-    refetchInterval: 30000,
   });
 
-  const checkInMutation = useMutation({
-    mutationFn: (studentId: number) => api.post(`/api/tablet/students/${studentId}/check-in`),
-    onSuccess: (_, studentId) => {
-      queryClient.invalidateQueries({ queryKey: ['tablet', 'students'] });
-      const student = students.find((s) => s.id === studentId);
-      toast.success(`${student?.student_name || ''} さんが来所しました`);
+  // 活動がある日付一覧
+  const { data: activeDates = [] } = useQuery({
+    queryKey: ['tablet', 'active-dates', calYear, calMonth],
+    queryFn: async () => {
+      const res = await api.get<{ data: string[] }>('/api/tablet/active-dates', {
+        params: { year: calYear, month: calMonth },
+      });
+      return res.data.data;
     },
-    onError: () => toast.error('打刻に失敗しました'),
   });
 
-  const checkOutMutation = useMutation({
-    mutationFn: (studentId: number) => api.post(`/api/tablet/students/${studentId}/check-out`),
-    onSuccess: (_, studentId) => {
-      queryClient.invalidateQueries({ queryKey: ['tablet', 'students'] });
-      const student = students.find((s) => s.id === studentId);
-      toast.success(`${student?.student_name || ''} さんが退所しました`);
+  // 削除
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => api.delete(`/api/tablet/activities/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tablet', 'activities', selectedDateStr] });
+      queryClient.invalidateQueries({ queryKey: ['tablet', 'active-dates'] });
+      toast.success('活動を削除しました');
     },
-    onError: () => toast.error('打刻に失敗しました'),
+    onError: () => toast.error('削除に失敗しました'),
   });
 
-  const handleTap = (student: TabletStudent) => {
-    if (student.status === 'not_arrived') {
-      checkInMutation.mutate(student.id);
-    } else if (student.status === 'present') {
-      checkOutMutation.mutate(student.id);
+  const handleDelete = (id: number) => {
+    if (confirm('この活動を削除してもよろしいですか？')) {
+      deleteMutation.mutate(id);
     }
   };
 
-  const filteredStudents = students.filter((s) =>
-    !searchQuery || s.student_name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // カレンダー生成
+  const calendarDays = useMemo(() => {
+    const first = startOfMonth(calendarMonth);
+    const firstDow = getDay(first);
+    const daysInMonth = getDaysInMonth(calendarMonth);
+    const days: Array<{ day: number; date: Date; dateStr: string } | null> = [];
 
-  const presentCount = students.filter((s) => s.status === 'present').length;
-  const departedCount = students.filter((s) => s.status === 'departed').length;
+    for (let i = 0; i < firstDow; i++) {
+      days.push(null);
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(calYear, calMonth - 1, d);
+      days.push({ day: d, date, dateStr: format(date, 'yyyy-MM-dd') });
+    }
+    return days;
+  }, [calendarMonth, calYear, calMonth]);
 
   return (
     <div className="space-y-6">
-      {/* Summary */}
-      <div className="flex items-center justify-center gap-6">
-        <div className="text-center">
-          <p className="text-sm text-gray-500">来所中</p>
-          <p className="text-4xl font-bold text-green-600">{presentCount}</p>
+      {/* カレンダー */}
+      <div className="rounded-xl bg-white p-6 shadow-md">
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setCalendarMonth(subMonths(calendarMonth, 1))}
+              className="rounded-lg bg-blue-600 px-6 py-3 text-2xl font-bold text-white hover:bg-blue-700"
+            >
+              ◀
+            </button>
+            <span className="text-2xl font-bold">{calYear}年{calMonth}月</span>
+            <button
+              onClick={() => setCalendarMonth(addMonths(calendarMonth, 1))}
+              className="rounded-lg bg-blue-600 px-6 py-3 text-2xl font-bold text-white hover:bg-blue-700"
+            >
+              ▶
+            </button>
+          </div>
+          <Link
+            href={`/tablet/activity/edit?date=${selectedDateStr}`}
+            className="rounded-lg bg-green-600 px-6 py-3 text-xl font-bold text-white hover:bg-green-700"
+          >
+            + 新しい活動を追加
+          </Link>
         </div>
-        <div className="h-12 w-px bg-gray-300" />
-        <div className="text-center">
-          <p className="text-sm text-gray-500">退所済</p>
-          <p className="text-4xl font-bold text-blue-600">{departedCount}</p>
-        </div>
-        <div className="h-12 w-px bg-gray-300" />
-        <div className="text-center">
-          <p className="text-sm text-gray-500">予定</p>
-          <p className="text-4xl font-bold text-gray-600">{students.length}</p>
-        </div>
-      </div>
 
-      {/* Search */}
-      <div className="relative max-w-md mx-auto">
-        <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="名前で検索..."
-          className="w-full rounded-full border border-gray-300 bg-white pl-12 pr-4 py-3 text-lg focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-        />
-      </div>
-
-      {/* Student Grid */}
-      {isLoading ? (
-        <SkeletonList items={8} />
-      ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {filteredStudents.map((student) => {
-            const config = statusConfig[student.status] || statusConfig.not_arrived;
+        <div className="grid grid-cols-7 gap-2">
+          {DAY_HEADERS.map((d) => (
+            <div key={d} className="rounded-md bg-gray-100 py-3 text-center text-xl font-bold">
+              {d}
+            </div>
+          ))}
+          {calendarDays.map((cell, i) => {
+            if (!cell) {
+              return <div key={`e-${i}`} className="aspect-square" />;
+            }
+            const hasActivity = activeDates.includes(cell.dateStr);
+            const isSelected = isSameDay(cell.date, selectedDate);
+            const today = isToday(cell.date);
             return (
               <button
-                key={student.id}
-                onClick={() => handleTap(student)}
-                disabled={student.status === 'departed' || checkInMutation.isPending || checkOutMutation.isPending}
-                className={`flex flex-col items-center rounded-2xl border-2 p-6 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed ${config.bgColor} hover:shadow-lg`}
+                key={cell.dateStr}
+                onClick={() => setSelectedDate(cell.date)}
+                className={`flex aspect-square items-center justify-center rounded-md text-xl font-medium transition-all
+                  ${hasActivity ? 'bg-green-100 font-bold' : 'bg-gray-50'}
+                  ${isSelected ? 'bg-blue-600 text-white' : ''}
+                  ${today && !isSelected ? 'ring-2 ring-blue-500' : ''}
+                  hover:bg-gray-200`}
               >
-                {/* Avatar */}
-                <div className={`flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-sm ${student.status === 'present' ? 'ring-4 ring-green-400' : ''}`}>
-                  {student.photo_url ? (
-                    <img src={student.photo_url} alt="" className="h-full w-full rounded-full object-cover" />
-                  ) : (
-                    <span className="text-2xl font-bold text-gray-600">
-                      {student.student_name.charAt(0)}
-                    </span>
-                  )}
-                </div>
-
-                {/* Name */}
-                <p className={`mt-3 text-lg font-bold ${config.color}`}>
-                  {student.student_name}
-                </p>
-                <p className="text-xs text-gray-500">{gradeLabels[student.grade_level] || student.grade_level}</p>
-
-                {/* Status */}
-                <div className="mt-2 flex items-center gap-1">
-                  {student.status === 'not_arrived' && (
-                    <div className="flex items-center gap-1 rounded-full bg-white px-3 py-1 text-sm font-medium text-green-700 shadow-sm">
-                      <LogIn className="h-4 w-4" /> タップで来所
-                    </div>
-                  )}
-                  {student.status === 'present' && (
-                    <div className="flex items-center gap-1 rounded-full bg-white px-3 py-1 text-sm font-medium text-blue-700 shadow-sm">
-                      <LogOut className="h-4 w-4" /> タップで退所
-                    </div>
-                  )}
-                  {student.status === 'departed' && (
-                    <p className="text-xs text-gray-500">退所済み</p>
-                  )}
-                </div>
-
-                {/* Times */}
-                {student.arrival_time && (
-                  <p className="mt-1 text-xs text-gray-500">
-                    来所: {student.arrival_time}
-                    {student.departure_time && ` / 退所: ${student.departure_time}`}
-                  </p>
-                )}
+                {cell.day}
               </button>
             );
           })}
         </div>
-      )}
+      </div>
 
-      {filteredStudents.length === 0 && !isLoading && (
-        <div className="py-12 text-center text-gray-500">
-          生徒が見つかりません
-        </div>
-      )}
+      {/* 活動一覧 */}
+      <div className="rounded-xl bg-white p-6 shadow-md">
+        <h2 className="mb-6 text-2xl font-bold">
+          {format(selectedDate, 'yyyy年M月d日', { locale: ja })}の活動
+        </h2>
+
+        {isLoading ? (
+          <div className="py-12 text-center text-xl text-gray-400">読み込み中...</div>
+        ) : activities.length === 0 ? (
+          <div className="py-12 text-center text-xl text-gray-400">
+            この日の活動はまだ登録されていません。<br />
+            「新しい活動を追加」ボタンから登録してください。
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {activities.map((activity) => (
+              <div
+                key={activity.id}
+                className="flex flex-wrap items-center justify-between gap-4 rounded-lg border-2 border-gray-200 p-5"
+              >
+                <div className="flex-1">
+                  <div className="text-xl font-bold">
+                    {activity.activity_name || activity.common_activity}
+                  </div>
+                  <div className="mt-1 text-base text-gray-500">
+                    {activity.staff?.full_name} | {activity.participant_count ?? activity.student_records?.length ?? 0}名参加
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <Link
+                    href={`/tablet/activity/edit?id=${activity.id}&date=${selectedDateStr}`}
+                    className="rounded-lg bg-blue-600 px-5 py-3 text-lg font-bold text-white hover:bg-blue-700"
+                  >
+                    編集
+                  </Link>
+                  <Link
+                    href={`/tablet/renrakucho?activity_id=${activity.id}`}
+                    className="rounded-lg bg-green-600 px-5 py-3 text-lg font-bold text-white hover:bg-green-700"
+                  >
+                    連絡帳入力
+                  </Link>
+                  <Link
+                    href={`/tablet/integrate?id=${activity.id}&date=${selectedDateStr}`}
+                    className="rounded-lg bg-gray-600 px-5 py-3 text-lg font-bold text-white hover:bg-gray-700"
+                  >
+                    統合
+                  </Link>
+                  <button
+                    onClick={() => handleDelete(activity.id)}
+                    className="rounded-lg bg-red-500 px-5 py-3 text-lg font-bold text-white hover:bg-red-600"
+                  >
+                    削除
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

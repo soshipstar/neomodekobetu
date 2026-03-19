@@ -515,12 +515,19 @@ Route::prefix('tablet')
         Route::get('/activity-options', [App\Http\Controllers\Tablet\TabletController::class, 'activityOptions']); // (#36)
         Route::get('/activity-records', [App\Http\Controllers\Tablet\TabletController::class, 'activityRecords']); // (#37)
         Route::post('/activity-records', [App\Http\Controllers\Tablet\TabletController::class, 'storeActivity']); // (#38)
+        Route::get('/activities/detail/{activity}', [App\Http\Controllers\Tablet\TabletController::class, 'activityDetail']);
         Route::get('/activities/{date}', [App\Http\Controllers\Tablet\TabletController::class, 'activities']);
         Route::post('/activities', [App\Http\Controllers\Tablet\TabletController::class, 'storeActivity']);
         Route::put('/activities/{activity}', [App\Http\Controllers\Tablet\TabletController::class, 'updateActivity']);
         Route::delete('/activities/{activity}', [App\Http\Controllers\Tablet\TabletController::class, 'deleteActivity']);
         Route::post('/activities/integrate', [App\Http\Controllers\Tablet\TabletController::class, 'integrateActivities']);
+        Route::get('/activities/{activity}/integrate-data', [App\Http\Controllers\Tablet\TabletController::class, 'integrateData']);
+        Route::post('/activities/{activity}/integrate-save', [App\Http\Controllers\Tablet\TabletController::class, 'saveIntegration']);
+        Route::get('/active-dates', [App\Http\Controllers\Tablet\TabletController::class, 'activeDates']);
+        Route::get('/support-plans', [App\Http\Controllers\Tablet\TabletController::class, 'supportPlans']);
         Route::post('/renrakucho', [App\Http\Controllers\Tablet\TabletController::class, 'storeRenrakucho']);
+        Route::post('/renrakucho/student', [App\Http\Controllers\Tablet\TabletController::class, 'saveStudentRecord']);
+        Route::post('/renrakucho/bulk', [App\Http\Controllers\Tablet\TabletController::class, 'saveRenrakucho']);
     });
 
 // ==========================================================================

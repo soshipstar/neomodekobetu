@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Tablet;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivitySupportPlan;
 use App\Models\DailyRecord;
 use App\Models\IntegratedNote;
 use App\Models\Student;
@@ -211,7 +212,12 @@ class TabletController extends Controller
             $query->where('classroom_id', $classroomId);
         }
 
-        $records = $query->orderBy('id')->get();
+        $records = $query->orderByDesc('created_at')->get();
+
+        // 旧アプリと同じ形式: 参加者数を付与
+        $records->each(function ($record) {
+            $record->participant_count = $record->studentRecords->count();
+        });
 
         return response()->json([
             'success' => true,
@@ -220,7 +226,78 @@ class TabletController extends Controller
     }
 
     /**
-     * 活動記録を作成
+     * 活動の詳細を取得（ID指定）
+     */
+    public function activityDetail(Request $request, DailyRecord $activity): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->classroom_id && $activity->classroom_id !== $user->classroom_id) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
+        $activity->load(['studentRecords.student:id,student_name', 'staff:id,full_name']);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $activity,
+        ]);
+    }
+
+    /**
+     * 指定月の活動がある日付一覧を取得
+     */
+    public function activeDates(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $classroomId = $user->classroom_id;
+        $year = (int) $request->input('year', now()->year);
+        $month = (int) $request->input('month', now()->month);
+
+        $query = DailyRecord::whereYear('record_date', $year)
+            ->whereMonth('record_date', $month)
+            ->select(DB::raw('DISTINCT record_date'));
+
+        if ($classroomId) {
+            $query->where('classroom_id', $classroomId);
+        }
+
+        $dates = $query->pluck('record_date')
+            ->map(fn ($d) => $d->format('Y-m-d'))
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $dates,
+        ]);
+    }
+
+    /**
+     * 指定日の支援案一覧を取得
+     */
+    public function supportPlans(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $classroomId = $user->classroom_id;
+        $date = $request->input('date', now()->toDateString());
+
+        $query = ActivitySupportPlan::where('activity_date', $date)
+            ->with('staff:id,full_name');
+
+        if ($classroomId) {
+            $query->where('classroom_id', $classroomId);
+        }
+
+        $plans = $query->orderByDesc('created_at')->get();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $plans,
+        ]);
+    }
+
+    /**
+     * 活動記録を作成（旧アプリ互換: activity_name + student_ids で作成）
      */
     public function storeActivity(Request $request): JsonResponse
     {
@@ -230,10 +307,8 @@ class TabletController extends Controller
             'record_date'     => 'required|date',
             'activity_name'   => 'required|string|max:255',
             'common_activity' => 'nullable|string|max:2000',
-            'student_records' => 'nullable|array',
-            'student_records.*.student_id' => 'required_with:student_records|exists:students,id',
-            'student_records.*.content'    => 'nullable|string|max:2000',
-            'student_records.*.attendance' => 'nullable|string|in:present,absent,late',
+            'student_ids'     => 'required|array|min:1',
+            'student_ids.*'   => 'exists:students,id',
         ]);
 
         $record = DB::transaction(function () use ($validated, $user) {
@@ -241,19 +316,16 @@ class TabletController extends Controller
                 'classroom_id'    => $user->classroom_id,
                 'record_date'     => $validated['record_date'],
                 'activity_name'   => $validated['activity_name'],
-                'common_activity' => $validated['common_activity'] ?? null,
+                'common_activity' => $validated['common_activity'] ?? $validated['activity_name'],
                 'staff_id'        => $user->id,
             ]);
 
-            if (! empty($validated['student_records'])) {
-                foreach ($validated['student_records'] as $sr) {
-                    StudentRecord::create([
-                        'daily_record_id' => $record->id,
-                        'student_id'      => $sr['student_id'],
-                        'content'         => $sr['content'] ?? null,
-                        'attendance'      => $sr['attendance'] ?? 'present',
-                    ]);
-                }
+            // 参加者の student_records を空で作成（旧アプリと同じ）
+            foreach ($validated['student_ids'] as $studentId) {
+                StudentRecord::create([
+                    'daily_record_id' => $record->id,
+                    'student_id'      => $studentId,
+                ]);
             }
 
             return $record;
@@ -261,13 +333,13 @@ class TabletController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => $record->load('studentRecords'),
+            'data'    => $record->load('studentRecords.student:id,student_name'),
             'message' => '活動記録を登録しました。',
         ], 201);
     }
 
     /**
-     * 活動記録を更新
+     * 活動記録を更新（旧アプリ互換: activity_name + student_ids）
      */
     public function updateActivity(Request $request, DailyRecord $activity): JsonResponse
     {
@@ -280,10 +352,8 @@ class TabletController extends Controller
         $validated = $request->validate([
             'activity_name'   => 'sometimes|string|max:255',
             'common_activity' => 'nullable|string|max:2000',
-            'student_records' => 'nullable|array',
-            'student_records.*.student_id' => 'required_with:student_records|exists:students,id',
-            'student_records.*.content'    => 'nullable|string|max:2000',
-            'student_records.*.attendance' => 'nullable|string|in:present,absent,late',
+            'student_ids'     => 'nullable|array',
+            'student_ids.*'   => 'exists:students,id',
         ]);
 
         DB::transaction(function () use ($activity, $validated) {
@@ -292,26 +362,21 @@ class TabletController extends Controller
                 'common_activity' => $validated['common_activity'] ?? $activity->common_activity,
             ]);
 
-            if (isset($validated['student_records'])) {
-                // 既存の生徒記録を更新または作成
-                foreach ($validated['student_records'] as $sr) {
-                    StudentRecord::updateOrCreate(
-                        [
-                            'daily_record_id' => $activity->id,
-                            'student_id'      => $sr['student_id'],
-                        ],
-                        [
-                            'content'    => $sr['content'] ?? null,
-                            'attendance' => $sr['attendance'] ?? 'present',
-                        ]
-                    );
+            if (isset($validated['student_ids'])) {
+                // 既存の生徒記録を削除して再作成（旧アプリと同じ動作）
+                $activity->studentRecords()->delete();
+                foreach ($validated['student_ids'] as $studentId) {
+                    StudentRecord::create([
+                        'daily_record_id' => $activity->id,
+                        'student_id'      => $studentId,
+                    ]);
                 }
             }
         });
 
         return response()->json([
             'success' => true,
-            'data'    => $activity->fresh()->load('studentRecords'),
+            'data'    => $activity->fresh()->load('studentRecords.student:id,student_name'),
             'message' => '更新しました。',
         ]);
     }
@@ -340,7 +405,187 @@ class TabletController extends Controller
     }
 
     /**
-     * 生徒記録を統合して連絡帳（統合ノート）を作成
+     * 連絡帳入力: 個別生徒の記録を保存（旧 renrakucho_save.php の save_student アクション）
+     */
+    public function saveStudentRecord(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'daily_record_id'       => 'required|exists:daily_records,id',
+            'student_id'            => 'required|exists:students,id',
+            'notes'                 => 'nullable|string|max:5000',
+            'health_life'           => 'nullable|string|max:5000',
+            'motor_sensory'         => 'nullable|string|max:5000',
+            'cognitive_behavior'    => 'nullable|string|max:5000',
+            'language_communication' => 'nullable|string|max:5000',
+            'social_relations'      => 'nullable|string|max:5000',
+        ]);
+
+        // 権限チェック
+        $record = DailyRecord::findOrFail($validated['daily_record_id']);
+        if ($user->classroom_id && $record->classroom_id !== $user->classroom_id) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
+        $studentRecord = StudentRecord::updateOrCreate(
+            [
+                'daily_record_id' => $validated['daily_record_id'],
+                'student_id'      => $validated['student_id'],
+            ],
+            [
+                'notes'                  => $validated['notes'] ?? null,
+                'health_life'            => $validated['health_life'] ?? null,
+                'motor_sensory'          => $validated['motor_sensory'] ?? null,
+                'cognitive_behavior'     => $validated['cognitive_behavior'] ?? null,
+                'language_communication' => $validated['language_communication'] ?? null,
+                'social_relations'       => $validated['social_relations'] ?? null,
+            ]
+        );
+
+        return response()->json([
+            'success' => true,
+            'data'    => $studentRecord,
+            'message' => '生徒記録を保存しました。',
+        ]);
+    }
+
+    /**
+     * 連絡帳一括保存（旧 renrakucho_save.php の通常保存）
+     */
+    public function saveRenrakucho(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'daily_record_id'       => 'required|exists:daily_records,id',
+            'common_activity'       => 'required|string|max:2000',
+            'students'              => 'required|array|min:1',
+            'students.*.student_id' => 'required|exists:students,id',
+            'students.*.notes'      => 'nullable|string|max:5000',
+            'students.*.health_life' => 'nullable|string|max:5000',
+            'students.*.motor_sensory' => 'nullable|string|max:5000',
+            'students.*.cognitive_behavior' => 'nullable|string|max:5000',
+            'students.*.language_communication' => 'nullable|string|max:5000',
+            'students.*.social_relations' => 'nullable|string|max:5000',
+        ]);
+
+        $record = DailyRecord::findOrFail($validated['daily_record_id']);
+        if ($user->classroom_id && $record->classroom_id !== $user->classroom_id) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
+        DB::transaction(function () use ($record, $validated) {
+            $record->update([
+                'common_activity' => $validated['common_activity'],
+            ]);
+
+            foreach ($validated['students'] as $s) {
+                StudentRecord::updateOrCreate(
+                    [
+                        'daily_record_id' => $record->id,
+                        'student_id'      => $s['student_id'],
+                    ],
+                    [
+                        'notes'                  => $s['notes'] ?? null,
+                        'health_life'            => $s['health_life'] ?? null,
+                        'motor_sensory'          => $s['motor_sensory'] ?? null,
+                        'cognitive_behavior'     => $s['cognitive_behavior'] ?? null,
+                        'language_communication' => $s['language_communication'] ?? null,
+                        'social_relations'       => $s['social_relations'] ?? null,
+                    ]
+                );
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => '連絡帳を保存しました。',
+        ]);
+    }
+
+    /**
+     * 統合連絡帳: 活動の参加者と記録を取得
+     */
+    public function integrateData(Request $request, DailyRecord $activity): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->classroom_id && $activity->classroom_id !== $user->classroom_id) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
+        $activity->load([
+            'studentRecords.student:id,student_name',
+            'integratedNotes',
+        ]);
+
+        $participants = $activity->studentRecords->map(function ($sr) use ($activity) {
+            $integratedNote = $activity->integratedNotes->firstWhere('student_id', $sr->student_id);
+            return [
+                'id'                  => $sr->student->id,
+                'student_name'        => $sr->student->student_name,
+                'notes'               => $sr->notes,
+                'integrated_id'       => $integratedNote?->id,
+                'integrated_content'  => $integratedNote?->integrated_content,
+                'is_sent'             => $integratedNote?->is_sent ?? false,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'activity'     => $activity->only(['id', 'activity_name', 'record_date', 'common_activity']),
+                'participants' => $participants,
+            ],
+        ]);
+    }
+
+    /**
+     * 統合連絡帳を保存（旧 activity_integrate.php のPOST処理）
+     */
+    public function saveIntegration(Request $request, DailyRecord $activity): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->classroom_id && $activity->classroom_id !== $user->classroom_id) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
+        $validated = $request->validate([
+            'contents'              => 'required|array',
+            'contents.*.student_id' => 'required|exists:students,id',
+            'contents.*.content'    => 'nullable|string|max:10000',
+        ]);
+
+        DB::transaction(function () use ($activity, $validated) {
+            foreach ($validated['contents'] as $item) {
+                $content = trim($item['content'] ?? '');
+                if (empty($content)) {
+                    continue;
+                }
+
+                IntegratedNote::updateOrCreate(
+                    [
+                        'daily_record_id' => $activity->id,
+                        'student_id'      => $item['student_id'],
+                    ],
+                    [
+                        'integrated_content' => $content,
+                        'is_sent'            => false,
+                    ]
+                );
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => '統合連絡帳を保存しました。',
+        ]);
+    }
+
+    /**
+     * 生徒記録を統合して連絡帳（統合ノート）を作成（自動統合）
      */
     public function integrateActivities(Request $request): JsonResponse
     {
@@ -368,12 +613,11 @@ class TabletController extends Controller
 
         DB::transaction(function () use ($records, $studentIds, &$createdCount) {
             foreach ($studentIds as $studentId) {
-                // この生徒の全記録を統合
                 $contents = [];
                 foreach ($records as $record) {
                     $studentRecord = $record->studentRecords->firstWhere('student_id', $studentId);
-                    if ($studentRecord && $studentRecord->content) {
-                        $contents[] = "【{$record->activity_name}】{$studentRecord->content}";
+                    if ($studentRecord && $studentRecord->notes) {
+                        $contents[] = "【{$record->activity_name}】{$studentRecord->notes}";
                     }
                 }
 

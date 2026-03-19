@@ -1,20 +1,37 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import Link from 'next/link';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function TabletLayout({ children }: { children: ReactNode }) {
+  const { user, logout } = useAuth();
+
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Fullscreen layout - no sidebar, large touch targets */}
-      <header className="flex h-14 items-center justify-between bg-blue-600 px-6 shadow-md">
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center">
-            <span className="text-sm font-bold text-blue-600">K</span>
-          </div>
-          <span className="text-lg font-bold text-white">KIDURI タブレット</span>
+      <header className="flex items-center justify-between bg-white px-6 py-4 shadow-md">
+        <div className="flex items-center gap-4">
+          <Link href="/tablet" className="text-3xl font-bold text-gray-900">
+            本日の記録
+          </Link>
+          <span className="text-xl text-gray-500">
+            {user?.classroom?.classroom_name && `${user.classroom.classroom_name} | `}
+            {user?.full_name}
+          </span>
         </div>
-        <div className="text-sm text-blue-100">
-          {new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
+        <div className="flex items-center gap-4">
+          <Link
+            href="/tablet"
+            className="rounded-lg bg-blue-600 px-6 py-3 text-lg font-bold text-white hover:bg-blue-700"
+          >
+            トップ
+          </Link>
+          <button
+            onClick={logout}
+            className="rounded-lg bg-red-500 px-6 py-3 text-lg font-bold text-white hover:bg-red-600"
+          >
+            ログアウト
+          </button>
         </div>
       </header>
       <main className="p-4 sm:p-6">
