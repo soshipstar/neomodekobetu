@@ -71,14 +71,17 @@ class DashboardController extends Controller
         // ==============================
         // 未読チャットメッセージ (per-room)
         // ==============================
-        $unreadChatMessages = ChatRoom::where('chat_rooms.guardian_id', $guardianId)
-            ->join('students', 'chat_rooms.student_id', '=', 'students.id')
-            ->selectRaw('chat_rooms.id as room_id, students.student_name')
-            ->selectRaw('(SELECT COUNT(*) FROM chat_messages WHERE chat_messages.room_id = chat_rooms.id AND chat_messages.sender_type = \'staff\' AND chat_messages.is_read = false AND (chat_messages.is_deleted = false OR chat_messages.is_deleted IS NULL)) as unread_count')
-            ->selectRaw('(SELECT MAX(chat_messages.created_at) FROM chat_messages WHERE chat_messages.room_id = chat_rooms.id AND chat_messages.sender_type = \'staff\' AND chat_messages.is_read = false AND (chat_messages.is_deleted = false OR chat_messages.is_deleted IS NULL)) as last_message_at')
-            ->having('unread_count', '>', 0)
-            ->orderByDesc('last_message_at')
-            ->get();
+        $unreadChatMessages = DB::select("
+            SELECT sub.* FROM (
+                SELECT chat_rooms.id as room_id, students.student_name,
+                    (SELECT COUNT(*) FROM chat_messages WHERE chat_messages.room_id = chat_rooms.id AND chat_messages.sender_type = 'staff' AND chat_messages.is_read = false AND (chat_messages.is_deleted = false OR chat_messages.is_deleted IS NULL)) as unread_count,
+                    (SELECT MAX(chat_messages.created_at) FROM chat_messages WHERE chat_messages.room_id = chat_rooms.id AND chat_messages.sender_type = 'staff' AND chat_messages.is_read = false AND (chat_messages.is_deleted = false OR chat_messages.is_deleted IS NULL)) as last_message_at
+                FROM chat_rooms
+                INNER JOIN students ON chat_rooms.student_id = students.id
+                WHERE chat_rooms.guardian_id = ?
+            ) sub WHERE sub.unread_count > 0
+            ORDER BY sub.last_message_at DESC
+        ", [$guardianId]);
 
         // ==============================
         // 未提出かけはし (overdue/urgent/pending)
