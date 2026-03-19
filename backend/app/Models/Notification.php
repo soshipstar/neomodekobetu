@@ -8,8 +8,6 @@ use Illuminate\Database\Eloquent\Builder;
 
 class Notification extends Model
 {
-    public $timestamps = false;
-
     protected $fillable = [
         'user_id',
         'type',

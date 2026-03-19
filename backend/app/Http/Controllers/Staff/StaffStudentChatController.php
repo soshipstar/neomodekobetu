@@ -6,9 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Student;
 use App\Models\StudentChatMessage;
 use App\Models\StudentChatRoom;
+use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class StaffStudentChatController extends Controller
 {
@@ -129,6 +132,28 @@ class StaffStudentChatController extends Controller
 
             return $msg;
         });
+
+        // 生徒の保護者に通知を送信
+        try {
+            $notificationService = app(NotificationService::class);
+            $senderName = $user->full_name ?? 'スタッフ';
+            $messagePreview = mb_substr($request->message, 0, 50);
+            $frontendUrl = rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/');
+
+            $room->loadMissing('student');
+            $guardian = $room->student?->guardian;
+            if ($guardian && $guardian->is_active) {
+                $notificationService->notify(
+                    $guardian,
+                    'chat_message',
+                    '新着メッセージ（生徒チャット）',
+                    "{$senderName}: {$messagePreview}",
+                    ['url' => "{$frontendUrl}/guardian/chat"]
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Student chat notification error: ' . $e->getMessage());
+        }
 
         return response()->json([
             'success' => true,

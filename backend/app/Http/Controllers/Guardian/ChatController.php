@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Guardian;
 use App\Http\Controllers\Controller;
 use App\Models\ChatMessage;
 use App\Models\ChatRoom;
+use App\Models\User;
+use App\Services\NotificationService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ChatController extends Controller
 {
@@ -132,6 +135,38 @@ class ChatController extends Controller
 
             return $msg;
         });
+
+        // 教室のスタッフに通知を送信
+        try {
+            $notificationService = app(NotificationService::class);
+            $senderName = $user->full_name ?? '保護者';
+            $messagePreview = $request->message
+                ? mb_substr($request->message, 0, 50)
+                : '添付ファイルが送信されました';
+            $frontendUrl = rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/');
+
+            $room->loadMissing('student');
+            $classroomId = $room->student?->classroom_id;
+
+            if ($classroomId) {
+                $staffUsers = User::where('classroom_id', $classroomId)
+                    ->whereIn('user_type', ['staff', 'admin'])
+                    ->where('is_active', true)
+                    ->get();
+
+                foreach ($staffUsers as $staff) {
+                    $notificationService->notify(
+                        $staff,
+                        'chat_message',
+                        '新着メッセージ',
+                        "{$senderName}: {$messagePreview}",
+                        ['url' => "{$frontendUrl}/staff/chat?room_id={$room->id}"]
+                    );
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Chat notification error (guardian→staff): ' . $e->getMessage());
+        }
 
         return response()->json([
             'success'    => true,

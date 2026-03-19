@@ -7,9 +7,12 @@ use App\Models\DailyRecord;
 use App\Models\IntegratedNote;
 use App\Models\SendHistory;
 use App\Models\StudentRecord;
+use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class RenrakuchoController extends Controller
 {
@@ -500,6 +503,36 @@ class RenrakuchoController extends Controller
                 $sentCount++;
             }
         });
+
+        // 保護者に通知を送信
+        try {
+            $notificationService = app(NotificationService::class);
+            $frontendUrl = rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/');
+            $dateStr = $record->record_date->format('n月j日');
+
+            // 送信対象の生徒IDから保護者を取得（重複除去）
+            $sentStudentIds = collect($validated['notes'])->pluck('student_id')->unique();
+            $guardianIds = \App\Models\Student::whereIn('id', $sentStudentIds)
+                ->whereNotNull('guardian_id')
+                ->pluck('guardian_id')
+                ->unique();
+
+            $guardians = User::whereIn('id', $guardianIds)
+                ->where('is_active', true)
+                ->get();
+
+            foreach ($guardians as $guardian) {
+                $notificationService->notify(
+                    $guardian,
+                    'renrakucho',
+                    '連絡帳が届きました',
+                    "{$dateStr}の連絡帳が送信されました。",
+                    ['url' => "{$frontendUrl}/guardian/notes"]
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Renrakucho notification error: ' . $e->getMessage());
+        }
 
         return response()->json([
             'success' => true,

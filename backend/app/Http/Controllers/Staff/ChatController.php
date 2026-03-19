@@ -7,9 +7,12 @@ use App\Models\ChatMessage;
 use App\Models\ChatMessageStaffRead;
 use App\Models\ChatRoom;
 use App\Models\ChatRoomPin;
+use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class ChatController extends Controller
@@ -178,6 +181,29 @@ class ChatController extends Controller
             return $msg;
         });
 
+        // 保護者に通知を送信
+        try {
+            $notificationService = app(NotificationService::class);
+            $senderName = $user->full_name ?? 'スタッフ';
+            $messagePreview = $request->message
+                ? mb_substr($request->message, 0, 50)
+                : '添付ファイルが送信されました';
+            $frontendUrl = rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/');
+
+            $guardian = User::find($room->guardian_id);
+            if ($guardian && $guardian->is_active) {
+                $notificationService->notify(
+                    $guardian,
+                    'chat_message',
+                    '新着メッセージ',
+                    "{$senderName}: {$messagePreview}",
+                    ['url' => "{$frontendUrl}/guardian/chat?room_id={$room->id}"]
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Chat notification error (staff→guardian): ' . $e->getMessage());
+        }
+
         return response()->json([
             'success'    => true,
             'data'       => $message,
@@ -298,6 +324,33 @@ class ChatController extends Controller
                 $sentCount++;
             }
         });
+
+        // 全保護者に通知を送信
+        try {
+            $notificationService = app(NotificationService::class);
+            $senderName = $user->full_name ?? 'スタッフ';
+            $messagePreview = $request->message
+                ? mb_substr($request->message, 0, 50)
+                : '添付ファイルが送信されました';
+            $frontendUrl = rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/');
+
+            $guardianIds = $rooms->pluck('guardian_id')->unique()->filter();
+            $guardians = User::whereIn('id', $guardianIds)
+                ->where('is_active', true)
+                ->get();
+
+            foreach ($guardians as $guardian) {
+                $notificationService->notify(
+                    $guardian,
+                    'chat_message',
+                    '新着メッセージ（一斉送信）',
+                    "{$senderName}: {$messagePreview}",
+                    ['url' => "{$frontendUrl}/guardian/chat"]
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Chat broadcast notification error: ' . $e->getMessage());
+        }
 
         return response()->json([
             'success'    => true,
