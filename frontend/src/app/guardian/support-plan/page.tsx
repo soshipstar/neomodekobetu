@@ -15,13 +15,8 @@ import { DOMAIN_LABELS, type Domain, type SupportPlan } from '@/types/support-pl
 import { CheckCircle, PenLine, MessageSquare } from 'lucide-react';
 
 interface ExtendedSupportPlan extends SupportPlan {
-  guardian_confirmed?: boolean;
   guardian_confirmed_at?: string | null;
-  guardian_signature?: string | null;
-  guardian_signature_image?: string | null;
   guardian_signature_date?: string | null;
-  staff_signature_image?: string | null;
-  staff_signer_name?: string | null;
   staff_signature_date?: string | null;
   guardian_review_comment?: string | null;
   guardian_reviewed_at?: string | null;
