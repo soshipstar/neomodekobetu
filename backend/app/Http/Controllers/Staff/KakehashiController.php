@@ -278,7 +278,7 @@ class KakehashiController extends Controller
             }
 
             $client = \OpenAI::client($apiKey);
-            $aiModel = 'gpt-5.2';
+            $aiModel = 'gpt-5.4-mini-2026-03-17';
             $totalInputTokens = 0;
             $totalOutputTokens = 0;
 

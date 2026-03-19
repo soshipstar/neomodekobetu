@@ -431,7 +431,7 @@ class MonitoringController extends Controller
                     . "\"monitoring_comment\": \"評価コメント（150〜200字程度。連絡帳の記録を踏まえた具体的な評価と、今後の支援の方向性を含める）\"}";
 
                 $response = $client->chat()->create([
-                    'model'    => 'gpt-4o',
+                    'model'    => 'gpt-5.4-mini-2026-03-17',
                     'messages' => [
                         [
                             'role'    => 'system',
