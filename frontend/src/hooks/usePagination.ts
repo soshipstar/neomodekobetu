@@ -41,10 +41,33 @@ export function usePagination<T>({
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: [...queryKey, queryParams],
     queryFn: async () => {
-      const response = await api.get<PaginatedResponse<T>>(endpoint, {
+      const response = await api.get(endpoint, {
         params: queryParams,
       });
-      return response.data;
+      const raw = response.data?.data ?? response.data;
+      // Laravel paginate() wraps in { data: [...], current_page, last_page, ... }
+      // Our API wraps further in { success, data: { data, current_page, ... } }
+      if (raw && Array.isArray(raw.data) && typeof raw.last_page === 'number') {
+        return {
+          data: raw.data as T[],
+          meta: {
+            current_page: raw.current_page ?? 1,
+            from: raw.from ?? null,
+            last_page: raw.last_page ?? 1,
+            per_page: raw.per_page ?? perPage,
+            to: raw.to ?? null,
+            total: raw.total ?? 0,
+          },
+          links: raw.links ?? {},
+        } as PaginatedResponse<T>;
+      }
+      // Fallback: non-paginated array
+      const items = Array.isArray(raw) ? raw : [];
+      return {
+        data: items as T[],
+        meta: { current_page: 1, from: 1, last_page: 1, per_page: items.length, to: items.length, total: items.length },
+        links: {},
+      } as PaginatedResponse<T>;
     },
     enabled,
   });
