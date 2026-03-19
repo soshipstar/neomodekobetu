@@ -1037,7 +1037,7 @@ export default function KobetsuPlanPage() {
                         <tr key={plan.id} className="hover:bg-[var(--neutral-background-2)]">
                           {/* 作成日 */}
                           <td className={tdClass}>
-                            {plan.created_date}
+                            {plan.created_date?.split('T')[0]}
                           </td>
 
                           {/* 状態 */}
