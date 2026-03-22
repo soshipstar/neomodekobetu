@@ -80,6 +80,7 @@ class WeeklyPlanController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
+            'student_id'      => 'required|exists:students,id',
             'week_start_date' => 'required|date',
             'plan_content'    => 'required|array',
         ]);
