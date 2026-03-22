@@ -189,7 +189,9 @@ export function Sidebar() {
 
   if (!user) return null;
 
-  const navItems = getNavItems(user.user_type as UserType);
+  // 通常管理者がスタッフ画面にいる場合、スタッフメニューを表示
+  const isAdminOnStaffPage = user.user_type === 'admin' && !user.is_master && pathname.startsWith('/staff');
+  const navItems = isAdminOnStaffPage ? staffNav : getNavItems(user.user_type as UserType);
 
   // Mobile overlay sidebar
   if (!isDesktop) {
@@ -213,6 +215,7 @@ export function Sidebar() {
             navItems={navItems}
             pathname={pathname}
             user={user}
+            isAdminOnStaffView={isAdminOnStaffPage}
             onClose={() => setSidebarOpen(false)}
           />
         </aside>
@@ -232,6 +235,7 @@ export function Sidebar() {
         navItems={navItems}
         pathname={pathname}
         user={user}
+        isAdminOnStaffView={isAdminOnStaffPage}
         collapsed={!sidebarOpen}
         onToggle={toggleSidebar}
       />
@@ -243,6 +247,7 @@ interface SidebarContentProps {
   navItems: NavItem[];
   pathname: string;
   user: { full_name: string; user_type: string; is_master?: boolean; classroom?: { classroom_name: string; logo_path: string | null } | null };
+  isAdminOnStaffView?: boolean;
   collapsed?: boolean;
   onClose?: () => void;
   onToggle?: () => void;
@@ -252,6 +257,7 @@ function SidebarContent({
   navItems,
   pathname,
   user,
+  isAdminOnStaffView = false,
   collapsed = false,
   onClose,
   onToggle,
@@ -372,20 +378,20 @@ function SidebarContent({
         </ul>
       </nav>
 
-      {/* Switch to staff view (non-master admin only) */}
+      {/* Switch between admin/staff view (non-master admin only) */}
       {user.user_type === 'admin' && !user.is_master && (
         <div className="border-t border-[var(--neutral-stroke-2)] p-3">
           <Link
-            href="/staff/dashboard"
+            href={isAdminOnStaffView ? '/admin/dashboard' : '/staff/dashboard'}
             onClick={onClose}
             className={cn(
               'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-[var(--neutral-foreground-2)] hover:bg-[var(--neutral-background-3)] hover:text-[var(--neutral-foreground-1)] transition-colors',
               collapsed && 'justify-center px-2'
             )}
-            title={collapsed ? 'スタッフ画面へ移動' : undefined}
+            title={collapsed ? (isAdminOnStaffView ? '管理者画面へ移動' : 'スタッフ画面へ移動') : undefined}
           >
             <ArrowRightLeft className="h-4.5 w-4.5 shrink-0" />
-            {!collapsed && <span>スタッフ画面へ移動</span>}
+            {!collapsed && <span>{isAdminOnStaffView ? '管理者画面へ移動' : 'スタッフ画面へ移動'}</span>}
           </Link>
         </div>
       )}
