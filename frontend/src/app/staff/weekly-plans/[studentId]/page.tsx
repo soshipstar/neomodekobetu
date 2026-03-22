@@ -299,24 +299,25 @@ export default function WeeklyPlanStudentDetailPage() {
 
   // Populate form when entering edit mode
   const enterEditMode = useCallback(() => {
-    const planData = plan?.plan_data ?? {};
-    // Also check plan_content for legacy compatibility
-    const content = (plan?.plan_content ?? {}) as Record<string, unknown>;
+    const pc = (plan?.plan_content ?? {}) as Record<string, unknown>;
+    const pd = plan?.plan_data && Object.keys(plan.plan_data).length > 0
+      ? plan.plan_data
+      : ((pc.plan_data ?? {}) as Record<string, string>);
 
     setForm({
-      weekly_goal: plan?.weekly_goal ?? (content.weekly_goal as string) ?? '',
-      shared_goal: plan?.shared_goal ?? (content.shared_goal as string) ?? '',
-      must_do: plan?.must_do ?? (content.must_do as string) ?? '',
-      should_do: plan?.should_do ?? (content.should_do as string) ?? '',
-      want_to_do: plan?.want_to_do ?? (content.want_to_do as string) ?? '',
+      weekly_goal: plan?.weekly_goal ?? (pc.weekly_goal as string) ?? '',
+      shared_goal: plan?.shared_goal ?? (pc.shared_goal as string) ?? '',
+      must_do: plan?.must_do ?? (pc.must_do as string) ?? '',
+      should_do: plan?.should_do ?? (pc.should_do as string) ?? '',
+      want_to_do: plan?.want_to_do ?? (pc.want_to_do as string) ?? '',
       plan_data: {
-        day_0: planData.day_0 ?? '',
-        day_1: planData.day_1 ?? '',
-        day_2: planData.day_2 ?? '',
-        day_3: planData.day_3 ?? '',
-        day_4: planData.day_4 ?? '',
-        day_5: planData.day_5 ?? '',
-        day_6: planData.day_6 ?? '',
+        day_0: pd.day_0 ?? '',
+        day_1: pd.day_1 ?? '',
+        day_2: pd.day_2 ?? '',
+        day_3: pd.day_3 ?? '',
+        day_4: pd.day_4 ?? '',
+        day_5: pd.day_5 ?? '',
+        day_6: pd.day_6 ?? '',
       },
     });
     setIsEditMode(true);
@@ -334,14 +335,12 @@ export default function WeeklyPlanStudentDetailPage() {
       const payload = {
         week_start_date: weekStartStr,
         student_id: studentId,
-        plan_content: {
-          weekly_goal: form.weekly_goal,
-          shared_goal: form.shared_goal,
-          must_do: form.must_do,
-          should_do: form.should_do,
-          want_to_do: form.want_to_do,
-          plan_data: form.plan_data,
-        },
+        weekly_goal: form.weekly_goal || null,
+        shared_goal: form.shared_goal || null,
+        must_do: form.must_do || null,
+        should_do: form.should_do || null,
+        want_to_do: form.want_to_do || null,
+        plan_data: form.plan_data,
       };
 
       if (plan?.id) {
@@ -404,16 +403,15 @@ export default function WeeklyPlanStudentDetailPage() {
   const diffMs = weekStart.getTime() - currentWeekStart.getTime();
   const backWeekOffset = Math.round(diffMs / (7 * 24 * 60 * 60 * 1000));
 
-  // Resolve plan data for display
-  const planData = plan?.plan_data ?? {};
+  // Resolve plan data for display (独立カラム優先、plan_content にフォールバック)
   const planContent = (plan?.plan_content ?? {}) as Record<string, unknown>;
   const displayGoal = plan?.weekly_goal ?? (planContent.weekly_goal as string) ?? null;
   const displaySharedGoal = plan?.shared_goal ?? (planContent.shared_goal as string) ?? null;
   const displayMustDo = plan?.must_do ?? (planContent.must_do as string) ?? null;
   const displayShouldDo = plan?.should_do ?? (planContent.should_do as string) ?? null;
   const displayWantToDo = plan?.want_to_do ?? (planContent.want_to_do as string) ?? null;
-  const displayPlanData = Object.keys(planData).length > 0
-    ? planData
+  const displayPlanData = plan?.plan_data && Object.keys(plan.plan_data).length > 0
+    ? plan.plan_data
     : ((planContent.plan_data ?? {}) as Record<string, string>);
 
   const isLoading = loadingStudent || loadingPlan;

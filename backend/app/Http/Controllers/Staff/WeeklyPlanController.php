@@ -82,7 +82,13 @@ class WeeklyPlanController extends Controller
         $validated = $request->validate([
             'student_id'      => 'required|exists:students,id',
             'week_start_date' => 'required|date',
-            'plan_content'    => 'required|array',
+            'weekly_goal'     => 'nullable|string',
+            'shared_goal'     => 'nullable|string',
+            'must_do'         => 'nullable|string',
+            'should_do'       => 'nullable|string',
+            'want_to_do'      => 'nullable|string',
+            'plan_data'       => 'nullable|array',
+            'plan_content'    => 'nullable|array',
         ]);
 
         $plan = WeeklyPlan::create(array_merge($validated, [
