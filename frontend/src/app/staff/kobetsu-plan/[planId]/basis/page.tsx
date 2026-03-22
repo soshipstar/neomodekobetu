@@ -151,7 +151,7 @@ export default function PlanBasisPage() {
 
       {/* Navigation back link */}
       <div className="print:hidden">
-        <Link href={`/staff/kobetsu-plan/${planId}`}>
+        <Link href="/staff/kobetsu-plan">
           <Button variant="ghost" size="sm" leftIcon={<ChevronLeft className="h-4 w-4" />}>個別支援計画に戻る</Button>
         </Link>
       </div>
