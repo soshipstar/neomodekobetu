@@ -211,6 +211,7 @@ Route::prefix('staff')
         // --- 面談 ---
         Route::apiResource('meetings', App\Http\Controllers\Staff\MeetingController::class)
             ->except(['destroy']);
+        Route::post('/meetings/{meeting}/generate-kakehashi', [App\Http\Controllers\Staff\MeetingController::class, 'generateKakehashi']);
 
         // --- 出欠 ---
         Route::get('/attendance', [App\Http\Controllers\Staff\AttendanceController::class, 'index']);
