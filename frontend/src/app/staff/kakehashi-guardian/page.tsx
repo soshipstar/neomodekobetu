@@ -12,8 +12,6 @@ import {
   Download,
   Printer,
   Pencil,
-  History,
-  ChevronLeft,
   Eye,
   EyeOff,
   Heart,
@@ -56,7 +54,6 @@ interface GuardianEntry {
   is_hidden: boolean;
   created_at: string;
   updated_at: string;
-  // Relations
   guardian?: { id: number; full_name: string } | null;
 }
 
@@ -151,7 +148,7 @@ export default function KakehashiGuardianViewPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header with navigation tabs */}
+      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">保護者入力かけはし確認</h1>
         <p className="mt-1 text-sm text-[var(--neutral-foreground-3)]">保護者が入力したかけはしを確認</p>
@@ -240,140 +237,132 @@ export default function KakehashiGuardianViewPage() {
 
       {/* Guardian entry display */}
       {selectedPeriod && guardianEntry && (
-        <Card>
-          <CardBody>
-            {/* Meta info */}
-            <div className="mb-4 rounded-lg bg-[var(--neutral-background-3)] p-4 space-y-2 text-sm">
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-[var(--neutral-foreground-3)]" />
-                <span className="font-medium">生徒:</span> {selectedStudent?.student_name}
-              </div>
-              {guardianEntry.guardian && (
+        <>
+          {/* Meta info */}
+          <Card>
+            <CardBody>
+              <div className="rounded-lg bg-[var(--neutral-background-3)] p-4 space-y-2 text-sm">
                 <div className="flex items-center gap-2">
                   <User className="h-4 w-4 text-[var(--neutral-foreground-3)]" />
-                  <span className="font-medium">保護者:</span> {guardianEntry.guardian.full_name}
+                  <span className="font-medium">生徒:</span> {selectedStudent?.student_name}
                 </div>
-              )}
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-[var(--neutral-foreground-3)]" />
-                <span className="font-medium">対象期間:</span>
-                {format(new Date(selectedPeriod.start_date), 'yyyy年MM月dd日')} ～ {format(new Date(selectedPeriod.end_date), 'yyyy年MM月dd日')}
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-[var(--neutral-foreground-3)]" />
-                <span className="font-medium">提出期限:</span>
-                {format(new Date(selectedPeriod.submission_deadline), 'yyyy年MM月dd日')}
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-medium">状態:</span>
-                {guardianEntry.is_submitted ? (
-                  <Badge variant="success">
-                    提出済み
-                    {guardianEntry.submitted_at && ` （提出日時: ${format(new Date(guardianEntry.submitted_at), 'yyyy年MM月dd日 HH:mm')}）`}
-                  </Badge>
-                ) : (
-                  <Badge variant="warning">下書き</Badge>
+                {guardianEntry.guardian && (
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-[var(--neutral-foreground-3)]" />
+                    <span className="font-medium">保護者:</span> {guardianEntry.guardian.full_name}
+                  </div>
                 )}
-              </div>
-            </div>
-
-            {/* Action buttons */}
-            <div className="mb-6 flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                leftIcon={<Download className="h-4 w-4" />}
-                onClick={() => handlePdfDownload(selectedPeriod.id, selectedPeriod.period_name)}
-              >
-                PDF印刷
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                leftIcon={<Printer className="h-4 w-4" />}
-                onClick={handlePrint}
-              >
-                このページを印刷
-              </Button>
-            </div>
-
-            {/* Section: 本人の願い */}
-            <Section
-              icon={<Heart className="h-4 w-4" />}
-              title="本人の願い"
-              subtitle="お子様が望んでいること、なりたい姿"
-              color="var(--status-danger-fg)"
-            >
-              <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">
-                {nl(guardianEntry.student_wish) || '（未入力）'}
-              </p>
-            </Section>
-
-            {/* Section: 家庭での願い */}
-            <Section
-              icon={<Home className="h-4 w-4" />}
-              title="家庭での願い"
-              subtitle="家庭で気になっていること、取り組みたいこと"
-              color="var(--status-warning-fg)"
-            >
-              <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">
-                {nl(guardianEntry.home_challenges) || '（未入力）'}
-              </p>
-            </Section>
-
-            {/* Section: 目標設定 */}
-            <Section
-              icon={<Target className="h-4 w-4" />}
-              title="目標設定"
-              subtitle=""
-              color="var(--brand-80)"
-            >
-              <div className="space-y-3">
-                <div>
-                  <p className="text-xs font-semibold text-[var(--neutral-foreground-3)] mb-1">短期目標（6か月）</p>
-                  <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">
-                    {nl(guardianEntry.short_term_goal) || '（未入力）'}
-                  </p>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-[var(--neutral-foreground-3)]" />
+                  <span className="font-medium">対象期間:</span>
+                  {format(new Date(selectedPeriod.start_date), 'yyyy年MM月dd日')} ～ {format(new Date(selectedPeriod.end_date), 'yyyy年MM月dd日')}
                 </div>
-                <div>
-                  <p className="text-xs font-semibold text-[var(--neutral-foreground-3)] mb-1">長期目標（1年以上）</p>
-                  <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">
-                    {nl(guardianEntry.long_term_goal) || '（未入力）'}
-                  </p>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-[var(--neutral-foreground-3)]" />
+                  <span className="font-medium">提出期限:</span>
+                  {format(new Date(selectedPeriod.submission_deadline), 'yyyy年MM月dd日')}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">状態:</span>
+                  {guardianEntry.is_submitted ? (
+                    <Badge variant="success">
+                      提出済み
+                      {guardianEntry.submitted_at && ` （提出日時: ${format(new Date(guardianEntry.submitted_at), 'yyyy年MM月dd日 HH:mm')}）`}
+                    </Badge>
+                  ) : (
+                    <Badge variant="warning">下書き</Badge>
+                  )}
                 </div>
               </div>
-            </Section>
 
-            {/* Section: 五領域の課題 */}
-            <Section
-              icon={<Star className="h-4 w-4" />}
-              title="五領域の課題"
-              subtitle=""
-              color="var(--status-info-fg)"
-            >
-              <div className="space-y-3">
-                <DomainItem label="健康・生活" value={guardianEntry.domain_health_life} />
-                <DomainItem label="運動・感覚" value={guardianEntry.domain_motor_sensory} />
-                <DomainItem label="認知・行動" value={guardianEntry.domain_cognitive_behavior} />
-                <DomainItem label="言語・コミュニケーション" value={guardianEntry.domain_language_communication} />
-                <DomainItem label="人間関係・社会性" value={guardianEntry.domain_social_relations} />
+              {/* Action buttons */}
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<Download className="h-4 w-4" />}
+                  onClick={() => handlePdfDownload(selectedPeriod.id, selectedPeriod.period_name)}
+                >
+                  PDF印刷
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<Printer className="h-4 w-4" />}
+                  onClick={handlePrint}
+                >
+                  このページを印刷
+                </Button>
               </div>
-            </Section>
+            </CardBody>
+          </Card>
 
-            {/* Section: その他の課題 */}
-            <Section
-              icon={<Pin className="h-4 w-4" />}
-              title="その他の課題"
-              subtitle="その他、お伝えしたいこと"
-              color="var(--neutral-foreground-3)"
-            >
-              <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">
-                {nl(guardianEntry.other_challenges) || '（未入力）'}
-              </p>
-            </Section>
+          {/* Section: 本人の願い */}
+          <SectionCard
+            icon={<Heart className="h-4 w-4" />}
+            title="本人の願い"
+            subtitle="お子様が望んでいること、なりたい姿"
+            color="var(--status-danger-fg)"
+          >
+            <ViewBox text={guardianEntry.student_wish} />
+          </SectionCard>
 
-            {/* Hidden toggle */}
-            <div className="mt-6 border-t border-[var(--neutral-stroke-2)] pt-4">
+          {/* Section: 家庭での願い */}
+          <SectionCard
+            icon={<Home className="h-4 w-4" />}
+            title="家庭での願い"
+            subtitle="家庭で気になっていること、取り組みたいこと"
+            color="var(--status-warning-fg)"
+          >
+            <ViewBox text={guardianEntry.home_challenges} />
+          </SectionCard>
+
+          {/* Section: 目標設定 */}
+          <SectionCard
+            icon={<Target className="h-4 w-4" />}
+            title="目標設定"
+            color="var(--brand-80)"
+          >
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs font-semibold text-[var(--neutral-foreground-3)] mb-1">短期目標（6か月）</p>
+                <ViewBox text={guardianEntry.short_term_goal} />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-[var(--neutral-foreground-3)] mb-1">長期目標（1年以上）</p>
+                <ViewBox text={guardianEntry.long_term_goal} />
+              </div>
+            </div>
+          </SectionCard>
+
+          {/* Section: 五領域の課題 */}
+          <SectionCard
+            icon={<Star className="h-4 w-4" />}
+            title="五領域の課題"
+            color="var(--status-info-fg)"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <DomainItem label="健康・生活" value={guardianEntry.domain_health_life} />
+              <DomainItem label="運動・感覚" value={guardianEntry.domain_motor_sensory} />
+              <DomainItem label="認知・行動" value={guardianEntry.domain_cognitive_behavior} />
+              <DomainItem label="言語・コミュニケーション" value={guardianEntry.domain_language_communication} />
+              <DomainItem label="人間関係・社会性" value={guardianEntry.domain_social_relations} />
+            </div>
+          </SectionCard>
+
+          {/* Section: その他の課題 */}
+          <SectionCard
+            icon={<Pin className="h-4 w-4" />}
+            title="その他の課題"
+            subtitle="その他、お伝えしたいこと"
+            color="var(--neutral-foreground-3)"
+          >
+            <ViewBox text={guardianEntry.other_challenges} />
+          </SectionCard>
+
+          {/* Hidden toggle */}
+          <Card>
+            <CardBody>
               <button
                 className={`flex items-center gap-2 text-xs transition-colors ${
                   guardianEntry.is_hidden
@@ -400,19 +389,19 @@ export default function KakehashiGuardianViewPage() {
                   <><EyeOff className="h-4 w-4" /> この保護者用かけはしを非表示</>
                 )}
               </button>
-            </div>
-          </CardBody>
-        </Card>
+            </CardBody>
+          </Card>
+        </>
       )}
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Section component (matching old system's section style)
+// Section Card component
 // ---------------------------------------------------------------------------
 
-function Section({
+function SectionCard({
   icon,
   title,
   subtitle,
@@ -421,22 +410,38 @@ function Section({
 }: {
   icon: React.ReactNode;
   title: string;
-  subtitle: string;
+  subtitle?: string;
   color: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="mb-5">
-      <div className="flex items-center gap-2 mb-2">
-        <span style={{ color }}>{icon}</span>
-        <h3 className="text-sm font-bold text-[var(--neutral-foreground-1)]">{title}</h3>
-      </div>
-      {subtitle && (
-        <p className="text-xs text-[var(--neutral-foreground-3)] mb-2 ml-6">{subtitle}</p>
-      )}
-      <div className="ml-6 rounded-lg border border-[var(--neutral-stroke-2)] p-3 bg-[var(--neutral-background-1)]">
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          <div className="flex items-center gap-2">
+            <span style={{ color }}>{icon}</span>
+            <span>{title}</span>
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardBody>
+        {subtitle && (
+          <p className="text-xs text-[var(--neutral-foreground-3)] mb-3">{subtitle}</p>
+        )}
         {children}
-      </div>
+      </CardBody>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// View Box
+// ---------------------------------------------------------------------------
+
+function ViewBox({ text }: { text: string | null }) {
+  return (
+    <div className="rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] p-3 text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap min-h-[60px]">
+      {nl(text) || '（未入力）'}
     </div>
   );
 }
@@ -448,10 +453,8 @@ function Section({
 function DomainItem({ label, value }: { label: string; value: string | null }) {
   return (
     <div>
-      <p className="text-xs font-semibold text-[var(--neutral-foreground-3)]">{label}</p>
-      <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap mt-0.5">
-        {nl(value) || '（未入力）'}
-      </p>
+      <p className="text-xs font-semibold text-[var(--neutral-foreground-3)] mb-1">{label}</p>
+      <ViewBox text={value} />
     </div>
   );
 }
