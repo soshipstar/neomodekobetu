@@ -52,7 +52,7 @@ const STATUS_MAP: Record<string, { label: string; variant: 'success' | 'danger' 
   cancelled: { label: 'キャンセル', variant: 'danger' },
 };
 
-const emptyForm = { purpose: '', purpose_detail: '', meeting_notes: '', candidate_dates: [''], student_id: '', guardian_id: '' };
+const emptyForm = { purpose: '', purpose_detail: '', meeting_notes: '', meeting_guidance: '', candidate_dates: [''], student_id: '', guardian_id: '', confirmed_date: '', create_mode: 'candidate' as 'candidate' | 'direct' };
 
 function fmtDate(d: string) {
   try { return format(new Date(d), 'yyyy年M月d日(E) HH:mm', { locale: ja }); } catch { return d; }
@@ -68,6 +68,7 @@ export default function MeetingsPage() {
   const [counterDates, setCounterDates] = useState<string[]>(['']);
   const [counterMessage, setCounterMessage] = useState('');
   const [showCounterForm, setShowCounterForm] = useState(false);
+  const [meetingNotesEdit, setMeetingNotesEdit] = useState('');
 
   useEffect(() => {
     if (searchParams.get('action') === 'create') {
@@ -101,10 +102,21 @@ export default function MeetingsPage() {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      await api.post('/api/staff/meetings', {
-        ...form, student_id: Number(form.student_id), guardian_id: Number(form.guardian_id),
-        candidate_dates: form.candidate_dates.filter((d) => d),
-      });
+      const payload: Record<string, unknown> = {
+        student_id: Number(form.student_id),
+        guardian_id: Number(form.guardian_id),
+        purpose: form.purpose,
+        purpose_detail: form.purpose_detail || null,
+        meeting_notes: form.meeting_notes || null,
+        meeting_guidance: form.meeting_guidance || null,
+      };
+      if (form.create_mode === 'direct' && form.confirmed_date) {
+        payload.confirmed_date = form.confirmed_date;
+        payload.candidate_dates = [];
+      } else {
+        payload.candidate_dates = form.candidate_dates.filter((d) => d);
+      }
+      await api.post('/api/staff/meetings', payload);
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['staff', 'meetings'] }); setShowCreate(false); setForm(emptyForm); toast.success('面談予約を送信しました'); },
     onError: () => toast.error('作成に失敗しました'),
@@ -143,6 +155,11 @@ export default function MeetingsPage() {
     if (!confirm('この面談予約をキャンセルしますか？')) return;
     updateMutation.mutate({ action: 'cancel' });
   };
+
+  // Sync meetingNotesEdit when detail meeting changes
+  useEffect(() => {
+    if (detailMeeting) setMeetingNotesEdit(detailMeeting.meeting_notes || '');
+  }, [detailMeeting?.id, detailMeeting?.meeting_notes]);
 
   // Open detail from URL param
   useEffect(() => {
@@ -255,18 +272,47 @@ export default function MeetingsPage() {
             <textarea value={form.meeting_notes} onChange={(e) => setForm({ ...form, meeting_notes: e.target.value })} className={textareaCls} rows={2} placeholder="持ち物や注意事項があれば記入" />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">候補日 *</label>
-            {form.candidate_dates.map((d, i) => (
-              <div key={i} className="mb-2 flex items-center gap-2">
-                <input type="datetime-local" value={d} onChange={(e) => { const dates = [...form.candidate_dates]; dates[i] = e.target.value; setForm({ ...form, candidate_dates: dates }); }} className={inputCls} />
-                {form.candidate_dates.length > 1 && <Button variant="ghost" size="sm" onClick={() => setForm({ ...form, candidate_dates: form.candidate_dates.filter((_, idx) => idx !== i) })}>削除</Button>}
-              </div>
-            ))}
-            {form.candidate_dates.length < 3 && <Button variant="ghost" size="sm" onClick={() => setForm({ ...form, candidate_dates: [...form.candidate_dates, ''] })}>候補日を追加</Button>}
+            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">保護者へのご案内</label>
+            <textarea value={form.meeting_guidance} onChange={(e) => setForm({ ...form, meeting_guidance: e.target.value })} className={textareaCls} rows={2} placeholder="保護者に伝えるご案内があれば記入" />
           </div>
+          {/* 作成モード選択 */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-[var(--neutral-foreground-2)]">日程設定方法 *</label>
+            <div className="flex gap-3">
+              <label className="flex items-center gap-1.5 text-sm cursor-pointer">
+                <input type="radio" checked={form.create_mode === 'candidate'} onChange={() => setForm({ ...form, create_mode: 'candidate' })} className="text-purple-600" />
+                候補日を提示して保護者に選んでもらう
+              </label>
+              <label className="flex items-center gap-1.5 text-sm cursor-pointer">
+                <input type="radio" checked={form.create_mode === 'direct'} onChange={() => setForm({ ...form, create_mode: 'direct' })} className="text-purple-600" />
+                日程を確定して通知する
+              </label>
+            </div>
+          </div>
+          {form.create_mode === 'candidate' ? (
+            <div>
+              <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">候補日 *</label>
+              {form.candidate_dates.map((d, i) => (
+                <div key={i} className="mb-2 flex items-center gap-2">
+                  <input type="datetime-local" value={d} onChange={(e) => { const dates = [...form.candidate_dates]; dates[i] = e.target.value; setForm({ ...form, candidate_dates: dates }); }} className={inputCls} />
+                  {form.candidate_dates.length > 1 && <Button variant="ghost" size="sm" onClick={() => setForm({ ...form, candidate_dates: form.candidate_dates.filter((_, idx) => idx !== i) })}>削除</Button>}
+                </div>
+              ))}
+              {form.candidate_dates.length < 3 && <Button variant="ghost" size="sm" onClick={() => setForm({ ...form, candidate_dates: [...form.candidate_dates, ''] })}>候補日を追加</Button>}
+            </div>
+          ) : (
+            <div>
+              <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">面談日時 *</label>
+              <input type="datetime-local" value={form.confirmed_date} onChange={(e) => setForm({ ...form, confirmed_date: e.target.value })} className={inputCls + ' w-full'} />
+              <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">確定した日時で保護者にチャット通知されます</p>
+            </div>
+          )}
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={closeCreate}>キャンセル</Button>
-            <Button onClick={() => createMutation.mutate()} isLoading={createMutation.isPending} disabled={!form.purpose || !form.student_id || !form.guardian_id || !form.candidate_dates[0]}>送信</Button>
+            <Button onClick={() => createMutation.mutate()} isLoading={createMutation.isPending}
+              disabled={!form.purpose || !form.student_id || !form.guardian_id || (form.create_mode === 'candidate' ? !form.candidate_dates[0] : !form.confirmed_date)}>
+              {form.create_mode === 'direct' ? '確定して通知' : '候補日を送信'}
+            </Button>
           </div>
         </div>
       </Modal>
@@ -371,6 +417,49 @@ export default function MeetingsPage() {
                   <div className="flex justify-end gap-2">
                     <Button variant="ghost" size="sm" onClick={() => setShowCounterForm(false)}>やめる</Button>
                     <Button size="sm" onClick={handleCounter} isLoading={updateMutation.isPending} disabled={!counterDates[0]}>提案を送信</Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Confirmed meeting actions: Notify & Complete */}
+              {m.status === 'confirmed' && (
+                <div className="space-y-4">
+                  {/* Chat notify button */}
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" size="sm" leftIcon={<Calendar className="h-4 w-4" />}
+                      onClick={() => { if (confirm('保護者にチャットで面談日時を通知しますか？')) updateMutation.mutate({ action: 'notify' }); }}
+                      isLoading={updateMutation.isPending}>
+                      チャットで通知を送信
+                    </Button>
+                    {!m.is_completed && (
+                      <Button variant="outline" size="sm" leftIcon={<Check className="h-4 w-4" />}
+                        onClick={() => { if (confirm('この面談を完了にしますか？')) updateMutation.mutate({ action: 'complete', meeting_notes: meetingNotesEdit }); }}
+                        isLoading={updateMutation.isPending}>
+                        面談完了
+                      </Button>
+                    )}
+                    {m.is_completed && (
+                      <Badge variant="success">完了済み</Badge>
+                    )}
+                  </div>
+
+                  {/* Meeting notes edit */}
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">面談記録</label>
+                    <textarea
+                      value={meetingNotesEdit}
+                      onChange={(e) => setMeetingNotesEdit(e.target.value)}
+                      className={textareaCls}
+                      rows={4}
+                      placeholder="面談の内容・結果を記録..."
+                    />
+                    <div className="mt-2 flex justify-end">
+                      <Button size="sm" variant="outline"
+                        onClick={() => updateMutation.mutate({ meeting_notes: meetingNotesEdit || null })}
+                        isLoading={updateMutation.isPending}>
+                        記録を保存
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}

@@ -59,15 +59,19 @@ class MeetingController extends Controller
             'purpose'                 => 'required|string|max:255',
             'purpose_detail'          => 'nullable|string',
             'meeting_notes'           => 'nullable|string',
+            'meeting_guidance'        => 'nullable|string',
             'related_plan_id'         => 'nullable|exists:individual_support_plans,id',
             'related_monitoring_id'   => 'nullable|exists:monitoring_records,id',
-            'candidate_dates'         => 'required|array|min:1|max:3',
-            'candidate_dates.*'       => 'required|date',
+            'candidate_dates'         => 'nullable|array|max:3',
+            'candidate_dates.*'       => 'nullable|date',
+            'confirmed_date'          => 'nullable|date',
         ]);
 
         $user = $request->user();
 
         $meeting = DB::transaction(function () use ($user, $validated) {
+            $isDirectConfirm = !empty($validated['confirmed_date']);
+
             $meeting = MeetingRequest::create([
                 'classroom_id'            => $user->classroom_id,
                 'student_id'              => $validated['student_id'],
@@ -76,10 +80,14 @@ class MeetingController extends Controller
                 'purpose'                 => $validated['purpose'],
                 'purpose_detail'          => $validated['purpose_detail'] ?? null,
                 'meeting_notes'           => $validated['meeting_notes'] ?? null,
+                'meeting_guidance'        => $validated['meeting_guidance'] ?? null,
                 'related_plan_id'         => $validated['related_plan_id'] ?? null,
                 'related_monitoring_id'   => $validated['related_monitoring_id'] ?? null,
-                'candidate_dates'         => $validated['candidate_dates'],
-                'status'                  => 'pending',
+                'candidate_dates'         => $validated['candidate_dates'] ?? [],
+                'confirmed_date'          => $isDirectConfirm ? $validated['confirmed_date'] : null,
+                'confirmed_by'            => $isDirectConfirm ? 'staff' : null,
+                'confirmed_at'            => $isDirectConfirm ? now() : null,
+                'status'                  => $isDirectConfirm ? 'confirmed' : 'pending',
             ]);
 
             // チャットルームを取得または作成
@@ -91,31 +99,52 @@ class MeetingController extends Controller
                 ['last_message_at' => now()]
             );
 
-            // 候補日時のフォーマット
             $dateFormat = 'Y年n月j日 H:i';
-            $candidateDates = $validated['candidate_dates'];
 
-            $messageText = "【面談予約のご案内】\n\n";
-            $messageText .= "面談目的：{$validated['purpose']}\n";
-            if (! empty($validated['purpose_detail'])) {
-                $messageText .= "詳細：{$validated['purpose_detail']}\n";
-            }
-            $messageText .= "\n以下の日程から、ご都合の良い日時をお選びください。\n\n";
-            $circleNumbers = ['①', '②', '③'];
-            foreach ($candidateDates as $i => $date) {
-                $formatted = Carbon::parse($date)->format($dateFormat);
-                $messageText .= ($circleNumbers[$i] ?? ($i + 1) . '.') . " {$formatted}\n";
-            }
-            $messageText .= "\n下記リンクから回答してください。\nご都合が合わない場合は、別の希望日時を提案いただけます。";
+            if ($isDirectConfirm) {
+                // 直接確定 → 確定メッセージ
+                $dateStr = Carbon::parse($validated['confirmed_date'])->format($dateFormat);
+                $messageText = "【面談日時が確定しました】\n\n"
+                    . "面談目的：{$validated['purpose']}\n"
+                    . "確定日時：{$dateStr}\n";
+                if (! empty($validated['meeting_guidance'])) {
+                    $messageText .= "ご案内：{$validated['meeting_guidance']}\n";
+                }
+                $messageText .= "\n当日はよろしくお願いいたします。";
 
-            ChatMessage::create([
-                'room_id'            => $room->id,
-                'sender_type'        => 'staff',
-                'sender_id'          => $user->id,
-                'message'            => $messageText,
-                'message_type'       => 'meeting_request',
-                'meeting_request_id' => $meeting->id,
-            ]);
+                ChatMessage::create([
+                    'room_id'            => $room->id,
+                    'sender_type'        => 'staff',
+                    'sender_id'          => $user->id,
+                    'message'            => $messageText,
+                    'message_type'       => 'meeting_confirmed',
+                    'meeting_request_id' => $meeting->id,
+                ]);
+            } else {
+                // 候補日提示 → 面談予約メッセージ
+                $candidateDates = $validated['candidate_dates'] ?? [];
+                $messageText = "【面談予約のご案内】\n\n";
+                $messageText .= "面談目的：{$validated['purpose']}\n";
+                if (! empty($validated['purpose_detail'])) {
+                    $messageText .= "詳細：{$validated['purpose_detail']}\n";
+                }
+                $messageText .= "\n以下の日程から、ご都合の良い日時をお選びください。\n\n";
+                $circleNumbers = ['①', '②', '③'];
+                foreach ($candidateDates as $i => $date) {
+                    $formatted = Carbon::parse($date)->format($dateFormat);
+                    $messageText .= ($circleNumbers[$i] ?? ($i + 1) . '.') . " {$formatted}\n";
+                }
+                $messageText .= "\n下記リンクから回答してください。\nご都合が合わない場合は、別の希望日時を提案いただけます。";
+
+                ChatMessage::create([
+                    'room_id'            => $room->id,
+                    'sender_type'        => 'staff',
+                    'sender_id'          => $user->id,
+                    'message'            => $messageText,
+                    'message_type'       => 'meeting_request',
+                    'meeting_request_id' => $meeting->id,
+                ]);
+            }
 
             $room->update(['last_message_at' => now()]);
 
@@ -148,7 +177,7 @@ class MeetingController extends Controller
     public function update(Request $request, MeetingRequest $meeting): JsonResponse
     {
         $validated = $request->validate([
-            'action'            => 'nullable|string|in:confirm,counter,cancel',
+            'action'            => 'nullable|string|in:confirm,counter,cancel,complete,notify',
             'confirmed_date'    => 'nullable|date',
             'status'            => 'nullable|string|in:pending,confirmed,cancelled,guardian_counter,staff_counter',
             'purpose_detail'    => 'nullable|string',
@@ -222,6 +251,36 @@ class MeetingController extends Controller
                 }
             } elseif ($action === 'cancel') {
                 $meeting->update(['status' => 'cancelled']);
+            } elseif ($action === 'complete') {
+                $meeting->update([
+                    'is_completed' => true,
+                    'completed_at' => now(),
+                    'meeting_notes' => $validated['meeting_notes'] ?? $meeting->meeting_notes,
+                ]);
+            } elseif ($action === 'notify') {
+                // 確定済み面談を保護者にチャット通知
+                $room = ChatRoom::where('student_id', $meeting->student_id)
+                    ->where('guardian_id', $meeting->guardian_id)->first();
+                if ($room && $meeting->confirmed_date) {
+                    $dateStr = Carbon::parse($meeting->confirmed_date)->format($dateFormat);
+                    $messageText = "【面談日時のお知らせ】\n\n"
+                        . "面談目的：{$meeting->purpose}\n"
+                        . "日時：{$dateStr}\n";
+                    if ($meeting->meeting_guidance) {
+                        $messageText .= "ご案内：{$meeting->meeting_guidance}\n";
+                    }
+                    $messageText .= "\n当日はよろしくお願いいたします。";
+
+                    ChatMessage::create([
+                        'room_id'            => $room->id,
+                        'sender_type'        => 'staff',
+                        'sender_id'          => $user->id,
+                        'message'            => $messageText,
+                        'message_type'       => 'meeting_confirmed',
+                        'meeting_request_id' => $meeting->id,
+                    ]);
+                    $room->update(['last_message_at' => now()]);
+                }
             } else {
                 // 通常更新（メモ等）
                 if (isset($validated['confirmed_date'])) {
