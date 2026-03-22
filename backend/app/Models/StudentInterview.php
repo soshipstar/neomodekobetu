@@ -21,6 +21,7 @@ class StudentInterview extends Model
         'check_troubles',
         'check_troubles_notes',
         'other_notes',
+        'created_by',
     ];
 
     protected function casts(): array

@@ -90,6 +90,7 @@ class StudentInterviewController extends Controller
             'student_id'     => $student->id,
             'classroom_id'   => $student->classroom_id,
             'interviewer_id' => $request->user()->id,
+            'created_by'     => $request->user()->id,
         ]));
 
         return response()->json([
