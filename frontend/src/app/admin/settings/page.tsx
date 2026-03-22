@@ -38,16 +38,20 @@ export default function AdminSettingsPage() {
     queryKey: ['admin', 'settings'],
     queryFn: async () => {
       const res = await api.get<{ data: SystemSetting[] }>('/api/admin/settings');
-      return res.data.data;
+      const data = res.data.data;
+      return Array.isArray(data) ? data : [];
     },
+    retry: false,
   });
 
   const { data: classroomSettings = [], isLoading: loadingClassrooms } = useQuery({
     queryKey: ['admin', 'classroom-settings'],
     queryFn: async () => {
       const res = await api.get<{ data: ClassroomSettings[] }>('/api/admin/classroom-settings');
-      return res.data.data;
+      const data = res.data.data;
+      return Array.isArray(data) ? data : [];
     },
+    retry: false,
   });
 
   useEffect(() => {

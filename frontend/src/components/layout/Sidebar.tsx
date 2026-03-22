@@ -56,6 +56,7 @@ import {
   GraduationCap,
   MailWarning,
   Bell,
+  ArrowRightLeft,
 } from 'lucide-react';
 import type { UserType } from '@/types/user';
 import type { LucideIcon } from 'lucide-react';
@@ -370,6 +371,24 @@ function SidebarContent({
           })}
         </ul>
       </nav>
+
+      {/* Switch to staff view (non-master admin only) */}
+      {user.user_type === 'admin' && !user.is_master && (
+        <div className="border-t border-[var(--neutral-stroke-2)] p-3">
+          <Link
+            href="/staff/dashboard"
+            onClick={onClose}
+            className={cn(
+              'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-[var(--neutral-foreground-2)] hover:bg-[var(--neutral-background-3)] hover:text-[var(--neutral-foreground-1)] transition-colors',
+              collapsed && 'justify-center px-2'
+            )}
+            title={collapsed ? 'スタッフ画面へ移動' : undefined}
+          >
+            <ArrowRightLeft className="h-4.5 w-4.5 shrink-0" />
+            {!collapsed && <span>スタッフ画面へ移動</span>}
+          </Link>
+        </div>
+      )}
 
       {/* Collapse toggle (desktop only) */}
       {onToggle && (

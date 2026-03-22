@@ -10,31 +10,44 @@ import {
   type HelpItem,
 } from '@/lib/helpContent';
 import type { UserType } from '@/types/user';
+import {
+  PenLine,
+  ClipboardList,
+  Handshake,
+  BarChart3,
+  Users,
+  MessageCircle,
+  Settings,
+  Home,
+  BookOpen,
+  Newspaper,
+  UserCircle,
+  HelpCircle,
+  CalendarDays,
+  CheckSquare,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 type ViewState =
   | { type: 'categories' }
   | { type: 'items'; categoryId: string }
   | { type: 'answer'; categoryId: string; itemIndex: number };
 
-/**
- * Material Symbols icon name to inline SVG fallback
- * Using simple text labels since we may not have the icon font loaded
- */
-const ICON_MAP: Record<string, string> = {
-  edit_note: 'edit_note',
-  assignment: 'assignment',
-  handshake: 'handshake',
-  monitoring: 'monitoring',
-  group: 'group',
-  chat: 'chat',
-  settings: 'settings',
-  home: 'home',
-  library_books: 'library_books',
-  newspaper: 'newspaper',
-  person: 'person',
-  help: 'help',
-  calendar_today: 'calendar_today',
-  task: 'task',
+const ICON_MAP: Record<string, LucideIcon> = {
+  edit_note: PenLine,
+  assignment: ClipboardList,
+  handshake: Handshake,
+  monitoring: BarChart3,
+  group: Users,
+  chat: MessageCircle,
+  settings: Settings,
+  home: Home,
+  library_books: BookOpen,
+  newspaper: Newspaper,
+  person: UserCircle,
+  help: HelpCircle,
+  calendar_today: CalendarDays,
+  task: CheckSquare,
 };
 
 export function HelpButton() {
@@ -453,20 +466,9 @@ export function HelpButton() {
   );
 }
 
-/**
- * Simple material icon component using the Material Symbols font class
- * Falls back to the icon name text if the font isn't loaded
- */
 function MaterialIcon({ name }: { name: string }) {
-  const displayName = ICON_MAP[name] || name;
-  return (
-    <span
-      className="material-symbols-outlined text-[20px] leading-none"
-      style={{ fontFamily: "'Material Symbols Outlined', sans-serif" }}
-    >
-      {displayName}
-    </span>
-  );
+  const Icon = ICON_MAP[name] || HelpCircle;
+  return <Icon className="h-5 w-5" />;
 }
 
 export default HelpButton;

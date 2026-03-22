@@ -20,12 +20,21 @@ class EventController extends Controller
             $query->where('classroom_id', $request->classroom_id);
         }
 
-        if ($request->filled('month') && $request->filled('year')) {
-            $query->whereMonth('event_date', $request->month)
-                  ->whereYear('event_date', $request->year);
+        // month パラメータは 'YYYY-MM' 形式を受け付ける
+        if ($request->filled('month')) {
+            $parts = explode('-', $request->month);
+            if (count($parts) === 2) {
+                $query->whereYear('event_date', $parts[0])
+                      ->whereMonth('event_date', $parts[1]);
+            }
+        } elseif ($request->filled('year')) {
+            $query->whereYear('event_date', $request->year);
+            if ($request->filled('month_num')) {
+                $query->whereMonth('event_date', $request->month_num);
+            }
         }
 
-        $events = $query->orderBy('event_date')->paginate($request->input('per_page', 50));
+        $events = $query->orderBy('event_date')->get();
 
         return response()->json([
             'success' => true,

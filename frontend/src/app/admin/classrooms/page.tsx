@@ -16,8 +16,10 @@ import { SkeletonTable } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { Plus, Building2 } from 'lucide-react';
 import type { Classroom } from '@/types/user';
+import { useMasterGuard } from '@/hooks/useMasterGuard';
 
 export default function ClassroomsPage() {
+  const { isMaster, isReady } = useMasterGuard();
   const queryClient = useQueryClient();
   const toast = useToast();
   const [showCreate, setShowCreate] = useState(false);
@@ -71,6 +73,8 @@ export default function ClassroomsPage() {
       ),
     },
   ];
+
+  if (!isReady || !isMaster) return null;
 
   return (
     <div className="space-y-6">

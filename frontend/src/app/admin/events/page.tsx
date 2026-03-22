@@ -17,17 +17,25 @@ import { Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Calendar, List } from 
 
 interface AdminEvent {
   id: number;
-  title: string;
-  description: string;
-  date: string;
-  start_time: string | null;
-  end_time: string | null;
-  location: string | null;
+  event_name: string;
+  event_description: string | null;
+  event_date: string;
+  event_color: string;
+  target_audience: string;
+  staff_comment: string | null;
+  guardian_message: string | null;
   classroom_id: number | null;
-  classroom_name: string | null;
-  is_published: boolean;
+  classroom?: { id: number; classroom_name: string } | null;
   created_at: string;
 }
+
+const TARGET_LABELS: Record<string, string> = {
+  all: '全員',
+  elementary: '小学生',
+  junior_high_school: '中学生',
+  guardian: '保護者',
+  other: 'その他',
+};
 
 export default function AdminEventsPage() {
   const queryClient = useQueryClient();
@@ -36,7 +44,11 @@ export default function AdminEventsPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<AdminEvent | null>(null);
-  const [form, setForm] = useState({ title: '', description: '', date: '', start_time: '', end_time: '', location: '', classroom_id: '', is_published: true });
+  const [form, setForm] = useState({
+    event_name: '', event_description: '', event_date: '',
+    target_audience: 'all', event_color: '#28a745',
+    staff_comment: '', guardian_message: '', classroom_id: '',
+  });
 
   const monthStr = format(currentMonth, 'yyyy-MM');
 
@@ -44,14 +56,19 @@ export default function AdminEventsPage() {
     queryKey: ['admin', 'events', monthStr],
     queryFn: async () => {
       const res = await api.get<{ data: AdminEvent[] }>('/api/admin/events', { params: { month: monthStr } });
-      return res.data.data;
+      const data = res.data.data;
+      return Array.isArray(data) ? data : [];
     },
   });
 
   const saveMutation = useMutation({
     mutationFn: async (data: typeof form) => {
-      if (editingEvent) return api.put(`/api/admin/events/${editingEvent.id}`, data);
-      return api.post('/api/admin/events', data);
+      const payload = {
+        ...data,
+        classroom_id: data.classroom_id ? Number(data.classroom_id) : null,
+      };
+      if (editingEvent) return api.put(`/api/admin/events/${editingEvent.id}`, payload);
+      return api.post('/api/admin/events', payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'events'] });
@@ -70,17 +87,35 @@ export default function AdminEventsPage() {
     onError: () => toast.error('削除に失敗しました'),
   });
 
-  const closeModal = () => { setModalOpen(false); setEditingEvent(null); setForm({ title: '', description: '', date: '', start_time: '', end_time: '', location: '', classroom_id: '', is_published: true }); };
+  const emptyForm = {
+    event_name: '', event_description: '', event_date: '',
+    target_audience: 'all', event_color: '#28a745',
+    staff_comment: '', guardian_message: '', classroom_id: '',
+  };
+
+  const closeModal = () => { setModalOpen(false); setEditingEvent(null); setForm(emptyForm); };
 
   const openEdit = (event: AdminEvent) => {
     setEditingEvent(event);
-    setForm({ title: event.title, description: event.description, date: event.date, start_time: event.start_time || '', end_time: event.end_time || '', location: event.location || '', classroom_id: event.classroom_id?.toString() || '', is_published: event.is_published });
+    setForm({
+      event_name: event.event_name,
+      event_description: event.event_description || '',
+      event_date: typeof event.event_date === 'string' ? event.event_date.slice(0, 10) : '',
+      target_audience: event.target_audience || 'all',
+      event_color: event.event_color || '#28a745',
+      staff_comment: event.staff_comment || '',
+      guardian_message: event.guardian_message || '',
+      classroom_id: event.classroom_id?.toString() || '',
+    });
     setModalOpen(true);
   };
 
   const eventsByDate = useMemo(() => {
     const map: Record<string, AdminEvent[]> = {};
-    events.forEach((e) => { if (!map[e.date]) map[e.date] = []; map[e.date].push(e); });
+    events.forEach((e) => {
+      const dateStr = typeof e.event_date === 'string' ? e.event_date.slice(0, 10) : '';
+      if (dateStr) { if (!map[dateStr]) map[dateStr] = []; map[dateStr].push(e); }
+    });
     return map;
   }, [events]);
 
@@ -91,10 +126,11 @@ export default function AdminEventsPage() {
   }, [currentMonth]);
 
   const columns: Column<AdminEvent>[] = [
-    { key: 'title', label: 'イベント名', render: (e) => <span className="font-medium">{e.title}</span> },
-    { key: 'date', label: '日付', render: (e) => format(new Date(e.date), 'yyyy/MM/dd(E)', { locale: ja }) },
-    { key: 'classroom_name', label: '事業所', render: (e) => e.classroom_name || '全体' },
-    { key: 'is_published', label: '公開', render: (e) => <Badge variant={e.is_published ? 'success' : 'default'}>{e.is_published ? '公開' : '下書き'}</Badge> },
+    { key: 'event_name', label: 'イベント名', render: (e) => <span className="font-medium">{e.event_name}</span> },
+    { key: 'event_date', label: '日付', render: (e) => format(new Date(e.event_date), 'yyyy/MM/dd(E)', { locale: ja }) },
+    { key: 'target_audience', label: '対象者', render: (e) => <Badge variant="default">{TARGET_LABELS[e.target_audience] || e.target_audience}</Badge> },
+    { key: 'event_color', label: '色', render: (e) => <div className="h-5 w-5 rounded" style={{ backgroundColor: e.event_color }} /> },
+    { key: 'classroom', label: '事業所', render: (e) => e.classroom?.classroom_name || '全体' },
     {
       key: 'actions', label: '操作', render: (e) => (
         <div className="flex gap-1">
@@ -114,7 +150,7 @@ export default function AdminEventsPage() {
             <button onClick={() => setViewMode('list')} className={`px-3 py-1.5 text-sm rounded-l-lg ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-gray-600'}`}><List className="h-4 w-4" /></button>
             <button onClick={() => setViewMode('calendar')} className={`px-3 py-1.5 text-sm rounded-r-lg ${viewMode === 'calendar' ? 'bg-blue-600 text-white' : 'text-gray-600'}`}><Calendar className="h-4 w-4" /></button>
           </div>
-          <Button onClick={() => { setEditingEvent(null); setModalOpen(true); }} leftIcon={<Plus className="h-4 w-4" />}>作成</Button>
+          <Button onClick={() => { setEditingEvent(null); setForm(emptyForm); setModalOpen(true); }} leftIcon={<Plus className="h-4 w-4" />}>作成</Button>
         </div>
       </div>
 
@@ -125,7 +161,7 @@ export default function AdminEventsPage() {
       </div>
 
       {viewMode === 'list' ? (
-        isLoading ? <SkeletonTable rows={5} cols={5} /> : <Table columns={columns} data={events} keyExtractor={(e) => e.id} emptyMessage="イベントがありません" />
+        isLoading ? <SkeletonTable rows={5} cols={6} /> : <Table columns={columns} data={events} keyExtractor={(e) => e.id} emptyMessage="イベントがありません" />
       ) : (
         <Card>
           {isLoading ? <SkeletonTable rows={5} cols={7} /> : (
@@ -139,7 +175,7 @@ export default function AdminEventsPage() {
                   <div key={dateStr} className="bg-white p-2 min-h-[80px]">
                     <span className={`text-sm ${isSameDay(day, new Date()) ? 'font-bold text-blue-600' : 'text-gray-700'}`}>{format(day, 'd')}</span>
                     {dayEvents.map((ev) => (
-                      <div key={ev.id} onClick={() => openEdit(ev)} className="mt-1 truncate rounded bg-green-100 px-1 py-0.5 text-xs text-green-700 cursor-pointer hover:bg-green-200">{ev.title}</div>
+                      <div key={ev.id} onClick={() => openEdit(ev)} className="mt-1 truncate rounded px-1 py-0.5 text-xs cursor-pointer hover:opacity-80" style={{ backgroundColor: ev.event_color + '33', color: ev.event_color }}>{ev.event_name}</div>
                     ))}
                   </div>
                 );
@@ -151,15 +187,36 @@ export default function AdminEventsPage() {
 
       <Modal isOpen={modalOpen} onClose={closeModal} title={editingEvent ? 'イベント編集' : 'イベント作成'} size="lg">
         <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(form); }} className="space-y-4">
-          <Input label="イベント名" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
-          <div><label className="mb-1 block text-sm font-medium text-gray-700">説明</label><textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" rows={3} /></div>
-          <Input label="日付" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
-          <div className="grid grid-cols-2 gap-4">
-            <Input label="開始時間" type="time" value={form.start_time} onChange={(e) => setForm({ ...form, start_time: e.target.value })} />
-            <Input label="終了時間" type="time" value={form.end_time} onChange={(e) => setForm({ ...form, end_time: e.target.value })} />
+          <Input label="イベント名 *" value={form.event_name} onChange={(e) => setForm({ ...form, event_name: e.target.value })} required />
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">説明</label>
+            <textarea value={form.event_description} onChange={(e) => setForm({ ...form, event_description: e.target.value })} className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" rows={3} />
           </div>
-          <Input label="場所" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
-          <label className="flex items-center gap-2"><input type="checkbox" checked={form.is_published} onChange={(e) => setForm({ ...form, is_published: e.target.checked })} className="rounded border-gray-300" /><span className="text-sm text-gray-700">公開する</span></label>
+          <Input label="日付 *" type="date" value={form.event_date} onChange={(e) => setForm({ ...form, event_date: e.target.value })} required />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">対象者</label>
+              <select value={form.target_audience} onChange={(e) => setForm({ ...form, target_audience: e.target.value })} className="block w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                <option value="all">全員</option>
+                <option value="elementary">小学生</option>
+                <option value="junior_high_school">中学生</option>
+                <option value="guardian">保護者</option>
+                <option value="other">その他</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">カレンダー色</label>
+              <input type="color" value={form.event_color} onChange={(e) => setForm({ ...form, event_color: e.target.value })} className="h-9 w-full rounded-md border border-gray-300 p-1" />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">スタッフ向けコメント</label>
+            <textarea value={form.staff_comment} onChange={(e) => setForm({ ...form, staff_comment: e.target.value })} className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" rows={2} />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">保護者・生徒連絡用メッセージ</label>
+            <textarea value={form.guardian_message} onChange={(e) => setForm({ ...form, guardian_message: e.target.value })} className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" rows={2} />
+          </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="secondary" type="button" onClick={closeModal}>キャンセル</Button>
             <Button type="submit" isLoading={saveMutation.isPending}>保存</Button>

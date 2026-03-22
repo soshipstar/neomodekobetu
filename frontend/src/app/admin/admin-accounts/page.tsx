@@ -13,6 +13,7 @@ import { useToast } from '@/components/ui/Toast';
 import { Search, Plus, Pencil, Trash2, ArrowRightLeft } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { usePagination } from '@/hooks/usePagination';
+import { useMasterGuard } from '@/hooks/useMasterGuard';
 
 interface Classroom {
   id: number;
@@ -52,6 +53,7 @@ const emptyFormData: AdminFormData = {
 };
 
 export default function AdminAccountsPage() {
+  const { isMaster, isReady } = useMasterGuard();
   const queryClient = useQueryClient();
   const toast = useToast();
   const [search, setSearch] = useState('');
@@ -261,6 +263,8 @@ export default function AdminAccountsPage() {
       ),
     },
   ];
+
+  if (!isReady || !isMaster) return null;
 
   return (
     <div className="space-y-6">
