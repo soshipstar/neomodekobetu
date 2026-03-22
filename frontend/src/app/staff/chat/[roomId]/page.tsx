@@ -7,8 +7,9 @@ import { useAuthStore } from '@/stores/authStore';
 import { ChatMessageList } from '@/components/chat/ChatMessageList';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { SkeletonList } from '@/components/ui/Skeleton';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CalendarDays } from 'lucide-react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/Button';
 
 export default function StaffChatRoomPage() {
   const params = useParams();
@@ -75,6 +76,15 @@ export default function StaffChatRoomPage() {
             {activeRoom?.guardian?.full_name && `保護者: ${activeRoom.guardian.full_name}`}
           </p>
         </div>
+        {activeRoom && (
+          <Link
+            href={`/staff/meetings?action=create&student_id=${activeRoom.student_id}&guardian_id=${activeRoom.guardian_id}`}
+          >
+            <Button variant="outline" size="sm" leftIcon={<CalendarDays className="h-4 w-4" />}>
+              面談予約
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Messages */}

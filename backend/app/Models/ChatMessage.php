@@ -24,6 +24,7 @@ class ChatMessage extends Model
         'attachment_name',
         'attachment_size',
         'attachment_mime',
+        'meeting_request_id',
         'is_deleted',
         'deleted_at',
     ];

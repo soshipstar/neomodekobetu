@@ -108,6 +108,7 @@ class MeetingController extends Controller
                 'sender_id'          => $user->id,
                 'message'            => $messageText,
                 'message_type'       => 'meeting_request',
+                'meeting_request_id' => $meeting->id,
             ]);
 
             $room->update(['last_message_at' => now()]);

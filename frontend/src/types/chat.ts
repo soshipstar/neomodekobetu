@@ -27,6 +27,7 @@ export interface ChatMessage {
   attachment_name: string | null;
   attachment_size: number | null;
   attachment_mime: string | null;
+  meeting_request_id: number | null;
   is_deleted: boolean;
   deleted_at: string | null;
   created_at: string;

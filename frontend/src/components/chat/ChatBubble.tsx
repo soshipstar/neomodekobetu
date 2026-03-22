@@ -4,6 +4,7 @@ import { cn, nl } from '@/lib/utils';
 import { ChatAttachment } from './ChatAttachment';
 import type { ChatMessage, MessageType } from '@/types/chat';
 import { AlertTriangle, Calendar, Megaphone, CalendarCheck, CalendarClock } from 'lucide-react';
+import Link from 'next/link';
 
 interface ChatBubbleProps {
   message: ChatMessage;
@@ -108,6 +109,24 @@ export function ChatBubble({ message, isMine }: ChatBubbleProps) {
 
           {/* Message text */}
           <p className="whitespace-pre-wrap break-words">{nl(message.message)}</p>
+
+          {/* Meeting action button */}
+          {message.meeting_request_id && (message.message_type === 'meeting_request' || message.message_type === 'meeting_counter' || message.message_type === 'meeting_confirmed') && (
+            <div className="mt-2">
+              <Link
+                href={`/staff/meetings?meeting_id=${message.meeting_request_id}`}
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors',
+                  message.message_type === 'meeting_confirmed'
+                    ? 'bg-green-600 text-white hover:bg-green-700'
+                    : 'bg-purple-600 text-white hover:bg-purple-700'
+                )}
+              >
+                <CalendarCheck className="h-3.5 w-3.5" />
+                {message.message_type === 'meeting_confirmed' ? '確定内容を確認' : '面談予約を確認'}
+              </Link>
+            </div>
+          )}
 
           {/* Attachment */}
           {message.attachment_path && (

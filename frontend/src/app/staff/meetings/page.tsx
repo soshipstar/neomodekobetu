@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
@@ -46,8 +47,19 @@ const emptyForm = { purpose: '', purpose_detail: '', candidate_dates: [''], stud
 export default function MeetingsPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const searchParams = useSearchParams();
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState(emptyForm);
+
+  // チャットから面談予約ボタン経由で遷移した場合、自動でモーダルを開く
+  useEffect(() => {
+    if (searchParams.get('action') === 'create') {
+      const studentId = searchParams.get('student_id') || '';
+      const guardianId = searchParams.get('guardian_id') || '';
+      setForm({ ...emptyForm, student_id: studentId, guardian_id: guardianId });
+      setShowCreate(true);
+    }
+  }, [searchParams]);
 
   const { data: meetings, isLoading } = useQuery({
     queryKey: ['staff', 'meetings'],
