@@ -164,6 +164,35 @@ export default function MeetingsPage() {
         <Button leftIcon={<Plus className="h-4 w-4" />} onClick={() => setShowCreate(true)}>新規作成</Button>
       </div>
 
+      {/* Upcoming confirmed meetings */}
+      {!isLoading && meetings && (() => {
+        const today = new Date().toISOString().split('T')[0];
+        const upcoming = meetings.filter((m) => m.status === 'confirmed' && m.confirmed_date && m.confirmed_date >= today)
+          .sort((a, b) => (a.confirmed_date! > b.confirmed_date! ? 1 : -1));
+        if (upcoming.length === 0) return null;
+        return (
+          <Card>
+            <CardHeader><CardTitle><CalendarCheck className="inline h-5 w-5 mr-1 text-green-600" />今後の面談予定</CardTitle></CardHeader>
+            <CardBody>
+              <div className="space-y-2">
+                {upcoming.map((m) => (
+                  <div key={m.id} onClick={() => setDetailMeeting(m)} className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 p-3 cursor-pointer hover:bg-green-100 transition-colors">
+                    <div>
+                      <p className="font-semibold text-green-800">{fmtDate(m.confirmed_date!)}</p>
+                      <p className="text-sm text-green-700">{m.purpose}</p>
+                    </div>
+                    <div className="text-right text-sm text-green-600">
+                      <p>{m.student?.student_name}</p>
+                      <p className="text-xs">{m.guardian?.full_name}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardBody>
+          </Card>
+        );
+      })()}
+
       {isLoading ? <SkeletonList items={4} /> : meetings && meetings.length > 0 ? (
         <div className="space-y-3">
           {meetings.map((m) => {
