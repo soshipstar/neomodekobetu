@@ -48,7 +48,8 @@ class WeeklyPlanController extends Controller
     {
         $user = $request->user();
 
-        $query = WeeklyPlan::with(['creator:id,full_name', 'comments.user:id,full_name', 'submissions']);
+        $query = WeeklyPlan::with(['creator:id,full_name', 'comments.user:id,full_name', 'submissions'])
+            ->where('student_id', $studentId);
 
         if ($user->classroom_id) {
             $query->where('classroom_id', $user->classroom_id);
