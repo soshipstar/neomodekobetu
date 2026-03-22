@@ -27,35 +27,74 @@ interface MeetingRequest {
   meeting_notes: string | null;
   meeting_guidance: string | null;
   student?: { id: number; student_name: string };
+  guardian?: { id: number; full_name: string };
   created_at: string;
 }
+
+interface Student {
+  id: number;
+  student_name: string;
+}
+
+interface Guardian {
+  id: number;
+  full_name: string;
+}
+
+const emptyForm = { purpose: '', purpose_detail: '', candidate_dates: [''], student_id: '', guardian_id: '' };
 
 export default function MeetingsPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ purpose: '', purpose_detail: '', candidate_dates: [''], student_id: '' });
+  const [form, setForm] = useState(emptyForm);
 
   const { data: meetings, isLoading } = useQuery({
     queryKey: ['staff', 'meetings'],
     queryFn: async () => {
       const response = await api.get<{ data: MeetingRequest[] }>('/api/staff/meetings');
-      return response.data.data;
+      const data = response.data.data;
+      return Array.isArray(data) ? data : [];
     },
+  });
+
+  const { data: students = [] } = useQuery({
+    queryKey: ['staff', 'students-list'],
+    queryFn: async () => {
+      const res = await api.get<{ data: Student[] }>('/api/staff/students');
+      return res.data.data;
+    },
+    enabled: showCreate,
+  });
+
+  const { data: guardians = [] } = useQuery({
+    queryKey: ['staff', 'guardians-list'],
+    queryFn: async () => {
+      const res = await api.get<{ data: Guardian[] }>('/api/staff/students/guardians');
+      return Array.isArray(res.data.data) ? res.data.data : [];
+    },
+    enabled: showCreate,
   });
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      await api.post('/api/staff/meetings', form);
+      await api.post('/api/staff/meetings', {
+        ...form,
+        student_id: Number(form.student_id),
+        guardian_id: Number(form.guardian_id),
+        candidate_dates: form.candidate_dates.filter((d) => d),
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'meetings'] });
       setShowCreate(false);
-      setForm({ purpose: '', purpose_detail: '', candidate_dates: [''], student_id: '' });
+      setForm(emptyForm);
       toast.success('面談予定を作成しました');
     },
     onError: () => toast.error('作成に失敗しました'),
   });
+
+  const closeModal = () => { setShowCreate(false); setForm(emptyForm); };
 
   return (
     <div className="space-y-6">
@@ -115,16 +154,44 @@ export default function MeetingsPage() {
         <Card><CardBody><p className="py-8 text-center text-sm text-[var(--neutral-foreground-3)]">面談予定がありません</p></CardBody></Card>
       )}
 
-      <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="面談予定を作成" size="lg">
+      <Modal isOpen={showCreate} onClose={closeModal} title="面談予定を作成" size="lg">
         <div className="space-y-4">
-          <Input label="目的" value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })} />
+          <div>
+            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">生徒 *</label>
+            <select
+              value={form.student_id}
+              onChange={(e) => setForm({ ...form, student_id: e.target.value, guardian_id: '' })}
+              className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm"
+            >
+              <option value="">-- 生徒を選択 --</option>
+              {students.map((s) => (
+                <option key={s.id} value={s.id}>{s.student_name}</option>
+              ))}
+            </select>
+          </div>
+          {form.student_id && (
+            <div>
+              <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">保護者 *</label>
+              <select
+                value={form.guardian_id}
+                onChange={(e) => setForm({ ...form, guardian_id: e.target.value })}
+                className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm"
+              >
+                <option value="">-- 保護者を選択 --</option>
+                {guardians.map((g) => (
+                  <option key={g.id} value={g.id}>{g.full_name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          <Input label="目的 *" value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })} />
           <div>
             <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">詳細</label>
             <textarea value={form.purpose_detail} onChange={(e) => setForm({ ...form, purpose_detail: e.target.value })}
               className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] px-3 py-2 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-80)]/20" rows={4} />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">候補日</label>
+            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">候補日 *</label>
             {form.candidate_dates.map((d, i) => (
               <div key={i} className="mb-2 flex items-center gap-2">
                 <input type="datetime-local" value={d}
@@ -135,11 +202,19 @@ export default function MeetingsPage() {
                 )}
               </div>
             ))}
-            <Button variant="ghost" size="sm" onClick={() => setForm({ ...form, candidate_dates: [...form.candidate_dates, ''] })}>候補日を追加</Button>
+            {form.candidate_dates.length < 3 && (
+              <Button variant="ghost" size="sm" onClick={() => setForm({ ...form, candidate_dates: [...form.candidate_dates, ''] })}>候補日を追加</Button>
+            )}
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setShowCreate(false)}>キャンセル</Button>
-            <Button onClick={() => createMutation.mutate()} isLoading={createMutation.isPending} disabled={!form.purpose || !form.candidate_dates[0]}>作成</Button>
+            <Button variant="ghost" onClick={closeModal}>キャンセル</Button>
+            <Button
+              onClick={() => createMutation.mutate()}
+              isLoading={createMutation.isPending}
+              disabled={!form.purpose || !form.student_id || !form.guardian_id || !form.candidate_dates[0]}
+            >
+              作成
+            </Button>
           </div>
         </div>
       </Modal>
