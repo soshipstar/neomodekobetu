@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -525,22 +525,68 @@ export default function KobetsuPlanPage() {
   // =========================================================================
   // RENDER: Editor View
   // =========================================================================
+  // Editor section open/close state
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    A: true, B: true, C: false, D: false,
+  });
+  const toggleSection = (key: string) => setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  // Section completion check
+  const sectionStatus = useMemo(() => ({
+    A: !!(form.created_date && form.guardian_wish.trim() && form.overall_policy.trim()),
+    B: !!(form.long_term_goal.trim() && form.short_term_goal.trim()),
+    C: form.details.some((d) => d.support_goal.trim() || d.support_content.trim()),
+    D: !!(form.manager_name.trim()),
+  }), [form]);
+
+  const EDITOR_SECTIONS = [
+    { key: 'A', label: '基本情報・意向', icon: '📋' },
+    { key: 'B', label: '目標設定', icon: '🎯' },
+    { key: 'C', label: '支援内容', icon: '📝' },
+    { key: 'D', label: '同意・署名', icon: '✍️' },
+  ] as const;
+
   if (view === 'editor') {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Header */}
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => setView('list')}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">
-            {isReadOnly ? '個別支援計画（閲覧）' : editingPlanId ? '個別支援計画を編集' : '個別支援計画を作成'}
-          </h1>
-          {selectedStudent && (
-            <span className="text-sm text-[var(--neutral-foreground-3)]">
-              - {selectedStudent.student_name}
-            </span>
-          )}
+          <div className="flex-1">
+            <h1 className="text-xl font-bold text-[var(--neutral-foreground-1)]">
+              {isReadOnly ? '個別支援計画（閲覧）' : editingPlanId ? '個別支援計画を編集' : '個別支援計画を作成'}
+            </h1>
+            {selectedStudent && (
+              <span className="text-sm text-[var(--neutral-foreground-3)]">
+                {selectedStudent.student_name}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Section navigation bar */}
+        <div className="sticky top-0 z-30 -mx-4 px-4 py-2 bg-[var(--neutral-background-2)] border-b border-[var(--neutral-stroke-2)]">
+          <div className="flex items-center gap-1 overflow-x-auto">
+            {EDITOR_SECTIONS.map((sec) => (
+              <button
+                key={sec.key}
+                type="button"
+                onClick={() => { setOpenSections((prev) => ({ ...prev, [sec.key]: true })); document.getElementById(`section-${sec.key}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
+                className={cn(
+                  'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors',
+                  sectionStatus[sec.key as keyof typeof sectionStatus]
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-[var(--neutral-background-3)] text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-4)]'
+                )}
+              >
+                <span>{sec.icon}</span>
+                <span>{sec.key}. {sec.label}</span>
+                {sectionStatus[sec.key as keyof typeof sectionStatus] && <span className="text-green-600">✓</span>}
+              </button>
+            ))}
+          </div>
         </div>
 
         {isReadOnly && (
@@ -550,15 +596,23 @@ export default function KobetsuPlanPage() {
         )}
 
         <fieldset disabled={isReadOnly} className="disabled:opacity-75">
-        <form onSubmit={handleSaveDraft} className="space-y-8">
+        <form onSubmit={handleSaveDraft} className="space-y-4">
           {/* ============================================================= */}
           {/* Section A: Basic Info */}
           {/* ============================================================= */}
-          <Card>
+          <Card id="section-A">
             <CardHeader>
-              <CardTitle>A. 基本情報</CardTitle>
+              <button type="button" className="flex w-full items-center justify-between" onClick={() => toggleSection('A')}>
+                <CardTitle>
+                  <span className="flex items-center gap-2">
+                    📋 A. 基本情報・意向
+                    {sectionStatus.A && <span className="text-xs text-green-600 font-normal">✓ 入力済み</span>}
+                  </span>
+                </CardTitle>
+                <span className={cn('text-[var(--neutral-foreground-4)] transition-transform', openSections.A ? 'rotate-180' : '')}>▼</span>
+              </button>
             </CardHeader>
-            <CardBody>
+            {openSections.A && <CardBody>
               <div className="space-y-4">
                 <div className="max-w-xs">
                   <Input
@@ -605,17 +659,25 @@ export default function KobetsuPlanPage() {
                   />
                 </div>
               </div>
-            </CardBody>
+            </CardBody>}
           </Card>
 
           {/* ============================================================= */}
           {/* Section B: Goals */}
           {/* ============================================================= */}
-          <Card>
+          <Card id="section-B">
             <CardHeader>
-              <CardTitle>B. 目標</CardTitle>
+              <button type="button" className="flex w-full items-center justify-between" onClick={() => toggleSection('B')}>
+                <CardTitle>
+                  <span className="flex items-center gap-2">
+                    🎯 B. 目標設定
+                    {sectionStatus.B && <span className="text-xs text-green-600 font-normal">✓ 入力済み</span>}
+                  </span>
+                </CardTitle>
+                <span className={cn('text-[var(--neutral-foreground-4)] transition-transform', openSections.B ? 'rotate-180' : '')}>▼</span>
+              </button>
             </CardHeader>
-            <CardBody>
+            {openSections.B && <CardBody>
               <div className="space-y-6">
                 {/* Long-term goal */}
                 <div className="rounded-lg border border-[var(--neutral-stroke-2)] p-4">
@@ -663,16 +725,24 @@ export default function KobetsuPlanPage() {
                   </div>
                 </div>
               </div>
-            </CardBody>
+            </CardBody>}
           </Card>
 
           {/* ============================================================= */}
           {/* Section C: Support Details Table */}
           {/* ============================================================= */}
-          <Card>
+          <Card id="section-C">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>C. 支援内容</CardTitle>
+                <button type="button" className="flex items-center gap-2" onClick={() => toggleSection('C')}>
+                  <CardTitle>
+                    <span className="flex items-center gap-2">
+                      📝 C. 支援内容
+                      {sectionStatus.C && <span className="text-xs text-green-600 font-normal">✓ 入力済み</span>}
+                    </span>
+                  </CardTitle>
+                  <span className={cn('text-[var(--neutral-foreground-4)] transition-transform', openSections.C ? 'rotate-180' : '')}>▼</span>
+                </button>
                 <Button
                   type="button"
                   variant="outline"
@@ -684,7 +754,7 @@ export default function KobetsuPlanPage() {
                 </Button>
               </div>
             </CardHeader>
-            <CardBody>
+            {openSections.C && <CardBody>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[1000px] border-collapse">
                   <thead>
@@ -807,17 +877,25 @@ export default function KobetsuPlanPage() {
                   + 行を追加
                 </Button>
               </div>
-            </CardBody>
+            </CardBody>}
           </Card>
 
           {/* ============================================================= */}
           {/* Section D: Consent */}
           {/* ============================================================= */}
-          <Card>
+          <Card id="section-D">
             <CardHeader>
-              <CardTitle>D. 同意・署名</CardTitle>
+              <button type="button" className="flex w-full items-center justify-between" onClick={() => toggleSection('D')}>
+                <CardTitle>
+                  <span className="flex items-center gap-2">
+                    ✍️ D. 同意・署名
+                    {sectionStatus.D && <span className="text-xs text-green-600 font-normal">✓ 入力済み</span>}
+                  </span>
+                </CardTitle>
+                <span className={cn('text-[var(--neutral-foreground-4)] transition-transform', openSections.D ? 'rotate-180' : '')}>▼</span>
+              </button>
             </CardHeader>
-            <CardBody>
+            {openSections.D && <CardBody>
               <div className="space-y-6">
                 <div className="grid gap-4 md:grid-cols-2">
                   <Input
@@ -861,89 +939,64 @@ export default function KobetsuPlanPage() {
                   </div>
                 </div>
               </div>
-            </CardBody>
+            </CardBody>}
           </Card>
 
           {/* ============================================================= */}
-          {/* Section E: Action Buttons */}
+          {/* Section E: Action Buttons (sticky) */}
           {/* ============================================================= */}
-          <Card>
-            <CardBody>
-              <div className="flex flex-wrap items-center gap-3">
-                {/* Save draft */}
-                <Button
-                  type="submit"
-                  variant="secondary"
-                  leftIcon={<Save className="h-4 w-4" />}
-                  isLoading={createMutation.isPending || updateMutation.isPending}
-                >
-                  下書き保存（保護者非公開）
-                </Button>
+          <div className="sticky bottom-0 z-30 -mx-4 px-4 py-3 bg-[var(--neutral-background-1)] border-t border-[var(--neutral-stroke-2)] shadow-[0_-2px_8px_rgba(0,0,0,0.08)]">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Primary actions */}
+              <Button
+                type="submit"
+                variant="secondary"
+                size="sm"
+                leftIcon={<Save className="h-4 w-4" />}
+                isLoading={createMutation.isPending || updateMutation.isPending}
+              >
+                下書き保存
+              </Button>
 
-                {/* Publish as proposal */}
-                <Button
-                  type="button"
-                  variant="primary"
-                  leftIcon={<Send className="h-4 w-4" />}
-                  onClick={handlePublish}
-                  isLoading={publishMutation.isPending}
-                  disabled={!editingPlanId}
-                >
-                  計画書案として提出（保護者確認依頼）
-                </Button>
+              {editingPlanId && (
+                <>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    leftIcon={<Send className="h-4 w-4" />}
+                    onClick={handlePublish}
+                    isLoading={publishMutation.isPending}
+                  >
+                    確認依頼
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    leftIcon={<PenLine className="h-4 w-4" />}
+                    onClick={handleSign}
+                    isLoading={signMutation.isPending}
+                  >
+                    署名して確定
+                  </Button>
+                </>
+              )}
 
-                {/* Sign */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  leftIcon={<PenLine className="h-4 w-4" />}
-                  onClick={handleSign}
-                  isLoading={signMutation.isPending}
-                  disabled={!editingPlanId}
-                >
-                  署名入力へ進む
-                </Button>
+              <div className="flex-1" />
 
-                <div className="flex-1" />
-
-                {/* CSV */}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  leftIcon={<Download className="h-4 w-4" />}
-                  onClick={handleCsvExport}
-                  disabled={!editingPlanId}
-                >
-                  CSV出力
-                </Button>
-
-                {/* PDF */}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  leftIcon={<FileText className="h-4 w-4" />}
-                  onClick={() => editingPlanId && handlePdfDownload(editingPlanId)}
-                  disabled={!editingPlanId}
-                >
-                  PDF出力
-                </Button>
-
-                {/* AI Generate */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  leftIcon={<Sparkles className="h-4 w-4" />}
-                  onClick={handleAIGenerate}
-                  isLoading={generating}
-                >
-                  AI生成
-                </Button>
-              </div>
-            </CardBody>
-          </Card>
+              {/* Secondary actions */}
+              <Button type="button" variant="ghost" size="sm" leftIcon={<Sparkles className="h-4 w-4" />} onClick={handleAIGenerate} isLoading={generating}>
+                AI生成
+              </Button>
+              {editingPlanId && (
+                <>
+                  <Button type="button" variant="ghost" size="sm" leftIcon={<FileText className="h-4 w-4" />} onClick={() => handlePdfDownload(editingPlanId)}>PDF</Button>
+                  <Button type="button" variant="ghost" size="sm" leftIcon={<Download className="h-4 w-4" />} onClick={handleCsvExport}>CSV</Button>
+                </>
+              )}
+            </div>
+          </div>
         </form>
         </fieldset>
       </div>
