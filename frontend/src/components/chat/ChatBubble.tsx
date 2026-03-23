@@ -145,8 +145,13 @@ export function ChatBubble({ message, isMine }: ChatBubbleProps) {
           )}
         </div>
 
-        {/* Timestamp */}
-        <span className={cn('mx-1 text-[10px] text-gray-400')}>{time}</span>
+        {/* Timestamp + Read receipt */}
+        <div className={cn('mx-1 flex items-center gap-1', isMine ? 'flex-row-reverse' : '')}>
+          <span className="text-[10px] text-gray-400">{time}</span>
+          {isMine && message.is_read_by_staff && (
+            <span className="text-[10px] text-blue-500 font-medium">既読</span>
+          )}
+        </div>
       </div>
     </div>
   );

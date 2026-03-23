@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useChat } from '@/hooks/useChat';
 import { useAuthStore } from '@/stores/authStore';
 import { ChatMessageList } from '@/components/chat/ChatMessageList';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { SkeletonList } from '@/components/ui/Skeleton';
-import { ArrowLeft, CalendarDays } from 'lucide-react';
+import { ArrowLeft, CalendarDays, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 
@@ -16,6 +16,7 @@ export default function StaffChatRoomPage() {
   const router = useRouter();
   const roomId = Number(params.roomId);
   const { user } = useAuthStore();
+  const [loadingOlder, setLoadingOlder] = useState(false);
 
   const {
     activeRoom,
@@ -25,6 +26,8 @@ export default function StaffChatRoomPage() {
     fetchRooms,
     setActiveRoom,
     fetchMessages,
+    fetchOlderMessages,
+    hasMoreMessages,
     sendMessage,
     markAsRead,
     rooms,
@@ -57,6 +60,12 @@ export default function StaffChatRoomPage() {
   const handleSend = async (message: string, attachment?: File) => {
     await sendMessage(message, attachment);
   };
+
+  const handleLoadOlder = useCallback(async () => {
+    setLoadingOlder(true);
+    await fetchOlderMessages(roomId);
+    setLoadingOlder(false);
+  }, [roomId, fetchOlderMessages]);
 
   return (
     <div className="flex h-[calc(100vh-8rem)] flex-col lg:h-[calc(100vh-5rem)]">
@@ -94,10 +103,24 @@ export default function StaffChatRoomPage() {
             <SkeletonList items={5} />
           </div>
         ) : (
-          <ChatMessageList
-            messages={messages}
-            currentUserId={user?.id || 0}
-          />
+          <>
+            {hasMoreMessages && (
+              <div className="flex justify-center py-3">
+                <button
+                  onClick={handleLoadOlder}
+                  disabled={loadingOlder}
+                  className="flex items-center gap-1 rounded-full bg-white px-4 py-1.5 text-xs text-gray-500 shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  <ChevronUp className="h-3.5 w-3.5" />
+                  {loadingOlder ? '読み込み中...' : '過去のメッセージを読み込む'}
+                </button>
+              </div>
+            )}
+            <ChatMessageList
+              messages={messages}
+              currentUserId={user?.id || 0}
+            />
+          </>
         )}
       </div>
 

@@ -115,20 +115,53 @@ class ChatController extends Controller
             $query->where('id', '>', $request->last_id);
         }
 
-        $messages = $query->limit(50)->get();
+        // before_id より前のメッセージを取得（過去メッセージ読み込み用）
+        if ($request->filled('before_id')) {
+            $query = $room->messages()
+                ->notDeleted()
+                ->with('staffReads')
+                ->where('id', '<', $request->before_id)
+                ->orderBy('id', 'desc');
+        }
 
-        // 送信者名を付加
-        $messages->each(function ($msg) {
-            if ($msg->sender_type === 'staff' || $msg->sender_type === 'guardian') {
-                $msg->sender_name = \App\Models\User::where('id', $msg->sender_id)->value('full_name');
-            } elseif ($msg->sender_type === 'student') {
-                $msg->sender_name = \App\Models\Student::where('id', $msg->sender_id)->value('student_name');
+        $limit = $request->integer('limit', 100);
+        $messages = $query->limit(min($limit, 200))->get();
+
+        // before_id の場合は逆順で取得したのでASCに戻す
+        if ($request->filled('before_id')) {
+            $messages = $messages->reverse()->values();
+        }
+
+        // 送信者情報をオブジェクトとして付加 + 既読フラグ
+        $userCache = [];
+        $messages->each(function ($msg) use (&$userCache) {
+            // sender オブジェクト
+            if (!isset($userCache[$msg->sender_id . '_' . $msg->sender_type])) {
+                if ($msg->sender_type === 'student') {
+                    $student = \App\Models\Student::where('id', $msg->sender_id)->first(['id', 'student_name']);
+                    $userCache[$msg->sender_id . '_' . $msg->sender_type] = $student
+                        ? ['id' => $student->id, 'full_name' => $student->student_name]
+                        : null;
+                } else {
+                    $user = \App\Models\User::where('id', $msg->sender_id)->first(['id', 'full_name']);
+                    $userCache[$msg->sender_id . '_' . $msg->sender_type] = $user
+                        ? ['id' => $user->id, 'full_name' => $user->full_name]
+                        : null;
+                }
             }
+            $msg->sender = $userCache[$msg->sender_id . '_' . $msg->sender_type];
+
+            // 既読フラグ (スタッフに読まれたか)
+            $msg->is_read_by_staff = $msg->staffReads->isNotEmpty();
+            unset($msg->staffReads); // レスポンスサイズ削減
         });
+
+        $hasMore = $messages->count() >= min($limit, 200);
 
         return response()->json([
             'success'  => true,
             'data'     => $messages,
+            'has_more' => $hasMore,
         ]);
     }
 

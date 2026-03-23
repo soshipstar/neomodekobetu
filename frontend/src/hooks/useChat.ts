@@ -21,6 +21,8 @@ export function useChat(roomId?: number) {
     fetchRooms,
     setActiveRoom,
     fetchMessages,
+    fetchOlderMessages,
+    hasMoreMessages,
     sendMessage,
     markAsRead,
     addMessage,
@@ -88,6 +90,8 @@ export function useChat(roomId?: number) {
     fetchRooms,
     setActiveRoom,
     fetchMessages,
+    fetchOlderMessages,
+    hasMoreMessages,
     sendMessage: handleSendMessage,
     markAsRead,
   };

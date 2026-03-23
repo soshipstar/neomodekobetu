@@ -16,6 +16,8 @@ interface ChatState {
   fetchRooms: () => Promise<void>;
   setActiveRoom: (room: ChatRoom | null) => void;
   fetchMessages: (roomId: number) => Promise<void>;
+  fetchOlderMessages: (roomId: number) => Promise<boolean>;
+  hasMoreMessages: boolean;
   sendMessage: (roomId: number, message: string, attachment?: File) => Promise<void>;
   markAsRead: (roomId: number) => Promise<void>;
   addMessage: (message: ChatMessage) => void;
@@ -57,14 +59,34 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ activeRoom: room, messages: [] });
   },
 
+  hasMoreMessages: false,
+
   fetchMessages: async (roomId: number) => {
     set({ isLoadingMessages: true });
     try {
       const { apiPrefix } = get();
-      const response = await api.get<{ data: ChatMessage[] }>(`${apiPrefix}/chat/rooms/${roomId}/messages`);
-      set({ messages: response.data.data, isLoadingMessages: false });
+      const response = await api.get<{ data: ChatMessage[]; has_more?: boolean }>(`${apiPrefix}/chat/rooms/${roomId}/messages`, { params: { limit: 100 } });
+      set({ messages: response.data.data, isLoadingMessages: false, hasMoreMessages: response.data.has_more ?? false });
     } catch {
       set({ isLoadingMessages: false });
+    }
+  },
+
+  fetchOlderMessages: async (roomId: number) => {
+    const { messages, apiPrefix } = get();
+    if (messages.length === 0) return false;
+    const oldestId = messages[0].id;
+    try {
+      const response = await api.get<{ data: ChatMessage[]; has_more?: boolean }>(`${apiPrefix}/chat/rooms/${roomId}/messages`, { params: { before_id: oldestId, limit: 100 } });
+      const older = response.data.data;
+      if (older.length > 0) {
+        set({ messages: [...older, ...messages], hasMoreMessages: response.data.has_more ?? false });
+        return true;
+      }
+      set({ hasMoreMessages: false });
+      return false;
+    } catch {
+      return false;
     }
   },
 

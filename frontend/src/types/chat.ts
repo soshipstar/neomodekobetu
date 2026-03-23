@@ -28,11 +28,12 @@ export interface ChatMessage {
   attachment_size: number | null;
   attachment_mime: string | null;
   meeting_request_id: number | null;
+  is_read_by_staff: boolean;
   is_deleted: boolean;
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
-  sender?: User;
+  sender?: { id: number; full_name: string } | null;
 }
 
 export interface ChatAttachment {
