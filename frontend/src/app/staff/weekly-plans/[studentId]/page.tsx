@@ -360,9 +360,48 @@ export default function WeeklyPlanStudentDetailPage() {
     },
   });
 
+  // バリデーション: 必須チェック + 類似文字列チェック
+  const validationErrors = useMemo(() => {
+    const errors: string[] = [];
+    if (!form.weekly_goal.trim()) errors.push('「今週の目標」は必須です。');
+    if (!form.shared_goal.trim()) errors.push('「いっしょに決めた目標」は必須です。');
+    return errors;
+  }, [form.weekly_goal, form.shared_goal]);
+
+  const similarityWarnings = useMemo(() => {
+    const warnings: string[] = [];
+    const fields = [
+      { key: 'must_do', label: 'やるべきこと' },
+      { key: 'should_do', label: 'やったほうがいいこと' },
+      { key: 'want_to_do', label: 'やりたいこと' },
+    ] as const;
+
+    // 20文字以上の共通部分文字列があるかチェック
+    function hasLongCommon(a: string, b: string, minLen: number): boolean {
+      if (!a || !b || a.length < minLen || b.length < minLen) return false;
+      for (let i = 0; i <= a.length - minLen; i++) {
+        const sub = a.substring(i, i + minLen);
+        if (b.includes(sub)) return true;
+      }
+      return false;
+    }
+
+    for (let i = 0; i < fields.length; i++) {
+      for (let j = i + 1; j < fields.length; j++) {
+        const a = form[fields[i].key].trim();
+        const b = form[fields[j].key].trim();
+        if (a && b && hasLongCommon(a, b, 20)) {
+          warnings.push(`「${fields[i].label}」と「${fields[j].label}」の内容が類似しています。それぞれ異なる内容を記述してください。`);
+        }
+      }
+    }
+    return warnings;
+  }, [form.must_do, form.should_do, form.want_to_do]);
+
   const handleSave = useCallback(() => {
+    if (validationErrors.length > 0) return;
     saveMutation.mutate();
-  }, [saveMutation]);
+  }, [saveMutation, validationErrors]);
 
   // Comment mutation
   const [commentText, setCommentText] = useState('');
@@ -534,7 +573,7 @@ export default function WeeklyPlanStudentDetailPage() {
                   size="sm"
                   onClick={handleSave}
                   leftIcon={<Save className="h-4 w-4" />}
-                  disabled={saveMutation.isPending}
+                  disabled={saveMutation.isPending || validationErrors.length > 0}
                 >
                   {saveMutation.isPending ? '保存中...' : '保存する'}
                 </Button>
@@ -545,28 +584,30 @@ export default function WeeklyPlanStudentDetailPage() {
             <div className="mb-5">
               <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-purple-700">
                 <Target className="h-4 w-4" />
-                今週の目標
+                今週の目標 <span className="text-red-500">*</span>
               </label>
               <textarea
-                className="w-full min-h-[60px] rounded-lg border border-gray-300 p-3 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 resize-y"
+                className={`w-full min-h-[60px] rounded-lg border p-3 text-sm focus:ring-1 resize-y ${!form.weekly_goal.trim() ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-purple-500 focus:ring-purple-500'}`}
                 placeholder="今週達成したい目標を記入してください"
                 value={form.weekly_goal}
                 onChange={(e) => setForm((f) => ({ ...f, weekly_goal: e.target.value }))}
               />
+              {!form.weekly_goal.trim() && <p className="mt-1 text-xs text-red-500">必須項目です</p>}
             </div>
 
             {/* いっしょに決めた目標 */}
             <div className="mb-5">
               <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-purple-700">
                 <Handshake className="h-4 w-4" />
-                いっしょに決めた目標
+                いっしょに決めた目標 <span className="text-red-500">*</span>
               </label>
               <textarea
-                className="w-full min-h-[60px] rounded-lg border border-gray-300 p-3 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 resize-y"
+                className={`w-full min-h-[60px] rounded-lg border p-3 text-sm focus:ring-1 resize-y ${!form.shared_goal.trim() ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-purple-500 focus:ring-purple-500'}`}
                 placeholder="生徒と一緒に決めた目標を記入してください"
                 value={form.shared_goal}
                 onChange={(e) => setForm((f) => ({ ...f, shared_goal: e.target.value }))}
               />
+              {!form.shared_goal.trim() && <p className="mt-1 text-xs text-red-500">必須項目です</p>}
             </div>
 
             {/* やるべきこと */}
@@ -646,6 +687,18 @@ export default function WeeklyPlanStudentDetailPage() {
               })}
             </div>
 
+            {/* Validation errors & warnings */}
+            {(validationErrors.length > 0 || similarityWarnings.length > 0) && (
+              <div className="mt-4 space-y-2">
+                {validationErrors.map((e, i) => (
+                  <div key={`e-${i}`} className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{e}</div>
+                ))}
+                {similarityWarnings.map((w, i) => (
+                  <div key={`w-${i}`} className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-700">{w}</div>
+                ))}
+              </div>
+            )}
+
             {/* Bottom save button */}
             <div className="mt-6 flex justify-end gap-2">
               <Button variant="outline" onClick={cancelEdit} leftIcon={<X className="h-4 w-4" />}>
@@ -655,7 +708,7 @@ export default function WeeklyPlanStudentDetailPage() {
                 variant="primary"
                 onClick={handleSave}
                 leftIcon={<Save className="h-4 w-4" />}
-                disabled={saveMutation.isPending}
+                disabled={saveMutation.isPending || validationErrors.length > 0}
               >
                 {saveMutation.isPending ? '保存中...' : '保存する'}
               </Button>
