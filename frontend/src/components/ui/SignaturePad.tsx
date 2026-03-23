@@ -11,51 +11,43 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from './Button';
-import { X, Maximize2, RotateCcw, Check } from 'lucide-react';
+import { X, Maximize2, RotateCcw, Check, Undo2, Pen } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 export interface SignaturePadProps {
-  /** Called when the user completes a signature (base64 PNG data URL) */
   onSave?: (base64: string) => void;
-  /** Called whenever the drawn state changes (has content or not) */
   onChange?: (hasContent: boolean) => void;
-  /** Pre-existing signature to display (base64 data URL) */
   initialValue?: string;
-  /** If true, the pad is view-only and shows the saved image */
   readOnly?: boolean;
-  /** Canvas width in CSS pixels (default 400) */
   width?: number;
-  /** Canvas height in CSS pixels (default 150) */
   height?: number;
-  /** Label displayed above the canvas */
   label?: string;
-  /** Additional class names for the outer wrapper */
   className?: string;
 }
 
 export interface SignaturePadRef {
-  /** Clear the canvas */
   clear: () => void;
-  /** Returns true if the user has drawn anything */
   isEmpty: () => boolean;
-  /** Export the canvas as a base64 PNG data URL */
   toDataURL: () => string;
 }
 
 // ---------------------------------------------------------------------------
-// Internal canvas drawing helper
+// Canvas Drawing Helper with velocity-based line width
 // ---------------------------------------------------------------------------
 
 class CanvasDrawer {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   drawing = false;
-  points: { x: number; y: number }[] = [];
+  points: { x: number; y: number; time: number }[] = [];
   hasDrawn = false;
   onChangeCallback?: (hasContent: boolean) => void;
+  // Undo support: store canvas state after each stroke
+  history: ImageData[] = [];
+  maxHistory = 20;
 
   constructor(canvas: HTMLCanvasElement, onChange?: (hasContent: boolean) => void) {
     this.canvas = canvas;
@@ -82,10 +74,41 @@ class CanvasDrawer {
     return { x: me.clientX - rect.left, y: me.clientY - rect.top };
   }
 
+  private getLineWidth(p1: { x: number; y: number; time: number }, p2: { x: number; y: number; time: number }): number {
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const dt = Math.max(p2.time - p1.time, 1);
+    const speed = Math.sqrt(dx * dx + dy * dy) / dt;
+    // Faster movement = thinner line (like a real pen)
+    const minWidth = 1.5;
+    const maxWidth = 4;
+    const width = maxWidth - Math.min(speed * 0.8, maxWidth - minWidth);
+    return Math.max(minWidth, width);
+  }
+
+  private saveState() {
+    const dpr = window.devicePixelRatio || 1;
+    const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+    this.history.push(imageData);
+    if (this.history.length > this.maxHistory) this.history.shift();
+  }
+
+  undo() {
+    if (this.history.length <= 1) {
+      this.clear();
+      return;
+    }
+    this.history.pop(); // Remove current state
+    const prev = this.history[this.history.length - 1];
+    this.ctx.putImageData(prev, 0, 0);
+    this.hasDrawn = this.history.length > 1;
+    this.onChangeCallback?.(this.hasDrawn);
+  }
+
   private startDrawing = (e: MouseEvent | TouchEvent) => {
     this.drawing = true;
     const coords = this.getCoords(e);
-    this.points = [coords];
+    this.points = [{ ...coords, time: Date.now() }];
     this.ctx.beginPath();
     this.ctx.moveTo(coords.x, coords.y);
   };
@@ -95,10 +118,10 @@ class CanvasDrawer {
     e.preventDefault();
 
     const coords = this.getCoords(e);
-    this.points.push(coords);
+    const now = Date.now();
+    this.points.push({ ...coords, time: now });
 
     this.ctx.strokeStyle = '#000000';
-    this.ctx.lineWidth = 2.5;
     this.ctx.lineCap = 'round';
     this.ctx.lineJoin = 'round';
 
@@ -107,6 +130,7 @@ class CanvasDrawer {
       const p0 = this.points[len - 3];
       const p1 = this.points[len - 2];
       const p2 = this.points[len - 1];
+      this.ctx.lineWidth = this.getLineWidth(p1, p2);
       const midX = (p1.x + p2.x) / 2;
       const midY = (p1.y + p2.y) / 2;
       this.ctx.beginPath();
@@ -114,6 +138,7 @@ class CanvasDrawer {
       this.ctx.quadraticCurveTo(p1.x, p1.y, midX, midY);
       this.ctx.stroke();
     } else if (this.points.length === 2) {
+      this.ctx.lineWidth = 2.5;
       this.ctx.beginPath();
       this.ctx.moveTo(this.points[0].x, this.points[0].y);
       this.ctx.lineTo(coords.x, coords.y);
@@ -127,16 +152,19 @@ class CanvasDrawer {
   };
 
   private stopDrawing = () => {
-    if (this.drawing && this.points.length === 1) {
-      const p = this.points[0];
-      this.ctx.beginPath();
-      this.ctx.arc(p.x, p.y, 1.25, 0, Math.PI * 2);
-      this.ctx.fillStyle = '#000000';
-      this.ctx.fill();
-      if (!this.hasDrawn) {
-        this.hasDrawn = true;
-        this.onChangeCallback?.(true);
+    if (this.drawing) {
+      if (this.points.length === 1) {
+        const p = this.points[0];
+        this.ctx.beginPath();
+        this.ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
+        this.ctx.fillStyle = '#000000';
+        this.ctx.fill();
+        if (!this.hasDrawn) {
+          this.hasDrawn = true;
+          this.onChangeCallback?.(true);
+        }
       }
+      this.saveState();
     }
     this.drawing = false;
     this.points = [];
@@ -159,30 +187,25 @@ class CanvasDrawer {
     c.removeEventListener('mousemove', this.draw);
     c.removeEventListener('mouseup', this.stopDrawing);
     c.removeEventListener('mouseleave', this.stopDrawing);
-    // Touch events are added inline so we rely on canvas removal for cleanup
   }
 
   clear() {
-    const dpr = window.devicePixelRatio || 1;
     this.ctx.save();
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.fillStyle = '#ffffff';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     this.ctx.restore();
     this.hasDrawn = false;
+    this.history = [];
+    this.saveState(); // Save blank state
     this.onChangeCallback?.(false);
   }
 
-  isEmpty() {
-    return !this.hasDrawn;
-  }
+  isEmpty() { return !this.hasDrawn; }
 
-  toDataURL() {
-    return this.canvas.toDataURL('image/png');
-  }
+  toDataURL() { return this.canvas.toDataURL('image/png'); }
 
   drawImage(img: HTMLImageElement) {
-    const dpr = window.devicePixelRatio || 1;
     this.ctx.save();
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.fillStyle = '#ffffff';
@@ -190,7 +213,22 @@ class CanvasDrawer {
     this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
     this.ctx.restore();
     this.hasDrawn = true;
+    this.saveState();
     this.onChangeCallback?.(true);
+  }
+
+  drawGuideline() {
+    const rect = this.canvas.getBoundingClientRect();
+    const y = rect.height * 0.75;
+    this.ctx.save();
+    this.ctx.strokeStyle = '#e5e7eb';
+    this.ctx.lineWidth = 1;
+    this.ctx.setLineDash([4, 4]);
+    this.ctx.beginPath();
+    this.ctx.moveTo(20, y);
+    this.ctx.lineTo(rect.width - 20, y);
+    this.ctx.stroke();
+    this.ctx.restore();
   }
 }
 
@@ -205,8 +243,8 @@ const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
       onChange,
       initialValue,
       readOnly = false,
-      width = 400,
-      height = 150,
+      width = 500,
+      height = 180,
       label,
       className,
     },
@@ -220,10 +258,10 @@ const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
     const [modalOpen, setModalOpen] = useState(false);
     const [hasContent, setHasContent] = useState(!!initialValue);
 
-    // Expose imperative methods
     useImperativeHandle(ref, () => ({
       clear() {
         drawerRef.current?.clear();
+        drawerRef.current?.drawGuideline();
         setHasContent(false);
       },
       isEmpty() {
@@ -234,7 +272,6 @@ const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
       },
     }));
 
-    // Handle change from the inline canvas
     const handleChange = useCallback(
       (has: boolean) => {
         setHasContent(has);
@@ -243,64 +280,69 @@ const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
       [onChange]
     );
 
-    // Initialize the inline canvas
+    // Initialize inline canvas
     useEffect(() => {
       if (readOnly || !canvasRef.current) return;
       const drawer = new CanvasDrawer(canvasRef.current, handleChange);
       drawer.init();
       drawerRef.current = drawer;
 
-      // Load initial value if present
       if (initialValue) {
         const img = new Image();
         img.onload = () => drawer.drawImage(img);
         img.src = initialValue;
+      } else {
+        drawer.drawGuideline();
       }
 
-      return () => {
-        drawer.unbindEvents();
-      };
+      return () => { drawer.unbindEvents(); };
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [readOnly]);
 
-    // Initialize modal canvas when modal opens
+    // Initialize modal canvas
     useEffect(() => {
       if (!modalOpen || !modalCanvasRef.current) return;
       const timer = setTimeout(() => {
         if (!modalCanvasRef.current) return;
         const drawer = new CanvasDrawer(modalCanvasRef.current);
         drawer.init();
+        drawer.drawGuideline();
         modalDrawerRef.current = drawer;
-      }, 50);
+      }, 80);
       return () => clearTimeout(timer);
     }, [modalOpen]);
 
-    // Clear inline canvas
     const handleClear = () => {
       drawerRef.current?.clear();
+      drawerRef.current?.drawGuideline();
       setHasContent(false);
       onChange?.(false);
     };
 
-    // Open fullscreen modal
+    const handleUndo = () => {
+      drawerRef.current?.undo();
+    };
+
     const openModal = () => {
       setModalOpen(true);
       document.body.style.overflow = 'hidden';
     };
 
-    // Close modal
     const closeModal = () => {
       setModalOpen(false);
       document.body.style.overflow = '';
       modalDrawerRef.current = null;
     };
 
-    // Clear modal canvas
     const clearModal = () => {
       modalDrawerRef.current?.clear();
+      modalDrawerRef.current?.drawGuideline();
     };
 
-    // Apply modal signature to inline canvas
+    const undoModal = () => {
+      modalDrawerRef.current?.undo();
+    };
+
     const applyModal = () => {
       if (!modalDrawerRef.current || modalDrawerRef.current.isEmpty()) return;
       const dataURL = modalDrawerRef.current.toDataURL();
@@ -322,7 +364,7 @@ const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
             <p className="text-sm font-medium text-[var(--neutral-foreground-2)]">{label}</p>
           )}
           {initialValue ? (
-            <div className="inline-block rounded-md border border-[var(--neutral-stroke-2)] bg-white p-2">
+            <div className="inline-block rounded-lg border border-[var(--neutral-stroke-2)] bg-white p-2">
               <img
                 src={initialValue}
                 alt={label ?? '署名'}
@@ -344,27 +386,45 @@ const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
           <p className="text-sm font-medium text-[var(--neutral-foreground-2)]">{label}</p>
         )}
 
-        {/* Inline canvas */}
+        {/* Inline canvas - click to open fullscreen */}
         <div
-          className="overflow-hidden rounded-md border-2 border-[var(--neutral-stroke-2)] bg-white"
+          className="overflow-hidden rounded-lg border-2 border-dashed border-[var(--neutral-stroke-1)] bg-white transition-colors hover:border-[var(--brand-80)] cursor-pointer relative group"
           style={{ width, maxWidth: '100%' }}
+          onClick={openModal}
         >
           <canvas
             ref={canvasRef}
-            style={{ display: 'block', width: '100%', height, cursor: 'crosshair', touchAction: 'none' }}
+            style={{ display: 'block', width: '100%', height, touchAction: 'none', pointerEvents: 'none' }}
           />
+          {!hasContent && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/60 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="flex items-center gap-1.5 text-sm text-[var(--brand-80)] font-medium">
+                <Maximize2 className="h-4 w-4" />
+                クリックして署名
+              </span>
+            </div>
+          )}
         </div>
+
+        {/* Hint */}
+        <p className="text-xs text-[var(--neutral-foreground-4)]">
+          <Pen className="inline h-3 w-3 mr-0.5" />
+          上のエリアに直接署名するか、「大きく書く」で拡大表示して記入できます
+        </p>
 
         {/* Controls */}
         <div className="flex flex-wrap items-center gap-2">
           <Button type="button" variant="primary" size="sm" leftIcon={<Maximize2 className="h-3.5 w-3.5" />} onClick={openModal}>
-            サインを記入
+            大きく書く
           </Button>
-          <Button type="button" variant="secondary" size="sm" leftIcon={<RotateCcw className="h-3.5 w-3.5" />} onClick={handleClear}>
+          <Button type="button" variant="outline" size="sm" leftIcon={<Undo2 className="h-3.5 w-3.5" />} onClick={handleUndo}>
+            戻す
+          </Button>
+          <Button type="button" variant="ghost" size="sm" leftIcon={<RotateCcw className="h-3.5 w-3.5" />} onClick={handleClear}>
             クリア
           </Button>
           {hasContent ? (
-            <span className="inline-flex items-center gap-1 rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+            <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">
               <Check className="h-3 w-3" /> 署名済み
             </span>
           ) : (
@@ -375,7 +435,7 @@ const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
         {/* Fullscreen modal */}
         <AnimatePresence>
           {modalOpen && (
-            <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 max-md:p-0">
               {/* Overlay */}
               <motion.div
                 initial={{ opacity: 0 }}
@@ -391,8 +451,8 @@ const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.96 }}
                 transition={{ duration: 0.2 }}
-                className="relative w-full max-w-[700px] rounded-lg bg-white shadow-xl md:max-h-[95vh]
-                  max-md:max-w-full max-md:rounded-none max-md:h-full"
+                className="relative w-full max-w-[800px] rounded-xl bg-white shadow-2xl
+                  max-md:max-w-full max-md:rounded-none max-md:h-full max-md:flex max-md:flex-col"
               >
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3">
@@ -402,35 +462,41 @@ const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                    className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
                   >
                     <X className="h-5 w-5" />
                   </button>
                 </div>
 
                 {/* Body */}
-                <div className="p-5">
+                <div className="p-5 max-md:flex-1 max-md:flex max-md:flex-col max-md:justify-center">
+                  <p className="mb-2 text-xs text-gray-500 text-center">点線の上に署名してください</p>
                   <canvas
                     ref={modalCanvasRef}
                     style={{
                       display: 'block',
                       width: '100%',
-                      height: 300,
+                      height: 350,
                       border: '2px solid #d1d5db',
-                      borderRadius: 8,
+                      borderRadius: 12,
                       cursor: 'crosshair',
                       touchAction: 'none',
                       background: 'white',
                     }}
-                    className="max-md:!h-[50vh]"
+                    className="max-md:!h-[60vh]"
                   />
                 </div>
 
                 {/* Footer */}
-                <div className="flex justify-end gap-2 border-t border-gray-200 px-5 py-3">
-                  <Button type="button" variant="secondary" onClick={clearModal} leftIcon={<RotateCcw className="h-4 w-4" />}>
-                    クリア
-                  </Button>
+                <div className="flex justify-between border-t border-gray-200 px-5 py-3">
+                  <div className="flex gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={undoModal} leftIcon={<Undo2 className="h-4 w-4" />}>
+                      戻す
+                    </Button>
+                    <Button type="button" variant="ghost" size="sm" onClick={clearModal} leftIcon={<RotateCcw className="h-4 w-4" />}>
+                      クリア
+                    </Button>
+                  </div>
                   <Button type="button" onClick={applyModal} leftIcon={<Check className="h-4 w-4" />}>
                     署名を適用
                   </Button>
