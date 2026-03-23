@@ -81,3 +81,4 @@ migrate_mysql_to_pg.py
 migrate_support_plans.py
 migration_output.sql
 post_migration_fixes.sql
+.claude/worktrees/
