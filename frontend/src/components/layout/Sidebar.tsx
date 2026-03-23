@@ -6,66 +6,14 @@ import { cn } from '@/lib/utils';
 import { useUiStore } from '@/stores/uiStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
-import {
-  Home,
-  MessageCircle,
-  MessageSquare,
-  Users,
-  FileText,
-  ClipboardList,
-  CalendarDays,
-  Megaphone,
-  UserCheck,
-  BookOpen,
-  Building2,
-  AlertTriangle,
-  Settings,
-  Star,
-  BarChart3,
-  ChevronLeft,
-  ChevronRight,
-  X,
-  CalendarPlus,
-  Upload,
-  PartyPopper,
-  CalendarOff,
-  Clock,
-  UserCircle,
-  BarChart,
-  Clipboard,
-  Calendar,
-  FileCheck,
-  Tablet,
-  UserCog,
-  Hourglass,
-  Handshake,
-  FolderOpen,
-  HelpCircle,
-  Lock,
-  Shield,
-  BadgeCheck,
-  CalendarSync,
-  PenTool,
-  NotebookPen,
-  Eye,
-  EyeOff,
-  AlertCircle,
-  FolderCheck,
-  Cog,
-  BookOpenCheck,
-  GraduationCap,
-  MailWarning,
-  Bell,
-  ArrowRightLeft,
-} from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import type { UserType } from '@/types/user';
-import type { LucideIcon } from 'lucide-react';
 
 interface NavLink {
   type: 'link';
   label: string;
   href: string;
-  icon: LucideIcon;
+  icon: string; // Material Symbols icon name
   badge?: number;
   visibility?: 'all' | 'master_only' | 'non_master';
 }
@@ -79,93 +27,93 @@ type NavItem = NavLink | NavDivider;
 
 const staffNav: NavItem[] = [
   { type: 'divider', label: '日常業務' },
-  { type: 'link', label: '活動管理', href: '/staff/dashboard', icon: Home },
-  { type: 'link', label: '振替管理', href: '/staff/attendance', icon: CalendarSync },
-  { type: 'link', label: '保留タスク', href: '/staff/pending-tasks', icon: AlertCircle },
+  { type: 'link', label: '活動管理', href: '/staff/dashboard', icon: 'home' },
+  { type: 'link', label: '振替管理', href: '/staff/attendance', icon: 'sync_alt' },
+  { type: 'link', label: '保留タスク', href: '/staff/pending-tasks', icon: 'pending_actions' },
   { type: 'divider', label: 'チャット' },
-  { type: 'link', label: '保護者チャット', href: '/staff/chat', icon: MessageCircle },
-  { type: 'link', label: '生徒チャット', href: '/staff/student-chats', icon: MessageSquare },
-  { type: 'link', label: 'スタッフ間チャット', href: '/staff/staff-chat', icon: Users },
+  { type: 'link', label: '保護者チャット', href: '/staff/chat', icon: 'chat' },
+  { type: 'link', label: '生徒チャット', href: '/staff/student-chats', icon: 'forum' },
+  { type: 'link', label: 'スタッフ間チャット', href: '/staff/staff-chat', icon: 'groups' },
   { type: 'divider', label: 'かけはし' },
-  { type: 'link', label: 'かけはし（職員）', href: '/staff/kakehashi-staff', icon: Handshake },
-  { type: 'link', label: 'かけはし（保護者）', href: '/staff/kakehashi-guardian', icon: BookOpen },
+  { type: 'link', label: 'かけはし（職員）', href: '/staff/kakehashi-staff', icon: 'handshake' },
+  { type: 'link', label: 'かけはし（保護者）', href: '/staff/kakehashi-guardian', icon: 'menu_book' },
   { type: 'divider', label: '計画・支援' },
-  { type: 'link', label: '支援案', href: '/staff/support-plans', icon: FileText },
-  { type: 'link', label: '週間計画', href: '/staff/weekly-plans', icon: ClipboardList },
-  { type: 'link', label: '生徒面談記録', href: '/staff/student-interviews', icon: NotebookPen },
-  { type: 'link', label: '面談管理', href: '/staff/meetings', icon: CalendarDays },
-  { type: 'link', label: '個別支援計画', href: '/staff/kobetsu-plan', icon: FolderCheck },
-  { type: 'link', label: 'モニタリング', href: '/staff/kobetsu-monitoring', icon: Eye },
+  { type: 'link', label: '支援案', href: '/staff/support-plans', icon: 'description' },
+  { type: 'link', label: '週間計画', href: '/staff/weekly-plans', icon: 'checklist' },
+  { type: 'link', label: '生徒面談記録', href: '/staff/student-interviews', icon: 'edit_note' },
+  { type: 'link', label: '面談管理', href: '/staff/meetings', icon: 'event' },
+  { type: 'link', label: '個別支援計画', href: '/staff/kobetsu-plan', icon: 'folder_special' },
+  { type: 'link', label: 'モニタリング', href: '/staff/kobetsu-monitoring', icon: 'monitoring' },
   { type: 'divider', label: '提出物' },
-  { type: 'link', label: '生徒提出物', href: '/staff/submissions', icon: FileCheck },
-  { type: 'link', label: '提出物管理', href: '/staff/submission-management', icon: FolderOpen },
-  { type: 'link', label: '非表示書類', href: '/staff/hidden-documents', icon: EyeOff },
+  { type: 'link', label: '生徒提出物', href: '/staff/submissions', icon: 'assignment_turned_in' },
+  { type: 'link', label: '提出物管理', href: '/staff/submission-management', icon: 'folder_open' },
+  { type: 'link', label: '非表示書類', href: '/staff/hidden-documents', icon: 'visibility_off' },
   { type: 'divider', label: '情報発信' },
-  { type: 'link', label: 'お知らせ', href: '/staff/announcements', icon: Bell },
-  { type: 'link', label: '施設通信', href: '/staff/newsletters', icon: Megaphone },
-  { type: 'link', label: '施設通信設定', href: '/staff/newsletter-settings', icon: Cog },
-  { type: 'link', label: 'イベント', href: '/staff/events', icon: PartyPopper },
+  { type: 'link', label: 'お知らせ', href: '/staff/announcements', icon: 'notifications' },
+  { type: 'link', label: '施設通信', href: '/staff/newsletters', icon: 'campaign' },
+  { type: 'link', label: '施設通信設定', href: '/staff/newsletter-settings', icon: 'tune' },
+  { type: 'link', label: 'イベント', href: '/staff/events', icon: 'celebration' },
   { type: 'divider', label: '記録・日誌' },
-  { type: 'link', label: '連絡帳', href: '/staff/renrakucho', icon: ClipboardList },
-  { type: 'link', label: '未確認連絡帳', href: '/staff/unconfirmed-notes', icon: MailWarning },
-  { type: 'link', label: '業務日誌', href: '/staff/work-diary', icon: PenTool },
+  { type: 'link', label: '連絡帳', href: '/staff/renrakucho', icon: 'auto_stories' },
+  { type: 'link', label: '未確認連絡帳', href: '/staff/unconfirmed-notes', icon: 'mark_email_unread' },
+  { type: 'link', label: '業務日誌', href: '/staff/work-diary', icon: 'edit_document' },
   { type: 'divider', label: '管理・設定' },
-  { type: 'link', label: '生徒登録・変更', href: '/staff/students', icon: Users },
-  { type: 'link', label: '保護者登録・変更', href: '/staff/guardians', icon: UserCog },
-  { type: 'link', label: '待機児童管理', href: '/staff/waiting-list', icon: Hourglass },
-  { type: 'link', label: '利用日一括変更', href: '/staff/additional-usage', icon: CalendarPlus },
-  { type: 'link', label: '学校休業日活動設定', href: '/staff/school-holiday-activities', icon: Calendar },
-  { type: 'link', label: '休日設定', href: '/staff/holidays', icon: CalendarOff },
-  { type: 'link', label: '日課設定', href: '/staff/daily-routines', icon: Clock },
-  { type: 'link', label: 'タグ設定', href: '/staff/tag-settings', icon: Settings },
-  { type: 'link', label: '事業所評価', href: '/staff/facility-evaluation', icon: BarChart3 },
-  { type: 'link', label: '利用者一括登録', href: '/staff/bulk-register', icon: Upload },
-  { type: 'link', label: 'マニュアル', href: '/staff/manual', icon: BookOpenCheck },
-  { type: 'link', label: 'プロフィール', href: '/staff/profile', icon: UserCircle },
+  { type: 'link', label: '生徒登録・変更', href: '/staff/students', icon: 'school' },
+  { type: 'link', label: '保護者登録・変更', href: '/staff/guardians', icon: 'family_restroom' },
+  { type: 'link', label: '待機児童管理', href: '/staff/waiting-list', icon: 'hourglass_top' },
+  { type: 'link', label: '利用日一括変更', href: '/staff/additional-usage', icon: 'event_repeat' },
+  { type: 'link', label: '学校休業日活動設定', href: '/staff/school-holiday-activities', icon: 'calendar_month' },
+  { type: 'link', label: '休日設定', href: '/staff/holidays', icon: 'event_busy' },
+  { type: 'link', label: '日課設定', href: '/staff/daily-routines', icon: 'schedule' },
+  { type: 'link', label: 'タグ設定', href: '/staff/tag-settings', icon: 'label' },
+  { type: 'link', label: '事業所評価', href: '/staff/facility-evaluation', icon: 'analytics' },
+  { type: 'link', label: '利用者一括登録', href: '/staff/bulk-register', icon: 'upload_file' },
+  { type: 'link', label: 'マニュアル', href: '/staff/manual', icon: 'help_center' },
+  { type: 'link', label: 'プロフィール', href: '/staff/profile', icon: 'account_circle' },
 ];
 
 const guardianNav: NavItem[] = [
-  { type: 'link', label: 'ダッシュボード', href: '/guardian/dashboard', icon: Home },
-  { type: 'link', label: '連絡帳一覧', href: '/guardian/notes', icon: BookOpen },
-  { type: 'link', label: '連絡帳検索', href: '/guardian/communication-logs', icon: FolderOpen },
-  { type: 'link', label: 'チャット', href: '/guardian/chat', icon: MessageCircle },
-  { type: 'link', label: '週間計画表', href: '/guardian/weekly-plans', icon: ClipboardList },
-  { type: 'link', label: 'かけはし入力', href: '/guardian/kakehashi', icon: Handshake },
-  { type: 'link', label: 'かけはし履歴', href: '/guardian/kakehashi-history', icon: Clock },
-  { type: 'link', label: 'お知らせ', href: '/guardian/announcements', icon: Bell },
-  { type: 'link', label: '施設通信', href: '/guardian/newsletters', icon: Megaphone },
-  { type: 'link', label: '個別支援計画書', href: '/guardian/support-plan', icon: FileText },
-  { type: 'link', label: 'モニタリング表', href: '/guardian/monitoring', icon: Clipboard },
-  { type: 'link', label: '事業所評価', href: '/guardian/evaluation', icon: Star },
-  { type: 'link', label: 'ご利用ガイド', href: '/guardian/manual', icon: HelpCircle },
-  { type: 'link', label: 'プロフィール', href: '/guardian/profile', icon: UserCircle },
-  { type: 'link', label: 'パスワード変更', href: '/guardian/change-password', icon: Lock },
+  { type: 'link', label: 'ダッシュボード', href: '/guardian/dashboard', icon: 'home' },
+  { type: 'link', label: '連絡帳一覧', href: '/guardian/notes', icon: 'menu_book' },
+  { type: 'link', label: '連絡帳検索', href: '/guardian/communication-logs', icon: 'search' },
+  { type: 'link', label: 'チャット', href: '/guardian/chat', icon: 'chat' },
+  { type: 'link', label: '週間計画表', href: '/guardian/weekly-plans', icon: 'checklist' },
+  { type: 'link', label: 'かけはし入力', href: '/guardian/kakehashi', icon: 'handshake' },
+  { type: 'link', label: 'かけはし履歴', href: '/guardian/kakehashi-history', icon: 'history' },
+  { type: 'link', label: 'お知らせ', href: '/guardian/announcements', icon: 'notifications' },
+  { type: 'link', label: '施設通信', href: '/guardian/newsletters', icon: 'campaign' },
+  { type: 'link', label: '個別支援計画書', href: '/guardian/support-plan', icon: 'description' },
+  { type: 'link', label: 'モニタリング表', href: '/guardian/monitoring', icon: 'monitoring' },
+  { type: 'link', label: '事業所評価', href: '/guardian/evaluation', icon: 'star' },
+  { type: 'link', label: 'ご利用ガイド', href: '/guardian/manual', icon: 'help_center' },
+  { type: 'link', label: 'プロフィール', href: '/guardian/profile', icon: 'account_circle' },
+  { type: 'link', label: 'パスワード変更', href: '/guardian/change-password', icon: 'lock' },
 ];
 
 const studentNav: NavItem[] = [
-  { type: 'link', label: 'マイページ', href: '/student/dashboard', icon: Home },
-  { type: 'link', label: 'チャット', href: '/student/chat', icon: MessageCircle },
-  { type: 'link', label: '週間計画', href: '/student/weekly-plans', icon: ClipboardList },
-  { type: 'link', label: '提出物', href: '/student/submissions', icon: FileCheck },
-  { type: 'link', label: 'スケジュール', href: '/student/schedule', icon: Calendar },
-  { type: 'link', label: 'パスワード変更', href: '/student/profile', icon: Lock },
+  { type: 'link', label: 'マイページ', href: '/student/dashboard', icon: 'home' },
+  { type: 'link', label: 'チャット', href: '/student/chat', icon: 'chat' },
+  { type: 'link', label: '週間計画', href: '/student/weekly-plans', icon: 'checklist' },
+  { type: 'link', label: '提出物', href: '/student/submissions', icon: 'assignment_turned_in' },
+  { type: 'link', label: 'スケジュール', href: '/student/schedule', icon: 'calendar_month' },
+  { type: 'link', label: 'パスワード変更', href: '/student/profile', icon: 'lock' },
 ];
 
 const adminNav: NavItem[] = [
-  { type: 'link', label: 'ダッシュボード', href: '/admin/dashboard', icon: Home },
-  { type: 'link', label: '生徒登録・変更', href: '/admin/students', icon: Users, visibility: 'non_master' },
-  { type: 'link', label: '保護者登録・変更', href: '/admin/guardians', icon: UserCog, visibility: 'non_master' },
-  { type: 'link', label: '待機児童管理', href: '/admin/waiting-list', icon: Hourglass, visibility: 'non_master' },
-  { type: 'link', label: 'スタッフ管理', href: '/admin/staff-management', icon: UserCheck, visibility: 'non_master' },
-  { type: 'link', label: 'タブレットユーザー', href: '/admin/tablet-accounts', icon: Tablet, visibility: 'non_master' },
-  { type: 'link', label: 'イベント管理', href: '/admin/events', icon: PartyPopper, visibility: 'non_master' },
-  { type: 'link', label: '休日管理', href: '/admin/holidays', icon: CalendarOff, visibility: 'non_master' },
-  { type: 'link', label: '教室基本設定', href: '/admin/settings', icon: Settings, visibility: 'non_master' },
-  { type: 'link', label: '教室管理', href: '/admin/classrooms', icon: Building2, visibility: 'master_only' },
-  { type: 'link', label: '管理者アカウント', href: '/admin/admin-accounts', icon: Shield, visibility: 'master_only' },
-  { type: 'link', label: 'スタッフアカウント', href: '/admin/staff-accounts', icon: BadgeCheck, visibility: 'master_only' },
+  { type: 'link', label: 'ダッシュボード', href: '/admin/dashboard', icon: 'dashboard' },
+  { type: 'link', label: '生徒登録・変更', href: '/admin/students', icon: 'school', visibility: 'non_master' },
+  { type: 'link', label: '保護者登録・変更', href: '/admin/guardians', icon: 'family_restroom', visibility: 'non_master' },
+  { type: 'link', label: '待機児童管理', href: '/admin/waiting-list', icon: 'hourglass_top', visibility: 'non_master' },
+  { type: 'link', label: 'スタッフ管理', href: '/admin/staff-management', icon: 'supervisor_account', visibility: 'non_master' },
+  { type: 'link', label: 'タブレットユーザー', href: '/admin/tablet-accounts', icon: 'tablet', visibility: 'non_master' },
+  { type: 'link', label: 'イベント管理', href: '/admin/events', icon: 'celebration', visibility: 'non_master' },
+  { type: 'link', label: '休日管理', href: '/admin/holidays', icon: 'event_busy', visibility: 'non_master' },
+  { type: 'link', label: '教室基本設定', href: '/admin/settings', icon: 'settings', visibility: 'non_master' },
+  { type: 'link', label: '教室管理', href: '/admin/classrooms', icon: 'apartment', visibility: 'master_only' },
+  { type: 'link', label: '管理者アカウント', href: '/admin/admin-accounts', icon: 'shield_person', visibility: 'master_only' },
+  { type: 'link', label: 'スタッフアカウント', href: '/admin/staff-accounts', icon: 'badge', visibility: 'master_only' },
   { type: 'divider', label: 'システム' },
-  { type: 'link', label: 'エラーログ', href: '/admin/error-logs', icon: AlertTriangle },
+  { type: 'link', label: 'エラーログ', href: '/admin/error-logs', icon: 'warning' },
 ];
 
 function getNavItems(userType: UserType): NavItem[] {
@@ -307,7 +255,7 @@ function SidebarContent({
         )}
         {onClose && (
           <button onClick={onClose} className="rounded-lg p-1 text-[var(--neutral-foreground-4)] hover:text-[var(--neutral-foreground-1)] lg:hidden">
-            <X className="h-5 w-5" />
+            <MaterialIcon name="close" size={20} />
           </button>
         )}
       </div>
@@ -349,7 +297,6 @@ function SidebarContent({
             }
 
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-            const Icon = item.icon;
             return (
               <li key={`${item.href}-${index}`}>
                 <Link
@@ -364,7 +311,7 @@ function SidebarContent({
                   )}
                   title={collapsed ? item.label : undefined}
                 >
-                  <Icon className="h-4.5 w-4.5 shrink-0" />
+                  <MaterialIcon name={item.icon} size={20} className="shrink-0" />
                   {!collapsed && <span>{item.label}</span>}
                   {!collapsed && item.badge !== undefined && item.badge > 0 && (
                     <span className="ml-auto rounded-full bg-[var(--status-danger-fg)] px-2 py-0.5 text-[10px] font-semibold text-white">
@@ -390,7 +337,7 @@ function SidebarContent({
             )}
             title={collapsed ? (isAdminOnStaffView ? '管理者画面へ移動' : 'スタッフ画面へ移動') : undefined}
           >
-            <ArrowRightLeft className="h-4.5 w-4.5 shrink-0" />
+            <MaterialIcon name="swap_horiz" size={20} className="shrink-0" />
             {!collapsed && <span>{isAdminOnStaffView ? '管理者画面へ移動' : 'スタッフ画面へ移動'}</span>}
           </Link>
         </div>
@@ -403,7 +350,7 @@ function SidebarContent({
             onClick={onToggle}
             className="flex w-full items-center justify-center rounded-md p-2 text-[var(--neutral-foreground-4)] hover:bg-[var(--neutral-background-3)] hover:text-[var(--neutral-foreground-1)]"
           >
-            {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+            {collapsed ? <MaterialIcon name="chevron_right" size={20} /> : <MaterialIcon name="chevron_left" size={20} />}
           </button>
         </div>
       )}

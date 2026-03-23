@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { Bell } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { cn, formatRelativeTime, truncate } from '@/lib/utils';
 import { useNotifications } from '@/hooks/useNotifications';
 
@@ -31,7 +31,7 @@ export function NotificationBell() {
         className="relative rounded-md p-1.5 text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-3)] hover:text-[var(--neutral-foreground-1)] transition-colors"
         aria-label="通知"
       >
-        <Bell className="h-5 w-5" />
+        <MaterialIcon name="notifications" size={20} />
         {unreadCount > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--status-danger-fg)] text-[9px] font-bold text-white">
             {unreadCount > 99 ? '99+' : unreadCount}

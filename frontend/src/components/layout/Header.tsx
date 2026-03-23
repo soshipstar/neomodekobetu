@@ -4,7 +4,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUiStore } from '@/stores/uiStore';
 import { useAuth } from '@/hooks/useAuth';
 import { NotificationBell } from './NotificationBell';
-import { Menu, LogOut } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { getInitials } from '@/lib/utils';
 
 export function Header() {
@@ -23,7 +23,7 @@ export function Header() {
           className="rounded-md p-1.5 text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-3)] hover:text-[var(--neutral-foreground-1)] transition-colors"
           aria-label="メニュー切替"
         >
-          <Menu className="h-5 w-5" />
+          <MaterialIcon name="menu" size={20} />
         </button>
         {user.classroom && (
           <span className="hidden text-sm font-medium text-[var(--neutral-foreground-2)] sm:block">
@@ -49,7 +49,7 @@ export function Header() {
             className="rounded-md p-1.5 text-[var(--neutral-foreground-4)] hover:bg-[var(--neutral-background-3)] hover:text-[var(--status-danger-fg)] transition-colors"
             title="ログアウト"
           >
-            <LogOut className="h-4 w-4" />
+            <MaterialIcon name="logout" size={18} />
           </button>
         </div>
       </div>

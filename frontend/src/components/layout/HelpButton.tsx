@@ -10,45 +10,12 @@ import {
   type HelpItem,
 } from '@/lib/helpContent';
 import type { UserType } from '@/types/user';
-import {
-  PenLine,
-  ClipboardList,
-  Handshake,
-  BarChart3,
-  Users,
-  MessageCircle,
-  Settings,
-  Home,
-  BookOpen,
-  Newspaper,
-  UserCircle,
-  HelpCircle,
-  CalendarDays,
-  CheckSquare,
-} from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 type ViewState =
   | { type: 'categories' }
   | { type: 'items'; categoryId: string }
   | { type: 'answer'; categoryId: string; itemIndex: number };
-
-const ICON_MAP: Record<string, LucideIcon> = {
-  edit_note: PenLine,
-  assignment: ClipboardList,
-  handshake: Handshake,
-  monitoring: BarChart3,
-  group: Users,
-  chat: MessageCircle,
-  settings: Settings,
-  home: Home,
-  library_books: BookOpen,
-  newspaper: Newspaper,
-  person: UserCircle,
-  help: HelpCircle,
-  calendar_today: CalendarDays,
-  task: CheckSquare,
-};
 
 export function HelpButton() {
   const [isOpen, setIsOpen] = useState(false);
@@ -406,7 +373,7 @@ export function HelpButton() {
                   <span
                     className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-lg ${accentColor}`}
                   >
-                    <MaterialIcon name={category.icon} />
+                    <MaterialIcon name={category.icon} size={20} />
                   </span>
                   <span className="flex-1 text-[15px] font-medium text-gray-800">
                     {category.title}
@@ -426,7 +393,7 @@ export function HelpButton() {
               </button>
               <h3 className={`mb-4 flex items-center gap-2 border-b-2 pb-2 text-lg font-semibold text-gray-800`}>
                 <span className={accentColor}>
-                  <MaterialIcon name={currentCategory.icon} />
+                  <MaterialIcon name={currentCategory.icon} size={20} />
                 </span>
                 {currentCategory.title}
               </h3>
@@ -466,9 +433,6 @@ export function HelpButton() {
   );
 }
 
-function MaterialIcon({ name }: { name: string }) {
-  const Icon = ICON_MAP[name] || HelpCircle;
-  return <Icon className="h-5 w-5" />;
-}
+// MaterialIcon is now imported from @/components/ui/MaterialIcon
 
 export default HelpButton;
