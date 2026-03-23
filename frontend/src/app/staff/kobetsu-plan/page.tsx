@@ -11,19 +11,7 @@ import { Badge } from '@/components/ui/Badge';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { SignaturePad, type SignaturePadRef } from '@/components/ui/SignaturePad';
-import {
-  Plus,
-  Pencil,
-  Trash2,
-  Download,
-  Sparkles,
-  FileText,
-  Save,
-  Send,
-  PenLine,
-  ChevronLeft,
-  ExternalLink,
-} from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import Link from 'next/link';
 
 // ---------------------------------------------------------------------------
@@ -552,7 +540,7 @@ export default function KobetsuPlanPage() {
         {/* Header */}
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => setView('list')}>
-            <ChevronLeft className="h-4 w-4" />
+            <MaterialIcon name="arrow_back" size={18} />
           </Button>
           <div className="flex-1">
             <h1 className="text-xl font-bold text-[var(--neutral-foreground-1)]">
@@ -634,7 +622,7 @@ export default function KobetsuPlanPage() {
                         onClick={handleGenerateWish}
                         disabled={generatingWish || !selectedStudentId}
                       >
-                        <Sparkles className="mr-1 h-3 w-3" />
+                        <MaterialIcon name="auto_awesome" size={14} className="mr-1" />
                         {generatingWish ? '生成中...' : '面談から生成'}
                       </Button>
                     )}
@@ -747,7 +735,7 @@ export default function KobetsuPlanPage() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  leftIcon={<Plus className="h-4 w-4" />}
+                  leftIcon={<MaterialIcon name="add" size={18} />}
                   onClick={addDetail}
                 >
                   行を追加
@@ -857,7 +845,7 @@ export default function KobetsuPlanPage() {
                             onClick={() => removeDetail(index)}
                             title="削除"
                           >
-                            <Trash2 className="h-3.5 w-3.5 text-[var(--status-danger-fg)]" />
+                            <MaterialIcon name="delete" size={16} className="text-[var(--status-danger-fg)]" />
                           </Button>
                         </td>
                       </tr>
@@ -871,7 +859,7 @@ export default function KobetsuPlanPage() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  leftIcon={<Plus className="h-4 w-4" />}
+                  leftIcon={<MaterialIcon name="add" size={18} />}
                   onClick={addDetail}
                 >
                   + 行を追加
@@ -952,7 +940,7 @@ export default function KobetsuPlanPage() {
                 type="submit"
                 variant="secondary"
                 size="sm"
-                leftIcon={<Save className="h-4 w-4" />}
+                leftIcon={<MaterialIcon name="save" size={18} />}
                 isLoading={createMutation.isPending || updateMutation.isPending}
               >
                 下書き保存
@@ -964,7 +952,7 @@ export default function KobetsuPlanPage() {
                     type="button"
                     variant="primary"
                     size="sm"
-                    leftIcon={<Send className="h-4 w-4" />}
+                    leftIcon={<MaterialIcon name="send" size={18} />}
                     onClick={handlePublish}
                     isLoading={publishMutation.isPending}
                   >
@@ -974,7 +962,7 @@ export default function KobetsuPlanPage() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    leftIcon={<PenLine className="h-4 w-4" />}
+                    leftIcon={<MaterialIcon name="draw" size={18} />}
                     onClick={handleSign}
                     isLoading={signMutation.isPending}
                   >
@@ -986,13 +974,13 @@ export default function KobetsuPlanPage() {
               <div className="flex-1" />
 
               {/* Secondary actions */}
-              <Button type="button" variant="ghost" size="sm" leftIcon={<Sparkles className="h-4 w-4" />} onClick={handleAIGenerate} isLoading={generating}>
+              <Button type="button" variant="ghost" size="sm" leftIcon={<MaterialIcon name="auto_awesome" size={18} />} onClick={handleAIGenerate} isLoading={generating}>
                 AI生成
               </Button>
               {editingPlanId && (
                 <>
-                  <Button type="button" variant="ghost" size="sm" leftIcon={<FileText className="h-4 w-4" />} onClick={() => handlePdfDownload(editingPlanId)}>PDF</Button>
-                  <Button type="button" variant="ghost" size="sm" leftIcon={<Download className="h-4 w-4" />} onClick={handleCsvExport}>CSV</Button>
+                  <Button type="button" variant="ghost" size="sm" leftIcon={<MaterialIcon name="description" size={18} />} onClick={() => handlePdfDownload(editingPlanId)}>PDF</Button>
+                  <Button type="button" variant="ghost" size="sm" leftIcon={<MaterialIcon name="download" size={18} />} onClick={handleCsvExport}>CSV</Button>
                 </>
               )}
             </div>
@@ -1096,7 +1084,7 @@ export default function KobetsuPlanPage() {
             <h2 className="text-lg font-semibold text-[var(--neutral-foreground-1)]">
               {selectedStudent?.student_name} の計画一覧
             </h2>
-            <Button leftIcon={<Plus className="h-4 w-4" />} onClick={openCreate}>
+            <Button leftIcon={<MaterialIcon name="add" size={18} />} onClick={openCreate}>
               新規作成
             </Button>
           </div>
@@ -1107,9 +1095,9 @@ export default function KobetsuPlanPage() {
             <Card>
               <CardBody>
                 <div className="py-12 text-center">
-                  <FileText className="mx-auto mb-3 h-12 w-12 text-[var(--neutral-foreground-4)]" />
+                  <MaterialIcon name="description" size={48} className="mx-auto mb-3 text-[var(--neutral-foreground-4)]" />
                   <p className="text-[var(--neutral-foreground-3)]">個別支援計画がありません</p>
-                  <Button className="mt-4" leftIcon={<Plus className="h-4 w-4" />} onClick={openCreate}>
+                  <Button className="mt-4" leftIcon={<MaterialIcon name="add" size={18} />} onClick={openCreate}>
                     最初の計画を作成
                   </Button>
                 </div>
@@ -1143,13 +1131,13 @@ export default function KobetsuPlanPage() {
 
                         {/* Right: Actions */}
                         <div className="flex flex-wrap items-center gap-2 shrink-0">
-                          <Button variant="outline" size="sm" leftIcon={<Pencil className="h-3.5 w-3.5" />} onClick={() => openEdit(plan.id)}>
+                          <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="edit" size={16} />} onClick={() => openEdit(plan.id)}>
                             {status === 'official' ? '閲覧' : '編集'}
                           </Button>
 
                           {status !== 'draft' && (
                             <a href={`/staff/kobetsu-plan/${plan.id}/preview`} target="_blank" rel="noopener noreferrer">
-                              <Button variant="ghost" size="sm" leftIcon={<FileText className="h-3.5 w-3.5" />}>
+                              <Button variant="ghost" size="sm" leftIcon={<MaterialIcon name="description" size={16} />}>
                                 計画案
                               </Button>
                             </a>
@@ -1157,14 +1145,14 @@ export default function KobetsuPlanPage() {
 
                           {status === 'official' && (
                             <a href={`/staff/kobetsu-plan/${plan.id}/preview?type=official`} target="_blank" rel="noopener noreferrer">
-                              <Button variant="ghost" size="sm" leftIcon={<PenLine className="h-3.5 w-3.5" />}>
+                              <Button variant="ghost" size="sm" leftIcon={<MaterialIcon name="draw" size={16} />}>
                                 正式版
                               </Button>
                             </a>
                           )}
 
                           <Link href={`/staff/kobetsu-plan/${plan.id}/basis`}>
-                            <Button variant="ghost" size="sm" leftIcon={<ExternalLink className="h-3.5 w-3.5" />}>
+                            <Button variant="ghost" size="sm" leftIcon={<MaterialIcon name="open_in_new" size={16} />}>
                               根拠
                             </Button>
                           </Link>
@@ -1175,7 +1163,7 @@ export default function KobetsuPlanPage() {
                               size="sm"
                               onClick={() => { if (confirm('この計画を削除しますか？')) deleteMutation.mutate(plan.id); }}
                             >
-                              <Trash2 className="h-3.5 w-3.5 text-[var(--status-danger-fg)]" />
+                              <MaterialIcon name="delete" size={16} className="text-[var(--status-danger-fg)]" />
                             </Button>
                           )}
                         </div>
