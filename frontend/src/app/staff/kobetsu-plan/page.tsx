@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { cn } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -952,11 +953,65 @@ export default function KobetsuPlanPage() {
   // =========================================================================
   // RENDER: List View
   // =========================================================================
+
+  const STEPS = [
+    { key: 'draft', label: '下書き', icon: '1' },
+    { key: 'proposal', label: '確認依頼', icon: '2' },
+    { key: 'official', label: '署名済み', icon: '3' },
+  ] as const;
+
+  function StepIndicator({ status }: { status: PlanStatus }) {
+    const stepIdx = status === 'official' ? 2 : status === 'proposal' ? 1 : 0;
+    return (
+      <div className="flex items-center gap-1">
+        {STEPS.map((step, i) => (
+          <div key={step.key} className="flex items-center">
+            <div className={cn(
+              'flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold transition-colors',
+              i <= stepIdx
+                ? i === stepIdx
+                  ? 'bg-[var(--brand-80)] text-white'
+                  : 'bg-green-500 text-white'
+                : 'bg-[var(--neutral-background-4)] text-[var(--neutral-foreground-4)]'
+            )}>
+              {i < stepIdx ? '✓' : step.icon}
+            </div>
+            {i < STEPS.length - 1 && (
+              <div className={cn(
+                'mx-1 h-0.5 w-6',
+                i < stepIdx ? 'bg-green-500' : 'bg-[var(--neutral-background-4)]'
+              )} />
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">個別支援計画</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">個別支援計画</h1>
+          <p className="mt-1 text-sm text-[var(--neutral-foreground-3)]">生徒ごとの個別支援計画を作成・管理します</p>
+        </div>
       </div>
+
+      {/* Workflow guide */}
+      <Card>
+        <CardBody>
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-6 text-xs text-[var(--neutral-foreground-3)]">
+              <span className="flex items-center gap-1.5"><span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold">1</span>下書き作成</span>
+              <span className="text-[var(--neutral-foreground-4)]">→</span>
+              <span className="flex items-center gap-1.5"><span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">2</span>保護者に確認依頼</span>
+              <span className="text-[var(--neutral-foreground-4)]">→</span>
+              <span className="flex items-center gap-1.5"><span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-green-700 text-[10px] font-bold">3</span>署名して確定</span>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
 
       {/* Student selector */}
       <Card>
@@ -981,155 +1036,104 @@ export default function KobetsuPlanPage() {
         </CardBody>
       </Card>
 
-      {/* Plan list table */}
+      {/* Plan list */}
       {selectedStudentId && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>
-                {selectedStudent?.student_name} の個別支援計画一覧
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardBody>
-            {loadingPlans ? (
-              <SkeletonList items={3} />
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr>
-                      <th className={thClass}>作成日</th>
-                      <th className={thClass}>状態</th>
-                      <th className={thClass}>編集</th>
-                      <th className={thClass}>計画案PDF</th>
-                      <th className={thClass}>正式版PDF</th>
-                      <th className={thClass}>根拠</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {/* New plan row - always at top */}
-                    <tr className="hover:bg-[var(--neutral-background-2)] bg-[var(--brand-160)]">
-                      <td className={tdClass}>-</td>
-                      <td className={tdClass}>-</td>
-                      <td className={tdClass}>
-                        <Button variant="primary" size="sm" leftIcon={<Plus className="h-4 w-4" />} onClick={openCreate}>
-                          新規作成
-                        </Button>
-                      </td>
-                      <td className={tdClass}>-</td>
-                      <td className={tdClass}>-</td>
-                      <td className={tdClass}>-</td>
-                    </tr>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-[var(--neutral-foreground-1)]">
+              {selectedStudent?.student_name} の計画一覧
+            </h2>
+            <Button leftIcon={<Plus className="h-4 w-4" />} onClick={openCreate}>
+              新規作成
+            </Button>
+          </div>
 
-                    {plans.length === 0 && (
-                      <tr>
-                        <td colSpan={6} className="py-8 text-center text-sm text-[var(--neutral-foreground-3)]">
-                          個別支援計画がありません
-                        </td>
-                      </tr>
-                    )}
+          {loadingPlans ? (
+            <SkeletonList items={3} />
+          ) : plans.length === 0 ? (
+            <Card>
+              <CardBody>
+                <div className="py-12 text-center">
+                  <FileText className="mx-auto mb-3 h-12 w-12 text-[var(--neutral-foreground-4)]" />
+                  <p className="text-[var(--neutral-foreground-3)]">個別支援計画がありません</p>
+                  <Button className="mt-4" leftIcon={<Plus className="h-4 w-4" />} onClick={openCreate}>
+                    最初の計画を作成
+                  </Button>
+                </div>
+              </CardBody>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {plans.map((plan) => {
+                const status: PlanStatus = plan.status || (plan.has_signature ? 'official' : plan.is_confirmed ? 'proposal' : 'draft');
+                const dateStr = plan.created_date?.split('T')[0] || '';
 
-                    {plans.map((plan) => {
-                      const status: PlanStatus = plan.status || (plan.has_signature ? 'official' : plan.is_confirmed ? 'proposal' : 'draft');
+                return (
+                  <Card key={plan.id} className="transition-shadow hover:shadow-md">
+                    <CardBody>
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        {/* Left: Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant={statusVariant(status)}>{statusLabel(status)}</Badge>
+                            <span className="text-sm text-[var(--neutral-foreground-3)]">作成日: {dateStr}</span>
+                          </div>
+                          {plan.short_term_goal && (
+                            <p className="text-sm text-[var(--neutral-foreground-2)] truncate">
+                              短期目標: {plan.short_term_goal}
+                            </p>
+                          )}
+                          <div className="mt-2">
+                            <StepIndicator status={status} />
+                          </div>
+                        </div>
 
-                      return (
-                        <tr key={plan.id} className="hover:bg-[var(--neutral-background-2)]">
-                          {/* 作成日 */}
-                          <td className={tdClass}>
-                            {plan.created_date?.split('T')[0]}
-                          </td>
+                        {/* Right: Actions */}
+                        <div className="flex flex-wrap items-center gap-2 shrink-0">
+                          <Button variant="outline" size="sm" leftIcon={<Pencil className="h-3.5 w-3.5" />} onClick={() => openEdit(plan.id)}>
+                            {status === 'official' ? '閲覧' : '編集'}
+                          </Button>
 
-                          {/* 状態 */}
-                          <td className={tdClass}>
-                            <Badge variant={statusVariant(status)}>
-                              {statusLabel(status)}
-                            </Badge>
-                          </td>
-
-                          {/* 編集 */}
-                          <td className={tdClass}>
-                            <div className="flex items-center gap-1">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openEdit(plan.id)}
-                                title="編集"
-                              >
-                                <Pencil className="h-3.5 w-3.5" />
+                          {status !== 'draft' && (
+                            <a href={`/staff/kobetsu-plan/${plan.id}/preview`} target="_blank" rel="noopener noreferrer">
+                              <Button variant="ghost" size="sm" leftIcon={<FileText className="h-3.5 w-3.5" />}>
+                                計画案
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  if (confirm('この計画を削除しますか？')) {
-                                    deleteMutation.mutate(plan.id);
-                                  }
-                                }}
-                                title="削除"
-                              >
-                                <Trash2 className="h-3.5 w-3.5 text-[var(--status-danger-fg)]" />
+                            </a>
+                          )}
+
+                          {status === 'official' && (
+                            <a href={`/staff/kobetsu-plan/${plan.id}/preview?type=official`} target="_blank" rel="noopener noreferrer">
+                              <Button variant="ghost" size="sm" leftIcon={<PenLine className="h-3.5 w-3.5" />}>
+                                正式版
                               </Button>
-                            </div>
-                          </td>
+                            </a>
+                          )}
 
-                          {/* 計画案PDF */}
-                          <td className={tdClass}>
-                            {status !== 'draft' ? (
-                              <a href={`/staff/kobetsu-plan/${plan.id}/preview`} target="_blank" rel="noopener noreferrer">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  title="計画案プレビュー"
-                                >
-                                  <FileText className="h-3.5 w-3.5" />
-                                  <span className="ml-1 text-xs">計画案</span>
-                                </Button>
-                              </a>
-                            ) : (
-                              <span className="text-xs text-[var(--neutral-foreground-3)]">-</span>
-                            )}
-                          </td>
-
-                          {/* 正式版PDF */}
-                          <td className={tdClass}>
-                            {status === 'official' ? (
-                              <a href={`/staff/kobetsu-plan/${plan.id}/preview?type=official`} target="_blank" rel="noopener noreferrer">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  title="正式版プレビュー"
-                                >
-                                <FileText className="h-3.5 w-3.5" />
-                                <span className="ml-1 text-xs">正式版</span>
-                                </Button>
-                              </a>
-                            ) : (
-                              <span className="text-xs text-[var(--neutral-foreground-3)]">-</span>
-                            )}
-                          </td>
-
-                          {/* 根拠 */}
-                          <td className={tdClass}>
-                            <Link
-                              href={`/staff/kobetsu-plan/${plan.id}/basis`}
-                              className="inline-flex items-center gap-1 text-xs text-[var(--brand-80)] hover:underline"
-                            >
-                              <ExternalLink className="h-3 w-3" />
+                          <Link href={`/staff/kobetsu-plan/${plan.id}/basis`}>
+                            <Button variant="ghost" size="sm" leftIcon={<ExternalLink className="h-3.5 w-3.5" />}>
                               根拠
-                            </Link>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                            </Button>
+                          </Link>
 
-                    {/* (New plan row is at top of tbody) */}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardBody>
-        </Card>
+                          {status === 'draft' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => { if (confirm('この計画を削除しますか？')) deleteMutation.mutate(plan.id); }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-[var(--status-danger-fg)]" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </CardBody>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
