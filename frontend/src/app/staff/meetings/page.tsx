@@ -84,8 +84,9 @@ export default function MeetingsPage() {
   const { data: meetings, isLoading } = useQuery({
     queryKey: ['staff', 'meetings'],
     queryFn: async () => {
-      const res = await api.get<{ data: MeetingRequest[] }>('/api/staff/meetings');
-      const data = res.data.data;
+      const res = await api.get('/api/staff/meetings', { params: { per_page: 100 } });
+      const payload = res.data?.data;
+      const data = Array.isArray(payload) ? payload : (payload?.data ?? []);
       return Array.isArray(data) ? data : [];
     },
   });
@@ -247,7 +248,7 @@ export default function MeetingsPage() {
                   </div>
                   {!m.confirmed_date && m.candidate_dates?.length > 0 && (
                     <div className="mt-1 text-xs text-[var(--neutral-foreground-4)]">
-                      候補日: {m.candidate_dates.map((d) => fmtDate(d)).join(' / ')}
+                      候補日: {m.candidate_dates.map((d: string) => fmtDate(d)).join(' / ')}
                     </div>
                   )}
                 </CardBody>
