@@ -21,6 +21,8 @@
             font-size: 9pt;
             line-height: 1.3;
             color: #333;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
         }
 
         .header {
@@ -76,7 +78,7 @@
             background: #e2e8f0;
             text-align: center;
             width: 45px;
-            font-size: 7pt;
+            font-size: 8pt;
         }
 
         .eval-cell {
@@ -142,7 +144,7 @@
         }
 
         .daily-table .day-date {
-            font-size: 7pt;
+            font-size: 8pt;
             font-weight: normal;
         }
 
@@ -162,7 +164,7 @@
             padding: 3px 6px;
             background: #f5f5f5;
             border: 1px solid #ccc;
-            font-size: 7pt;
+            font-size: 8pt;
         }
 
         .legend-inline {
@@ -234,7 +236,7 @@
         .footer {
             text-align: center;
             margin-top: 8px;
-            font-size: 7pt;
+            font-size: 8pt;
             color: #999;
         }
     </style>

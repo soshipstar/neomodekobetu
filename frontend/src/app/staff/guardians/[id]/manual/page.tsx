@@ -67,9 +67,10 @@ export default function GuardianManualPage() {
       <div className="mx-auto max-w-3xl bg-white print:max-w-none print:m-0">
         <style>{`
           @media print {
-            body { margin: 0; padding: 0; font-size: 11pt; }
+            body { margin: 0; padding: 0; font-size: 11pt; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
             .print\\:hidden { display: none !important; }
             @page { size: A4 portrait; margin: 15mm; }
+            div[style*="marginBottom"] { page-break-inside: avoid; }
           }
         `}</style>
 

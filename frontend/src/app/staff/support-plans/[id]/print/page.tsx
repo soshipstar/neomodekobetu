@@ -67,7 +67,7 @@ export default function SupportPlanPrintPage() {
       <div className="mx-auto max-w-5xl bg-white print:max-w-none print:m-0">
         <style>{`
           @media print {
-            body { margin: 0; padding: 0; }
+            body { margin: 0; padding: 0; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
             .print\\:hidden { display: none !important; }
             @page { size: A3 landscape; margin: 8mm; }
           }
@@ -84,7 +84,7 @@ export default function SupportPlanPrintPage() {
           .pp-sec-body { padding: 8px; border: 1px solid #ccc; min-height: 50px; white-space: pre-wrap; word-wrap: break-word; font-size: 10pt; line-height: 1.5; }
           .pp-goal-header { display: flex; align-items: center; margin-bottom: 5px; }
           .pp-goal-title { font-weight: bold; margin-right: 10px; }
-          .pp-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 9pt; }
+          .pp-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 9pt; table-layout: fixed; }
           .pp-table th, .pp-table td { border: 1px solid #333; padding: 4px 6px; text-align: left; vertical-align: top; }
           .pp-table th { background: #e2e8f0; font-weight: bold; text-align: center; }
           .pp-table td { white-space: pre-wrap; min-height: 40px; line-height: 1.5; }

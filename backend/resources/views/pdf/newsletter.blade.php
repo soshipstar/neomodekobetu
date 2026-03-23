@@ -21,6 +21,8 @@
             font-size: 10pt;
             line-height: 1.6;
             color: #333;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
         }
 
         /* ヘッダー */

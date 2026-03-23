@@ -87,10 +87,12 @@ export default function PlanPreviewPage() {
           .plan-section-title { background: #34495e; color: white; padding: 3px 8px; font-weight: bold; font-size: 8.5pt; }
           .plan-section-body { border: 0.5px solid #aaa; border-top: none; padding: 5px 8px; font-size: 8pt; white-space: pre-wrap; word-wrap: break-word; line-height: 1.35; }
           .plan-goals { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 8pt; }
-          .plan-goals th { background: #ecf0f1; border: 0.5px solid #888; padding: 2px 4px; text-align: center; font-size: 7.5pt; }
-          .plan-goals td { border: 0.5px solid #888; padding: 2px 4px; vertical-align: top; font-size: 7.5pt; line-height: 1.25; white-space: pre-wrap; word-wrap: break-word; }
+          .plan-goals { page-break-inside: auto; }
+          .plan-goals th { background: #ecf0f1; border: 0.5px solid #888; padding: 2px 4px; text-align: center; font-size: 8pt; }
+          .plan-goals td { border: 0.5px solid #888; padding: 2px 4px; vertical-align: top; font-size: 8pt; line-height: 1.25; white-space: pre-wrap; word-wrap: break-word; }
+          .plan-goals tr { page-break-inside: avoid; }
           .plan-goals .cat-cell { background: #f9f9f9; font-weight: bold; text-align: center; width: 7%; }
-          .plan-goals .sub-cat { font-size: 6.5pt; color: #555; font-weight: normal; }
+          .plan-goals .sub-cat { font-size: 7pt; color: #555; font-weight: normal; }
           .plan-consent { border: 1px solid #aaa; padding: 8px; margin-top: 8px; font-size: 8pt; }
           .plan-consent .title { font-weight: bold; margin-bottom: 4px; }
           .plan-footer { text-align: center; margin-top: 8px; padding-top: 4px; border-top: 0.5px solid #ccc; font-size: 6.5pt; color: #999; }

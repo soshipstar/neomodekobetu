@@ -64,7 +64,7 @@ export default function InterviewPrintPage() {
       <div className="mx-auto max-w-3xl bg-white print:max-w-none print:m-0 print:p-0">
         <style>{`
           @media print {
-            body { margin: 0; padding: 15mm 18mm; font-size: 10pt; }
+            body { margin: 0; padding: 15mm 18mm; font-size: 10pt; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
             .print\\:hidden { display: none !important; }
             @page { size: A4 portrait; margin: 15mm 18mm; }
           }
@@ -74,10 +74,11 @@ export default function InterviewPrintPage() {
           .print-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 16px; font-size: 10pt; }
           .print-meta-item { padding: 4px 0; }
           .print-meta-label { font-weight: bold; color: #555; font-size: 9pt; }
-          .print-section { margin-bottom: 14px; }
+          .print-section { margin-bottom: 14px; page-break-inside: avoid; }
           .print-section-title { background: #34495e; color: white; padding: 4px 10px; font-weight: bold; font-size: 10pt; margin-bottom: 0; }
           .print-section-content { border: 1px solid #aaa; border-top: none; padding: 8px 10px; font-size: 10pt; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
           .print-check-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+          @media print { .print-check-grid { grid-template-columns: repeat(3, 1fr); } }
           .print-check-item { border: 1px solid #ccc; border-radius: 4px; padding: 8px; }
           .print-check-label { font-weight: bold; font-size: 9pt; color: #555; margin-bottom: 4px; }
           .print-footer { text-align: center; margin-top: 20px; padding-top: 6px; border-top: 1px solid #ccc; font-size: 8pt; color: #999; }

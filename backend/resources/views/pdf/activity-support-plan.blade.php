@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>支援案 - {{ $plan->activity_name }}</title>
     <style>
+        @page { size: A4 portrait; margin: 10mm; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
@@ -11,6 +12,8 @@
             font-size: 8.5pt;
             line-height: 1.35;
             color: #333;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
         }
 
         /* ── ヘッダー ── */
@@ -70,6 +73,7 @@
         /* ── セクション ── */
         .section {
             margin-bottom: 6px;
+            page-break-inside: avoid;
         }
         .section-head {
             font-size: 8.5pt;

@@ -144,8 +144,12 @@ export default function PlanBasisPage() {
       <style>{`
         @media print {
           .print\\:hidden { display: none !important; }
-          @page { size: A4 portrait; margin: 12mm 15mm; }
-          body { font-size: 9pt; }
+          @page { size: A4 portrait; margin: 14mm 16mm; }
+          body { font-size: 9pt; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+          .overflow-x-auto { overflow: visible !important; width: 100% !important; }
+          table { page-break-inside: auto; }
+          tr { page-break-inside: avoid; }
+          thead { display: table-header-group; }
         }
       `}</style>
 

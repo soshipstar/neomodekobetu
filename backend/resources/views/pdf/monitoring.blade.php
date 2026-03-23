@@ -21,6 +21,8 @@
             font-size: 9pt;
             line-height: 1.5;
             color: #333;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
         }
 
         .header {

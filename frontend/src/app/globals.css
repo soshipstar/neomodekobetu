@@ -155,11 +155,41 @@ p, li, td, th, label {
 
 /* Print styles */
 @media print {
-  .no-print {
+  .no-print, .print\:hidden {
     display: none !important;
   }
   body {
     background: white;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  /* Prevent overflow clipping */
+  .overflow-x-auto, .overflow-auto, .overflow-hidden {
+    overflow: visible !important;
+  }
+  /* Prevent page breaks inside important sections */
+  .pp-sec, .print-section, .plan-section, section {
+    page-break-inside: avoid;
+  }
+  table {
+    page-break-inside: auto;
+  }
+  tr {
+    page-break-inside: avoid;
+  }
+  thead {
+    display: table-header-group;
+  }
+  /* Hide layout elements */
+  nav, aside, header, footer,
+  [data-help-toggle],
+  .fixed {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
   }
 }
 
