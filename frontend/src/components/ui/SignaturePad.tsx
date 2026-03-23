@@ -113,6 +113,8 @@ class CanvasDrawer {
     this.ctx.moveTo(coords.x, coords.y);
   };
 
+  private lastWidth = 2.5;
+
   private draw = (e: MouseEvent | TouchEvent) => {
     if (!this.drawing) return;
     e.preventDefault();
@@ -125,19 +127,30 @@ class CanvasDrawer {
     this.ctx.lineCap = 'round';
     this.ctx.lineJoin = 'round';
 
-    if (this.points.length >= 3) {
-      const len = this.points.length;
+    const len = this.points.length;
+
+    if (len >= 3) {
       const p0 = this.points[len - 3];
       const p1 = this.points[len - 2];
       const p2 = this.points[len - 1];
-      this.ctx.lineWidth = this.getLineWidth(p1, p2);
-      const midX = (p1.x + p2.x) / 2;
-      const midY = (p1.y + p2.y) / 2;
+
+      // Smooth width transition for natural pen feel
+      const targetWidth = this.getLineWidth(p1, p2);
+      this.lastWidth = this.lastWidth * 0.6 + targetWidth * 0.4;
+      this.ctx.lineWidth = this.lastWidth;
+
+      // Catmull-Rom style smooth curve through midpoints
+      const mid0x = (p0.x + p1.x) / 2;
+      const mid0y = (p0.y + p1.y) / 2;
+      const mid1x = (p1.x + p2.x) / 2;
+      const mid1y = (p1.y + p2.y) / 2;
+
       this.ctx.beginPath();
-      this.ctx.moveTo((p0.x + p1.x) / 2, (p0.y + p1.y) / 2);
-      this.ctx.quadraticCurveTo(p1.x, p1.y, midX, midY);
+      this.ctx.moveTo(mid0x, mid0y);
+      this.ctx.quadraticCurveTo(p1.x, p1.y, mid1x, mid1y);
       this.ctx.stroke();
-    } else if (this.points.length === 2) {
+    } else if (len === 2) {
+      this.lastWidth = 2.5;
       this.ctx.lineWidth = 2.5;
       this.ctx.beginPath();
       this.ctx.moveTo(this.points[0].x, this.points[0].y);
