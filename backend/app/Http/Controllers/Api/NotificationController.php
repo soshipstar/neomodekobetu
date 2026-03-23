@@ -25,6 +25,13 @@ class NotificationController extends Controller
         $notifications = $query->orderByDesc('created_at')
             ->paginate($request->integer('per_page', 30));
 
+        // フロント用フィールドマッピング (body -> message, data.link -> link)
+        $notifications->getCollection()->transform(function ($n) {
+            $n->message = $n->body;
+            $n->link = $n->data['link'] ?? null;
+            return $n;
+        });
+
         // 未読数も一緒に返す
         $unreadCount = Notification::where('user_id', $user->id)
             ->whereNull('read_at')
