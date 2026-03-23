@@ -341,7 +341,7 @@ class ActivitySupportPlanController extends Controller
                     ],
                 ],
                 'response_format' => ['type' => 'json_object'],
-                'max_tokens' => 2000,
+                'max_completion_tokens' => 2000,
             ]);
 
             $durationMs = (int) ((microtime(true) - $startTime) * 1000);
@@ -467,7 +467,7 @@ class ActivitySupportPlanController extends Controller
                     ],
                 ],
                 'response_format' => ['type' => 'json_object'],
-                'max_tokens' => 3000,
+                'max_completion_tokens' => 3000,
             ]);
 
             $durationMs = (int) ((microtime(true) - $startTime) * 1000);
