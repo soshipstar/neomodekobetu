@@ -108,11 +108,7 @@ export default function GuardianAnnouncementsPage() {
                     <span className="text-xs text-[var(--neutral-foreground-4)]">
                       {formatDate(a.published_at)}
                     </span>
-                    <ChevronDown
-                      className={`h-4 w-4 text-[var(--neutral-foreground-4)] transition-transform ${
-                        isExpanded ? 'rotate-180' : ''
-                      }`}
-                    />
+                    <MaterialIcon name="expand_more" size={16} className={`text-[var(--neutral-foreground-4)] transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                   </div>
                 </button>
 
