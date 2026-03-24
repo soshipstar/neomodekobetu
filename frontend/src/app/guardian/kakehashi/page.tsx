@@ -191,7 +191,7 @@ export default function GuardianKakehashiPage() {
           </p>
         </div>
         <Link href="/guardian/kakehashi-history">
-          <Button variant="outline" leftIcon={<History className="h-4 w-4" />}>
+          <Button variant="outline" leftIcon={<MaterialIcon name="history" size={16} />}>
             かけはし履歴
           </Button>
         </Link>
