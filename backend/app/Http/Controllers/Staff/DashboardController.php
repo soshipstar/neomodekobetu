@@ -8,6 +8,7 @@ use App\Models\ChatMessage;
 use App\Models\ChatRoom;
 use App\Models\MeetingRequest;
 use App\Models\Student;
+use App\Http\Controllers\Staff\PendingTaskController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -156,75 +157,39 @@ class DashboardController extends Controller
             Log::warning('integrated_notes table not available: ' . $e->getMessage());
         }
 
-        // --- 支援計画期限 ---
-        $students = Student::where('classroom_id', $classroomId)->active()->pluck('id');
+        // --- 保留タスクと同じロジックで件数を取得 ---
+        $pendingTaskController = app(PendingTaskController::class);
+        $fakeRequest = Request::create('/api/staff/pending-tasks', 'GET');
+        $fakeRequest->setUserResolver(fn () => $request->user());
+        $pendingResponse = $pendingTaskController->index($fakeRequest);
+        $pendingData = json_decode($pendingResponse->getContent(), true);
+        $pendingSummary = $pendingData['summary'] ?? [];
 
         $planOverdue = 0;
         $planUrgent = 0;
-        if ($students->isNotEmpty()) {
-            $latestPlans = DB::table('individual_support_plans')
-                ->whereIn('student_id', $students)
-                ->select('student_id', DB::raw('MAX(created_at) as latest_date'))
-                ->groupBy('student_id')
-                ->get();
-
-            foreach ($latestPlans as $plan) {
-                $daysSince = Carbon::parse($plan->latest_date)->diffInDays($today);
-                if ($daysSince >= 180) {
-                    $planOverdue++;
-                } elseif ($daysSince >= 150) {
-                    $planUrgent++;
-                }
-            }
-
-            // Students with no plan at all are overdue
-            $studentsWithPlan = $latestPlans->pluck('student_id')->toArray();
-            $studentsWithoutPlan = $students->diff($studentsWithPlan)->count();
-            $planOverdue += $studentsWithoutPlan;
-        }
-
-        // --- モニタリング期限 ---
         $monitoringOverdue = 0;
         $monitoringUrgent = 0;
-        if ($students->isNotEmpty()) {
-            $latestMonitoring = DB::table('monitoring_records')
-                ->whereIn('student_id', $students)
-                ->select('student_id', DB::raw('MAX(created_at) as latest_date'))
-                ->groupBy('student_id')
-                ->get();
-
-            foreach ($latestMonitoring as $record) {
-                $daysSince = Carbon::parse($record->latest_date)->diffInDays($today);
-                if ($daysSince >= 180) {
-                    $monitoringOverdue++;
-                } elseif ($daysSince >= 150) {
-                    $monitoringUrgent++;
-                }
-            }
-
-            $studentsWithMonitoring = $latestMonitoring->pluck('student_id')->toArray();
-            $studentsWithoutMonitoring = $students->diff($studentsWithMonitoring)->count();
-            $monitoringOverdue += $studentsWithoutMonitoring;
-        }
-
-        // --- かけはし期限 ---
         $guardianPending = 0;
         $staffPending = 0;
-        try {
-            $guardianPending = DB::table('kakehashi_guardian')
-                ->whereIn('student_id', $students)
-                ->where('is_submitted', false)
-                ->count();
-        } catch (\Exception $e) {
-            Log::warning('kakehashi_guardian table not available: ' . $e->getMessage());
+
+        // 保留タスクの件数をそのまま使用
+        $planCount = $pendingSummary['plans'] ?? 0;
+        $monitoringCount = $pendingSummary['monitoring'] ?? 0;
+        $guardianPending = $pendingSummary['guardian_kakehashi'] ?? 0;
+        $staffPending = $pendingSummary['staff_kakehashi'] ?? 0;
+
+        // plan/monitoringはoverdue/urgentの内訳を保留タスクデータから計算
+        $planTasks = $pendingData['data']['plans'] ?? [];
+        foreach ($planTasks as $task) {
+            $code = $task['status_code'] ?? '';
+            if ($code === 'outdated') $planOverdue++;
+            else $planUrgent++;
         }
-        try {
-            $staffPending = DB::table('kakehashi_staff')
-                ->whereIn('student_id', $students)
-                ->where('is_submitted', false)
-                ->count();
-        } catch (\Exception $e) {
-            Log::warning('kakehashi_staff table not available: ' . $e->getMessage());
+        $monitoringTasks = $pendingData['data']['monitoring'] ?? [];
+        foreach ($monitoringTasks as $task) {
+            $code = $task['status_code'] ?? '';
+            if ($code === 'outdated') $monitoringOverdue++;
+            else $monitoringUrgent++;
         }
 
         // --- 未提出ドキュメント ---
