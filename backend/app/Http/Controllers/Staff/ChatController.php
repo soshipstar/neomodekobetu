@@ -151,9 +151,13 @@ class ChatController extends Controller
             }
             $msg->sender = $userCache[$msg->sender_id . '_' . $msg->sender_type];
 
-            // 既読フラグ (スタッフに読まれたか)
+            // 既読フラグ (スタッフに読まれたか) - 保護者送信メッセージ用
             $msg->is_read_by_staff = $msg->staffReads->isNotEmpty();
             unset($msg->staffReads); // レスポンスサイズ削減
+
+            // 既読フラグ (保護者に読まれたか) - スタッフ送信メッセージ用
+            // chat_messages.is_read は保護者がメッセージを閲覧した際にtrueになる
+            $msg->is_read_by_recipient = ($msg->sender_type === 'staff') ? (bool) $msg->is_read : $msg->is_read_by_staff;
         });
 
         $hasMore = $messages->count() >= min($limit, 200);
@@ -390,6 +394,41 @@ class ChatController extends Controller
             'sent_count' => $sentCount,
             'message'    => "{$sentCount}件のチャットに送信しました。",
         ]);
+    }
+
+    /**
+     * メッセージを削除（論理削除）
+     * 自分が送信したスタッフメッセージのみ削除可能
+     */
+    public function deleteMessage(Request $request, ChatRoom $room, ChatMessage $message): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! $this->canAccessRoom($user, $room)) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
+        // ルームのメッセージか確認
+        if ($message->room_id !== $room->id) {
+            return response()->json(['success' => false, 'message' => 'メッセージが見つかりません。'], 404);
+        }
+
+        // スタッフが送信したメッセージのみ削除可能
+        if ($message->sender_type !== 'staff') {
+            return response()->json(['success' => false, 'message' => '削除権限がありません。'], 403);
+        }
+
+        // 自分が送信したメッセージかチェック
+        if ($message->sender_id !== $user->id) {
+            return response()->json(['success' => false, 'message' => '削除権限がありません。'], 403);
+        }
+
+        $message->update([
+            'is_deleted' => true,
+            'deleted_at' => now(),
+        ]);
+
+        return response()->json(['success' => true]);
     }
 
     /**

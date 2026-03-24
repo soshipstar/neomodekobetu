@@ -20,6 +20,7 @@ interface ChatState {
   hasMoreMessages: boolean;
   sendMessage: (roomId: number, message: string, attachment?: File) => Promise<void>;
   markAsRead: (roomId: number) => Promise<void>;
+  deleteMessage: (roomId: number, messageId: number) => Promise<void>;
   addMessage: (message: ChatMessage) => void;
   updateUnreadCount: (roomId: number, count: number) => void;
 }
@@ -120,6 +121,22 @@ export const useChatStore = create<ChatState>((set, get) => ({
       }));
     } catch {
       // Silently fail
+    }
+  },
+
+  deleteMessage: async (roomId: number, messageId: number) => {
+    try {
+      const { apiPrefix } = get();
+      await api.delete(`${apiPrefix}/chat/rooms/${roomId}/messages/${messageId}`);
+      set((state) => ({
+        messages: state.messages.map((msg) =>
+          msg.id === messageId
+            ? { ...msg, is_deleted: true, message: '' }
+            : msg
+        ),
+      }));
+    } catch {
+      throw new Error('メッセージの削除に失敗しました');
     }
   },
 

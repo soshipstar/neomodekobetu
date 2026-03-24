@@ -56,6 +56,7 @@ class ChatController extends Controller
 
         $query = $room->messages()
             ->notDeleted()
+            ->with('staffReads')
             ->orderBy('created_at', 'asc')
             ->orderBy('id', 'asc');
 
@@ -66,13 +67,19 @@ class ChatController extends Controller
 
         $messages = $query->limit(50)->get();
 
-        // 送信者名を付加
+        // 送信者名を付加 + 既読フラグ
         $messages->each(function ($msg) {
             if ($msg->sender_type === 'staff' || $msg->sender_type === 'guardian') {
                 $msg->sender_name = \App\Models\User::where('id', $msg->sender_id)->value('full_name');
             } elseif ($msg->sender_type === 'student') {
                 $msg->sender_name = \App\Models\Student::where('id', $msg->sender_id)->value('student_name');
             }
+
+            // 既読フラグ: 保護者送信メッセージがスタッフに読まれたか
+            $msg->is_read_by_staff = $msg->staffReads->isNotEmpty();
+            // 統合既読フラグ: 自分の送信メッセージが相手に読まれたか
+            $msg->is_read_by_recipient = ($msg->sender_type === 'guardian') ? $msg->is_read_by_staff : (bool) $msg->is_read;
+            unset($msg->staffReads);
         });
 
         // 未読メッセージを既読にする（スタッフからのメッセージ）
@@ -80,7 +87,7 @@ class ChatController extends Controller
             ->notDeleted()
             ->where('sender_type', '!=', 'guardian')
             ->where('is_read', false)
-            ->update(['is_read' => true, 'read_at' => now()]);
+            ->update(['is_read' => true]);
 
         return response()->json([
             'success' => true,
@@ -190,7 +197,7 @@ class ChatController extends Controller
             ->notDeleted()
             ->where('sender_type', '!=', 'guardian')
             ->where('is_read', false)
-            ->update(['is_read' => true, 'read_at' => now()]);
+            ->update(['is_read' => true]);
 
         return response()->json(['success' => true]);
     }

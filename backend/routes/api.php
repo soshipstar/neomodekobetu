@@ -132,6 +132,7 @@ Route::prefix('staff')
             Route::post('/rooms/{room}/messages', [App\Http\Controllers\Staff\ChatController::class, 'sendMessage']);
             Route::post('/rooms/{room}/pin', [App\Http\Controllers\Staff\ChatController::class, 'togglePin']);
             Route::post('/rooms/{room}/read', [App\Http\Controllers\Staff\ChatController::class, 'markRead']);
+            Route::delete('/rooms/{room}/messages/{message}', [App\Http\Controllers\Staff\ChatController::class, 'deleteMessage']);
             Route::post('/broadcast', [App\Http\Controllers\Staff\ChatController::class, 'broadcast']);
         });
 
@@ -403,6 +404,9 @@ Route::prefix('guardian')
         Route::post('/chat/rooms/{room}/absence', [App\Http\Controllers\Guardian\ChatController::class, 'sendAbsenceNotification']);
         Route::post('/chat/rooms/{room}/event-registration', [App\Http\Controllers\Guardian\ChatController::class, 'sendEventRegistration']);
         Route::post('/chat/rooms/{room}/meeting-request', [App\Http\Controllers\Guardian\ChatController::class, 'sendMeetingRequest']);
+
+        // イベント
+        Route::get('/events', [App\Http\Controllers\Guardian\GuardianEventController::class, 'index']);
 
         // 支援計画
         Route::get('/support-plans', [App\Http\Controllers\Guardian\SupportPlanController::class, 'index']);
