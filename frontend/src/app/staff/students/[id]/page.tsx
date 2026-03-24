@@ -1,21 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import { useParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Tabs, type TabItem } from '@/components/ui/Tabs';
-import { SkeletonCard, SkeletonText } from '@/components/ui/Skeleton';
+import { SkeletonCard } from '@/components/ui/Skeleton';
+import { useToast } from '@/components/ui/Toast';
 import { formatDate } from '@/lib/utils';
-import {
-  User,
-  Calendar,
-  FileText,
-  BarChart3,
-  ArrowLeftRight,
-  ClipboardList,
-} from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import Link from 'next/link';
 import type { Student } from '@/types/user';
 
@@ -63,21 +60,27 @@ export default function StudentDetailPage() {
     {
       key: 'info',
       label: '基本情報',
-      icon: <User className="h-4 w-4" />,
+      icon: <MaterialIcon name="person" size={18} />,
       content: <StudentInfo student={student} />,
     },
     {
       key: 'schedule',
       label: '通所曜日',
-      icon: <Calendar className="h-4 w-4" />,
+      icon: <MaterialIcon name="calendar_month" size={18} />,
       content: <StudentSchedule student={student} />,
+    },
+    {
+      key: 'account',
+      label: 'アカウント',
+      icon: <MaterialIcon name="key" size={18} />,
+      content: <StudentAccount studentId={studentId} student={student} />,
     },
   ];
 
   const actionLinks = [
-    { href: `/staff/students/${studentId}/support-plan`, label: '個別支援計画', icon: FileText },
-    { href: `/staff/students/${studentId}/monitoring`, label: 'モニタリング', icon: BarChart3 },
-    { href: `/staff/students/${studentId}/kakehashi`, label: 'かけはし', icon: ArrowLeftRight },
+    { href: `/staff/students/${studentId}/support-plan`, label: '個別支援計画', icon: 'description' },
+    { href: `/staff/students/${studentId}/monitoring`, label: 'モニタリング', icon: 'monitoring' },
+    { href: `/staff/students/${studentId}/kakehashi`, label: 'かけはし', icon: 'handshake' },
   ];
 
   return (
@@ -99,8 +102,8 @@ export default function StudentDetailPage() {
       <div className="grid gap-3 sm:grid-cols-3">
         {actionLinks.map((link) => (
           <Link key={link.href} href={link.href}>
-            <Card className="flex items-center gap-3 transition-shadow hover:shadow-[var(--shadow-8)]">
-              <link.icon className="h-5 w-5 text-[var(--brand-80)]" />
+            <Card className="flex items-center gap-3 transition-shadow hover:shadow-[var(--shadow-8)] p-3">
+              <MaterialIcon name={link.icon} size={20} className="text-[var(--brand-80)]" />
               <span className="text-sm font-medium text-[var(--neutral-foreground-2)]">{link.label}</span>
             </Card>
           </Link>
@@ -137,6 +140,63 @@ function StudentInfo({ student }: { student: Student }) {
             <dd className="mt-1 text-sm text-[var(--neutral-foreground-1)]">{student.guardian?.full_name || '-'}</dd>
           </div>
         </dl>
+      </CardBody>
+    </Card>
+  );
+}
+
+function StudentAccount({ studentId, student }: { studentId: number; student: Student }) {
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const [username, setUsername] = useState(student.username || '');
+  const [password, setPassword] = useState('');
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const payload: Record<string, string> = {};
+      if (username.trim()) payload.username = username.trim();
+      if (password.trim()) payload.password = password.trim();
+      if (Object.keys(payload).length === 0) throw new Error('変更がありません');
+      return api.put(`/api/staff/students/${studentId}`, payload);
+    },
+    onSuccess: () => {
+      toast.success('アカウント情報を更新しました');
+      setPassword('');
+      queryClient.invalidateQueries({ queryKey: ['staff', 'student', studentId] });
+    },
+    onError: (e: any) => toast.error(e?.response?.data?.message || e?.message || '更新に失敗しました'),
+  });
+
+  return (
+    <Card>
+      <CardBody>
+        <p className="mb-4 text-sm text-[var(--neutral-foreground-3)]">
+          生徒のログインID・パスワードを変更できます
+        </p>
+        <div className="space-y-4 max-w-md">
+          <Input
+            label="ログインID（ユーザー名）"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="ログインIDを入力"
+          />
+          <Input
+            label="新しいパスワード"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="変更しない場合は空欄"
+            helperText="変更する場合のみ入力してください（6文字以上）"
+          />
+          <Button
+            leftIcon={<MaterialIcon name="save" size={16} />}
+            onClick={() => saveMutation.mutate()}
+            isLoading={saveMutation.isPending}
+            disabled={!username.trim() && !password.trim()}
+          >
+            アカウント情報を保存
+          </Button>
+        </div>
       </CardBody>
     </Card>
   );

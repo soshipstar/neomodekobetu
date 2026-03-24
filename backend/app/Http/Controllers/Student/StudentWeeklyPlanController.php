@@ -106,35 +106,57 @@ class StudentWeeklyPlanController extends Controller
             return response()->json(['success' => false, 'message' => '生徒情報が見つかりません。'], 404);
         }
 
-        if ($plan->classroom_id !== $student->classroom_id) {
+        if ($plan->student_id !== $student->id) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
         $validated = $request->validate([
-            'submissions' => 'required|array',
+            'weekly_goal'  => 'nullable|string',
+            'shared_goal'  => 'nullable|string',
+            'must_do'      => 'nullable|string',
+            'should_do'    => 'nullable|string',
+            'want_to_do'   => 'nullable|string',
+            'plan_data'    => 'nullable|array',
+            'submissions'  => 'nullable|array',
             'submissions.*.submission_item' => 'required|string|max:500',
             'submissions.*.is_completed'    => 'boolean',
         ]);
 
         DB::transaction(function () use ($plan, $student, $validated) {
-            foreach ($validated['submissions'] as $item) {
-                WeeklyPlanSubmission::updateOrCreate(
-                    [
-                        'weekly_plan_id'  => $plan->id,
-                        'submission_item' => $item['submission_item'],
-                    ],
-                    [
-                        'is_completed'      => $item['is_completed'] ?? false,
-                        'completed_at'      => ($item['is_completed'] ?? false) ? now() : null,
-                        'completed_by_type' => 'student',
-                        'completed_by_id'   => $student->id,
-                    ]
-                );
+            // Update plan content
+            $planFields = ['weekly_goal', 'shared_goal', 'must_do', 'should_do', 'want_to_do', 'plan_data'];
+            $updateData = [];
+            foreach ($planFields as $field) {
+                if (array_key_exists($field, $validated)) {
+                    $updateData[$field] = $validated[$field];
+                }
+            }
+            if (!empty($updateData)) {
+                $plan->update($updateData);
+            }
+
+            // Update submissions
+            if (!empty($validated['submissions'])) {
+                foreach ($validated['submissions'] as $item) {
+                    WeeklyPlanSubmission::updateOrCreate(
+                        [
+                            'weekly_plan_id'  => $plan->id,
+                            'submission_item' => $item['submission_item'],
+                        ],
+                        [
+                            'is_completed'      => $item['is_completed'] ?? false,
+                            'completed_at'      => ($item['is_completed'] ?? false) ? now() : null,
+                            'completed_by_type' => 'student',
+                            'completed_by_id'   => $student->id,
+                        ]
+                    );
+                }
             }
         });
 
         return response()->json([
             'success' => true,
+            'data'    => $plan->fresh(),
             'message' => '保存しました。',
         ]);
     }
