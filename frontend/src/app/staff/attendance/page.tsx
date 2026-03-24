@@ -157,7 +157,7 @@ export default function AttendancePage() {
         <div className="space-y-3">
           {filteredRequests.map((req) => {
             const cfg = STATUS_CONFIG[req.makeup_status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.pending;
-            const StatusIcon = cfg.icon;
+            
 
             return (
               <Card key={req.id}>
@@ -172,7 +172,7 @@ export default function AttendancePage() {
                       </div>
                     </div>
                     <Badge variant={cfg.variant}>
-                      <StatusIcon className="h-3 w-3 mr-1" />
+                      <MaterialIcon name={cfg.icon} size={12} className="mr-1" />
                       {cfg.label}
                     </Badge>
                   </div>
