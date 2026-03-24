@@ -146,7 +146,12 @@ export default function WeeklyPlansPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {students.map((student) => {
+          {[...students].sort((a, b) => {
+            const aPlan = !!planByStudent[a.id];
+            const bPlan = !!planByStudent[b.id];
+            if (aPlan === bPlan) return 0;
+            return aPlan ? 1 : -1; // 未作成が上、作成済みが下
+          }).map((student) => {
             const plan = planByStudent[student.id];
             const hasPlan = !!plan;
 
