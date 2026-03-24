@@ -70,10 +70,11 @@ export function useChat(roomId?: number) {
 
   const handleSendMessage = useCallback(
     async (message: string, attachment?: File) => {
-      if (!roomId) return;
-      await sendMessage(roomId, message, attachment);
+      const targetRoomId = roomId || activeRoom?.id;
+      if (!targetRoomId) return;
+      await sendMessage(targetRoomId, message, attachment);
     },
-    [roomId, sendMessage]
+    [roomId, activeRoom, sendMessage]
   );
 
   const totalUnread = Object.values(unreadCounts).reduce((sum, count) => sum + count, 0);
