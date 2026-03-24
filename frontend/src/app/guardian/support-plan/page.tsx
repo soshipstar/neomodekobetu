@@ -144,7 +144,7 @@ export default function GuardianSupportPlanPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 flex-wrap">
                       <CardTitle>
-                        {plan.student?.student_name} - {formatDate(plan.plan_period_start ?? '')} ~ {formatDate(plan.plan_period_end ?? '')}
+                        {plan.student?.student_name} {plan.plan_period_start ? `- ${formatDate(plan.plan_period_start)}` : ''} {plan.plan_period_end ? `~ ${formatDate(plan.plan_period_end)}` : ''}
                       </CardTitle>
                       <Badge variant={plan.status === 'active' ? 'primary' : plan.status === 'approved' ? 'success' : 'default'}>
                         {statusLabels[plan.status] || plan.status}
