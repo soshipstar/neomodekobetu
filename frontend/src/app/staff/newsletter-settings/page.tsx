@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { Save, Settings, FileText, Sparkles } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -158,7 +158,7 @@ export default function NewsletterSettingsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">施設通信設定</h1>
-        <Button leftIcon={<Save className="h-4 w-4" />} onClick={handleSubmit} isLoading={saveMutation.isPending}>
+        <Button leftIcon={<MaterialIcon name="save" size={16} />} onClick={handleSubmit} isLoading={saveMutation.isPending}>
           保存
         </Button>
       </div>
@@ -168,7 +168,7 @@ export default function NewsletterSettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Settings className="h-5 w-5 text-[var(--brand-80)]" />
+              <MaterialIcon name="settings" size={20} className="text-[var(--brand-80)]" />
               <CardTitle>表示セクション設定</CardTitle>
             </div>
           </CardHeader>
@@ -230,7 +230,7 @@ export default function NewsletterSettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-[var(--brand-80)]" />
+              <MaterialIcon name="description" size={20} className="text-[var(--brand-80)]" />
               <CardTitle>デフォルトテキスト</CardTitle>
             </div>
           </CardHeader>
@@ -293,7 +293,7 @@ export default function NewsletterSettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-[var(--brand-80)]" />
+              <MaterialIcon name="auto_awesome" size={20} className="text-[var(--brand-80)]" />
               <CardTitle>AI生成指示</CardTitle>
             </div>
           </CardHeader>
@@ -320,7 +320,7 @@ export default function NewsletterSettingsPage() {
 
         {/* Save button (bottom) */}
         <div className="flex justify-end">
-          <Button type="submit" leftIcon={<Save className="h-4 w-4" />} isLoading={saveMutation.isPending}>
+          <Button type="submit" leftIcon={<MaterialIcon name="save" size={16} />} isLoading={saveMutation.isPending}>
             設定を保存
           </Button>
         </div>

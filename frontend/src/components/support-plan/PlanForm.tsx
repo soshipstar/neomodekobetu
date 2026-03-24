@@ -9,8 +9,8 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody } from '@/components/ui/Card';
 import { useToast } from '@/components/ui/Toast';
-import { Plus, Trash2 } from 'lucide-react';
 import type { SupportPlan } from '@/types/support-plan';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface PlanFormProps {
   studentId: number;
@@ -198,7 +198,7 @@ export function PlanForm({ studentId, existingPlan, onSuccess, onCancel }: PlanF
             type="button"
             variant="outline"
             size="sm"
-            leftIcon={<Plus className="h-4 w-4" />}
+            leftIcon={<MaterialIcon name="add" size={16} />}
             onClick={() =>
               append({
                 category: '',
@@ -303,7 +303,7 @@ export function PlanForm({ studentId, existingPlan, onSuccess, onCancel }: PlanF
                         onClick={() => remove(index)}
                         className="rounded p-1 text-[var(--neutral-foreground-4)] hover:text-red-500"
                       >
-                        <Trash2 className="h-3 w-3" />
+                        <MaterialIcon name="delete" size={12} />
                       </button>
                     )}
                   </td>

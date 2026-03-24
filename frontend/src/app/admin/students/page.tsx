@@ -7,8 +7,8 @@ import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Table, type Column } from '@/components/ui/Table';
 import { SkeletonTable } from '@/components/ui/Skeleton';
-import { Search } from 'lucide-react';
 import type { Student } from '@/types/user';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 const statusLabels: Record<string, string> = {
   active: '在籍', trial: '体験', short_term: '短期', withdrawn: '退所', waiting: '待機',
@@ -45,7 +45,7 @@ export default function AdminStudentsPage() {
       <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">生徒管理 (管理者)</h1>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
+        <MaterialIcon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
         <Input placeholder="生徒名で検索..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
       </div>
 

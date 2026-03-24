@@ -10,9 +10,9 @@ import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { SkeletonTable } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { Search, Plus, Pencil, Trash2 } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { usePagination } from '@/hooks/usePagination';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface StaffMember {
   id: number;
@@ -178,10 +178,10 @@ export default function StaffManagementPage() {
       label: '操作',
       render: (s) => (
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => openEditModal(s)} leftIcon={<Pencil className="h-3.5 w-3.5" />}>
+          <Button variant="ghost" size="sm" onClick={() => openEditModal(s)} leftIcon={<MaterialIcon name="edit" size={14} />}>
             編集
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => openDeleteModal(s)} leftIcon={<Trash2 className="h-3.5 w-3.5" />} className="text-[var(--status-danger-fg)]">
+          <Button variant="ghost" size="sm" onClick={() => openDeleteModal(s)} leftIcon={<MaterialIcon name="delete" size={14} />} className="text-[var(--status-danger-fg)]">
             削除
           </Button>
         </div>
@@ -193,13 +193,13 @@ export default function StaffManagementPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">スタッフ管理</h1>
-        <Button onClick={openAddModal} leftIcon={<Plus className="h-4 w-4" />}>
+        <Button onClick={openAddModal} leftIcon={<MaterialIcon name="add" size={16} />}>
           新規スタッフ登録
         </Button>
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
+        <MaterialIcon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
         <Input
           placeholder="氏名・ユーザー名で検索..."
           value={search}

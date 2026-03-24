@@ -11,7 +11,7 @@ import { SkeletonTable } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, isSameDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface Holiday {
   id: number;
@@ -79,14 +79,14 @@ export default function AdminHolidaysPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">休日管理</h1>
-        <Button onClick={() => setModalOpen(true)} leftIcon={<Plus className="h-4 w-4" />}>追加</Button>
+        <Button onClick={() => setModalOpen(true)} leftIcon={<MaterialIcon name="add" size={16} />}>追加</Button>
       </div>
 
       <Card>
         <div className="flex items-center justify-between mb-4">
-          <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}><ChevronLeft className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}><MaterialIcon name="chevron_left" size={16} /></Button>
           <h2 className="text-lg font-semibold">{format(currentMonth, 'yyyy年M月', { locale: ja })}</h2>
-          <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}><ChevronRight className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}><MaterialIcon name="chevron_right" size={16} /></Button>
         </div>
         {isLoading ? <SkeletonTable rows={5} cols={7} /> : (
           <div className="grid grid-cols-7 gap-px bg-[var(--neutral-background-5)] rounded-lg overflow-hidden">
@@ -117,7 +117,7 @@ export default function AdminHolidaysPage() {
                   <span className="ml-2 text-[var(--neutral-foreground-2)]">{h.holiday_name}</span>
                   {h.classroom?.classroom_name && <span className="ml-2 text-sm text-[var(--neutral-foreground-3)]">({h.classroom.classroom_name})</span>}
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => { if (confirm('削除しますか？')) deleteMutation.mutate(h.id); }}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                <Button variant="ghost" size="sm" onClick={() => { if (confirm('削除しますか？')) deleteMutation.mutate(h.id); }}><MaterialIcon name="delete" size={16} className="text-red-500" /></Button>
               </div>
             ))}
           </div>

@@ -7,7 +7,7 @@ import { loginSchema, type LoginFormData } from '@/lib/validators';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { AlertCircle } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 export default function LoginPage() {
   const { login, error, clearError } = useAuth();
@@ -41,7 +41,7 @@ export default function LoginPage() {
 
       {error && (
         <div className="mb-4 flex items-center gap-2 rounded-md border border-[var(--status-danger-fg)]/20 bg-[var(--status-danger-bg)] px-4 py-3">
-          <AlertCircle className="h-4 w-4 shrink-0 text-[var(--status-danger-fg)]" />
+          <MaterialIcon name="error" size={16} className="text-[var(--status-danger-fg)]" />
           <p className="text-sm text-[var(--status-danger-fg)]">{error}</p>
         </div>
       )}

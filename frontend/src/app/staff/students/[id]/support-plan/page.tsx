@@ -13,8 +13,8 @@ import { PlanForm } from '@/components/support-plan/PlanForm';
 import { PlanPreview } from '@/components/support-plan/PlanPreview';
 import { AiGenerateButton } from '@/components/support-plan/AiGenerateButton';
 import { formatDate } from '@/lib/utils';
-import { Plus, Eye, Edit2 } from 'lucide-react';
 import type { SupportPlan } from '@/types/support-plan';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 const statusLabels: Record<string, string> = {
   draft: '下書き', submitted: '提出済', official: '正式',
@@ -64,7 +64,7 @@ export default function SupportPlanPage() {
         <div className="flex items-center gap-2">
           <AiGenerateButton studentId={studentId} onGenerated={() => refetch()} />
           <Button
-            leftIcon={<Plus className="h-4 w-4" />}
+            leftIcon={<MaterialIcon name="add" size={16} />}
             onClick={() => setShowForm(true)}
           >
             新規作成
@@ -90,7 +90,7 @@ export default function SupportPlanPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    leftIcon={<Eye className="h-4 w-4" />}
+                    leftIcon={<MaterialIcon name="visibility" size={16} />}
                     onClick={() => setPreviewPlan(plan)}
                   >
                     プレビュー
@@ -99,7 +99,7 @@ export default function SupportPlanPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      leftIcon={<Edit2 className="h-4 w-4" />}
+                      leftIcon={<MaterialIcon name="edit" size={16} />}
                       onClick={() => { setEditPlan(plan); setShowForm(true); }}
                     >
                       編集

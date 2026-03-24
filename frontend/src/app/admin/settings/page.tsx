@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { Save, Building2 } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface ClassroomData {
   id: number;
@@ -96,7 +96,7 @@ export default function AdminSettingsPage() {
         <CardHeader>
           <CardTitle>
             <div className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
+              <MaterialIcon name="apartment" size={20} />
               {currentClassroom.classroom_name}
             </div>
           </CardTitle>
@@ -140,7 +140,7 @@ export default function AdminSettingsPage() {
             <Button
               type="submit"
               isLoading={saveMutation.isPending}
-              leftIcon={<Save className="h-4 w-4" />}
+              leftIcon={<MaterialIcon name="save" size={16} />}
             >
               設定を保存
             </Button>

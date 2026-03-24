@@ -12,10 +12,10 @@ import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { Plus, FileText, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import Link from 'next/link';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface Interview {
   id: number;
@@ -98,7 +98,7 @@ export default function StudentInterviewPage() {
           </Link>
           <h1 className="mt-1 text-2xl font-bold text-[var(--neutral-foreground-1)]">面談記録</h1>
         </div>
-        <Button onClick={() => setModalOpen(true)} leftIcon={<Plus className="h-4 w-4" />}>
+        <Button onClick={() => setModalOpen(true)} leftIcon={<MaterialIcon name="add" size={16} />}>
           新規面談記録
         </Button>
       </div>
@@ -109,7 +109,7 @@ export default function StudentInterviewPage() {
       ) : interviews.length === 0 ? (
         <Card>
           <div className="py-12 text-center">
-            <FileText className="mx-auto h-12 w-12 text-[var(--neutral-foreground-4)]" />
+            <MaterialIcon name="description" size={48} className="mx-auto text-[var(--neutral-foreground-4)]" />
             <p className="mt-2 text-sm text-[var(--neutral-foreground-3)]">面談記録がありません</p>
           </div>
         </Card>
@@ -125,7 +125,7 @@ export default function StudentInterviewPage() {
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--neutral-background-3)]">
-                      <Calendar className="h-5 w-5 text-[var(--brand-80)]" />
+                      <MaterialIcon name="calendar_month" size={20} className="text-[var(--brand-80)]" />
                     </div>
                     <div>
                       <p className="font-medium text-[var(--neutral-foreground-1)]">
@@ -134,7 +134,7 @@ export default function StudentInterviewPage() {
                       <p className="text-sm text-[var(--neutral-foreground-3)]">担当: {interview.interviewer?.full_name || '-'}</p>
                     </div>
                   </div>
-                  {isExpanded ? <ChevronUp className="h-5 w-5 text-[var(--neutral-foreground-4)]" /> : <ChevronDown className="h-5 w-5 text-[var(--neutral-foreground-4)]" />}
+                  {isExpanded ? <MaterialIcon name="expand_less" size={20} className="text-[var(--neutral-foreground-4)]" /> : <MaterialIcon name="expand_more" size={20} className="text-[var(--neutral-foreground-4)]" />}
                 </button>
 
                 {isExpanded && (

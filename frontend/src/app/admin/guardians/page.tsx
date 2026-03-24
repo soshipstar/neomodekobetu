@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Table, type Column } from '@/components/ui/Table';
 import { useToast } from '@/components/ui/Toast';
-import { Search, Plus, Pencil, Trash2, Mail, Phone } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface Guardian {
   id: number;
@@ -68,8 +68,8 @@ export default function AdminGuardiansPage() {
     {
       key: 'contact', label: '連絡先', render: (g) => (
         <div className="space-y-0.5">
-          {g.email && <div className="flex items-center gap-1 text-sm text-[var(--neutral-foreground-3)]"><Mail className="h-3 w-3" />{g.email}</div>}
-          {g.phone && <div className="flex items-center gap-1 text-sm text-[var(--neutral-foreground-3)]"><Phone className="h-3 w-3" />{g.phone}</div>}
+          {g.email && <div className="flex items-center gap-1 text-sm text-[var(--neutral-foreground-3)]"><MaterialIcon name="mail" size={12} />{g.email}</div>}
+          {g.phone && <div className="flex items-center gap-1 text-sm text-[var(--neutral-foreground-3)]"><MaterialIcon name="phone" size={12} />{g.phone}</div>}
         </div>
       ),
     },
@@ -83,8 +83,8 @@ export default function AdminGuardiansPage() {
     {
       key: 'actions', label: '操作', render: (g) => (
         <div className="flex gap-1">
-          <Button variant="ghost" size="sm" onClick={() => openEdit(g)}><Pencil className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="sm" onClick={() => { if (confirm('削除しますか？')) deleteMutation.mutate(g.id); }}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+          <Button variant="ghost" size="sm" onClick={() => openEdit(g)}><MaterialIcon name="edit" size={16} /></Button>
+          <Button variant="ghost" size="sm" onClick={() => { if (confirm('削除しますか？')) deleteMutation.mutate(g.id); }}><MaterialIcon name="delete" size={16} className="text-red-500" /></Button>
         </div>
       ),
     },
@@ -94,11 +94,11 @@ export default function AdminGuardiansPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">保護者管理</h1>
-        <Button onClick={() => { setEditing(null); setModalOpen(true); }} leftIcon={<Plus className="h-4 w-4" />}>追加</Button>
+        <Button onClick={() => { setEditing(null); setModalOpen(true); }} leftIcon={<MaterialIcon name="add" size={16} />}>追加</Button>
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
+        <MaterialIcon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
         <Input placeholder="名前・メールで検索..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
       </div>
 

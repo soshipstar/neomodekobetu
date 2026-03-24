@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { Plus, Trash2, RotateCcw, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface Tag {
   id: number;
@@ -108,7 +108,7 @@ export default function TagSettingsPage() {
           <p className="text-sm text-[var(--neutral-foreground-3)]">支援案に使用するタグをカスタマイズできます</p>
         </div>
         <Link href="/staff/support-plans">
-          <Button variant="secondary" leftIcon={<ArrowLeft className="h-4 w-4" />}>
+          <Button variant="secondary" leftIcon={<MaterialIcon name="arrow_back" size={16} />}>
             支援案一覧へ
           </Button>
         </Link>
@@ -130,7 +130,7 @@ export default function TagSettingsPage() {
           <SkeletonList items={5} />
         ) : (
           <div className="space-y-2 p-4 pt-2">
-            <Button onClick={addTag} variant="secondary" leftIcon={<Plus className="h-4 w-4" />} className="mb-3">
+            <Button onClick={addTag} variant="secondary" leftIcon={<MaterialIcon name="add" size={16} />} className="mb-3">
               タグを追加
             </Button>
 
@@ -154,7 +154,7 @@ export default function TagSettingsPage() {
                   size="sm"
                   onClick={() => removeTag(index)}
                 >
-                  <Trash2 className="h-4 w-4 text-[var(--status-danger-fg)]" />
+                  <MaterialIcon name="delete" size={16} className="text-[var(--status-danger-fg)]" />
                 </Button>
               </div>
             ))}
@@ -173,7 +173,7 @@ export default function TagSettingsPage() {
                 variant="secondary"
                 onClick={handleReset}
                 isLoading={resetMutation.isPending}
-                leftIcon={<RotateCcw className="h-4 w-4" />}
+                leftIcon={<MaterialIcon name="undo" size={16} />}
                 className="flex-1"
               >
                 デフォルトに戻す

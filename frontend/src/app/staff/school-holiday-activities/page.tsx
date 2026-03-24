@@ -8,13 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import {
-  ChevronLeft,
-  ChevronRight,
-  Save,
-  Calendar,
-  Info,
-} from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types & Constants
@@ -156,7 +150,7 @@ export default function SchoolHolidayActivitiesPage() {
       <Card>
         <CardBody>
           <div className="flex items-start gap-3">
-            <Info className="h-5 w-5 shrink-0 text-[var(--brand-80)] mt-0.5" />
+            <MaterialIcon name="info" size={20} className="text-[var(--brand-80)] mt-0.5" />
             <div className="text-sm text-[var(--neutral-foreground-2)] space-y-1">
               <p className="font-semibold">学校休業日活動とは？</p>
               <p>学校が休みの日（夏休み、春休み、冬休み等）に施設で活動する日です。</p>
@@ -186,15 +180,15 @@ export default function SchoolHolidayActivitiesPage() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <button onClick={goToPrevMonth} className="rounded-lg p-1.5 hover:bg-[var(--neutral-background-3)]">
-                <ChevronLeft className="h-5 w-5 text-[var(--neutral-foreground-3)]" />
+                <MaterialIcon name="chevron_left" size={20} className="text-[var(--neutral-foreground-3)]" />
               </button>
               <h2 className="text-lg font-bold text-[var(--neutral-foreground-1)] min-w-[120px] text-center">
                 {year}年{month}月
               </h2>
               <button onClick={goToNextMonth} className="rounded-lg p-1.5 hover:bg-[var(--neutral-background-3)]">
-                <ChevronRight className="h-5 w-5 text-[var(--neutral-foreground-3)]" />
+                <MaterialIcon name="chevron_right" size={20} className="text-[var(--neutral-foreground-3)]" />
               </button>
-              <Button variant="ghost" size="sm" onClick={goToToday} leftIcon={<Calendar className="h-4 w-4" />}>
+              <Button variant="ghost" size="sm" onClick={goToToday} leftIcon={<MaterialIcon name="calendar_month" size={16} />}>
                 今月
               </Button>
             </div>
@@ -283,7 +277,7 @@ export default function SchoolHolidayActivitiesPage() {
           {/* Save button */}
           <div className="mt-4 flex justify-end">
             <Button
-              leftIcon={<Save className="h-4 w-4" />}
+              leftIcon={<MaterialIcon name="save" size={16} />}
               onClick={() => saveMutation.mutate()}
               isLoading={saveMutation.isPending}
             >

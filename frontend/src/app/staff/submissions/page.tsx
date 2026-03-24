@@ -12,8 +12,8 @@ import { Table, type Column } from '@/components/ui/Table';
 import { Tabs } from '@/components/ui/Tabs';
 import { SkeletonTable } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { Plus, FileText, Download, Trash2, Eye } from 'lucide-react';
 import { format } from 'date-fns';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface SubmissionRequest {
   id: number;
@@ -157,7 +157,7 @@ export default function SubmissionsPage() {
             size="sm"
             onClick={() => { if (confirm('削除しますか？')) deleteMutation.mutate(req.id); }}
           >
-            <Trash2 className="h-4 w-4 text-[var(--status-danger-fg)]" />
+            <MaterialIcon name="delete" size={16} className="text-[var(--status-danger-fg)]" />
           </Button>
         </div>
       ),
@@ -189,7 +189,7 @@ export default function SubmissionsPage() {
       label: 'ファイル',
       render: (sub) => sub.file_url ? (
         <a href={sub.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm text-[var(--brand-80)] hover:underline">
-          <Download className="h-3 w-3" />
+          <MaterialIcon name="download" size={12} />
           {sub.file_name || 'ダウンロード'}
         </a>
       ) : '-',
@@ -205,7 +205,7 @@ export default function SubmissionsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">提出物管理</h1>
-        <Button onClick={() => setCreateModal(true)} leftIcon={<Plus className="h-4 w-4" />}>
+        <Button onClick={() => setCreateModal(true)} leftIcon={<MaterialIcon name="add" size={16} />}>
           新規依頼作成
         </Button>
       </div>

@@ -10,7 +10,7 @@ import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { Search, BookOpen, CheckCircle, BarChart3, X } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 /** Normalize escaped newlines from API */
 function nl(text: string | null | undefined): string {
@@ -164,7 +164,7 @@ export default function CommunicationLogsPage() {
       <Card>
         <CardBody>
           <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-[var(--brand-60)]">
-            <Search className="h-4 w-4" /> 検索・フィルター
+            <MaterialIcon name="search" size={16} /> 検索・フィルター
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {students.length > 1 && (
@@ -229,7 +229,7 @@ export default function CommunicationLogsPage() {
             <Button variant="outline" size="sm" onClick={handleClear}>
               クリア
             </Button>
-            <Button variant="primary" size="sm" leftIcon={<Search className="h-4 w-4" />} onClick={handleSearch}>
+            <Button variant="primary" size="sm" leftIcon={<MaterialIcon name="search" size={16} />} onClick={handleSearch}>
               検索
             </Button>
           </div>
@@ -242,7 +242,7 @@ export default function CommunicationLogsPage() {
           <CardBody>
             <div className="flex items-center justify-between mb-4">
               <h2 className="flex items-center gap-2 text-sm font-semibold text-[var(--brand-60)]">
-                <BarChart3 className="h-4 w-4" /> 統計情報
+                <MaterialIcon name="analytics" size={16} /> 統計情報
               </h2>
               <Button variant="ghost" size="sm" onClick={() => setShowStats(!showStats)}>
                 {showStats ? '閉じる' : '開く'}
@@ -302,7 +302,7 @@ export default function CommunicationLogsPage() {
       <Card>
         <CardBody>
           <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-[var(--brand-60)]">
-            <BookOpen className="h-4 w-4" /> 連絡帳一覧
+            <MaterialIcon name="menu_book" size={16} /> 連絡帳一覧
           </h2>
 
           {/* Search info banner */}
@@ -324,7 +324,7 @@ export default function CommunicationLogsPage() {
             <SkeletonList items={3} />
           ) : notes.length === 0 ? (
             <div className="py-12 text-center">
-              <BookOpen className="mx-auto h-12 w-12 text-[var(--neutral-foreground-disabled)]" />
+              <MaterialIcon name="menu_book" size={48} className="mx-auto text-[var(--neutral-foreground-disabled)]" />
               <p className="mt-2 text-sm text-[var(--neutral-foreground-3)]">
                 {isSearching
                   ? '検索条件に一致する連絡帳が見つかりませんでした'
@@ -384,7 +384,7 @@ export default function CommunicationLogsPage() {
                       {note.guardian_confirmed ? (
                         <>
                           <div className="flex items-center gap-2 text-sm text-green-600">
-                            <CheckCircle className="h-4 w-4" />
+                            <MaterialIcon name="check_circle" size={16} />
                             確認済み
                           </div>
                           {note.guardian_confirmed_at && (
@@ -397,7 +397,7 @@ export default function CommunicationLogsPage() {
                         <Button
                           variant="primary"
                           size="sm"
-                          leftIcon={<CheckCircle className="h-4 w-4" />}
+                          leftIcon={<MaterialIcon name="check_circle" size={16} />}
                           onClick={() => {
                             if (window.confirm('この連絡帳を「確認しました」にしてよろしいですか？')) {
                               confirmMutation.mutate(note.id);

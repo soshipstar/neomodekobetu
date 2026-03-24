@@ -7,9 +7,9 @@ import { useAuthStore } from '@/stores/authStore';
 import { ChatMessageList } from '@/components/chat/ChatMessageList';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { SkeletonList } from '@/components/ui/Skeleton';
-import { ArrowLeft, CalendarDays, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 export default function StaffChatRoomPage() {
   const params = useParams();
@@ -75,7 +75,7 @@ export default function StaffChatRoomPage() {
           href="/staff/chat"
           className="rounded-lg p-1 text-[var(--neutral-foreground-4)] hover:text-[var(--neutral-foreground-2)] lg:hidden"
         >
-          <ArrowLeft className="h-5 w-5" />
+          <MaterialIcon name="arrow_back" size={20} />
         </Link>
         <div className="flex-1">
           <h2 className="text-sm font-semibold text-[var(--neutral-foreground-1)]">
@@ -89,7 +89,7 @@ export default function StaffChatRoomPage() {
           <Link
             href={`/staff/meetings?action=create&student_id=${activeRoom.student_id}&guardian_id=${activeRoom.guardian_id}`}
           >
-            <Button variant="outline" size="sm" leftIcon={<CalendarDays className="h-4 w-4" />}>
+            <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="event" size={16} />}>
               面談予約
             </Button>
           </Link>
@@ -111,7 +111,7 @@ export default function StaffChatRoomPage() {
                   disabled={loadingOlder}
                   className="flex items-center gap-1 rounded-full bg-white px-4 py-1.5 text-xs text-[var(--neutral-foreground-3)] shadow-sm hover:bg-[var(--neutral-background-3)] transition-colors disabled:opacity-50"
                 >
-                  <ChevronUp className="h-3.5 w-3.5" />
+                  <MaterialIcon name="expand_less" size={14} />
                   {loadingOlder ? '読み込み中...' : '過去のメッセージを読み込む'}
                 </button>
               </div>

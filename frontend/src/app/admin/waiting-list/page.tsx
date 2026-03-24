@@ -12,9 +12,9 @@ import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Table, type Column } from '@/components/ui/Table';
 import { useToast } from '@/components/ui/Toast';
-import { Search, Pencil, UserPlus, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface WaitingStudent {
   id: number;
@@ -101,7 +101,7 @@ export default function AdminWaitingListPage() {
       label: '操作',
       render: (s) => (
         <Button variant="ghost" size="sm" onClick={() => openEdit(s)}>
-          <Pencil className="h-4 w-4" />
+          <MaterialIcon name="edit" size={16} />
         </Button>
       ),
     },
@@ -115,7 +115,7 @@ export default function AdminWaitingListPage() {
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">待機者管理</h1>
         {waitingCount > 0 && (
           <Badge variant="warning" className="text-sm px-3 py-1">
-            <Clock className="mr-1 inline h-3 w-3" />
+            <MaterialIcon name="schedule" size={12} className="mr-1 inline" />
             待機中: {waitingCount}名
           </Badge>
         )}
@@ -123,7 +123,7 @@ export default function AdminWaitingListPage() {
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
+          <MaterialIcon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
           <Input placeholder="名前で検索..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
         </div>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-lg border border-[var(--neutral-stroke-1)] bg-white px-3 py-2 text-sm">

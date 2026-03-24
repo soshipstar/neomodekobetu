@@ -8,10 +8,10 @@ import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { ChevronLeft, Printer, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 function nl(t: string | null | undefined): string {
   if (!t) return '';
@@ -156,7 +156,7 @@ export default function PlanBasisPage() {
       {/* Navigation back link */}
       <div className="print:hidden">
         <Link href="/staff/kobetsu-plan">
-          <Button variant="ghost" size="sm" leftIcon={<ChevronLeft className="h-4 w-4" />}>個別支援計画に戻る</Button>
+          <Button variant="ghost" size="sm" leftIcon={<MaterialIcon name="chevron_left" size={16} />}>個別支援計画に戻る</Button>
         </Link>
       </div>
 
@@ -333,7 +333,7 @@ export default function PlanBasisPage() {
       <div className="flex flex-wrap gap-3 print:hidden">
         {!plan.basis_content ? (
           <Button
-            leftIcon={<Sparkles className="h-4 w-4" />}
+            leftIcon={<MaterialIcon name="auto_awesome" size={16} />}
             onClick={() => generateBasisMutation.mutate()}
             isLoading={generating}
             className="text-white"
@@ -344,14 +344,14 @@ export default function PlanBasisPage() {
         ) : (
           <Button
             variant="outline"
-            leftIcon={<Sparkles className="h-4 w-4" />}
+            leftIcon={<MaterialIcon name="auto_awesome" size={16} />}
             onClick={() => generateBasisMutation.mutate()}
             isLoading={generating}
           >
             全体所感を再生成
           </Button>
         )}
-        <Button variant="outline" leftIcon={<Printer className="h-4 w-4" />} onClick={() => window.print()}>印刷</Button>
+        <Button variant="outline" leftIcon={<MaterialIcon name="print" size={16} />} onClick={() => window.print()}>印刷</Button>
       </div>
     </div>
   );

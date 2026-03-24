@@ -15,8 +15,8 @@ import { SkeletonTable } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { usePagination } from '@/hooks/usePagination';
 import { useDebounce } from '@/hooks/useDebounce';
-import { Plus, Search } from 'lucide-react';
 import type { User } from '@/types/user';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 const userTypeLabels: Record<string, string> = {
   admin: '管理者', staff: 'スタッフ', guardian: '保護者', tablet: 'タブレット',
@@ -63,11 +63,11 @@ export default function UsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">ユーザー管理</h1>
-        <Button leftIcon={<Plus className="h-4 w-4" />} onClick={() => setShowCreate(true)}>新規作成</Button>
+        <Button leftIcon={<MaterialIcon name="add" size={16} />} onClick={() => setShowCreate(true)}>新規作成</Button>
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
+        <MaterialIcon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
         <Input placeholder="氏名・ユーザー名で検索..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
       </div>
 

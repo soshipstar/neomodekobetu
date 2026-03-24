@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { Send, Save, CheckCircle2, Clock, Info } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -187,7 +187,7 @@ export default function FacilityEvaluationPage() {
         <Card>
           <CardBody>
             <div className="flex flex-col items-center py-8 text-center">
-              <Info className="h-12 w-12 text-[var(--neutral-foreground-4)] mb-3" />
+              <MaterialIcon name="info" size={48} className="text-[var(--neutral-foreground-4)] mb-3" />
               <h2 className="text-lg font-semibold text-[var(--neutral-foreground-1)] mb-2">
                 現在、回答を受け付けている評価はありません
               </h2>
@@ -219,7 +219,7 @@ export default function FacilityEvaluationPage() {
       {/* Submitted notice */}
       {isSubmitted && (
         <div className="rounded-lg bg-[var(--status-info-bg,rgba(59,130,246,0.1))] border border-[var(--status-info-fg,#3b82f6)] px-4 py-3 text-sm text-[var(--status-info-fg,#3b82f6)] text-center">
-          <CheckCircle2 className="inline h-4 w-4 mr-1" />
+          <MaterialIcon name="check_circle" size={16} className="inline mr-1" />
           この評価は{data.evaluation?.submitted_at
             ? new Date(data.evaluation.submitted_at).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
             : ''}に提出済みです。
@@ -243,7 +243,7 @@ export default function FacilityEvaluationPage() {
             </p>
             {data.period.guardian_deadline && (
               <div className="mt-3 flex items-center gap-2 rounded-md bg-[var(--status-warning-bg,rgba(245,158,11,0.1))] px-3 py-2 text-sm text-[var(--status-warning-fg,#f59e0b)]">
-                <Clock className="h-4 w-4" />
+                <MaterialIcon name="schedule" size={16} />
                 回答期限: {new Date(data.period.guardian_deadline).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
             )}
@@ -322,7 +322,7 @@ export default function FacilityEvaluationPage() {
             variant="outline"
             onClick={() => handleSave(false)}
             isLoading={isSaving}
-            leftIcon={<Save className="h-4 w-4" />}
+            leftIcon={<MaterialIcon name="save" size={16} />}
           >
             下書き保存
           </Button>
@@ -333,7 +333,7 @@ export default function FacilityEvaluationPage() {
               }
             }}
             isLoading={isSaving}
-            leftIcon={<Send className="h-4 w-4" />}
+            leftIcon={<MaterialIcon name="send" size={16} />}
           >
             回答を提出する
           </Button>

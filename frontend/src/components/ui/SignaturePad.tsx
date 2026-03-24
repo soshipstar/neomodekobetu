@@ -11,7 +11,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from './Button';
-import { X, Maximize2, RotateCcw, Check, Undo2, Pen } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -412,7 +412,7 @@ const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
           {!hasContent && (
             <div className="absolute inset-0 flex items-center justify-center bg-white/60 opacity-0 group-hover:opacity-100 transition-opacity">
               <span className="flex items-center gap-1.5 text-sm text-[var(--brand-80)] font-medium">
-                <Maximize2 className="h-4 w-4" />
+                <MaterialIcon name="open_in_full" size={16} />
                 クリックして署名
               </span>
             </div>
@@ -421,24 +421,24 @@ const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
 
         {/* Hint */}
         <p className="text-xs text-[var(--neutral-foreground-4)]">
-          <Pen className="inline h-3 w-3 mr-0.5" />
+          <MaterialIcon name="edit" size={12} className="inline mr-0.5" />
           上のエリアに直接署名するか、「大きく書く」で拡大表示して記入できます
         </p>
 
         {/* Controls */}
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" variant="primary" size="sm" leftIcon={<Maximize2 className="h-3.5 w-3.5" />} onClick={openModal}>
+          <Button type="button" variant="primary" size="sm" leftIcon={<MaterialIcon name="open_in_full" size={14} />} onClick={openModal}>
             大きく書く
           </Button>
-          <Button type="button" variant="outline" size="sm" leftIcon={<Undo2 className="h-3.5 w-3.5" />} onClick={handleUndo}>
+          <Button type="button" variant="outline" size="sm" leftIcon={<MaterialIcon name="undo" size={14} />} onClick={handleUndo}>
             戻す
           </Button>
-          <Button type="button" variant="ghost" size="sm" leftIcon={<RotateCcw className="h-3.5 w-3.5" />} onClick={handleClear}>
+          <Button type="button" variant="ghost" size="sm" leftIcon={<MaterialIcon name="undo" size={14} />} onClick={handleClear}>
             クリア
           </Button>
           {hasContent ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">
-              <Check className="h-3 w-3" /> 署名済み
+              <MaterialIcon name="check" size={12} /> 署名済み
             </span>
           ) : (
             <span className="text-xs text-[var(--neutral-foreground-3)]">未署名</span>
@@ -477,7 +477,7 @@ const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
                     onClick={closeModal}
                     className="rounded-lg p-1.5 text-[var(--neutral-foreground-4)] hover:bg-[var(--neutral-background-4)] hover:text-[var(--neutral-foreground-3)] transition-colors"
                   >
-                    <X className="h-5 w-5" />
+                    <MaterialIcon name="close" size={20} />
                   </button>
                 </div>
 
@@ -503,14 +503,14 @@ const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
                 {/* Footer */}
                 <div className="flex justify-between border-t border-[var(--neutral-stroke-2)] px-5 py-3">
                   <div className="flex gap-2">
-                    <Button type="button" variant="outline" size="sm" onClick={undoModal} leftIcon={<Undo2 className="h-4 w-4" />}>
+                    <Button type="button" variant="outline" size="sm" onClick={undoModal} leftIcon={<MaterialIcon name="undo" size={16} />}>
                       戻す
                     </Button>
-                    <Button type="button" variant="ghost" size="sm" onClick={clearModal} leftIcon={<RotateCcw className="h-4 w-4" />}>
+                    <Button type="button" variant="ghost" size="sm" onClick={clearModal} leftIcon={<MaterialIcon name="undo" size={16} />}>
                       クリア
                     </Button>
                   </div>
-                  <Button type="button" onClick={applyModal} leftIcon={<Check className="h-4 w-4" />}>
+                  <Button type="button" onClick={applyModal} leftIcon={<MaterialIcon name="check" size={16} />}>
                     署名を適用
                   </Button>
                 </div>

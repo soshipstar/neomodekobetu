@@ -10,27 +10,10 @@ import { Modal } from '@/components/ui/Modal';
 import { Tabs } from '@/components/ui/Tabs';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import {
-  Plus,
-  ChevronLeft,
-  ChevronRight,
-  Calendar,
-  Users,
-  Send,
-  Save,
-  Sparkles,
-  CheckCircle,
-  AlertCircle,
-  Clock,
-  Trash2,
-  Edit3,
-  Eye,
-  FileText,
-  RefreshCw,
-} from 'lucide-react';
 import { format, addDays, subDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import Link from 'next/link';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -546,17 +529,17 @@ export default function RenrakuchoPage() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={goToPrevDay}>
-              <ChevronLeft className="h-4 w-4" />
+              <MaterialIcon name="chevron_left" size={16} />
             </Button>
             <Button variant="outline" size="sm" onClick={goToToday}>
               今日
             </Button>
             <Button variant="ghost" size="sm" onClick={goToNextDay}>
-              <ChevronRight className="h-4 w-4" />
+              <MaterialIcon name="chevron_right" size={16} />
             </Button>
           </div>
           <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-[var(--neutral-foreground-3)]" />
+            <MaterialIcon name="calendar_month" size={16} className="text-[var(--neutral-foreground-3)]" />
             <input
               type="date"
               value={dateStr}
@@ -624,7 +607,7 @@ export default function RenrakuchoPage() {
                   )}
                   <div className="flex items-center gap-3 text-xs text-[var(--neutral-foreground-3)]">
                     <span className="flex items-center gap-1">
-                      <Users className="h-3 w-3" />
+                      <MaterialIcon name="group" size={12} />
                       {activity.student_records_count}名
                     </span>
                     {activity.sent_count > 0 && (
@@ -656,7 +639,7 @@ export default function RenrakuchoPage() {
                     title="統合・送信"
                     onClick={() => handleOpenSendModal(activity.id)}
                   >
-                    <Send className="h-4 w-4 mr-1" />
+                    <MaterialIcon name="send" size={16} className="mr-1" />
                     <span className="text-xs">統合</span>
                   </Button>
                   {activity.sent_count > 0 && (
@@ -666,7 +649,7 @@ export default function RenrakuchoPage() {
                       title="送信済み内容を閲覧"
                       onClick={() => handleOpenViewModal(activity.id)}
                     >
-                      <Eye className="h-4 w-4" />
+                      <MaterialIcon name="visibility" size={16} />
                     </Button>
                   )}
                   <Button
@@ -675,7 +658,7 @@ export default function RenrakuchoPage() {
                     title="削除"
                     onClick={() => handleDeleteActivity(activity.id)}
                   >
-                    <Trash2 className="h-4 w-4 text-[var(--status-danger-fg)]" />
+                    <MaterialIcon name="delete" size={16} className="text-[var(--status-danger-fg)]" />
                   </Button>
                 </div>
               </div>
@@ -686,12 +669,12 @@ export default function RenrakuchoPage() {
         <Card>
           <CardBody>
             <div className="py-10 text-center">
-              <FileText className="mx-auto mb-3 h-10 w-10 text-[var(--neutral-foreground-4)]" />
+              <MaterialIcon name="description" size={40} className="mx-auto mb-3 text-[var(--neutral-foreground-4)]" />
               <p className="text-sm text-[var(--neutral-foreground-3)]">
                 この日の活動はまだ作成されていません
               </p>
               <Link href={`/staff/activities/new?date=${dateStr}`}>
-                <Button className="mt-4" size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+                <Button className="mt-4" size="sm" leftIcon={<MaterialIcon name="add" size={16} />}>
                   活動を作成する
                 </Button>
               </Link>
@@ -783,7 +766,7 @@ export default function RenrakuchoPage() {
         <Card>
           <CardBody>
             <div className="py-10 text-center">
-              <CheckCircle className="mx-auto mb-3 h-10 w-10 text-[var(--status-success-fg)]" />
+              <MaterialIcon name="check_circle" size={40} className="mx-auto mb-3 text-[var(--status-success-fg)]" />
               <p className="text-sm font-medium text-[var(--status-success-fg)]">
                 未確認の連絡帳はありません
               </p>
@@ -810,7 +793,7 @@ export default function RenrakuchoPage() {
           <p className="text-sm text-[var(--neutral-foreground-3)]">日常活動の記録と保護者への連絡</p>
         </div>
         <Link href={`/staff/activities/new?date=${dateStr}`}>
-          <Button leftIcon={<Plus className="h-4 w-4" />}>
+          <Button leftIcon={<MaterialIcon name="add" size={16} />}>
             活動を作成
           </Button>
         </Link>
@@ -827,14 +810,14 @@ export default function RenrakuchoPage() {
           {
             key: 'activities',
             label: '活動一覧',
-            icon: <FileText className="h-4 w-4" />,
+            icon: <MaterialIcon name="description" size={16} />,
             badge: activities.length,
             content: renderActivityList(),
           },
           {
             key: 'unconfirmed',
             label: '未確認連絡帳',
-            icon: <AlertCircle className="h-4 w-4" />,
+            icon: <MaterialIcon name="error" size={16} />,
             badge: unconfirmedNotes.length,
             content: renderUnconfirmedNotes(),
           },
@@ -884,9 +867,9 @@ export default function RenrakuchoPage() {
                       >
                         <span>{rec.student?.student_name || `生徒ID: ${rec.student_id}`}</span>
                         {hasContent ? (
-                          <CheckCircle className="h-4 w-4 text-[var(--status-success-fg)]" />
+                          <MaterialIcon name="check_circle" size={16} className="text-[var(--status-success-fg)]" />
                         ) : (
-                          <Clock className="h-4 w-4 text-[var(--neutral-foreground-4)]" />
+                          <MaterialIcon name="schedule" size={16} className="text-[var(--neutral-foreground-4)]" />
                         )}
                       </button>
                     );
@@ -948,7 +931,7 @@ export default function RenrakuchoPage() {
                         <Button
                           size="sm"
                           isLoading={isSavingStudent}
-                          leftIcon={<Save className="h-4 w-4" />}
+                          leftIcon={<MaterialIcon name="save" size={16} />}
                           onClick={handleSaveStudentRecord}
                         >
                           保存
@@ -958,7 +941,7 @@ export default function RenrakuchoPage() {
                   ) : (
                     <div className="flex h-full items-center justify-center py-12 text-sm text-[var(--neutral-foreground-4)]">
                       <div className="text-center">
-                        <Eye className="mx-auto mb-2 h-8 w-8" />
+                        <MaterialIcon name="visibility" size={32} className="mx-auto mb-2" />
                         <p>左の一覧から生徒を選択してください</p>
                       </div>
                     </div>
@@ -1016,7 +999,7 @@ export default function RenrakuchoPage() {
                           variant="subtle"
                           size="sm"
                           isLoading={isGenerating === studentId}
-                          leftIcon={<Sparkles className="h-4 w-4" />}
+                          leftIcon={<MaterialIcon name="auto_awesome" size={16} />}
                           onClick={() => handleGenerateIntegrated(studentId)}
                         >
                           AI生成
@@ -1078,14 +1061,14 @@ export default function RenrakuchoPage() {
               <Button
                 variant="outline"
                 isLoading={isSavingDraft}
-                leftIcon={<Save className="h-4 w-4" />}
+                leftIcon={<MaterialIcon name="save" size={16} />}
                 onClick={() => handleSaveDraft(false)}
               >
                 途中保存
               </Button>
               <Button
                 isLoading={isSending}
-                leftIcon={<Send className="h-4 w-4" />}
+                leftIcon={<MaterialIcon name="send" size={16} />}
                 onClick={handleSendToGuardians}
                 disabled={Object.entries(sendNotes).every(([sid, v]) => !v.trim() || sentStudentIds.has(Number(sid)))}
               >
@@ -1194,12 +1177,12 @@ export default function RenrakuchoPage() {
 
                     {note.guardian_confirmed && note.guardian_confirmed_at ? (
                       <div className="mt-2 rounded-md bg-[rgba(var(--status-success-fg-rgb,52,199,89),0.1)] p-2 text-xs text-[var(--status-success-fg)]">
-                        <CheckCircle className="inline h-3 w-3 mr-1" />
+                        <MaterialIcon name="check_circle" size={12} className="inline mr-1" />
                         保護者確認日時: {format(new Date(note.guardian_confirmed_at), 'yyyy年M月d日 HH:mm')}
                       </div>
                     ) : (
                       <div className="mt-2 rounded-md bg-[rgba(var(--status-danger-fg-rgb,255,59,48),0.1)] p-2 text-xs text-[var(--status-danger-fg)]">
-                        <AlertCircle className="inline h-3 w-3 mr-1" />
+                        <MaterialIcon name="error" size={12} className="inline mr-1" />
                         まだ保護者が確認していません
                       </div>
                     )}

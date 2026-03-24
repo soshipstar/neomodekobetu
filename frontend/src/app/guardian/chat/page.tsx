@@ -8,7 +8,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { ChatRoomList } from '@/components/chat/ChatRoomList';
 import { Input } from '@/components/ui/Input';
 import { SkeletonList } from '@/components/ui/Skeleton';
-import { Search } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 export default function GuardianChatListPage() {
   const router = useRouter();
@@ -37,7 +37,7 @@ export default function GuardianChatListPage() {
       <h1 className="text-xl font-bold text-[var(--neutral-foreground-1)] sm:text-2xl">チャット</h1>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
+        <MaterialIcon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
         <Input
           placeholder="お子様の名前で検索..."
           value={search}

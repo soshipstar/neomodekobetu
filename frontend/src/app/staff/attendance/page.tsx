@@ -10,8 +10,8 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { Check, X, Clock, Calendar, User, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -33,9 +33,9 @@ interface MakeupRequest {
 }
 
 const STATUS_CONFIG = {
-  pending:  { label: '承認待ち', variant: 'warning' as const, icon: Clock },
-  approved: { label: '承認済み', variant: 'success' as const, icon: Check },
-  rejected: { label: '却下', variant: 'danger' as const, icon: X },
+  pending:  { label: '承認待ち', variant: 'warning' as const, icon: "schedule" },
+  approved: { label: '承認済み', variant: 'success' as const, icon: "check" },
+  rejected: { label: '却下', variant: 'danger' as const, icon: "close" },
 };
 
 function nl(text: string | null | undefined): string {
@@ -92,7 +92,7 @@ export default function AttendancePage() {
           <p className="text-sm text-[var(--neutral-foreground-3)]">保護者からの振替依頼を確認・承認</p>
         </div>
         <Link href="/staff/dashboard">
-          <Button variant="ghost" size="sm" leftIcon={<ChevronLeft className="h-4 w-4" />}>
+          <Button variant="ghost" size="sm" leftIcon={<MaterialIcon name="chevron_left" size={16} />}>
             活動管理へ戻る
           </Button>
         </Link>
@@ -148,7 +148,7 @@ export default function AttendancePage() {
         <Card>
           <CardBody>
             <div className="py-12 text-center text-[var(--neutral-foreground-4)]">
-              <Calendar className="mx-auto mb-3 h-12 w-12" />
+              <MaterialIcon name="calendar_month" size={48} className="mx-auto mb-3" />
               <p className="text-sm">{statusFilter === 'pending' ? '承認待ちの振替依頼はありません' : '該当する振替依頼はありません'}</p>
             </div>
           </CardBody>
@@ -210,7 +210,7 @@ export default function AttendancePage() {
                   {req.makeup_status === 'approved' && (
                     <div className="rounded-lg bg-green-50 border border-green-200 p-3 text-sm">
                       <p className="text-green-800">
-                        <Check className="inline h-4 w-4 mr-1" />
+                        <MaterialIcon name="check" size={16} className="inline mr-1" />
                         承認済み
                         {req.approver && <span className="ml-2">承認者: {req.approver.full_name}</span>}
                         {req.makeup_approved_at && (
@@ -224,7 +224,7 @@ export default function AttendancePage() {
                   {req.makeup_status === 'rejected' && (
                     <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm">
                       <p className="text-red-800">
-                        <X className="inline h-4 w-4 mr-1" />
+                        <MaterialIcon name="close" size={16} className="inline mr-1" />
                         却下
                         {req.approver && <span className="ml-2">担当: {req.approver.full_name}</span>}
                       </p>
@@ -238,7 +238,7 @@ export default function AttendancePage() {
                       <Button
                         variant="primary"
                         size="sm"
-                        leftIcon={<Check className="h-4 w-4" />}
+                        leftIcon={<MaterialIcon name="check" size={16} />}
                         onClick={() => {
                           if (confirm('この振替依頼を承認しますか？'))
                             actionMutation.mutate({ id: req.id, action: 'approve' });
@@ -250,7 +250,7 @@ export default function AttendancePage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        leftIcon={<X className="h-4 w-4" />}
+                        leftIcon={<MaterialIcon name="close" size={16} />}
                         onClick={() => {
                           const note = prompt('却下理由を入力してください（任意）');
                           if (note !== null)

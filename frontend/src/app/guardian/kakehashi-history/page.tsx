@@ -10,19 +10,8 @@ import { Modal } from '@/components/ui/Modal';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { formatDate, formatDateTime, nl } from '@/lib/utils';
-import {
-  BookOpen,
-  Calendar,
-  ChevronDown,
-  ChevronUp,
-  Eye,
-  Printer,
-  CheckCircle,
-  Clock,
-  User,
-  Building2,
-} from 'lucide-react';
 import Link from 'next/link';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---- Types ----
 
@@ -156,7 +145,7 @@ export default function GuardianKakehashiHistoryPage() {
           </p>
         </div>
         <Link href="/guardian/kakehashi">
-          <Button variant="primary" leftIcon={<BookOpen className="h-4 w-4" />}>
+          <Button variant="primary" leftIcon={<MaterialIcon name="menu_book" size={16} />}>
             かけはし入力
           </Button>
         </Link>
@@ -242,7 +231,7 @@ export default function GuardianKakehashiHistoryPage() {
           ) : filteredHistory.length === 0 ? (
             <Card>
               <div className="py-12 text-center">
-                <BookOpen className="mx-auto mb-3 h-12 w-12 text-[var(--neutral-foreground-4)]" />
+                <MaterialIcon name="menu_book" size={48} className="mx-auto mb-3 text-[var(--neutral-foreground-4)]" />
                 <p className="text-sm text-[var(--neutral-foreground-3)]">
                   {selectedStudentName
                     ? `${selectedStudentName}さんの提出済みかけはしはまだありません`
@@ -269,19 +258,19 @@ export default function GuardianKakehashiHistoryPage() {
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--neutral-foreground-3)]">
                         <span className="inline-flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
+                          <MaterialIcon name="calendar_month" size={12} />
                           対象期間: {formatDate(item.start_date)} ~ {formatDate(item.end_date)}
                         </span>
                         <span className="inline-flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
+                          <MaterialIcon name="schedule" size={12} />
                           提出期限: {formatDate(item.submission_deadline)}
                         </span>
                       </div>
                     </div>
                     {expandedPeriod === item.period_id ? (
-                      <ChevronUp className="h-5 w-5 text-[var(--neutral-foreground-3)]" />
+                      <MaterialIcon name="expand_less" size={20} className="text-[var(--neutral-foreground-3)]" />
                     ) : (
-                      <ChevronDown className="h-5 w-5 text-[var(--neutral-foreground-3)]" />
+                      <MaterialIcon name="expand_more" size={20} className="text-[var(--neutral-foreground-3)]" />
                     )}
                   </button>
 
@@ -299,7 +288,7 @@ export default function GuardianKakehashiHistoryPage() {
                         >
                           <div className="mb-3 flex items-center justify-between">
                             <span className="flex items-center gap-1.5 text-sm font-semibold text-[var(--brand-70)]">
-                              <User className="h-4 w-4" />
+                              <MaterialIcon name="person" size={16} />
                               保護者
                             </span>
                             {item.guardian_submitted ? (
@@ -317,7 +306,7 @@ export default function GuardianKakehashiHistoryPage() {
                                 <Button
                                   variant="secondary"
                                   size="sm"
-                                  leftIcon={<Eye className="h-3.5 w-3.5" />}
+                                  leftIcon={<MaterialIcon name="visibility" size={14} />}
                                   onClick={() =>
                                     setDetailModal({
                                       open: true,
@@ -332,7 +321,7 @@ export default function GuardianKakehashiHistoryPage() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  leftIcon={<Printer className="h-3.5 w-3.5" />}
+                                  leftIcon={<MaterialIcon name="print" size={14} />}
                                   onClick={() =>
                                     window.open(
                                       `/guardian/kakehashi-history/print?student_id=${activeStudentId}&period_id=${item.period_id}&type=guardian`,
@@ -361,7 +350,7 @@ export default function GuardianKakehashiHistoryPage() {
                         >
                           <div className="mb-3 flex items-center justify-between">
                             <span className="flex items-center gap-1.5 text-sm font-semibold text-[var(--brand-80)]">
-                              <Building2 className="h-4 w-4" />
+                              <MaterialIcon name="apartment" size={16} />
                               事業所
                             </span>
                             {item.staff_submitted ? (
@@ -396,7 +385,7 @@ export default function GuardianKakehashiHistoryPage() {
                                 <Button
                                   variant="secondary"
                                   size="sm"
-                                  leftIcon={<Eye className="h-3.5 w-3.5" />}
+                                  leftIcon={<MaterialIcon name="visibility" size={14} />}
                                   onClick={() =>
                                     setDetailModal({
                                       open: true,
@@ -412,7 +401,7 @@ export default function GuardianKakehashiHistoryPage() {
                                   <Button
                                     variant="primary"
                                     size="sm"
-                                    leftIcon={<CheckCircle className="h-3.5 w-3.5" />}
+                                    leftIcon={<MaterialIcon name="check_circle" size={14} />}
                                     isLoading={confirmMutation.isPending}
                                     onClick={() => {
                                       if (window.confirm('事業所かけはしの内容を確認しましたか？')) {

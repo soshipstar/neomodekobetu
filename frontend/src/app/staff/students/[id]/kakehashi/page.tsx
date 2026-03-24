@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { formatDate } from '@/lib/utils';
-import { Plus } from 'lucide-react';
 import type { KakehashiPeriod } from '@/types/kakehashi';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 const statusLabels: Record<string, string> = {
   draft: '下書き', in_progress: '実施中', completed: '完了',
@@ -42,7 +42,7 @@ export default function KakehashiPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">かけはし</h1>
-        <Button leftIcon={<Plus className="h-4 w-4" />}>新規作成</Button>
+        <Button leftIcon={<MaterialIcon name="add" size={16} />}>新規作成</Button>
       </div>
 
       {periods && periods.length > 0 ? (

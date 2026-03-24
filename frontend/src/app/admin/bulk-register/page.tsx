@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Table, type Column } from '@/components/ui/Table';
 import { Tabs } from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
-import { Upload, FileText, CheckCircle, AlertCircle, Download } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface ParsedRow {
   row_number: number;
@@ -89,11 +89,11 @@ export default function AdminBulkRegisterPage() {
           <CardHeader><CardTitle>データ入力</CardTitle></CardHeader>
           <Tabs items={[
             {
-              key: 'csv', label: 'CSVアップロード', icon: <Upload className="h-4 w-4" />,
+              key: 'csv', label: 'CSVアップロード', icon: <MaterialIcon name="upload" size={16} />,
               content: (
                 <div className="space-y-4">
                   <div onClick={() => fileInputRef.current?.click()} className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-[var(--neutral-stroke-1)] p-12 hover:border-[var(--brand-100)] hover:bg-[var(--brand-160)] transition-colors">
-                    <Upload className="h-12 w-12 text-[var(--neutral-foreground-4)]" />
+                    <MaterialIcon name="upload" size={48} className="text-[var(--neutral-foreground-4)]" />
                     <p className="mt-2 text-sm text-[var(--neutral-foreground-3)]">CSVファイルを選択</p>
                   </div>
                   <input ref={fileInputRef} type="file" accept=".csv,.xlsx" onChange={handleFileUpload} className="hidden" />
@@ -101,7 +101,7 @@ export default function AdminBulkRegisterPage() {
               ),
             },
             {
-              key: 'text', label: 'テキスト入力', icon: <FileText className="h-4 w-4" />,
+              key: 'text', label: 'テキスト入力', icon: <MaterialIcon name="description" size={16} />,
               content: (
                 <div className="space-y-4">
                   <textarea value={textInput} onChange={(e) => setTextInput(e.target.value)} className="block w-full rounded-lg border border-[var(--neutral-stroke-1)] px-3 py-2 font-mono text-sm" rows={10} placeholder="生徒名,生年月日,学年,保護者名,保護者メール,事業所名" />
@@ -131,9 +131,9 @@ export default function AdminBulkRegisterPage() {
         <Card>
           <div className="py-8 text-center">
             {result.error_count === 0 ? (
-              <><CheckCircle className="mx-auto h-16 w-16 text-green-500" /><h2 className="mt-4 text-xl font-bold text-[var(--neutral-foreground-1)]">登録完了</h2><p className="mt-2 text-[var(--neutral-foreground-3)]">{result.success_count}件を登録しました</p></>
+              <><MaterialIcon name="check_circle" size={18} className="mx-auto h-16 w-16 text-green-500" /><h2 className="mt-4 text-xl font-bold text-[var(--neutral-foreground-1)]">登録完了</h2><p className="mt-2 text-[var(--neutral-foreground-3)]">{result.success_count}件を登録しました</p></>
             ) : (
-              <><AlertCircle className="mx-auto h-16 w-16 text-yellow-500" /><h2 className="mt-4 text-xl font-bold text-[var(--neutral-foreground-1)]">一部エラー</h2><p className="mt-2 text-[var(--neutral-foreground-3)]">{result.success_count}件成功 / {result.error_count}件エラー</p>
+              <><MaterialIcon name="error" size={18} className="mx-auto h-16 w-16 text-yellow-500" /><h2 className="mt-4 text-xl font-bold text-[var(--neutral-foreground-1)]">一部エラー</h2><p className="mt-2 text-[var(--neutral-foreground-3)]">{result.success_count}件成功 / {result.error_count}件エラー</p>
               <div className="mt-4 mx-auto max-w-md text-left">{result.errors.map((e, i) => <p key={i} className="text-sm text-red-600">行{e.row}: {e.message}</p>)}</div></>
             )}
             <div className="mt-6"><Button onClick={() => { setStep('input'); setParsedData([]); setResult(null); setTextInput(''); }}>新規登録</Button></div>

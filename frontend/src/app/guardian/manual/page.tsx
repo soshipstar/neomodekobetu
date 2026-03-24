@@ -2,19 +2,7 @@
 
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
-import {
-  BookOpen,
-  LayoutDashboard,
-  MessageCircle,
-  FileText,
-  Handshake,
-  ClipboardCheck,
-  PenLine,
-  ChevronDown,
-  ChevronUp,
-  HelpCircle,
-  ArrowDown,
-} from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface ManualSection {
   id: string;
@@ -89,7 +77,7 @@ const sections: ManualSection[] = [
   },
   {
     id: 'renrakucho',
-    icon: <FileText className="h-5 w-5" />,
+    icon: <MaterialIcon name="description" size={20} />,
     title: '連絡帳（日々の活動記録）',
     content: (
       <div className="space-y-3">
@@ -112,7 +100,7 @@ const sections: ManualSection[] = [
   },
   {
     id: 'chat',
-    icon: <MessageCircle className="h-5 w-5" />,
+    icon: <MaterialIcon name="chat" size={20} />,
     title: 'チャット',
     content: (
       <div className="space-y-3">
@@ -133,7 +121,7 @@ const sections: ManualSection[] = [
   },
   {
     id: 'kakehashi',
-    icon: <Handshake className="h-5 w-5" />,
+    icon: <MaterialIcon name="handshake" size={20} />,
     title: 'かけはし',
     content: (
       <div className="space-y-3">
@@ -193,7 +181,7 @@ const sections: ManualSection[] = [
   },
   {
     id: 'signature',
-    icon: <PenLine className="h-5 w-5" />,
+    icon: <MaterialIcon name="draw" size={20} />,
     title: '電子署名について',
     content: (
       <div className="space-y-3">
@@ -218,7 +206,7 @@ const sections: ManualSection[] = [
   },
   {
     id: 'flow',
-    icon: <BookOpen className="h-5 w-5" />,
+    icon: <MaterialIcon name="menu_book" size={20} />,
     title: '書類作成の全体の流れ',
     content: (
       <div className="space-y-3">
@@ -334,7 +322,7 @@ export default function GuardianManualPage() {
       <Card className="border-l-4 border-l-[var(--brand-80)]">
         <CardBody>
           <div className="flex items-start gap-3">
-            <BookOpen className="mt-0.5 h-5 w-5 shrink-0 text-[var(--brand-80)]" />
+            <MaterialIcon name="menu_book" size={20} className="mt-0.5 text-[var(--brand-80)]" />
             <div className="text-sm leading-relaxed text-[var(--neutral-foreground-2)]">
               <p>
                 この連絡帳システムは、お子様の日々の活動記録と成長を、保護者の皆様とスタッフが一緒に見守り、
@@ -404,9 +392,9 @@ export default function GuardianManualPage() {
                   </h2>
                 </div>
                 {isExpanded ? (
-                  <ChevronUp className="h-4 w-4 text-[var(--neutral-foreground-3)]" />
+                  <MaterialIcon name="expand_less" size={16} className="text-[var(--neutral-foreground-3)]" />
                 ) : (
-                  <ChevronDown className="h-4 w-4 text-[var(--neutral-foreground-3)]" />
+                  <MaterialIcon name="expand_more" size={16} className="text-[var(--neutral-foreground-3)]" />
                 )}
               </button>
               {isExpanded && (

@@ -2,26 +2,7 @@
 
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
-import {
-  BookOpen,
-  Home,
-  ClipboardList,
-  Calendar,
-  CalendarClock,
-  PenSquare,
-  Users,
-  GraduationCap,
-  Upload,
-  Handshake,
-  ClipboardCheck,
-  Settings,
-  HelpCircle,
-  PenLine,
-  Lightbulb,
-  Phone,
-  ChevronDown,
-  ChevronRight,
-} from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Manual sections
@@ -37,7 +18,7 @@ interface ManualSection {
 const sections: ManualSection[] = [
   {
     id: 'about',
-    icon: <BookOpen className="h-5 w-5" />,
+    icon: <MaterialIcon name="menu_book" size={20} />,
     title: '「きづり（軌綴）」とは',
     content: (
       <div className="space-y-3">
@@ -72,7 +53,7 @@ const sections: ManualSection[] = [
   },
   {
     id: 'menu',
-    icon: <ClipboardList className="h-5 w-5" />,
+    icon: <MaterialIcon name="checklist" size={20} />,
     title: 'メニュー構成',
     content: (
       <div className="space-y-3">
@@ -108,7 +89,7 @@ const sections: ManualSection[] = [
   },
   {
     id: 'daily',
-    icon: <Calendar className="h-5 w-5" />,
+    icon: <MaterialIcon name="calendar_month" size={20} />,
     title: '毎日行うこと',
     content: (
       <div className="space-y-3">
@@ -133,7 +114,7 @@ const sections: ManualSection[] = [
   },
   {
     id: 'periodic',
-    icon: <CalendarClock className="h-5 w-5" />,
+    icon: <MaterialIcon name="schedule" size={20} />,
     title: '一定期間ごとに行うこと',
     content: (
       <div className="space-y-3">
@@ -213,7 +194,7 @@ const sections: ManualSection[] = [
   },
   {
     id: 'guardian',
-    icon: <Users className="h-5 w-5" />,
+    icon: <MaterialIcon name="group" size={20} />,
     title: '保護者機能',
     content: (
       <div className="space-y-3">
@@ -254,7 +235,7 @@ const sections: ManualSection[] = [
   },
   {
     id: 'submissions',
-    icon: <Upload className="h-5 w-5" />,
+    icon: <MaterialIcon name="upload" size={20} />,
     title: '提出物管理',
     content: (
       <div className="space-y-3">
@@ -271,7 +252,7 @@ const sections: ManualSection[] = [
   },
   {
     id: 'kakehashi',
-    icon: <Handshake className="h-5 w-5" />,
+    icon: <MaterialIcon name="handshake" size={20} />,
     title: 'かけはし管理',
     content: (
       <div className="space-y-3">
@@ -316,7 +297,7 @@ const sections: ManualSection[] = [
   },
   {
     id: 'schedule',
-    icon: <CalendarClock className="h-5 w-5" />,
+    icon: <MaterialIcon name="schedule" size={20} />,
     title: '書類作成スケジュールと期限ルール',
     content: (
       <div className="space-y-3">
@@ -332,7 +313,7 @@ const sections: ManualSection[] = [
   },
   {
     id: 'settings',
-    icon: <Settings className="h-5 w-5" />,
+    icon: <MaterialIcon name="settings" size={20} />,
     title: 'マスタ管理',
     content: (
       <div className="space-y-3">
@@ -352,7 +333,7 @@ const sections: ManualSection[] = [
   },
   {
     id: 'signature',
-    icon: <PenLine className="h-5 w-5" />,
+    icon: <MaterialIcon name="draw" size={20} />,
     title: '電子署名機能',
     content: (
       <div className="space-y-3">
@@ -406,7 +387,7 @@ const sections: ManualSection[] = [
   },
   {
     id: 'contact',
-    icon: <Phone className="h-5 w-5" />,
+    icon: <MaterialIcon name="phone" size={20} />,
     title: 'お問い合わせ',
     content: (
       <div className="space-y-3">
@@ -501,9 +482,9 @@ export default function ManualPage() {
                   <span className="text-base font-semibold text-[var(--neutral-foreground-1)]">{section.title}</span>
                 </div>
                 {isOpen ? (
-                  <ChevronDown className="h-5 w-5 text-[var(--neutral-foreground-3)]" />
+                  <MaterialIcon name="expand_more" size={20} className="text-[var(--neutral-foreground-3)]" />
                 ) : (
-                  <ChevronRight className="h-5 w-5 text-[var(--neutral-foreground-3)]" />
+                  <MaterialIcon name="chevron_right" size={20} className="text-[var(--neutral-foreground-3)]" />
                 )}
               </button>
               {isOpen && (

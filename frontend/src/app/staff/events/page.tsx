@@ -14,7 +14,7 @@ import { SkeletonTable } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, isSameDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Calendar, List, Users } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface Event {
   id: number;
@@ -133,7 +133,7 @@ export default function EventsPage() {
       label: '参加者',
       render: (e) => (
         <button onClick={() => { setEditingEvent(e); setRegistrationModal(true); }} className="flex items-center gap-1 text-sm text-[var(--brand-80)] hover:underline">
-          <Users className="h-3 w-3" /> {e.registration_count}名
+          <MaterialIcon name="group" size={12} /> {e.registration_count}名
           {e.capacity && <span className="text-[var(--neutral-foreground-4)]">/ {e.capacity}</span>}
         </button>
       ),
@@ -148,9 +148,9 @@ export default function EventsPage() {
       label: '操作',
       render: (e) => (
         <div className="flex gap-1">
-          <Button variant="ghost" size="sm" onClick={() => openEdit(e)}><Pencil className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="sm" onClick={() => openEdit(e)}><MaterialIcon name="edit" size={16} /></Button>
           <Button variant="ghost" size="sm" onClick={() => { if (confirm('削除しますか？')) deleteMutation.mutate(e.id); }}>
-            <Trash2 className="h-4 w-4 text-[var(--status-danger-fg)]" />
+            <MaterialIcon name="delete" size={16} className="text-[var(--status-danger-fg)]" />
           </Button>
         </div>
       ),
@@ -164,13 +164,13 @@ export default function EventsPage() {
         <div className="flex gap-2">
           <div className="flex rounded-lg border border-[var(--neutral-stroke-2)]">
             <button onClick={() => setViewMode('list')} className={`px-3 py-1.5 text-sm ${viewMode === 'list' ? 'bg-[var(--brand-80)] text-white' : 'text-[var(--neutral-foreground-2)]'} rounded-l-lg`}>
-              <List className="h-4 w-4" />
+              <MaterialIcon name="list" size={16} />
             </button>
             <button onClick={() => setViewMode('calendar')} className={`px-3 py-1.5 text-sm ${viewMode === 'calendar' ? 'bg-[var(--brand-80)] text-white' : 'text-[var(--neutral-foreground-2)]'} rounded-r-lg`}>
-              <Calendar className="h-4 w-4" />
+              <MaterialIcon name="calendar_month" size={16} />
             </button>
           </div>
-          <Button onClick={() => { setEditingEvent(null); setForm({ title: '', description: '', date: '', start_time: '', end_time: '', location: '', capacity: '', is_published: true }); setModalOpen(true); }} leftIcon={<Plus className="h-4 w-4" />}>
+          <Button onClick={() => { setEditingEvent(null); setForm({ title: '', description: '', date: '', start_time: '', end_time: '', location: '', capacity: '', is_published: true }); setModalOpen(true); }} leftIcon={<MaterialIcon name="add" size={16} />}>
             イベント作成
           </Button>
         </div>
@@ -178,9 +178,9 @@ export default function EventsPage() {
 
       {/* Month navigation */}
       <div className="flex items-center justify-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}><ChevronLeft className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}><MaterialIcon name="chevron_left" size={16} /></Button>
         <span className="text-lg font-semibold">{format(currentMonth, 'yyyy年M月', { locale: ja })}</span>
-        <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}><ChevronRight className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}><MaterialIcon name="chevron_right" size={16} /></Button>
       </div>
 
       {viewMode === 'list' ? (

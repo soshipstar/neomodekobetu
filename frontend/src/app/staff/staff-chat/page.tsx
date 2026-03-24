@@ -11,19 +11,8 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import { cn, formatRelativeTime, formatFileSize, truncate, nl } from '@/lib/utils';
-import {
-  Search,
-  ChevronLeft,
-  Send,
-  MessageCircle,
-  Paperclip,
-  X,
-  Plus,
-  Users,
-  User,
-  Download,
-} from 'lucide-react';
 import api from '@/lib/api';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -280,12 +269,12 @@ export default function StaffChatPage() {
                 className="flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-3)] transition-colors"
                 title="新規チャット"
               >
-                <Plus className="h-3.5 w-3.5" />
+                <MaterialIcon name="add" size={14} />
                 新規
               </button>
             </div>
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
+              <MaterialIcon name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
               <Input
                 placeholder="スタッフ名で検索..."
                 value={search}
@@ -334,7 +323,7 @@ export default function StaffChatPage() {
                       onClick={handleBack}
                       className="rounded-md p-1 text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-3)]"
                     >
-                      <ChevronLeft className="h-5 w-5" />
+                      <MaterialIcon name="chevron_left" size={20} />
                     </button>
                   )}
                   <div className="flex items-center gap-2">
@@ -410,7 +399,7 @@ export default function StaffChatPage() {
                                           : 'border-[var(--neutral-stroke-2)] text-[var(--neutral-foreground-2)] hover:bg-[var(--neutral-background-4)]'
                                       )}
                                     >
-                                      <Download className="h-3.5 w-3.5 shrink-0" />
+                                      <MaterialIcon name="download" size={14} />
                                       <span className="truncate">
                                         {msg.attachment_original_name || 'ファイル'}
                                       </span>
@@ -451,7 +440,7 @@ export default function StaffChatPage() {
                 {/* Attachment preview */}
                 {attachment && (
                   <div className="mb-2 flex items-center gap-2 rounded-lg bg-[var(--neutral-background-3)] px-3 py-2">
-                    <Paperclip className="h-4 w-4 text-[var(--neutral-foreground-4)]" />
+                    <MaterialIcon name="attach_file" size={16} className="text-[var(--neutral-foreground-4)]" />
                     <span className="flex-1 truncate text-sm text-[var(--neutral-foreground-2)]">
                       {attachment.name}
                     </span>
@@ -462,7 +451,7 @@ export default function StaffChatPage() {
                       onClick={() => setAttachment(null)}
                       className="rounded p-1 text-[var(--neutral-foreground-4)] hover:text-[var(--status-danger-fg)]"
                     >
-                      <X className="h-4 w-4" />
+                      <MaterialIcon name="close" size={16} />
                     </button>
                   </div>
                 )}
@@ -473,7 +462,7 @@ export default function StaffChatPage() {
                     onClick={() => fileInputRef.current?.click()}
                     className="shrink-0 rounded-lg p-2 text-[var(--neutral-foreground-4)] hover:bg-[var(--neutral-background-3)] hover:text-[var(--neutral-foreground-2)]"
                   >
-                    <Paperclip className="h-5 w-5" />
+                    <MaterialIcon name="attach_file" size={20} />
                   </button>
                   <input
                     ref={fileInputRef}
@@ -513,7 +502,7 @@ export default function StaffChatPage() {
                     size="md"
                     className="shrink-0 rounded-xl"
                   >
-                    <Send className="h-4 w-4" />
+                    <MaterialIcon name="send" size={16} />
                   </Button>
                 </div>
 
@@ -526,7 +515,7 @@ export default function StaffChatPage() {
             /* Empty state */
             <div className="flex flex-1 items-center justify-center text-[var(--neutral-foreground-4)]">
               <div className="text-center">
-                <MessageCircle className="mx-auto mb-3 h-12 w-12" />
+                <MaterialIcon name="chat" size={48} className="mx-auto mb-3" />
                 <p className="text-sm">左のリストからチャットルームを選択してください</p>
               </div>
             </div>
@@ -577,9 +566,9 @@ function StaffRoomItem({
         )}
       >
         {room.room_type === 'direct' ? (
-          <User className="h-4 w-4" />
+          <MaterialIcon name="person" size={16} />
         ) : (
-          <Users className="h-4 w-4" />
+          <MaterialIcon name="group" size={16} />
         )}
       </div>
 
@@ -727,7 +716,7 @@ function CreateRoomModal({
                 : 'border-transparent text-[var(--neutral-foreground-3)] hover:text-[var(--neutral-foreground-1)]'
             )}
           >
-            <User className="h-4 w-4" />
+            <MaterialIcon name="person" size={16} />
             個人チャット
           </button>
           <button
@@ -742,7 +731,7 @@ function CreateRoomModal({
                 : 'border-transparent text-[var(--neutral-foreground-3)] hover:text-[var(--neutral-foreground-1)]'
             )}
           >
-            <Users className="h-4 w-4" />
+            <MaterialIcon name="group" size={16} />
             グループチャット
           </button>
         </div>

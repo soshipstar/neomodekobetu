@@ -9,18 +9,9 @@ import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { useToast } from '@/components/ui/Toast';
 import { nl } from '@/lib/utils';
-import {
-  Trash2,
-  Download,
-  Sparkles,
-  ClipboardCheck,
-  PenLine,
-  FileText,
-  Target,
-  Pin,
-} from 'lucide-react';
 import { format } from 'date-fns';
 import { SignaturePad, type SignaturePadRef } from '@/components/ui/SignaturePad';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -455,14 +446,14 @@ export default function KobetsuMonitoringPage() {
                     className="rounded bg-red-500 p-1 text-white hover:bg-red-600"
                     title="削除"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <MaterialIcon name="delete" size={14} />
                   </button>
                   <button
                     onClick={() => handlePdfDownload(m.id)}
                     className="rounded bg-[var(--brand-80)] p-1 text-white hover:bg-[var(--brand-80)]"
                     title="PDF出力"
                   >
-                    <Download className="h-3.5 w-3.5" />
+                    <MaterialIcon name="download" size={14} />
                   </button>
                 </div>
               ))}
@@ -526,7 +517,7 @@ export default function KobetsuMonitoringPage() {
               <Button
                 variant="primary"
                 size="sm"
-                leftIcon={<Sparkles className="h-4 w-4" />}
+                leftIcon={<MaterialIcon name="auto_awesome" size={16} />}
                 onClick={handleAIGenerateAll}
                 isLoading={generating}
                 className="bg-purple-600 hover:bg-purple-700"
@@ -676,7 +667,7 @@ export default function KobetsuMonitoringPage() {
             {/* Short-term goal */}
             <div className="mb-6 rounded-lg border-l-4 border-l-green-500 bg-[var(--neutral-background-2)] p-4">
               <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-green-600">
-                <Pin className="h-4 w-4" /> 短期目標
+                <MaterialIcon name="push_pin" size={16} /> 短期目標
               </h4>
               {(planData.short_term_goal_text || planData.short_term_goal) ? (
                 <div className="mb-3 whitespace-pre-wrap rounded-md bg-[var(--neutral-background-1)] p-3 text-sm leading-relaxed text-[var(--neutral-foreground-1)]">
@@ -789,7 +780,7 @@ export default function KobetsuMonitoringPage() {
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center rounded-lg bg-[var(--neutral-background-2)] p-6 text-center">
-                        <PenLine className="mb-2 h-8 w-8 text-[var(--neutral-foreground-3)] opacity-50" />
+                        <MaterialIcon name="draw" size={32} className="mb-2 text-[var(--neutral-foreground-3)] opacity-50" />
                         <p className="text-sm text-[var(--neutral-foreground-3)]">保護者からの署名待ち</p>
                         <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
                           モニタリング表提出後、保護者画面から署名できます
@@ -808,7 +799,7 @@ export default function KobetsuMonitoringPage() {
               variant="secondary"
               onClick={() => saveMutation.mutate(true)}
               isLoading={saveMutation.isPending}
-              leftIcon={<FileText className="h-4 w-4" />}
+              leftIcon={<MaterialIcon name="description" size={16} />}
             >
               下書き保存（保護者非公開）
             </Button>
@@ -825,7 +816,7 @@ export default function KobetsuMonitoringPage() {
               <Button
                 variant="primary"
                 onClick={() => handlePdfDownload(selectedMonitoringId)}
-                leftIcon={<Download className="h-4 w-4" />}
+                leftIcon={<MaterialIcon name="download" size={16} />}
               >
                 PDF出力
               </Button>

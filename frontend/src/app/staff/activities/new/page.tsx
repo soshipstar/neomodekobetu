@@ -9,15 +9,8 @@ import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import {
-  ArrowLeft,
-  Plus,
-  Trash2,
-  Search,
-  X,
-  UserPlus,
-} from 'lucide-react';
 import Link from 'next/link';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -266,7 +259,7 @@ export default function NewActivityPage() {
       <div className="flex items-center gap-3">
         <Link href={`/staff/renrakucho?date=${dateParam}`}>
           <Button variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4" />
+            <MaterialIcon name="arrow_back" size={16} />
           </Button>
         </Link>
         <div>
@@ -343,14 +336,14 @@ export default function NewActivityPage() {
               variant="outline"
               size="sm"
               onClick={addAllScheduled}
-              leftIcon={<UserPlus className="h-4 w-4" />}
+              leftIcon={<MaterialIcon name="person_add" size={16} />}
             >
               本日予定の生徒を追加
             </Button>
             <Button
               size="sm"
               onClick={() => setShowStudentPicker(true)}
-              leftIcon={<Plus className="h-4 w-4" />}
+              leftIcon={<MaterialIcon name="add" size={16} />}
             >
               生徒を追加
             </Button>
@@ -359,7 +352,7 @@ export default function NewActivityPage() {
         <CardBody>
           {students.length === 0 ? (
             <div className="py-8 text-center text-sm text-[var(--neutral-foreground-4)]">
-              <UserPlus className="mx-auto mb-2 h-10 w-10" />
+              <MaterialIcon name="person_add" size={40} className="mx-auto mb-2" />
               <p>参加生徒を追加してください</p>
               <Button
                 variant="outline"
@@ -434,7 +427,7 @@ function StudentRecordCard({
           onClick={onRemove}
           className="rounded p-1 text-[var(--neutral-foreground-4)] hover:bg-[var(--neutral-background-3)] hover:text-[var(--status-danger-fg)]"
         >
-          <Trash2 className="h-4 w-4" />
+          <MaterialIcon name="delete" size={16} />
         </button>
       </div>
 
@@ -533,14 +526,14 @@ function StudentPickerModal({
             生徒を追加
           </h3>
           <button onClick={onClose} className="rounded p-1 hover:bg-[var(--neutral-background-3)]">
-            <X className="h-4 w-4" />
+            <MaterialIcon name="close" size={16} />
           </button>
         </div>
 
         {/* Search */}
         <div className="border-b border-[var(--neutral-stroke-3)] px-4 py-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
+            <MaterialIcon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
             <Input
               placeholder="名前で検索..."
               value={search}

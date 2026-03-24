@@ -10,7 +10,7 @@ import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { format, addDays, subDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, BookOpen, CheckCircle } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 /** Normalize escaped newlines from API */
 function nl(text: string | null | undefined): string {
@@ -67,7 +67,7 @@ export default function GuardianNotesPage() {
       {/* Date picker */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" onClick={() => setSelectedDate(subDays(selectedDate, 1))}>
-          <ChevronLeft className="h-4 w-4" />
+          <MaterialIcon name="chevron_left" size={16} />
         </Button>
         <div className="text-center">
           <input
@@ -81,7 +81,7 @@ export default function GuardianNotesPage() {
           </p>
         </div>
         <Button variant="ghost" size="sm" onClick={() => setSelectedDate(addDays(selectedDate, 1))}>
-          <ChevronRight className="h-4 w-4" />
+          <MaterialIcon name="chevron_right" size={16} />
         </Button>
         <Button variant="outline" size="sm" onClick={() => setSelectedDate(new Date())}>
           今日
@@ -94,7 +94,7 @@ export default function GuardianNotesPage() {
       ) : notes.length === 0 ? (
         <Card>
           <div className="py-12 text-center">
-            <BookOpen className="mx-auto h-12 w-12 text-[var(--neutral-foreground-disabled)]" />
+            <MaterialIcon name="menu_book" size={48} className="mx-auto text-[var(--neutral-foreground-disabled)]" />
             <p className="mt-2 text-sm text-[var(--neutral-foreground-3)]">この日の連絡帳はありません</p>
           </div>
         </Card>
@@ -140,7 +140,7 @@ export default function GuardianNotesPage() {
                 <Button
                   onClick={() => confirmMutation.mutate(note.id)}
                   isLoading={confirmMutation.isPending}
-                  leftIcon={<CheckCircle className="h-4 w-4" />}
+                  leftIcon={<MaterialIcon name="check_circle" size={16} />}
                 >
                   確認しました
                 </Button>

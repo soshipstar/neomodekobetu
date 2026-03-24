@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
-import { User, Lock, Save, Users } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface GuardianProfile {
   id: number;
@@ -79,7 +79,7 @@ export default function GuardianProfilePage() {
           <CardHeader>
             <CardTitle>
               <div className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
+                <MaterialIcon name="group" size={20} />
                 お子さま
               </div>
             </CardTitle>
@@ -105,7 +105,7 @@ export default function GuardianProfilePage() {
         <CardHeader>
           <CardTitle>
             <div className="flex items-center gap-2">
-              <User className="h-5 w-5" />
+              <MaterialIcon name="person" size={20} />
               基本情報
             </div>
           </CardTitle>
@@ -122,7 +122,7 @@ export default function GuardianProfilePage() {
           <Input label="氏名" value={profileForm.full_name} onChange={(e) => setProfileForm({ ...profileForm, full_name: e.target.value })} required />
           <Input label="メールアドレス" type="email" value={profileForm.email} onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })} />
           <div className="flex justify-end">
-            <Button type="submit" isLoading={updateProfileMutation.isPending} leftIcon={<Save className="h-4 w-4" />}>保存</Button>
+            <Button type="submit" isLoading={updateProfileMutation.isPending} leftIcon={<MaterialIcon name="save" size={16} />}>保存</Button>
           </div>
         </form>
       </Card>
@@ -132,7 +132,7 @@ export default function GuardianProfilePage() {
         <CardHeader>
           <CardTitle>
             <div className="flex items-center gap-2">
-              <Lock className="h-5 w-5" />
+              <MaterialIcon name="lock" size={20} />
               パスワード変更
             </div>
           </CardTitle>

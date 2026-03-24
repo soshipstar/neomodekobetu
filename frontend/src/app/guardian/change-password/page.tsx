@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
-import { Lock, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 export default function GuardianChangePasswordPage() {
   const router = useRouter();
@@ -99,7 +99,7 @@ export default function GuardianChangePasswordPage() {
           <CardHeader>
             <CardTitle>
               <span className="flex items-center gap-2">
-                <Lock className="h-4 w-4 text-[var(--brand-80)]" />
+                <MaterialIcon name="lock" size={16} className="text-[var(--brand-80)]" />
                 パスワード変更
               </span>
             </CardTitle>
@@ -121,7 +121,7 @@ export default function GuardianChangePasswordPage() {
                 className="absolute right-3 top-[34px] text-[var(--neutral-foreground-4)] hover:text-[var(--neutral-foreground-2)]"
                 onClick={() => setShowCurrentPassword(!showCurrentPassword)}
               >
-                {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showCurrentPassword ? <MaterialIcon name="visibility_off" size={16} /> : <MaterialIcon name="visibility" size={16} />}
               </button>
             </div>
 
@@ -141,7 +141,7 @@ export default function GuardianChangePasswordPage() {
                 className="absolute right-3 top-[34px] text-[var(--neutral-foreground-4)] hover:text-[var(--neutral-foreground-2)]"
                 onClick={() => setShowNewPassword(!showNewPassword)}
               >
-                {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showNewPassword ? <MaterialIcon name="visibility_off" size={16} /> : <MaterialIcon name="visibility" size={16} />}
               </button>
             </div>
 
@@ -160,7 +160,7 @@ export default function GuardianChangePasswordPage() {
                 className="absolute right-3 top-[34px] text-[var(--neutral-foreground-4)] hover:text-[var(--neutral-foreground-2)]"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               >
-                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showConfirmPassword ? <MaterialIcon name="visibility_off" size={16} /> : <MaterialIcon name="visibility" size={16} />}
               </button>
             </div>
 
@@ -170,7 +170,7 @@ export default function GuardianChangePasswordPage() {
                 type="button"
                 variant="secondary"
                 className="flex-1"
-                leftIcon={<ArrowLeft className="h-4 w-4" />}
+                leftIcon={<MaterialIcon name="arrow_back" size={16} />}
                 onClick={() => router.push('/guardian/dashboard')}
               >
                 キャンセル
@@ -180,7 +180,7 @@ export default function GuardianChangePasswordPage() {
                 variant="primary"
                 className="flex-1"
                 isLoading={mutation.isPending}
-                leftIcon={<Lock className="h-4 w-4" />}
+                leftIcon={<MaterialIcon name="lock" size={16} />}
               >
                 変更する
               </Button>

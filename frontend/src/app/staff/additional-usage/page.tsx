@@ -8,12 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Badge } from '@/components/ui/Badge';
 import { useToast } from '@/components/ui/Toast';
-import {
-  ChevronLeft,
-  ChevronRight,
-  Save,
-  Calendar,
-} from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -270,16 +265,16 @@ export default function AdditionalUsagePage() {
               <div className="flex items-center gap-2">
                 <button onClick={goToPrevMonth}
                   className="rounded-lg p-1.5 hover:bg-[var(--neutral-background-3)] transition-colors">
-                  <ChevronLeft className="h-5 w-5 text-[var(--neutral-foreground-3)]" />
+                  <MaterialIcon name="chevron_left" size={20} className="text-[var(--neutral-foreground-3)]" />
                 </button>
                 <h2 className="text-lg font-bold text-[var(--neutral-foreground-1)] min-w-[120px] text-center">
                   {year}年{month}月
                 </h2>
                 <button onClick={goToNextMonth}
                   className="rounded-lg p-1.5 hover:bg-[var(--neutral-background-3)] transition-colors">
-                  <ChevronRight className="h-5 w-5 text-[var(--neutral-foreground-3)]" />
+                  <MaterialIcon name="chevron_right" size={20} className="text-[var(--neutral-foreground-3)]" />
                 </button>
-                <Button variant="ghost" size="sm" onClick={goToToday} leftIcon={<Calendar className="h-4 w-4" />}>
+                <Button variant="ghost" size="sm" onClick={goToToday} leftIcon={<MaterialIcon name="calendar_month" size={16} />}>
                   今月
                 </Button>
               </div>
@@ -287,7 +282,7 @@ export default function AdditionalUsagePage() {
               {/* Save button */}
               {hasChanges && (
                 <Button
-                  leftIcon={<Save className="h-4 w-4" />}
+                  leftIcon={<MaterialIcon name="save" size={16} />}
                   onClick={() => saveMutation.mutate()}
                   isLoading={saveMutation.isPending}
                 >
@@ -408,7 +403,7 @@ export default function AdditionalUsagePage() {
         <div className="fixed bottom-6 right-6 z-50 print:hidden">
           <Button
             size="lg"
-            leftIcon={<Save className="h-5 w-5" />}
+            leftIcon={<MaterialIcon name="save" size={20} />}
             onClick={() => saveMutation.mutate()}
             isLoading={saveMutation.isPending}
             className="shadow-lg"

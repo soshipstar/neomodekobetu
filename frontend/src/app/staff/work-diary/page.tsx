@@ -6,7 +6,7 @@ import { nl } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { Calendar, Save } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface WorkDiary {
   id: number;
@@ -182,7 +182,7 @@ function DailyView({ onSwitchToCalendar, initialDate }: { onSwitchToCalendar: ()
         <Button
           variant="secondary"
           onClick={onSwitchToCalendar}
-          leftIcon={<Calendar className="h-4 w-4" />}
+          leftIcon={<MaterialIcon name="calendar_month" size={16} />}
         >
           カレンダー表示
         </Button>
@@ -219,7 +219,7 @@ function DailyView({ onSwitchToCalendar, initialDate }: { onSwitchToCalendar: ()
 
           {/* Save button */}
           <div className="text-center pb-4">
-            <Button onClick={handleSave} isLoading={isSaving} leftIcon={<Save className="h-4 w-4" />} size="lg">
+            <Button onClick={handleSave} isLoading={isSaving} leftIcon={<MaterialIcon name="save" size={16} />} size="lg">
               {diary ? '更新する' : '保存する'}
             </Button>
           </div>

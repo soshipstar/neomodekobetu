@@ -5,24 +5,14 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/authStore';
 import { useChatStore } from '@/stores/chatStore';
-import {
-  LayoutDashboard,
-  MessageCircle,
-  Users,
-  BookOpen,
-  Menu,
-  Calendar,
-  FileText,
-  ClipboardList,
-} from 'lucide-react';
 import { useUiStore } from '@/stores/uiStore';
 import type { UserType } from '@/types/user';
-import type { LucideIcon } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface MobileNavItem {
   label: string;
   href: string;
-  icon: LucideIcon;
+  icon: string;
   badge?: number;
 }
 
@@ -30,33 +20,33 @@ function getMobileNavItems(userType: UserType, chatUnread: number): MobileNavIte
   switch (userType) {
     case 'staff':
       return [
-        { label: 'ホーム', href: '/staff/dashboard', icon: LayoutDashboard },
-        { label: 'チャット', href: '/staff/chat', icon: MessageCircle, badge: chatUnread },
-        { label: '生徒', href: '/staff/students', icon: Users },
-        { label: '連絡帳', href: '/staff/renrakucho', icon: BookOpen },
-        { label: 'メニュー', href: '#menu', icon: Menu },
+        { label: 'ホーム', href: '/staff/dashboard', icon: "dashboard" },
+        { label: 'チャット', href: '/staff/chat', icon: "chat", badge: chatUnread },
+        { label: '生徒', href: '/staff/students', icon: "group" },
+        { label: '連絡帳', href: '/staff/renrakucho', icon: "menu_book" },
+        { label: 'メニュー', href: '#menu', icon: "menu" },
       ];
     case 'guardian':
       return [
-        { label: 'ホーム', href: '/guardian/dashboard', icon: LayoutDashboard },
-        { label: 'チャット', href: '/guardian/chat', icon: MessageCircle, badge: chatUnread },
-        { label: '支援計画', href: '/guardian/support-plan', icon: BookOpen },
-        { label: 'メニュー', href: '#menu', icon: Menu },
+        { label: 'ホーム', href: '/guardian/dashboard', icon: "dashboard" },
+        { label: 'チャット', href: '/guardian/chat', icon: "chat", badge: chatUnread },
+        { label: '支援計画', href: '/guardian/support-plan', icon: "menu_book" },
+        { label: 'メニュー', href: '#menu', icon: "menu" },
       ];
     case 'admin':
       return [
-        { label: 'ホーム', href: '/admin/dashboard', icon: LayoutDashboard },
-        { label: '事業所', href: '/admin/classrooms', icon: Users },
-        { label: 'ユーザー', href: '/admin/users', icon: Users },
-        { label: 'メニュー', href: '#menu', icon: Menu },
+        { label: 'ホーム', href: '/admin/dashboard', icon: "dashboard" },
+        { label: '事業所', href: '/admin/classrooms', icon: "group" },
+        { label: 'ユーザー', href: '/admin/users', icon: "group" },
+        { label: 'メニュー', href: '#menu', icon: "menu" },
       ];
     default:
       return [
-        { label: 'ホーム', href: '/student/dashboard', icon: LayoutDashboard },
-        { label: 'チャット', href: '/student/chat', icon: MessageCircle, badge: chatUnread },
-        { label: '計画', href: '/student/weekly-plans', icon: ClipboardList },
-        { label: '提出物', href: '/student/submissions', icon: FileText },
-        { label: 'スケジュール', href: '/student/schedule', icon: Calendar },
+        { label: 'ホーム', href: '/student/dashboard', icon: "dashboard" },
+        { label: 'チャット', href: '/student/chat', icon: "chat", badge: chatUnread },
+        { label: '計画', href: '/student/weekly-plans', icon: "checklist" },
+        { label: '提出物', href: '/student/submissions', icon: "description" },
+        { label: 'スケジュール', href: '/student/schedule', icon: "calendar_month" },
       ];
   }
 }
@@ -78,7 +68,7 @@ export function MobileNav() {
         {navItems.map((item) => {
           const isMenu = item.href === '#menu';
           const isActive = !isMenu && (pathname === item.href || pathname.startsWith(item.href + '/'));
-          const Icon = item.icon;
+          // icon is now a Material Symbol name string
 
           if (isMenu) {
             return (
@@ -87,7 +77,7 @@ export function MobileNav() {
                 onClick={toggleSidebar}
                 className="flex flex-1 flex-col items-center gap-1 py-2 text-[var(--neutral-foreground-4)]"
               >
-                <Icon className="h-5 w-5" />
+                <MaterialIcon name={item.icon} size={20} />
                 <span className="text-[10px]">{item.label}</span>
               </button>
             );
@@ -103,7 +93,7 @@ export function MobileNav() {
               )}
             >
               <div className="relative">
-                <Icon className="h-5 w-5" />
+                <MaterialIcon name={item.icon} size={20} />
                 {item.badge !== undefined && item.badge > 0 && (
                   <span className="absolute -right-2 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--status-danger-fg)] text-[10px] font-bold text-white">
                     {item.badge > 9 ? '9+' : item.badge}

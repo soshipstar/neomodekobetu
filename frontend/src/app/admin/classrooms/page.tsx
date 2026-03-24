@@ -14,9 +14,9 @@ import { Input } from '@/components/ui/Input';
 import { Table, type Column } from '@/components/ui/Table';
 import { SkeletonTable } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { Plus, Building2 } from 'lucide-react';
 import type { Classroom } from '@/types/user';
 import { useMasterGuard } from '@/hooks/useMasterGuard';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 export default function ClassroomsPage() {
   const { isMaster, isReady } = useMasterGuard();
@@ -56,7 +56,7 @@ export default function ClassroomsPage() {
       sortable: true,
       render: (c) => (
         <div className="flex items-center gap-2">
-          <Building2 className="h-4 w-4 text-[var(--neutral-foreground-4)]" />
+          <MaterialIcon name="apartment" size={16} className="text-[var(--neutral-foreground-4)]" />
           <span className="font-medium">{c.classroom_name}</span>
         </div>
       ),
@@ -80,7 +80,7 @@ export default function ClassroomsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">事業所管理</h1>
-        <Button leftIcon={<Plus className="h-4 w-4" />} onClick={() => setShowCreate(true)}>新規作成</Button>
+        <Button leftIcon={<MaterialIcon name="add" size={16} />} onClick={() => setShowCreate(true)}>新規作成</Button>
       </div>
 
       {isLoading ? (

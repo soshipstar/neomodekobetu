@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { Save } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface DailyRoutine {
   id: number | null;
@@ -274,7 +274,7 @@ export default function DailyRoutinesPage() {
                 className="flex-1"
                 onClick={handleSave}
                 isLoading={saveMutation.isPending}
-                leftIcon={<Save className="h-4 w-4" />}
+                leftIcon={<MaterialIcon name="save" size={16} />}
               >
                 保存する
               </Button>

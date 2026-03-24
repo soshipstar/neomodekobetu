@@ -5,8 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { Printer, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface GuardianDetail {
   id: number;
@@ -54,11 +54,11 @@ export default function GuardianManualPage() {
       {/* Screen-only header */}
       <div className="print:hidden mb-6 flex items-center justify-between">
         <Link href="/staff/guardians">
-          <Button variant="ghost" size="sm" leftIcon={<ChevronLeft className="h-4 w-4" />}>
+          <Button variant="ghost" size="sm" leftIcon={<MaterialIcon name="chevron_left" size={16} />}>
             保護者一覧に戻る
           </Button>
         </Link>
-        <Button leftIcon={<Printer className="h-4 w-4" />} onClick={() => window.print()}>
+        <Button leftIcon={<MaterialIcon name="print" size={16} />} onClick={() => window.print()}>
           印刷する
         </Button>
       </div>

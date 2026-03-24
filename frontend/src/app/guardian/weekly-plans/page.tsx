@@ -10,7 +10,7 @@ import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { format, startOfWeek, addWeeks, subWeeks, addDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Calendar, Send } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface WeeklyPlan {
   id: number;
@@ -156,13 +156,13 @@ export default function GuardianWeeklyPlansPage() {
         </h2>
         <div className="flex gap-2">
           <Button variant="secondary" size="sm" onClick={() => setCurrentWeek(subWeeks(currentWeek, 1))}>
-            <ChevronLeft className="h-4 w-4" /> 前週
+            <MaterialIcon name="chevron_left" size={16} /> 前週
           </Button>
           <Button variant="outline" size="sm" onClick={() => setCurrentWeek(new Date())}>
             今週
           </Button>
           <Button variant="secondary" size="sm" onClick={() => setCurrentWeek(addWeeks(currentWeek, 1))}>
-            次週 <ChevronRight className="h-4 w-4" />
+            次週 <MaterialIcon name="chevron_right" size={16} />
           </Button>
         </div>
       </div>
@@ -172,7 +172,7 @@ export default function GuardianWeeklyPlansPage() {
       ) : !activePlan ? (
         <Card>
           <div className="py-12 text-center">
-            <Calendar className="mx-auto h-12 w-12 text-[var(--neutral-foreground-disabled)]" />
+            <MaterialIcon name="calendar_month" size={48} className="mx-auto text-[var(--neutral-foreground-disabled)]" />
             <p className="mt-2 text-sm text-[var(--neutral-foreground-3)]">この週の計画はまだ作成されていません</p>
           </div>
         </Card>
@@ -312,7 +312,7 @@ export default function GuardianWeeklyPlansPage() {
                     onClick={handleSubmitComment}
                     isLoading={commentMutation.isPending}
                     disabled={!comment.trim()}
-                    leftIcon={<Send className="h-4 w-4" />}
+                    leftIcon={<MaterialIcon name="send" size={16} />}
                   >
                     コメントを投稿
                   </Button>

@@ -7,9 +7,9 @@ import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { UserPlus, CheckCircle2, Users, Clock, Settings, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types & Constants
@@ -188,7 +188,7 @@ export default function WaitingListPage() {
           <p className="text-sm text-[var(--neutral-foreground-3)]">空き状況の確認と待機児童の管理</p>
         </div>
         <Link href="/staff/students">
-          <Button variant="outline" size="sm" leftIcon={<UserPlus className="h-4 w-4" />}>
+          <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="person_add" size={16} />}>
             生徒管理で新規登録
           </Button>
         </Link>
@@ -204,7 +204,7 @@ export default function WaitingListPage() {
             <Button
               variant="outline"
               size="sm"
-              leftIcon={<Settings className="h-3.5 w-3.5" />}
+              leftIcon={<MaterialIcon name="settings" size={14} />}
               onClick={() => { setShowCapacitySettings(!showCapacitySettings); if (!showCapacitySettings) initCapacityForm(); }}
             >
               {showCapacitySettings ? '閉じる' : '設定変更'}
@@ -251,7 +251,7 @@ export default function WaitingListPage() {
                 <Button
                   variant="primary"
                   size="sm"
-                  leftIcon={<Save className="h-3.5 w-3.5" />}
+                  leftIcon={<MaterialIcon name="save" size={14} />}
                   onClick={handleSaveCapacity}
                   isLoading={capacityMutation.isPending}
                 >
@@ -402,7 +402,7 @@ export default function WaitingListPage() {
             <CardBody>
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100">
-                  <Clock className="h-5 w-5 text-orange-600" />
+                  <MaterialIcon name="schedule" size={20} className="text-orange-600" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-[var(--neutral-foreground-1)]">{summary.total_waiting}</p>
@@ -415,7 +415,7 @@ export default function WaitingListPage() {
             <CardBody>
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--brand-160)]">
-                  <Users className="h-5 w-5 text-[var(--brand-80)]" />
+                  <MaterialIcon name="group" size={20} className="text-[var(--brand-80)]" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-[var(--neutral-foreground-1)]">
@@ -432,7 +432,7 @@ export default function WaitingListPage() {
             <CardBody>
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
-                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  <MaterialIcon name="check_circle" size={20} className="text-green-600" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-[var(--neutral-foreground-1)]">
@@ -459,7 +459,7 @@ export default function WaitingListPage() {
             <div className="space-y-2">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}</div>
           ) : students.length === 0 ? (
             <div className="py-12 text-center text-[var(--neutral-foreground-4)]">
-              <UserPlus className="mx-auto mb-3 h-12 w-12" />
+              <MaterialIcon name="person_add" size={48} className="mx-auto mb-3" />
               <p className="text-sm">現在、待機児童はいません。</p>
               <p className="mt-1 text-xs">生徒管理ページで状態を「待機」にすると、ここに表示されます</p>
             </div>
@@ -550,7 +550,7 @@ export default function WaitingListPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            leftIcon={<CheckCircle2 className="h-3.5 w-3.5" />}
+                            leftIcon={<MaterialIcon name="check_circle" size={14} />}
                             onClick={() => {
                               if (confirm(`${s.student_name}さんを入所させますか？\n希望曜日が利用曜日に自動設定されます。`))
                                 enrollMutation.mutate(s.id);

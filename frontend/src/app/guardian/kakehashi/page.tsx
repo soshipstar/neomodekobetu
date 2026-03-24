@@ -10,19 +10,8 @@ import { Badge } from '@/components/ui/Badge';
 import { SkeletonCard, Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { format } from 'date-fns';
-import {
-  BookOpen,
-  Save,
-  Send,
-  Heart,
-  Home,
-  Target,
-  Star,
-  Pin,
-  Calendar,
-  History,
-} from 'lucide-react';
 import Link from 'next/link';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -275,12 +264,12 @@ export default function GuardianKakehashiPage() {
             {/* Period info */}
             <div className="mb-4 rounded-lg bg-[var(--neutral-background-3)] p-4 space-y-1 text-sm">
               <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-[var(--neutral-foreground-3)]" />
+                <MaterialIcon name="calendar_month" size={16} className="text-[var(--neutral-foreground-3)]" />
                 <span className="font-medium">対象期間:</span>
                 {format(new Date(selectedPeriod.start_date), 'yyyy年MM月dd日')} ~ {format(new Date(selectedPeriod.end_date), 'yyyy年MM月dd日')}
               </div>
               <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-[var(--neutral-foreground-3)]" />
+                <MaterialIcon name="calendar_month" size={16} className="text-[var(--neutral-foreground-3)]" />
                 <span className="font-medium">提出期限:</span>
                 {format(new Date(selectedPeriod.submission_deadline), 'yyyy年MM月dd日')}
               </div>
@@ -416,7 +405,7 @@ export default function GuardianKakehashiPage() {
             </div>
 
             {/* Section: その他の課題 */}
-            <SectionHeader icon={<Pin className="h-4 w-4" />} title="その他の課題" color="var(--neutral-foreground-3)" />
+            <SectionHeader icon={<MaterialIcon name="push_pin" size={16} />} title="その他の課題" color="var(--neutral-foreground-3)" />
             <div className="mb-4 ml-6">
               <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">
                 その他、お伝えしたいこと
@@ -439,7 +428,7 @@ export default function GuardianKakehashiPage() {
               <div className="mt-6 flex flex-wrap justify-end gap-3 border-t border-[var(--neutral-stroke-2)] pt-4">
                 <Button
                   variant="outline"
-                  leftIcon={<Save className="h-4 w-4" />}
+                  leftIcon={<MaterialIcon name="save" size={16} />}
                   onClick={handleSave}
                   isLoading={saveMutation.isPending}
                 >
@@ -447,7 +436,7 @@ export default function GuardianKakehashiPage() {
                 </Button>
                 <Button
                   variant="primary"
-                  leftIcon={<Send className="h-4 w-4" />}
+                  leftIcon={<MaterialIcon name="send" size={16} />}
                   onClick={handleSubmit}
                   isLoading={saveMutation.isPending}
                 >

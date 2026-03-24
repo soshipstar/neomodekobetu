@@ -7,17 +7,9 @@ import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { SkeletonList } from '@/components/ui/Skeleton';
-import {
-  MailWarning,
-  CheckCircle,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-  ExternalLink,
-  RefreshCw,
-} from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -330,7 +322,7 @@ export default function UnconfirmedNotesPage() {
         <Card>
           <CardBody>
             <div className="py-10 text-center">
-              <CheckCircle className="mx-auto mb-3 h-10 w-10 text-[var(--status-success-fg)]" />
+              <MaterialIcon name="check_circle" size={40} className="mx-auto mb-3 text-[var(--status-success-fg)]" />
               <p className="text-sm font-medium text-[var(--status-success-fg)]">
                 未確認の連絡帳はありません
               </p>

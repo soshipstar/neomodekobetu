@@ -2,8 +2,8 @@
 
 import { cn, formatRelativeTime, truncate } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
-import { Pin } from 'lucide-react';
 import type { ChatRoom } from '@/types/chat';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface ChatRoomListProps {
   rooms: ChatRoom[];
@@ -41,7 +41,7 @@ export function ChatRoomList({ rooms, unreadCounts, onSelectRoom, activeRoomId }
                 <p className="text-sm font-semibold text-[var(--neutral-foreground-1)] truncate">
                   {room.student?.student_name || 'チャットルーム'}
                 </p>
-                {room.is_pinned && <Pin className="h-3 w-3 text-[var(--neutral-foreground-4)]" />}
+                {room.is_pinned && <MaterialIcon name="push_pin" size={12} className="text-[var(--neutral-foreground-4)]" />}
               </div>
               {room.guardian && (
                 <p className="text-xs text-[var(--neutral-foreground-3)] truncate">

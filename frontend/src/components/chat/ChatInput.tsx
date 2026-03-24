@@ -3,8 +3,8 @@
 import { useState, useRef, type KeyboardEvent } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
-import { Paperclip, Send, X } from 'lucide-react';
 import { formatFileSize } from '@/lib/utils';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface ChatInputProps {
   onSend: (message: string, attachment?: File) => Promise<void>;
@@ -63,11 +63,11 @@ export function ChatInput({ onSend, isSending, disabled = false }: ChatInputProp
       {/* Attachment preview */}
       {attachment && (
         <div className="mb-2 flex items-center gap-2 rounded-lg bg-[var(--neutral-background-3)] px-3 py-2">
-          <Paperclip className="h-4 w-4 text-[var(--neutral-foreground-4)]" />
+          <MaterialIcon name="attach_file" size={16} className="text-[var(--neutral-foreground-4)]" />
           <span className="flex-1 truncate text-sm text-[var(--neutral-foreground-2)]">{attachment.name}</span>
           <span className="text-xs text-[var(--neutral-foreground-4)]">{formatFileSize(attachment.size)}</span>
           <button onClick={removeAttachment} className="rounded p-1 text-[var(--neutral-foreground-4)] hover:text-red-500">
-            <X className="h-4 w-4" />
+            <MaterialIcon name="close" size={16} />
           </button>
         </div>
       )}
@@ -80,7 +80,7 @@ export function ChatInput({ onSend, isSending, disabled = false }: ChatInputProp
           disabled={disabled}
           className="shrink-0 rounded-lg p-2 text-[var(--neutral-foreground-4)] hover:bg-[var(--neutral-background-4)] hover:text-[var(--neutral-foreground-3)] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <Paperclip className="h-5 w-5" />
+          <MaterialIcon name="attach_file" size={20} />
         </button>
         <input
           ref={fileInputRef}
@@ -121,7 +121,7 @@ export function ChatInput({ onSend, isSending, disabled = false }: ChatInputProp
           size="md"
           className="shrink-0 rounded-xl"
         >
-          <Send className="h-4 w-4" />
+          <MaterialIcon name="send" size={16} />
         </Button>
       </div>
 

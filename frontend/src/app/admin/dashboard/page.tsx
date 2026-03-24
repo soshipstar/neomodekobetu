@@ -4,9 +4,9 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card } from '@/components/ui/Card';
 import { SkeletonCard } from '@/components/ui/Skeleton';
-import { Building2, Users, UserCheck, Shield, FileText, Activity } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/authStore';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface MasterDashboard {
   total_classrooms: number;
@@ -55,16 +55,16 @@ export default function AdminDashboardPage() {
 
   const summaryCards = serverIsMaster
     ? [
-        { label: '登録教室数', value: (data as MasterDashboard)?.total_classrooms ?? 0, icon: Building2, color: 'text-[var(--brand-80)] bg-[var(--brand-160)]', href: '/admin/classrooms' },
-        { label: '管理者数', value: (data as MasterDashboard)?.total_admins ?? 0, icon: Shield, color: 'text-red-600 bg-red-100', href: '/admin/admin-accounts' },
-        { label: 'スタッフ数', value: (data as MasterDashboard)?.total_staff ?? 0, icon: Users, color: 'text-green-600 bg-green-100', href: '/admin/staff-accounts' },
-        { label: 'ミニマム版教室', value: (data as MasterDashboard)?.minimum_classrooms ?? 0, icon: Activity, color: 'text-orange-600 bg-orange-100', href: '/admin/classrooms' },
+        { label: '登録教室数', value: (data as MasterDashboard)?.total_classrooms ?? 0, icon: "apartment", color: 'text-[var(--brand-80)] bg-[var(--brand-160)]', href: '/admin/classrooms' },
+        { label: '管理者数', value: (data as MasterDashboard)?.total_admins ?? 0, icon: "shield", color: 'text-red-600 bg-red-100', href: '/admin/admin-accounts' },
+        { label: 'スタッフ数', value: (data as MasterDashboard)?.total_staff ?? 0, icon: "group", color: 'text-green-600 bg-green-100', href: '/admin/staff-accounts' },
+        { label: 'ミニマム版教室', value: (data as MasterDashboard)?.minimum_classrooms ?? 0, icon: "trending_up", color: 'text-orange-600 bg-orange-100', href: '/admin/classrooms' },
       ]
     : [
-        { label: '登録ユーザー数', value: (data as RegularDashboard)?.total_users ?? 0, icon: Users, color: 'text-green-600 bg-green-100', href: '/admin/staff-management' },
-        { label: '登録生徒数', value: (data as RegularDashboard)?.total_students ?? 0, icon: UserCheck, color: 'text-[var(--brand-70)] bg-[var(--brand-150)]', href: '/admin/students' },
-        { label: '有効な生徒数', value: (data as RegularDashboard)?.active_students ?? 0, icon: UserCheck, color: 'text-[var(--brand-80)] bg-[var(--brand-160)]', href: '/admin/students' },
-        { label: '総記録数', value: (data as RegularDashboard)?.total_records ?? 0, icon: FileText, color: 'text-orange-600 bg-orange-100', href: '#' },
+        { label: '登録ユーザー数', value: (data as RegularDashboard)?.total_users ?? 0, icon: "group", color: 'text-green-600 bg-green-100', href: '/admin/staff-management' },
+        { label: '登録生徒数', value: (data as RegularDashboard)?.total_students ?? 0, icon: "how_to_reg", color: 'text-[var(--brand-70)] bg-[var(--brand-150)]', href: '/admin/students' },
+        { label: '有効な生徒数', value: (data as RegularDashboard)?.active_students ?? 0, icon: "how_to_reg", color: 'text-[var(--brand-80)] bg-[var(--brand-160)]', href: '/admin/students' },
+        { label: '総記録数', value: (data as RegularDashboard)?.total_records ?? 0, icon: "description", color: 'text-orange-600 bg-orange-100', href: '#' },
       ];
 
   return (
@@ -84,7 +84,7 @@ export default function AdminDashboardPage() {
             <Card className="transition-shadow hover:shadow-md">
               <div className="flex items-center gap-4">
                 <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${card.color}`}>
-                  <card.icon className="h-6 w-6" />
+                  <MaterialIcon name={card.icon} size={24} />
                 </div>
                 <div>
                   <p className="text-sm text-[var(--neutral-foreground-3)]">{card.label}</p>

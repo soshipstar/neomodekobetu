@@ -9,8 +9,8 @@ import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { Plus, Pencil, Trash2, Send, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -175,7 +175,7 @@ export default function NewslettersPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">施設通信（お便り）</h1>
-        <Button leftIcon={<Plus className="h-4 w-4" />} onClick={openCreate}>新規作成</Button>
+        <Button leftIcon={<MaterialIcon name="add" size={16} />} onClick={openCreate}>新規作成</Button>
       </div>
 
       {/* List */}
@@ -198,14 +198,14 @@ export default function NewslettersPage() {
                 <Badge variant={n.status === 'published' || n.is_published ? 'success' : 'warning'}>
                   {n.status === 'published' || n.is_published ? '配信済み' : '下書き'}
                 </Badge>
-                <Button variant="outline" size="sm" onClick={() => openEdit(n)}><Pencil className="h-3.5 w-3.5" /></Button>
+                <Button variant="outline" size="sm" onClick={() => openEdit(n)}><MaterialIcon name="edit" size={14} /></Button>
                 {!n.is_published && n.status !== 'published' && (
                   <>
                     <Button variant="outline" size="sm" onClick={() => { if (confirm('配信しますか？')) publishMutation.mutate(n.id); }}>
-                      <Send className="h-3.5 w-3.5" />
+                      <MaterialIcon name="send" size={14} />
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => { if (confirm('削除しますか？')) deleteMutation.mutate(n.id); }}>
-                      <Trash2 className="h-3.5 w-3.5 text-[var(--status-danger-fg)]" />
+                      <MaterialIcon name="delete" size={14} className="text-[var(--status-danger-fg)]" />
                     </Button>
                   </>
                 )}
@@ -240,7 +240,7 @@ export default function NewslettersPage() {
               <div className="mb-1 flex items-center justify-between">
                 <label className="text-sm font-medium text-[var(--neutral-foreground-2)]">{label}</label>
                 {editingId && ai && (
-                  <Button variant="ghost" size="sm" leftIcon={<Sparkles className="h-3.5 w-3.5" />}
+                  <Button variant="ghost" size="sm" leftIcon={<MaterialIcon name="auto_awesome" size={14} />}
                     onClick={() => handleAiGenerate(key)}
                     isLoading={generatingSection === key} disabled={!!generatingSection}>
                     AI生成
@@ -259,7 +259,7 @@ export default function NewslettersPage() {
           <div className="sticky bottom-0 flex items-center justify-between border-t border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] pt-3">
             <div>
               {editingId && (
-                <Button variant="outline" size="sm" leftIcon={<Send className="h-4 w-4" />}
+                <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="send" size={16} />}
                   onClick={() => { if (confirm('配信しますか？')) publishMutation.mutate(editingId); }}>
                   配信する
                 </Button>

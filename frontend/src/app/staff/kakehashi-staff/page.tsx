@@ -8,17 +8,8 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton, SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import {
-  Pencil,
-  Download,
-  Send,
-  Sparkles,
-  Save,
-  ChevronDown,
-  ChevronRight,
-  FileText,
-} from 'lucide-react';
 import { format } from 'date-fns';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -309,8 +300,8 @@ export default function KakehashiStaffPage() {
                   >
                     <div className="flex items-center gap-3">
                       {isExpanded
-                        ? <ChevronDown className="h-5 w-5 text-[var(--neutral-foreground-3)]" />
-                        : <ChevronRight className="h-5 w-5 text-[var(--neutral-foreground-3)]" />
+                        ? <MaterialIcon name="expand_more" size={20} className="text-[var(--neutral-foreground-3)]" />
+                        : <MaterialIcon name="chevron_right" size={20} className="text-[var(--neutral-foreground-3)]" />
                       }
                       <div>
                         <h3 className="font-semibold text-[var(--neutral-foreground-1)]">{period.period_name}</h3>
@@ -348,7 +339,7 @@ export default function KakehashiStaffPage() {
                             <Button
                               variant="secondary"
                               size="sm"
-                              leftIcon={<Sparkles className="h-4 w-4" />}
+                              leftIcon={<MaterialIcon name="auto_awesome" size={16} />}
                               onClick={() => handleAIGenerate(period.id)}
                               isLoading={generating}
                             >
@@ -429,7 +420,7 @@ export default function KakehashiStaffPage() {
                             <div className="flex gap-2">
                               {entry?.is_submitted ? (
                                 <Button
-                                  leftIcon={<Save className="h-4 w-4" />}
+                                  leftIcon={<MaterialIcon name="save" size={16} />}
                                   onClick={() => handleUpdate(period.id)}
                                   isLoading={updateMutation.isPending}
                                 >
@@ -439,14 +430,14 @@ export default function KakehashiStaffPage() {
                                 <>
                                   <Button
                                     variant="secondary"
-                                    leftIcon={<Save className="h-4 w-4" />}
+                                    leftIcon={<MaterialIcon name="save" size={16} />}
                                     onClick={() => handleSave(period.id, 'save')}
                                     isLoading={saveMutation.isPending}
                                   >
                                     下書き保存
                                   </Button>
                                   <Button
-                                    leftIcon={<Send className="h-4 w-4" />}
+                                    leftIcon={<MaterialIcon name="send" size={16} />}
                                     onClick={() => {
                                       if (confirm('提出しますか？提出後も内容の修正は可能です。')) {
                                         handleSave(period.id, 'submit');
@@ -469,7 +460,7 @@ export default function KakehashiStaffPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              leftIcon={<Download className="h-4 w-4" />}
+                              leftIcon={<MaterialIcon name="download" size={16} />}
                               onClick={() => handlePdfDownload(period.id, period.period_name)}
                             >
                               PDF
@@ -477,7 +468,7 @@ export default function KakehashiStaffPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              leftIcon={<Pencil className="h-4 w-4" />}
+                              leftIcon={<MaterialIcon name="edit" size={16} />}
                               onClick={() => startEditing(period.id, entry ?? undefined)}
                             >
                               {entry ? '編集' : '入力開始'}
@@ -486,7 +477,7 @@ export default function KakehashiStaffPage() {
 
                           {!entry ? (
                             <div className="py-8 text-center text-[var(--neutral-foreground-4)]">
-                              <FileText className="mx-auto mb-2 h-10 w-10" />
+                              <MaterialIcon name="description" size={40} className="mx-auto mb-2" />
                               <p className="text-sm">まだ入力されていません</p>
                               <p className="mt-1 text-xs">「入力開始」ボタンから記入を始めてください</p>
                             </div>

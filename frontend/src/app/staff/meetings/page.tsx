@@ -13,7 +13,7 @@ import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { Plus, Users, Calendar, CalendarCheck, CalendarClock, X, Check, ArrowRightLeft, FileText } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface MeetingRequest {
   id: number;
@@ -195,7 +195,7 @@ export default function MeetingsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">面談管理</h1>
-        <Button leftIcon={<Plus className="h-4 w-4" />} onClick={() => setShowCreate(true)}>新規作成</Button>
+        <Button leftIcon={<MaterialIcon name="add" size={16} />} onClick={() => setShowCreate(true)}>新規作成</Button>
       </div>
 
       {/* Upcoming confirmed meetings */}
@@ -206,7 +206,7 @@ export default function MeetingsPage() {
         if (upcoming.length === 0) return null;
         return (
           <Card>
-            <CardHeader><CardTitle><CalendarCheck className="inline h-5 w-5 mr-1 text-green-600" />今後の面談予定</CardTitle></CardHeader>
+            <CardHeader><CardTitle><MaterialIcon name="event_available" size={20} className="inline mr-1 text-green-600" />今後の面談予定</CardTitle></CardHeader>
             <CardBody>
               <div className="space-y-2">
                 {upcoming.map((m) => (
@@ -242,8 +242,8 @@ export default function MeetingsPage() {
                     <span className="text-xs text-[var(--neutral-foreground-4)]">{format(new Date(m.created_at), 'yyyy/MM/dd')}</span>
                   </div>
                   <div className="mt-2 flex items-center gap-4 text-sm text-[var(--neutral-foreground-3)]">
-                    {m.confirmed_date && <span className="flex items-center gap-1"><CalendarCheck className="h-4 w-4 text-green-600" />{fmtDate(m.confirmed_date)}</span>}
-                    {m.student && <span className="flex items-center gap-1"><Users className="h-4 w-4" />{m.student.student_name}</span>}
+                    {m.confirmed_date && <span className="flex items-center gap-1"><MaterialIcon name="event_available" size={16} className="text-green-600" />{fmtDate(m.confirmed_date)}</span>}
+                    {m.student && <span className="flex items-center gap-1"><MaterialIcon name="group" size={16} />{m.student.student_name}</span>}
                     {m.guardian && <span>{m.guardian.full_name}</span>}
                   </div>
                   {!m.confirmed_date && m.candidate_dates?.length > 0 && (
@@ -353,17 +353,17 @@ export default function MeetingsPage() {
                 <div><span className="font-medium">目的:</span> {m.purpose}</div>
                 {m.purpose_detail && <div><span className="font-medium">詳細:</span> {m.purpose_detail}</div>}
                 <div className="flex gap-4">
-                  <span><Users className="inline h-4 w-4 mr-1" />{m.student?.student_name}</span>
+                  <span><MaterialIcon name="group" size={16} className="inline mr-1" />{m.student?.student_name}</span>
                   <span>保護者: {m.guardian?.full_name}</span>
                   {m.staff && <span>担当: {m.staff.full_name}</span>}
                 </div>
-                {m.meeting_notes && <div className="mt-2 rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800"><FileText className="inline h-3 w-3 mr-1" />メモ: {m.meeting_notes}</div>}
+                {m.meeting_notes && <div className="mt-2 rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800"><MaterialIcon name="description" size={12} className="inline mr-1" />メモ: {m.meeting_notes}</div>}
               </div>
 
               {/* Confirmed Date */}
               {m.confirmed_date && (
                 <div className="rounded-lg border-2 border-green-300 bg-green-50 p-4 text-center">
-                  <CalendarCheck className="mx-auto mb-2 h-8 w-8 text-green-600" />
+                  <MaterialIcon name="event_available" size={32} className="mx-auto mb-2 text-green-600" />
                   <p className="text-lg font-bold text-green-800">{fmtDate(m.confirmed_date)}</p>
                   {m.confirmed_by && <p className="text-xs text-green-600 mt-1">{m.confirmed_by === 'guardian' ? '保護者' : 'スタッフ'}が確定 ({m.confirmed_at ? format(new Date(m.confirmed_at), 'yyyy/MM/dd HH:mm') : ''})</p>}
                 </div>
@@ -373,7 +373,7 @@ export default function MeetingsPage() {
               {!m.confirmed_date && m.candidate_dates?.length > 0 && (
                 <div>
                   <h4 className="mb-2 text-sm font-semibold text-[var(--neutral-foreground-2)]">
-                    <CalendarClock className="inline h-4 w-4 mr-1" />
+                    <MaterialIcon name="schedule" size={16} className="inline mr-1" />
                     {needsStaffAction ? '保護者からの候補日（クリックで確定）' : '提案中の候補日'}
                   </h4>
                   <div className="space-y-2">
@@ -411,10 +411,10 @@ export default function MeetingsPage() {
               {/* Staff Counter-Proposal Form */}
               {isActionable && !showCounterForm && (
                 <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm" leftIcon={<ArrowRightLeft className="h-4 w-4" />} onClick={() => setShowCounterForm(true)}>
+                  <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="swap_horiz" size={16} />} onClick={() => setShowCounterForm(true)}>
                     別日程を提案
                   </Button>
-                  <Button variant="ghost" size="sm" leftIcon={<X className="h-4 w-4" />} className="text-red-600" onClick={handleCancel}>
+                  <Button variant="ghost" size="sm" leftIcon={<MaterialIcon name="close" size={16} />} className="text-red-600" onClick={handleCancel}>
                     キャンセル
                   </Button>
                 </div>
@@ -443,13 +443,13 @@ export default function MeetingsPage() {
                 <div className="space-y-4">
                   {/* Chat notify button */}
                   <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" size="sm" leftIcon={<Calendar className="h-4 w-4" />}
+                    <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="calendar_month" size={16} />}
                       onClick={() => { if (confirm('保護者にチャットで面談日時を通知しますか？')) updateMutation.mutate({ action: 'notify' }); }}
                       isLoading={updateMutation.isPending}>
                       チャットで通知を送信
                     </Button>
                     {!m.is_completed && (
-                      <Button variant="outline" size="sm" leftIcon={<Check className="h-4 w-4" />}
+                      <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="check" size={16} />}
                         onClick={() => { if (confirm('この面談を完了にしますか？')) updateMutation.mutate({ action: 'complete', meeting_notes: meetingNotesEdit }); }}
                         isLoading={updateMutation.isPending}>
                         面談完了
@@ -482,7 +482,7 @@ export default function MeetingsPage() {
                   {/* Hearing notes → Guardian Kakehashi */}
                   <div className="border-t border-[var(--neutral-stroke-2)] pt-4">
                     <h4 className="mb-2 text-sm font-semibold text-[var(--brand-60)] flex items-center gap-1.5">
-                      <FileText className="h-4 w-4" />
+                      <MaterialIcon name="description" size={16} />
                       保護者かけはし用ヒアリング
                     </h4>
                     <p className="mb-2 text-xs text-[var(--neutral-foreground-4)]">
@@ -498,7 +498,7 @@ export default function MeetingsPage() {
                     />
                     <div className="mt-2 flex justify-end">
                       <Button size="sm" variant="primary"
-                        leftIcon={<FileText className="h-4 w-4" />}
+                        leftIcon={<MaterialIcon name="description" size={16} />}
                         onClick={() => kakehashiMutation.mutate()}
                         isLoading={kakehashiMutation.isPending}
                         disabled={hearingNotes.trim().length < 10}>

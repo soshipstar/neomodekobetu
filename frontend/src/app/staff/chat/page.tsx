@@ -14,9 +14,9 @@ import { cn, formatRelativeTime, truncate } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
-import { Search, Pin, ChevronDown, ChevronRight, ChevronLeft, Send, MessageCircle, CalendarDays, ClipboardList, Megaphone } from 'lucide-react';
 import api from '@/lib/api';
 import type { ChatRoom } from '@/types/chat';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // Grade group ordering for sidebar accordions
 const GRADE_GROUPS = [
@@ -234,12 +234,12 @@ export default function StaffChatPage() {
                 className="flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-3)] transition-colors"
                 title="一斉送信"
               >
-                <Megaphone className="h-3.5 w-3.5" />
+                <MaterialIcon name="campaign" size={14} />
                 一斉送信
               </button>
             </div>
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
+              <MaterialIcon name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
               <Input
                 placeholder="生徒名・保護者名で検索..."
                 value={search}
@@ -294,9 +294,9 @@ export default function StaffChatPage() {
                       >
                         <div className="flex items-center gap-1.5">
                           {isExpanded ? (
-                            <ChevronDown className="h-3.5 w-3.5 text-[var(--neutral-foreground-3)]" />
+                            <MaterialIcon name="expand_more" size={14} className="text-[var(--neutral-foreground-3)]" />
                           ) : (
-                            <ChevronRight className="h-3.5 w-3.5 text-[var(--neutral-foreground-3)]" />
+                            <MaterialIcon name="chevron_right" size={14} className="text-[var(--neutral-foreground-3)]" />
                           )}
                           <span className="text-xs font-semibold text-[var(--neutral-foreground-2)]">
                             {group.label}
@@ -347,7 +347,7 @@ export default function StaffChatPage() {
                       onClick={handleBack}
                       className="rounded-md p-1 text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-3)]"
                     >
-                      <ChevronLeft className="h-5 w-5" />
+                      <MaterialIcon name="chevron_left" size={20} />
                     </button>
                   )}
                   <div>
@@ -372,21 +372,21 @@ export default function StaffChatPage() {
                     )}
                     title={activeRoom.is_pinned ? 'ピン解除' : 'ピン留め'}
                   >
-                    <Pin className="h-4 w-4" />
+                    <MaterialIcon name="push_pin" size={16} />
                   </button>
                   <button
                     onClick={() => setMeetingModal(true)}
                     className="rounded-md p-1.5 text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-3)] transition-colors"
                     title="面談予約"
                   >
-                    <CalendarDays className="h-4 w-4" />
+                    <MaterialIcon name="event" size={16} />
                   </button>
                   <button
                     onClick={() => setSubmissionModal(true)}
                     className="rounded-md p-1.5 text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-3)] transition-colors"
                     title="提出期限"
                   >
-                    <ClipboardList className="h-4 w-4" />
+                    <MaterialIcon name="checklist" size={16} />
                   </button>
                 </div>
               </div>
@@ -414,7 +414,7 @@ export default function StaffChatPage() {
             /* Empty state - only shown on desktop */
             <div className="flex flex-1 items-center justify-center text-[var(--neutral-foreground-4)]">
               <div className="text-center">
-                <MessageCircle className="mx-auto mb-3 h-12 w-12" />
+                <MaterialIcon name="chat" size={48} className="mx-auto mb-3" />
                 <p className="text-sm">左のリストからチャットルームを選択してください</p>
               </div>
             </div>
@@ -569,7 +569,7 @@ function BroadcastModal({
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose}>キャンセル</Button>
           <Button onClick={onSubmit} isLoading={isSending}
-            disabled={!message.trim()} leftIcon={<Send className="h-4 w-4" />}>送信</Button>
+            disabled={!message.trim()} leftIcon={<MaterialIcon name="send" size={16} />}>送信</Button>
         </div>
       </div>
     </Modal>
@@ -615,7 +615,7 @@ function RoomItem({
           )}>
             {room.student?.student_name}さん
           </span>
-          {room.is_pinned && <Pin className="h-2.5 w-2.5 text-[var(--neutral-foreground-4)]" />}
+          {room.is_pinned && <MaterialIcon name="push_pin" size={18} className="h-2.5 w-2.5 text-[var(--neutral-foreground-4)]" />}
         </div>
         {room.last_message && (
           <p className="text-[10px] text-[var(--neutral-foreground-4)] truncate">

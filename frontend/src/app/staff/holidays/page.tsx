@@ -11,7 +11,7 @@ import { SkeletonTable } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, isSameDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Trash2, Search } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface Holiday {
   id: number;
@@ -134,7 +134,7 @@ export default function HolidaysPage() {
           <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">休日管理</h1>
           <p className="text-sm text-[var(--neutral-foreground-3)]">休日・祝日の登録と管理</p>
         </div>
-        <Button onClick={() => setModalOpen(true)} leftIcon={<Plus className="h-4 w-4" />}>
+        <Button onClick={() => setModalOpen(true)} leftIcon={<MaterialIcon name="add" size={16} />}>
           休日を追加
         </Button>
       </div>
@@ -142,9 +142,9 @@ export default function HolidaysPage() {
       {/* Calendar */}
       <Card>
         <div className="flex items-center justify-between mb-4">
-          <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}><ChevronLeft className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}><MaterialIcon name="chevron_left" size={16} /></Button>
           <h2 className="text-lg font-semibold">{format(currentMonth, 'yyyy年M月', { locale: ja })}</h2>
-          <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}><ChevronRight className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}><MaterialIcon name="chevron_right" size={16} /></Button>
         </div>
 
         {isLoading ? (
@@ -211,7 +211,7 @@ export default function HolidaysPage() {
           />
           <div className="flex justify-end gap-2">
             <Button variant="secondary" type="button" onClick={clearSearch}>クリア</Button>
-            <Button type="submit" leftIcon={<Search className="h-4 w-4" />} isLoading={isSearching}>検索</Button>
+            <Button type="submit" leftIcon={<MaterialIcon name="search" size={16} />} isLoading={isSearching}>検索</Button>
           </div>
         </form>
       </Card>

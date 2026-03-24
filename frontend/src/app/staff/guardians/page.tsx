@@ -11,17 +11,9 @@ import { Modal } from '@/components/ui/Modal';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useDebounce } from '@/hooks/useDebounce';
-import {
-  Search,
-  Plus,
-  Pencil,
-  Printer,
-  Copy,
-  RefreshCw,
-  Trash2,
-} from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -154,14 +146,14 @@ export default function GuardiansPage() {
           <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">保護者管理</h1>
           <p className="text-sm text-[var(--neutral-foreground-4)]">保護者の登録・編集</p>
         </div>
-        <Button leftIcon={<Plus className="h-4 w-4" />} onClick={openCreate}>
+        <Button leftIcon={<MaterialIcon name="add" size={16} />} onClick={openCreate}>
           保護者を追加
         </Button>
       </div>
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
+        <MaterialIcon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
         <Input placeholder="氏名・ユーザー名・メールで検索..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
       </div>
 
@@ -212,7 +204,7 @@ export default function GuardiansPage() {
                       </Button>
                       <Link href={`/staff/guardians/${g.id}/manual`} target="_blank">
                         <Button variant="ghost" size="sm" title="マニュアル印刷">
-                          <Printer className="h-3.5 w-3.5" />
+                          <MaterialIcon name="print" size={14} />
                         </Button>
                       </Link>
                     </div>
@@ -319,7 +311,7 @@ export default function GuardiansPage() {
                   if (confirm(`本当に「${editingGuardian.full_name}」を削除しますか？\n\nこの操作は取り消せません。関連する生徒との紐付けも解除されます。`))
                     deleteMutation.mutate(editingGuardian.id);
                 }}>
-                  <Trash2 className="h-4 w-4 text-[var(--status-danger-fg)]" />
+                  <MaterialIcon name="delete" size={16} className="text-[var(--status-danger-fg)]" />
                   <span className="ml-1 text-[var(--status-danger-fg)]">削除</span>
                 </Button>
               )}

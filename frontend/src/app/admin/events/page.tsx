@@ -13,7 +13,7 @@ import { SkeletonTable } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, isSameDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Calendar, List } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface AdminEvent {
   id: number;
@@ -134,8 +134,8 @@ export default function AdminEventsPage() {
     {
       key: 'actions', label: '操作', render: (e) => (
         <div className="flex gap-1">
-          <Button variant="ghost" size="sm" onClick={() => openEdit(e)}><Pencil className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="sm" onClick={() => { if (confirm('削除しますか？')) deleteMutation.mutate(e.id); }}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+          <Button variant="ghost" size="sm" onClick={() => openEdit(e)}><MaterialIcon name="edit" size={16} /></Button>
+          <Button variant="ghost" size="sm" onClick={() => { if (confirm('削除しますか？')) deleteMutation.mutate(e.id); }}><MaterialIcon name="delete" size={16} className="text-red-500" /></Button>
         </div>
       ),
     },
@@ -147,17 +147,17 @@ export default function AdminEventsPage() {
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">イベント管理</h1>
         <div className="flex gap-2">
           <div className="flex rounded-lg border border-[var(--neutral-stroke-1)]">
-            <button onClick={() => setViewMode('list')} className={`px-3 py-1.5 text-sm rounded-l-lg ${viewMode === 'list' ? 'bg-[var(--brand-80)] text-white' : 'text-[var(--neutral-foreground-3)]'}`}><List className="h-4 w-4" /></button>
-            <button onClick={() => setViewMode('calendar')} className={`px-3 py-1.5 text-sm rounded-r-lg ${viewMode === 'calendar' ? 'bg-[var(--brand-80)] text-white' : 'text-[var(--neutral-foreground-3)]'}`}><Calendar className="h-4 w-4" /></button>
+            <button onClick={() => setViewMode('list')} className={`px-3 py-1.5 text-sm rounded-l-lg ${viewMode === 'list' ? 'bg-[var(--brand-80)] text-white' : 'text-[var(--neutral-foreground-3)]'}`}><MaterialIcon name="list" size={16} /></button>
+            <button onClick={() => setViewMode('calendar')} className={`px-3 py-1.5 text-sm rounded-r-lg ${viewMode === 'calendar' ? 'bg-[var(--brand-80)] text-white' : 'text-[var(--neutral-foreground-3)]'}`}><MaterialIcon name="calendar_month" size={16} /></button>
           </div>
-          <Button onClick={() => { setEditingEvent(null); setForm(emptyForm); setModalOpen(true); }} leftIcon={<Plus className="h-4 w-4" />}>作成</Button>
+          <Button onClick={() => { setEditingEvent(null); setForm(emptyForm); setModalOpen(true); }} leftIcon={<MaterialIcon name="add" size={16} />}>作成</Button>
         </div>
       </div>
 
       <div className="flex items-center justify-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}><ChevronLeft className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}><MaterialIcon name="chevron_left" size={16} /></Button>
         <span className="text-lg font-semibold">{format(currentMonth, 'yyyy年M月', { locale: ja })}</span>
-        <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}><ChevronRight className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}><MaterialIcon name="chevron_right" size={16} /></Button>
       </div>
 
       {viewMode === 'list' ? (

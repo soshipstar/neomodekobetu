@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { useToast } from '@/components/ui/Toast';
-import { User, Lock, Calendar, School } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface StudentProfile {
   id: number;
@@ -99,7 +99,7 @@ export default function StudentProfilePage() {
         <CardHeader>
           <CardTitle>
             <div className="flex items-center gap-2">
-              <User className="h-5 w-5" />
+              <MaterialIcon name="person" size={20} />
               基本情報
             </div>
           </CardTitle>
@@ -111,12 +111,12 @@ export default function StudentProfilePage() {
           </div>
           {profile?.birth_date && (
             <div className="flex items-center justify-between rounded-lg bg-[var(--neutral-background-3)] p-3">
-              <span className="text-sm text-[var(--neutral-foreground-3)] flex items-center gap-1"><Calendar className="h-3 w-3" />生年月日</span>
+              <span className="text-sm text-[var(--neutral-foreground-3)] flex items-center gap-1"><MaterialIcon name="calendar_month" size={12} />生年月日</span>
               <span className="font-medium text-[var(--neutral-foreground-1)]">{new Date(profile.birth_date).toLocaleDateString('ja-JP')}</span>
             </div>
           )}
           <div className="flex items-center justify-between rounded-lg bg-[var(--neutral-background-3)] p-3">
-            <span className="text-sm text-[var(--neutral-foreground-3)] flex items-center gap-1"><School className="h-3 w-3" />事業所</span>
+            <span className="text-sm text-[var(--neutral-foreground-3)] flex items-center gap-1"><MaterialIcon name="school" size={12} />事業所</span>
             <span className="font-medium text-[var(--neutral-foreground-1)]">{profile?.classroom_name}</span>
           </div>
           {profile?.guardian_name && (
@@ -150,7 +150,7 @@ export default function StudentProfilePage() {
         <CardHeader>
           <CardTitle>
             <div className="flex items-center gap-2">
-              <Lock className="h-5 w-5" />
+              <MaterialIcon name="lock" size={20} />
               パスワード変更
             </div>
           </CardTitle>

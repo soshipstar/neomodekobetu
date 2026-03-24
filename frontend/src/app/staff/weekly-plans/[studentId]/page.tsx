@@ -9,25 +9,10 @@ import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
-import {
-  ChevronLeft,
-  ChevronRight,
-  Calendar,
-  Save,
-  Edit3,
-  X,
-  User,
-  Target,
-  Handshake,
-  CheckCircle,
-  ThumbsUp,
-  Lightbulb,
-  ArrowLeft,
-  MessageSquare,
-} from 'lucide-react';
 import { format, addDays, startOfWeek, addWeeks } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import Link from 'next/link';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -227,7 +212,7 @@ function AchievementDisplay({
       </span>
       {comment?.trim() && (
         <div className="mt-2 rounded border-l-3 border-yellow-500 bg-yellow-50 p-2 text-xs text-[var(--neutral-foreground-2)]">
-          <MessageSquare className="mr-1 inline-block h-3 w-3" />
+          <MaterialIcon name="forum" size={12} className="mr-1 inline-block" />
           {comment}
         </div>
       )}
@@ -471,7 +456,7 @@ export default function WeeklyPlanStudentDetailPage() {
           </p>
         </div>
         <Link href={`/staff/weekly-plans`}>
-          <Button variant="outline" size="sm" leftIcon={<ArrowLeft className="h-4 w-4" />}>
+          <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="arrow_back" size={16} />}>
             一覧に戻る
           </Button>
         </Link>
@@ -497,7 +482,7 @@ export default function WeeklyPlanStudentDetailPage() {
             <Button
               variant="outline"
               size="sm"
-              leftIcon={<ChevronLeft className="h-4 w-4" />}
+              leftIcon={<MaterialIcon name="chevron_left" size={16} />}
               onClick={goToPrevWeek}
             >
               前週
@@ -512,7 +497,7 @@ export default function WeeklyPlanStudentDetailPage() {
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={goToNextWeek}>
                 次週
-                <ChevronRight className="h-4 w-4 ml-1" />
+                <MaterialIcon name="chevron_right" size={16} className="ml-1" />
               </Button>
             </div>
           </div>
@@ -522,7 +507,7 @@ export default function WeeklyPlanStudentDetailPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                leftIcon={<Calendar className="h-4 w-4" />}
+                leftIcon={<MaterialIcon name="calendar_month" size={16} />}
                 onClick={goToCurrentWeek}
               >
                 今週に戻る
@@ -543,7 +528,7 @@ export default function WeeklyPlanStudentDetailPage() {
         <Card>
           <CardBody>
             <div className="py-16 text-center">
-              <Calendar className="mx-auto mb-4 h-12 w-12 text-[var(--neutral-foreground-disabled)]" />
+              <MaterialIcon name="calendar_month" size={48} className="mx-auto mb-4 text-[var(--neutral-foreground-disabled)]" />
               <p className="mb-4 text-[var(--neutral-foreground-4)]">
                 この週の計画はまだ作成されていません
               </p>
@@ -565,14 +550,14 @@ export default function WeeklyPlanStudentDetailPage() {
                 週間計画を編集
               </h2>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={cancelEdit} leftIcon={<X className="h-4 w-4" />}>
+                <Button variant="outline" size="sm" onClick={cancelEdit} leftIcon={<MaterialIcon name="close" size={16} />}>
                   キャンセル
                 </Button>
                 <Button
                   variant="primary"
                   size="sm"
                   onClick={handleSave}
-                  leftIcon={<Save className="h-4 w-4" />}
+                  leftIcon={<MaterialIcon name="save" size={16} />}
                   disabled={saveMutation.isPending || validationErrors.length > 0}
                 >
                   {saveMutation.isPending ? '保存中...' : '保存する'}
@@ -598,7 +583,7 @@ export default function WeeklyPlanStudentDetailPage() {
             {/* いっしょに決めた目標 */}
             <div className="mb-5">
               <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--brand-60)]">
-                <Handshake className="h-4 w-4" />
+                <MaterialIcon name="handshake" size={16} />
                 いっしょに決めた目標 <span className="text-red-500">*</span>
               </label>
               <textarea
@@ -613,7 +598,7 @@ export default function WeeklyPlanStudentDetailPage() {
             {/* やるべきこと */}
             <div className="mb-5">
               <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--brand-60)]">
-                <CheckCircle className="h-4 w-4" />
+                <MaterialIcon name="check_circle" size={16} />
                 やるべきこと
               </label>
               <textarea
@@ -655,7 +640,7 @@ export default function WeeklyPlanStudentDetailPage() {
             {/* 各曜日の計画 */}
             <div className="mt-6">
               <h3 className="mb-3 flex items-center gap-2 text-base font-bold text-[var(--neutral-foreground-1)]">
-                <Calendar className="h-5 w-5" />
+                <MaterialIcon name="calendar_month" size={20} />
                 各曜日の計画・目標
               </h3>
               {DAYS.map((day, index) => {
@@ -701,13 +686,13 @@ export default function WeeklyPlanStudentDetailPage() {
 
             {/* Bottom save button */}
             <div className="mt-6 flex justify-end gap-2">
-              <Button variant="outline" onClick={cancelEdit} leftIcon={<X className="h-4 w-4" />}>
+              <Button variant="outline" onClick={cancelEdit} leftIcon={<MaterialIcon name="close" size={16} />}>
                 キャンセル
               </Button>
               <Button
                 variant="primary"
                 onClick={handleSave}
-                leftIcon={<Save className="h-4 w-4" />}
+                leftIcon={<MaterialIcon name="save" size={16} />}
                 disabled={saveMutation.isPending || validationErrors.length > 0}
               >
                 {saveMutation.isPending ? '保存中...' : '保存する'}
@@ -744,12 +729,12 @@ export default function WeeklyPlanStudentDetailPage() {
                 content={displayGoal}
               />
               <ViewSection
-                icon={<Handshake className="h-4 w-4" />}
+                icon={<MaterialIcon name="handshake" size={16} />}
                 label="いっしょに決めた目標"
                 content={displaySharedGoal}
               />
               <ViewSection
-                icon={<CheckCircle className="h-4 w-4" />}
+                icon={<MaterialIcon name="check_circle" size={16} />}
                 label="やるべきこと"
                 content={displayMustDo}
               />
@@ -767,7 +752,7 @@ export default function WeeklyPlanStudentDetailPage() {
               {/* Daily Plans */}
               <div className="mt-6">
                 <h3 className="mb-3 flex items-center gap-2 text-base font-bold text-[var(--neutral-foreground-1)]">
-                  <Calendar className="h-5 w-5" />
+                  <MaterialIcon name="calendar_month" size={20} />
                   各曜日の計画・目標
                 </h3>
                 {DAYS.map((day, index) => {
@@ -802,7 +787,7 @@ export default function WeeklyPlanStudentDetailPage() {
               {plan?.submissions && plan.submissions.length > 0 && (
                 <div className="mt-8 border-t-2 border-[var(--neutral-stroke-2)] pt-6">
                   <h3 className="mb-3 flex items-center gap-2 text-base font-bold text-red-600">
-                    <CheckCircle className="h-5 w-5" />
+                    <MaterialIcon name="check_circle" size={20} />
                     提出物一覧
                   </h3>
                   {plan.submissions.map((sub) => {
@@ -838,7 +823,7 @@ export default function WeeklyPlanStudentDetailPage() {
                         <div>
                           <div className="font-semibold text-[var(--neutral-foreground-1)]">
                             {sub.is_completed && (
-                              <CheckCircle className="mr-1 inline-block h-4 w-4 text-green-600" />
+                              <MaterialIcon name="check_circle" size={16} className="mr-1 inline-block text-green-600" />
                             )}
                             {sub.submission_item}
                           </div>
@@ -874,14 +859,14 @@ export default function WeeklyPlanStudentDetailPage() {
                     comment={plan.weekly_goal_comment}
                   />
                   <AchievementDisplay
-                    icon={<Handshake className="h-4 w-4" />}
+                    icon={<MaterialIcon name="handshake" size={16} />}
                     label="いっしょに決めた目標"
                     goalText={displaySharedGoal}
                     achievement={plan.shared_goal_achievement}
                     comment={plan.shared_goal_comment}
                   />
                   <AchievementDisplay
-                    icon={<CheckCircle className="h-4 w-4" />}
+                    icon={<MaterialIcon name="check_circle" size={16} />}
                     label="やるべきこと"
                     goalText={displayMustDo}
                     achievement={plan.must_do_achievement}
@@ -906,7 +891,7 @@ export default function WeeklyPlanStudentDetailPage() {
                   {plan.daily_achievement && Object.keys(plan.daily_achievement).length > 0 && (
                     <div className="mt-4">
                       <h4 className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--neutral-foreground-1)]">
-                        <Calendar className="h-4 w-4" />
+                        <MaterialIcon name="calendar_month" size={16} />
                         各曜日の達成度
                       </h4>
                       {Object.entries(plan.daily_achievement).map(([key, data]) => {
@@ -951,7 +936,7 @@ export default function WeeklyPlanStudentDetailPage() {
           <Card>
             <CardBody>
               <h3 className="mb-4 text-lg font-bold text-[var(--neutral-foreground-1)]">
-                <MessageSquare className="mr-2 inline-block h-5 w-5" />
+                <MaterialIcon name="forum" size={20} className="mr-2 inline-block" />
                 コメント
               </h3>
 

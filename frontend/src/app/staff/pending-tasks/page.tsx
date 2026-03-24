@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { CheckCircle, FileText, Activity, Handshake, Search } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // --- Types ---
 interface PlanTask {
@@ -208,7 +208,7 @@ export default function PendingTasksPage() {
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-[var(--neutral-foreground-3)]">生徒名で検索</label>
               <div className="relative">
-                <Search className="absolute left-2.5 top-2 h-4 w-4 text-[var(--neutral-foreground-4)]" />
+                <MaterialIcon name="search" size={16} className="absolute left-2.5 top-2 text-[var(--neutral-foreground-4)]" />
                 <input
                   type="text"
                   value={nameFilter}
@@ -293,7 +293,7 @@ export default function PendingTasksPage() {
           {(categoryFilter === '' || categoryFilter === 'plan') && (
             <TaskSection
               title="個別支援計画書"
-              icon={<FileText className="h-5 w-5" />}
+              icon={<MaterialIcon name="description" size={20} />}
               count={filteredData.plans.length}
               emptyMessage="すべての生徒の個別支援計画書が最新です"
               badgeText={filteredData.plans.length > 0 ? `${filteredData.plans.length}件の対応が必要です` : 'すべて最新です'}
@@ -364,7 +364,7 @@ export default function PendingTasksPage() {
           {(categoryFilter === '' || categoryFilter === 'monitoring') && (
             <TaskSection
               title="モニタリング"
-              icon={<Activity className="h-5 w-5" />}
+              icon={<MaterialIcon name="trending_up" size={20} />}
               count={filteredData.monitoring.length}
               emptyMessage="すべての生徒のモニタリングが最新です"
               badgeText={filteredData.monitoring.length > 0 ? `${filteredData.monitoring.length}件の対応が必要です` : 'すべて最新です'}
@@ -448,7 +448,7 @@ export default function PendingTasksPage() {
           {(categoryFilter === '' || categoryFilter === 'guardian_kakehashi') && (
             <TaskSection
               title="保護者かけはし"
-              icon={<Handshake className="h-5 w-5" />}
+              icon={<MaterialIcon name="handshake" size={20} />}
               count={filteredData.guardian_kakehashi.length}
               emptyMessage="すべての保護者かけはしが提出済みです"
               badgeText={filteredData.guardian_kakehashi.length > 0 ? `${filteredData.guardian_kakehashi.length}件の未提出があります` : 'すべて提出済みです'}
@@ -515,7 +515,7 @@ export default function PendingTasksPage() {
           {(categoryFilter === '' || categoryFilter === 'staff_kakehashi') && (
             <TaskSection
               title="スタッフかけはし"
-              icon={<Handshake className="h-5 w-5" />}
+              icon={<MaterialIcon name="handshake" size={20} />}
               count={filteredData.staff_kakehashi.length}
               emptyMessage="すべてのスタッフかけはしが作成済みです"
               badgeText={filteredData.staff_kakehashi.length > 0 ? `${filteredData.staff_kakehashi.length}件の未作成があります` : 'すべて作成済みです'}
@@ -586,7 +586,7 @@ export default function PendingTasksPage() {
             <Card>
               <CardBody>
                 <div className="flex flex-col items-center py-12">
-                  <CheckCircle className="mb-3 h-12 w-12 text-[var(--status-success-fg)]" />
+                  <MaterialIcon name="check_circle" size={48} className="mb-3 text-[var(--status-success-fg)]" />
                   <p className="text-sm font-medium text-[var(--neutral-foreground-2)]">すべてのタスクが完了しています</p>
                   <p className="text-xs text-[var(--neutral-foreground-3)]">お疲れさまです!</p>
                 </div>
@@ -652,7 +652,7 @@ function TaskSection({
       ) : (
         <CardBody>
           <div className="flex flex-col items-center py-8">
-            <CheckCircle className="mb-2 h-8 w-8 text-[var(--status-success-fg)]" />
+            <MaterialIcon name="check_circle" size={32} className="mb-2 text-[var(--status-success-fg)]" />
             <p className="text-sm text-[var(--neutral-foreground-3)]">{emptyMessage}</p>
             <p className="text-xs text-[var(--neutral-foreground-4)]">対応が必要な項目はありません。</p>
           </div>

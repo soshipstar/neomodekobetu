@@ -11,7 +11,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Table, type Column } from '@/components/ui/Table';
 import { SkeletonTable } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { Plus, Tablet, Power, PowerOff } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface TabletAccount {
   id: number;
@@ -65,7 +65,7 @@ export default function AdminTabletAccountsPage() {
       label: 'アカウント名',
       render: (a) => (
         <div className="flex items-center gap-2">
-          <Tablet className="h-4 w-4 text-[var(--neutral-foreground-4)]" />
+          <MaterialIcon name="tablet" size={16} className="text-[var(--neutral-foreground-4)]" />
           <span className="font-medium text-[var(--neutral-foreground-1)]">{a.display_name}</span>
         </div>
       ),
@@ -94,7 +94,7 @@ export default function AdminTabletAccountsPage() {
           variant={a.is_active ? 'outline' : 'primary'}
           size="sm"
           onClick={() => toggleMutation.mutate({ id: a.id, is_active: !a.is_active })}
-          leftIcon={a.is_active ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
+          leftIcon={a.is_active ? <MaterialIcon name="power_off" size={16} /> : <MaterialIcon name="power_settings_new" size={16} />}
         >
           {a.is_active ? '無効にする' : '有効にする'}
         </Button>
@@ -106,7 +106,7 @@ export default function AdminTabletAccountsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">タブレットアカウント管理</h1>
-        <Button onClick={() => setModalOpen(true)} leftIcon={<Plus className="h-4 w-4" />}>
+        <Button onClick={() => setModalOpen(true)} leftIcon={<MaterialIcon name="add" size={16} />}>
           アカウント作成
         </Button>
       </div>

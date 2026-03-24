@@ -6,26 +6,8 @@ import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
-import {
-  MessageCircle,
-  RefreshCw,
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  Users,
-  ClipboardList,
-  AlertTriangle,
-  FileText,
-  Clock,
-  CheckCircle2,
-  Plus,
-  Send,
-  UserCheck,
-  UserX,
-  BookOpen,
-  PenSquare,
-} from 'lucide-react';
 import Link from 'next/link';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -339,7 +321,7 @@ export default function StaffDashboardPage() {
       {/* Page title */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">活動管理</h1>
-        <Button variant="ghost" size="sm" onClick={goToToday} leftIcon={<Calendar className="h-4 w-4" />}>
+        <Button variant="ghost" size="sm" onClick={goToToday} leftIcon={<MaterialIcon name="calendar_month" size={16} />}>
           今日
         </Button>
       </div>
@@ -373,7 +355,7 @@ export default function StaffDashboardPage() {
                   onClick={goToPrevMonth}
                   className="rounded-lg p-1.5 hover:bg-[var(--neutral-background-3)] transition-colors"
                 >
-                  <ChevronLeft className="h-5 w-5 text-[var(--neutral-foreground-3)]" />
+                  <MaterialIcon name="chevron_left" size={20} className="text-[var(--neutral-foreground-3)]" />
                 </button>
                 <CardTitle className="min-w-[120px] text-center">
                   {year}年{month}月
@@ -382,7 +364,7 @@ export default function StaffDashboardPage() {
                   onClick={goToNextMonth}
                   className="rounded-lg p-1.5 hover:bg-[var(--neutral-background-3)] transition-colors"
                 >
-                  <ChevronRight className="h-5 w-5 text-[var(--neutral-foreground-3)]" />
+                  <MaterialIcon name="chevron_right" size={20} className="text-[var(--neutral-foreground-3)]" />
                 </button>
               </div>
             </CardHeader>
@@ -600,7 +582,7 @@ export default function StaffDashboardPage() {
                   </Button>
                 </Link>
                 <Link href={`/staff/activities/new?date=${selectedDate}`}>
-                  <Button size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+                  <Button size="sm" leftIcon={<MaterialIcon name="add" size={16} />}>
                     新規活動
                   </Button>
                 </Link>
@@ -613,7 +595,7 @@ export default function StaffDashboardPage() {
                 </div>
               ) : activities.length === 0 ? (
                 <div className="py-8 text-center text-[var(--neutral-foreground-4)]">
-                  <ClipboardList className="mx-auto h-10 w-10 mb-2 text-[var(--neutral-foreground-4)]" />
+                  <MaterialIcon name="checklist" size={40} className="mx-auto mb-2 text-[var(--neutral-foreground-4)]" />
                   <p>この日の活動はありません</p>
                 </div>
               ) : (
@@ -634,13 +616,13 @@ export default function StaffDashboardPage() {
                         </div>
                         <div className="flex flex-col items-end gap-1 text-sm shrink-0 ml-3">
                           <span className="flex items-center gap-1 text-[var(--neutral-foreground-2)]">
-                            <Users className="h-4 w-4" />
+                            <MaterialIcon name="group" size={16} />
                             {act.participant_count}名
                           </span>
                           <div className="flex items-center gap-2">
                             {act.sent_count > 0 && (
                               <span className="flex items-center gap-1 text-xs text-[var(--status-success-fg)]">
-                                <Send className="h-3 w-3" />
+                                <MaterialIcon name="send" size={12} />
                                 送信済 {act.sent_count}
                               </span>
                             )}
@@ -666,7 +648,7 @@ export default function StaffDashboardPage() {
             <div className="flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-1.5 font-bold text-sm">
-                  <BookOpen className="h-4 w-4" /> 業務日誌
+                  <MaterialIcon name="menu_book" size={16} /> 業務日誌
                 </div>
                 <p className="mt-1 text-xs opacity-90">
                   {selectedDate.replace(/-/g, '/')}の業務記録
@@ -694,7 +676,7 @@ export default function StaffDashboardPage() {
               </CardTitle>
               <div className="flex items-center gap-2 text-xs text-[var(--neutral-foreground-3)]">
                 <span className="flex items-center gap-1">
-                  <UserCheck className="h-3.5 w-3.5 text-[var(--status-success-fg)]" />
+                  <MaterialIcon name="how_to_reg" size={14} className="text-[var(--status-success-fg)]" />
                   {totalAttendance - absentCount}
                 </span>
                 <span className="flex items-center gap-1">
@@ -716,7 +698,7 @@ export default function StaffDashboardPage() {
                 </div>
               ) : totalAttendance === 0 ? (
                 <div className="py-6 text-center text-[var(--neutral-foreground-4)]">
-                  <Users className="mx-auto h-8 w-8 mb-2 text-[var(--neutral-foreground-4)]" />
+                  <MaterialIcon name="group" size={32} className="mx-auto mb-2 text-[var(--neutral-foreground-4)]" />
                   <p className="text-sm">参加予定者はいません</p>
                 </div>
               ) : (
@@ -782,7 +764,7 @@ function NotificationGrid({ summary }: { summary: DashboardSummary }) {
   const items = [
     {
       borderColor: 'border-l-[var(--status-success-fg)]',
-      icon: <MessageCircle className="h-4 w-4 text-[var(--status-success-fg)]" />,
+      icon: <MaterialIcon name="chat" size={16} className="text-[var(--status-success-fg)]" />,
       label: '未読チャットメッセージ',
       count: summary.unread_chat.count,
       href: '/staff/chat',
@@ -800,21 +782,21 @@ function NotificationGrid({ summary }: { summary: DashboardSummary }) {
     },
     {
       borderColor: 'border-l-[var(--status-warning-fg)]',
-      icon: <Users className="h-4 w-4 text-[var(--status-warning-fg)]" />,
+      icon: <MaterialIcon name="group" size={16} className="text-[var(--status-warning-fg)]" />,
       label: '面談対案待ち',
       count: summary.pending_meeting_counter,
       href: '/staff/meetings',
     },
     {
       borderColor: 'border-l-[var(--status-success-fg)]',
-      icon: <ClipboardList className="h-4 w-4 text-[var(--status-success-fg)]" />,
+      icon: <MaterialIcon name="checklist" size={16} className="text-[var(--status-success-fg)]" />,
       label: '未確認連絡帳',
       count: summary.unconfirmed_renrakucho,
       href: '/staff/unconfirmed-notes',
     },
     {
       borderColor: 'border-l-[var(--brand-80)]',
-      icon: <FileText className="h-4 w-4 text-[var(--brand-80)]" />,
+      icon: <MaterialIcon name="description" size={16} className="text-[var(--brand-80)]" />,
       label: '個別支援計画期限',
       count: summary.plan_deadlines.overdue + summary.plan_deadlines.urgent,
       href: '/staff/pending-tasks',
@@ -825,7 +807,7 @@ function NotificationGrid({ summary }: { summary: DashboardSummary }) {
     },
     {
       borderColor: 'border-l-[var(--status-info-fg)]',
-      icon: <Clock className="h-4 w-4 text-[var(--status-info-fg)]" />,
+      icon: <MaterialIcon name="schedule" size={16} className="text-[var(--status-info-fg)]" />,
       label: 'モニタリング期限',
       count: summary.monitoring_deadlines.overdue + summary.monitoring_deadlines.urgent,
       href: '/staff/pending-tasks',
@@ -836,7 +818,7 @@ function NotificationGrid({ summary }: { summary: DashboardSummary }) {
     },
     {
       borderColor: 'border-l-[var(--status-warning-fg)]',
-      icon: <AlertTriangle className="h-4 w-4 text-[var(--status-warning-fg)]" />,
+      icon: <MaterialIcon name="warning" size={16} className="text-[var(--status-warning-fg)]" />,
       label: 'かけはし期限',
       count: summary.kakehashi_deadlines.guardian_pending + summary.kakehashi_deadlines.staff_pending,
       href: '/staff/pending-tasks',
@@ -847,7 +829,7 @@ function NotificationGrid({ summary }: { summary: DashboardSummary }) {
     },
     {
       borderColor: 'border-l-[var(--status-danger-fg)]',
-      icon: <FileText className="h-4 w-4 text-[var(--status-danger-fg)]" />,
+      icon: <MaterialIcon name="description" size={16} className="text-[var(--status-danger-fg)]" />,
       label: '未提出提出物',
       count: summary.unsubmitted_documents,
       href: '/staff/submission-management',
@@ -858,7 +840,7 @@ function NotificationGrid({ summary }: { summary: DashboardSummary }) {
   if (summary.facility_evaluation_incomplete) {
     items.push({
       borderColor: 'border-l-[var(--status-danger-fg)]',
-      icon: <AlertTriangle className="h-4 w-4 text-[var(--status-danger-fg)]" />,
+      icon: <MaterialIcon name="warning" size={16} className="text-[var(--status-danger-fg)]" />,
       label: '事業所評価未提出',
       count: 1,
       href: '/staff/facility-evaluation',
@@ -871,7 +853,7 @@ function NotificationGrid({ summary }: { summary: DashboardSummary }) {
   if (visibleItems.length === 0) {
     return (
       <div className="px-6 py-8 text-center text-[var(--neutral-foreground-4)]">
-        <CheckCircle2 className="mx-auto h-8 w-8 mb-2" />
+        <MaterialIcon name="check_circle" size={32} className="mx-auto mb-2" />
         <p className="text-sm">未対応の通知はありません</p>
       </div>
     );

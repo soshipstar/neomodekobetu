@@ -3,8 +3,8 @@
 import { cn, nl } from '@/lib/utils';
 import { ChatAttachment } from './ChatAttachment';
 import type { ChatMessage, MessageType } from '@/types/chat';
-import { AlertTriangle, Calendar, Megaphone, CalendarCheck, CalendarClock } from 'lucide-react';
 import Link from 'next/link';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface ChatBubbleProps {
   message: ChatMessage;
@@ -19,37 +19,37 @@ const MESSAGE_TYPE_CONFIG: Record<string, {
 }> = {
   absence_notification: {
     label: '欠席連絡',
-    icon: AlertTriangle,
+    icon: "warning",
     bubbleClass: 'bg-[var(--status-danger-bg)] border-[var(--status-danger-fg)]/20 text-[var(--neutral-foreground-1)]',
     badgeClass: 'bg-[var(--status-danger-bg)] text-[var(--status-danger-fg)]',
   },
   event_registration: {
     label: 'イベント参加',
-    icon: Calendar,
+    icon: "calendar_month",
     bubbleClass: 'bg-[var(--status-success-bg)] border-[var(--status-success-fg)]/20 text-[var(--neutral-foreground-1)]',
     badgeClass: 'bg-[var(--status-success-bg)] text-[var(--status-success-fg)]',
   },
   meeting_request: {
     label: '面談申込',
-    icon: CalendarClock,
+    icon: "schedule",
     bubbleClass: 'bg-[var(--brand-160)] border-[var(--brand-80)]/20 text-[var(--neutral-foreground-1)]',
     badgeClass: 'bg-[var(--brand-150)] text-[var(--brand-60)]',
   },
   meeting_counter: {
     label: '面談日程対案',
-    icon: CalendarClock,
+    icon: "schedule",
     bubbleClass: 'bg-[var(--brand-160)] border-[var(--brand-80)]/20 text-[var(--neutral-foreground-1)]',
     badgeClass: 'bg-[var(--brand-150)] text-[var(--brand-60)]',
   },
   meeting_confirmed: {
     label: '面談日程確定',
-    icon: CalendarCheck,
+    icon: "event_available",
     bubbleClass: 'bg-[var(--status-success-bg)] border-[var(--status-success-fg)]/20 text-[var(--neutral-foreground-1)]',
     badgeClass: 'bg-[var(--status-success-bg)] text-[var(--status-success-fg)]',
   },
   broadcast: {
     label: '一斉送信',
-    icon: Megaphone,
+    icon: "campaign",
     bubbleClass: 'bg-[var(--status-warning-bg)] border-[var(--status-warning-fg)]/20 text-[var(--neutral-foreground-1)]',
     badgeClass: 'bg-[var(--status-warning-bg)] text-[var(--status-warning-fg)]',
   },
@@ -122,7 +122,7 @@ export function ChatBubble({ message, isMine }: ChatBubbleProps) {
                     : 'bg-purple-600 text-white hover:bg-purple-700'
                 )}
               >
-                <CalendarCheck className="h-3.5 w-3.5" />
+                <MaterialIcon name="event_available" size={14} />
                 {message.message_type === 'meeting_confirmed' ? '確定内容を確認' : '面談予約を確認'}
               </Link>
             </div>

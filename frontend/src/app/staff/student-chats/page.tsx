@@ -12,16 +12,8 @@ import { useToast } from '@/components/ui/Toast';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { cn, formatRelativeTime, truncate, nl } from '@/lib/utils';
-import {
-  Search,
-  ChevronLeft,
-  Send,
-  MessageCircle,
-  Megaphone,
-  Paperclip,
-  X,
-} from 'lucide-react';
 import { formatFileSize } from '@/lib/utils';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -182,12 +174,12 @@ export default function StudentChatsPage() {
                 className="flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-3)] transition-colors"
                 title="一斉送信"
               >
-                <Megaphone className="h-3.5 w-3.5" />
+                <MaterialIcon name="campaign" size={14} />
                 一斉送信
               </button>
             </div>
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
+              <MaterialIcon name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
               <Input
                 placeholder="生徒名で検索..."
                 value={search}
@@ -281,7 +273,7 @@ export default function StudentChatsPage() {
                       onClick={handleBack}
                       className="rounded-md p-1 text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-3)]"
                     >
-                      <ChevronLeft className="h-5 w-5" />
+                      <MaterialIcon name="chevron_left" size={20} />
                     </button>
                   )}
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand-140)] text-xs font-semibold text-[var(--brand-80)]">
@@ -308,7 +300,7 @@ export default function StudentChatsPage() {
                 ) : messages.length === 0 ? (
                   <div className="flex h-full items-center justify-center text-[var(--neutral-foreground-4)]">
                     <div className="text-center">
-                      <MessageCircle className="mx-auto mb-2 h-10 w-10" />
+                      <MaterialIcon name="chat" size={40} className="mx-auto mb-2" />
                       <p className="text-sm">メッセージはありません</p>
                     </div>
                   </div>
@@ -342,7 +334,7 @@ export default function StudentChatsPage() {
                                   isStaff ? 'text-blue-100' : 'text-[var(--brand-80)]'
                                 )}
                               >
-                                <Paperclip className="h-3 w-3" />
+                                <MaterialIcon name="attach_file" size={12} />
                                 {msg.attachment_name || '添付ファイル'}
                               </a>
                             )}
@@ -367,11 +359,11 @@ export default function StudentChatsPage() {
               <div className="border-t border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] p-3">
                 {attachment && (
                   <div className="mb-2 flex items-center gap-2 rounded-lg bg-[var(--neutral-background-3)] px-3 py-2">
-                    <Paperclip className="h-4 w-4 text-[var(--neutral-foreground-4)]" />
+                    <MaterialIcon name="attach_file" size={16} className="text-[var(--neutral-foreground-4)]" />
                     <span className="flex-1 truncate text-sm text-[var(--neutral-foreground-2)]">{attachment.name}</span>
                     <span className="text-xs text-[var(--neutral-foreground-4)]">{formatFileSize(attachment.size)}</span>
                     <button onClick={() => setAttachment(null)} className="rounded p-1 text-[var(--neutral-foreground-4)] hover:text-[var(--status-danger-fg)]">
-                      <X className="h-4 w-4" />
+                      <MaterialIcon name="close" size={16} />
                     </button>
                   </div>
                 )}
@@ -380,7 +372,7 @@ export default function StudentChatsPage() {
                     onClick={() => fileInputRef.current?.click()}
                     className="shrink-0 rounded-lg p-2 text-[var(--neutral-foreground-4)] hover:bg-[var(--neutral-background-3)] hover:text-[var(--neutral-foreground-2)]"
                   >
-                    <Paperclip className="h-5 w-5" />
+                    <MaterialIcon name="attach_file" size={20} />
                   </button>
                   <input
                     ref={fileInputRef}
@@ -414,7 +406,7 @@ export default function StudentChatsPage() {
                     size="md"
                     className="shrink-0 rounded-xl"
                   >
-                    <Send className="h-4 w-4" />
+                    <MaterialIcon name="send" size={16} />
                   </Button>
                 </div>
                 <p className="mt-1 text-center text-[10px] text-[var(--neutral-foreground-4)]">
@@ -425,7 +417,7 @@ export default function StudentChatsPage() {
           ) : (
             <div className="flex flex-1 items-center justify-center text-[var(--neutral-foreground-4)]">
               <div className="text-center">
-                <MessageCircle className="mx-auto mb-3 h-12 w-12" />
+                <MaterialIcon name="chat" size={48} className="mx-auto mb-3" />
                 <p className="text-sm">左のリストからチャットルームを選択してください</p>
               </div>
             </div>
@@ -456,7 +448,7 @@ export default function StudentChatsPage() {
               onClick={() => broadcastMutation.mutate(broadcastMessage)}
               isLoading={broadcastMutation.isPending}
               disabled={!broadcastMessage.trim()}
-              leftIcon={<Send className="h-4 w-4" />}
+              leftIcon={<MaterialIcon name="send" size={16} />}
             >
               送信
             </Button>

@@ -11,25 +11,7 @@ import { Modal } from '@/components/ui/Modal';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import Link from 'next/link';
-import {
-  Plus,
-  Pencil,
-  Trash2,
-  Search,
-  ArrowLeft,
-  Calendar,
-  Tag,
-  Clock,
-  User,
-  Copy,
-  Sparkles,
-  ChevronUp,
-  ChevronDown,
-  X,
-  Loader2,
-  Download,
-  Printer,
-} from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -221,11 +203,11 @@ export default function SupportPlansPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">支援案一覧</h1>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={handleCreate} leftIcon={<Plus className="h-4 w-4" />}>
+          <Button onClick={handleCreate} leftIcon={<MaterialIcon name="add" size={16} />}>
             新しい支援案を作成
           </Button>
           <Link href="/staff/daily-routines">
-            <Button variant="outline" leftIcon={<Clock className="h-4 w-4" />}>
+            <Button variant="outline" leftIcon={<MaterialIcon name="schedule" size={16} />}>
               毎日の支援を設定
             </Button>
           </Link>
@@ -238,14 +220,14 @@ export default function SupportPlansPage() {
       </div>
 
       <Link href="/staff/renrakucho" className="inline-flex items-center gap-1 text-sm text-[var(--neutral-foreground-3)] hover:text-[var(--neutral-foreground-1)]">
-        <ArrowLeft className="h-3.5 w-3.5" /> 活動管理へ
+        <MaterialIcon name="arrow_back" size={14} /> 活動管理へ
       </Link>
 
       {/* Search */}
       <Card>
         <CardBody>
           <div className="flex items-center gap-2 mb-4">
-            <Search className="h-4 w-4 text-[var(--neutral-foreground-3)]" />
+            <MaterialIcon name="search" size={16} className="text-[var(--neutral-foreground-3)]" />
             <span className="text-sm font-semibold text-[var(--neutral-foreground-2)]">支援案を検索</span>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -364,12 +346,12 @@ function PlanCard({
                 {PLAN_TYPES[plan.plan_type]}
               </Badge>
               <span className="flex items-center gap-1 text-sm text-[var(--brand-80)]">
-                <Calendar className="h-3.5 w-3.5" /> {dateStr}
+                <MaterialIcon name="calendar_month" size={14} /> {dateStr}
               </span>
             </div>
             <div className="flex flex-wrap gap-3 text-xs text-[var(--neutral-foreground-3)]">
               <span className="flex items-center gap-1">
-                <User className="h-3 w-3" /> 作成者: {plan.staff_name}
+                <MaterialIcon name="person" size={12} /> 作成者: {plan.staff_name}
               </span>
               <span>作成日: {formatDateJP(plan.created_at)}</span>
               {plan.usage_count !== undefined && plan.usage_count > 0 && (
@@ -400,18 +382,18 @@ function PlanCard({
         )}
 
         <div className="mt-4 flex gap-2 border-t border-[var(--neutral-stroke-3)] pt-3">
-          <Button size="sm" onClick={() => onEdit(plan)} leftIcon={<Pencil className="h-3.5 w-3.5" />}>
+          <Button size="sm" onClick={() => onEdit(plan)} leftIcon={<MaterialIcon name="edit" size={14} />}>
             編集
           </Button>
-          <Button size="sm" variant="outline" onClick={() => onPdfDownload(plan)} leftIcon={<Download className="h-3.5 w-3.5" />}>
+          <Button size="sm" variant="outline" onClick={() => onPdfDownload(plan)} leftIcon={<MaterialIcon name="download" size={14} />}>
             PDF
           </Button>
           <a href={`/staff/support-plans/${plan.id}/print`} target="_blank" rel="noopener noreferrer">
-            <Button size="sm" variant="outline" leftIcon={<Printer className="h-3.5 w-3.5" />}>
+            <Button size="sm" variant="outline" leftIcon={<MaterialIcon name="print" size={14} />}>
               印刷
             </Button>
           </a>
-          <Button size="sm" variant="danger" onClick={() => onDelete(plan)} leftIcon={<Trash2 className="h-3.5 w-3.5" />}>
+          <Button size="sm" variant="danger" onClick={() => onDelete(plan)} leftIcon={<MaterialIcon name="delete" size={14} />}>
             削除
           </Button>
         </div>
@@ -732,7 +714,7 @@ function SupportPlanFormModal({
             {isEdit ? '支援案編集' : '支援案作成'}
           </h2>
           <button onClick={onClose} className="rounded-md p-1 hover:bg-[var(--neutral-background-3)]">
-            <X className="h-5 w-5 text-[var(--neutral-foreground-3)]" />
+            <MaterialIcon name="close" size={20} className="text-[var(--neutral-foreground-3)]" />
           </button>
         </div>
 
@@ -973,7 +955,7 @@ function SupportPlanFormModal({
                           disabled={index === 0}
                           className="rounded p-1 hover:bg-[var(--neutral-background-3)] disabled:opacity-30"
                         >
-                          <ChevronUp className="h-3.5 w-3.5" />
+                          <MaterialIcon name="expand_less" size={14} />
                         </button>
                         <button
                           type="button"
@@ -981,14 +963,14 @@ function SupportPlanFormModal({
                           disabled={index === scheduleItems.length - 1}
                           className="rounded p-1 hover:bg-[var(--neutral-background-3)] disabled:opacity-30"
                         >
-                          <ChevronDown className="h-3.5 w-3.5" />
+                          <MaterialIcon name="expand_more" size={14} />
                         </button>
                         <button
                           type="button"
                           onClick={() => removeScheduleItem(index)}
                           className="rounded p-1 text-[var(--status-danger-fg)] hover:bg-[var(--status-danger-bg)]"
                         >
-                          <X className="h-3.5 w-3.5" />
+                          <MaterialIcon name="close" size={14} />
                         </button>
                       </div>
                     </div>
@@ -1009,7 +991,7 @@ function SupportPlanFormModal({
               className="mt-2"
               onClick={handleGenerateAiScheduleContent}
               disabled={aiGeneratingSchedule}
-              leftIcon={aiGeneratingSchedule ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              leftIcon={aiGeneratingSchedule ? <MaterialIcon name="progress_activity" size={16} className="animate-spin" /> : <MaterialIcon name="auto_awesome" size={16} />}
             >
               {aiGeneratingSchedule ? '生成中...' : 'スケジュールをもとに活動内容を生成'}
             </Button>
@@ -1036,7 +1018,7 @@ function SupportPlanFormModal({
               className="mt-2"
               onClick={handleGenerateAiFiveDomains}
               disabled={aiGeneratingFiveDomains}
-              leftIcon={aiGeneratingFiveDomains ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              leftIcon={aiGeneratingFiveDomains ? <MaterialIcon name="progress_activity" size={16} className="animate-spin" /> : <MaterialIcon name="auto_awesome" size={16} />}
             >
               {aiGeneratingFiveDomains ? '生成中...' : 'AIで五領域への配慮を生成'}
             </Button>
@@ -1102,7 +1084,7 @@ function SupportPlanFormModal({
         {/* Footer buttons */}
         <div className="flex gap-3 border-t border-[var(--neutral-stroke-2)] px-6 py-4">
           <Button variant="outline" onClick={onClose} className="flex-1">キャンセル</Button>
-          <Button onClick={handleSave} disabled={saving} className="flex-1" leftIcon={saving ? <Loader2 className="h-4 w-4 animate-spin" /> : undefined}>
+          <Button onClick={handleSave} disabled={saving} className="flex-1" leftIcon={saving ? <MaterialIcon name="progress_activity" size={16} className="animate-spin" /> : undefined}>
             {saving ? '保存中...' : isEdit ? '更新する' : '作成する'}
           </Button>
         </div>
@@ -1194,7 +1176,7 @@ function CopyFromPastModal({
         <div className="flex items-center justify-between border-b border-[var(--neutral-stroke-2)] px-6 py-4 shrink-0">
           <h2 className="text-lg font-bold">過去の支援案を選択</h2>
           <button onClick={onClose} className="rounded-md p-1 hover:bg-[var(--neutral-background-3)]">
-            <X className="h-5 w-5" />
+            <MaterialIcon name="close" size={20} />
           </button>
         </div>
 

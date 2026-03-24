@@ -10,7 +10,7 @@ import { Modal } from '@/components/ui/Modal';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { formatDateTime, nl } from '@/lib/utils';
-import { Plus, Pencil, Trash2, Send, EyeOff, Eye } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -199,7 +199,7 @@ export default function StaffAnnouncementsPage() {
             setShowForm(true);
           }}
         >
-          <Plus className="mr-1 h-4 w-4" />
+          <MaterialIcon name="add" size={16} className="mr-1" />
           新規作成
         </Button>
       </div>
@@ -368,7 +368,7 @@ export default function StaffAnnouncementsPage() {
                     )}
                   </div>
                   <span className="text-xs text-[var(--neutral-foreground-4)]">
-                    <Eye className="mr-0.5 inline h-3.5 w-3.5" />
+                    <MaterialIcon name="visibility" size={14} className="mr-0.5 inline" />
                     既読: {a.reads_count ?? 0}人
                   </span>
                 </div>
@@ -401,7 +401,7 @@ export default function StaffAnnouncementsPage() {
                       onClick={() => unpublishMutation.mutate(a.id)}
                       disabled={unpublishMutation.isPending}
                     >
-                      <EyeOff className="mr-1 h-3.5 w-3.5" />
+                      <MaterialIcon name="visibility_off" size={14} className="mr-1" />
                       非公開にする
                     </Button>
                   ) : (
@@ -411,16 +411,16 @@ export default function StaffAnnouncementsPage() {
                       onClick={() => publishMutation.mutate(a.id)}
                       disabled={publishMutation.isPending}
                     >
-                      <Send className="mr-1 h-3.5 w-3.5" />
+                      <MaterialIcon name="send" size={14} className="mr-1" />
                       公開する
                     </Button>
                   )}
                   <Button size="sm" variant="secondary" onClick={() => startEdit(a)}>
-                    <Pencil className="mr-1 h-3.5 w-3.5" />
+                    <MaterialIcon name="edit" size={14} className="mr-1" />
                     編集
                   </Button>
                   <Button size="sm" variant="danger" onClick={() => setDeleteTarget(a)}>
-                    <Trash2 className="mr-1 h-3.5 w-3.5" />
+                    <MaterialIcon name="delete" size={14} className="mr-1" />
                     削除
                   </Button>
                 </div>

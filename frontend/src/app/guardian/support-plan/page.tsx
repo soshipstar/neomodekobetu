@@ -12,7 +12,7 @@ import { useToast } from '@/components/ui/Toast';
 import { SignaturePad, type SignaturePadRef } from '@/components/ui/SignaturePad';
 import { formatDate, nl } from '@/lib/utils';
 import { DOMAIN_LABELS, type Domain, type SupportPlan } from '@/types/support-plan';
-import { CheckCircle, PenLine, MessageSquare } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface ExtendedSupportPlan extends SupportPlan {
   guardian_confirmed_at?: string | null;
@@ -160,7 +160,7 @@ export default function GuardianSupportPlanPage() {
                       )}
                     </div>
                     {canReview && (
-                      <Button size="sm" onClick={() => openConfirmModal(ext)} leftIcon={<PenLine className="h-4 w-4" />}>
+                      <Button size="sm" onClick={() => openConfirmModal(ext)} leftIcon={<MaterialIcon name="draw" size={16} />}>
                         内容を確認する
                       </Button>
                     )}
@@ -261,7 +261,7 @@ export default function GuardianSupportPlanPage() {
                   {/* Reviewed / signed status */}
                   {hasSigned && ext.guardian_signature_date && (
                     <div className="mt-3 flex items-center gap-2 rounded-lg bg-green-50 p-3">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <MaterialIcon name="check_circle" size={16} className="text-green-600" />
                       <span className="text-sm text-green-700">
                         {ext.guardian_signature_date} に署名済み
                       </span>
@@ -269,7 +269,7 @@ export default function GuardianSupportPlanPage() {
                   )}
                   {hasReviewed && !hasSigned && ext.guardian_reviewed_at && (
                     <div className="mt-3 flex items-center gap-2 rounded-lg bg-[var(--brand-160)] p-3">
-                      <CheckCircle className="h-4 w-4 text-[var(--brand-80)]" />
+                      <MaterialIcon name="check_circle" size={16} className="text-[var(--brand-80)]" />
                       <span className="text-sm text-[var(--brand-70)]">
                         {formatDate(ext.guardian_reviewed_at)} にレビュー済み
                       </span>
@@ -367,7 +367,7 @@ export default function GuardianSupportPlanPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => setCommentMode(true)}
-                  leftIcon={<MessageSquare className="h-4 w-4" />}
+                  leftIcon={<MaterialIcon name="forum" size={16} />}
                 >
                   コメントを送る
                 </Button>
@@ -379,14 +379,14 @@ export default function GuardianSupportPlanPage() {
                     variant="outline"
                     onClick={handleApprove}
                     isLoading={approveMutation.isPending}
-                    leftIcon={<CheckCircle className="h-4 w-4" />}
+                    leftIcon={<MaterialIcon name="check_circle" size={16} />}
                   >
                     変更なし（承認）
                   </Button>
                   <Button
                     onClick={handleSign}
                     isLoading={signMutation.isPending}
-                    leftIcon={<PenLine className="h-4 w-4" />}
+                    leftIcon={<MaterialIcon name="draw" size={16} />}
                   >
                     署名して確認
                   </Button>

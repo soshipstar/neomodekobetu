@@ -1,8 +1,8 @@
 'use client';
 
 import { cn, formatFileSize } from '@/lib/utils';
-import { FileText, Image as ImageIcon, Download } from 'lucide-react';
 import type { ChatAttachment as ChatAttachmentType } from '@/types/chat';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface ChatAttachmentProps {
   attachment: ChatAttachmentType;

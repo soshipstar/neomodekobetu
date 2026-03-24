@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { FileText, Eye, Filter } from 'lucide-react';
 import { format } from 'date-fns';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -101,7 +101,7 @@ export default function HiddenDocumentsPage() {
       <Card>
         <CardBody>
           <div className="flex items-center gap-3">
-            <Filter className="h-4 w-4 text-[var(--neutral-foreground-3)]" />
+            <MaterialIcon name="filter_list" size={16} className="text-[var(--neutral-foreground-3)]" />
             <label className="text-sm font-medium text-[var(--neutral-foreground-2)]">種類で絞り込み</label>
             <select
               value={docTypeFilter}
@@ -132,7 +132,7 @@ export default function HiddenDocumentsPage() {
         <Card>
           <CardBody>
             <div className="flex flex-col items-center py-12">
-              <FileText className="mb-3 h-12 w-12 text-[var(--neutral-foreground-4)]" />
+              <MaterialIcon name="description" size={48} className="mb-3 text-[var(--neutral-foreground-4)]" />
               <p className="text-sm font-medium text-[var(--neutral-foreground-2)]">
                 非表示の書類はありません
               </p>
@@ -172,7 +172,7 @@ export default function HiddenDocumentsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                leftIcon={<Eye className="h-3.5 w-3.5" />}
+                leftIcon={<MaterialIcon name="visibility" size={14} />}
                 onClick={() => handleRestore(doc)}
                 disabled={restoreMutation.isPending}
               >

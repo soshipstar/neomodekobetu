@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { Plus, Pencil, Trash2, Clock } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface DailyRoutine {
   id: number;
@@ -66,7 +66,7 @@ export default function AdminDailyRoutinesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">日課管理</h1>
-        <Button onClick={() => { setEditing(null); setModalOpen(true); }} leftIcon={<Plus className="h-4 w-4" />}>追加</Button>
+        <Button onClick={() => { setEditing(null); setModalOpen(true); }} leftIcon={<MaterialIcon name="add" size={16} />}>追加</Button>
       </div>
 
       <Card>
@@ -84,7 +84,7 @@ export default function AdminDailyRoutinesPage() {
                 </div>
                 <div className="flex-1 flex items-center justify-between rounded-lg border border-[var(--neutral-stroke-2)] p-4 mb-2">
                   <div className="flex items-center gap-3">
-                    <Clock className="h-5 w-5 text-[var(--brand-80)]" />
+                    <MaterialIcon name="schedule" size={20} className="text-[var(--brand-80)]" />
                     <div>
                       <h3 className="font-medium text-[var(--neutral-foreground-1)]">{routine.name}</h3>
                       <div className="flex gap-1 mt-0.5">
@@ -94,8 +94,8 @@ export default function AdminDailyRoutinesPage() {
                     </div>
                   </div>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => openEdit(routine)}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="sm" onClick={() => { if (confirm('削除しますか？')) deleteMutation.mutate(routine.id); }}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                    <Button variant="ghost" size="sm" onClick={() => openEdit(routine)}><MaterialIcon name="edit" size={16} /></Button>
+                    <Button variant="ghost" size="sm" onClick={() => { if (confirm('削除しますか？')) deleteMutation.mutate(routine.id); }}><MaterialIcon name="delete" size={16} className="text-red-500" /></Button>
                   </div>
                 </div>
               </div>

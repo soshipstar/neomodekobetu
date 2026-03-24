@@ -13,7 +13,7 @@ import { SignaturePad, type SignaturePadRef } from '@/components/ui/SignaturePad
 import { formatDate, nl } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { ClipboardList, CheckCircle, ChevronDown, ChevronUp, PenLine } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface MonitoringDetail {
   id: number;
@@ -187,7 +187,7 @@ export default function GuardianMonitoringPage() {
       ) : records.length === 0 ? (
         <Card>
           <div className="py-12 text-center">
-            <ClipboardList className="mx-auto h-12 w-12 text-[var(--neutral-foreground-disabled)]" />
+            <MaterialIcon name="checklist" size={48} className="mx-auto text-[var(--neutral-foreground-disabled)]" />
             <p className="mt-2 text-sm text-[var(--neutral-foreground-3)]">提出済みのモニタリング表はまだありません</p>
             <p className="text-xs text-[var(--neutral-foreground-4)]">スタッフがモニタリング表を作成・提出すると、ここに表示されます。</p>
           </div>
@@ -208,9 +208,9 @@ export default function GuardianMonitoringPage() {
                   <div className="flex items-center gap-3">
                     <div className={`flex h-10 w-10 items-center justify-center rounded-full ${record.guardian_confirmed ? 'bg-green-100' : 'bg-[var(--brand-160)]'}`}>
                       {record.guardian_confirmed ? (
-                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <MaterialIcon name="check_circle" size={20} className="text-green-600" />
                       ) : (
-                        <ClipboardList className="h-5 w-5 text-[var(--brand-80)]" />
+                        <MaterialIcon name="checklist" size={20} className="text-[var(--brand-80)]" />
                       )}
                     </div>
                     <div>
@@ -231,7 +231,7 @@ export default function GuardianMonitoringPage() {
                       </div>
                     </div>
                   </div>
-                  {isExpanded ? <ChevronUp className="h-5 w-5 text-[var(--neutral-foreground-4)]" /> : <ChevronDown className="h-5 w-5 text-[var(--neutral-foreground-4)]" />}
+                  {isExpanded ? <MaterialIcon name="expand_less" size={20} className="text-[var(--neutral-foreground-4)]" /> : <MaterialIcon name="expand_more" size={20} className="text-[var(--neutral-foreground-4)]" />}
                 </button>
 
                 {isExpanded && (
@@ -377,7 +377,7 @@ export default function GuardianMonitoringPage() {
                     {/* Confirmation status */}
                     {record.guardian_confirmed && record.guardian_confirmed_at && (
                       <div className="rounded-lg bg-green-50 p-3 flex items-center gap-2">
-                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <MaterialIcon name="check_circle" size={20} className="text-green-600" />
                         <div>
                           <p className="text-sm font-semibold text-green-700">確認済み</p>
                           <p className="text-xs text-green-600">
@@ -390,7 +390,7 @@ export default function GuardianMonitoringPage() {
                     {/* Confirm button */}
                     {!record.guardian_confirmed && (
                       <div className="flex justify-end">
-                        <Button onClick={() => openConfirm(record)} leftIcon={<PenLine className="h-4 w-4" />}>
+                        <Button onClick={() => openConfirm(record)} leftIcon={<MaterialIcon name="draw" size={16} />}>
                           署名して確認
                         </Button>
                       </div>
@@ -432,7 +432,7 @@ export default function GuardianMonitoringPage() {
             <Button
               onClick={handleConfirm}
               isLoading={confirmMutation.isPending}
-              leftIcon={<CheckCircle className="h-4 w-4" />}
+              leftIcon={<MaterialIcon name="check_circle" size={16} />}
             >
               署名して確認
             </Button>

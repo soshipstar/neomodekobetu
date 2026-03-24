@@ -9,23 +9,8 @@ import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Skeleton, SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import {
-  Plus,
-  Pencil,
-  Trash2,
-  Download,
-  Printer,
-  User,
-  Calendar,
-  MessageSquare,
-  School,
-  Home,
-  AlertTriangle,
-  Heart,
-  FileText,
-  ChevronLeft,
-} from 'lucide-react';
 import { format } from 'date-fns';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -239,7 +224,7 @@ export default function StudentInterviewsPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => { setSelectedStudentId(null); setSelectedInterview(null); setIsEditing(false); }}>
-            <ChevronLeft className="h-4 w-4" />
+            <MaterialIcon name="chevron_left" size={16} />
             戻る
           </Button>
           <h1 className="text-xl font-bold text-[var(--neutral-foreground-1)]">
@@ -248,7 +233,7 @@ export default function StudentInterviewsPage() {
         </div>
         <Button
           size="sm"
-          leftIcon={<Plus className="h-4 w-4" />}
+          leftIcon={<MaterialIcon name="add" size={16} />}
           onClick={() => { setForm(emptyForm); setCreateModal(true); }}
         >
           新規作成
@@ -279,9 +264,9 @@ export default function StudentInterviewsPage() {
                     {format(new Date(iv.interview_date), 'yyyy/MM/dd')}
                   </span>
                   <div className="flex gap-1">
-                    {iv.check_school && <School className="h-3 w-3 text-[var(--status-info-fg)]" />}
+                    {iv.check_school && <MaterialIcon name="school" size={12} className="text-[var(--status-info-fg)]" />}
                     {iv.check_home && <Home className="h-3 w-3 text-[var(--status-warning-fg)]" />}
-                    {iv.check_troubles && <AlertTriangle className="h-3 w-3 text-[var(--status-danger-fg)]" />}
+                    {iv.check_troubles && <MaterialIcon name="warning" size={12} className="text-[var(--status-danger-fg)]" />}
                   </div>
                 </div>
                 <p className="text-xs text-[var(--neutral-foreground-3)] mt-0.5">
@@ -301,7 +286,7 @@ export default function StudentInterviewsPage() {
             <Card>
               <CardBody>
                 <div className="py-16 text-center text-[var(--neutral-foreground-4)]">
-                  <MessageSquare className="mx-auto mb-3 h-12 w-12" />
+                  <MaterialIcon name="forum" size={48} className="mx-auto mb-3" />
                   <p className="text-sm">左の履歴から面談記録を選択するか、新規作成してください</p>
                 </div>
               </CardBody>
@@ -327,23 +312,23 @@ export default function StudentInterviewsPage() {
                 {/* Actions */}
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2 text-sm text-[var(--neutral-foreground-3)]">
-                    <Calendar className="h-4 w-4" />
+                    <MaterialIcon name="calendar_month" size={16} />
                     {format(new Date(selectedInterview.interview_date), 'yyyy年MM月dd日')}
                     <span className="mx-1">|</span>
-                    <User className="h-4 w-4" />
+                    <MaterialIcon name="person" size={16} />
                     {selectedInterview.interviewer?.full_name || '不明'}
                   </div>
                   <div className="flex gap-1">
-                    <Button variant="outline" size="sm" leftIcon={<Download className="h-4 w-4" />}
+                    <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="download" size={16} />}
                       onClick={() => handlePdf(selectedInterview.id)}>PDF</Button>
                     <a href={`/staff/student-interviews/${selectedInterview.id}/print`} target="_blank" rel="noopener noreferrer">
-                      <Button variant="outline" size="sm" leftIcon={<Printer className="h-4 w-4" />}>印刷プレビュー</Button>
+                      <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="print" size={16} />}>印刷プレビュー</Button>
                     </a>
-                    <Button variant="outline" size="sm" leftIcon={<Pencil className="h-4 w-4" />}
+                    <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="edit" size={16} />}
                       onClick={() => openEdit(selectedInterview)}>編集</Button>
                     <Button variant="ghost" size="sm"
                       onClick={() => { if (confirm('この面談記録を削除しますか？')) deleteMutation.mutate(selectedInterview.id); }}>
-                      <Trash2 className="h-4 w-4 text-[var(--status-danger-fg)]" />
+                      <MaterialIcon name="delete" size={16} className="text-[var(--status-danger-fg)]" />
                     </Button>
                   </div>
                 </div>
@@ -351,7 +336,7 @@ export default function StudentInterviewsPage() {
                 {/* Content sections */}
                 <div className="space-y-4">
                   {/* 面談内容 */}
-                  <SectionBlock icon={<MessageSquare className="h-4 w-4" />} title="面談内容" color="var(--brand-80)">
+                  <SectionBlock icon={<MaterialIcon name="forum" size={16} />} title="面談内容" color="var(--brand-80)">
                     <p className="text-sm whitespace-pre-wrap">{nl(selectedInterview.interview_content) || '（未入力）'}</p>
                   </SectionBlock>
 
@@ -365,7 +350,7 @@ export default function StudentInterviewsPage() {
                   {/* チェック項目 */}
                   <div className="grid gap-3 md:grid-cols-3">
                     {selectedInterview.check_school && (
-                      <CheckBlock icon={<School className="h-4 w-4" />} title="学校での様子"
+                      <CheckBlock icon={<MaterialIcon name="school" size={16} />} title="学校での様子"
                         color="var(--status-info-fg)" notes={selectedInterview.check_school_notes} />
                     )}
                     {selectedInterview.check_home && (
@@ -373,14 +358,14 @@ export default function StudentInterviewsPage() {
                         color="var(--status-warning-fg)" notes={selectedInterview.check_home_notes} />
                     )}
                     {selectedInterview.check_troubles && (
-                      <CheckBlock icon={<AlertTriangle className="h-4 w-4" />} title="困りごと・悩み"
+                      <CheckBlock icon={<MaterialIcon name="warning" size={16} />} title="困りごと・悩み"
                         color="var(--status-danger-fg)" notes={selectedInterview.check_troubles_notes} />
                     )}
                   </div>
 
                   {/* その他備考 */}
                   {selectedInterview.other_notes && (
-                    <SectionBlock icon={<FileText className="h-4 w-4" />} title="その他備考" color="var(--neutral-foreground-3)">
+                    <SectionBlock icon={<MaterialIcon name="description" size={16} />} title="その他備考" color="var(--neutral-foreground-3)">
                       <p className="text-sm whitespace-pre-wrap">{nl(selectedInterview.other_notes)}</p>
                     </SectionBlock>
                   )}
@@ -488,7 +473,7 @@ function InterviewFormComponent({ form, updateField, onSubmit, onCancel, isLoadi
         label="学校での様子" checked={form.check_school} notes={form.check_school_notes}
         onCheck={(v) => updateField('check_school', v)}
         onNotes={(v) => updateField('check_school_notes', v)}
-        icon={<School className="h-4 w-4 text-[var(--status-info-fg)]" />}
+        icon={<MaterialIcon name="school" size={16} className="text-[var(--status-info-fg)]" />}
       />
       <CheckFieldGroup
         label="家庭での様子" checked={form.check_home} notes={form.check_home_notes}
@@ -500,7 +485,7 @@ function InterviewFormComponent({ form, updateField, onSubmit, onCancel, isLoadi
         label="困りごと・悩み" checked={form.check_troubles} notes={form.check_troubles_notes}
         onCheck={(v) => updateField('check_troubles', v)}
         onNotes={(v) => updateField('check_troubles_notes', v)}
-        icon={<AlertTriangle className="h-4 w-4 text-[var(--status-danger-fg)]" />}
+        icon={<MaterialIcon name="warning" size={16} className="text-[var(--status-danger-fg)]" />}
       />
 
       {/* その他備考 */}

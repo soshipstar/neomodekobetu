@@ -13,16 +13,7 @@ import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { format, differenceInDays, isPast } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import {
-  Plus,
-  CheckCircle,
-  Clock,
-  AlertTriangle,
-  Undo2,
-  Edit3,
-  Trash2,
-  FileText,
-} from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface Submission {
   id: number;
@@ -164,7 +155,7 @@ export default function StudentSubmissionsPage() {
 
           {dueDate && (
             <p className={`mt-1 text-sm ${isOverdue ? 'text-[var(--status-danger-fg)] font-medium' : 'text-[var(--neutral-foreground-2)]'}`}>
-              <Clock className="mr-1 inline h-3.5 w-3.5" />
+              <MaterialIcon name="schedule" size={14} className="mr-1 inline" />
               提出期限: {format(dueDate, 'yyyy年M月d日', { locale: ja })}
               {!sub.is_completed && daysLeft !== null && (
                 daysLeft >= 0
@@ -186,7 +177,7 @@ export default function StudentSubmissionsPage() {
                 size="sm"
                 variant="outline"
                 onClick={() => completeMutation.mutate({ id: sub.id, source: sub.source })}
-                leftIcon={<CheckCircle className="h-3.5 w-3.5" />}
+                leftIcon={<MaterialIcon name="check_circle" size={14} />}
               >
                 完了にする
               </Button>
@@ -195,7 +186,7 @@ export default function StudentSubmissionsPage() {
                 size="sm"
                 variant="outline"
                 onClick={() => uncompleteMutation.mutate({ id: sub.id, source: sub.source })}
-                leftIcon={<Undo2 className="h-3.5 w-3.5" />}
+                leftIcon={<MaterialIcon name="undo" size={14} />}
               >
                 未完了に戻す
               </Button>
@@ -219,7 +210,7 @@ export default function StudentSubmissionsPage() {
                     if (confirm('この提出物を削除しますか？')) deleteMutation.mutate(sub.id);
                   }}
                 >
-                  <Trash2 className="h-3.5 w-3.5 text-[var(--status-danger-fg)]" />
+                  <MaterialIcon name="delete" size={14} className="text-[var(--status-danger-fg)]" />
                 </Button>
               </>
             )}
@@ -233,7 +224,7 @@ export default function StudentSubmissionsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">提出物管理</h1>
-        <Button onClick={openAddModal} leftIcon={<Plus className="h-4 w-4" />}>
+        <Button onClick={openAddModal} leftIcon={<MaterialIcon name="add" size={16} />}>
           提出物を追加
         </Button>
       </div>
@@ -272,7 +263,7 @@ export default function StudentSubmissionsPage() {
             {pending.length === 0 ? (
               <Card>
                 <div className="py-8 text-center">
-                  <FileText className="mx-auto h-10 w-10 text-[var(--neutral-foreground-3)]" />
+                  <MaterialIcon name="description" size={40} className="mx-auto text-[var(--neutral-foreground-3)]" />
                   <p className="mt-2 text-sm text-[var(--neutral-foreground-3)]">未提出の提出物はありません</p>
                 </div>
               </Card>

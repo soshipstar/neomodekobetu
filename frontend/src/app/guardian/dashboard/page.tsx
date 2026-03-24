@@ -7,29 +7,8 @@ import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { formatDate } from '@/lib/utils';
-import {
-  Bell,
-  MessageCircle,
-  FileText,
-  CalendarDays,
-  ChevronLeft,
-  ChevronRight,
-  ClipboardCheck,
-  BarChart3,
-  Handshake,
-  Upload,
-  Calendar,
-  Star,
-  User,
-  Pencil,
-  RefreshCw,
-  XCircle,
-  Plus,
-  BookOpen,
-  GraduationCap,
-  ArrowRight,
-} from 'lucide-react';
 import Link from 'next/link';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---- Type definitions matching the legacy PHP dashboard ----
 
@@ -371,7 +350,7 @@ export default function GuardianDashboardPage() {
             {/* Unread chat messages */}
             {totalUnreadMessages > 0 && (
               <AlertCard
-                icon={<MessageCircle className="h-5 w-5" />}
+                icon={<MaterialIcon name="chat" size={20} />}
                 title="未読チャットメッセージ"
                 borderColor="border-l-blue-500"
                 bgColor="bg-[var(--brand-160)]"
@@ -439,7 +418,7 @@ export default function GuardianDashboardPage() {
             {/* Monitoring Records */}
             {(pendingMonitoringRecords.length > 0 || signaturePendingMonitoring.length > 0) && (
               <AlertCard
-                icon={<BarChart3 className="h-5 w-5" />}
+                icon={<MaterialIcon name="analytics" size={20} />}
                 title="モニタリング表"
                 borderColor="border-l-teal-500"
                 bgColor="bg-teal-50"
@@ -476,7 +455,7 @@ export default function GuardianDashboardPage() {
             {/* Staff Kakehashi */}
             {pendingStaffKakehashi.length > 0 && (
               <AlertCard
-                icon={<FileText className="h-5 w-5" />}
+                icon={<MaterialIcon name="description" size={20} />}
                 title="スタッフからのかけはし"
                 borderColor="border-l-blue-500"
                 bgColor="bg-[var(--brand-160)]"
@@ -505,7 +484,7 @@ export default function GuardianDashboardPage() {
               urgentKakehashi.length > 0 ||
               pendingKakehashi.length > 0) && (
               <AlertCard
-                icon={<Handshake className="h-5 w-5" />}
+                icon={<MaterialIcon name="handshake" size={20} />}
                 title="かけはしの提出"
                 borderColor="border-l-orange-500"
                 bgColor="bg-orange-50"
@@ -565,7 +544,7 @@ export default function GuardianDashboardPage() {
             {/* Submissions */}
             {(overdueSubmissions.length > 0 || urgentSubmissions.length > 0) && (
               <AlertCard
-                icon={<Upload className="h-5 w-5" />}
+                icon={<MaterialIcon name="upload" size={20} />}
                 title="提出物"
                 borderColor="border-l-red-500"
                 bgColor="bg-red-50"
@@ -593,7 +572,7 @@ export default function GuardianDashboardPage() {
             {/* Meeting Requests */}
             {pendingMeetingRequests.length > 0 && (
               <AlertCard
-                icon={<Calendar className="h-5 w-5" />}
+                icon={<MaterialIcon name="calendar_month" size={20} />}
                 title="面談予約"
                 borderColor="border-l-purple-500"
                 bgColor="bg-[var(--brand-160)]"
@@ -613,7 +592,7 @@ export default function GuardianDashboardPage() {
             {/* Confirmed Meetings */}
             {confirmedMeetings.length > 0 && (
               <AlertCard
-                icon={<CalendarDays className="h-5 w-5" />}
+                icon={<MaterialIcon name="event" size={20} />}
                 title="確定済み面談"
                 borderColor="border-l-purple-400"
                 bgColor="bg-[var(--brand-160)]"
@@ -677,7 +656,7 @@ export default function GuardianDashboardPage() {
               return (
                 <AlertCard
                   key={studentIdStr}
-                  icon={<Pencil className="h-5 w-5" />}
+                  icon={<MaterialIcon name="edit" size={20} />}
                   title={`${studentName}さんの未確認連絡帳`}
                   borderColor="border-l-amber-500"
                   bgColor="bg-amber-50"
@@ -702,7 +681,7 @@ export default function GuardianDashboardPage() {
           {/* Calendar header with navigation */}
           <div className="flex items-center justify-between border-b border-[var(--neutral-stroke-2)] px-4 py-3 sm:px-6">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-[var(--neutral-foreground-1)]">
-              <CalendarDays className="h-5 w-5 text-[var(--neutral-foreground-3)]" />
+              <MaterialIcon name="event" size={20} className="text-[var(--neutral-foreground-3)]" />
               {calYear}年 {calMonth}月のカレンダー
             </h2>
             <div className="flex items-center gap-1">
@@ -711,7 +690,7 @@ export default function GuardianDashboardPage() {
                 className="rounded-lg p-2 text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-4)]"
                 aria-label="前月"
               >
-                <ChevronLeft className="h-5 w-5" />
+                <MaterialIcon name="chevron_left" size={20} />
               </button>
               <button
                 onClick={goToCurrentMonth}
@@ -724,7 +703,7 @@ export default function GuardianDashboardPage() {
                 className="rounded-lg p-2 text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-4)]"
                 aria-label="次月"
               >
-                <ChevronRight className="h-5 w-5" />
+                <MaterialIcon name="chevron_right" size={20} />
               </button>
             </div>
           </div>
@@ -834,7 +813,7 @@ export default function GuardianDashboardPage() {
                                 key={`sched-${s.student_id}`}
                                 className="flex items-center gap-0.5 rounded bg-[var(--neutral-background-4)] px-1 py-0.5 text-[var(--neutral-foreground-3)]"
                               >
-                                <User className="h-3 w-3 shrink-0" />
+                                <MaterialIcon name="person" size={12} />
                                 <span className="truncate">
                                   {s.student_name}さん活動日（連絡帳なし）
                                 </span>
@@ -847,7 +826,7 @@ export default function GuardianDashboardPage() {
                                 key={`sched-${s.student_id}`}
                                 className="flex items-center gap-0.5 rounded bg-green-50 px-1 py-0.5 text-green-700"
                               >
-                                <User className="h-3 w-3 shrink-0" />
+                                <MaterialIcon name="person" size={12} />
                                 <span className="truncate">{s.student_name}さん活動予定日</span>
                               </div>
                             );
@@ -868,7 +847,7 @@ export default function GuardianDashboardPage() {
                                     : 'bg-red-50 text-red-600'
                                 }`}
                               >
-                                <Pencil className="h-3 w-3 shrink-0" />
+                                <MaterialIcon name="edit" size={12} />
                                 <span className="truncate">
                                   {n.student_name}さん{isConfirmed ? '活動日（確認済み）' : '活動日（要確認）'}
                                 </span>
@@ -884,7 +863,7 @@ export default function GuardianDashboardPage() {
                                   : 'bg-orange-50 text-orange-600'
                               }`}
                             >
-                              <Pencil className="h-3 w-3 shrink-0" />
+                              <MaterialIcon name="edit" size={12} />
                               <span className="truncate">
                                 {n.student_name}さん{isConfirmed ? '連絡帳あり' : '連絡帳あり（確認してください）'}
                               </span>
@@ -920,7 +899,7 @@ export default function GuardianDashboardPage() {
                             key={`add-${ad.student_id}`}
                             className="flex items-center gap-0.5 rounded bg-green-50 px-1 py-0.5 text-green-600"
                           >
-                            <Plus className="h-3 w-3 shrink-0" />
+                            <MaterialIcon name="add" size={12} />
                             <span className="truncate">{ad.student_name}さん追加利用</span>
                           </div>
                         ))}
@@ -932,7 +911,7 @@ export default function GuardianDashboardPage() {
                             onClick={() => setMeetingModal(mt)}
                             className="flex w-full items-center gap-0.5 rounded bg-[var(--brand-160)] px-1 py-0.5 text-left text-[var(--brand-60)] hover:bg-[var(--brand-150)]"
                           >
-                            <Calendar className="h-3 w-3 shrink-0" />
+                            <MaterialIcon name="calendar_month" size={12} />
                             <span className="truncate">{mt.time} 面談</span>
                           </button>
                         ))}
@@ -955,7 +934,7 @@ export default function GuardianDashboardPage() {
               今日
             </LegendItem>
             <LegendItem>
-              <BookOpen className="h-3.5 w-3.5 text-[var(--brand-80)]" />
+              <MaterialIcon name="menu_book" size={14} className="text-[var(--brand-80)]" />
               平日活動
             </LegendItem>
             <LegendItem>
@@ -967,15 +946,15 @@ export default function GuardianDashboardPage() {
               イベント
             </LegendItem>
             <LegendItem>
-              <User className="h-3.5 w-3.5 text-green-600" />
+              <MaterialIcon name="person" size={14} className="text-green-600" />
               活動予定日
             </LegendItem>
             <LegendItem>
-              <Pencil className="h-3.5 w-3.5 text-green-600" />
+              <MaterialIcon name="edit" size={14} className="text-green-600" />
               連絡帳（確認済み）
             </LegendItem>
             <LegendItem>
-              <Pencil className="h-3.5 w-3.5 text-red-500" />
+              <MaterialIcon name="edit" size={14} className="text-red-500" />
               連絡帳（未確認）
             </LegendItem>
             <LegendItem>
@@ -987,11 +966,11 @@ export default function GuardianDashboardPage() {
               欠席日
             </LegendItem>
             <LegendItem>
-              <Plus className="h-3.5 w-3.5 text-green-600" />
+              <MaterialIcon name="add" size={14} className="text-green-600" />
               追加利用
             </LegendItem>
             <LegendItem>
-              <Calendar className="h-3.5 w-3.5 text-[var(--brand-70)]" />
+              <MaterialIcon name="calendar_month" size={14} className="text-[var(--brand-70)]" />
               面談予定
             </LegendItem>
           </div>
@@ -1152,7 +1131,7 @@ export default function GuardianDashboardPage() {
       {meetingModal && (
         <ModalOverlay onClose={() => setMeetingModal(null)}>
           <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--brand-60)]">
-            <Calendar className="h-5 w-5" />
+            <MaterialIcon name="calendar_month" size={20} />
             面談予定
           </h2>
 

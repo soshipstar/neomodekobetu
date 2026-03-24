@@ -12,17 +12,8 @@ import { Modal } from '@/components/ui/Modal';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useDebounce } from '@/hooks/useDebounce';
-import {
-  Plus,
-  Pencil,
-  Search,
-  UserX,
-  Trash2,
-  Printer,
-  Calendar,
-  Info,
-} from 'lucide-react';
 import { format } from 'date-fns';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -314,7 +305,7 @@ export default function StudentsPage() {
           <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">生徒管理</h1>
           <p className="text-sm text-[var(--neutral-foreground-3)]">生徒の登録・編集</p>
         </div>
-        <Button leftIcon={<Plus className="h-4 w-4" />} onClick={() => { setForm(emptyForm); setCreateModal(true); }}>
+        <Button leftIcon={<MaterialIcon name="add" size={16} />} onClick={() => { setForm(emptyForm); setCreateModal(true); }}>
           新規生徒登録
         </Button>
       </div>
@@ -322,7 +313,7 @@ export default function StudentsPage() {
       {/* Filters */}
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
+          <MaterialIcon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
           <Input placeholder="生徒名で検索..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
         </div>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
@@ -501,8 +492,8 @@ function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel
           <option value="next">次回の期間から作成する</option>
         </select>
         <div className="mt-1 rounded-lg bg-[var(--neutral-background-3)] p-2.5 text-xs text-[var(--neutral-foreground-3)]">
-          <p className="flex items-start gap-1"><Info className="h-3.5 w-3.5 mt-0.5 shrink-0" /><span>【新規入所の児童】「現在の期間から作成する」を選択してください。</span></p>
-          <p className="flex items-start gap-1 mt-1"><Info className="h-3.5 w-3.5 mt-0.5 shrink-0" /><span>【既に入所中の児童】既存の計画を移行する場合 →「現在の期間から」、次回から開始する場合 →「次回の期間から」</span></p>
+          <p className="flex items-start gap-1"><MaterialIcon name="info" size={14} className="mt-0.5" /><span>【新規入所の児童】「現在の期間から作成する」を選択してください。</span></p>
+          <p className="flex items-start gap-1 mt-1"><MaterialIcon name="info" size={14} className="mt-0.5" /><span>【既に入所中の児童】既存の計画を移行する場合 →「現在の期間から」、次回から開始する場合 →「次回の期間から」</span></p>
         </div>
       </div>
 
@@ -622,13 +613,13 @@ function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel
       <div className="flex items-center gap-2 pt-2">
         <Button variant="secondary" onClick={onCancel}>キャンセル</Button>
         {!isNew && (
-          <Button variant="outline" size="sm" onClick={handlePrintLogin} leftIcon={<Printer className="h-3.5 w-3.5" />}>
+          <Button variant="outline" size="sm" onClick={handlePrintLogin} leftIcon={<MaterialIcon name="print" size={14} />}>
             生徒用資料を印刷
           </Button>
         )}
         <div className="flex-1" />
         {!isNew && onDelete && (
-          <Button variant="danger" size="sm" onClick={onDelete} leftIcon={<Trash2 className="h-3.5 w-3.5" />}>
+          <Button variant="danger" size="sm" onClick={onDelete} leftIcon={<MaterialIcon name="delete" size={14} />}>
             退所処理
           </Button>
         )}

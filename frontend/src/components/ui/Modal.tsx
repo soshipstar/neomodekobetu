@@ -2,8 +2,8 @@
 
 import { useEffect, useCallback, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface ModalProps {
   isOpen: boolean;
@@ -85,7 +85,7 @@ export function Modal({
                     onClick={onClose}
                     className="rounded-md p-1 text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-3)] hover:text-[var(--neutral-foreground-1)] transition-colors"
                   >
-                    <X className="h-5 w-5" />
+                    <MaterialIcon name="close" size={20} />
                   </button>
                 )}
               </div>

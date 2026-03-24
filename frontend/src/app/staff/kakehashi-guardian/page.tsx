@@ -8,22 +8,9 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton, SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import {
-  Download,
-  Printer,
-  Pencil,
-  Eye,
-  EyeOff,
-  Heart,
-  Home,
-  Target,
-  Star,
-  Pin,
-  User,
-  Calendar,
-} from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -157,12 +144,12 @@ export default function KakehashiGuardianViewPage() {
       {/* Navigation tabs */}
       <div className="flex flex-wrap gap-2">
         <Link href="/staff/kakehashi-guardian">
-          <Button variant="primary" size="sm" leftIcon={<Eye className="h-4 w-4" />}>
+          <Button variant="primary" size="sm" leftIcon={<MaterialIcon name="visibility" size={16} />}>
             保護者入力かけはし確認
           </Button>
         </Link>
         <Link href="/staff/kakehashi-staff">
-          <Button variant="outline" size="sm" leftIcon={<Pencil className="h-4 w-4" />}>
+          <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="edit" size={16} />}>
             スタッフ入力
           </Button>
         </Link>
@@ -243,22 +230,22 @@ export default function KakehashiGuardianViewPage() {
             <CardBody>
               <div className="rounded-lg bg-[var(--neutral-background-3)] p-4 space-y-2 text-sm">
                 <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-[var(--neutral-foreground-3)]" />
+                  <MaterialIcon name="person" size={16} className="text-[var(--neutral-foreground-3)]" />
                   <span className="font-medium">生徒:</span> {selectedStudent?.student_name}
                 </div>
                 {guardianEntry.guardian && (
                   <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-[var(--neutral-foreground-3)]" />
+                    <MaterialIcon name="person" size={16} className="text-[var(--neutral-foreground-3)]" />
                     <span className="font-medium">保護者:</span> {guardianEntry.guardian.full_name}
                   </div>
                 )}
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-[var(--neutral-foreground-3)]" />
+                  <MaterialIcon name="calendar_month" size={16} className="text-[var(--neutral-foreground-3)]" />
                   <span className="font-medium">対象期間:</span>
                   {format(new Date(selectedPeriod.start_date), 'yyyy年MM月dd日')} ～ {format(new Date(selectedPeriod.end_date), 'yyyy年MM月dd日')}
                 </div>
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-[var(--neutral-foreground-3)]" />
+                  <MaterialIcon name="calendar_month" size={16} className="text-[var(--neutral-foreground-3)]" />
                   <span className="font-medium">提出期限:</span>
                   {format(new Date(selectedPeriod.submission_deadline), 'yyyy年MM月dd日')}
                 </div>
@@ -280,7 +267,7 @@ export default function KakehashiGuardianViewPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  leftIcon={<Download className="h-4 w-4" />}
+                  leftIcon={<MaterialIcon name="download" size={16} />}
                   onClick={() => handlePdfDownload(selectedPeriod.id, selectedPeriod.period_name)}
                 >
                   PDF印刷
@@ -288,7 +275,7 @@ export default function KakehashiGuardianViewPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  leftIcon={<Printer className="h-4 w-4" />}
+                  leftIcon={<MaterialIcon name="print" size={16} />}
                   onClick={handlePrint}
                 >
                   このページを印刷
@@ -352,7 +339,7 @@ export default function KakehashiGuardianViewPage() {
 
           {/* Section: その他の課題 */}
           <SectionCard
-            icon={<Pin className="h-4 w-4" />}
+            icon={<MaterialIcon name="push_pin" size={16} />}
             title="その他の課題"
             subtitle="その他、お伝えしたいこと"
             color="var(--neutral-foreground-3)"
@@ -384,9 +371,9 @@ export default function KakehashiGuardianViewPage() {
                 }}
               >
                 {guardianEntry.is_hidden ? (
-                  <><Eye className="h-4 w-4" /> この保護者用かけはしを再表示</>
+                  <><MaterialIcon name="visibility" size={16} /> この保護者用かけはしを再表示</>
                 ) : (
-                  <><EyeOff className="h-4 w-4" /> この保護者用かけはしを非表示</>
+                  <><MaterialIcon name="visibility_off" size={16} /> この保護者用かけはしを非表示</>
                 )}
               </button>
             </CardBody>

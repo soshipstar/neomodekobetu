@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Table, type Column } from '@/components/ui/Table';
 import { Tabs } from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
-import { Upload, FileText, CheckCircle, AlertCircle, Download, Info } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface ParsedRow {
   row_number: number;
@@ -137,7 +137,7 @@ export default function BulkRegisterPage() {
           <Card>
             <CardHeader>
               <CardTitle>データ入力方法を選択</CardTitle>
-              <Button variant="outline" size="sm" onClick={downloadTemplate} leftIcon={<Download className="h-4 w-4" />}>
+              <Button variant="outline" size="sm" onClick={downloadTemplate} leftIcon={<MaterialIcon name="download" size={16} />}>
                 CSVテンプレートをダウンロード
               </Button>
             </CardHeader>
@@ -147,7 +147,7 @@ export default function BulkRegisterPage() {
                 {
                   key: 'csv',
                   label: '標準フォーマット',
-                  icon: <Upload className="h-4 w-4" />,
+                  icon: <MaterialIcon name="upload" size={16} />,
                   content: (
                     <div className="space-y-4">
                       <div className="rounded-lg bg-[var(--neutral-background-2)] p-4">
@@ -169,7 +169,7 @@ export default function BulkRegisterPage() {
                         onClick={() => fileInputRef.current?.click()}
                         className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-[var(--neutral-stroke-2)] p-12 hover:border-[var(--brand-80)] hover:bg-[var(--brand-160)] transition-colors"
                       >
-                        <Upload className="h-12 w-12 text-[var(--neutral-foreground-4)]" />
+                        <MaterialIcon name="upload" size={48} className="text-[var(--neutral-foreground-4)]" />
                         <p className="mt-2 text-sm text-[var(--neutral-foreground-2)]">クリックしてCSVファイルを選択</p>
                         <p className="text-xs text-[var(--neutral-foreground-4)]">UTF-8またはShift-JIS形式のCSVファイル</p>
                       </div>
@@ -186,7 +186,7 @@ export default function BulkRegisterPage() {
                 {
                   key: 'text',
                   label: 'テキスト入力',
-                  icon: <FileText className="h-4 w-4" />,
+                  icon: <MaterialIcon name="description" size={16} />,
                   content: (
                     <div className="space-y-4">
                       <p className="text-sm text-[var(--neutral-foreground-2)]">
@@ -243,7 +243,7 @@ export default function BulkRegisterPage() {
             <CardHeader>
               <CardTitle>
                 <div className="flex items-center gap-2">
-                  <Info className="h-5 w-5" />
+                  <MaterialIcon name="info" size={20} />
                   注意事項
                 </div>
               </CardTitle>
@@ -291,13 +291,13 @@ export default function BulkRegisterPage() {
           <div className="py-8 text-center">
             {result.error_count === 0 ? (
               <>
-                <CheckCircle className="mx-auto h-16 w-16 text-[var(--status-success-fg)]" />
+                <MaterialIcon name="check_circle" size={18} className="mx-auto h-16 w-16 text-[var(--status-success-fg)]" />
                 <h2 className="mt-4 text-xl font-bold text-[var(--neutral-foreground-1)]">登録完了</h2>
                 <p className="mt-2 text-[var(--neutral-foreground-2)]">{result.success_count}件を正常に登録しました</p>
               </>
             ) : (
               <>
-                <AlertCircle className="mx-auto h-16 w-16 text-[var(--status-warning-fg)]" />
+                <MaterialIcon name="error" size={18} className="mx-auto h-16 w-16 text-[var(--status-warning-fg)]" />
                 <h2 className="mt-4 text-xl font-bold text-[var(--neutral-foreground-1)]">登録完了（一部エラー）</h2>
                 <p className="mt-2 text-[var(--neutral-foreground-2)]">
                   {result.success_count}件成功 / {result.error_count}件エラー

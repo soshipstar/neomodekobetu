@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
-import { User, Lock, Save } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface Profile {
   id: number;
@@ -77,7 +77,7 @@ export default function StaffProfilePage() {
         <CardHeader>
           <CardTitle>
             <div className="flex items-center gap-2">
-              <User className="h-5 w-5" />
+              <MaterialIcon name="person" size={20} />
               基本情報
             </div>
           </CardTitle>
@@ -109,7 +109,7 @@ export default function StaffProfilePage() {
             </p>
           )}
           <div className="flex justify-end">
-            <Button type="submit" isLoading={updateProfileMutation.isPending} leftIcon={<Save className="h-4 w-4" />}>
+            <Button type="submit" isLoading={updateProfileMutation.isPending} leftIcon={<MaterialIcon name="save" size={16} />}>
               保存
             </Button>
           </div>
@@ -121,7 +121,7 @@ export default function StaffProfilePage() {
         <CardHeader>
           <CardTitle>
             <div className="flex items-center gap-2">
-              <Lock className="h-5 w-5" />
+              <MaterialIcon name="lock" size={20} />
               パスワード変更
             </div>
           </CardTitle>

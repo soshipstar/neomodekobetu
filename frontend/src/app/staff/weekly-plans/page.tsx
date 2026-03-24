@@ -7,16 +7,10 @@ import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
-import {
-  ChevronLeft,
-  ChevronRight,
-  Calendar,
-  CheckCircle,
-  User,
-} from 'lucide-react';
 import { format, addWeeks, startOfWeek, addDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import Link from 'next/link';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -99,7 +93,7 @@ export default function WeeklyPlansPage() {
       <Card>
         <CardBody>
           <div className="flex items-center justify-between">
-            <Button variant="outline" size="sm" leftIcon={<ChevronLeft className="h-4 w-4" />}
+            <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="chevron_left" size={16} />}
               onClick={() => setWeekOffset(weekOffset - 1)}>
               前の週
             </Button>
@@ -115,13 +109,13 @@ export default function WeeklyPlansPage() {
             <Button variant="outline" size="sm" disabled={weekOffset >= 1}
               onClick={() => setWeekOffset(weekOffset + 1)}>
               次の週
-              <ChevronRight className="h-4 w-4 ml-1" />
+              <MaterialIcon name="chevron_right" size={16} className="ml-1" />
             </Button>
           </div>
 
           {!isCurrentWeek && (
             <div className="mt-3 text-center">
-              <Button variant="ghost" size="sm" leftIcon={<Calendar className="h-4 w-4" />}
+              <Button variant="ghost" size="sm" leftIcon={<MaterialIcon name="calendar_month" size={16} />}
                 onClick={() => setWeekOffset(0)}>
                 今週に戻る
               </Button>
@@ -139,7 +133,7 @@ export default function WeeklyPlansPage() {
         <Card>
           <CardBody>
             <div className="py-12 text-center text-[var(--neutral-foreground-4)]">
-              <User className="mx-auto mb-3 h-12 w-12" />
+              <MaterialIcon name="person" size={48} className="mx-auto mb-3" />
               <p>生徒が登録されていません</p>
             </div>
           </CardBody>
@@ -165,7 +159,7 @@ export default function WeeklyPlansPage() {
                     {/* Header */}
                     <div className="flex items-center gap-3 border-b border-[var(--neutral-stroke-2)] pb-3 mb-3">
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--brand-150)] text-[var(--brand-70)]">
-                        <User className="h-5 w-5" />
+                        <MaterialIcon name="person" size={20} />
                       </div>
                       <span className="text-base font-semibold text-[var(--neutral-foreground-1)]">
                         {student.student_name}
@@ -177,7 +171,7 @@ export default function WeeklyPlansPage() {
                       {hasPlan ? (
                         <>
                           <Badge variant="success" dot>
-                            <CheckCircle className="h-3 w-3 mr-1" />
+                            <MaterialIcon name="check_circle" size={12} className="mr-1" />
                             計画あり
                           </Badge>
                           {plan.updated_at && (

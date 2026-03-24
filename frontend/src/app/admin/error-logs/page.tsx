@@ -11,17 +11,8 @@ import { Modal } from '@/components/ui/Modal';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useDebounce } from '@/hooks/useDebounce';
-import {
-  Search,
-  AlertTriangle,
-  AlertCircle,
-  XCircle,
-  Trash2,
-  Eye,
-  RefreshCw,
-  Clock,
-} from 'lucide-react';
 import { format } from 'date-fns';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -53,9 +44,9 @@ interface Summary {
 }
 
 const LEVEL_CONFIG: Record<string, { icon: typeof AlertTriangle; color: string; bg: string; label: string }> = {
-  critical: { icon: XCircle, color: 'text-red-700', bg: 'bg-red-100', label: '重大' },
-  error:    { icon: AlertCircle, color: 'text-orange-700', bg: 'bg-orange-100', label: 'エラー' },
-  warning:  { icon: AlertTriangle, color: 'text-yellow-700', bg: 'bg-yellow-100', label: '警告' },
+  critical: { icon: "cancel", color: 'text-red-700', bg: 'bg-red-100', label: '重大' },
+  error:    { icon: "error", color: 'text-orange-700', bg: 'bg-orange-100', label: 'エラー' },
+  warning:  { icon: "warning", color: 'text-yellow-700', bg: 'bg-yellow-100', label: '警告' },
 };
 
 // ---------------------------------------------------------------------------
@@ -123,7 +114,7 @@ export default function ErrorLogsPage() {
           <Button variant="outline" size="sm" leftIcon={<RefreshCw className="h-4 w-4" />} onClick={() => refetch()}>
             更新
           </Button>
-          <Button variant="ghost" size="sm" leftIcon={<Trash2 className="h-4 w-4" />}
+          <Button variant="ghost" size="sm" leftIcon={<MaterialIcon name="delete" size={16} />}
             onClick={() => { if (confirm('30日以上前のログを削除しますか？')) cleanupMutation.mutate(30); }}>
             古いログを削除
           </Button>
@@ -133,9 +124,9 @@ export default function ErrorLogsPage() {
       {/* Summary cards */}
       {summary && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <SummaryCard label="今日" count={summary.today} icon={<Clock className="h-5 w-5 text-[var(--brand-80)]" />} bg="bg-[var(--brand-160)]" />
-          <SummaryCard label="今週" count={summary.this_week} icon={<AlertCircle className="h-5 w-5 text-orange-600" />} bg="bg-orange-100" />
-          <SummaryCard label="合計" count={summary.total} icon={<AlertTriangle className="h-5 w-5 text-[var(--neutral-foreground-3)]" />} bg="bg-[var(--neutral-background-4)]" />
+          <SummaryCard label="今日" count={summary.today} icon={<MaterialIcon name="schedule" size={20} className="text-[var(--brand-80)]" />} bg="bg-[var(--brand-160)]" />
+          <SummaryCard label="今週" count={summary.this_week} icon={<MaterialIcon name="error" size={20} className="text-orange-600" />} bg="bg-orange-100" />
+          <SummaryCard label="合計" count={summary.total} icon={<MaterialIcon name="warning" size={20} className="text-[var(--neutral-foreground-3)]" />} bg="bg-[var(--neutral-background-4)]" />
           <Card>
             <CardBody>
               <div className="flex items-center justify-between text-xs">
@@ -154,7 +145,7 @@ export default function ErrorLogsPage() {
         <CardBody>
           <div className="flex flex-wrap gap-3">
             <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
+              <MaterialIcon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
               <Input placeholder="メッセージ・URL・クラスで検索..." value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="pl-10" />
             </div>
@@ -181,7 +172,7 @@ export default function ErrorLogsPage() {
         <Card>
           <CardBody>
             <div className="py-12 text-center text-[var(--neutral-foreground-4)]">
-              <AlertCircle className="mx-auto mb-3 h-12 w-12" />
+              <MaterialIcon name="error" size={48} className="mx-auto mb-3" />
               <p>エラーログはありません</p>
             </div>
           </CardBody>
@@ -229,7 +220,7 @@ export default function ErrorLogsPage() {
                       </td>
                       <td className="px-3 py-2">
                         <Button variant="ghost" size="sm" onClick={() => setSelectedLog(log)}>
-                          <Eye className="h-3.5 w-3.5" />
+                          <MaterialIcon name="visibility" size={14} />
                         </Button>
                       </td>
                     </tr>

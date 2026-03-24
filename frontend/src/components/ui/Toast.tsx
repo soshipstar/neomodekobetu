@@ -2,8 +2,8 @@
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -25,10 +25,10 @@ interface ToastContextType {
 const ToastContext = createContext<ToastContextType | null>(null);
 
 const toastIcons: Record<ToastType, ReactNode> = {
-  success: <CheckCircle className="h-4 w-4 text-[var(--status-success-fg)]" />,
-  error: <AlertCircle className="h-4 w-4 text-[var(--status-danger-fg)]" />,
-  info: <Info className="h-4 w-4 text-[var(--status-info-fg)]" />,
-  warning: <AlertTriangle className="h-4 w-4 text-[var(--status-warning-fg)]" />,
+  success: <MaterialIcon name="check_circle" size={16} className="text-[var(--status-success-fg)]" />,
+  error: <MaterialIcon name="error" size={16} className="text-[var(--status-danger-fg)]" />,
+  info: <MaterialIcon name="info" size={16} className="text-[var(--status-info-fg)]" />,
+  warning: <MaterialIcon name="warning" size={16} className="text-[var(--status-warning-fg)]" />,
 };
 
 const toastStyles: Record<ToastType, string> = {
@@ -89,7 +89,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 onClick={() => removeToast(t.id)}
                 className="ml-2 rounded-md p-0.5 text-[var(--neutral-foreground-4)] hover:text-[var(--neutral-foreground-1)] transition-colors"
               >
-                <X className="h-3.5 w-3.5" />
+                <MaterialIcon name="close" size={14} />
               </button>
             </motion.div>
           ))}

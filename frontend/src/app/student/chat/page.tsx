@@ -5,8 +5,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { SkeletonList } from '@/components/ui/Skeleton';
-import { Send, Paperclip, X, MessageCircle } from 'lucide-react';
 import { formatFileSize, nl } from '@/lib/utils';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface StudentChatMessage {
   id: number;
@@ -117,7 +117,7 @@ export default function StudentChatPage() {
       <div className="flex-1 overflow-y-auto bg-[var(--neutral-background-2)] px-3 py-4 sm:px-4">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <MessageCircle className="h-12 w-12 text-[var(--neutral-foreground-4)] mb-3" />
+            <MaterialIcon name="chat" size={48} className="text-[var(--neutral-foreground-4)] mb-3" />
             <h3 className="text-sm font-medium text-[var(--neutral-foreground-2)]">まだメッセージがありません</h3>
             <p className="text-xs text-[var(--neutral-foreground-3)] mt-1">スタッフにメッセージを送ってみましょう</p>
           </div>
@@ -141,7 +141,7 @@ export default function StudentChatPage() {
                       {nl(msg.message)}
                       {msg.attachment_path && (
                         <div className={`mt-2 flex items-center gap-1 text-xs ${isSent ? 'text-white/80' : 'text-[var(--brand-80)]'}`}>
-                          <Paperclip className="h-3 w-3" />
+                          <MaterialIcon name="attach_file" size={12} />
                           <span>{msg.attachment_original_name}</span>
                           {msg.attachment_size && (
                             <span>({formatFileSize(msg.attachment_size)})</span>
@@ -170,11 +170,11 @@ export default function StudentChatPage() {
         {/* File preview */}
         {attachment && (
           <div className="flex items-center gap-2 mb-2 rounded-lg bg-[var(--neutral-background-2)] px-3 py-2 text-sm">
-            <Paperclip className="h-4 w-4 text-[var(--neutral-foreground-3)]" />
+            <MaterialIcon name="attach_file" size={16} className="text-[var(--neutral-foreground-3)]" />
             <span className="flex-1 truncate text-[var(--neutral-foreground-2)]">{attachment.name}</span>
             <span className="text-xs text-[var(--neutral-foreground-3)]">{formatFileSize(attachment.size)}</span>
             <button type="button" onClick={() => setAttachment(null)} className="text-[var(--neutral-foreground-3)] hover:text-[var(--status-danger-fg)]">
-              <X className="h-4 w-4" />
+              <MaterialIcon name="close" size={16} />
             </button>
           </div>
         )}
@@ -185,7 +185,7 @@ export default function StudentChatPage() {
             className="flex-shrink-0 rounded-full p-2 text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-2)]"
             title="ファイルを添付"
           >
-            <Paperclip className="h-5 w-5" />
+            <MaterialIcon name="attach_file" size={20} />
           </button>
           <input
             ref={fileInputRef}
@@ -210,7 +210,7 @@ export default function StudentChatPage() {
             disabled={sendMutation.isPending || (!message.trim() && !attachment)}
             isLoading={sendMutation.isPending}
           >
-            <Send className="h-5 w-5" />
+            <MaterialIcon name="send" size={20} />
           </Button>
         </div>
       </div>

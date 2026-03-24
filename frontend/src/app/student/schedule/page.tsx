@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { SkeletonList } from '@/components/ui/Skeleton';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface ScheduleEvent {
   id: number;
@@ -131,13 +131,13 @@ export default function StudentSchedulePage() {
       {/* Month navigation */}
       <div className="flex items-center justify-center gap-4">
         <Button variant="ghost" size="sm" onClick={goToPrevMonth}>
-          <ChevronLeft className="h-4 w-4" />
+          <MaterialIcon name="chevron_left" size={16} />
         </Button>
         <p className="text-lg font-semibold text-[var(--neutral-foreground-1)]">
           {year}年{month}月
         </p>
         <Button variant="ghost" size="sm" onClick={goToNextMonth}>
-          <ChevronRight className="h-4 w-4" />
+          <MaterialIcon name="chevron_right" size={16} />
         </Button>
         <Button variant="outline" size="sm" onClick={goToThisMonth}>今月</Button>
       </div>

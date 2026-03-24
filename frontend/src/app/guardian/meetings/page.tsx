@@ -11,7 +11,7 @@ import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { Calendar, Check, Send, ArrowLeft } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface MeetingRequest {
   id: number;
@@ -121,14 +121,14 @@ export default function GuardianMeetingsPage() {
 
     return (
       <div className="space-y-6">
-        <Button variant="ghost" size="sm" onClick={() => setSelectedMeeting(null)} leftIcon={<ArrowLeft className="h-4 w-4" />}>
+        <Button variant="ghost" size="sm" onClick={() => setSelectedMeeting(null)} leftIcon={<MaterialIcon name="arrow_back" size={16} />}>
           一覧に戻る
         </Button>
 
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
+              <MaterialIcon name="calendar_month" size={20} />
               面談予約
             </CardTitle>
           </CardHeader>
@@ -162,7 +162,7 @@ export default function GuardianMeetingsPage() {
             {/* Confirmed */}
             {detail.status === 'confirmed' && detail.confirmed_date && (
               <div className="rounded-lg border-2 border-green-400 bg-green-50 p-6 text-center mb-6">
-                <Check className="mx-auto h-12 w-12 text-green-500" />
+                <MaterialIcon name="check" size={48} className="mx-auto text-green-500" />
                 <p className="mt-2 font-semibold text-[var(--neutral-foreground-1)]">面談日時が確定しました</p>
                 <p className="mt-2 text-xl font-bold text-green-600">
                   {formatCandidateDate(detail.confirmed_date)}
@@ -212,7 +212,7 @@ export default function GuardianMeetingsPage() {
                 {/* Counter proposal section */}
                 <div className="mb-6 rounded-lg border border-[var(--brand-130)] bg-[var(--brand-160)] p-4">
                   <h3 className="mb-2 flex items-center gap-1 text-sm font-semibold text-[var(--brand-70)]">
-                    <Calendar className="h-4 w-4" />
+                    <MaterialIcon name="calendar_month" size={16} />
                     上記日程でご都合が合わない場合
                   </h3>
                   <p className="mb-3 text-xs text-[var(--neutral-foreground-3)]">
@@ -260,7 +260,7 @@ export default function GuardianMeetingsPage() {
                 <div className="flex flex-wrap gap-3">
                   <Button
                     variant="primary"
-                    leftIcon={<Check className="h-4 w-4" />}
+                    leftIcon={<MaterialIcon name="check" size={16} />}
                     isLoading={selectMutation.isPending}
                     onClick={() => {
                       if (!selectedDate) {
@@ -274,7 +274,7 @@ export default function GuardianMeetingsPage() {
                   </Button>
                   <Button
                     variant="outline"
-                    leftIcon={<Send className="h-4 w-4" />}
+                    leftIcon={<MaterialIcon name="send" size={16} />}
                     isLoading={counterMutation.isPending}
                     onClick={() => {
                       if (!counterDate1) {

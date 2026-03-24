@@ -7,8 +7,8 @@ import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
-import { Lock, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface PasswordForm {
   current_password: string;
@@ -56,7 +56,7 @@ export default function StudentChangePasswordPage() {
           href="/student/profile"
           className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--neutral-foreground-2)] hover:bg-[var(--neutral-background-3)] transition-colors"
         >
-          <ArrowLeft className="h-5 w-5" />
+          <MaterialIcon name="arrow_back" size={20} />
         </Link>
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">パスワード変更</h1>
       </div>
@@ -66,7 +66,7 @@ export default function StudentChangePasswordPage() {
           <CardHeader>
             <CardTitle>
               <div className="flex items-center gap-2">
-                <Lock className="h-5 w-5" />
+                <MaterialIcon name="lock" size={20} />
                 あたらしいパスワードをせっていしてね
               </div>
             </CardTitle>

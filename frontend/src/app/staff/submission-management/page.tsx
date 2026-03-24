@@ -12,16 +12,8 @@ import { Table, type Column } from '@/components/ui/Table';
 import { Tabs } from '@/components/ui/Tabs';
 import { SkeletonTable } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import {
-  Plus,
-  Trash2,
-  CheckCircle2,
-  Clock,
-  Download,
-  AlertTriangle,
-  Undo2,
-} from 'lucide-react';
 import { format, isPast, differenceInDays } from 'date-fns';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -199,7 +191,7 @@ export default function SubmissionManagementPage() {
         return (
           <div>
             <span className={isOverdue ? 'font-medium text-[var(--status-danger-fg)]' : isSoon ? 'font-medium text-[var(--status-warning-fg)]' : ''}>
-              {isOverdue && <AlertTriangle className="mr-1 inline h-3 w-3" />}
+              {isOverdue && <MaterialIcon name="warning" size={12} className="mr-1 inline" />}
               {format(dueDate, 'yyyy/MM/dd')}
             </span>
             {isOverdue && (
@@ -246,7 +238,7 @@ export default function SubmissionManagementPage() {
           rel="noopener noreferrer"
           className="flex items-center gap-1 text-sm text-[var(--brand-80)] hover:underline"
         >
-          <Download className="h-3 w-3" />
+          <MaterialIcon name="download" size={12} />
           {req.attachment_original_name || 'ファイル'}
         </a>
       ) : (
@@ -264,7 +256,7 @@ export default function SubmissionManagementPage() {
               size="sm"
               onClick={() => openCompleteModal(req.id, req.title)}
             >
-              <CheckCircle2 className="mr-1 h-3 w-3" />
+              <MaterialIcon name="check_circle" size={12} className="mr-1" />
               完了
             </Button>
           ) : (
@@ -275,7 +267,7 @@ export default function SubmissionManagementPage() {
                 if (confirm('未提出に戻しますか？')) incompleteMutation.mutate(req.id);
               }}
             >
-              <Undo2 className="mr-1 h-3 w-3" />
+              <MaterialIcon name="undo" size={12} className="mr-1" />
               未提出に戻す
             </Button>
           )}
@@ -284,7 +276,7 @@ export default function SubmissionManagementPage() {
             size="sm"
             onClick={() => { if (confirm('削除しますか？')) deleteMutation.mutate(req.id); }}
           >
-            <Trash2 className="h-4 w-4 text-[var(--status-danger-fg)]" />
+            <MaterialIcon name="delete" size={16} className="text-[var(--status-danger-fg)]" />
           </Button>
         </div>
       ),
@@ -295,7 +287,7 @@ export default function SubmissionManagementPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">提出物管理</h1>
-        <Button leftIcon={<Plus className="h-4 w-4" />} onClick={() => { setForm(emptyForm); setCreateModal(true); }}>
+        <Button leftIcon={<MaterialIcon name="add" size={16} />} onClick={() => { setForm(emptyForm); setCreateModal(true); }}>
           新規依頼作成
         </Button>
       </div>
@@ -306,7 +298,7 @@ export default function SubmissionManagementPage() {
           <CardBody>
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--neutral-background-4)]">
-                <Clock className="h-5 w-5 text-[var(--neutral-foreground-2)]" />
+                <MaterialIcon name="schedule" size={20} className="text-[var(--neutral-foreground-2)]" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-[var(--neutral-foreground-1)]">{stats.total}</p>
@@ -319,7 +311,7 @@ export default function SubmissionManagementPage() {
           <CardBody>
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50">
-                <Clock className="h-5 w-5 text-[var(--status-warning-fg)]" />
+                <MaterialIcon name="schedule" size={20} className="text-[var(--status-warning-fg)]" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-[var(--neutral-foreground-1)]">{stats.pending}</p>
@@ -332,7 +324,7 @@ export default function SubmissionManagementPage() {
           <CardBody>
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-50">
-                <AlertTriangle className="h-5 w-5 text-[var(--status-danger-fg)]" />
+                <MaterialIcon name="warning" size={20} className="text-[var(--status-danger-fg)]" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-[var(--neutral-foreground-1)]">{stats.overdue}</p>
@@ -345,7 +337,7 @@ export default function SubmissionManagementPage() {
           <CardBody>
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50">
-                <CheckCircle2 className="h-5 w-5 text-[var(--status-success-fg)]" />
+                <MaterialIcon name="check_circle" size={20} className="text-[var(--status-success-fg)]" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-[var(--neutral-foreground-1)]">{stats.completed}</p>

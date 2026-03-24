@@ -2,8 +2,8 @@
 
 import { useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from './Button';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 export interface Column<T> {
   key: string;
@@ -69,9 +69,9 @@ export function Table<T extends Record<string, any>>({
                     {col.label}
                     {col.sortable && sortKey === col.key && (
                       sortDir === 'asc' ? (
-                        <ChevronUp className="h-3 w-3" />
+                        <MaterialIcon name="expand_less" size={12} />
                       ) : (
-                        <ChevronDown className="h-3 w-3" />
+                        <MaterialIcon name="expand_more" size={12} />
                       )
                     )}
                   </div>
@@ -124,7 +124,7 @@ export function Table<T extends Record<string, any>>({
               size="sm"
               onClick={() => onPageChange(currentPage! - 1)}
               disabled={currentPage === 1}
-              leftIcon={<ChevronLeft className="h-4 w-4" />}
+              leftIcon={<MaterialIcon name="chevron_left" size={16} />}
             >
               前へ
             </Button>
@@ -133,7 +133,7 @@ export function Table<T extends Record<string, any>>({
               size="sm"
               onClick={() => onPageChange(currentPage! + 1)}
               disabled={currentPage === totalPages}
-              rightIcon={<ChevronRight className="h-4 w-4" />}
+              rightIcon={<MaterialIcon name="chevron_right" size={16} />}
             >
               次へ
             </Button>

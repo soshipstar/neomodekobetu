@@ -6,7 +6,7 @@ import api from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface AiGenerateButtonProps {
   studentId: number;
@@ -46,7 +46,7 @@ export function AiGenerateButton({ studentId, onGenerated }: AiGenerateButtonPro
     <>
       <Button
         variant="outline"
-        leftIcon={<Sparkles className="h-4 w-4" />}
+        leftIcon={<MaterialIcon name="auto_awesome" size={16} />}
         onClick={() => setShowConfirm(true)}
       >
         AI生成
@@ -60,7 +60,7 @@ export function AiGenerateButton({ studentId, onGenerated }: AiGenerateButtonPro
       >
         {mutation.isPending ? (
           <div className="flex flex-col items-center gap-4 py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-[var(--brand-80)]" />
+            <MaterialIcon name="progress_activity" size={32} className="animate-spin text-[var(--brand-80)]" />
             <p className="text-sm text-[var(--neutral-foreground-3)]">{progress}</p>
             <p className="text-xs text-[var(--neutral-foreground-4)]">
               この処理には数分かかる場合があります
@@ -86,7 +86,7 @@ export function AiGenerateButton({ studentId, onGenerated }: AiGenerateButtonPro
                 キャンセル
               </Button>
               <Button
-                leftIcon={<Sparkles className="h-4 w-4" />}
+                leftIcon={<MaterialIcon name="auto_awesome" size={16} />}
                 onClick={() => mutation.mutate()}
               >
                 生成を開始

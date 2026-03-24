@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/Badge';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { formatDate } from '@/lib/utils';
-import { Send, Calendar } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 const absenceFormSchema = z.object({
   student_id: z.number({ error: 'お子様を選択してください' }),
@@ -172,7 +172,7 @@ export default function AbsenceNotificationPage() {
               )}
             </div>
 
-            <Button type="submit" leftIcon={<Send className="h-4 w-4" />} isLoading={mutation.isPending}>
+            <Button type="submit" leftIcon={<MaterialIcon name="send" size={16} />} isLoading={mutation.isPending}>
               送信する
             </Button>
           </form>
@@ -198,7 +198,7 @@ export default function AbsenceNotificationPage() {
                     <p className="text-xs text-[var(--neutral-foreground-3)]">{absence.reason}</p>
                     {absence.makeup_request_date && (
                       <p className="mt-1 flex items-center gap-1 text-xs text-[var(--brand-80)]">
-                        <Calendar className="h-3 w-3" />
+                        <MaterialIcon name="calendar_month" size={12} />
                         振替希望: {formatDate(absence.makeup_request_date)}
                       </p>
                     )}

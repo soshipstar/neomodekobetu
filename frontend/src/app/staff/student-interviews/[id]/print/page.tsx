@@ -5,10 +5,10 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { Printer, ChevronLeft, Download } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 function nl(t: string | null | undefined): string {
   if (!t) return '';
@@ -52,11 +52,11 @@ export default function InterviewPrintPage() {
       {/* Screen-only toolbar */}
       <div className="print:hidden mb-4 flex items-center justify-between">
         <Link href="/staff/student-interviews">
-          <Button variant="ghost" size="sm" leftIcon={<ChevronLeft className="h-4 w-4" />}>面談記録に戻る</Button>
+          <Button variant="ghost" size="sm" leftIcon={<MaterialIcon name="chevron_left" size={16} />}>面談記録に戻る</Button>
         </Link>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Download className="h-4 w-4" />} onClick={handlePdf}>PDFダウンロード</Button>
-          <Button leftIcon={<Printer className="h-4 w-4" />} onClick={() => window.print()}>印刷する</Button>
+          <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="download" size={16} />} onClick={handlePdf}>PDFダウンロード</Button>
+          <Button leftIcon={<MaterialIcon name="print" size={16} />} onClick={() => window.print()}>印刷する</Button>
         </div>
       </div>
 

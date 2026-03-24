@@ -10,10 +10,10 @@ import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { SkeletonTable } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { Search, Plus, Pencil, Trash2, ArrowRightLeft } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { usePagination } from '@/hooks/usePagination';
 import { useMasterGuard } from '@/hooks/useMasterGuard';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface Classroom {
   id: number;
@@ -239,14 +239,14 @@ export default function AdminAccountsPage() {
       label: '操作',
       render: (a) => (
         <div className="flex items-center gap-1 flex-wrap">
-          <Button variant="ghost" size="sm" onClick={() => openEditModal(a)} leftIcon={<Pencil className="h-3.5 w-3.5" />}>
+          <Button variant="ghost" size="sm" onClick={() => openEditModal(a)} leftIcon={<MaterialIcon name="edit" size={14} />}>
             編集
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => { setConvertingAdmin(a); setConvertModalOpen(true); }}
-            leftIcon={<ArrowRightLeft className="h-3.5 w-3.5" />}
+            leftIcon={<MaterialIcon name="swap_horiz" size={14} />}
           >
             スタッフに変換
           </Button>
@@ -254,7 +254,7 @@ export default function AdminAccountsPage() {
             variant="ghost"
             size="sm"
             onClick={() => { setDeletingAdmin(a); setDeleteModalOpen(true); }}
-            leftIcon={<Trash2 className="h-3.5 w-3.5" />}
+            leftIcon={<MaterialIcon name="delete" size={14} />}
             className="text-[var(--status-danger-fg)]"
           >
             削除
@@ -273,13 +273,13 @@ export default function AdminAccountsPage() {
           <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">管理者アカウント管理</h1>
           <p className="mt-1 text-sm text-[var(--neutral-foreground-3)]">マスター管理者専用</p>
         </div>
-        <Button onClick={openAddModal} leftIcon={<Plus className="h-4 w-4" />}>
+        <Button onClick={openAddModal} leftIcon={<MaterialIcon name="add" size={16} />}>
           新規管理者登録
         </Button>
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
+        <MaterialIcon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
         <Input
           placeholder="氏名・ユーザー名で検索..."
           value={search}

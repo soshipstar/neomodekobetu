@@ -11,25 +11,7 @@ import { Input } from '@/components/ui/Input';
 import { Tabs } from '@/components/ui/Tabs';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import {
-  BarChart3,
-  Users,
-  FileText,
-  Plus,
-  CheckCircle2,
-  Clock,
-  XCircle,
-  ChevronRight,
-  Send,
-  Save,
-  MessageCircle,
-  RefreshCw,
-  FileDown,
-  Globe,
-  ClipboardList,
-  ChevronDown,
-  ChevronUp,
-} from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -206,7 +188,7 @@ export default function FacilityEvaluationPage() {
           <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">事業所評価シート</h1>
           <p className="text-sm text-[var(--neutral-foreground-3)]">年度ごとの事業所評価アンケートを管理します</p>
         </div>
-        <Button leftIcon={<Plus className="h-4 w-4" />} onClick={() => setShowCreate(true)}>
+        <Button leftIcon={<MaterialIcon name="add" size={16} />} onClick={() => setShowCreate(true)}>
           新規評価期間
         </Button>
       </div>
@@ -219,7 +201,7 @@ export default function FacilityEvaluationPage() {
         <Card>
           <CardBody>
             <div className="py-8 text-center text-[var(--neutral-foreground-4)]">
-              <FileText className="mx-auto h-10 w-10 mb-2" />
+              <MaterialIcon name="description" size={40} className="mx-auto mb-2" />
               <p>評価期間がまだ作成されていません。</p>
               <p className="text-xs mt-1">上のボタンから新しい評価期間を作成してください。</p>
             </div>
@@ -246,7 +228,7 @@ export default function FacilityEvaluationPage() {
                       <h3 className="font-semibold text-[var(--neutral-foreground-1)]">{period.title}</h3>
                       <Badge variant={st.variant}>{st.label}</Badge>
                     </div>
-                    <ChevronRight className="h-5 w-5 text-[var(--neutral-foreground-4)]" />
+                    <MaterialIcon name="chevron_right" size={20} className="text-[var(--neutral-foreground-4)]" />
                   </div>
 
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
@@ -405,25 +387,25 @@ function PeriodDetail({
           {
             key: 'status',
             label: '回答状況',
-            icon: <Users className="h-4 w-4" />,
+            icon: <MaterialIcon name="group" size={16} />,
             content: <ResponseStatusTab periodId={period.id} />,
           },
           {
             key: 'guardian-results',
             label: '保護者評価（別紙4）',
-            icon: <BarChart3 className="h-4 w-4" />,
+            icon: <MaterialIcon name="analytics" size={16} />,
             content: <GuardianResultsTab periodId={period.id} />,
           },
           {
             key: 'staff-results',
             label: 'スタッフ自己評価（別紙5）',
-            icon: <FileText className="h-4 w-4" />,
+            icon: <MaterialIcon name="description" size={16} />,
             content: <StaffSelfEvaluationTab periodId={period.id} />,
           },
           {
             key: 'self-summary',
             label: '自己評価総括表（別紙3）',
-            icon: <ClipboardList className="h-4 w-4" />,
+            icon: <MaterialIcon name="checklist" size={16} />,
             content: <SelfEvaluationSummaryTab periodId={period.id} />,
           },
         ]}
@@ -467,7 +449,7 @@ function ResponseStatusTab({ periodId }: { periodId: number }) {
           </span>
           {item.is_submitted ? (
             <div className="flex items-center gap-1.5 text-xs text-[var(--status-success-fg)]">
-              <CheckCircle2 className="h-3.5 w-3.5" />
+              <MaterialIcon name="check_circle" size={14} />
               回答済み
               {item.submitted_at && (
                 <span className="text-[var(--neutral-foreground-4)]">
@@ -568,7 +550,7 @@ function GuardianResultsTab({ periodId }: { periodId: number }) {
   if (summary.length === 0) {
     return (
       <div className="py-8 text-center text-[var(--neutral-foreground-4)]">
-        <BarChart3 className="mx-auto h-10 w-10 mb-2" />
+        <MaterialIcon name="analytics" size={40} className="mx-auto mb-2" />
         <p>まだ回答がありません</p>
       </div>
     );
@@ -661,9 +643,9 @@ function GuardianResultsTab({ periodId }: { periodId: number }) {
                           className="flex items-center gap-1 text-xs font-semibold text-[var(--status-info-fg,#3b82f6)] mb-2"
                           onClick={() => setExpandedComments((prev) => ({ ...prev, [q.question_id]: !prev[q.question_id] }))}
                         >
-                          <MessageCircle className="h-3.5 w-3.5" />
+                          <MaterialIcon name="chat" size={14} />
                           ご意見 ({qComments.length}件)
-                          {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                          {isExpanded ? <MaterialIcon name="expand_less" size={12} /> : <MaterialIcon name="expand_more" size={12} />}
                         </button>
                         {isExpanded && (
                           <ul className="space-y-1">
@@ -795,7 +777,7 @@ function StaffSelfEvaluationTab({ periodId }: { periodId: number }) {
   if (questions.length === 0) {
     return (
       <div className="py-8 text-center text-[var(--neutral-foreground-4)]">
-        <FileText className="mx-auto h-10 w-10 mb-2" />
+        <MaterialIcon name="description" size={40} className="mx-auto mb-2" />
         <p>スタッフ用の質問がありません</p>
       </div>
     );
@@ -812,7 +794,7 @@ function StaffSelfEvaluationTab({ periodId }: { periodId: number }) {
     <div className="space-y-4">
       {isSubmitted && (
         <div className="rounded-lg bg-[var(--status-info-bg,rgba(59,130,246,0.1))] border border-[var(--status-info-fg,#3b82f6)] px-4 py-3 text-sm text-[var(--status-info-fg,#3b82f6)] text-center flex items-center justify-center gap-2">
-          <CheckCircle2 className="h-4 w-4" />
+          <MaterialIcon name="check_circle" size={16} />
           自己評価は提出済みです
         </div>
       )}
@@ -899,10 +881,10 @@ function StaffSelfEvaluationTab({ periodId }: { periodId: number }) {
 
       {!isSubmitted && (
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => handleSave(false)} isLoading={isSaving} leftIcon={<Save className="h-4 w-4" />}>
+          <Button variant="outline" onClick={() => handleSave(false)} isLoading={isSaving} leftIcon={<MaterialIcon name="save" size={16} />}>
             下書き保存
           </Button>
-          <Button onClick={() => handleSave(true)} isLoading={isSaving} leftIcon={<Send className="h-4 w-4" />}>
+          <Button onClick={() => handleSave(true)} isLoading={isSaving} leftIcon={<MaterialIcon name="send" size={16} />}>
             提出する
           </Button>
         </div>
@@ -1151,7 +1133,7 @@ function SelfEvaluationSummaryTab({ periodId }: { periodId: number }) {
       </Card>
 
       <div className="flex justify-center">
-        <Button onClick={handleSave} isLoading={isSaving} leftIcon={<Save className="h-4 w-4" />}>
+        <Button onClick={handleSave} isLoading={isSaving} leftIcon={<MaterialIcon name="save" size={16} />}>
           自己評価総括表を保存
         </Button>
       </div>

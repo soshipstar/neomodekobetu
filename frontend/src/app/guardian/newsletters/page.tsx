@@ -7,7 +7,7 @@ import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { formatDate, nl as normalizeNewlines } from '@/lib/utils';
-import { Megaphone, ArrowLeft, Printer } from 'lucide-react';
+import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface Newsletter {
   id: number;
@@ -90,10 +90,10 @@ export default function GuardianNewslettersPage() {
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">施設通信</h1>
 
         <div className="flex gap-2 print:hidden">
-          <Button variant="secondary" size="sm" onClick={() => setSelectedId(null)} leftIcon={<ArrowLeft className="h-4 w-4" />}>
+          <Button variant="secondary" size="sm" onClick={() => setSelectedId(null)} leftIcon={<MaterialIcon name="arrow_back" size={16} />}>
             一覧に戻る
           </Button>
-          <Button variant="secondary" size="sm" onClick={() => window.print()} leftIcon={<Printer className="h-4 w-4" />}>
+          <Button variant="secondary" size="sm" onClick={() => window.print()} leftIcon={<MaterialIcon name="print" size={16} />}>
             印刷
           </Button>
         </div>
@@ -245,7 +245,7 @@ export default function GuardianNewslettersPage() {
         <Card>
           <CardBody>
             <div className="py-12 text-center">
-              <Megaphone className="mx-auto h-12 w-12 text-[var(--neutral-foreground-disabled)]" />
+              <MaterialIcon name="campaign" size={48} className="mx-auto text-[var(--neutral-foreground-disabled)]" />
               <p className="mt-2 text-sm text-[var(--neutral-foreground-3)]">まだ通信が発行されていません</p>
             </div>
           </CardBody>
