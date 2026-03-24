@@ -629,7 +629,7 @@ export default function KobetsuMonitoringPage() {
             {/* Long-term goal */}
             <div className="mb-6 rounded-lg border-l-4 border-l-purple-500 bg-[var(--neutral-background-2)] p-4">
               <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--brand-70)]">
-                <Target className="h-4 w-4" /> 長期目標
+                <MaterialIcon name="target" size={16} className="h-4 w-4" /> 長期目標
               </h4>
               {(planData.long_term_goal_text || planData.long_term_goal) ? (
                 <div className="mb-3 whitespace-pre-wrap rounded-md bg-[var(--neutral-background-1)] p-3 text-sm leading-relaxed text-[var(--neutral-foreground-1)]">
@@ -807,7 +807,7 @@ export default function KobetsuMonitoringPage() {
               variant="primary"
               onClick={() => saveMutation.mutate(false)}
               isLoading={saveMutation.isPending}
-              leftIcon={<ClipboardCheck className="h-4 w-4" />}
+              leftIcon={<MaterialIcon name="assignment_turned_in" size={16} className="h-4 w-4" />}
               className="bg-green-600 hover:bg-green-700"
             >
               作成・提出（保護者公開）

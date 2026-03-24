@@ -286,7 +286,7 @@ export default function KakehashiGuardianViewPage() {
 
           {/* Section: 本人の願い */}
           <SectionCard
-            icon={<Heart className="h-4 w-4" />}
+            icon={<MaterialIcon name="favorite" size={16} className="h-4 w-4" />}
             title="本人の願い"
             subtitle="お子様が望んでいること、なりたい姿"
             color="var(--status-danger-fg)"
@@ -296,7 +296,7 @@ export default function KakehashiGuardianViewPage() {
 
           {/* Section: 家庭での願い */}
           <SectionCard
-            icon={<Home className="h-4 w-4" />}
+            icon={<MaterialIcon name="home" size={16} className="h-4 w-4" />}
             title="家庭での願い"
             subtitle="家庭で気になっていること、取り組みたいこと"
             color="var(--status-warning-fg)"
@@ -306,7 +306,7 @@ export default function KakehashiGuardianViewPage() {
 
           {/* Section: 目標設定 */}
           <SectionCard
-            icon={<Target className="h-4 w-4" />}
+            icon={<MaterialIcon name="target" size={16} className="h-4 w-4" />}
             title="目標設定"
             color="var(--brand-80)"
           >
@@ -324,7 +324,7 @@ export default function KakehashiGuardianViewPage() {
 
           {/* Section: 五領域の課題 */}
           <SectionCard
-            icon={<Star className="h-4 w-4" />}
+            icon={<MaterialIcon name="star" size={16} className="h-4 w-4" />}
             title="五領域の課題"
             color="var(--status-info-fg)"
           >

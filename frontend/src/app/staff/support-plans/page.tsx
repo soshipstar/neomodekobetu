@@ -727,7 +727,7 @@ function SupportPlanFormModal({
           {/* Copy from past button */}
           {!isEdit && (
             <div className="text-center">
-              <Button variant="outline" onClick={() => setCopyModalOpen(true)} leftIcon={<Copy className="h-4 w-4" />}>
+              <Button variant="outline" onClick={() => setCopyModalOpen(true)} leftIcon={<MaterialIcon name="content_copy" size={16} className="h-4 w-4" />}>
                 過去の支援案を引用する
               </Button>
             </div>

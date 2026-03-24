@@ -370,7 +370,7 @@ function PeriodDetail({
             </Button>
           )}
           {(period.status === 'collecting' || period.status === 'aggregating') && (
-            <Button size="sm" variant="outline" onClick={handleAggregate} leftIcon={<RefreshCw className="h-3.5 w-3.5" />}>
+            <Button size="sm" variant="outline" onClick={handleAggregate} leftIcon={<MaterialIcon name="refresh" size={16} className="h-3.5 w-3.5" />}>
               {period.status === 'aggregating' ? '再集計' : '集計開始'}
             </Button>
           )}
@@ -459,7 +459,7 @@ function ResponseStatusTab({ periodId }: { periodId: number }) {
             </div>
           ) : (
             <div className="flex items-center gap-1.5 text-xs text-[var(--status-danger-fg)]">
-              <XCircle className="h-3.5 w-3.5" />
+              <MaterialIcon name="cancel" size={16} className="h-3.5 w-3.5" />
               未回答
             </div>
           )}

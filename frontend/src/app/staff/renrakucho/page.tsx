@@ -1048,7 +1048,7 @@ export default function RenrakuchoPage() {
               <Button
                 variant="outline"
                 size="sm"
-                leftIcon={<RefreshCw className="h-4 w-4" />}
+                leftIcon={<MaterialIcon name="refresh" size={16} className="h-4 w-4" />}
                 onClick={handleRegenerateAll}
               >
                 統合をリセット

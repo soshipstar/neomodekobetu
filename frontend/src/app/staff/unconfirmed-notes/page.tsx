@@ -131,11 +131,11 @@ export default function UnconfirmedNotesPage() {
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field)
-      return <ArrowUpDown className="h-3 w-3 opacity-40" />;
+      return <MaterialIcon name="swap_vert" size={16} className="h-3 w-3 opacity-40" />;
     return sortDir === 'asc' ? (
-      <ArrowUp className="h-3 w-3" />
+      <MaterialIcon name="arrow_upward" size={16} className="h-3 w-3" />
     ) : (
-      <ArrowDown className="h-3 w-3" />
+      <MaterialIcon name="arrow_downward" size={16} className="h-3 w-3" />
     );
   };
 
@@ -163,7 +163,7 @@ export default function UnconfirmedNotesPage() {
         <Button
           variant="outline"
           size="sm"
-          leftIcon={<RefreshCw className="h-4 w-4" />}
+          leftIcon={<MaterialIcon name="refresh" size={16} className="h-4 w-4" />}
           onClick={fetchNotes}
           isLoading={isLoading}
         >

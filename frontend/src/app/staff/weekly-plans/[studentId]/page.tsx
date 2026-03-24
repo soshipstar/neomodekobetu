@@ -568,7 +568,7 @@ export default function WeeklyPlanStudentDetailPage() {
             {/* 今週の目標 */}
             <div className="mb-5">
               <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--brand-60)]">
-                <Target className="h-4 w-4" />
+                <MaterialIcon name="target" size={16} className="h-4 w-4" />
                 今週の目標 <span className="text-red-500">*</span>
               </label>
               <textarea
@@ -612,7 +612,7 @@ export default function WeeklyPlanStudentDetailPage() {
             {/* やったほうがいいこと */}
             <div className="mb-5">
               <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--brand-60)]">
-                <ThumbsUp className="h-4 w-4" />
+                <MaterialIcon name="thumb_up" size={16} className="h-4 w-4" />
                 やったほうがいいこと
               </label>
               <textarea
@@ -626,7 +626,7 @@ export default function WeeklyPlanStudentDetailPage() {
             {/* やりたいこと */}
             <div className="mb-5">
               <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--brand-60)]">
-                <Lightbulb className="h-4 w-4" />
+                <MaterialIcon name="lightbulb" size={16} className="h-4 w-4" />
                 やりたいこと
               </label>
               <textarea
@@ -724,7 +724,7 @@ export default function WeeklyPlanStudentDetailPage() {
 
               {/* Goals */}
               <ViewSection
-                icon={<Target className="h-4 w-4" />}
+                icon={<MaterialIcon name="target" size={16} className="h-4 w-4" />}
                 label="今週の目標"
                 content={displayGoal}
               />
@@ -739,12 +739,12 @@ export default function WeeklyPlanStudentDetailPage() {
                 content={displayMustDo}
               />
               <ViewSection
-                icon={<ThumbsUp className="h-4 w-4" />}
+                icon={<MaterialIcon name="thumb_up" size={16} className="h-4 w-4" />}
                 label="やったほうがいいこと"
                 content={displayShouldDo}
               />
               <ViewSection
-                icon={<Lightbulb className="h-4 w-4" />}
+                icon={<MaterialIcon name="lightbulb" size={16} className="h-4 w-4" />}
                 label="やりたいこと"
                 content={displayWantToDo}
               />
@@ -852,7 +852,7 @@ export default function WeeklyPlanStudentDetailPage() {
                 </div>
                 <div className="rounded-lg bg-[var(--neutral-background-3)] p-4">
                   <AchievementDisplay
-                    icon={<Target className="h-4 w-4" />}
+                    icon={<MaterialIcon name="target" size={16} className="h-4 w-4" />}
                     label="今週の目標"
                     goalText={displayGoal}
                     achievement={plan.weekly_goal_achievement}
@@ -873,14 +873,14 @@ export default function WeeklyPlanStudentDetailPage() {
                     comment={plan.must_do_comment}
                   />
                   <AchievementDisplay
-                    icon={<ThumbsUp className="h-4 w-4" />}
+                    icon={<MaterialIcon name="thumb_up" size={16} className="h-4 w-4" />}
                     label="やったほうがいいこと"
                     goalText={displayShouldDo}
                     achievement={plan.should_do_achievement}
                     comment={plan.should_do_comment}
                   />
                   <AchievementDisplay
-                    icon={<Lightbulb className="h-4 w-4" />}
+                    icon={<MaterialIcon name="lightbulb" size={16} className="h-4 w-4" />}
                     label="やりたいこと"
                     goalText={displayWantToDo}
                     achievement={plan.want_to_do_achievement}

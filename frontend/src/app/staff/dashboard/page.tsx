@@ -577,7 +577,7 @@ export default function StaffDashboardPage() {
               <CardTitle>{selectedDate.replace(/-/g, '/')} の活動</CardTitle>
               <div className="flex items-center gap-2">
                 <Link href="/staff/support-plans">
-                  <Button variant="outline" size="sm" leftIcon={<PenSquare className="h-4 w-4" />}>
+                  <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="edit_square" size={16} className="h-4 w-4" />}>
                     支援案管理
                   </Button>
                 </Link>
@@ -680,7 +680,7 @@ export default function StaffDashboardPage() {
                   {totalAttendance - absentCount}
                 </span>
                 <span className="flex items-center gap-1">
-                  <UserX className="h-3.5 w-3.5 text-[var(--status-danger-fg)]" />
+                  <MaterialIcon name="person_off" size={16} className="h-3.5 w-3.5 text-[var(--status-danger-fg)]" />
                   {absentCount}
                 </span>
               </div>
@@ -775,7 +775,7 @@ function NotificationGrid({ summary }: { summary: DashboardSummary }) {
     },
     {
       borderColor: 'border-l-[var(--status-warning-fg)]',
-      icon: <RefreshCw className="h-4 w-4 text-[var(--status-warning-fg)]" />,
+      icon: <MaterialIcon name="refresh" size={16} className="h-4 w-4 text-[var(--status-warning-fg)]" />,
       label: '承認待ち振替依頼',
       count: summary.pending_makeup,
       href: '/staff/attendance',

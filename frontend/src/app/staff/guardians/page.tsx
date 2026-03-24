@@ -279,14 +279,14 @@ export default function GuardiansPage() {
                       variant="outline"
                       size="sm"
                       type="button"
-                      leftIcon={<RefreshCw className="h-3.5 w-3.5" />}
+                      leftIcon={<MaterialIcon name="refresh" size={16} className="h-3.5 w-3.5" />}
                       onClick={() => setForm({ ...form, password: generatePassword() })}
                     >
                       自動生成
                     </Button>
                     {form.password && (
                       <Button variant="ghost" size="sm" type="button" onClick={() => copyToClipboard(form.password)}>
-                        <Copy className="h-3.5 w-3.5" />
+                        <MaterialIcon name="content_copy" size={16} className="h-3.5 w-3.5" />
                       </Button>
                     )}
                   </div>

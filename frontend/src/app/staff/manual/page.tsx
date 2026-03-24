@@ -36,7 +36,7 @@ const sections: ManualSection[] = [
   },
   {
     id: 'overview',
-    icon: <Home className="h-5 w-5" />,
+    icon: <MaterialIcon name="home" size={16} className="h-5 w-5" />,
     title: 'システム概要',
     content: (
       <div className="space-y-3">
@@ -161,7 +161,7 @@ const sections: ManualSection[] = [
   },
   {
     id: 'basic-usage',
-    icon: <PenSquare className="h-5 w-5" />,
+    icon: <MaterialIcon name="edit_square" size={16} className="h-5 w-5" />,
     title: '基本的な使い方',
     content: (
       <div className="space-y-4">
@@ -213,7 +213,7 @@ const sections: ManualSection[] = [
   },
   {
     id: 'student',
-    icon: <GraduationCap className="h-5 w-5" />,
+    icon: <MaterialIcon name="school" size={16} className="h-5 w-5" />,
     title: '生徒機能',
     content: (
       <div className="space-y-3">
@@ -281,7 +281,7 @@ const sections: ManualSection[] = [
   },
   {
     id: 'evaluation',
-    icon: <ClipboardCheck className="h-5 w-5" />,
+    icon: <MaterialIcon name="assignment_turned_in" size={16} className="h-5 w-5" />,
     title: '事業所評価',
     content: (
       <div className="space-y-3">
@@ -349,7 +349,7 @@ const sections: ManualSection[] = [
   },
   {
     id: 'faq',
-    icon: <HelpCircle className="h-5 w-5" />,
+    icon: <MaterialIcon name="help" size={16} className="h-5 w-5" />,
     title: 'よくある質問',
     content: (
       <div className="space-y-4">
@@ -370,7 +370,7 @@ const sections: ManualSection[] = [
   },
   {
     id: 'tips',
-    icon: <Lightbulb className="h-5 w-5" />,
+    icon: <MaterialIcon name="lightbulb" size={16} className="h-5 w-5" />,
     title: 'ヒントとコツ',
     content: (
       <div className="space-y-3">

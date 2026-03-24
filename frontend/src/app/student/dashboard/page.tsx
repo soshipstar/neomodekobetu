@@ -122,7 +122,7 @@ export default function StudentDashboardPage() {
               </div>
             </div>
             <Link href="/student/submissions" className="flex items-center gap-1 text-sm text-[var(--brand-80)] hover:underline">
-              確認する <ArrowRight className="h-4 w-4" />
+              確認する <MaterialIcon name="arrow_forward" size={16} className="h-4 w-4" />
             </Link>
           </div>
         </Card>

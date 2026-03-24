@@ -295,7 +295,7 @@ export default function GuardianKakehashiPage() {
             )}
 
             {/* Section: 本人の願い */}
-            <SectionHeader icon={<Heart className="h-4 w-4" />} title="本人の願い" color="var(--status-danger-fg)" />
+            <SectionHeader icon={<MaterialIcon name="favorite" size={16} className="h-4 w-4" />} title="本人の願い" color="var(--status-danger-fg)" />
             <div className="mb-4 ml-6">
               <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">
                 お子様が望んでいること、なりたい姿
@@ -314,7 +314,7 @@ export default function GuardianKakehashiPage() {
             </div>
 
             {/* Section: 家庭での願い */}
-            <SectionHeader icon={<Home className="h-4 w-4" />} title="家庭での願い" color="var(--status-warning-fg)" />
+            <SectionHeader icon={<MaterialIcon name="home" size={16} className="h-4 w-4" />} title="家庭での願い" color="var(--status-warning-fg)" />
             <div className="mb-4 ml-6">
               <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">
                 家庭で気になっていること、取り組みたいこと
@@ -333,7 +333,7 @@ export default function GuardianKakehashiPage() {
             </div>
 
             {/* Section: 目標設定 */}
-            <SectionHeader icon={<Target className="h-4 w-4" />} title="目標設定" color="var(--brand-80)" />
+            <SectionHeader icon={<MaterialIcon name="target" size={16} className="h-4 w-4" />} title="目標設定" color="var(--brand-80)" />
             <div className="mb-4 ml-6 space-y-3">
               <div>
                 <label className="mb-1 block text-xs font-semibold text-[var(--neutral-foreground-3)]">
@@ -370,7 +370,7 @@ export default function GuardianKakehashiPage() {
             </div>
 
             {/* Section: 五領域の課題 */}
-            <SectionHeader icon={<Star className="h-4 w-4" />} title="五領域の課題" color="var(--status-info-fg)" />
+            <SectionHeader icon={<MaterialIcon name="star" size={16} className="h-4 w-4" />} title="五領域の課題" color="var(--status-info-fg)" />
             <div className="mb-4 ml-6 space-y-3">
               <DomainField
                 label="健康・生活"

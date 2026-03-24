@@ -28,7 +28,7 @@ function FlowStep({ number, title, description }: { number: number; title: strin
 function FlowArrow() {
   return (
     <div className="flex justify-center py-1">
-      <ArrowDown className="h-4 w-4 text-[var(--brand-80)]" />
+      <MaterialIcon name="arrow_downward" size={16} className="h-4 w-4 text-[var(--brand-80)]" />
     </div>
   );
 }
@@ -56,7 +56,7 @@ function HighlightBox({
 const sections: ManualSection[] = [
   {
     id: 'dashboard',
-    icon: <LayoutDashboard className="h-5 w-5" />,
+    icon: <MaterialIcon name="dashboard" size={16} className="h-5 w-5" />,
     title: 'ダッシュボード',
     content: (
       <div className="space-y-3">
@@ -152,7 +152,7 @@ const sections: ManualSection[] = [
   },
   {
     id: 'support-plan',
-    icon: <ClipboardCheck className="h-5 w-5" />,
+    icon: <MaterialIcon name="assignment_turned_in" size={16} className="h-5 w-5" />,
     title: '個別支援計画書',
     content: (
       <div className="space-y-3">
@@ -233,7 +233,7 @@ const sections: ManualSection[] = [
   },
   {
     id: 'request',
-    icon: <HelpCircle className="h-5 w-5" />,
+    icon: <MaterialIcon name="help" size={16} className="h-5 w-5" />,
     title: '保護者の皆様へのお願い',
     content: (
       <div className="space-y-3">

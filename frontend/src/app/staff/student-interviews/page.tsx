@@ -265,7 +265,7 @@ export default function StudentInterviewsPage() {
                   </span>
                   <div className="flex gap-1">
                     {iv.check_school && <MaterialIcon name="school" size={12} className="text-[var(--status-info-fg)]" />}
-                    {iv.check_home && <Home className="h-3 w-3 text-[var(--status-warning-fg)]" />}
+                    {iv.check_home && <MaterialIcon name="home" size={16} className="h-3 w-3 text-[var(--status-warning-fg)]" />}
                     {iv.check_troubles && <MaterialIcon name="warning" size={12} className="text-[var(--status-danger-fg)]" />}
                   </div>
                 </div>
@@ -342,7 +342,7 @@ export default function StudentInterviewsPage() {
 
                   {/* 児童の願い */}
                   {selectedInterview.child_wish && (
-                    <SectionBlock icon={<Heart className="h-4 w-4" />} title="児童の願い" color="var(--status-danger-fg)">
+                    <SectionBlock icon={<MaterialIcon name="favorite" size={16} className="h-4 w-4" />} title="児童の願い" color="var(--status-danger-fg)">
                       <p className="text-sm whitespace-pre-wrap">{nl(selectedInterview.child_wish)}</p>
                     </SectionBlock>
                   )}
@@ -354,7 +354,7 @@ export default function StudentInterviewsPage() {
                         color="var(--status-info-fg)" notes={selectedInterview.check_school_notes} />
                     )}
                     {selectedInterview.check_home && (
-                      <CheckBlock icon={<Home className="h-4 w-4" />} title="家庭での様子"
+                      <CheckBlock icon={<MaterialIcon name="home" size={16} className="h-4 w-4" />} title="家庭での様子"
                         color="var(--status-warning-fg)" notes={selectedInterview.check_home_notes} />
                     )}
                     {selectedInterview.check_troubles && (
@@ -479,7 +479,7 @@ function InterviewFormComponent({ form, updateField, onSubmit, onCancel, isLoadi
         label="家庭での様子" checked={form.check_home} notes={form.check_home_notes}
         onCheck={(v) => updateField('check_home', v)}
         onNotes={(v) => updateField('check_home_notes', v)}
-        icon={<Home className="h-4 w-4 text-[var(--status-warning-fg)]" />}
+        icon={<MaterialIcon name="home" size={16} className="h-4 w-4 text-[var(--status-warning-fg)]" />}
       />
       <CheckFieldGroup
         label="困りごと・悩み" checked={form.check_troubles} notes={form.check_troubles_notes}
