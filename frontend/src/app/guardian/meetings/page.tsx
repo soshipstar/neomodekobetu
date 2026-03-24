@@ -134,27 +134,27 @@ export default function GuardianMeetingsPage() {
           </CardHeader>
           <CardBody>
             {/* Meeting info */}
-            <div className="space-y-2 rounded-lg bg-gray-50 p-4 mb-6">
+            <div className="space-y-2 rounded-lg bg-[var(--neutral-background-3)] p-4 mb-6">
               <div className="flex gap-2">
-                <span className="min-w-[100px] text-sm font-medium text-gray-500">対象児童</span>
-                <span className="text-sm text-gray-900">{detail.student?.student_name}さん</span>
+                <span className="min-w-[100px] text-sm font-medium text-[var(--neutral-foreground-3)]">対象児童</span>
+                <span className="text-sm text-[var(--neutral-foreground-1)]">{detail.student?.student_name}さん</span>
               </div>
               <div className="flex gap-2">
-                <span className="min-w-[100px] text-sm font-medium text-gray-500">面談目的</span>
-                <span className="text-sm text-gray-900">{detail.purpose}</span>
+                <span className="min-w-[100px] text-sm font-medium text-[var(--neutral-foreground-3)]">面談目的</span>
+                <span className="text-sm text-[var(--neutral-foreground-1)]">{detail.purpose}</span>
               </div>
               {detail.purpose_detail && (
                 <div className="flex gap-2">
-                  <span className="min-w-[100px] text-sm font-medium text-gray-500">詳細</span>
-                  <span className="text-sm text-gray-900 whitespace-pre-wrap">{nl(detail.purpose_detail)}</span>
+                  <span className="min-w-[100px] text-sm font-medium text-[var(--neutral-foreground-3)]">詳細</span>
+                  <span className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{nl(detail.purpose_detail)}</span>
                 </div>
               )}
               <div className="flex gap-2">
-                <span className="min-w-[100px] text-sm font-medium text-gray-500">担当者</span>
-                <span className="text-sm text-gray-900">{detail.staff?.full_name ?? ''}</span>
+                <span className="min-w-[100px] text-sm font-medium text-[var(--neutral-foreground-3)]">担当者</span>
+                <span className="text-sm text-[var(--neutral-foreground-1)]">{detail.staff?.full_name ?? ''}</span>
               </div>
               <div className="flex gap-2">
-                <span className="min-w-[100px] text-sm font-medium text-gray-500">ステータス</span>
+                <span className="min-w-[100px] text-sm font-medium text-[var(--neutral-foreground-3)]">ステータス</span>
                 <Badge variant={status.variant}>{status.label}</Badge>
               </div>
             </div>
@@ -163,7 +163,7 @@ export default function GuardianMeetingsPage() {
             {detail.status === 'confirmed' && detail.confirmed_date && (
               <div className="rounded-lg border-2 border-green-400 bg-green-50 p-6 text-center mb-6">
                 <Check className="mx-auto h-12 w-12 text-green-500" />
-                <p className="mt-2 font-semibold text-gray-900">面談日時が確定しました</p>
+                <p className="mt-2 font-semibold text-[var(--neutral-foreground-1)]">面談日時が確定しました</p>
                 <p className="mt-2 text-xl font-bold text-green-600">
                   {formatCandidateDate(detail.confirmed_date)}
                 </p>
@@ -174,9 +174,9 @@ export default function GuardianMeetingsPage() {
             {(detail.status === 'pending' || detail.status === 'staff_counter') && (
               <>
                 <div className="mb-6">
-                  <h3 className="mb-3 text-base font-semibold text-gray-900">候補日時から選択</h3>
+                  <h3 className="mb-3 text-base font-semibold text-[var(--neutral-foreground-1)]">候補日時から選択</h3>
                   {detail.status === 'staff_counter' && (
-                    <p className="mb-3 text-sm text-gray-500">
+                    <p className="mb-3 text-sm text-[var(--neutral-foreground-3)]">
                       スタッフから新たな候補日時が提案されました。
                     </p>
                   )}
@@ -185,7 +185,7 @@ export default function GuardianMeetingsPage() {
                       <label
                         key={i}
                         className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-4 transition-colors ${
-                          selectedDate === date ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
+                          selectedDate === date ? 'border-green-500 bg-green-50' : 'border-[var(--neutral-stroke-2)] hover:border-[var(--neutral-stroke-1)]'
                         }`}
                       >
                         <input
@@ -197,11 +197,11 @@ export default function GuardianMeetingsPage() {
                           className="sr-only"
                         />
                         <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-semibold ${
-                          selectedDate === date ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'
+                          selectedDate === date ? 'bg-green-500 text-white' : 'bg-[var(--neutral-background-5)] text-[var(--neutral-foreground-3)]'
                         }`}>
                           {i + 1}
                         </span>
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-sm font-medium text-[var(--neutral-foreground-1)]">
                           {formatCandidateDate(date)}
                         </span>
                       </label>
@@ -210,46 +210,46 @@ export default function GuardianMeetingsPage() {
                 </div>
 
                 {/* Counter proposal section */}
-                <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
-                  <h3 className="mb-2 flex items-center gap-1 text-sm font-semibold text-blue-700">
+                <div className="mb-6 rounded-lg border border-[var(--brand-130)] bg-[var(--brand-160)] p-4">
+                  <h3 className="mb-2 flex items-center gap-1 text-sm font-semibold text-[var(--brand-70)]">
                     <Calendar className="h-4 w-4" />
                     上記日程でご都合が合わない場合
                   </h3>
-                  <p className="mb-3 text-xs text-gray-500">
+                  <p className="mb-3 text-xs text-[var(--neutral-foreground-3)]">
                     別の希望日時を3つまでご提案ください。
                   </p>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
-                      <span className="min-w-[80px] text-sm font-medium text-gray-500">希望日時1</span>
+                      <span className="min-w-[80px] text-sm font-medium text-[var(--neutral-foreground-3)]">希望日時1</span>
                       <input
                         type="datetime-local"
                         value={counterDate1}
                         onChange={(e) => setCounterDate1(e.target.value)}
-                        className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        className="flex-1 rounded-lg border border-[var(--neutral-stroke-1)] px-3 py-2 text-sm"
                       />
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="min-w-[80px] text-sm font-medium text-gray-500">希望日時2</span>
+                      <span className="min-w-[80px] text-sm font-medium text-[var(--neutral-foreground-3)]">希望日時2</span>
                       <input
                         type="datetime-local"
                         value={counterDate2}
                         onChange={(e) => setCounterDate2(e.target.value)}
-                        className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        className="flex-1 rounded-lg border border-[var(--neutral-stroke-1)] px-3 py-2 text-sm"
                       />
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="min-w-[80px] text-sm font-medium text-gray-500">希望日時3</span>
+                      <span className="min-w-[80px] text-sm font-medium text-[var(--neutral-foreground-3)]">希望日時3</span>
                       <input
                         type="datetime-local"
                         value={counterDate3}
                         onChange={(e) => setCounterDate3(e.target.value)}
-                        className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        className="flex-1 rounded-lg border border-[var(--neutral-stroke-1)] px-3 py-2 text-sm"
                       />
                     </div>
                     <textarea
                       value={counterMessage}
                       onChange={(e) => setCounterMessage(e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                      className="w-full rounded-lg border border-[var(--neutral-stroke-1)] px-3 py-2 text-sm"
                       rows={3}
                       placeholder="メッセージ（任意）"
                     />
@@ -293,29 +293,29 @@ export default function GuardianMeetingsPage() {
             {/* Guardian counter - waiting for staff response */}
             {detail.status === 'guardian_counter' && (
               <div className="mb-6">
-                <h3 className="mb-3 text-base font-semibold text-gray-900">ご提案いただいた日程</h3>
-                <p className="mb-3 text-sm text-gray-500">
+                <h3 className="mb-3 text-base font-semibold text-[var(--neutral-foreground-1)]">ご提案いただいた日程</h3>
+                <p className="mb-3 text-sm text-[var(--neutral-foreground-3)]">
                   スタッフからの回答をお待ちください。
                 </p>
                 <div className="space-y-3">
                   {candidates.map((date: string, i: number) => (
                     <div
                       key={i}
-                      className="flex items-center gap-3 rounded-lg border-2 border-blue-300 p-4"
+                      className="flex items-center gap-3 rounded-lg border-2 border-[var(--brand-120)] p-4"
                     >
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-500 font-semibold text-white">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-80)] font-semibold text-white">
                         {i + 1}
                       </span>
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className="text-sm font-medium text-[var(--neutral-foreground-1)]">
                         {formatCandidateDate(date)}
                       </span>
                     </div>
                   ))}
                 </div>
                 {detail.guardian_counter_message && (
-                  <div className="mt-3 rounded-lg bg-gray-50 p-3">
-                    <p className="text-xs font-medium text-gray-500 mb-1">メッセージ:</p>
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{nl(detail.guardian_counter_message)}</p>
+                  <div className="mt-3 rounded-lg bg-[var(--neutral-background-3)] p-3">
+                    <p className="text-xs font-medium text-[var(--neutral-foreground-3)] mb-1">メッセージ:</p>
+                    <p className="text-sm text-[var(--neutral-foreground-2)] whitespace-pre-wrap">{nl(detail.guardian_counter_message)}</p>
                   </div>
                 )}
               </div>
@@ -329,7 +329,7 @@ export default function GuardianMeetingsPage() {
   // List view
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">面談予約</h1>
+      <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">面談予約</h1>
 
       {isLoading ? (
         <SkeletonList items={3} />
@@ -344,7 +344,7 @@ export default function GuardianMeetingsPage() {
                   <Badge variant={status.variant}>{status.label}</Badge>
                 </CardHeader>
                 <CardBody>
-                  <div className="flex flex-col gap-1 text-sm text-gray-600">
+                  <div className="flex flex-col gap-1 text-sm text-[var(--neutral-foreground-3)]">
                     <p>対象: {meeting.student?.student_name}さん</p>
                     {meeting.staff && <p>担当: {meeting.staff.full_name}</p>}
                     {meeting.status === 'confirmed' && meeting.confirmed_date && (
@@ -361,7 +361,7 @@ export default function GuardianMeetingsPage() {
       ) : (
         <Card>
           <CardBody>
-            <p className="py-8 text-center text-sm text-gray-500">面談の予定はありません</p>
+            <p className="py-8 text-center text-sm text-[var(--neutral-foreground-3)]">面談の予定はありません</p>
           </CardBody>
         </Card>
       )}

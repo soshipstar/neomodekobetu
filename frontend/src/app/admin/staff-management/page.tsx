@@ -192,14 +192,14 @@ export default function StaffManagementPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">スタッフ管理</h1>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">スタッフ管理</h1>
         <Button onClick={openAddModal} leftIcon={<Plus className="h-4 w-4" />}>
           新規スタッフ登録
         </Button>
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
         <Input
           placeholder="氏名・ユーザー名で検索..."
           value={search}

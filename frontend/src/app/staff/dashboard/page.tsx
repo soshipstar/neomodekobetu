@@ -540,8 +540,8 @@ export default function StaffDashboardPage() {
                           <p className="text-sm text-[var(--neutral-foreground-2)] whitespace-pre-wrap mb-2">{nl(ev.description)}</p>
                         )}
                         {ev.guardian_message && (
-                          <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 mb-2">
-                            <p className="text-[10px] font-semibold text-blue-600 mb-1">保護者向けメッセージ</p>
+                          <div className="rounded-lg bg-[var(--brand-160)] border border-[var(--brand-130)] p-3 mb-2">
+                            <p className="text-[10px] font-semibold text-[var(--brand-80)] mb-1">保護者向けメッセージ</p>
                             <p className="text-sm text-blue-900 whitespace-pre-wrap">{nl(ev.guardian_message)}</p>
                           </div>
                         )}

@@ -111,8 +111,8 @@ export function PlanForm({ studentId, existingPlan, onSuccess, onCancel }: PlanF
     onError: () => toast.error('保存に失敗しました'),
   });
 
-  const textareaClass = 'block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20';
-  const inputClass = 'block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20';
+  const textareaClass = 'block w-full rounded-lg border border-[var(--neutral-stroke-1)] px-3 py-2 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-80)]/20';
+  const inputClass = 'block w-full rounded-lg border border-[var(--neutral-stroke-1)] px-3 py-2 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-80)]/20';
 
   return (
     <form onSubmit={handleSubmit((data) => mutation.mutate(data))} className="space-y-6">
@@ -128,7 +128,7 @@ export function PlanForm({ studentId, existingPlan, onSuccess, onCancel }: PlanF
 
       {/* Life Intention */}
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">利用児及び家族の生活に対する意向</label>
+        <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">利用児及び家族の生活に対する意向</label>
         <textarea
           {...register('life_intention')}
           className={textareaClass}
@@ -139,7 +139,7 @@ export function PlanForm({ studentId, existingPlan, onSuccess, onCancel }: PlanF
 
       {/* Overall Policy */}
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">総合的な支援の方針</label>
+        <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">総合的な支援の方針</label>
         <textarea
           {...register('overall_policy')}
           className={textareaClass}
@@ -151,9 +151,9 @@ export function PlanForm({ studentId, existingPlan, onSuccess, onCancel }: PlanF
       {/* Long-term Goal (plan-level) */}
       <Card>
         <CardBody>
-          <h3 className="mb-3 text-lg font-semibold text-blue-700">長期目標</h3>
+          <h3 className="mb-3 text-lg font-semibold text-[var(--brand-70)]">長期目標</h3>
           <div className="mb-3 flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-700">達成時期</span>
+            <span className="text-sm font-medium text-[var(--neutral-foreground-2)]">達成時期</span>
             <input
               type="date"
               {...register('long_term_goal_date')}
@@ -172,9 +172,9 @@ export function PlanForm({ studentId, existingPlan, onSuccess, onCancel }: PlanF
       {/* Short-term Goal (plan-level) */}
       <Card>
         <CardBody>
-          <h3 className="mb-3 text-lg font-semibold text-blue-700">短期目標</h3>
+          <h3 className="mb-3 text-lg font-semibold text-[var(--brand-70)]">短期目標</h3>
           <div className="mb-3 flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-700">達成時期</span>
+            <span className="text-sm font-medium text-[var(--neutral-foreground-2)]">達成時期</span>
             <input
               type="date"
               {...register('short_term_goal_date')}
@@ -193,7 +193,7 @@ export function PlanForm({ studentId, existingPlan, onSuccess, onCancel }: PlanF
       {/* Support Details Table */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">支援目標及び具体的な支援内容等</h3>
+          <h3 className="text-lg font-semibold text-[var(--neutral-foreground-1)]">支援目標及び具体的な支援内容等</h3>
           <Button
             type="button"
             variant="outline"
@@ -224,7 +224,7 @@ export function PlanForm({ studentId, existingPlan, onSuccess, onCancel }: PlanF
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="bg-blue-600 text-white">
+              <tr className="bg-[var(--brand-80)] text-white">
                 <th className="border border-blue-600 px-2 py-2 text-left" style={{ width: '80px' }}>項目</th>
                 <th className="border border-blue-600 px-2 py-2 text-left" style={{ width: '200px' }}>支援目標</th>
                 <th className="border border-blue-600 px-2 py-2 text-left" style={{ width: '300px' }}>支援内容</th>
@@ -237,71 +237,71 @@ export function PlanForm({ studentId, existingPlan, onSuccess, onCancel }: PlanF
             </thead>
             <tbody>
               {fields.map((field, index) => (
-                <tr key={field.id} className="border border-gray-300">
-                  <td className="border border-gray-300 p-1 align-top">
+                <tr key={field.id} className="border border-[var(--neutral-stroke-1)]">
+                  <td className="border border-[var(--neutral-stroke-1)] p-1 align-top">
                     <input
                       type="text"
                       {...register(`details.${index}.category`)}
                       placeholder="項目"
-                      className="mb-1 block w-full rounded border border-gray-300 px-1 py-1 text-xs"
+                      className="mb-1 block w-full rounded border border-[var(--neutral-stroke-1)] px-1 py-1 text-xs"
                     />
                     <textarea
                       {...register(`details.${index}.sub_category`)}
                       rows={2}
                       placeholder="サブカテゴリ"
-                      className="block w-full rounded border border-gray-300 px-1 py-1 text-xs"
+                      className="block w-full rounded border border-[var(--neutral-stroke-1)] px-1 py-1 text-xs"
                     />
                   </td>
-                  <td className="border border-gray-300 p-1 align-top">
+                  <td className="border border-[var(--neutral-stroke-1)] p-1 align-top">
                     <textarea
                       {...register(`details.${index}.support_goal`)}
                       rows={3}
-                      className="block w-full rounded border border-gray-300 px-1 py-1 text-xs"
+                      className="block w-full rounded border border-[var(--neutral-stroke-1)] px-1 py-1 text-xs"
                     />
                   </td>
-                  <td className="border border-gray-300 p-1 align-top">
+                  <td className="border border-[var(--neutral-stroke-1)] p-1 align-top">
                     <textarea
                       {...register(`details.${index}.support_content`)}
                       rows={3}
-                      className="block w-full rounded border border-gray-300 px-1 py-1 text-xs"
+                      className="block w-full rounded border border-[var(--neutral-stroke-1)] px-1 py-1 text-xs"
                     />
                   </td>
-                  <td className="border border-gray-300 p-1 align-top">
+                  <td className="border border-[var(--neutral-stroke-1)] p-1 align-top">
                     <input
                       type="date"
                       {...register(`details.${index}.achievement_date`)}
-                      className="block w-full rounded border border-gray-300 px-1 py-1 text-xs"
+                      className="block w-full rounded border border-[var(--neutral-stroke-1)] px-1 py-1 text-xs"
                     />
                   </td>
-                  <td className="border border-gray-300 p-1 align-top">
+                  <td className="border border-[var(--neutral-stroke-1)] p-1 align-top">
                     <textarea
                       {...register(`details.${index}.staff_organization`)}
                       rows={3}
-                      className="block w-full rounded border border-gray-300 px-1 py-1 text-xs"
+                      className="block w-full rounded border border-[var(--neutral-stroke-1)] px-1 py-1 text-xs"
                     />
                   </td>
-                  <td className="border border-gray-300 p-1 align-top">
+                  <td className="border border-[var(--neutral-stroke-1)] p-1 align-top">
                     <textarea
                       {...register(`details.${index}.notes`)}
                       rows={3}
-                      className="block w-full rounded border border-gray-300 px-1 py-1 text-xs"
+                      className="block w-full rounded border border-[var(--neutral-stroke-1)] px-1 py-1 text-xs"
                     />
                   </td>
-                  <td className="border border-gray-300 p-1 align-top text-center">
+                  <td className="border border-[var(--neutral-stroke-1)] p-1 align-top text-center">
                     <input
                       type="number"
                       {...register(`details.${index}.priority`, { valueAsNumber: true })}
                       min={1}
                       max={10}
-                      className="block w-full rounded border border-gray-300 px-1 py-1 text-center text-xs"
+                      className="block w-full rounded border border-[var(--neutral-stroke-1)] px-1 py-1 text-center text-xs"
                     />
                   </td>
-                  <td className="border border-gray-300 p-1 align-top text-center">
+                  <td className="border border-[var(--neutral-stroke-1)] p-1 align-top text-center">
                     {fields.length > 1 && (
                       <button
                         type="button"
                         onClick={() => remove(index)}
-                        className="rounded p-1 text-gray-400 hover:text-red-500"
+                        className="rounded p-1 text-[var(--neutral-foreground-4)] hover:text-red-500"
                       >
                         <Trash2 className="h-3 w-3" />
                       </button>
@@ -313,7 +313,7 @@ export function PlanForm({ studentId, existingPlan, onSuccess, onCancel }: PlanF
           </table>
         </div>
 
-        <div className="rounded-md border-l-4 border-orange-400 bg-orange-50 p-3 text-sm text-gray-700">
+        <div className="rounded-md border-l-4 border-orange-400 bg-orange-50 p-3 text-sm text-[var(--neutral-foreground-2)]">
           <strong>※ 5領域の視点：</strong>「健康・生活」「運動・感覚」「認知・行動」「言語・コミュニケーション」「人間関係・社会性」
         </div>
       </div>
@@ -321,7 +321,7 @@ export function PlanForm({ studentId, existingPlan, onSuccess, onCancel }: PlanF
       {/* Consent Section */}
       <Card>
         <CardBody>
-          <h3 className="mb-3 text-lg font-semibold text-blue-700">同意</h3>
+          <h3 className="mb-3 text-lg font-semibold text-[var(--brand-70)]">同意</h3>
           <div className="grid gap-4 sm:grid-cols-2">
             <Input
               label="管理責任者氏名"
@@ -337,7 +337,7 @@ export function PlanForm({ studentId, existingPlan, onSuccess, onCancel }: PlanF
       </Card>
 
       {/* Actions */}
-      <div className="flex items-center justify-end gap-3 border-t border-gray-200 pt-4">
+      <div className="flex items-center justify-end gap-3 border-t border-[var(--neutral-stroke-2)] pt-4">
         <Button type="button" variant="ghost" onClick={onCancel}>
           キャンセル
         </Button>

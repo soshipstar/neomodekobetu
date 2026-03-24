@@ -55,18 +55,18 @@ export default function GuardianChatRoomPage() {
 
   return (
     <div className="flex h-[calc(100vh-6rem)] flex-col sm:h-[calc(100vh-7rem)] lg:h-[calc(100vh-5rem)]">
-      <div className="flex items-center gap-2 border-b border-gray-200 bg-white px-3 py-2 sm:gap-3 sm:px-4 sm:py-3">
-        <Link href="/guardian/chat" className="rounded-lg p-1 text-gray-400 hover:text-gray-600 lg:hidden">
+      <div className="flex items-center gap-2 border-b border-[var(--neutral-stroke-2)] bg-white px-3 py-2 sm:gap-3 sm:px-4 sm:py-3">
+        <Link href="/guardian/chat" className="rounded-lg p-1 text-[var(--neutral-foreground-4)] hover:text-[var(--neutral-foreground-3)] lg:hidden">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="flex-1 min-w-0">
-          <h2 className="text-sm font-semibold text-gray-900 truncate">
+          <h2 className="text-sm font-semibold text-[var(--neutral-foreground-1)] truncate">
             {activeRoom?.student?.student_name || 'チャット'}
           </h2>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto bg-gray-50">
+      <div className="flex-1 overflow-y-auto bg-[var(--neutral-background-3)]">
         {isLoadingMessages ? (
           <div className="p-4"><SkeletonList items={5} /></div>
         ) : (

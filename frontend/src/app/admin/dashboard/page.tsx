@@ -42,7 +42,7 @@ export default function AdminDashboardPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">管理者ダッシュボード</h1>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">管理者ダッシュボード</h1>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => <SkeletonCard key={i} />)}
         </div>
@@ -55,23 +55,23 @@ export default function AdminDashboardPage() {
 
   const summaryCards = serverIsMaster
     ? [
-        { label: '登録教室数', value: (data as MasterDashboard)?.total_classrooms ?? 0, icon: Building2, color: 'text-blue-600 bg-blue-100', href: '/admin/classrooms' },
+        { label: '登録教室数', value: (data as MasterDashboard)?.total_classrooms ?? 0, icon: Building2, color: 'text-[var(--brand-80)] bg-[var(--brand-160)]', href: '/admin/classrooms' },
         { label: '管理者数', value: (data as MasterDashboard)?.total_admins ?? 0, icon: Shield, color: 'text-red-600 bg-red-100', href: '/admin/admin-accounts' },
         { label: 'スタッフ数', value: (data as MasterDashboard)?.total_staff ?? 0, icon: Users, color: 'text-green-600 bg-green-100', href: '/admin/staff-accounts' },
         { label: 'ミニマム版教室', value: (data as MasterDashboard)?.minimum_classrooms ?? 0, icon: Activity, color: 'text-orange-600 bg-orange-100', href: '/admin/classrooms' },
       ]
     : [
         { label: '登録ユーザー数', value: (data as RegularDashboard)?.total_users ?? 0, icon: Users, color: 'text-green-600 bg-green-100', href: '/admin/staff-management' },
-        { label: '登録生徒数', value: (data as RegularDashboard)?.total_students ?? 0, icon: UserCheck, color: 'text-purple-600 bg-purple-100', href: '/admin/students' },
-        { label: '有効な生徒数', value: (data as RegularDashboard)?.active_students ?? 0, icon: UserCheck, color: 'text-blue-600 bg-blue-100', href: '/admin/students' },
+        { label: '登録生徒数', value: (data as RegularDashboard)?.total_students ?? 0, icon: UserCheck, color: 'text-[var(--brand-70)] bg-[var(--brand-150)]', href: '/admin/students' },
+        { label: '有効な生徒数', value: (data as RegularDashboard)?.active_students ?? 0, icon: UserCheck, color: 'text-[var(--brand-80)] bg-[var(--brand-160)]', href: '/admin/students' },
         { label: '総記録数', value: (data as RegularDashboard)?.total_records ?? 0, icon: FileText, color: 'text-orange-600 bg-orange-100', href: '#' },
       ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">管理者ダッシュボード</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">管理者ダッシュボード</h1>
+        <p className="mt-1 text-sm text-[var(--neutral-foreground-3)]">
           {serverIsMaster
             ? 'マスター管理者 - 全教室管理'
             : user?.classroom?.classroom_name ?? ''}
@@ -87,8 +87,8 @@ export default function AdminDashboardPage() {
                   <card.icon className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">{card.label}</p>
-                  <p className="text-2xl font-bold text-gray-900">{card.value}</p>
+                  <p className="text-sm text-[var(--neutral-foreground-3)]">{card.label}</p>
+                  <p className="text-2xl font-bold text-[var(--neutral-foreground-1)]">{card.value}</p>
                 </div>
               </div>
             </Card>

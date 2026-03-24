@@ -26,30 +26,30 @@ export function ChatRoomList({ rooms, unreadCounts, onSelectRoom, activeRoomId }
             className={cn(
               'flex w-full items-center gap-3 rounded-xl border p-4 text-left transition-all',
               isActive
-                ? 'border-blue-200 bg-blue-50'
-                : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+                ? 'border-[var(--brand-130)] bg-[var(--brand-160)]'
+                : 'border-[var(--neutral-stroke-2)] bg-white hover:border-[var(--neutral-stroke-1)] hover:shadow-sm'
             )}
           >
             {/* Avatar */}
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--brand-160)] text-sm font-semibold text-[var(--brand-70)]">
               {room.student?.student_name?.charAt(0) || '?'}
             </div>
 
             {/* Content */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold text-gray-900 truncate">
+                <p className="text-sm font-semibold text-[var(--neutral-foreground-1)] truncate">
                   {room.student?.student_name || 'チャットルーム'}
                 </p>
-                {room.is_pinned && <Pin className="h-3 w-3 text-gray-400" />}
+                {room.is_pinned && <Pin className="h-3 w-3 text-[var(--neutral-foreground-4)]" />}
               </div>
               {room.guardian && (
-                <p className="text-xs text-gray-500 truncate">
+                <p className="text-xs text-[var(--neutral-foreground-3)] truncate">
                   保護者: {room.guardian.full_name}
                 </p>
               )}
               {room.last_message && (
-                <p className="mt-1 text-xs text-gray-400 truncate">
+                <p className="mt-1 text-xs text-[var(--neutral-foreground-4)] truncate">
                   {truncate(typeof room.last_message === 'string' ? room.last_message : room.last_message.message, 40)}
                 </p>
               )}
@@ -58,7 +58,7 @@ export function ChatRoomList({ rooms, unreadCounts, onSelectRoom, activeRoomId }
             {/* Right side */}
             <div className="flex flex-col items-end gap-1 shrink-0">
               {room.last_message_at && (
-                <span className="text-[10px] text-gray-400">
+                <span className="text-[10px] text-[var(--neutral-foreground-4)]">
                   {formatRelativeTime(room.last_message_at)}
                 </span>
               )}

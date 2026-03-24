@@ -60,15 +60,15 @@ export function AiGenerateButton({ studentId, onGenerated }: AiGenerateButtonPro
       >
         {mutation.isPending ? (
           <div className="flex flex-col items-center gap-4 py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-            <p className="text-sm text-gray-600">{progress}</p>
-            <p className="text-xs text-gray-400">
+            <Loader2 className="h-8 w-8 animate-spin text-[var(--brand-80)]" />
+            <p className="text-sm text-[var(--neutral-foreground-3)]">{progress}</p>
+            <p className="text-xs text-[var(--neutral-foreground-4)]">
               この処理には数分かかる場合があります
             </p>
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="rounded-lg bg-blue-50 p-4">
+            <div className="rounded-lg bg-[var(--brand-160)] p-4">
               <p className="text-sm text-blue-800">
                 AIが過去のデータに基づいて個別支援計画の素案を生成します。
                 生成された内容は下書きとして保存され、確認・編集が可能です。

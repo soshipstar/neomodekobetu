@@ -68,8 +68,8 @@ export default function AdminGuardiansPage() {
     {
       key: 'contact', label: '連絡先', render: (g) => (
         <div className="space-y-0.5">
-          {g.email && <div className="flex items-center gap-1 text-sm text-gray-600"><Mail className="h-3 w-3" />{g.email}</div>}
-          {g.phone && <div className="flex items-center gap-1 text-sm text-gray-600"><Phone className="h-3 w-3" />{g.phone}</div>}
+          {g.email && <div className="flex items-center gap-1 text-sm text-[var(--neutral-foreground-3)]"><Mail className="h-3 w-3" />{g.email}</div>}
+          {g.phone && <div className="flex items-center gap-1 text-sm text-[var(--neutral-foreground-3)]"><Phone className="h-3 w-3" />{g.phone}</div>}
         </div>
       ),
     },
@@ -77,7 +77,7 @@ export default function AdminGuardiansPage() {
     {
       key: 'students', label: '生徒', render: (g) => g.students.length > 0 ? (
         <div className="flex flex-wrap gap-1">{g.students.map((s) => <Badge key={s.id} variant="primary">{s.student_name}</Badge>)}</div>
-      ) : <span className="text-gray-400">-</span>,
+      ) : <span className="text-[var(--neutral-foreground-4)]">-</span>,
     },
     { key: 'is_active', label: 'ステータス', render: (g) => <Badge variant={g.is_active ? 'success' : 'danger'} dot>{g.is_active ? '有効' : '無効'}</Badge> },
     {
@@ -93,12 +93,12 @@ export default function AdminGuardiansPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">保護者管理</h1>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">保護者管理</h1>
         <Button onClick={() => { setEditing(null); setModalOpen(true); }} leftIcon={<Plus className="h-4 w-4" />}>追加</Button>
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
         <Input placeholder="名前・メールで検索..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
       </div>
 
@@ -111,7 +111,7 @@ export default function AdminGuardiansPage() {
           <Input label="メールアドレス" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
           <Input label="電話番号" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
           <Input label={editing ? '新しいパスワード（変更時のみ）' : 'パスワード'} type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required={!editing} />
-          <label className="flex items-center gap-2"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="rounded border-gray-300" /><span className="text-sm text-gray-700">有効</span></label>
+          <label className="flex items-center gap-2"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="rounded border-[var(--neutral-stroke-1)]" /><span className="text-sm text-[var(--neutral-foreground-2)]">有効</span></label>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="secondary" type="button" onClick={closeModal}>キャンセル</Button>
             <Button type="submit" isLoading={saveMutation.isPending}>保存</Button>

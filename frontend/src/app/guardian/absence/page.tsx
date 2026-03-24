@@ -105,7 +105,7 @@ export default function AbsenceNotificationPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">欠席連絡</h1>
+      <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">欠席連絡</h1>
 
       {/* Form */}
       <Card>
@@ -115,10 +115,10 @@ export default function AbsenceNotificationPage() {
         <CardBody>
           <form onSubmit={handleSubmit((data) => mutation.mutate(data))} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">お子様</label>
+              <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">お子様</label>
               <select
                 {...register('student_id', { valueAsNumber: true })}
-                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                className="block w-full rounded-lg border border-[var(--neutral-stroke-1)] bg-white px-3 py-2 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-80)]/20"
               >
                 <option value="">選択してください</option>
                 {children?.map((child) => (
@@ -136,10 +136,10 @@ export default function AbsenceNotificationPage() {
             />
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">理由</label>
+              <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">理由</label>
               <textarea
                 {...register('reason')}
-                className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                className="block w-full rounded-lg border border-[var(--neutral-stroke-1)] px-3 py-2 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-80)]/20"
                 rows={3}
                 placeholder="欠席理由を入力..."
               />
@@ -147,7 +147,7 @@ export default function AbsenceNotificationPage() {
             </div>
 
             {/* Makeup request toggle */}
-            <div className="rounded-lg border border-gray-200 p-4">
+            <div className="rounded-lg border border-[var(--neutral-stroke-2)] p-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -156,9 +156,9 @@ export default function AbsenceNotificationPage() {
                     register('makeup_request').onChange(e);
                     setShowMakeup(e.target.checked);
                   }}
-                  className="rounded border-gray-300"
+                  className="rounded border-[var(--neutral-stroke-1)]"
                 />
-                <span className="text-sm font-medium text-gray-700">振替を希望する</span>
+                <span className="text-sm font-medium text-[var(--neutral-foreground-2)]">振替を希望する</span>
               </label>
               {showMakeup && (
                 <div className="mt-3">
@@ -190,14 +190,14 @@ export default function AbsenceNotificationPage() {
           ) : absences.length > 0 ? (
             <div className="space-y-2">
               {absences.map((absence) => (
-                <div key={absence.id} className="flex items-center justify-between rounded-lg border border-gray-100 p-3">
+                <div key={absence.id} className="flex items-center justify-between rounded-lg border border-[var(--neutral-stroke-3)] p-3">
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-[var(--neutral-foreground-1)]">
                       {absence.student?.student_name} - {formatDate(absence.absence_date)}
                     </p>
-                    <p className="text-xs text-gray-500">{absence.reason}</p>
+                    <p className="text-xs text-[var(--neutral-foreground-3)]">{absence.reason}</p>
                     {absence.makeup_request_date && (
-                      <p className="mt-1 flex items-center gap-1 text-xs text-blue-600">
+                      <p className="mt-1 flex items-center gap-1 text-xs text-[var(--brand-80)]">
                         <Calendar className="h-3 w-3" />
                         振替希望: {formatDate(absence.makeup_request_date)}
                       </p>
@@ -214,7 +214,7 @@ export default function AbsenceNotificationPage() {
               ))}
             </div>
           ) : (
-            <p className="py-4 text-center text-sm text-gray-500">送信履歴はありません</p>
+            <p className="py-4 text-center text-sm text-[var(--neutral-foreground-3)]">送信履歴はありません</p>
           )}
         </CardBody>
       </Card>

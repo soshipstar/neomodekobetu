@@ -63,10 +63,10 @@ export default function StudentProfilePage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">プロフィール</h1>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">プロフィール</h1>
         <div className="animate-pulse space-y-4">
-          <div className="h-48 rounded-xl bg-gray-200" />
-          <div className="h-48 rounded-xl bg-gray-200" />
+          <div className="h-48 rounded-xl bg-[var(--neutral-background-5)]" />
+          <div className="h-48 rounded-xl bg-[var(--neutral-background-5)]" />
         </div>
       </div>
     );
@@ -74,18 +74,18 @@ export default function StudentProfilePage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">プロフィール</h1>
+      <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">プロフィール</h1>
 
       {/* Profile Card */}
       <Card>
         <div className="flex flex-col items-center text-center sm:flex-row sm:text-left sm:items-start gap-6">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-100 shrink-0">
-            <span className="text-2xl font-bold text-blue-600">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[var(--brand-160)] shrink-0">
+            <span className="text-2xl font-bold text-[var(--brand-80)]">
               {profile?.student_name?.charAt(0) || '?'}
             </span>
           </div>
           <div className="flex-1">
-            <h2 className="text-xl font-bold text-gray-900">{profile?.student_name}</h2>
+            <h2 className="text-xl font-bold text-[var(--neutral-foreground-1)]">{profile?.student_name}</h2>
             <div className="mt-2 flex flex-wrap justify-center gap-2 sm:justify-start">
               <Badge variant="primary">{gradeLabels[profile?.grade_level || ''] || profile?.grade_level}</Badge>
               <Badge variant="info">{profile?.classroom_name}</Badge>
@@ -105,36 +105,36 @@ export default function StudentProfilePage() {
           </CardTitle>
         </CardHeader>
         <div className="space-y-3">
-          <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
-            <span className="text-sm text-gray-500">ユーザー名</span>
-            <span className="font-medium text-gray-900">{profile?.username}</span>
+          <div className="flex items-center justify-between rounded-lg bg-[var(--neutral-background-3)] p-3">
+            <span className="text-sm text-[var(--neutral-foreground-3)]">ユーザー名</span>
+            <span className="font-medium text-[var(--neutral-foreground-1)]">{profile?.username}</span>
           </div>
           {profile?.birth_date && (
-            <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
-              <span className="text-sm text-gray-500 flex items-center gap-1"><Calendar className="h-3 w-3" />生年月日</span>
-              <span className="font-medium text-gray-900">{new Date(profile.birth_date).toLocaleDateString('ja-JP')}</span>
+            <div className="flex items-center justify-between rounded-lg bg-[var(--neutral-background-3)] p-3">
+              <span className="text-sm text-[var(--neutral-foreground-3)] flex items-center gap-1"><Calendar className="h-3 w-3" />生年月日</span>
+              <span className="font-medium text-[var(--neutral-foreground-1)]">{new Date(profile.birth_date).toLocaleDateString('ja-JP')}</span>
             </div>
           )}
-          <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
-            <span className="text-sm text-gray-500 flex items-center gap-1"><School className="h-3 w-3" />事業所</span>
-            <span className="font-medium text-gray-900">{profile?.classroom_name}</span>
+          <div className="flex items-center justify-between rounded-lg bg-[var(--neutral-background-3)] p-3">
+            <span className="text-sm text-[var(--neutral-foreground-3)] flex items-center gap-1"><School className="h-3 w-3" />事業所</span>
+            <span className="font-medium text-[var(--neutral-foreground-1)]">{profile?.classroom_name}</span>
           </div>
           {profile?.guardian_name && (
-            <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
-              <span className="text-sm text-gray-500">保護者</span>
-              <span className="font-medium text-gray-900">{profile.guardian_name}</span>
+            <div className="flex items-center justify-between rounded-lg bg-[var(--neutral-background-3)] p-3">
+              <span className="text-sm text-[var(--neutral-foreground-3)]">保護者</span>
+              <span className="font-medium text-[var(--neutral-foreground-1)]">{profile.guardian_name}</span>
             </div>
           )}
-          <div className="rounded-lg bg-gray-50 p-3">
-            <span className="text-sm text-gray-500 block mb-2">通所曜日</span>
+          <div className="rounded-lg bg-[var(--neutral-background-3)] p-3">
+            <span className="text-sm text-[var(--neutral-foreground-3)] block mb-2">通所曜日</span>
             <div className="flex gap-2">
               {Object.entries(dayLabels).map(([key, label]) => (
                 <div
                   key={key}
                   className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-medium ${
                     profile?.scheduled_days?.includes(key)
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-400'
+                      ? 'bg-[var(--brand-80)] text-white'
+                      : 'bg-[var(--neutral-background-5)] text-[var(--neutral-foreground-4)]'
                   }`}
                 >
                   {label}

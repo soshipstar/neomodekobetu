@@ -170,25 +170,12 @@ export function HelpButton() {
 
   // Determine accent color by user type
   const accentGradient = useMemo(() => {
-    switch (userType) {
-      case 'guardian':
-        return 'from-indigo-500 to-purple-600';
-      case 'student':
-        return 'from-teal-500 to-cyan-600';
-      default:
-        return 'from-green-500 to-emerald-600';
-    }
+    // 全ユーザータイプでブランドカラーに統一
+    return 'from-[var(--brand-70)] to-[var(--brand-50)]';
   }, [userType]);
 
   const accentColor = useMemo(() => {
-    switch (userType) {
-      case 'guardian':
-        return 'text-indigo-500';
-      case 'student':
-        return 'text-teal-500';
-      default:
-        return 'text-green-600';
-    }
+    return 'text-[var(--brand-70)]';
   }, [userType]);
 
   const currentCategory = useMemo(() => {
@@ -290,7 +277,7 @@ export function HelpButton() {
         </div>
 
         {/* Search bar */}
-        <div className="shrink-0 border-b border-gray-100 px-4 py-3">
+        <div className="shrink-0 border-b border-[var(--neutral-stroke-3)] px-4 py-3">
           <div className="relative">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -298,7 +285,7 @@ export function HelpButton() {
               viewBox="0 0 24 24"
               strokeWidth={1.5}
               stroke="currentColor"
-              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--neutral-foreground-4)]"
             >
               <path
                 strokeLinecap="round"
@@ -311,12 +298,12 @@ export function HelpButton() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="ヘルプを検索..."
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm outline-none transition-colors focus:border-blue-300 focus:bg-white"
+              className="w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] py-2 pl-9 pr-3 text-sm outline-none transition-colors focus:border-[var(--brand-120)] focus:bg-white"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-gray-400 hover:text-gray-600"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-[var(--neutral-foreground-4)] hover:text-[var(--neutral-foreground-3)]"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -334,11 +321,11 @@ export function HelpButton() {
         </div>
 
         {/* Content area */}
-        <div className="flex-1 overflow-y-auto bg-gray-50 p-4">
+        <div className="flex-1 overflow-y-auto bg-[var(--neutral-background-3)] p-4">
           {/* Search results */}
           {filteredResults !== null ? (
             <div>
-              <p className="mb-3 text-xs text-gray-500">
+              <p className="mb-3 text-xs text-[var(--neutral-foreground-3)]">
                 {filteredResults.length > 0
                   ? `${filteredResults.length}件の結果`
                   : '該当するヘルプが見つかりません'}
@@ -350,35 +337,35 @@ export function HelpButton() {
                     setSearchQuery('');
                     showAnswer(category.id, itemIndex);
                   }}
-                  className="mb-2 flex w-full items-start gap-3 rounded-xl bg-white p-3 text-left transition-all hover:bg-gray-100 hover:translate-x-1"
+                  className="mb-2 flex w-full items-start gap-3 rounded-xl bg-white p-3 text-left transition-all hover:bg-[var(--neutral-background-4)] hover:translate-x-1"
                 >
-                  <span className="mt-0.5 text-xs text-gray-400">{category.title}</span>
-                  <span className="flex-1 text-sm text-gray-800">{item.question}</span>
-                  <span className="text-gray-300">&#8250;</span>
+                  <span className="mt-0.5 text-xs text-[var(--neutral-foreground-4)]">{category.title}</span>
+                  <span className="flex-1 text-sm text-[var(--neutral-foreground-1)]">{item.question}</span>
+                  <span className="text-[var(--neutral-foreground-disabled)]">&#8250;</span>
                 </button>
               ))}
             </div>
           ) : viewState.type === 'categories' ? (
             /* Category list */
             <div>
-              <p className="mb-4 text-center text-sm text-gray-500">
+              <p className="mb-4 text-center text-sm text-[var(--neutral-foreground-3)]">
                 知りたい項目を選んでください
               </p>
               {helpData.categories.map((category) => (
                 <button
                   key={category.id}
                   onClick={() => showCategory(category.id)}
-                  className="mb-2 flex w-full items-center gap-3 rounded-xl bg-white p-3.5 text-left transition-all hover:bg-gray-100 hover:translate-x-1"
+                  className="mb-2 flex w-full items-center gap-3 rounded-xl bg-white p-3.5 text-left transition-all hover:bg-[var(--neutral-background-4)] hover:translate-x-1"
                 >
                   <span
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-lg ${accentColor}`}
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--neutral-background-4)] text-lg ${accentColor}`}
                   >
                     <MaterialIcon name={category.icon} size={20} />
                   </span>
-                  <span className="flex-1 text-[15px] font-medium text-gray-800">
+                  <span className="flex-1 text-[15px] font-medium text-[var(--neutral-foreground-1)]">
                     {category.title}
                   </span>
-                  <span className="text-xl text-gray-300">&#8250;</span>
+                  <span className="text-xl text-[var(--neutral-foreground-disabled)]">&#8250;</span>
                 </button>
               ))}
             </div>
@@ -391,7 +378,7 @@ export function HelpButton() {
               >
                 &#8592; カテゴリに戻る
               </button>
-              <h3 className={`mb-4 flex items-center gap-2 border-b-2 pb-2 text-lg font-semibold text-gray-800`}>
+              <h3 className={`mb-4 flex items-center gap-2 border-b-2 pb-2 text-lg font-semibold text-[var(--neutral-foreground-1)]`}>
                 <span className={accentColor}>
                   <MaterialIcon name={currentCategory.icon} size={20} />
                 </span>
@@ -401,10 +388,10 @@ export function HelpButton() {
                 <button
                   key={index}
                   onClick={() => showAnswer(currentCategory.id, index)}
-                  className="mb-2 flex w-full items-center gap-2 rounded-xl bg-white p-3.5 text-left transition-all hover:bg-gray-100 hover:translate-x-1"
+                  className="mb-2 flex w-full items-center gap-2 rounded-xl bg-white p-3.5 text-left transition-all hover:bg-[var(--neutral-background-4)] hover:translate-x-1"
                 >
-                  <span className="flex-1 text-sm text-gray-800">{item.question}</span>
-                  <span className="text-lg text-gray-300">&#8250;</span>
+                  <span className="flex-1 text-sm text-[var(--neutral-foreground-1)]">{item.question}</span>
+                  <span className="text-lg text-[var(--neutral-foreground-disabled)]">&#8250;</span>
                 </button>
               ))}
             </div>
@@ -418,10 +405,10 @@ export function HelpButton() {
                 &#8592; 質問一覧に戻る
               </button>
               <div className="rounded-xl bg-white p-5">
-                <h4 className="mb-3 text-[15px] font-semibold text-gray-800">
+                <h4 className="mb-3 text-[15px] font-semibold text-[var(--neutral-foreground-1)]">
                   {currentItem.question}
                 </h4>
-                <div className="whitespace-pre-wrap text-sm leading-7 text-gray-700">
+                <div className="whitespace-pre-wrap text-sm leading-7 text-[var(--neutral-foreground-2)]">
                   {currentItem.answer}
                 </div>
               </div>

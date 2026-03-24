@@ -62,12 +62,12 @@ export default function UsersPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">ユーザー管理</h1>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">ユーザー管理</h1>
         <Button leftIcon={<Plus className="h-4 w-4" />} onClick={() => setShowCreate(true)}>新規作成</Button>
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
         <Input placeholder="氏名・ユーザー名で検索..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
       </div>
 
@@ -94,8 +94,8 @@ export default function UsersPage() {
           <Input label="氏名" error={errors.full_name?.message} {...register('full_name')} />
           <Input label="メールアドレス" type="email" error={errors.email?.message} {...register('email')} />
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">種別</label>
-            <select {...register('user_type')} className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">種別</label>
+            <select {...register('user_type')} className="block w-full rounded-lg border border-[var(--neutral-stroke-1)] bg-white px-3 py-2 text-sm">
               <option value="staff">スタッフ</option>
               <option value="guardian">保護者</option>
               <option value="admin">管理者</option>

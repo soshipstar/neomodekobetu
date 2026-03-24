@@ -160,14 +160,14 @@ export default function GuardianMonitoringPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">モニタリング表</h1>
+      <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">モニタリング表</h1>
 
       {/* Student selector */}
       {students.length > 1 && (
         <select
           value={selectedStudent || students[0]?.id}
           onChange={(e) => setSelectedStudent(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm"
+          className="w-full rounded-lg border border-[var(--neutral-stroke-1)] bg-white px-3 py-2 text-sm shadow-sm"
         >
           {students.map((s) => (
             <option key={s.id} value={s.id}>{s.student_name}</option>
@@ -187,9 +187,9 @@ export default function GuardianMonitoringPage() {
       ) : records.length === 0 ? (
         <Card>
           <div className="py-12 text-center">
-            <ClipboardList className="mx-auto h-12 w-12 text-gray-300" />
-            <p className="mt-2 text-sm text-gray-500">提出済みのモニタリング表はまだありません</p>
-            <p className="text-xs text-gray-400">スタッフがモニタリング表を作成・提出すると、ここに表示されます。</p>
+            <ClipboardList className="mx-auto h-12 w-12 text-[var(--neutral-foreground-disabled)]" />
+            <p className="mt-2 text-sm text-[var(--neutral-foreground-3)]">提出済みのモニタリング表はまだありません</p>
+            <p className="text-xs text-[var(--neutral-foreground-4)]">スタッフがモニタリング表を作成・提出すると、ここに表示されます。</p>
           </div>
         </Card>
       ) : (
@@ -206,15 +206,15 @@ export default function GuardianMonitoringPage() {
                   className="flex w-full items-center justify-between text-left"
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-full ${record.guardian_confirmed ? 'bg-green-100' : 'bg-blue-100'}`}>
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-full ${record.guardian_confirmed ? 'bg-green-100' : 'bg-[var(--brand-160)]'}`}>
                       {record.guardian_confirmed ? (
                         <CheckCircle className="h-5 w-5 text-green-600" />
                       ) : (
-                        <ClipboardList className="h-5 w-5 text-blue-600" />
+                        <ClipboardList className="h-5 w-5 text-[var(--brand-80)]" />
                       )}
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">
+                      <p className="font-medium text-[var(--neutral-foreground-1)]">
                         モニタリング（{formatDate(record.monitoring_date)}実施）
                       </p>
                       <div className="flex items-center gap-2 mt-0.5">
@@ -224,32 +224,32 @@ export default function GuardianMonitoringPage() {
                           <Badge variant="warning">確認待ち</Badge>
                         )}
                         {record.plan && (
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-[var(--neutral-foreground-3)]">
                             対象計画: {formatDate(record.plan.created_date)}作成
                           </span>
                         )}
                       </div>
                     </div>
                   </div>
-                  {isExpanded ? <ChevronUp className="h-5 w-5 text-gray-400" /> : <ChevronDown className="h-5 w-5 text-gray-400" />}
+                  {isExpanded ? <ChevronUp className="h-5 w-5 text-[var(--neutral-foreground-4)]" /> : <ChevronDown className="h-5 w-5 text-[var(--neutral-foreground-4)]" />}
                 </button>
 
                 {isExpanded && (
-                  <div className="mt-4 space-y-4 border-t border-gray-200 pt-4">
+                  <div className="mt-4 space-y-4 border-t border-[var(--neutral-stroke-2)] pt-4">
                     {/* Basic info */}
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                      <div className="rounded-lg bg-gray-50 p-3">
-                        <p className="text-xs font-medium text-gray-500">お子様のお名前</p>
-                        <p className="text-sm font-medium text-gray-900">{record.student_name || record.student?.student_name}</p>
+                      <div className="rounded-lg bg-[var(--neutral-background-3)] p-3">
+                        <p className="text-xs font-medium text-[var(--neutral-foreground-3)]">お子様のお名前</p>
+                        <p className="text-sm font-medium text-[var(--neutral-foreground-1)]">{record.student_name || record.student?.student_name}</p>
                       </div>
-                      <div className="rounded-lg bg-gray-50 p-3">
-                        <p className="text-xs font-medium text-gray-500">実施日</p>
-                        <p className="text-sm text-gray-900">{formatDate(record.monitoring_date)}</p>
+                      <div className="rounded-lg bg-[var(--neutral-background-3)] p-3">
+                        <p className="text-xs font-medium text-[var(--neutral-foreground-3)]">実施日</p>
+                        <p className="text-sm text-[var(--neutral-foreground-1)]">{formatDate(record.monitoring_date)}</p>
                       </div>
                       {record.plan && (
-                        <div className="rounded-lg bg-gray-50 p-3">
-                          <p className="text-xs font-medium text-gray-500">対象計画書</p>
-                          <p className="text-sm text-gray-900">{formatDate(record.plan.created_date)}作成</p>
+                        <div className="rounded-lg bg-[var(--neutral-background-3)] p-3">
+                          <p className="text-xs font-medium text-[var(--neutral-foreground-3)]">対象計画書</p>
+                          <p className="text-sm text-[var(--neutral-foreground-1)]">{formatDate(record.plan.created_date)}作成</p>
                         </div>
                       )}
                     </div>
@@ -263,11 +263,11 @@ export default function GuardianMonitoringPage() {
                         <div className="overflow-x-auto">
                           <table className="w-full min-w-[600px] border-collapse text-sm">
                             <thead>
-                              <tr className="bg-gray-50">
-                                <th className="border border-gray-200 px-3 py-2 text-left font-semibold">項目</th>
-                                <th className="border border-gray-200 px-3 py-2 text-left font-semibold">支援目標</th>
-                                <th className="border border-gray-200 px-3 py-2 text-left font-semibold">達成状況</th>
-                                <th className="border border-gray-200 px-3 py-2 text-left font-semibold">コメント</th>
+                              <tr className="bg-[var(--neutral-background-3)]">
+                                <th className="border border-[var(--neutral-stroke-2)] px-3 py-2 text-left font-semibold">項目</th>
+                                <th className="border border-[var(--neutral-stroke-2)] px-3 py-2 text-left font-semibold">支援目標</th>
+                                <th className="border border-[var(--neutral-stroke-2)] px-3 py-2 text-left font-semibold">達成状況</th>
+                                <th className="border border-[var(--neutral-stroke-2)] px-3 py-2 text-left font-semibold">コメント</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -275,17 +275,17 @@ export default function GuardianMonitoringPage() {
                                 const md = detailMap[pd.id];
                                 return (
                                   <tr key={pd.id}>
-                                    <td className="border border-gray-200 px-3 py-2 align-top">
+                                    <td className="border border-[var(--neutral-stroke-2)] px-3 py-2 align-top">
                                       {pd.main_category}
-                                      {pd.sub_category && <><br /><span className="text-xs text-gray-400">{pd.sub_category}</span></>}
+                                      {pd.sub_category && <><br /><span className="text-xs text-[var(--neutral-foreground-4)]">{pd.sub_category}</span></>}
                                     </td>
-                                    <td className="border border-gray-200 px-3 py-2 align-top whitespace-pre-wrap">
+                                    <td className="border border-[var(--neutral-stroke-2)] px-3 py-2 align-top whitespace-pre-wrap">
                                       {nl(pd.support_goal)}
                                     </td>
-                                    <td className="border border-gray-200 px-3 py-2 align-top">
+                                    <td className="border border-[var(--neutral-stroke-2)] px-3 py-2 align-top">
                                       {md ? achievementBadge(md.achievement_status) : null}
                                     </td>
-                                    <td className="border border-gray-200 px-3 py-2 align-top whitespace-pre-wrap">
+                                    <td className="border border-[var(--neutral-stroke-2)] px-3 py-2 align-top whitespace-pre-wrap">
                                       {nl(md?.monitoring_comment) || ''}
                                     </td>
                                   </tr>
@@ -306,30 +306,30 @@ export default function GuardianMonitoringPage() {
                         </h4>
                         <div className="space-y-3">
                           {(record.long_term_goal_achievement || record.long_term_goal_comment) && (
-                            <div className="rounded-lg border-l-4 border-purple-500 bg-gray-50 p-3">
-                              <h5 className="text-sm font-semibold text-purple-700 mb-2">長期目標</h5>
+                            <div className="rounded-lg border-l-4 border-[var(--brand-90)] bg-[var(--neutral-background-3)] p-3">
+                              <h5 className="text-sm font-semibold text-[var(--brand-60)] mb-2">長期目標</h5>
                               {record.plan?.long_term_goal_text && (
-                                <p className="mb-2 rounded bg-white p-2 text-sm text-gray-800 whitespace-pre-wrap">{nl(record.plan.long_term_goal_text)}</p>
+                                <p className="mb-2 rounded bg-white p-2 text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{nl(record.plan.long_term_goal_text)}</p>
                               )}
                               {record.long_term_goal_achievement && (
-                                <p className="text-sm"><span className="font-medium text-gray-500">達成状況: </span><Badge variant="default">{record.long_term_goal_achievement}</Badge></p>
+                                <p className="text-sm"><span className="font-medium text-[var(--neutral-foreground-3)]">達成状況: </span><Badge variant="default">{record.long_term_goal_achievement}</Badge></p>
                               )}
                               {record.long_term_goal_comment && (
-                                <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">{nl(record.long_term_goal_comment)}</p>
+                                <p className="mt-1 text-sm text-[var(--neutral-foreground-2)] whitespace-pre-wrap">{nl(record.long_term_goal_comment)}</p>
                               )}
                             </div>
                           )}
                           {(record.short_term_goal_achievement || record.short_term_goal_comment) && (
-                            <div className="rounded-lg border-l-4 border-green-500 bg-gray-50 p-3">
+                            <div className="rounded-lg border-l-4 border-green-500 bg-[var(--neutral-background-3)] p-3">
                               <h5 className="text-sm font-semibold text-green-700 mb-2">短期目標</h5>
                               {record.plan?.short_term_goal_text && (
-                                <p className="mb-2 rounded bg-white p-2 text-sm text-gray-800 whitespace-pre-wrap">{nl(record.plan.short_term_goal_text)}</p>
+                                <p className="mb-2 rounded bg-white p-2 text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{nl(record.plan.short_term_goal_text)}</p>
                               )}
                               {record.short_term_goal_achievement && (
-                                <p className="text-sm"><span className="font-medium text-gray-500">達成状況: </span><Badge variant="default">{record.short_term_goal_achievement}</Badge></p>
+                                <p className="text-sm"><span className="font-medium text-[var(--neutral-foreground-3)]">達成状況: </span><Badge variant="default">{record.short_term_goal_achievement}</Badge></p>
                               )}
                               {record.short_term_goal_comment && (
-                                <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">{nl(record.short_term_goal_comment)}</p>
+                                <p className="mt-1 text-sm text-[var(--neutral-foreground-2)] whitespace-pre-wrap">{nl(record.short_term_goal_comment)}</p>
                               )}
                             </div>
                           )}
@@ -341,8 +341,8 @@ export default function GuardianMonitoringPage() {
                     {record.overall_comment && (
                       <div>
                         <h4 className="mb-2 text-sm font-semibold text-green-700 border-b-2 border-green-600 pb-1">総合コメント</h4>
-                        <div className="rounded-lg bg-blue-50 p-3">
-                          <p className="text-sm text-gray-700 whitespace-pre-wrap">{nl(record.overall_comment)}</p>
+                        <div className="rounded-lg bg-[var(--brand-160)] p-3">
+                          <p className="text-sm text-[var(--neutral-foreground-2)] whitespace-pre-wrap">{nl(record.overall_comment)}</p>
                         </div>
                       </div>
                     )}
@@ -406,7 +406,7 @@ export default function GuardianMonitoringPage() {
       {/* Confirm Modal */}
       <Modal isOpen={confirmModal} onClose={() => setConfirmModal(false)} title="モニタリング表の確認" size="lg">
         <div className="space-y-5">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-[var(--neutral-foreground-3)]">
             このモニタリング表の内容を確認し、署名をお願いします。
           </p>
 
@@ -418,16 +418,16 @@ export default function GuardianMonitoringPage() {
           />
 
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-600 whitespace-nowrap">署名日:</label>
+            <label className="text-sm font-medium text-[var(--neutral-foreground-3)] whitespace-nowrap">署名日:</label>
             <input
               type="date"
               value={signatureDate}
               onChange={(e) => setSignatureDate(e.target.value)}
-              className="rounded border border-gray-300 px-2 py-1 text-sm"
+              className="rounded border border-[var(--neutral-stroke-1)] px-2 py-1 text-sm"
             />
           </div>
 
-          <div className="flex justify-end gap-2 border-t border-gray-200 pt-4">
+          <div className="flex justify-end gap-2 border-t border-[var(--neutral-stroke-2)] pt-4">
             <Button variant="secondary" onClick={() => setConfirmModal(false)}>キャンセル</Button>
             <Button
               onClick={handleConfirm}

@@ -164,7 +164,7 @@ export default function WeeklyPlansPage() {
                   <CardBody>
                     {/* Header */}
                     <div className="flex items-center gap-3 border-b border-[var(--neutral-stroke-2)] pb-3 mb-3">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-purple-100 text-purple-600">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--brand-150)] text-[var(--brand-70)]">
                         <User className="h-5 w-5" />
                       </div>
                       <span className="text-base font-semibold text-[var(--neutral-foreground-1)]">

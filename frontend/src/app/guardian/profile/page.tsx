@@ -60,10 +60,10 @@ export default function GuardianProfilePage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">プロフィール</h1>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">プロフィール</h1>
         <div className="animate-pulse space-y-4">
-          <div className="h-48 rounded-xl bg-gray-200" />
-          <div className="h-48 rounded-xl bg-gray-200" />
+          <div className="h-48 rounded-xl bg-[var(--neutral-background-5)]" />
+          <div className="h-48 rounded-xl bg-[var(--neutral-background-5)]" />
         </div>
       </div>
     );
@@ -71,7 +71,7 @@ export default function GuardianProfilePage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">プロフィール</h1>
+      <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">プロフィール</h1>
 
       {/* Linked Students */}
       {profile?.students && profile.students.length > 0 && (
@@ -86,13 +86,13 @@ export default function GuardianProfilePage() {
           </CardHeader>
           <div className="space-y-2">
             {profile.students.map((s) => (
-              <div key={s.id} className="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
-                  <span className="text-sm font-bold text-blue-600">{s.student_name.charAt(0)}</span>
+              <div key={s.id} className="flex items-center gap-3 rounded-lg bg-[var(--neutral-background-3)] p-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand-160)]">
+                  <span className="text-sm font-bold text-[var(--brand-80)]">{s.student_name.charAt(0)}</span>
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">{s.student_name}</p>
-                  <p className="text-xs text-gray-500">{s.grade_level}</p>
+                  <p className="font-medium text-[var(--neutral-foreground-1)]">{s.student_name}</p>
+                  <p className="text-xs text-[var(--neutral-foreground-3)]">{s.grade_level}</p>
                 </div>
               </div>
             ))}
@@ -111,13 +111,13 @@ export default function GuardianProfilePage() {
           </CardTitle>
         </CardHeader>
         <form onSubmit={(e) => { e.preventDefault(); updateProfileMutation.mutate(profileForm); }} className="space-y-4">
-          <div className="rounded-lg bg-gray-50 p-3">
-            <p className="text-sm text-gray-500">ユーザー名</p>
-            <p className="font-medium text-gray-900">{profile?.username}</p>
+          <div className="rounded-lg bg-[var(--neutral-background-3)] p-3">
+            <p className="text-sm text-[var(--neutral-foreground-3)]">ユーザー名</p>
+            <p className="font-medium text-[var(--neutral-foreground-1)]">{profile?.username}</p>
           </div>
-          <div className="rounded-lg bg-gray-50 p-3">
-            <p className="text-sm text-gray-500">所属事業所</p>
-            <p className="font-medium text-gray-900">{profile?.classroom?.classroom_name ?? '未設定'}</p>
+          <div className="rounded-lg bg-[var(--neutral-background-3)] p-3">
+            <p className="text-sm text-[var(--neutral-foreground-3)]">所属事業所</p>
+            <p className="font-medium text-[var(--neutral-foreground-1)]">{profile?.classroom?.classroom_name ?? '未設定'}</p>
           </div>
           <Input label="氏名" value={profileForm.full_name} onChange={(e) => setProfileForm({ ...profileForm, full_name: e.target.value })} required />
           <Input label="メールアドレス" type="email" value={profileForm.email} onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })} />

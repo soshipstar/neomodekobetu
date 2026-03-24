@@ -16,7 +16,7 @@ export default function TabletActivityRedirect() {
   }, [router]);
 
   return (
-    <div className="py-12 text-center text-xl text-gray-400">
+    <div className="py-12 text-center text-xl text-[var(--neutral-foreground-4)]">
       リダイレクト中...
     </div>
   );

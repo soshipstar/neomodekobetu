@@ -8,13 +8,13 @@ export default function TabletLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-[var(--neutral-background-4)]">
       <header className="flex items-center justify-between bg-white px-6 py-4 shadow-md">
         <div className="flex items-center gap-4">
-          <Link href="/tablet" className="text-3xl font-bold text-gray-900">
+          <Link href="/tablet" className="text-3xl font-bold text-[var(--neutral-foreground-1)]">
             本日の記録
           </Link>
-          <span className="text-xl text-gray-500">
+          <span className="text-xl text-[var(--neutral-foreground-3)]">
             {user?.classroom?.classroom_name && `${user.classroom.classroom_name} | `}
             {user?.full_name}
           </span>
@@ -22,7 +22,7 @@ export default function TabletLayout({ children }: { children: ReactNode }) {
         <div className="flex items-center gap-4">
           <Link
             href="/tablet"
-            className="rounded-lg bg-blue-600 px-6 py-3 text-lg font-bold text-white hover:bg-blue-700"
+            className="rounded-lg bg-[var(--brand-80)] px-6 py-3 text-lg font-bold text-white hover:bg-blue-700"
           >
             トップ
           </Link>

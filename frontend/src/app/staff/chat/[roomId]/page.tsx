@@ -109,7 +109,7 @@ export default function StaffChatRoomPage() {
                 <button
                   onClick={handleLoadOlder}
                   disabled={loadingOlder}
-                  className="flex items-center gap-1 rounded-full bg-white px-4 py-1.5 text-xs text-gray-500 shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1 rounded-full bg-white px-4 py-1.5 text-xs text-[var(--neutral-foreground-3)] shadow-sm hover:bg-[var(--neutral-background-3)] transition-colors disabled:opacity-50"
                 >
                   <ChevronUp className="h-3.5 w-3.5" />
                   {loadingOlder ? '読み込み中...' : '過去のメッセージを読み込む'}

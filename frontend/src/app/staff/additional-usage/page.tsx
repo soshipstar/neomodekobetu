@@ -336,7 +336,7 @@ export default function AdditionalUsagePage() {
                                 hasChange ? 'bg-yellow-50 ring-2 ring-inset ring-yellow-400' :
                                 status === 'cancelled' ? 'bg-red-50' :
                                 status === 'additional' ? 'bg-green-50' :
-                                status === 'regular' ? 'bg-blue-100' :
+                                status === 'regular' ? 'bg-[var(--brand-160)]' :
                                 ''
                               } ${isToday ? 'ring-2 ring-inset ring-green-500' : ''} ${
                                 dayIsHoliday ? 'cursor-default' : 'cursor-pointer'
@@ -385,7 +385,7 @@ export default function AdditionalUsagePage() {
                 {/* Legend */}
                 <div className="mt-4 flex flex-wrap gap-4 text-xs text-[var(--neutral-foreground-3)]">
                   <span className="flex items-center gap-1">
-                    <span className="inline-block h-3 w-3 rounded bg-blue-200 border border-blue-300" /> 通常利用日
+                    <span className="inline-block h-3 w-3 rounded bg-blue-200 border border-[var(--brand-120)]" /> 通常利用日
                   </span>
                   <span className="flex items-center gap-1">
                     <span className="inline-block h-3 w-3 rounded bg-green-100 border border-green-300" /> 追加利用

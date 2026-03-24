@@ -56,7 +56,7 @@ export default function ClassroomsPage() {
       sortable: true,
       render: (c) => (
         <div className="flex items-center gap-2">
-          <Building2 className="h-4 w-4 text-gray-400" />
+          <Building2 className="h-4 w-4 text-[var(--neutral-foreground-4)]" />
           <span className="font-medium">{c.classroom_name}</span>
         </div>
       ),
@@ -79,7 +79,7 @@ export default function ClassroomsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">事業所管理</h1>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">事業所管理</h1>
         <Button leftIcon={<Plus className="h-4 w-4" />} onClick={() => setShowCreate(true)}>新規作成</Button>
       </div>
 

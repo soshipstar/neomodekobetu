@@ -166,7 +166,7 @@ function TabletActivityEditPage() {
         </h1>
         <Link
           href={`/tablet`}
-          className="mt-2 inline-block text-xl text-blue-600 hover:underline"
+          className="mt-2 inline-block text-xl text-[var(--brand-80)] hover:underline"
         >
           ← 戻る
         </Link>
@@ -180,7 +180,7 @@ function TabletActivityEditPage() {
             <select
               value={selectedPlanId}
               onChange={(e) => handlePlanChange(e.target.value)}
-              className="w-full rounded-lg border-2 border-gray-300 p-5 text-xl focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border-2 border-[var(--neutral-stroke-1)] p-5 text-xl focus:border-[var(--brand-80)] focus:outline-none"
             >
               <option value="">支援案を選択しない（手動入力）</option>
               {supportPlans.map((plan) => (
@@ -192,29 +192,29 @@ function TabletActivityEditPage() {
             </select>
 
             {showPlanDetails && planDetails && (
-              <div className="mt-4 rounded-lg border-l-4 border-purple-500 bg-gray-50 p-5">
-                <h3 className="mb-3 text-xl font-bold text-purple-700">選択した支援案の内容</h3>
+              <div className="mt-4 rounded-lg border-l-4 border-[var(--brand-90)] bg-[var(--neutral-background-3)] p-5">
+                <h3 className="mb-3 text-xl font-bold text-[var(--brand-60)]">選択した支援案の内容</h3>
                 {planDetails.activity_purpose && (
                   <div className="mb-3 text-lg">
-                    <strong className="text-purple-700">活動の目的:</strong><br />
+                    <strong className="text-[var(--brand-60)]">活動の目的:</strong><br />
                     <span className="whitespace-pre-wrap">{planDetails.activity_purpose}</span>
                   </div>
                 )}
                 {planDetails.activity_content && (
                   <div className="mb-3 text-lg">
-                    <strong className="text-purple-700">活動の内容:</strong><br />
+                    <strong className="text-[var(--brand-60)]">活動の内容:</strong><br />
                     <span className="whitespace-pre-wrap">{planDetails.activity_content}</span>
                   </div>
                 )}
                 {planDetails.five_domains_consideration && (
                   <div className="mb-3 text-lg">
-                    <strong className="text-purple-700">五領域への配慮:</strong><br />
+                    <strong className="text-[var(--brand-60)]">五領域への配慮:</strong><br />
                     <span className="whitespace-pre-wrap">{planDetails.five_domains_consideration}</span>
                   </div>
                 )}
                 {planDetails.other_notes && (
                   <div className="text-lg">
-                    <strong className="text-purple-700">その他:</strong><br />
+                    <strong className="text-[var(--brand-60)]">その他:</strong><br />
                     <span className="whitespace-pre-wrap">{planDetails.other_notes}</span>
                   </div>
                 )}
@@ -235,7 +235,7 @@ function TabletActivityEditPage() {
               type="text"
               value={activityName}
               onChange={(e) => setActivityName(e.target.value)}
-              className="flex-1 rounded-lg border-2 border-gray-300 p-5 text-xl focus:border-blue-500 focus:outline-none"
+              className="flex-1 rounded-lg border-2 border-[var(--neutral-stroke-1)] p-5 text-xl focus:border-[var(--brand-80)] focus:outline-none"
               required
             />
             <button
@@ -244,7 +244,7 @@ function TabletActivityEditPage() {
               className={`whitespace-nowrap rounded-lg px-6 py-3 text-xl font-bold text-white transition-all ${
                 activeField === 'activity_name'
                   ? 'animate-pulse bg-red-500'
-                  : 'bg-blue-600 hover:bg-blue-700'
+                  : 'bg-[var(--brand-80)] hover:bg-blue-700'
               }`}
             >
               {activeField === 'activity_name' ? '聞いています...' : '声で入力'}
@@ -266,7 +266,7 @@ function TabletActivityEditPage() {
                   className={`rounded-lg border-2 p-5 text-center text-xl transition-all ${
                     isSelected
                       ? 'border-green-500 bg-green-100 font-bold'
-                      : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
+                      : 'border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-3)] hover:bg-[var(--neutral-background-4)]'
                   }`}
                 >
                   {student.student_name}
@@ -288,7 +288,7 @@ function TabletActivityEditPage() {
           <button
             type="button"
             onClick={() => router.push('/tablet')}
-            className="flex-1 rounded-lg bg-gray-500 py-5 text-2xl font-bold text-white hover:bg-gray-600"
+            className="flex-1 rounded-lg bg-[var(--neutral-background-3)]0 py-5 text-2xl font-bold text-white hover:bg-gray-600"
           >
             キャンセル
           </button>

@@ -83,14 +83,14 @@ function TabletIntegratePage() {
   });
 
   if (isLoading) {
-    return <div className="py-12 text-center text-xl text-gray-400">読み込み中...</div>;
+    return <div className="py-12 text-center text-xl text-[var(--neutral-foreground-4)]">読み込み中...</div>;
   }
 
   if (!data) {
     return (
       <div className="rounded-xl bg-white p-6 shadow-md">
-        <p className="text-xl text-gray-500">活動が見つかりません。</p>
-        <Link href="/tablet" className="mt-4 inline-block text-xl text-blue-600 hover:underline">
+        <p className="text-xl text-[var(--neutral-foreground-3)]">活動が見つかりません。</p>
+        <Link href="/tablet" className="mt-4 inline-block text-xl text-[var(--brand-80)] hover:underline">
           ← 戻る
         </Link>
       </div>
@@ -102,11 +102,11 @@ function TabletIntegratePage() {
       {/* ヘッダー */}
       <div className="rounded-xl bg-white p-6 shadow-md">
         <h1 className="text-3xl font-bold">統合連絡帳作成</h1>
-        <div className="mt-2 text-xl text-gray-500">
+        <div className="mt-2 text-xl text-[var(--neutral-foreground-3)]">
           活動: {data.activity.activity_name}<br />
           日付: {data.activity.record_date}
         </div>
-        <Link href="/tablet" className="mt-2 inline-block text-xl text-blue-600 hover:underline">
+        <Link href="/tablet" className="mt-2 inline-block text-xl text-[var(--brand-80)] hover:underline">
           ← 戻る
         </Link>
       </div>
@@ -118,8 +118,8 @@ function TabletIntegratePage() {
 
           {/* 活動記録（元の記録を表示） */}
           {participant.notes && (
-            <div className="rounded-lg border-l-4 border-blue-500 bg-gray-50 p-4">
-              <div className="mb-1 text-base text-gray-500">活動記録:</div>
+            <div className="rounded-lg border-l-4 border-blue-500 bg-[var(--neutral-background-3)] p-4">
+              <div className="mb-1 text-base text-[var(--neutral-foreground-3)]">活動記録:</div>
               <div className="whitespace-pre-wrap text-lg">{participant.notes}</div>
             </div>
           )}
@@ -133,7 +133,7 @@ function TabletIntegratePage() {
                 onChange={(e) =>
                   setContents((prev) => ({ ...prev, [participant.id]: e.target.value }))
                 }
-                className="w-full rounded-lg border-2 border-gray-300 p-4 text-xl focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border-2 border-[var(--neutral-stroke-1)] p-4 text-xl focus:border-[var(--brand-80)] focus:outline-none"
                 rows={5}
                 placeholder="保護者に送る内容を入力してください"
               />
@@ -149,7 +149,7 @@ function TabletIntegratePage() {
                 className={`self-start rounded-lg px-6 py-3 text-xl font-bold text-white ${
                   activeField === `integrate_${participant.id}`
                     ? 'animate-pulse bg-red-500'
-                    : 'bg-blue-600 hover:bg-blue-700'
+                    : 'bg-[var(--brand-80)] hover:bg-blue-700'
                 }`}
               >
                 {activeField === `integrate_${participant.id}`
@@ -174,7 +174,7 @@ function TabletIntegratePage() {
         <button
           type="button"
           onClick={() => router.push('/tablet')}
-          className="flex-1 rounded-lg bg-gray-500 py-5 text-2xl font-bold text-white hover:bg-gray-600"
+          className="flex-1 rounded-lg bg-[var(--neutral-background-3)]0 py-5 text-2xl font-bold text-white hover:bg-gray-600"
         >
           キャンセル
         </button>

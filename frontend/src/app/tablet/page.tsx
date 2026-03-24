@@ -96,14 +96,14 @@ export default function TabletHomePage() {
           <div className="flex items-center gap-4">
             <button
               onClick={() => setCalendarMonth(subMonths(calendarMonth, 1))}
-              className="rounded-lg bg-blue-600 px-6 py-3 text-2xl font-bold text-white hover:bg-blue-700"
+              className="rounded-lg bg-[var(--brand-80)] px-6 py-3 text-2xl font-bold text-white hover:bg-blue-700"
             >
               ◀
             </button>
             <span className="text-2xl font-bold">{calYear}年{calMonth}月</span>
             <button
               onClick={() => setCalendarMonth(addMonths(calendarMonth, 1))}
-              className="rounded-lg bg-blue-600 px-6 py-3 text-2xl font-bold text-white hover:bg-blue-700"
+              className="rounded-lg bg-[var(--brand-80)] px-6 py-3 text-2xl font-bold text-white hover:bg-blue-700"
             >
               ▶
             </button>
@@ -118,7 +118,7 @@ export default function TabletHomePage() {
 
         <div className="grid grid-cols-7 gap-2">
           {DAY_HEADERS.map((d) => (
-            <div key={d} className="rounded-md bg-gray-100 py-3 text-center text-xl font-bold">
+            <div key={d} className="rounded-md bg-[var(--neutral-background-4)] py-3 text-center text-xl font-bold">
               {d}
             </div>
           ))}
@@ -134,10 +134,10 @@ export default function TabletHomePage() {
                 key={cell.dateStr}
                 onClick={() => setSelectedDate(cell.date)}
                 className={`flex aspect-square items-center justify-center rounded-md text-xl font-medium transition-all
-                  ${hasActivity ? 'bg-green-100 font-bold' : 'bg-gray-50'}
-                  ${isSelected ? 'bg-blue-600 text-white' : ''}
+                  ${hasActivity ? 'bg-green-100 font-bold' : 'bg-[var(--neutral-background-3)]'}
+                  ${isSelected ? 'bg-[var(--brand-80)] text-white' : ''}
                   ${today && !isSelected ? 'ring-2 ring-blue-500' : ''}
-                  hover:bg-gray-200`}
+                  hover:bg-[var(--neutral-background-5)]`}
               >
                 {cell.day}
               </button>
@@ -153,9 +153,9 @@ export default function TabletHomePage() {
         </h2>
 
         {isLoading ? (
-          <div className="py-12 text-center text-xl text-gray-400">読み込み中...</div>
+          <div className="py-12 text-center text-xl text-[var(--neutral-foreground-4)]">読み込み中...</div>
         ) : activities.length === 0 ? (
-          <div className="py-12 text-center text-xl text-gray-400">
+          <div className="py-12 text-center text-xl text-[var(--neutral-foreground-4)]">
             この日の活動はまだ登録されていません。<br />
             「新しい活動を追加」ボタンから登録してください。
           </div>
@@ -164,20 +164,20 @@ export default function TabletHomePage() {
             {activities.map((activity) => (
               <div
                 key={activity.id}
-                className="flex flex-wrap items-center justify-between gap-4 rounded-lg border-2 border-gray-200 p-5"
+                className="flex flex-wrap items-center justify-between gap-4 rounded-lg border-2 border-[var(--neutral-stroke-2)] p-5"
               >
                 <div className="flex-1">
                   <div className="text-xl font-bold">
                     {activity.activity_name || activity.common_activity}
                   </div>
-                  <div className="mt-1 text-base text-gray-500">
+                  <div className="mt-1 text-base text-[var(--neutral-foreground-3)]">
                     {activity.staff?.full_name} | {activity.participant_count ?? activity.student_records?.length ?? 0}名参加
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-3">
                   <Link
                     href={`/tablet/activity/edit?id=${activity.id}&date=${selectedDateStr}`}
-                    className="rounded-lg bg-blue-600 px-5 py-3 text-lg font-bold text-white hover:bg-blue-700"
+                    className="rounded-lg bg-[var(--brand-80)] px-5 py-3 text-lg font-bold text-white hover:bg-blue-700"
                   >
                     編集
                   </Link>

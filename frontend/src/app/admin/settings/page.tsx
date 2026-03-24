@@ -71,7 +71,7 @@ export default function AdminSettingsPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">教室基本設定</h1>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">教室基本設定</h1>
         <SkeletonList items={4} />
       </div>
     );
@@ -80,8 +80,8 @@ export default function AdminSettingsPage() {
   if (classrooms.length === 0) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">教室基本設定</h1>
-        <p className="text-sm text-gray-500">設定可能な教室がありません。</p>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">教室基本設定</h1>
+        <p className="text-sm text-[var(--neutral-foreground-3)]">設定可能な教室がありません。</p>
       </div>
     );
   }
@@ -90,7 +90,7 @@ export default function AdminSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">教室基本設定</h1>
+      <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">教室基本設定</h1>
 
       <Card>
         <CardHeader>
@@ -128,11 +128,11 @@ export default function AdminSettingsPage() {
           />
           {currentClassroom.logo_path && (
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">教室ロゴ</label>
+              <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">教室ロゴ</label>
               <img
                 src={`${process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:8000'}/storage/${currentClassroom.logo_path}`}
                 alt="教室ロゴ"
-                className="h-16 w-16 rounded-lg object-contain border border-gray-200"
+                className="h-16 w-16 rounded-lg object-contain border border-[var(--neutral-stroke-2)]"
               />
             </div>
           )}

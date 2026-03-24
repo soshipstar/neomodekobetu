@@ -120,7 +120,7 @@ export default function TagSettingsPage() {
         </CardHeader>
 
         <div className="px-4 pb-2">
-          <div className="rounded-md border-l-4 border-blue-500 bg-blue-50 p-3 text-sm text-[var(--neutral-foreground-2)] dark:bg-blue-950/30">
+          <div className="rounded-md border-l-4 border-blue-500 bg-[var(--brand-160)] p-3 text-sm text-[var(--neutral-foreground-2)] dark:bg-blue-950/30">
             支援案作成時に選択できるタグを設定します。<br />
             タグは教室ごとに設定でき、活動の分類に使用されます。
           </div>

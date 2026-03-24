@@ -258,7 +258,7 @@ export default function HolidaysPage() {
                     <td className="py-2 px-3">
                       <span className={`inline-block rounded-md px-2.5 py-1 text-xs font-bold ${
                         holiday.holiday_type === 'regular'
-                          ? 'bg-blue-500/15 text-blue-600'
+                          ? 'bg-[var(--brand-80)]/15 text-[var(--brand-80)]'
                           : 'bg-orange-500/15 text-orange-600'
                       }`}>
                         {holiday.holiday_type === 'regular' ? '定期休日' : '特別休日'}

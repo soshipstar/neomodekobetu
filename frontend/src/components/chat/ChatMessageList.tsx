@@ -21,7 +21,7 @@ export function ChatMessageList({ messages, currentUserId }: ChatMessageListProp
   if (messages.length === 0) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-gray-400">メッセージはまだありません</p>
+        <p className="text-sm text-[var(--neutral-foreground-4)]">メッセージはまだありません</p>
       </div>
     );
   }
@@ -44,7 +44,7 @@ export function ChatMessageList({ messages, currentUserId }: ChatMessageListProp
           <div key={message.id}>
             {showDateSeparator && (
               <div className="my-4 flex items-center justify-center">
-                <span className="rounded-full bg-gray-200 px-3 py-1 text-xs text-gray-500">
+                <span className="rounded-full bg-[var(--neutral-background-5)] px-3 py-1 text-xs text-[var(--neutral-foreground-3)]">
                   {messageDate}
                 </span>
               </div>

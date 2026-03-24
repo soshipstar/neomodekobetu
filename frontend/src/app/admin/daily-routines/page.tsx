@@ -65,28 +65,28 @@ export default function AdminDailyRoutinesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">日課管理</h1>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">日課管理</h1>
         <Button onClick={() => { setEditing(null); setModalOpen(true); }} leftIcon={<Plus className="h-4 w-4" />}>追加</Button>
       </div>
 
       <Card>
         <CardHeader><CardTitle>日課一覧</CardTitle></CardHeader>
         {isLoading ? <SkeletonList items={6} /> : routines.length === 0 ? (
-          <p className="py-8 text-center text-sm text-gray-500">日課がありません</p>
+          <p className="py-8 text-center text-sm text-[var(--neutral-foreground-3)]">日課がありません</p>
         ) : (
           <div className="space-y-0">
             {routines.map((routine) => (
               <div key={routine.id} className={`flex items-stretch gap-4 ${!routine.is_active ? 'opacity-50' : ''}`}>
                 <div className="flex flex-col items-center w-16 shrink-0">
-                  <span className="text-xs font-medium text-gray-500">{routine.start_time}</span>
+                  <span className="text-xs font-medium text-[var(--neutral-foreground-3)]">{routine.start_time}</span>
                   <div className="flex-1 w-px bg-blue-200 my-1" />
-                  <span className="text-xs font-medium text-gray-500">{routine.end_time}</span>
+                  <span className="text-xs font-medium text-[var(--neutral-foreground-3)]">{routine.end_time}</span>
                 </div>
-                <div className="flex-1 flex items-center justify-between rounded-lg border border-gray-200 p-4 mb-2">
+                <div className="flex-1 flex items-center justify-between rounded-lg border border-[var(--neutral-stroke-2)] p-4 mb-2">
                   <div className="flex items-center gap-3">
-                    <Clock className="h-5 w-5 text-blue-600" />
+                    <Clock className="h-5 w-5 text-[var(--brand-80)]" />
                     <div>
-                      <h3 className="font-medium text-gray-900">{routine.name}</h3>
+                      <h3 className="font-medium text-[var(--neutral-foreground-1)]">{routine.name}</h3>
                       <div className="flex gap-1 mt-0.5">
                         {routine.classroom_name && <Badge variant="info">{routine.classroom_name}</Badge>}
                         {!routine.is_active && <Badge variant="default">無効</Badge>}
@@ -111,8 +111,8 @@ export default function AdminDailyRoutinesPage() {
             <Input label="開始時間" type="time" value={form.start_time} onChange={(e) => setForm({ ...form, start_time: e.target.value })} required />
             <Input label="終了時間" type="time" value={form.end_time} onChange={(e) => setForm({ ...form, end_time: e.target.value })} required />
           </div>
-          <div><label className="mb-1 block text-sm font-medium text-gray-700">説明</label><textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" rows={2} /></div>
-          <label className="flex items-center gap-2"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="rounded border-gray-300" /><span className="text-sm text-gray-700">有効</span></label>
+          <div><label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">説明</label><textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="block w-full rounded-lg border border-[var(--neutral-stroke-1)] px-3 py-2 text-sm" rows={2} /></div>
+          <label className="flex items-center gap-2"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="rounded border-[var(--neutral-stroke-1)]" /><span className="text-sm text-[var(--neutral-foreground-2)]">有効</span></label>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="secondary" type="button" onClick={closeModal}>キャンセル</Button>
             <Button type="submit" isLoading={saveMutation.isPending}>保存</Button>

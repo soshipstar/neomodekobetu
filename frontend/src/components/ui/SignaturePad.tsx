@@ -468,14 +468,14 @@ const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
                   max-md:max-w-full max-md:rounded-none max-md:h-full max-md:flex max-md:flex-col"
               >
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3">
-                  <h3 className="text-base font-semibold text-gray-900">
+                <div className="flex items-center justify-between border-b border-[var(--neutral-stroke-2)] px-5 py-3">
+                  <h3 className="text-base font-semibold text-[var(--neutral-foreground-1)]">
                     {label ? `${label}を記入` : '署名を記入'}
                   </h3>
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                    className="rounded-lg p-1.5 text-[var(--neutral-foreground-4)] hover:bg-[var(--neutral-background-4)] hover:text-[var(--neutral-foreground-3)] transition-colors"
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -483,7 +483,7 @@ const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
 
                 {/* Body */}
                 <div className="p-5 max-md:flex-1 max-md:flex max-md:flex-col max-md:justify-center">
-                  <p className="mb-2 text-xs text-gray-500 text-center">点線の上に署名してください</p>
+                  <p className="mb-2 text-xs text-[var(--neutral-foreground-3)] text-center">点線の上に署名してください</p>
                   <canvas
                     ref={modalCanvasRef}
                     style={{
@@ -501,7 +501,7 @@ const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
                 </div>
 
                 {/* Footer */}
-                <div className="flex justify-between border-t border-gray-200 px-5 py-3">
+                <div className="flex justify-between border-t border-[var(--neutral-stroke-2)] px-5 py-3">
                   <div className="flex gap-2">
                     <Button type="button" variant="outline" size="sm" onClick={undoModal} leftIcon={<Undo2 className="h-4 w-4" />}>
                       戻す

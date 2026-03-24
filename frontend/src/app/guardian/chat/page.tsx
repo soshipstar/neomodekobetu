@@ -34,10 +34,10 @@ export default function GuardianChatListPage() {
 
   return (
     <div className="space-y-3 px-2 sm:space-y-4 sm:px-0">
-      <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">チャット</h1>
+      <h1 className="text-xl font-bold text-[var(--neutral-foreground-1)] sm:text-2xl">チャット</h1>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
         <Input
           placeholder="お子様の名前で検索..."
           value={search}
@@ -49,7 +49,7 @@ export default function GuardianChatListPage() {
       {isLoadingRooms ? (
         <SkeletonList items={4} />
       ) : filteredRooms.length === 0 ? (
-        <div className="py-12 text-center text-sm text-gray-500">
+        <div className="py-12 text-center text-sm text-[var(--neutral-foreground-3)]">
           チャットルームがありません
         </div>
       ) : (

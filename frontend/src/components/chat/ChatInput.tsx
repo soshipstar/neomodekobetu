@@ -59,14 +59,14 @@ export function ChatInput({ onSend, isSending, disabled = false }: ChatInputProp
   };
 
   return (
-    <div className="border-t border-gray-200 bg-white p-3">
+    <div className="border-t border-[var(--neutral-stroke-2)] bg-white p-3">
       {/* Attachment preview */}
       {attachment && (
-        <div className="mb-2 flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2">
-          <Paperclip className="h-4 w-4 text-gray-400" />
-          <span className="flex-1 truncate text-sm text-gray-700">{attachment.name}</span>
-          <span className="text-xs text-gray-400">{formatFileSize(attachment.size)}</span>
-          <button onClick={removeAttachment} className="rounded p-1 text-gray-400 hover:text-red-500">
+        <div className="mb-2 flex items-center gap-2 rounded-lg bg-[var(--neutral-background-3)] px-3 py-2">
+          <Paperclip className="h-4 w-4 text-[var(--neutral-foreground-4)]" />
+          <span className="flex-1 truncate text-sm text-[var(--neutral-foreground-2)]">{attachment.name}</span>
+          <span className="text-xs text-[var(--neutral-foreground-4)]">{formatFileSize(attachment.size)}</span>
+          <button onClick={removeAttachment} className="rounded p-1 text-[var(--neutral-foreground-4)] hover:text-red-500">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -78,7 +78,7 @@ export function ChatInput({ onSend, isSending, disabled = false }: ChatInputProp
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled}
-          className="shrink-0 rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+          className="shrink-0 rounded-lg p-2 text-[var(--neutral-foreground-4)] hover:bg-[var(--neutral-background-4)] hover:text-[var(--neutral-foreground-3)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Paperclip className="h-5 w-5" />
         </button>
@@ -100,8 +100,8 @@ export function ChatInput({ onSend, isSending, disabled = false }: ChatInputProp
           disabled={disabled}
           rows={1}
           className={cn(
-            'flex-1 resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm',
-            'placeholder-gray-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20',
+            'flex-1 resize-none rounded-xl border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] px-4 py-2.5 text-sm',
+            'placeholder-gray-400 focus:border-[var(--brand-80)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-80)]/20',
             'disabled:cursor-not-allowed disabled:opacity-50',
             'max-h-32'
           )}
@@ -125,7 +125,7 @@ export function ChatInput({ onSend, isSending, disabled = false }: ChatInputProp
         </Button>
       </div>
 
-      <p className="mt-1 text-center text-[10px] text-gray-300">
+      <p className="mt-1 text-center text-[10px] text-[var(--neutral-foreground-disabled)]">
         Shift+Enterで改行
       </p>
     </div>

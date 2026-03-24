@@ -143,13 +143,13 @@ const sections: ManualSection[] = [
         </p>
         <div className="space-y-2">
           <div className="rounded-lg border border-[var(--neutral-stroke-2)] p-3">
-            <h5 className="text-sm font-semibold text-purple-600">保護者かけはし（保護者の皆様が記入）</h5>
+            <h5 className="text-sm font-semibold text-[var(--brand-70)]">保護者かけはし（保護者の皆様が記入）</h5>
             <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
               家庭でのお子様の様子、最近の変化、気になること、教室への要望などを記入していただきます。
             </p>
           </div>
           <div className="rounded-lg border border-[var(--neutral-stroke-2)] p-3">
-            <h5 className="text-sm font-semibold text-blue-600">スタッフかけはし（スタッフが作成）</h5>
+            <h5 className="text-sm font-semibold text-[var(--brand-80)]">スタッフかけはし（スタッフが作成）</h5>
             <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
               日々の活動記録をもとに、教室でのお子様の様子、成長したポイント、今後の支援の方向性などをまとめます。
             </p>

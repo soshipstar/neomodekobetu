@@ -134,14 +134,14 @@ export default function GuardianWeeklyPlansPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">週間計画表</h1>
+      <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">週間計画表</h1>
 
       {/* Student selector */}
       {students.length > 1 && (
         <select
           value={selectedStudent || students[0]?.id}
           onChange={(e) => setSelectedStudent(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm"
+          className="w-full rounded-lg border border-[var(--neutral-stroke-1)] bg-white px-3 py-2 text-sm shadow-sm"
         >
           {students.map((s) => (
             <option key={s.id} value={s.id}>{s.student_name}</option>
@@ -151,7 +151,7 @@ export default function GuardianWeeklyPlansPage() {
 
       {/* Week navigation */}
       <div className="flex items-center justify-between rounded-lg bg-white px-4 py-3 shadow-sm">
-        <h2 className="text-sm font-semibold text-gray-900">
+        <h2 className="text-sm font-semibold text-[var(--neutral-foreground-1)]">
           {format(new Date(weekStartDate), 'yyyy年M月d日', { locale: ja })}の週
         </h2>
         <div className="flex gap-2">
@@ -172,8 +172,8 @@ export default function GuardianWeeklyPlansPage() {
       ) : !activePlan ? (
         <Card>
           <div className="py-12 text-center">
-            <Calendar className="mx-auto h-12 w-12 text-gray-300" />
-            <p className="mt-2 text-sm text-gray-500">この週の計画はまだ作成されていません</p>
+            <Calendar className="mx-auto h-12 w-12 text-[var(--neutral-foreground-disabled)]" />
+            <p className="mt-2 text-sm text-[var(--neutral-foreground-3)]">この週の計画はまだ作成されていません</p>
           </div>
         </Card>
       ) : (
@@ -182,36 +182,36 @@ export default function GuardianWeeklyPlansPage() {
           {(activePlan.weekly_goal || activePlan.shared_goal || activePlan.must_do || activePlan.should_do || activePlan.want_to_do) && (
             <Card>
               <CardBody>
-                <h3 className="mb-3 text-sm font-semibold text-gray-700">目標</h3>
+                <h3 className="mb-3 text-sm font-semibold text-[var(--neutral-foreground-2)]">目標</h3>
                 <div className="space-y-2">
                   {activePlan.weekly_goal && (
-                    <div className="rounded-lg bg-purple-50 p-3">
-                      <p className="text-xs font-medium text-purple-600">週間目標</p>
-                      <p className="text-sm text-gray-800 whitespace-pre-wrap">{nl(activePlan.weekly_goal)}</p>
+                    <div className="rounded-lg bg-[var(--brand-160)] p-3">
+                      <p className="text-xs font-medium text-[var(--brand-70)]">週間目標</p>
+                      <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{nl(activePlan.weekly_goal)}</p>
                     </div>
                   )}
                   {activePlan.shared_goal && (
-                    <div className="rounded-lg bg-blue-50 p-3">
-                      <p className="text-xs font-medium text-blue-600">共有目標</p>
-                      <p className="text-sm text-gray-800 whitespace-pre-wrap">{nl(activePlan.shared_goal)}</p>
+                    <div className="rounded-lg bg-[var(--brand-160)] p-3">
+                      <p className="text-xs font-medium text-[var(--brand-80)]">共有目標</p>
+                      <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{nl(activePlan.shared_goal)}</p>
                     </div>
                   )}
                   {activePlan.must_do && (
                     <div className="rounded-lg bg-red-50 p-3">
                       <p className="text-xs font-medium text-red-600">やるべきこと</p>
-                      <p className="text-sm text-gray-800 whitespace-pre-wrap">{nl(activePlan.must_do)}</p>
+                      <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{nl(activePlan.must_do)}</p>
                     </div>
                   )}
                   {activePlan.should_do && (
                     <div className="rounded-lg bg-amber-50 p-3">
                       <p className="text-xs font-medium text-amber-600">やったほうがいいこと</p>
-                      <p className="text-sm text-gray-800 whitespace-pre-wrap">{nl(activePlan.should_do)}</p>
+                      <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{nl(activePlan.should_do)}</p>
                     </div>
                   )}
                   {activePlan.want_to_do && (
                     <div className="rounded-lg bg-green-50 p-3">
                       <p className="text-xs font-medium text-green-600">やりたいこと</p>
-                      <p className="text-sm text-gray-800 whitespace-pre-wrap">{nl(activePlan.want_to_do)}</p>
+                      <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{nl(activePlan.want_to_do)}</p>
                     </div>
                   )}
                 </div>
@@ -226,10 +226,10 @@ export default function GuardianWeeklyPlansPage() {
                 <table className="w-full min-w-[500px] border-collapse">
                   <thead>
                     <tr>
-                      <th className="border border-gray-200 bg-gray-50 px-4 py-2 text-left text-sm font-semibold text-gray-700" style={{ width: 100 }}>
+                      <th className="border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] px-4 py-2 text-left text-sm font-semibold text-[var(--neutral-foreground-2)]" style={{ width: 100 }}>
                         曜日
                       </th>
-                      <th className="border border-gray-200 bg-gray-50 px-4 py-2 text-left text-sm font-semibold text-gray-700">
+                      <th className="border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] px-4 py-2 text-left text-sm font-semibold text-[var(--neutral-foreground-2)]">
                         計画・目標
                       </th>
                     </tr>
@@ -241,15 +241,15 @@ export default function GuardianWeeklyPlansPage() {
                       const date = format(addDays(new Date(weekStartDate), index), 'M/d');
                       return (
                         <tr key={dayKey}>
-                          <td className="border border-gray-200 px-4 py-3 align-top">
-                            <p className="text-sm font-semibold text-purple-600">{dayLabel}</p>
-                            <p className="text-xs text-gray-400">{date}</p>
+                          <td className="border border-[var(--neutral-stroke-2)] px-4 py-3 align-top">
+                            <p className="text-sm font-semibold text-[var(--brand-70)]">{dayLabel}</p>
+                            <p className="text-xs text-[var(--neutral-foreground-4)]">{date}</p>
                           </td>
-                          <td className="border border-gray-200 px-4 py-3 align-top">
+                          <td className="border border-[var(--neutral-stroke-2)] px-4 py-3 align-top">
                             {content ? (
-                              <p className="whitespace-pre-wrap text-sm text-gray-800">{nl(content)}</p>
+                              <p className="whitespace-pre-wrap text-sm text-[var(--neutral-foreground-1)]">{nl(content)}</p>
                             ) : (
-                              <p className="text-sm italic text-gray-400">計画なし</p>
+                              <p className="text-sm italic text-[var(--neutral-foreground-4)]">計画なし</p>
                             )}
                           </td>
                         </tr>
@@ -265,8 +265,8 @@ export default function GuardianWeeklyPlansPage() {
           {activePlan.overall_comment && (
             <Card>
               <CardBody>
-                <h3 className="mb-2 text-sm font-semibold text-gray-700">総合コメント</h3>
-                <p className="whitespace-pre-wrap text-sm text-gray-800">{nl(activePlan.overall_comment)}</p>
+                <h3 className="mb-2 text-sm font-semibold text-[var(--neutral-foreground-2)]">総合コメント</h3>
+                <p className="whitespace-pre-wrap text-sm text-[var(--neutral-foreground-1)]">{nl(activePlan.overall_comment)}</p>
               </CardBody>
             </Card>
           )}
@@ -274,35 +274,35 @@ export default function GuardianWeeklyPlansPage() {
           {/* Comments section */}
           <Card>
             <CardBody>
-              <h3 className="mb-4 text-sm font-semibold text-gray-700">コメント</h3>
+              <h3 className="mb-4 text-sm font-semibold text-[var(--neutral-foreground-2)]">コメント</h3>
 
               {comments.length === 0 ? (
-                <p className="py-4 text-center text-sm text-gray-400">まだコメントはありません</p>
+                <p className="py-4 text-center text-sm text-[var(--neutral-foreground-4)]">まだコメントはありません</p>
               ) : (
                 <div className="mb-4 space-y-3">
                   {comments.map((c) => (
-                    <div key={c.id} className="rounded-lg border-l-4 border-purple-500 bg-gray-50 p-3">
+                    <div key={c.id} className="rounded-lg border-l-4 border-[var(--brand-90)] bg-[var(--neutral-background-3)] p-3">
                       <div className="mb-1 flex items-center justify-between">
-                        <span className="text-sm font-semibold text-purple-600">
+                        <span className="text-sm font-semibold text-[var(--brand-70)]">
                           {c.user?.full_name ?? '不明'}
                         </span>
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-[var(--neutral-foreground-4)]">
                           {format(new Date(c.created_at), 'yyyy/M/d HH:mm', { locale: ja })}
                         </span>
                       </div>
-                      <p className="whitespace-pre-wrap text-sm text-gray-700">{nl(c.comment)}</p>
+                      <p className="whitespace-pre-wrap text-sm text-[var(--neutral-foreground-2)]">{nl(c.comment)}</p>
                     </div>
                   ))}
                 </div>
               )}
 
               {/* Comment form */}
-              <div className="border-t border-gray-200 pt-4">
+              <div className="border-t border-[var(--neutral-stroke-2)] pt-4">
                 <textarea
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   placeholder="コメントを入力..."
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-[var(--neutral-stroke-1)] px-3 py-2 text-sm"
                   rows={3}
                   required
                 />

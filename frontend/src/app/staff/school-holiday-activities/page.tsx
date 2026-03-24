@@ -167,13 +167,13 @@ export default function SchoolHolidayActivitiesPage() {
           </div>
           <div className="mt-3 flex flex-wrap gap-4 text-xs">
             <span className="flex items-center gap-1.5">
-              <span className="inline-block h-3 w-3 rounded bg-blue-100 border border-blue-400" /> 学校休業日活動
+              <span className="inline-block h-3 w-3 rounded bg-[var(--brand-160)] border border-blue-400" /> 学校休業日活動
             </span>
             <span className="flex items-center gap-1.5">
               <span className="inline-block h-3 w-3 rounded bg-red-100 border border-red-400" /> 休日（選択不可）
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="inline-block h-3 w-3 rounded bg-white border border-gray-300" /> 平日活動
+              <span className="inline-block h-3 w-3 rounded bg-white border border-[var(--neutral-stroke-1)]" /> 平日活動
             </span>
           </div>
         </CardBody>
@@ -233,8 +233,8 @@ export default function SchoolHolidayActivitiesPage() {
                             isHoliday
                               ? 'bg-red-50 cursor-not-allowed'
                               : isChecked
-                                ? 'bg-blue-50 cursor-pointer hover:bg-blue-100'
-                                : 'bg-white cursor-pointer hover:bg-gray-50'
+                                ? 'bg-[var(--brand-160)] cursor-pointer hover:bg-[var(--brand-160)]'
+                                : 'bg-white cursor-pointer hover:bg-[var(--neutral-background-3)]'
                           }`}
                           onClick={() => !isHoliday && toggleDate(dateStr)}
                         >
@@ -264,7 +264,7 @@ export default function SchoolHolidayActivitiesPage() {
                                   <span className="text-[10px] text-[var(--neutral-foreground-3)] hidden sm:inline">休業日活動</span>
                                 </div>
                                 <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
-                                  isChecked ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                                  isChecked ? 'bg-[var(--brand-160)] text-blue-800' : 'bg-green-100 text-green-800'
                                 }`}>
                                   {isChecked ? '休業日活動' : '平日活動'}
                                 </span>

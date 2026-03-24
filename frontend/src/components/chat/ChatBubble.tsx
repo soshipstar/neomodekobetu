@@ -20,38 +20,38 @@ const MESSAGE_TYPE_CONFIG: Record<string, {
   absence_notification: {
     label: '欠席連絡',
     icon: AlertTriangle,
-    bubbleClass: 'bg-red-50 border-red-200 text-red-900',
-    badgeClass: 'bg-red-100 text-red-700',
+    bubbleClass: 'bg-[var(--status-danger-bg)] border-[var(--status-danger-fg)]/20 text-[var(--neutral-foreground-1)]',
+    badgeClass: 'bg-[var(--status-danger-bg)] text-[var(--status-danger-fg)]',
   },
   event_registration: {
     label: 'イベント参加',
     icon: Calendar,
-    bubbleClass: 'bg-emerald-50 border-emerald-200 text-emerald-900',
-    badgeClass: 'bg-emerald-100 text-emerald-700',
+    bubbleClass: 'bg-[var(--status-success-bg)] border-[var(--status-success-fg)]/20 text-[var(--neutral-foreground-1)]',
+    badgeClass: 'bg-[var(--status-success-bg)] text-[var(--status-success-fg)]',
   },
   meeting_request: {
     label: '面談申込',
     icon: CalendarClock,
-    bubbleClass: 'bg-purple-50 border-purple-200 text-purple-900',
-    badgeClass: 'bg-purple-100 text-purple-700',
+    bubbleClass: 'bg-[var(--brand-160)] border-[var(--brand-80)]/20 text-[var(--neutral-foreground-1)]',
+    badgeClass: 'bg-[var(--brand-150)] text-[var(--brand-60)]',
   },
   meeting_counter: {
     label: '面談日程対案',
     icon: CalendarClock,
-    bubbleClass: 'bg-purple-50 border-purple-200 text-purple-900',
-    badgeClass: 'bg-purple-100 text-purple-700',
+    bubbleClass: 'bg-[var(--brand-160)] border-[var(--brand-80)]/20 text-[var(--neutral-foreground-1)]',
+    badgeClass: 'bg-[var(--brand-150)] text-[var(--brand-60)]',
   },
   meeting_confirmed: {
     label: '面談日程確定',
     icon: CalendarCheck,
-    bubbleClass: 'bg-purple-50 border-purple-200 text-purple-900',
-    badgeClass: 'bg-purple-100 text-purple-700',
+    bubbleClass: 'bg-[var(--status-success-bg)] border-[var(--status-success-fg)]/20 text-[var(--neutral-foreground-1)]',
+    badgeClass: 'bg-[var(--status-success-bg)] text-[var(--status-success-fg)]',
   },
   broadcast: {
     label: '一斉送信',
     icon: Megaphone,
-    bubbleClass: 'bg-amber-50 border-amber-200 text-amber-900',
-    badgeClass: 'bg-amber-100 text-amber-700',
+    bubbleClass: 'bg-[var(--status-warning-bg)] border-[var(--status-warning-fg)]/20 text-[var(--neutral-foreground-1)]',
+    badgeClass: 'bg-[var(--status-warning-bg)] text-[var(--status-warning-fg)]',
   },
 };
 
@@ -59,7 +59,7 @@ export function ChatBubble({ message, isMine }: ChatBubbleProps) {
   if (message.is_deleted) {
     return (
       <div className={cn('flex', isMine ? 'justify-end' : 'justify-start')}>
-        <div className="max-w-xs rounded-lg bg-gray-100 px-4 py-2 italic text-gray-400 text-sm">
+        <div className="max-w-xs rounded-lg bg-[var(--neutral-background-4)] px-4 py-2 italic text-[var(--neutral-foreground-4)] text-sm">
           このメッセージは削除されました
         </div>
       </div>
@@ -80,7 +80,7 @@ export function ChatBubble({ message, isMine }: ChatBubbleProps) {
       <div className={cn('flex max-w-[75%] flex-col gap-1', isMine ? 'items-end' : 'items-start')}>
         {/* Sender name (for received messages) */}
         {!isMine && message.sender && (
-          <span className="ml-1 text-xs font-medium text-gray-500">
+          <span className="ml-1 text-xs font-medium text-[var(--neutral-foreground-3)]">
             {message.sender.full_name}
           </span>
         )}
@@ -92,8 +92,8 @@ export function ChatBubble({ message, isMine }: ChatBubbleProps) {
             typeConfig
               ? cn('rounded-tr-sm border', typeConfig.bubbleClass)
               : isMine
-                ? 'rounded-tr-sm bg-blue-600 text-white'
-                : 'rounded-tl-sm bg-white text-gray-800 shadow-sm border border-gray-100'
+                ? 'rounded-tr-sm bg-[var(--brand-80)] text-white'
+                : 'rounded-tl-sm bg-[var(--neutral-background-1)] text-[var(--neutral-foreground-1)] shadow-sm border border-[var(--neutral-stroke-2)]'
           )}
         >
           {/* Message type badge */}
@@ -147,9 +147,9 @@ export function ChatBubble({ message, isMine }: ChatBubbleProps) {
 
         {/* Timestamp + Read receipt */}
         <div className={cn('mx-1 flex items-center gap-1', isMine ? 'flex-row-reverse' : '')}>
-          <span className="text-[10px] text-gray-400">{time}</span>
+          <span className="text-[10px] text-[var(--neutral-foreground-4)]">{time}</span>
           {isMine && message.is_read_by_staff && (
-            <span className="text-[10px] text-blue-500 font-medium">既読</span>
+            <span className="text-[10px] text-[var(--brand-80)] font-medium">既読</span>
           )}
         </div>
       </div>

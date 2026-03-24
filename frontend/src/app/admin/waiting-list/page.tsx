@@ -70,7 +70,7 @@ export default function AdminWaitingListPage() {
   };
 
   const columns: Column<WaitingStudent>[] = [
-    { key: 'student_name', label: '生徒名', render: (s) => <span className="font-medium text-gray-900">{s.student_name}</span> },
+    { key: 'student_name', label: '生徒名', render: (s) => <span className="font-medium text-[var(--neutral-foreground-1)]">{s.student_name}</span> },
     { key: 'guardian_name', label: '保護者名' },
     { key: 'guardian_phone', label: '電話番号', render: (s) => s.guardian_phone || '-' },
     {
@@ -112,7 +112,7 @@ export default function AdminWaitingListPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">待機者管理</h1>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">待機者管理</h1>
         {waitingCount > 0 && (
           <Badge variant="warning" className="text-sm px-3 py-1">
             <Clock className="mr-1 inline h-3 w-3" />
@@ -123,10 +123,10 @@ export default function AdminWaitingListPage() {
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
           <Input placeholder="名前で検索..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
         </div>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-lg border border-[var(--neutral-stroke-1)] bg-white px-3 py-2 text-sm">
           <option value="">全ステータス</option>
           {Object.entries(statusConfig).map(([val, cfg]) => <option key={val} value={val}>{cfg.text}</option>)}
         </select>
@@ -137,14 +137,14 @@ export default function AdminWaitingListPage() {
       <Modal isOpen={editModal} onClose={() => setEditModal(false)} title={`${editingStudent?.student_name || ''} - ステータス更新`}>
         <form onSubmit={(e) => { e.preventDefault(); if (editingStudent) updateMutation.mutate({ id: editingStudent.id, data: editForm }); }} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">ステータス</label>
-            <select value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">ステータス</label>
+            <select value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })} className="w-full rounded-lg border border-[var(--neutral-stroke-1)] px-3 py-2 text-sm">
               {Object.entries(statusConfig).map(([val, cfg]) => <option key={val} value={val}>{cfg.text}</option>)}
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">メモ</label>
-            <textarea value={editForm.waiting_notes} onChange={(e) => setEditForm({ ...editForm, waiting_notes: e.target.value })} className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" rows={4} />
+            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">メモ</label>
+            <textarea value={editForm.waiting_notes} onChange={(e) => setEditForm({ ...editForm, waiting_notes: e.target.value })} className="block w-full rounded-lg border border-[var(--neutral-stroke-1)] px-3 py-2 text-sm" rows={4} />
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="secondary" type="button" onClick={() => setEditModal(false)}>キャンセル</Button>

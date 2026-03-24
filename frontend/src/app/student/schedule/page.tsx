@@ -156,7 +156,7 @@ export default function StudentSchedulePage() {
                       <th
                         key={label}
                         className={`border border-[var(--neutral-stroke-2)] p-2 text-center text-xs font-medium ${
-                          i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : 'text-[var(--neutral-foreground-2)]'
+                          i === 0 ? 'text-red-500' : i === 6 ? 'text-[var(--brand-80)]' : 'text-[var(--neutral-foreground-2)]'
                         }`}
                       >
                         {label}
@@ -185,13 +185,13 @@ export default function StudentSchedulePage() {
                             key={di}
                             className={`border border-[var(--neutral-stroke-2)] p-1 h-16 align-top cursor-pointer transition-colors ${
                               isSelected ? 'bg-[var(--brand-80)]/10' : ''
-                            } ${isToday ? 'bg-blue-50' : ''} ${hasHoliday ? 'bg-red-50/50' : ''}`}
+                            } ${isToday ? 'bg-[var(--brand-160)]' : ''} ${hasHoliday ? 'bg-red-50/50' : ''}`}
                             onClick={() => setSelectedDay(day === selectedDay ? null : day)}
                           >
                             <div className="flex flex-col items-center gap-0.5">
                               <span className={`text-xs font-medium leading-none ${
                                 isToday ? 'bg-[var(--brand-80)] text-white rounded-full w-6 h-6 flex items-center justify-center' : ''
-                              } ${hasHoliday || isSun ? 'text-red-500' : isSat ? 'text-blue-500' : 'text-[var(--neutral-foreground-1)]'}`}>
+                              } ${hasHoliday || isSun ? 'text-red-500' : isSat ? 'text-[var(--brand-80)]' : 'text-[var(--neutral-foreground-1)]'}`}>
                                 {day}
                               </span>
                               <div className="flex flex-wrap justify-center gap-0.5 mt-0.5">

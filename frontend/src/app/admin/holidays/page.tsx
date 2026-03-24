@@ -78,7 +78,7 @@ export default function AdminHolidaysPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">休日管理</h1>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">休日管理</h1>
         <Button onClick={() => setModalOpen(true)} leftIcon={<Plus className="h-4 w-4" />}>追加</Button>
       </div>
 
@@ -89,15 +89,15 @@ export default function AdminHolidaysPage() {
           <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}><ChevronRight className="h-4 w-4" /></Button>
         </div>
         {isLoading ? <SkeletonTable rows={5} cols={7} /> : (
-          <div className="grid grid-cols-7 gap-px bg-gray-200 rounded-lg overflow-hidden">
-            {['日', '月', '火', '水', '木', '金', '土'].map((d) => <div key={d} className="bg-gray-50 py-2 text-center text-xs font-semibold text-gray-500">{d}</div>)}
+          <div className="grid grid-cols-7 gap-px bg-[var(--neutral-background-5)] rounded-lg overflow-hidden">
+            {['日', '月', '火', '水', '木', '金', '土'].map((d) => <div key={d} className="bg-[var(--neutral-background-3)] py-2 text-center text-xs font-semibold text-[var(--neutral-foreground-3)]">{d}</div>)}
             {Array.from({ length: calendarDays.startPad }).map((_, i) => <div key={`p-${i}`} className="bg-white p-2 min-h-[70px]" />)}
             {calendarDays.days.map((day) => {
               const dateStr = format(day, 'yyyy-MM-dd');
               const holiday = holidaysByDate[dateStr];
               return (
                 <div key={dateStr} className={`p-2 min-h-[70px] ${holiday ? 'bg-red-50' : 'bg-white'}`}>
-                  <span className={`text-sm ${isSameDay(day, new Date()) ? 'font-bold text-blue-600' : holiday ? 'text-red-600' : 'text-gray-700'}`}>{format(day, 'd')}</span>
+                  <span className={`text-sm ${isSameDay(day, new Date()) ? 'font-bold text-[var(--brand-80)]' : holiday ? 'text-red-600' : 'text-[var(--neutral-foreground-2)]'}`}>{format(day, 'd')}</span>
                   {holiday && <div className="mt-1 truncate rounded bg-red-100 px-1 py-0.5 text-xs text-red-700">{holiday.holiday_name}</div>}
                 </div>
               );
@@ -108,14 +108,14 @@ export default function AdminHolidaysPage() {
 
       <Card>
         <CardHeader><CardTitle>休日一覧 ({monthHolidays.length}件)</CardTitle></CardHeader>
-        {monthHolidays.length === 0 ? <p className="text-sm text-gray-500">この月の休日はありません</p> : (
+        {monthHolidays.length === 0 ? <p className="text-sm text-[var(--neutral-foreground-3)]">この月の休日はありません</p> : (
           <div className="space-y-2">
             {monthHolidays.map((h) => (
-              <div key={h.id} className="flex items-center justify-between rounded-lg border border-gray-200 p-3">
+              <div key={h.id} className="flex items-center justify-between rounded-lg border border-[var(--neutral-stroke-2)] p-3">
                 <div>
-                  <span className="font-medium text-gray-900">{format(new Date(h.holiday_date), 'M/d(E)', { locale: ja })}</span>
-                  <span className="ml-2 text-gray-700">{h.holiday_name}</span>
-                  {h.classroom?.classroom_name && <span className="ml-2 text-sm text-gray-500">({h.classroom.classroom_name})</span>}
+                  <span className="font-medium text-[var(--neutral-foreground-1)]">{format(new Date(h.holiday_date), 'M/d(E)', { locale: ja })}</span>
+                  <span className="ml-2 text-[var(--neutral-foreground-2)]">{h.holiday_name}</span>
+                  {h.classroom?.classroom_name && <span className="ml-2 text-sm text-[var(--neutral-foreground-3)]">({h.classroom.classroom_name})</span>}
                 </div>
                 <Button variant="ghost" size="sm" onClick={() => { if (confirm('削除しますか？')) deleteMutation.mutate(h.id); }}><Trash2 className="h-4 w-4 text-red-500" /></Button>
               </div>

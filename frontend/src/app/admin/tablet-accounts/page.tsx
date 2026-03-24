@@ -65,8 +65,8 @@ export default function AdminTabletAccountsPage() {
       label: 'アカウント名',
       render: (a) => (
         <div className="flex items-center gap-2">
-          <Tablet className="h-4 w-4 text-gray-400" />
-          <span className="font-medium text-gray-900">{a.display_name}</span>
+          <Tablet className="h-4 w-4 text-[var(--neutral-foreground-4)]" />
+          <span className="font-medium text-[var(--neutral-foreground-1)]">{a.display_name}</span>
         </div>
       ),
     },
@@ -105,7 +105,7 @@ export default function AdminTabletAccountsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">タブレットアカウント管理</h1>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">タブレットアカウント管理</h1>
         <Button onClick={() => setModalOpen(true)} leftIcon={<Plus className="h-4 w-4" />}>
           アカウント作成
         </Button>
@@ -114,19 +114,19 @@ export default function AdminTabletAccountsPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <div className="text-center">
-            <p className="text-sm text-gray-500">全アカウント</p>
-            <p className="text-3xl font-bold text-gray-900">{accounts.length}</p>
+            <p className="text-sm text-[var(--neutral-foreground-3)]">全アカウント</p>
+            <p className="text-3xl font-bold text-[var(--neutral-foreground-1)]">{accounts.length}</p>
           </div>
         </Card>
         <Card>
           <div className="text-center">
-            <p className="text-sm text-gray-500">有効</p>
+            <p className="text-sm text-[var(--neutral-foreground-3)]">有効</p>
             <p className="text-3xl font-bold text-green-600">{accounts.filter((a) => a.is_active).length}</p>
           </div>
         </Card>
         <Card>
           <div className="text-center">
-            <p className="text-sm text-gray-500">無効</p>
+            <p className="text-sm text-[var(--neutral-foreground-3)]">無効</p>
             <p className="text-3xl font-bold text-red-600">{accounts.filter((a) => !a.is_active).length}</p>
           </div>
         </Card>

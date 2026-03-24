@@ -162,7 +162,7 @@ export default function StudentWeeklyPlansPage() {
                   <textarea className={inputCls} rows={2} value={form.should_do} onChange={(e) => setForm({ ...form, should_do: e.target.value })} />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-blue-600">やりたいこと</label>
+                  <label className="mb-1 block text-xs font-medium text-[var(--brand-80)]">やりたいこと</label>
                   <textarea className={inputCls} rows={2} value={form.want_to_do} onChange={(e) => setForm({ ...form, want_to_do: e.target.value })} />
                 </div>
               </div>
@@ -239,8 +239,8 @@ export default function StudentWeeklyPlansPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-blue-600">やりたいこと</label>
-                  <div className="rounded-lg border-l-4 border-l-blue-400 bg-blue-50/50 p-3">
+                  <label className="mb-1 block text-xs font-medium text-[var(--brand-80)]">やりたいこと</label>
+                  <div className="rounded-lg border-l-4 border-l-blue-400 bg-[var(--brand-160)]/50 p-3">
                     <p className="text-sm whitespace-pre-wrap">{nl(plan.want_to_do) || '-'}</p>
                   </div>
                 </div>

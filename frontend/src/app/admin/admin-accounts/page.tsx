@@ -270,8 +270,8 @@ export default function AdminAccountsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">管理者アカウント管理</h1>
-          <p className="mt-1 text-sm text-gray-500">マスター管理者専用</p>
+          <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">管理者アカウント管理</h1>
+          <p className="mt-1 text-sm text-[var(--neutral-foreground-3)]">マスター管理者専用</p>
         </div>
         <Button onClick={openAddModal} leftIcon={<Plus className="h-4 w-4" />}>
           新規管理者登録
@@ -279,7 +279,7 @@ export default function AdminAccountsPage() {
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
         <Input
           placeholder="氏名・ユーザー名で検索..."
           value={search}

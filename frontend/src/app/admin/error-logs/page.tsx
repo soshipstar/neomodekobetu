@@ -133,9 +133,9 @@ export default function ErrorLogsPage() {
       {/* Summary cards */}
       {summary && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <SummaryCard label="今日" count={summary.today} icon={<Clock className="h-5 w-5 text-blue-600" />} bg="bg-blue-100" />
+          <SummaryCard label="今日" count={summary.today} icon={<Clock className="h-5 w-5 text-[var(--brand-80)]" />} bg="bg-[var(--brand-160)]" />
           <SummaryCard label="今週" count={summary.this_week} icon={<AlertCircle className="h-5 w-5 text-orange-600" />} bg="bg-orange-100" />
-          <SummaryCard label="合計" count={summary.total} icon={<AlertTriangle className="h-5 w-5 text-gray-600" />} bg="bg-gray-100" />
+          <SummaryCard label="合計" count={summary.total} icon={<AlertTriangle className="h-5 w-5 text-[var(--neutral-foreground-3)]" />} bg="bg-[var(--neutral-background-4)]" />
           <Card>
             <CardBody>
               <div className="flex items-center justify-between text-xs">

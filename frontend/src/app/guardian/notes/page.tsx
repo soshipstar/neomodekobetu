@@ -62,7 +62,7 @@ export default function GuardianNotesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">連絡帳</h1>
+      <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">連絡帳</h1>
 
       {/* Date picker */}
       <div className="flex items-center gap-4">
@@ -74,9 +74,9 @@ export default function GuardianNotesPage() {
             type="date"
             value={dateStr}
             onChange={(e) => setSelectedDate(new Date(e.target.value))}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            className="rounded-lg border border-[var(--neutral-stroke-1)] px-3 py-2 text-sm"
           />
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-[var(--neutral-foreground-3)]">
             {format(selectedDate, 'yyyy年M月d日(E)', { locale: ja })}
           </p>
         </div>
@@ -94,8 +94,8 @@ export default function GuardianNotesPage() {
       ) : notes.length === 0 ? (
         <Card>
           <div className="py-12 text-center">
-            <BookOpen className="mx-auto h-12 w-12 text-gray-300" />
-            <p className="mt-2 text-sm text-gray-500">この日の連絡帳はありません</p>
+            <BookOpen className="mx-auto h-12 w-12 text-[var(--neutral-foreground-disabled)]" />
+            <p className="mt-2 text-sm text-[var(--neutral-foreground-3)]">この日の連絡帳はありません</p>
           </div>
         </Card>
       ) : (
@@ -115,28 +115,28 @@ export default function GuardianNotesPage() {
             {/* Activity name */}
             {note.daily_record?.activity_name && (
               <div className="mb-3 px-1">
-                <span className="text-xs font-medium text-gray-500">活動名: </span>
-                <span className="text-sm text-gray-700">{note.daily_record.activity_name}</span>
+                <span className="text-xs font-medium text-[var(--neutral-foreground-3)]">活動名: </span>
+                <span className="text-sm text-[var(--neutral-foreground-2)]">{note.daily_record.activity_name}</span>
               </div>
             )}
 
             {/* Sent time */}
             {note.sent_at && (
               <div className="mb-3 px-1">
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-[var(--neutral-foreground-4)]">
                   送信: {format(new Date(note.sent_at), 'HH:mm')}
                 </span>
               </div>
             )}
 
             {/* Integrated content */}
-            <div className="rounded-lg bg-gray-50 p-4 mb-4">
-              <p className="text-sm text-gray-700 whitespace-pre-wrap">{nl(note.integrated_content)}</p>
+            <div className="rounded-lg bg-[var(--neutral-background-3)] p-4 mb-4">
+              <p className="text-sm text-[var(--neutral-foreground-2)] whitespace-pre-wrap">{nl(note.integrated_content)}</p>
             </div>
 
             {/* Confirm button */}
             {!note.guardian_confirmed && (
-              <div className="flex justify-end border-t border-gray-100 pt-4">
+              <div className="flex justify-end border-t border-[var(--neutral-stroke-3)] pt-4">
                 <Button
                   onClick={() => confirmMutation.mutate(note.id)}
                   isLoading={confirmMutation.isPending}
@@ -147,7 +147,7 @@ export default function GuardianNotesPage() {
               </div>
             )}
             {note.guardian_confirmed && note.guardian_confirmed_at && (
-              <div className="text-right text-xs text-gray-400 border-t border-gray-100 pt-2">
+              <div className="text-right text-xs text-[var(--neutral-foreground-4)] border-t border-[var(--neutral-stroke-3)] pt-2">
                 {format(new Date(note.guardian_confirmed_at), 'yyyy年M月d日 HH:mm', { locale: ja })} に確認
               </div>
             )}

@@ -1046,7 +1046,7 @@ export default function KobetsuPlanPage() {
             <div className="flex items-center gap-6 text-xs text-[var(--neutral-foreground-3)]">
               <span className="flex items-center gap-1.5"><span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold">1</span>下書き作成</span>
               <span className="text-[var(--neutral-foreground-4)]">→</span>
-              <span className="flex items-center gap-1.5"><span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">2</span>保護者に確認依頼</span>
+              <span className="flex items-center gap-1.5"><span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--brand-160)] text-[var(--brand-70)] text-[10px] font-bold">2</span>保護者に確認依頼</span>
               <span className="text-[var(--neutral-foreground-4)]">→</span>
               <span className="flex items-center gap-1.5"><span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-green-700 text-[10px] font-bold">3</span>署名して確定</span>
             </div>

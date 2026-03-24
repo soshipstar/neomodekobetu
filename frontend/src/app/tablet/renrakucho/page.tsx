@@ -182,7 +182,7 @@ function TabletRenrakuchoPage() {
   });
 
   if (isLoading) {
-    return <div className="py-12 text-center text-xl text-gray-400">読み込み中...</div>;
+    return <div className="py-12 text-center text-xl text-[var(--neutral-foreground-4)]">読み込み中...</div>;
   }
 
   if (!activity || studentForms.length === 0) {
@@ -190,8 +190,8 @@ function TabletRenrakuchoPage() {
       <div className="space-y-6">
         <div className="rounded-xl bg-white p-6 shadow-md">
           <h1 className="text-2xl font-bold">連絡帳入力</h1>
-          <p className="mt-4 text-lg text-gray-500">参加者がいません。先に活動を作成してください。</p>
-          <Link href="/tablet" className="mt-4 inline-block text-xl text-blue-600 hover:underline">
+          <p className="mt-4 text-lg text-[var(--neutral-foreground-3)]">参加者がいません。先に活動を作成してください。</p>
+          <Link href="/tablet" className="mt-4 inline-block text-xl text-[var(--brand-80)] hover:underline">
             ← 戻る
           </Link>
         </div>
@@ -206,10 +206,10 @@ function TabletRenrakuchoPage() {
       {/* ヘッダー */}
       <div className="rounded-xl bg-white p-6 shadow-md">
         <h1 className="text-3xl font-bold">連絡帳入力フォーム</h1>
-        <div className="mt-2 text-xl text-gray-500">
+        <div className="mt-2 text-xl text-[var(--neutral-foreground-3)]">
           活動: {activity.activity_name} | {studentForms.length}名参加
         </div>
-        <Link href="/tablet" className="mt-2 inline-block text-xl text-blue-600 hover:underline">
+        <Link href="/tablet" className="mt-2 inline-block text-xl text-[var(--brand-80)] hover:underline">
           ← 戻る
         </Link>
       </div>
@@ -221,7 +221,7 @@ function TabletRenrakuchoPage() {
           <textarea
             value={commonActivity}
             onChange={(e) => setCommonActivity(e.target.value)}
-            className="flex-1 rounded-lg border-2 border-gray-300 p-4 text-xl focus:border-blue-500 focus:outline-none"
+            className="flex-1 rounded-lg border-2 border-[var(--neutral-stroke-1)] p-4 text-xl focus:border-[var(--brand-80)] focus:outline-none"
             rows={3}
           />
           <button
@@ -232,7 +232,7 @@ function TabletRenrakuchoPage() {
             className={`self-start whitespace-nowrap rounded-lg px-6 py-3 text-xl font-bold text-white ${
               activeField === 'common_activity'
                 ? 'animate-pulse bg-red-500'
-                : 'bg-blue-600 hover:bg-blue-700'
+                : 'bg-[var(--brand-80)] hover:bg-blue-700'
             }`}
           >
             {activeField === 'common_activity' ? '聞いています... (クリックで終了)' : '声で入力'}
@@ -248,8 +248,8 @@ function TabletRenrakuchoPage() {
             onClick={() => setCurrentStudentIndex(idx)}
             className={`rounded-lg px-5 py-3 text-lg font-bold transition-all ${
               idx === currentStudentIndex
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100'
+                ? 'bg-[var(--brand-80)] text-white'
+                : 'bg-white text-[var(--neutral-foreground-2)] hover:bg-[var(--neutral-background-4)]'
             }`}
           >
             {form.student_name}
@@ -270,7 +270,7 @@ function TabletRenrakuchoPage() {
             <select
               value={currentForm.domain1}
               onChange={(e) => updateStudentForm(currentStudentIndex, 'domain1', e.target.value)}
-              className="mb-3 w-full rounded-lg border-2 border-gray-300 p-4 text-xl focus:border-blue-500 focus:outline-none"
+              className="mb-3 w-full rounded-lg border-2 border-[var(--neutral-stroke-1)] p-4 text-xl focus:border-[var(--brand-80)] focus:outline-none"
             >
               <option value="">領域を選択</option>
               {DOMAINS.filter((d) => d.key !== currentForm.domain2).map((d) => (
@@ -281,7 +281,7 @@ function TabletRenrakuchoPage() {
               <textarea
                 value={currentForm.domain1_content}
                 onChange={(e) => updateStudentForm(currentStudentIndex, 'domain1_content', e.target.value)}
-                className="flex-1 rounded-lg border-2 border-gray-300 p-4 text-xl focus:border-blue-500 focus:outline-none"
+                className="flex-1 rounded-lg border-2 border-[var(--neutral-stroke-1)] p-4 text-xl focus:border-[var(--brand-80)] focus:outline-none"
                 rows={3}
                 placeholder="具体的な様子を入力..."
               />
@@ -297,7 +297,7 @@ function TabletRenrakuchoPage() {
                 className={`self-start whitespace-nowrap rounded-lg px-6 py-3 text-xl font-bold text-white ${
                   activeField === `domain1_${currentForm.student_id}`
                     ? 'animate-pulse bg-red-500'
-                    : 'bg-blue-600 hover:bg-blue-700'
+                    : 'bg-[var(--brand-80)] hover:bg-blue-700'
                 }`}
               >
                 {activeField === `domain1_${currentForm.student_id}` ? '聞いています...' : '声で入力'}
@@ -311,7 +311,7 @@ function TabletRenrakuchoPage() {
             <select
               value={currentForm.domain2}
               onChange={(e) => updateStudentForm(currentStudentIndex, 'domain2', e.target.value)}
-              className="mb-3 w-full rounded-lg border-2 border-gray-300 p-4 text-xl focus:border-blue-500 focus:outline-none"
+              className="mb-3 w-full rounded-lg border-2 border-[var(--neutral-stroke-1)] p-4 text-xl focus:border-[var(--brand-80)] focus:outline-none"
             >
               <option value="">領域を選択</option>
               {DOMAINS.filter((d) => d.key !== currentForm.domain1).map((d) => (
@@ -322,7 +322,7 @@ function TabletRenrakuchoPage() {
               <textarea
                 value={currentForm.domain2_content}
                 onChange={(e) => updateStudentForm(currentStudentIndex, 'domain2_content', e.target.value)}
-                className="flex-1 rounded-lg border-2 border-gray-300 p-4 text-xl focus:border-blue-500 focus:outline-none"
+                className="flex-1 rounded-lg border-2 border-[var(--neutral-stroke-1)] p-4 text-xl focus:border-[var(--brand-80)] focus:outline-none"
                 rows={3}
                 placeholder="具体的な様子を入力..."
               />
@@ -338,7 +338,7 @@ function TabletRenrakuchoPage() {
                 className={`self-start whitespace-nowrap rounded-lg px-6 py-3 text-xl font-bold text-white ${
                   activeField === `domain2_${currentForm.student_id}`
                     ? 'animate-pulse bg-red-500'
-                    : 'bg-blue-600 hover:bg-blue-700'
+                    : 'bg-[var(--brand-80)] hover:bg-blue-700'
                 }`}
               >
                 {activeField === `domain2_${currentForm.student_id}` ? '聞いています...' : '声で入力'}
@@ -353,7 +353,7 @@ function TabletRenrakuchoPage() {
               <textarea
                 value={currentForm.notes}
                 onChange={(e) => updateStudentForm(currentStudentIndex, 'notes', e.target.value)}
-                className="flex-1 rounded-lg border-2 border-gray-300 p-4 text-xl focus:border-blue-500 focus:outline-none"
+                className="flex-1 rounded-lg border-2 border-[var(--neutral-stroke-1)] p-4 text-xl focus:border-[var(--brand-80)] focus:outline-none"
                 rows={3}
                 placeholder="その他気になったことなど..."
               />
@@ -369,7 +369,7 @@ function TabletRenrakuchoPage() {
                 className={`self-start whitespace-nowrap rounded-lg px-6 py-3 text-xl font-bold text-white ${
                   activeField === `notes_${currentForm.student_id}`
                     ? 'animate-pulse bg-red-500'
-                    : 'bg-blue-600 hover:bg-blue-700'
+                    : 'bg-[var(--brand-80)] hover:bg-blue-700'
                 }`}
               >
                 {activeField === `notes_${currentForm.student_id}` ? '聞いています...' : '声で入力'}
@@ -382,7 +382,7 @@ function TabletRenrakuchoPage() {
             type="button"
             onClick={() => saveStudentMutation.mutate(currentForm)}
             disabled={saveStudentMutation.isPending}
-            className="w-full rounded-lg bg-blue-600 py-4 text-xl font-bold text-white hover:bg-blue-700 disabled:opacity-50"
+            className="w-full rounded-lg bg-[var(--brand-80)] py-4 text-xl font-bold text-white hover:bg-blue-700 disabled:opacity-50"
           >
             {saveStudentMutation.isPending ? '保存中...' : `${currentForm.student_name}の記録を保存`}
           </button>
@@ -393,7 +393,7 @@ function TabletRenrakuchoPage() {
               type="button"
               disabled={currentStudentIndex === 0}
               onClick={() => setCurrentStudentIndex((i) => i - 1)}
-              className="rounded-lg bg-gray-200 px-8 py-3 text-xl font-bold text-gray-700 hover:bg-gray-300 disabled:opacity-30"
+              className="rounded-lg bg-[var(--neutral-background-5)] px-8 py-3 text-xl font-bold text-[var(--neutral-foreground-2)] hover:bg-gray-300 disabled:opacity-30"
             >
               ← 前の生徒
             </button>
@@ -401,7 +401,7 @@ function TabletRenrakuchoPage() {
               type="button"
               disabled={currentStudentIndex >= studentForms.length - 1}
               onClick={() => setCurrentStudentIndex((i) => i + 1)}
-              className="rounded-lg bg-gray-200 px-8 py-3 text-xl font-bold text-gray-700 hover:bg-gray-300 disabled:opacity-30"
+              className="rounded-lg bg-[var(--neutral-background-5)] px-8 py-3 text-xl font-bold text-[var(--neutral-foreground-2)] hover:bg-gray-300 disabled:opacity-30"
             >
               次の生徒 →
             </button>
@@ -422,7 +422,7 @@ function TabletRenrakuchoPage() {
         <button
           type="button"
           onClick={() => router.push('/tablet')}
-          className="flex-1 rounded-lg bg-gray-500 py-5 text-2xl font-bold text-white hover:bg-gray-600"
+          className="flex-1 rounded-lg bg-[var(--neutral-background-3)]0 py-5 text-2xl font-bold text-white hover:bg-gray-600"
         >
           キャンセル
         </button>

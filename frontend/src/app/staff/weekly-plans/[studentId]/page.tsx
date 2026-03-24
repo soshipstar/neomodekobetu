@@ -111,7 +111,7 @@ const ACHIEVEMENT_COLORS: Record<number, string> = {
   0: 'bg-gray-400',
   1: 'bg-red-500',
   2: 'bg-yellow-500',
-  3: 'bg-blue-500',
+  3: 'bg-[var(--brand-80)]',
   4: 'bg-green-400',
   5: 'bg-green-600',
 };
@@ -153,7 +153,7 @@ function RatingScale({
           className={`flex h-9 w-9 items-center justify-center rounded-md border-2 text-sm font-bold transition-all ${
             value === n
               ? 'border-purple-600 bg-purple-600 text-white'
-              : 'border-gray-300 bg-white text-gray-400 hover:border-purple-400'
+              : 'border-[var(--neutral-stroke-1)] bg-white text-[var(--neutral-foreground-4)] hover:border-[var(--brand-110)]'
           }`}
           aria-label={`${name} ${n}`}
         >
@@ -177,13 +177,13 @@ function ViewSection({
   const hasContent = !!content?.trim();
   return (
     <div className="mb-5">
-      <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-purple-700">
+      <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--brand-60)]">
         {icon}
         {label}
       </h3>
       <div
-        className={`rounded-md border-l-4 border-purple-500 bg-gray-50 p-3 text-sm leading-relaxed whitespace-pre-wrap ${
-          !hasContent ? 'italic text-gray-400' : 'text-[var(--neutral-foreground-1)]'
+        className={`rounded-md border-l-4 border-[var(--brand-90)] bg-[var(--neutral-background-3)] p-3 text-sm leading-relaxed whitespace-pre-wrap ${
+          !hasContent ? 'italic text-[var(--neutral-foreground-4)]' : 'text-[var(--neutral-foreground-1)]'
         }`}
       >
         {hasContent ? nl(content) : '未記入'}
@@ -217,7 +217,7 @@ function AchievementDisplay({
         {icon}
         {label}
       </div>
-      <div className="mb-2 rounded bg-gray-50 p-2 text-sm leading-relaxed whitespace-pre-wrap">
+      <div className="mb-2 rounded bg-[var(--neutral-background-3)] p-2 text-sm leading-relaxed whitespace-pre-wrap">
         {nl(goalText)}
       </div>
       <span
@@ -226,7 +226,7 @@ function AchievementDisplay({
         {achLabel}
       </span>
       {comment?.trim() && (
-        <div className="mt-2 rounded border-l-3 border-yellow-500 bg-yellow-50 p-2 text-xs text-gray-700">
+        <div className="mt-2 rounded border-l-3 border-yellow-500 bg-yellow-50 p-2 text-xs text-[var(--neutral-foreground-2)]">
           <MessageSquare className="mr-1 inline-block h-3 w-3" />
           {comment}
         </div>
@@ -543,7 +543,7 @@ export default function WeeklyPlanStudentDetailPage() {
         <Card>
           <CardBody>
             <div className="py-16 text-center">
-              <Calendar className="mx-auto mb-4 h-12 w-12 text-gray-300" />
+              <Calendar className="mx-auto mb-4 h-12 w-12 text-[var(--neutral-foreground-disabled)]" />
               <p className="mb-4 text-[var(--neutral-foreground-4)]">
                 この週の計画はまだ作成されていません
               </p>
@@ -582,12 +582,12 @@ export default function WeeklyPlanStudentDetailPage() {
 
             {/* 今週の目標 */}
             <div className="mb-5">
-              <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-purple-700">
+              <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--brand-60)]">
                 <Target className="h-4 w-4" />
                 今週の目標 <span className="text-red-500">*</span>
               </label>
               <textarea
-                className={`w-full min-h-[60px] rounded-lg border p-3 text-sm focus:ring-1 resize-y ${!form.weekly_goal.trim() ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-purple-500 focus:ring-purple-500'}`}
+                className={`w-full min-h-[60px] rounded-lg border p-3 text-sm focus:ring-1 resize-y ${!form.weekly_goal.trim() ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-[var(--neutral-stroke-1)] focus:border-[var(--brand-90)] focus:ring-[var(--brand-80)]'}`}
                 placeholder="今週達成したい目標を記入してください"
                 value={form.weekly_goal}
                 onChange={(e) => setForm((f) => ({ ...f, weekly_goal: e.target.value }))}
@@ -597,12 +597,12 @@ export default function WeeklyPlanStudentDetailPage() {
 
             {/* いっしょに決めた目標 */}
             <div className="mb-5">
-              <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-purple-700">
+              <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--brand-60)]">
                 <Handshake className="h-4 w-4" />
                 いっしょに決めた目標 <span className="text-red-500">*</span>
               </label>
               <textarea
-                className={`w-full min-h-[60px] rounded-lg border p-3 text-sm focus:ring-1 resize-y ${!form.shared_goal.trim() ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-purple-500 focus:ring-purple-500'}`}
+                className={`w-full min-h-[60px] rounded-lg border p-3 text-sm focus:ring-1 resize-y ${!form.shared_goal.trim() ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-[var(--neutral-stroke-1)] focus:border-[var(--brand-90)] focus:ring-[var(--brand-80)]'}`}
                 placeholder="生徒と一緒に決めた目標を記入してください"
                 value={form.shared_goal}
                 onChange={(e) => setForm((f) => ({ ...f, shared_goal: e.target.value }))}
@@ -612,12 +612,12 @@ export default function WeeklyPlanStudentDetailPage() {
 
             {/* やるべきこと */}
             <div className="mb-5">
-              <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-purple-700">
+              <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--brand-60)]">
                 <CheckCircle className="h-4 w-4" />
                 やるべきこと
               </label>
               <textarea
-                className="w-full min-h-[60px] rounded-lg border border-gray-300 p-3 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 resize-y"
+                className="w-full min-h-[60px] rounded-lg border border-[var(--neutral-stroke-1)] p-3 text-sm focus:border-[var(--brand-90)] focus:ring-1 focus:ring-[var(--brand-80)] resize-y"
                 placeholder="必ずやるべきことを記入してください"
                 value={form.must_do}
                 onChange={(e) => setForm((f) => ({ ...f, must_do: e.target.value }))}
@@ -626,12 +626,12 @@ export default function WeeklyPlanStudentDetailPage() {
 
             {/* やったほうがいいこと */}
             <div className="mb-5">
-              <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-purple-700">
+              <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--brand-60)]">
                 <ThumbsUp className="h-4 w-4" />
                 やったほうがいいこと
               </label>
               <textarea
-                className="w-full min-h-[60px] rounded-lg border border-gray-300 p-3 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 resize-y"
+                className="w-full min-h-[60px] rounded-lg border border-[var(--neutral-stroke-1)] p-3 text-sm focus:border-[var(--brand-90)] focus:ring-1 focus:ring-[var(--brand-80)] resize-y"
                 placeholder="できればやったほうがいいことを記入してください"
                 value={form.should_do}
                 onChange={(e) => setForm((f) => ({ ...f, should_do: e.target.value }))}
@@ -640,12 +640,12 @@ export default function WeeklyPlanStudentDetailPage() {
 
             {/* やりたいこと */}
             <div className="mb-5">
-              <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-purple-700">
+              <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--brand-60)]">
                 <Lightbulb className="h-4 w-4" />
                 やりたいこと
               </label>
               <textarea
-                className="w-full min-h-[60px] rounded-lg border border-gray-300 p-3 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 resize-y"
+                className="w-full min-h-[60px] rounded-lg border border-[var(--neutral-stroke-1)] p-3 text-sm focus:border-[var(--brand-90)] focus:ring-1 focus:ring-[var(--brand-80)] resize-y"
                 placeholder="本人がやりたいと思っていることを記入してください"
                 value={form.want_to_do}
                 onChange={(e) => setForm((f) => ({ ...f, want_to_do: e.target.value }))}
@@ -667,11 +667,11 @@ export default function WeeklyPlanStudentDetailPage() {
                     className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-[120px_1fr] sm:items-start"
                   >
                     <div className="sm:pt-3">
-                      <div className="font-semibold text-purple-700">{day}</div>
+                      <div className="font-semibold text-[var(--brand-60)]">{day}</div>
                       <div className="text-xs text-[var(--neutral-foreground-4)]">{dateStr}</div>
                     </div>
                     <textarea
-                      className="w-full min-h-[50px] rounded-lg border border-gray-300 p-3 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 resize-y"
+                      className="w-full min-h-[50px] rounded-lg border border-[var(--neutral-stroke-1)] p-3 text-sm focus:border-[var(--brand-90)] focus:ring-1 focus:ring-[var(--brand-80)] resize-y"
                       placeholder="この日の計画や目標を記入してください"
                       rows={2}
                       value={form.plan_data[dayKey] ?? ''}
@@ -781,13 +781,13 @@ export default function WeeklyPlanStudentDetailPage() {
                       className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-[120px_1fr] sm:items-start"
                     >
                       <div className="sm:pt-3">
-                        <div className="font-semibold text-purple-700">{day}</div>
+                        <div className="font-semibold text-[var(--brand-60)]">{day}</div>
                         <div className="text-xs text-[var(--neutral-foreground-4)]">{dateStr}</div>
                       </div>
                       <div
-                        className={`rounded-md border-l-4 border-purple-500 bg-gray-50 p-3 text-sm leading-relaxed whitespace-pre-wrap ${
+                        className={`rounded-md border-l-4 border-[var(--brand-90)] bg-[var(--neutral-background-3)] p-3 text-sm leading-relaxed whitespace-pre-wrap ${
                           !content?.trim()
-                            ? 'italic text-gray-400'
+                            ? 'italic text-[var(--neutral-foreground-4)]'
                             : 'text-[var(--neutral-foreground-1)]'
                         }`}
                       >
@@ -800,7 +800,7 @@ export default function WeeklyPlanStudentDetailPage() {
 
               {/* Submissions */}
               {plan?.submissions && plan.submissions.length > 0 && (
-                <div className="mt-8 border-t-2 border-gray-200 pt-6">
+                <div className="mt-8 border-t-2 border-[var(--neutral-stroke-2)] pt-6">
                   <h3 className="mb-3 flex items-center gap-2 text-base font-bold text-red-600">
                     <CheckCircle className="h-5 w-5" />
                     提出物一覧
@@ -829,7 +829,7 @@ export default function WeeklyPlanStudentDetailPage() {
                     return (
                       <div
                         key={sub.id}
-                        className={`mb-3 flex items-center justify-between rounded-md border-l-4 bg-gray-50 p-3 ${
+                        className={`mb-3 flex items-center justify-between rounded-md border-l-4 bg-[var(--neutral-background-3)] p-3 ${
                           sub.is_completed
                             ? 'border-green-500 opacity-60 line-through'
                             : 'border-red-500'
@@ -860,12 +860,12 @@ export default function WeeklyPlanStudentDetailPage() {
             <Card>
               <CardBody>
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-lg font-bold text-blue-600">達成度評価</h3>
+                  <h3 className="text-lg font-bold text-[var(--brand-80)]">達成度評価</h3>
                   <span className="text-xs text-[var(--neutral-foreground-4)]">
                     評価日: {format(new Date(plan.evaluated_at), 'yyyy年M月d日', { locale: ja })}
                   </span>
                 </div>
-                <div className="rounded-lg bg-gray-50 p-4">
+                <div className="rounded-lg bg-[var(--neutral-background-3)] p-4">
                   <AchievementDisplay
                     icon={<Target className="h-4 w-4" />}
                     label="今週の目標"
@@ -916,14 +916,14 @@ export default function WeeklyPlanStudentDetailPage() {
                         const label = ACHIEVEMENT_LABELS[a] || '未評価';
                         return (
                           <div key={key} className="mb-2 rounded bg-white p-3">
-                            <span className="mr-2 font-semibold text-purple-700">{key}</span>
+                            <span className="mr-2 font-semibold text-[var(--brand-60)]">{key}</span>
                             <span
                               className={`inline-block rounded px-2 py-0.5 text-xs font-bold text-white ${colorClass}`}
                             >
                               {label}
                             </span>
                             {data.comment && (
-                              <p className="mt-1 text-xs text-gray-600">{data.comment}</p>
+                              <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">{data.comment}</p>
                             )}
                           </div>
                         );
@@ -934,7 +934,7 @@ export default function WeeklyPlanStudentDetailPage() {
                   {/* Overall comment */}
                   {plan.overall_comment?.trim() && (
                     <div className="mt-4 rounded-lg bg-white p-4">
-                      <h4 className="mb-2 text-sm font-bold text-purple-700">
+                      <h4 className="mb-2 text-sm font-bold text-[var(--brand-60)]">
                         週全体の総合コメント
                       </h4>
                       <p className="text-sm leading-relaxed whitespace-pre-wrap text-[var(--neutral-foreground-1)]">
@@ -960,10 +960,10 @@ export default function WeeklyPlanStudentDetailPage() {
                   {plan.comments.map((c) => (
                     <div
                       key={c.id}
-                      className="rounded-lg border-l-4 border-green-500 bg-gray-50 p-3"
+                      className="rounded-lg border-l-4 border-green-500 bg-[var(--neutral-background-3)] p-3"
                     >
                       <div className="mb-1 flex items-center justify-between">
-                        <span className="text-sm font-semibold text-purple-700">
+                        <span className="text-sm font-semibold text-[var(--brand-60)]">
                           {c.user?.full_name ?? '不明'}
                         </span>
                         <span className="text-xs text-[var(--neutral-foreground-4)]">
@@ -985,9 +985,9 @@ export default function WeeklyPlanStudentDetailPage() {
 
               {/* Comment form */}
               {plan?.id && (
-                <div className="border-t border-gray-200 pt-4">
+                <div className="border-t border-[var(--neutral-stroke-2)] pt-4">
                   <textarea
-                    className="w-full min-h-[80px] rounded-lg border border-gray-300 p-3 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 resize-y"
+                    className="w-full min-h-[80px] rounded-lg border border-[var(--neutral-stroke-1)] p-3 text-sm focus:border-[var(--brand-90)] focus:ring-1 focus:ring-[var(--brand-80)] resize-y"
                     placeholder="コメントを入力..."
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}

@@ -84,9 +84,9 @@ const ACHIEVEMENT_LABELS: Record<string, { label: string; color: string }> = {
   '達成': { label: '達成', color: 'text-green-700 bg-green-100' },
   '継続': { label: '継続', color: 'text-yellow-700 bg-yellow-100' },
   '未達成': { label: '未達成', color: 'text-red-700 bg-red-100' },
-  '進行中': { label: '進行中', color: 'text-blue-700 bg-blue-100' },
+  '進行中': { label: '進行中', color: 'text-[var(--brand-70)] bg-[var(--brand-160)]' },
   '継続中': { label: '継続中', color: 'text-yellow-700 bg-yellow-100' },
-  '未着手': { label: '未着手', color: 'text-gray-700 bg-gray-100' },
+  '未着手': { label: '未着手', color: 'text-[var(--neutral-foreground-2)] bg-[var(--neutral-background-4)]' },
   '見直し必要': { label: '見直し必要', color: 'text-red-700 bg-red-100' },
 };
 
@@ -284,7 +284,7 @@ export default function PlanBasisPage() {
                         </thead>
                         <tbody>
                           {monitoring.details.map((d, i) => {
-                            const ach = ACHIEVEMENT_LABELS[d.achievement_status] || { label: d.achievement_status || '（未評価）', color: 'text-gray-700 bg-gray-100' };
+                            const ach = ACHIEVEMENT_LABELS[d.achievement_status] || { label: d.achievement_status || '（未評価）', color: 'text-[var(--neutral-foreground-2)] bg-[var(--neutral-background-4)]' };
                             return (
                               <tr key={i}>
                                 <td className="px-3 py-1.5 border border-[var(--neutral-stroke-2)] text-xs">
@@ -365,9 +365,9 @@ function GoalBox({ label, text, color }: { label: string; text: string | null | 
   const colors = {
     pink: 'bg-pink-50 border-pink-200',
     green: 'bg-green-50 border-green-200',
-    blue: 'bg-blue-50 border-blue-200',
+    blue: 'bg-[var(--brand-160)] border-[var(--brand-130)]',
   };
-  const labelColors = { pink: 'text-pink-700', green: 'text-green-700', blue: 'text-blue-700' };
+  const labelColors = { pink: 'text-pink-700', green: 'text-green-700', blue: 'text-[var(--brand-70)]' };
 
   return (
     <div className={`rounded-lg border p-3 ${colors[color]}`}>

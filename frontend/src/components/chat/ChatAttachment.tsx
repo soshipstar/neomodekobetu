@@ -35,20 +35,20 @@ export function ChatAttachment({ attachment, isMine }: ChatAttachmentProps) {
       className={cn(
         'flex items-center gap-2 rounded-lg border px-3 py-2 transition-colors',
         isMine
-          ? 'border-blue-400/50 bg-blue-500/20 hover:bg-blue-500/30'
-          : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
+          ? 'border-blue-400/50 bg-[var(--brand-80)]/20 hover:bg-[var(--brand-80)]/30'
+          : 'border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] hover:bg-[var(--neutral-background-4)]'
       )}
     >
-      <FileText className={cn('h-5 w-5 shrink-0', isMine ? 'text-blue-200' : 'text-gray-400')} />
+      <FileText className={cn('h-5 w-5 shrink-0', isMine ? 'text-blue-200' : 'text-[var(--neutral-foreground-4)]')} />
       <div className="flex-1 min-w-0">
-        <p className={cn('truncate text-xs font-medium', isMine ? 'text-white' : 'text-gray-700')}>
+        <p className={cn('truncate text-xs font-medium', isMine ? 'text-white' : 'text-[var(--neutral-foreground-2)]')}>
           {attachment.name}
         </p>
-        <p className={cn('text-[10px]', isMine ? 'text-blue-200' : 'text-gray-400')}>
+        <p className={cn('text-[10px]', isMine ? 'text-blue-200' : 'text-[var(--neutral-foreground-4)]')}>
           {formatFileSize(attachment.size)}
         </p>
       </div>
-      <Download className={cn('h-4 w-4 shrink-0', isMine ? 'text-blue-200' : 'text-gray-400')} />
+      <Download className={cn('h-4 w-4 shrink-0', isMine ? 'text-blue-200' : 'text-[var(--neutral-foreground-4)]')} />
     </a>
   );
 }

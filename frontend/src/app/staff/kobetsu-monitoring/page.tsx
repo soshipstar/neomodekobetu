@@ -459,7 +459,7 @@ export default function KobetsuMonitoringPage() {
                   </button>
                   <button
                     onClick={() => handlePdfDownload(m.id)}
-                    className="rounded bg-blue-500 p-1 text-white hover:bg-blue-600"
+                    className="rounded bg-[var(--brand-80)] p-1 text-white hover:bg-[var(--brand-80)]"
                     title="PDF出力"
                   >
                     <Download className="h-3.5 w-3.5" />
@@ -478,24 +478,24 @@ export default function KobetsuMonitoringPage() {
           {/* Plan Info */}
           <Card className="border-l-4 border-l-blue-500">
             <CardBody>
-              <h3 className="mb-3 font-semibold text-blue-600">対象の個別支援計画書</h3>
+              <h3 className="mb-3 font-semibold text-[var(--brand-80)]">対象の個別支援計画書</h3>
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                 <div>
-                  <p className="text-xs font-semibold text-blue-600">生徒氏名</p>
+                  <p className="text-xs font-semibold text-[var(--brand-80)]">生徒氏名</p>
                   <p className="text-sm text-[var(--neutral-foreground-1)]">{planData.student_name}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-blue-600">作成年月日</p>
+                  <p className="text-xs font-semibold text-[var(--brand-80)]">作成年月日</p>
                   <p className="text-sm text-[var(--neutral-foreground-1)]">{format(new Date(planData.created_date), 'yyyy年MM月dd日')}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-blue-600">長期目標達成時期</p>
+                  <p className="text-xs font-semibold text-[var(--brand-80)]">長期目標達成時期</p>
                   <p className="text-sm text-[var(--neutral-foreground-1)]">
                     {planData.long_term_goal_date ? format(new Date(planData.long_term_goal_date), 'yyyy年MM月dd日') : '未設定'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-blue-600">短期目標達成時期</p>
+                  <p className="text-xs font-semibold text-[var(--brand-80)]">短期目標達成時期</p>
                   <p className="text-sm text-[var(--neutral-foreground-1)]">
                     {planData.short_term_goal_date ? format(new Date(planData.short_term_goal_date), 'yyyy年MM月dd日') : '未設定'}
                   </p>
@@ -522,7 +522,7 @@ export default function KobetsuMonitoringPage() {
           {/* Support Goals Achievement Table */}
           <div>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b-2 border-blue-500 pb-2">
-              <h2 className="text-lg font-semibold text-blue-600">支援目標の達成状況</h2>
+              <h2 className="text-lg font-semibold text-[var(--brand-80)]">支援目標の達成状況</h2>
               <Button
                 variant="primary"
                 size="sm"
@@ -553,12 +553,12 @@ export default function KobetsuMonitoringPage() {
               <table className="w-full border-collapse shadow">
                 <thead>
                   <tr>
-                    <th className="border border-blue-500 bg-blue-600 px-2 py-2 text-left text-xs font-semibold text-white" style={{ width: '100px' }}>項目</th>
-                    <th className="border border-blue-500 bg-blue-600 px-2 py-2 text-left text-xs font-semibold text-white" style={{ width: '196px' }}>支援目標</th>
-                    <th className="border border-blue-500 bg-blue-600 px-2 py-2 text-left text-xs font-semibold text-white" style={{ width: '245px' }}>支援内容</th>
-                    <th className="border border-blue-500 bg-blue-600 px-2 py-2 text-left text-xs font-semibold text-white" style={{ width: '64px' }}>達成時期</th>
-                    <th className="border border-blue-500 bg-blue-600 px-2 py-2 text-left text-xs font-semibold text-white" style={{ width: '95px' }}>達成状況</th>
-                    <th className="border border-blue-500 bg-blue-600 px-2 py-2 text-left text-xs font-semibold text-white" style={{ width: '300px' }}>モニタリングコメント</th>
+                    <th className="border border-blue-500 bg-[var(--brand-80)] px-2 py-2 text-left text-xs font-semibold text-white" style={{ width: '100px' }}>項目</th>
+                    <th className="border border-blue-500 bg-[var(--brand-80)] px-2 py-2 text-left text-xs font-semibold text-white" style={{ width: '196px' }}>支援目標</th>
+                    <th className="border border-blue-500 bg-[var(--brand-80)] px-2 py-2 text-left text-xs font-semibold text-white" style={{ width: '245px' }}>支援内容</th>
+                    <th className="border border-blue-500 bg-[var(--brand-80)] px-2 py-2 text-left text-xs font-semibold text-white" style={{ width: '64px' }}>達成時期</th>
+                    <th className="border border-blue-500 bg-[var(--brand-80)] px-2 py-2 text-left text-xs font-semibold text-white" style={{ width: '95px' }}>達成状況</th>
+                    <th className="border border-blue-500 bg-[var(--brand-80)] px-2 py-2 text-left text-xs font-semibold text-white" style={{ width: '300px' }}>モニタリングコメント</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -617,7 +617,7 @@ export default function KobetsuMonitoringPage() {
                           type="button"
                           onClick={() => handleAIGenerateSingle(detail.id)}
                           disabled={generatingDetailId === detail.id}
-                          className="mt-1 w-full rounded border border-blue-500 bg-[var(--neutral-background-1)] px-2 py-1 text-[10px] text-blue-600 hover:bg-blue-500 hover:text-white disabled:cursor-not-allowed disabled:border-gray-400 disabled:bg-gray-400 disabled:text-white"
+                          className="mt-1 w-full rounded border border-blue-500 bg-[var(--neutral-background-1)] px-2 py-1 text-[10px] text-[var(--brand-80)] hover:bg-[var(--brand-80)] hover:text-white disabled:cursor-not-allowed disabled:border-gray-400 disabled:bg-gray-400 disabled:text-white"
                         >
                           {generatingDetailId === detail.id ? 'AI生成中...' : 'AI生成'}
                         </button>
@@ -631,13 +631,13 @@ export default function KobetsuMonitoringPage() {
 
           {/* Goal Achievement Section */}
           <div>
-            <h2 className="mb-4 border-b-2 border-blue-500 pb-2 text-lg font-semibold text-blue-600">
+            <h2 className="mb-4 border-b-2 border-blue-500 pb-2 text-lg font-semibold text-[var(--brand-80)]">
               目標の達成状況
             </h2>
 
             {/* Long-term goal */}
             <div className="mb-6 rounded-lg border-l-4 border-l-purple-500 bg-[var(--neutral-background-2)] p-4">
-              <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-purple-600">
+              <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--brand-70)]">
                 <Target className="h-4 w-4" /> 長期目標
               </h4>
               {(planData.long_term_goal_text || planData.long_term_goal) ? (
@@ -714,7 +714,7 @@ export default function KobetsuMonitoringPage() {
 
           {/* Overall Comment */}
           <div>
-            <h2 className="mb-4 border-b-2 border-blue-500 pb-2 text-lg font-semibold text-blue-600">総合所見</h2>
+            <h2 className="mb-4 border-b-2 border-blue-500 pb-2 text-lg font-semibold text-[var(--brand-80)]">総合所見</h2>
             <textarea
               className="w-full resize-y rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
               rows={6}
@@ -725,13 +725,13 @@ export default function KobetsuMonitoringPage() {
 
           {/* Signature Section */}
           <div>
-            <h2 className="mb-4 border-b-2 border-blue-500 pb-2 text-lg font-semibold text-blue-600">電子署名</h2>
+            <h2 className="mb-4 border-b-2 border-blue-500 pb-2 text-lg font-semibold text-[var(--brand-80)]">電子署名</h2>
             <Card>
               <CardBody>
                 <div className="grid gap-8 md:grid-cols-2">
                   {/* Staff Signature */}
                   <div>
-                    <p className="mb-2 text-sm font-semibold text-blue-600">職員署名</p>
+                    <p className="mb-2 text-sm font-semibold text-[var(--brand-80)]">職員署名</p>
                     <SignaturePad
                       ref={staffSigRef}
                       label=""
@@ -773,7 +773,7 @@ export default function KobetsuMonitoringPage() {
 
                   {/* Guardian Signature (display only) */}
                   <div>
-                    <p className="mb-2 text-sm font-semibold text-blue-600">保護者署名</p>
+                    <p className="mb-2 text-sm font-semibold text-[var(--brand-80)]">保護者署名</p>
                     {monitoringData?.guardian_signature ? (
                       <div className="rounded-lg bg-[var(--neutral-background-2)] p-3">
                         <p className="mb-1 text-xs text-[var(--neutral-foreground-3)]">

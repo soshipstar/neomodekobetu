@@ -298,7 +298,7 @@ export default function GuardianKakehashiHistoryPage() {
                           }`}
                         >
                           <div className="mb-3 flex items-center justify-between">
-                            <span className="flex items-center gap-1.5 text-sm font-semibold text-purple-600">
+                            <span className="flex items-center gap-1.5 text-sm font-semibold text-[var(--brand-70)]">
                               <User className="h-4 w-4" />
                               保護者
                             </span>
@@ -360,7 +360,7 @@ export default function GuardianKakehashiHistoryPage() {
                           }`}
                         >
                           <div className="mb-3 flex items-center justify-between">
-                            <span className="flex items-center gap-1.5 text-sm font-semibold text-blue-600">
+                            <span className="flex items-center gap-1.5 text-sm font-semibold text-[var(--brand-80)]">
                               <Building2 className="h-4 w-4" />
                               事業所
                             </span>

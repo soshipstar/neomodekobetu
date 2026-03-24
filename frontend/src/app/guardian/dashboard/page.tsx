@@ -324,7 +324,7 @@ export default function GuardianDashboardPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">連絡帳ダッシュボード</h1>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">連絡帳ダッシュボード</h1>
         <div className="grid gap-4 sm:grid-cols-2">
           {[...Array(4)].map((_, i) => (
             <SkeletonCard key={i} />
@@ -337,10 +337,10 @@ export default function GuardianDashboardPage() {
   if (error && !data) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">連絡帳ダッシュボード</h1>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">連絡帳ダッシュボード</h1>
         <Card>
           <CardBody>
-            <p className="text-gray-500">
+            <p className="text-[var(--neutral-foreground-3)]">
               ダッシュボードの読み込みに失敗しました。ページを再読み込みしてください。
             </p>
           </CardBody>
@@ -357,12 +357,12 @@ export default function GuardianDashboardPage() {
   return (
     <div className="space-y-6">
       {/* Page header */}
-      <h1 className="text-2xl font-bold text-gray-900">連絡帳ダッシュボード</h1>
+      <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">連絡帳ダッシュボード</h1>
 
       {/* ==================== ALERTS SECTION ==================== */}
       {hasAlerts && (
         <section>
-          <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
+          <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-[var(--neutral-foreground-1)]">
             <Bell className="h-5 w-5 text-orange-500" />
             確認が必要な項目
           </h2>
@@ -374,16 +374,16 @@ export default function GuardianDashboardPage() {
                 icon={<MessageCircle className="h-5 w-5" />}
                 title="未読チャットメッセージ"
                 borderColor="border-l-blue-500"
-                bgColor="bg-blue-50"
-                textColor="text-blue-700"
+                bgColor="bg-[var(--brand-160)]"
+                textColor="text-[var(--brand-70)]"
                 link="/guardian/chat"
                 linkText="チャットを開く"
               >
                 <p>
-                  <span className="font-semibold text-blue-700">{totalUnreadMessages}件</span>
+                  <span className="font-semibold text-[var(--brand-70)]">{totalUnreadMessages}件</span>
                   の未読メッセージがあります
                 </p>
-                <ul className="mt-1 list-disc pl-5 text-xs text-gray-600">
+                <ul className="mt-1 list-disc pl-5 text-xs text-[var(--neutral-foreground-3)]">
                   {unreadChat.map((c) => (
                     <li key={c.room_id}>
                       {c.student_name}さん: {c.unread_count}件
@@ -399,8 +399,8 @@ export default function GuardianDashboardPage() {
                 icon={<ClipboardCheck className="h-5 w-5" />}
                 title="個別支援計画書"
                 borderColor="border-l-purple-500"
-                bgColor="bg-purple-50"
-                textColor="text-purple-700"
+                bgColor="bg-[var(--brand-160)]"
+                textColor="text-[var(--brand-60)]"
                 link="/guardian/support-plan"
                 linkText="確認する"
               >
@@ -410,7 +410,7 @@ export default function GuardianDashboardPage() {
                       {pendingSupportPlans.length}件
                     </span>
                     の確認待ちがあります
-                    <ul className="mt-1 list-disc pl-5 text-xs text-gray-600">
+                    <ul className="mt-1 list-disc pl-5 text-xs text-[var(--neutral-foreground-3)]">
                       {pendingSupportPlans.map((p) => (
                         <li key={p.id}>
                           {p.student_name}さんの計画書案（{formatDate(p.created_date, 'yyyy/MM/dd')}
@@ -426,7 +426,7 @@ export default function GuardianDashboardPage() {
                       {signaturePendingPlans.length}件
                     </span>
                     の署名待ちがあります
-                    <ul className="mt-1 list-disc pl-5 text-xs text-gray-600">
+                    <ul className="mt-1 list-disc pl-5 text-xs text-[var(--neutral-foreground-3)]">
                       {signaturePendingPlans.map((p) => (
                         <li key={p.id}>{p.student_name}さんの正式版計画書</li>
                       ))}
@@ -453,7 +453,7 @@ export default function GuardianDashboardPage() {
                       {pendingMonitoringRecords.length}件
                     </span>
                     の確認待ちがあります
-                    <ul className="mt-1 list-disc pl-5 text-xs text-gray-600">
+                    <ul className="mt-1 list-disc pl-5 text-xs text-[var(--neutral-foreground-3)]">
                       {pendingMonitoringRecords.map((r) => (
                         <li key={r.id}>
                           {r.student_name}さん（{formatDate(r.monitoring_date, 'yyyy/MM/dd')}）
@@ -479,18 +479,18 @@ export default function GuardianDashboardPage() {
                 icon={<FileText className="h-5 w-5" />}
                 title="スタッフからのかけはし"
                 borderColor="border-l-blue-500"
-                bgColor="bg-blue-50"
-                textColor="text-blue-700"
+                bgColor="bg-[var(--brand-160)]"
+                textColor="text-[var(--brand-70)]"
                 link="/guardian/kakehashi"
                 linkText="確認する"
               >
                 <p>
-                  <span className="font-semibold text-blue-700">
+                  <span className="font-semibold text-[var(--brand-70)]">
                     {pendingStaffKakehashi.length}件
                   </span>
                   の確認待ちがあります
                 </p>
-                <ul className="mt-1 list-disc pl-5 text-xs text-gray-600">
+                <ul className="mt-1 list-disc pl-5 text-xs text-[var(--neutral-foreground-3)]">
                   {pendingStaffKakehashi.map((sk) => (
                     <li key={sk.id}>
                       {sk.student_name}さん「{sk.period_name}」
@@ -533,7 +533,7 @@ export default function GuardianDashboardPage() {
                       {urgentKakehashi.length}件
                     </span>
                     の提出期限が近づいています（7日以内）
-                    <ul className="mt-1 list-disc pl-5 text-xs text-gray-600">
+                    <ul className="mt-1 list-disc pl-5 text-xs text-[var(--neutral-foreground-3)]">
                       {urgentKakehashi.map((k) => (
                         <li key={k.period_id}>
                           {k.student_name}さん「{k.period_name}」（期限:{' '}
@@ -545,11 +545,11 @@ export default function GuardianDashboardPage() {
                 )}
                 {pendingKakehashi.length > 0 && (
                   <div>
-                    <span className="font-semibold text-gray-500">
+                    <span className="font-semibold text-[var(--neutral-foreground-3)]">
                       {pendingKakehashi.length}件
                     </span>
                     の提出期限が1ヶ月以内です
-                    <ul className="mt-1 list-disc pl-5 text-xs text-gray-600">
+                    <ul className="mt-1 list-disc pl-5 text-xs text-[var(--neutral-foreground-3)]">
                       {pendingKakehashi.map((k) => (
                         <li key={k.period_id}>
                           {k.student_name}さん「{k.period_name}」（期限:{' '}
@@ -596,13 +596,13 @@ export default function GuardianDashboardPage() {
                 icon={<Calendar className="h-5 w-5" />}
                 title="面談予約"
                 borderColor="border-l-purple-500"
-                bgColor="bg-purple-50"
-                textColor="text-purple-700"
+                bgColor="bg-[var(--brand-160)]"
+                textColor="text-[var(--brand-60)]"
                 link="/guardian/meetings"
                 linkText="回答する"
               >
                 <p>
-                  <span className="font-semibold text-purple-700">
+                  <span className="font-semibold text-[var(--brand-60)]">
                     {pendingMeetingRequests.length}件
                   </span>
                   の回答待ちがあります
@@ -616,18 +616,18 @@ export default function GuardianDashboardPage() {
                 icon={<CalendarDays className="h-5 w-5" />}
                 title="確定済み面談"
                 borderColor="border-l-purple-400"
-                bgColor="bg-purple-50"
-                textColor="text-purple-600"
+                bgColor="bg-[var(--brand-160)]"
+                textColor="text-[var(--brand-70)]"
                 link="/guardian/meetings"
                 linkText="面談一覧を見る"
               >
                 <p>
-                  <span className="font-semibold text-purple-600">
+                  <span className="font-semibold text-[var(--brand-70)]">
                     {confirmedMeetings.length}件
                   </span>
                   の面談予定があります
                 </p>
-                <ul className="mt-1 list-disc pl-5 text-xs text-gray-600">
+                <ul className="mt-1 list-disc pl-5 text-xs text-[var(--neutral-foreground-3)]">
                   {confirmedMeetings.map((m) => (
                     <li key={m.id}>
                       {m.student_name}さん
@@ -655,7 +655,7 @@ export default function GuardianDashboardPage() {
                   </span>
                   のアンケート回答をお願いしています
                 </p>
-                <ul className="mt-1 list-disc pl-5 text-xs text-gray-600">
+                <ul className="mt-1 list-disc pl-5 text-xs text-[var(--neutral-foreground-3)]">
                   {pendingFacilityEvaluations.map((ev) => (
                     <li key={ev.id}>
                       {ev.title}（期限:{' '}
@@ -700,28 +700,28 @@ export default function GuardianDashboardPage() {
       <section>
         <Card padding={false}>
           {/* Calendar header with navigation */}
-          <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 sm:px-6">
-            <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
-              <CalendarDays className="h-5 w-5 text-gray-500" />
+          <div className="flex items-center justify-between border-b border-[var(--neutral-stroke-2)] px-4 py-3 sm:px-6">
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-[var(--neutral-foreground-1)]">
+              <CalendarDays className="h-5 w-5 text-[var(--neutral-foreground-3)]" />
               {calYear}年 {calMonth}月のカレンダー
             </h2>
             <div className="flex items-center gap-1">
               <button
                 onClick={goToPrevMonth}
-                className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
+                className="rounded-lg p-2 text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-4)]"
                 aria-label="前月"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
               <button
                 onClick={goToCurrentMonth}
-                className="rounded-lg px-3 py-1 text-sm font-medium text-blue-600 hover:bg-blue-50"
+                className="rounded-lg px-3 py-1 text-sm font-medium text-[var(--brand-80)] hover:bg-[var(--brand-160)]"
               >
                 今月
               </button>
               <button
                 onClick={goToNextMonth}
-                className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
+                className="rounded-lg p-2 text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-4)]"
                 aria-label="次月"
               >
                 <ChevronRight className="h-5 w-5" />
@@ -733,12 +733,12 @@ export default function GuardianDashboardPage() {
           <div className="overflow-x-auto">
             <div className="min-w-[700px]">
               {/* Day of week headers */}
-              <div className="grid grid-cols-7 border-b border-gray-200">
+              <div className="grid grid-cols-7 border-b border-[var(--neutral-stroke-2)]">
                 {['日', '月', '火', '水', '木', '金', '土'].map((d, i) => (
                   <div
                     key={d}
                     className={`py-2 text-center text-xs font-semibold ${
-                      i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : 'text-gray-600'
+                      i === 0 ? 'text-red-500' : i === 6 ? 'text-[var(--brand-80)]' : 'text-[var(--neutral-foreground-3)]'
                     }`}
                   >
                     {d}
@@ -750,7 +750,7 @@ export default function GuardianDashboardPage() {
               <div className="grid grid-cols-7">
                 {/* Empty cells for offset */}
                 {Array.from({ length: calendarGrid.startDow }).map((_, i) => (
-                  <div key={`empty-${i}`} className="min-h-[100px] border-b border-r border-gray-100 bg-gray-50/50" />
+                  <div key={`empty-${i}`} className="min-h-[100px] border-b border-r border-[var(--neutral-stroke-3)] bg-[var(--neutral-background-3)]/50" />
                 ))}
 
                 {calendarGrid.cells.map((cell) => {
@@ -769,9 +769,9 @@ export default function GuardianDashboardPage() {
                   return (
                     <div
                       key={cell.date}
-                      className={`min-h-[100px] border-b border-r border-gray-100 p-1 ${
+                      className={`min-h-[100px] border-b border-r border-[var(--neutral-stroke-3)] p-1 ${
                         cell.isToday ? 'bg-green-50 ring-2 ring-inset ring-green-400' : ''
-                      } ${isHoliday ? 'bg-gray-100' : ''}`}
+                      } ${isHoliday ? 'bg-[var(--neutral-background-4)]' : ''}`}
                     >
                       {/* Day number */}
                       <div
@@ -779,8 +779,8 @@ export default function GuardianDashboardPage() {
                           cell.dow === 0 || isHoliday
                             ? 'text-red-500'
                             : cell.dow === 6
-                              ? 'text-blue-500'
-                              : 'text-gray-700'
+                              ? 'text-[var(--brand-80)]'
+                              : 'text-[var(--neutral-foreground-2)]'
                         }`}
                       >
                         {cell.day}
@@ -790,7 +790,7 @@ export default function GuardianDashboardPage() {
                       <div className="space-y-0.5 text-[10px] leading-tight">
                         {/* Holiday name */}
                         {isHoliday && holidayInfo && (
-                          <div className="rounded bg-gray-200 px-1 py-0.5 font-medium text-gray-600">
+                          <div className="rounded bg-[var(--neutral-background-5)] px-1 py-0.5 font-medium text-[var(--neutral-foreground-3)]">
                             {holidayInfo.name}
                           </div>
                         )}
@@ -801,7 +801,7 @@ export default function GuardianDashboardPage() {
                             className={`rounded px-1 py-0.5 font-medium ${
                               isSchoolHolidayActivity
                                 ? 'bg-yellow-100 text-yellow-700'
-                                : 'bg-blue-50 text-blue-600'
+                                : 'bg-[var(--brand-160)] text-[var(--brand-80)]'
                             }`}
                           >
                             {isSchoolHolidayActivity ? '学休' : '平日'}
@@ -813,7 +813,7 @@ export default function GuardianDashboardPage() {
                           <button
                             key={ev.id}
                             onClick={() => setEventModal(ev)}
-                            className="flex w-full items-center gap-0.5 rounded px-1 py-0.5 text-left hover:bg-gray-100"
+                            className="flex w-full items-center gap-0.5 rounded px-1 py-0.5 text-left hover:bg-[var(--neutral-background-4)]"
                           >
                             <span
                               className="inline-block h-2 w-2 shrink-0 rounded-full"
@@ -832,7 +832,7 @@ export default function GuardianDashboardPage() {
                             return (
                               <div
                                 key={`sched-${s.student_id}`}
-                                className="flex items-center gap-0.5 rounded bg-gray-100 px-1 py-0.5 text-gray-500"
+                                className="flex items-center gap-0.5 rounded bg-[var(--neutral-background-4)] px-1 py-0.5 text-[var(--neutral-foreground-3)]"
                               >
                                 <User className="h-3 w-3 shrink-0" />
                                 <span className="truncate">
@@ -896,7 +896,7 @@ export default function GuardianDashboardPage() {
                         {makeups.map((m) => (
                           <div
                             key={`makeup-${m.student_id}`}
-                            className="flex items-center gap-0.5 rounded bg-blue-50 px-1 py-0.5 text-blue-600"
+                            className="flex items-center gap-0.5 rounded bg-[var(--brand-160)] px-1 py-0.5 text-[var(--brand-80)]"
                           >
                             <RefreshCw className="h-3 w-3 shrink-0" />
                             <span className="truncate">{m.student_name}さん振替活動日</span>
@@ -930,7 +930,7 @@ export default function GuardianDashboardPage() {
                           <button
                             key={`meet-${mt.id}`}
                             onClick={() => setMeetingModal(mt)}
-                            className="flex w-full items-center gap-0.5 rounded bg-purple-50 px-1 py-0.5 text-left text-purple-700 hover:bg-purple-100"
+                            className="flex w-full items-center gap-0.5 rounded bg-[var(--brand-160)] px-1 py-0.5 text-left text-[var(--brand-60)] hover:bg-[var(--brand-150)]"
                           >
                             <Calendar className="h-3 w-3 shrink-0" />
                             <span className="truncate">{mt.time} 面談</span>
@@ -945,9 +945,9 @@ export default function GuardianDashboardPage() {
           </div>
 
           {/* Legend */}
-          <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-gray-200 px-4 py-3 text-xs text-gray-600 sm:px-6">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-[var(--neutral-stroke-2)] px-4 py-3 text-xs text-[var(--neutral-foreground-3)] sm:px-6">
             <LegendItem>
-              <span className="inline-block h-3 w-3 rounded border border-gray-300 bg-gray-100" />
+              <span className="inline-block h-3 w-3 rounded border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-4)]" />
               休日
             </LegendItem>
             <LegendItem>
@@ -955,7 +955,7 @@ export default function GuardianDashboardPage() {
               今日
             </LegendItem>
             <LegendItem>
-              <BookOpen className="h-3.5 w-3.5 text-blue-600" />
+              <BookOpen className="h-3.5 w-3.5 text-[var(--brand-80)]" />
               平日活動
             </LegendItem>
             <LegendItem>
@@ -979,7 +979,7 @@ export default function GuardianDashboardPage() {
               連絡帳（未確認）
             </LegendItem>
             <LegendItem>
-              <RefreshCw className="h-3.5 w-3.5 text-blue-600" />
+              <RefreshCw className="h-3.5 w-3.5 text-[var(--brand-80)]" />
               振替活動日
             </LegendItem>
             <LegendItem>
@@ -991,7 +991,7 @@ export default function GuardianDashboardPage() {
               追加利用
             </LegendItem>
             <LegendItem>
-              <Calendar className="h-3.5 w-3.5 text-purple-600" />
+              <Calendar className="h-3.5 w-3.5 text-[var(--brand-70)]" />
               面談予定
             </LegendItem>
           </div>
@@ -1003,10 +1003,10 @@ export default function GuardianDashboardPage() {
         {children.length === 0 ? (
           <Card>
             <CardBody>
-              <h2 className="mb-1 text-base font-semibold text-gray-900">
+              <h2 className="mb-1 text-base font-semibold text-[var(--neutral-foreground-1)]">
                 お子様の情報が登録されていません
               </h2>
-              <p className="text-sm text-gray-500">管理者にお問い合わせください。</p>
+              <p className="text-sm text-[var(--neutral-foreground-3)]">管理者にお問い合わせください。</p>
             </CardBody>
           </Card>
         ) : (
@@ -1017,11 +1017,11 @@ export default function GuardianDashboardPage() {
                 <Card key={child.id}>
                   {/* Student header */}
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand-160)] text-sm font-semibold text-[var(--brand-70)]">
                       {child.student_name.charAt(0)}
                     </div>
                     <div>
-                      <span className="text-base font-semibold text-gray-900">
+                      <span className="text-base font-semibold text-[var(--neutral-foreground-1)]">
                         {child.student_name}
                       </span>
                       {getGradeLabel(child.grade_level) && (
@@ -1035,7 +1035,7 @@ export default function GuardianDashboardPage() {
                   <div className="mb-2 text-right">
                     <Link
                       href="/guardian/notes"
-                      className="text-xs font-medium text-blue-600 hover:underline"
+                      className="text-xs font-medium text-[var(--brand-80)] hover:underline"
                     >
                       すべての連絡帳を見る <ArrowRight className="inline h-3 w-3" />
                     </Link>
@@ -1050,18 +1050,18 @@ export default function GuardianDashboardPage() {
                       {childNotes.map((note) => (
                         <div
                           key={note.id}
-                          className="rounded-lg border border-gray-200 bg-gray-50 p-3"
+                          className="rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] p-3"
                         >
                           <div className="mb-1 flex items-center justify-between">
-                            <span className="text-sm font-medium text-gray-900">
+                            <span className="text-sm font-medium text-[var(--neutral-foreground-1)]">
                               {note.activity_name}
                             </span>
-                            <span className="text-xs text-gray-400">
+                            <span className="text-xs text-[var(--neutral-foreground-4)]">
                               {formatDate(note.record_date, 'yyyy年M月d日')}
                               {note.sent_at && `（送信: ${note.sent_at.slice(11, 16)}）`}
                             </span>
                           </div>
-                          <p className="mb-2 whitespace-pre-wrap text-xs text-gray-600">
+                          <p className="mb-2 whitespace-pre-wrap text-xs text-[var(--neutral-foreground-3)]">
                             {nl(note.integrated_content)}
                           </p>
                           <div className="flex items-center gap-2">
@@ -1071,7 +1071,7 @@ export default function GuardianDashboardPage() {
                               <Badge variant="warning">未確認</Badge>
                             )}
                             {note.guardian_confirmed && note.guardian_confirmed_at && (
-                              <span className="text-xs text-gray-400">
+                              <span className="text-xs text-[var(--neutral-foreground-4)]">
                                 確認日時: {formatDate(note.guardian_confirmed_at, 'yyyy年M月d日 HH:mm')}
                               </span>
                             )}
@@ -1106,27 +1106,27 @@ export default function GuardianDashboardPage() {
       {/* Event Modal */}
       {eventModal && (
         <ModalOverlay onClose={() => setEventModal(null)}>
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">{eventModal.name}</h2>
+          <h2 className="mb-4 text-lg font-semibold text-[var(--neutral-foreground-1)]">{eventModal.name}</h2>
           {eventModal.description && (
             <div className="mb-3">
-              <h4 className="mb-1 text-sm font-medium text-gray-700">説明</h4>
-              <p className="whitespace-pre-wrap text-sm text-gray-600">
+              <h4 className="mb-1 text-sm font-medium text-[var(--neutral-foreground-2)]">説明</h4>
+              <p className="whitespace-pre-wrap text-sm text-[var(--neutral-foreground-3)]">
                 {nl(eventModal.description)}
               </p>
             </div>
           )}
           {eventModal.guardian_message && (
             <div className="mb-3">
-              <h4 className="mb-1 text-sm font-medium text-gray-700">保護者・生徒連絡用</h4>
-              <p className="whitespace-pre-wrap text-sm text-gray-600">
+              <h4 className="mb-1 text-sm font-medium text-[var(--neutral-foreground-2)]">保護者・生徒連絡用</h4>
+              <p className="whitespace-pre-wrap text-sm text-[var(--neutral-foreground-3)]">
                 {nl(eventModal.guardian_message)}
               </p>
             </div>
           )}
           {eventModal.target_audience && (
             <div>
-              <h4 className="mb-1 text-sm font-medium text-gray-700">対象者</h4>
-              <p className="text-sm text-gray-600">
+              <h4 className="mb-1 text-sm font-medium text-[var(--neutral-foreground-2)]">対象者</h4>
+              <p className="text-sm text-[var(--neutral-foreground-3)]">
                 {eventModal.target_audience
                   .split(',')
                   .map((a) => {
@@ -1151,35 +1151,35 @@ export default function GuardianDashboardPage() {
       {/* Meeting Modal */}
       {meetingModal && (
         <ModalOverlay onClose={() => setMeetingModal(null)}>
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-purple-700">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--brand-60)]">
             <Calendar className="h-5 w-5" />
             面談予定
           </h2>
 
-          <div className="mb-4 rounded-lg bg-purple-50 p-4">
-            <div className="mb-1 text-lg font-semibold text-purple-700">
+          <div className="mb-4 rounded-lg bg-[var(--brand-160)] p-4">
+            <div className="mb-1 text-lg font-semibold text-[var(--brand-60)]">
               {(() => {
                 const d = new Date(meetingModal.confirmed_date);
                 const dow = ['日', '月', '火', '水', '木', '金', '土'];
                 return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（${dow[d.getDay()]}） ${meetingModal.time}`;
               })()}
             </div>
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-[var(--neutral-foreground-3)]">
               {meetingModal.student_name}さんの面談
             </div>
           </div>
 
           <div className="mb-3">
-            <h4 className="mb-1 text-sm font-medium text-purple-700">面談目的</h4>
-            <p className="text-sm text-gray-600">{meetingModal.purpose}</p>
+            <h4 className="mb-1 text-sm font-medium text-[var(--brand-60)]">面談目的</h4>
+            <p className="text-sm text-[var(--neutral-foreground-3)]">{meetingModal.purpose}</p>
           </div>
 
           {meetingModal.purpose_detail && (
             <div className="mb-3">
-              <h4 className="mb-1 text-sm font-medium text-purple-700">
+              <h4 className="mb-1 text-sm font-medium text-[var(--brand-60)]">
                 詳細・ご相談内容
               </h4>
-              <p className="whitespace-pre-wrap text-sm text-gray-600">
+              <p className="whitespace-pre-wrap text-sm text-[var(--neutral-foreground-3)]">
                 {nl(meetingModal.purpose_detail)}
               </p>
             </div>
@@ -1187,21 +1187,21 @@ export default function GuardianDashboardPage() {
 
           {meetingModal.staff_name && (
             <div className="mb-3">
-              <h4 className="mb-1 text-sm font-medium text-purple-700">担当スタッフ</h4>
-              <p className="text-sm text-gray-600">{meetingModal.staff_name}</p>
+              <h4 className="mb-1 text-sm font-medium text-[var(--brand-60)]">担当スタッフ</h4>
+              <p className="text-sm text-[var(--neutral-foreground-3)]">{meetingModal.staff_name}</p>
             </div>
           )}
 
-          <div className="rounded-lg border-l-4 border-purple-500 bg-gray-50 p-4">
-            <h4 className="mb-2 text-sm font-medium text-purple-700">
+          <div className="rounded-lg border-l-4 border-[var(--brand-90)] bg-[var(--neutral-background-3)] p-4">
+            <h4 className="mb-2 text-sm font-medium text-[var(--brand-60)]">
               面談当日のご案内
             </h4>
             {meetingModal.meeting_notes?.trim() ? (
-              <p className="whitespace-pre-wrap text-sm text-gray-600">
+              <p className="whitespace-pre-wrap text-sm text-[var(--neutral-foreground-3)]">
                 {nl(meetingModal.meeting_notes)}
               </p>
             ) : (
-              <ul className="list-disc pl-5 text-sm leading-relaxed text-gray-600">
+              <ul className="list-disc pl-5 text-sm leading-relaxed text-[var(--neutral-foreground-3)]">
                 <li>ご予約時間の5分前にはお越しください</li>
                 <li>印鑑をお持ちください（計画書への署名に必要です）</li>
                 <li>
@@ -1246,7 +1246,7 @@ function AlertCard({
         {icon}
         {title}
       </div>
-      <div className="text-sm text-gray-700">{children}</div>
+      <div className="text-sm text-[var(--neutral-foreground-2)]">{children}</div>
       <Link
         href={link}
         className={`mt-2 inline-flex items-center gap-1 text-xs font-medium ${textColor} hover:underline`}
@@ -1269,8 +1269,8 @@ function QuickLink({
   return (
     <Link href={href}>
       <Card className="flex items-center gap-3 transition-shadow hover:shadow-md">
-        <Icon className="h-5 w-5 text-blue-600" />
-        <span className="text-sm font-medium text-gray-700">{label}</span>
+        <Icon className="h-5 w-5 text-[var(--brand-80)]" />
+        <span className="text-sm font-medium text-[var(--neutral-foreground-2)]">{label}</span>
       </Card>
     </Link>
   );
@@ -1297,7 +1297,7 @@ function ModalOverlay({
       <div className="relative max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
         <button
           onClick={onClose}
-          className="absolute right-3 top-3 text-2xl leading-none text-gray-400 hover:text-gray-600"
+          className="absolute right-3 top-3 text-2xl leading-none text-[var(--neutral-foreground-4)] hover:text-[var(--neutral-foreground-3)]"
           aria-label="閉じる"
         >
           &times;

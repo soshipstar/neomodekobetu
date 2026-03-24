@@ -58,7 +58,7 @@ export default function StudentChangePasswordPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">パスワード変更</h1>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">パスワード変更</h1>
       </div>
 
       <div className="mx-auto max-w-md">

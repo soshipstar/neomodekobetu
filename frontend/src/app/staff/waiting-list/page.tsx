@@ -215,7 +215,7 @@ export default function WaitingListPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
                 {DAYS.map(({ label, dow, day }) => (
                   <div key={day} className="rounded-lg border border-[var(--neutral-stroke-2)] p-3 text-center">
-                    <p className={`text-sm font-bold mb-2 ${day === 'sunday' ? 'text-red-500' : day === 'saturday' ? 'text-blue-500' : 'text-[var(--neutral-foreground-1)]'}`}>
+                    <p className={`text-sm font-bold mb-2 ${day === 'sunday' ? 'text-red-500' : day === 'saturday' ? 'text-[var(--brand-80)]' : 'text-[var(--neutral-foreground-1)]'}`}>
                       {DAY_LONG_LABELS[day]}
                     </p>
                     <label className="flex items-center justify-center gap-1.5 text-xs mb-2 cursor-pointer">
@@ -289,7 +289,7 @@ export default function WaitingListPage() {
                     } ${isSelected ? 'ring-2 ring-[var(--brand-80)] ring-offset-1' : ''}`}
                   >
                     <p className={`text-lg font-bold mb-1 ${
-                      d.day === 'sunday' ? 'text-red-500' : d.day === 'saturday' ? 'text-blue-500' : 'text-[var(--neutral-foreground-1)]'
+                      d.day === 'sunday' ? 'text-red-500' : d.day === 'saturday' ? 'text-[var(--brand-80)]' : 'text-[var(--neutral-foreground-1)]'
                     }`}>
                       {DAY_LABELS[d.day]}
                     </p>
@@ -325,7 +325,7 @@ export default function WaitingListPage() {
                     selectedDay === day
                       ? 'bg-[var(--brand-80)] text-white border-[var(--brand-80)]'
                       : `border-[var(--neutral-stroke-3)] bg-[var(--neutral-background-3)] hover:border-[var(--brand-80)] ${
-                        day === 'sunday' ? 'text-red-500' : day === 'saturday' ? 'text-blue-500' : ''
+                        day === 'sunday' ? 'text-red-500' : day === 'saturday' ? 'text-[var(--brand-80)]' : ''
                       }`
                   }`}
                 >
@@ -353,7 +353,7 @@ export default function WaitingListPage() {
                               <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-600">体験</span>
                             )}
                             {s.status === 'short_term' && (
-                              <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-600">短期</span>
+                              <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-[var(--brand-160)] text-[var(--brand-80)]">短期</span>
                             )}
                             <p className="text-xs text-[var(--neutral-foreground-3)]">
                               {GRADE_LABELS[s.grade_level || ''] || s.grade_level || '-'}
@@ -414,8 +414,8 @@ export default function WaitingListPage() {
           <Card>
             <CardBody>
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
-                  <Users className="h-5 w-5 text-blue-600" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--brand-160)]">
+                  <Users className="h-5 w-5 text-[var(--brand-80)]" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-[var(--neutral-foreground-1)]">
@@ -476,7 +476,7 @@ export default function WaitingListPage() {
                         className={`rounded-lg bg-[var(--neutral-background-3)] p-2 text-center ${!d.is_open ? 'opacity-50' : ''}`}
                       >
                         <p className={`text-sm font-bold mb-0.5 ${
-                          d.day === 'sunday' ? 'text-red-500' : d.day === 'saturday' ? 'text-blue-500' : ''
+                          d.day === 'sunday' ? 'text-red-500' : d.day === 'saturday' ? 'text-[var(--brand-80)]' : ''
                         }`}>
                           {DAY_LABELS[d.day]}
                         </p>
@@ -522,7 +522,7 @@ export default function WaitingListPage() {
                         {/* Desired weekly count */}
                         <div className="min-w-[80px]">
                           {s.desired_weekly_count ? (
-                            <span className="bg-blue-500 text-white px-2 py-0.5 rounded text-xs font-semibold">
+                            <span className="bg-[var(--brand-80)] text-white px-2 py-0.5 rounded text-xs font-semibold">
                               週{s.desired_weekly_count}回
                             </span>
                           ) : (

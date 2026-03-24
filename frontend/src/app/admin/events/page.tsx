@@ -144,11 +144,11 @@ export default function AdminEventsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">イベント管理</h1>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">イベント管理</h1>
         <div className="flex gap-2">
-          <div className="flex rounded-lg border border-gray-300">
-            <button onClick={() => setViewMode('list')} className={`px-3 py-1.5 text-sm rounded-l-lg ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-gray-600'}`}><List className="h-4 w-4" /></button>
-            <button onClick={() => setViewMode('calendar')} className={`px-3 py-1.5 text-sm rounded-r-lg ${viewMode === 'calendar' ? 'bg-blue-600 text-white' : 'text-gray-600'}`}><Calendar className="h-4 w-4" /></button>
+          <div className="flex rounded-lg border border-[var(--neutral-stroke-1)]">
+            <button onClick={() => setViewMode('list')} className={`px-3 py-1.5 text-sm rounded-l-lg ${viewMode === 'list' ? 'bg-[var(--brand-80)] text-white' : 'text-[var(--neutral-foreground-3)]'}`}><List className="h-4 w-4" /></button>
+            <button onClick={() => setViewMode('calendar')} className={`px-3 py-1.5 text-sm rounded-r-lg ${viewMode === 'calendar' ? 'bg-[var(--brand-80)] text-white' : 'text-[var(--neutral-foreground-3)]'}`}><Calendar className="h-4 w-4" /></button>
           </div>
           <Button onClick={() => { setEditingEvent(null); setForm(emptyForm); setModalOpen(true); }} leftIcon={<Plus className="h-4 w-4" />}>作成</Button>
         </div>
@@ -165,15 +165,15 @@ export default function AdminEventsPage() {
       ) : (
         <Card>
           {isLoading ? <SkeletonTable rows={5} cols={7} /> : (
-            <div className="grid grid-cols-7 gap-px bg-gray-200 rounded-lg overflow-hidden">
-              {['日', '月', '火', '水', '木', '金', '土'].map((d) => <div key={d} className="bg-gray-50 py-2 text-center text-xs font-semibold text-gray-500">{d}</div>)}
+            <div className="grid grid-cols-7 gap-px bg-[var(--neutral-background-5)] rounded-lg overflow-hidden">
+              {['日', '月', '火', '水', '木', '金', '土'].map((d) => <div key={d} className="bg-[var(--neutral-background-3)] py-2 text-center text-xs font-semibold text-[var(--neutral-foreground-3)]">{d}</div>)}
               {Array.from({ length: calendarDays.startPad }).map((_, i) => <div key={`p-${i}`} className="bg-white p-2 min-h-[80px]" />)}
               {calendarDays.days.map((day) => {
                 const dateStr = format(day, 'yyyy-MM-dd');
                 const dayEvents = eventsByDate[dateStr] || [];
                 return (
                   <div key={dateStr} className="bg-white p-2 min-h-[80px]">
-                    <span className={`text-sm ${isSameDay(day, new Date()) ? 'font-bold text-blue-600' : 'text-gray-700'}`}>{format(day, 'd')}</span>
+                    <span className={`text-sm ${isSameDay(day, new Date()) ? 'font-bold text-[var(--brand-80)]' : 'text-[var(--neutral-foreground-2)]'}`}>{format(day, 'd')}</span>
                     {dayEvents.map((ev) => (
                       <div key={ev.id} onClick={() => openEdit(ev)} className="mt-1 truncate rounded px-1 py-0.5 text-xs cursor-pointer hover:opacity-80" style={{ backgroundColor: ev.event_color + '33', color: ev.event_color }}>{ev.event_name}</div>
                     ))}
@@ -189,14 +189,14 @@ export default function AdminEventsPage() {
         <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(form); }} className="space-y-4">
           <Input label="イベント名 *" value={form.event_name} onChange={(e) => setForm({ ...form, event_name: e.target.value })} required />
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">説明</label>
-            <textarea value={form.event_description} onChange={(e) => setForm({ ...form, event_description: e.target.value })} className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" rows={3} />
+            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">説明</label>
+            <textarea value={form.event_description} onChange={(e) => setForm({ ...form, event_description: e.target.value })} className="block w-full rounded-lg border border-[var(--neutral-stroke-1)] px-3 py-2 text-sm" rows={3} />
           </div>
           <Input label="日付 *" type="date" value={form.event_date} onChange={(e) => setForm({ ...form, event_date: e.target.value })} required />
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">対象者</label>
-              <select value={form.target_audience} onChange={(e) => setForm({ ...form, target_audience: e.target.value })} className="block w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+              <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">対象者</label>
+              <select value={form.target_audience} onChange={(e) => setForm({ ...form, target_audience: e.target.value })} className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-white px-3 py-1.5 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]">
                 <option value="all">全員</option>
                 <option value="elementary">小学生</option>
                 <option value="junior_high_school">中学生</option>
@@ -205,17 +205,17 @@ export default function AdminEventsPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">カレンダー色</label>
-              <input type="color" value={form.event_color} onChange={(e) => setForm({ ...form, event_color: e.target.value })} className="h-9 w-full rounded-md border border-gray-300 p-1" />
+              <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">カレンダー色</label>
+              <input type="color" value={form.event_color} onChange={(e) => setForm({ ...form, event_color: e.target.value })} className="h-9 w-full rounded-md border border-[var(--neutral-stroke-1)] p-1" />
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">スタッフ向けコメント</label>
-            <textarea value={form.staff_comment} onChange={(e) => setForm({ ...form, staff_comment: e.target.value })} className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" rows={2} />
+            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">スタッフ向けコメント</label>
+            <textarea value={form.staff_comment} onChange={(e) => setForm({ ...form, staff_comment: e.target.value })} className="block w-full rounded-lg border border-[var(--neutral-stroke-1)] px-3 py-2 text-sm" rows={2} />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">保護者・生徒連絡用メッセージ</label>
-            <textarea value={form.guardian_message} onChange={(e) => setForm({ ...form, guardian_message: e.target.value })} className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" rows={2} />
+            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">保護者・生徒連絡用メッセージ</label>
+            <textarea value={form.guardian_message} onChange={(e) => setForm({ ...form, guardian_message: e.target.value })} className="block w-full rounded-lg border border-[var(--neutral-stroke-1)] px-3 py-2 text-sm" rows={2} />
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="secondary" type="button" onClick={closeModal}>キャンセル</Button>

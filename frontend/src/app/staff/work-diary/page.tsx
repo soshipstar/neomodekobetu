@@ -351,7 +351,7 @@ function CalendarView({ onSwitchToDaily }: { onSwitchToDaily: (date?: string) =>
             <>
               <div className="grid grid-cols-7 gap-[2px]">
                 {DAY_NAMES.map((dn, i) => (
-                  <div key={dn} className={`text-center text-xs font-bold py-2 ${i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : 'text-[var(--neutral-foreground-3)]'}`}>
+                  <div key={dn} className={`text-center text-xs font-bold py-2 ${i === 0 ? 'text-red-500' : i === 6 ? 'text-[var(--brand-80)]' : 'text-[var(--neutral-foreground-3)]'}`}>
                     {dn}
                   </div>
                 ))}
@@ -369,10 +369,10 @@ function CalendarView({ onSwitchToDaily }: { onSwitchToDaily: (date?: string) =>
                       key={dateStr}
                       onClick={() => setSelectedDate(dateStr)}
                       className={`relative flex aspect-square flex-col items-center justify-center rounded transition-colors text-sm
-                        ${isSelected ? 'bg-green-600 text-white' : isToday ? 'bg-blue-600 text-white' : 'hover:bg-[var(--neutral-background-3)]'}
+                        ${isSelected ? 'bg-green-600 text-white' : isToday ? 'bg-[var(--brand-80)] text-white' : 'hover:bg-[var(--neutral-background-3)]'}
                       `}
                     >
-                      <span className={`font-medium ${!isToday && !isSelected ? (dow === 0 ? 'text-red-500' : dow === 6 ? 'text-blue-500' : '') : ''}`}>
+                      <span className={`font-medium ${!isToday && !isSelected ? (dow === 0 ? 'text-red-500' : dow === 6 ? 'text-[var(--brand-80)]' : '') : ''}`}>
                         {day}
                       </span>
                       {hasDiary && (
@@ -390,7 +390,7 @@ function CalendarView({ onSwitchToDaily }: { onSwitchToDaily: (date?: string) =>
                   <span>業務日誌あり</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="inline-block h-2 w-2 rounded-full bg-blue-600" />
+                  <span className="inline-block h-2 w-2 rounded-full bg-[var(--brand-80)]" />
                   <span>今日</span>
                 </div>
               </div>

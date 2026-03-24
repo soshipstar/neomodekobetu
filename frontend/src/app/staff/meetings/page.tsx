@@ -297,11 +297,11 @@ export default function MeetingsPage() {
             <label className="mb-2 block text-sm font-medium text-[var(--neutral-foreground-2)]">日程設定方法 *</label>
             <div className="flex gap-3">
               <label className="flex items-center gap-1.5 text-sm cursor-pointer">
-                <input type="radio" checked={form.create_mode === 'candidate'} onChange={() => setForm({ ...form, create_mode: 'candidate' })} className="text-purple-600" />
+                <input type="radio" checked={form.create_mode === 'candidate'} onChange={() => setForm({ ...form, create_mode: 'candidate' })} className="text-[var(--brand-70)]" />
                 候補日を提示して保護者に選んでもらう
               </label>
               <label className="flex items-center gap-1.5 text-sm cursor-pointer">
-                <input type="radio" checked={form.create_mode === 'direct'} onChange={() => setForm({ ...form, create_mode: 'direct' })} className="text-purple-600" />
+                <input type="radio" checked={form.create_mode === 'direct'} onChange={() => setForm({ ...form, create_mode: 'direct' })} className="text-[var(--brand-70)]" />
                 日程を確定して通知する
               </label>
             </div>
@@ -384,12 +384,12 @@ export default function MeetingsPage() {
                         disabled={!needsStaffAction || updateMutation.isPending}
                         className={`w-full rounded-lg border p-3 text-left text-sm transition-colors ${
                           needsStaffAction
-                            ? 'border-purple-300 bg-purple-50 hover:bg-purple-100 cursor-pointer'
+                            ? 'border-[var(--brand-120)] bg-[var(--brand-160)] hover:bg-[var(--brand-150)] cursor-pointer'
                             : 'border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)]'
                         }`}
                       >
                         <span className="font-medium">{['①', '②', '③'][i]} {fmtDate(d)}</span>
-                        {needsStaffAction && <span className="ml-2 text-xs text-purple-600">（クリックで確定）</span>}
+                        {needsStaffAction && <span className="ml-2 text-xs text-[var(--brand-70)]">（クリックで確定）</span>}
                       </button>
                     ))}
                   </div>
@@ -398,12 +398,12 @@ export default function MeetingsPage() {
 
               {/* Guardian counter message */}
               {m.guardian_counter_message && (
-                <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+                <div className="rounded-lg border border-[var(--brand-130)] bg-[var(--brand-160)] p-3 text-sm text-blue-800">
                   <span className="font-medium">保護者からのメッセージ:</span> {m.guardian_counter_message}
                 </div>
               )}
               {m.staff_counter_message && (
-                <div className="rounded-lg border border-purple-200 bg-purple-50 p-3 text-sm text-purple-800">
+                <div className="rounded-lg border border-[var(--brand-130)] bg-[var(--brand-160)] p-3 text-sm text-[var(--brand-50)]">
                   <span className="font-medium">スタッフからのメッセージ:</span> {m.staff_counter_message}
                 </div>
               )}
@@ -481,7 +481,7 @@ export default function MeetingsPage() {
 
                   {/* Hearing notes → Guardian Kakehashi */}
                   <div className="border-t border-[var(--neutral-stroke-2)] pt-4">
-                    <h4 className="mb-2 text-sm font-semibold text-purple-700 flex items-center gap-1.5">
+                    <h4 className="mb-2 text-sm font-semibold text-[var(--brand-60)] flex items-center gap-1.5">
                       <FileText className="h-4 w-4" />
                       保護者かけはし用ヒアリング
                     </h4>

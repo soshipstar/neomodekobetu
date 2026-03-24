@@ -117,12 +117,12 @@ export default function GuardianSupportPlanPage() {
   };
 
   if (isLoading) {
-    return <div className="space-y-4"><h1 className="text-2xl font-bold text-gray-900">個別支援計画書</h1><SkeletonCard /><SkeletonCard /></div>;
+    return <div className="space-y-4"><h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">個別支援計画書</h1><SkeletonCard /><SkeletonCard /></div>;
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">個別支援計画書</h1>
+      <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">個別支援計画書</h1>
 
       {/* Pending review banner */}
       {plans && plans.some((p) => !p.is_draft && !p.guardian_review_comment && !p.guardian_signature) && (
@@ -169,20 +169,20 @@ export default function GuardianSupportPlanPage() {
                 <CardBody>
                   {/* Plan details in read-only mode */}
                   {plan.life_intention && (
-                    <div className="mb-3 rounded-lg bg-purple-50 p-3">
-                      <p className="text-xs font-medium text-purple-700">本人の生活に対する意向</p>
-                      <p className="text-sm text-purple-900">{plan.life_intention}</p>
+                    <div className="mb-3 rounded-lg bg-[var(--brand-160)] p-3">
+                      <p className="text-xs font-medium text-[var(--brand-60)]">本人の生活に対する意向</p>
+                      <p className="text-sm text-[var(--brand-40)]">{plan.life_intention}</p>
                     </div>
                   )}
                   {plan.overall_policy && (
-                    <div className="mb-3 rounded-lg bg-gray-50 p-3">
-                      <p className="text-xs font-medium text-gray-600">総合的な援助の方針</p>
-                      <p className="text-sm text-gray-800">{plan.overall_policy}</p>
+                    <div className="mb-3 rounded-lg bg-[var(--neutral-background-3)] p-3">
+                      <p className="text-xs font-medium text-[var(--neutral-foreground-3)]">総合的な援助の方針</p>
+                      <p className="text-sm text-[var(--neutral-foreground-1)]">{plan.overall_policy}</p>
                     </div>
                   )}
                   {plan.guardian_wish && (
-                    <div className="mb-3 rounded-lg bg-blue-50 p-3">
-                      <p className="text-xs font-medium text-blue-700">保護者の願い</p>
+                    <div className="mb-3 rounded-lg bg-[var(--brand-160)] p-3">
+                      <p className="text-xs font-medium text-[var(--brand-70)]">保護者の願い</p>
                       <p className="text-sm text-blue-900">{plan.guardian_wish}</p>
                     </div>
                   )}
@@ -200,23 +200,23 @@ export default function GuardianSupportPlanPage() {
                   )}
                   {plan.details && plan.details.length > 0 && (
                     <div className="space-y-2">
-                      <p className="text-xs font-medium text-gray-500">支援内容</p>
+                      <p className="text-xs font-medium text-[var(--neutral-foreground-3)]">支援内容</p>
                       {plan.details.map((detail) => (
-                        <div key={detail.id} className="rounded-lg border border-gray-100 p-3">
-                          <p className="text-xs font-medium text-gray-500">
+                        <div key={detail.id} className="rounded-lg border border-[var(--neutral-stroke-3)] p-3">
+                          <p className="text-xs font-medium text-[var(--neutral-foreground-3)]">
                             {DOMAIN_LABELS[detail.domain as Domain] || detail.domain}
                           </p>
                           {detail.current_status && (
-                            <p className="text-xs text-gray-500 mt-1">現状: {detail.current_status}</p>
+                            <p className="text-xs text-[var(--neutral-foreground-3)] mt-1">現状: {detail.current_status}</p>
                           )}
                           {detail.short_term_goal && (
-                            <p className="text-sm text-gray-700 mt-1">短期目標: {detail.short_term_goal}</p>
+                            <p className="text-sm text-[var(--neutral-foreground-2)] mt-1">短期目標: {detail.short_term_goal}</p>
                           )}
                           {detail.support_content && (
-                            <p className="mt-1 text-xs text-gray-500">支援内容: {detail.support_content}</p>
+                            <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">支援内容: {detail.support_content}</p>
                           )}
                           {detail.achievement_criteria && (
-                            <p className="mt-1 text-xs text-gray-400">達成基準: {detail.achievement_criteria}</p>
+                            <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">達成基準: {detail.achievement_criteria}</p>
                           )}
                         </div>
                       ))}
@@ -236,7 +236,7 @@ export default function GuardianSupportPlanPage() {
 
                   {/* Signature display */}
                   {(ext.staff_signature_image || ext.guardian_signature_image || ext.guardian_signature) && (
-                    <div className="mt-4 flex flex-wrap gap-4 border-t border-gray-200 pt-4">
+                    <div className="mt-4 flex flex-wrap gap-4 border-t border-[var(--neutral-stroke-2)] pt-4">
                       {ext.staff_signature_image && (
                         <SignaturePad
                           readOnly
@@ -268,9 +268,9 @@ export default function GuardianSupportPlanPage() {
                     </div>
                   )}
                   {hasReviewed && !hasSigned && ext.guardian_reviewed_at && (
-                    <div className="mt-3 flex items-center gap-2 rounded-lg bg-blue-50 p-3">
-                      <CheckCircle className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm text-blue-700">
+                    <div className="mt-3 flex items-center gap-2 rounded-lg bg-[var(--brand-160)] p-3">
+                      <CheckCircle className="h-4 w-4 text-[var(--brand-80)]" />
+                      <span className="text-sm text-[var(--brand-70)]">
                         {formatDate(ext.guardian_reviewed_at)} にレビュー済み
                       </span>
                     </div>
@@ -281,7 +281,7 @@ export default function GuardianSupportPlanPage() {
           })}
         </div>
       ) : (
-        <Card><CardBody><p className="py-8 text-center text-sm text-gray-500">個別支援計画書がありません</p></CardBody></Card>
+        <Card><CardBody><p className="py-8 text-center text-sm text-[var(--neutral-foreground-3)]">個別支援計画書がありません</p></CardBody></Card>
       )}
 
       {/* Confirm + Review Modal */}
@@ -294,51 +294,51 @@ export default function GuardianSupportPlanPage() {
         <div className="space-y-5">
           {/* Plan details in read-only mode within the modal */}
           {confirmingPlan && (
-            <div className="max-h-[40vh] overflow-y-auto space-y-3 rounded-lg border border-gray-200 p-4 bg-gray-50">
-              <h3 className="text-sm font-semibold text-gray-700">
+            <div className="max-h-[40vh] overflow-y-auto space-y-3 rounded-lg border border-[var(--neutral-stroke-2)] p-4 bg-[var(--neutral-background-3)]">
+              <h3 className="text-sm font-semibold text-[var(--neutral-foreground-2)]">
                 {confirmingPlan.student?.student_name} - {formatDate(confirmingPlan.plan_period_start ?? '')} ~ {formatDate(confirmingPlan.plan_period_end ?? '')}
               </h3>
               {confirmingPlan.life_intention && (
                 <div>
-                  <p className="text-xs font-medium text-purple-700">本人の生活に対する意向</p>
-                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{nl(confirmingPlan.life_intention)}</p>
+                  <p className="text-xs font-medium text-[var(--brand-60)]">本人の生活に対する意向</p>
+                  <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{nl(confirmingPlan.life_intention)}</p>
                 </div>
               )}
               {confirmingPlan.overall_policy && (
                 <div>
-                  <p className="text-xs font-medium text-gray-600">総合的な援助の方針</p>
-                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{nl(confirmingPlan.overall_policy)}</p>
+                  <p className="text-xs font-medium text-[var(--neutral-foreground-3)]">総合的な援助の方針</p>
+                  <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{nl(confirmingPlan.overall_policy)}</p>
                 </div>
               )}
               {confirmingPlan.guardian_wish && (
                 <div>
-                  <p className="text-xs font-medium text-blue-700">保護者の願い</p>
-                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{nl(confirmingPlan.guardian_wish)}</p>
+                  <p className="text-xs font-medium text-[var(--brand-70)]">保護者の願い</p>
+                  <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{nl(confirmingPlan.guardian_wish)}</p>
                 </div>
               )}
               {confirmingPlan.long_term_goal && (
                 <div>
                   <p className="text-xs font-medium text-green-700">長期目標</p>
-                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{nl(confirmingPlan.long_term_goal)}</p>
+                  <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{nl(confirmingPlan.long_term_goal)}</p>
                 </div>
               )}
               {confirmingPlan.short_term_goal && (
                 <div>
                   <p className="text-xs font-medium text-amber-700">短期目標</p>
-                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{nl(confirmingPlan.short_term_goal)}</p>
+                  <p className="text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{nl(confirmingPlan.short_term_goal)}</p>
                 </div>
               )}
               {confirmingPlan.details && confirmingPlan.details.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-gray-600">支援内容</p>
+                  <p className="text-xs font-medium text-[var(--neutral-foreground-3)]">支援内容</p>
                   {confirmingPlan.details.map((detail) => (
-                    <div key={detail.id} className="rounded border border-gray-200 bg-white p-2">
-                      <p className="text-xs font-medium text-gray-500">
+                    <div key={detail.id} className="rounded border border-[var(--neutral-stroke-2)] bg-white p-2">
+                      <p className="text-xs font-medium text-[var(--neutral-foreground-3)]">
                         {DOMAIN_LABELS[detail.domain as Domain] || detail.domain}
                       </p>
-                      {detail.current_status && <p className="text-xs text-gray-600">現状: {detail.current_status}</p>}
-                      {detail.short_term_goal && <p className="text-sm text-gray-700">目標: {detail.short_term_goal}</p>}
-                      {detail.support_content && <p className="text-xs text-gray-500">支援: {detail.support_content}</p>}
+                      {detail.current_status && <p className="text-xs text-[var(--neutral-foreground-3)]">現状: {detail.current_status}</p>}
+                      {detail.short_term_goal && <p className="text-sm text-[var(--neutral-foreground-2)]">目標: {detail.short_term_goal}</p>}
+                      {detail.support_content && <p className="text-xs text-[var(--neutral-foreground-3)]">支援: {detail.support_content}</p>}
                     </div>
                   ))}
                 </div>
@@ -348,7 +348,7 @@ export default function GuardianSupportPlanPage() {
 
           {!commentMode ? (
             <>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-[var(--neutral-foreground-3)]">
                 計画の内容をご確認ください。問題がなければ「変更なし（承認）」を押してください。
                 署名をご希望の場合は署名欄に記入のうえ「署名して確認」を押してください。
                 変更を希望される場合は「コメントを送る」を選択してください。
@@ -362,7 +362,7 @@ export default function GuardianSupportPlanPage() {
                 height={150}
               />
 
-              <div className="flex flex-col gap-2 border-t border-gray-200 pt-4 sm:flex-row sm:justify-between">
+              <div className="flex flex-col gap-2 border-t border-[var(--neutral-stroke-2)] pt-4 sm:flex-row sm:justify-between">
                 <Button
                   variant="outline"
                   size="sm"
@@ -395,20 +395,20 @@ export default function GuardianSupportPlanPage() {
             </>
           ) : (
             <>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-[var(--neutral-foreground-3)]">
                 変更を希望される箇所やコメントをご入力ください。
               </p>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">変更希望コメント</label>
+                <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">変更希望コメント</label>
                 <textarea
                   value={reviewComment}
                   onChange={(e) => setReviewComment(e.target.value)}
-                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  className="block w-full rounded-lg border border-[var(--neutral-stroke-1)] px-3 py-2 text-sm"
                   rows={5}
                   placeholder="変更を希望する内容を入力してください..."
                 />
               </div>
-              <div className="flex justify-end gap-2 border-t border-gray-200 pt-4">
+              <div className="flex justify-end gap-2 border-t border-[var(--neutral-stroke-2)] pt-4">
                 <Button variant="secondary" onClick={() => setCommentMode(false)}>
                   戻る
                 </Button>

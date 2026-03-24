@@ -76,7 +76,7 @@ export default function GuardianNewslettersPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">施設通信</h1>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">施設通信</h1>
         <SkeletonList items={4} />
       </div>
     );
@@ -87,7 +87,7 @@ export default function GuardianNewslettersPage() {
     const nl = selectedNewsletter;
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-gray-900">施設通信</h1>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">施設通信</h1>
 
         <div className="flex gap-2 print:hidden">
           <Button variant="secondary" size="sm" onClick={() => setSelectedId(null)} leftIcon={<ArrowLeft className="h-4 w-4" />}>
@@ -101,11 +101,11 @@ export default function GuardianNewslettersPage() {
         <div className="mx-auto max-w-3xl rounded-xl bg-white p-6 shadow-md">
           {/* Header */}
           <div className="mb-5 border-b-2 border-purple-600 pb-4 text-center">
-            <p className="text-2xl font-bold text-gray-900">{nl.title}</p>
-            <p className="mt-1 text-sm font-semibold text-purple-600">
+            <p className="text-2xl font-bold text-[var(--neutral-foreground-1)]">{nl.title}</p>
+            <p className="mt-1 text-sm font-semibold text-[var(--brand-70)]">
               {nl.year}年{nl.month}月号
             </p>
-            <p className="mt-2 text-xs text-gray-500">
+            <p className="mt-2 text-xs text-[var(--neutral-foreground-3)]">
               {nl.report_start_date && nl.report_end_date && (
                 <>報告期間: {formatShortDate(nl.report_start_date)} ~ {formatShortDate(nl.report_end_date)}</>
               )}
@@ -118,16 +118,16 @@ export default function GuardianNewslettersPage() {
 
           {/* Greeting */}
           {nl.greeting && (
-            <div className="mb-5 rounded border-l-4 border-blue-500 bg-blue-50 px-5 py-3">
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-800">{normalizeNewlines(nl.greeting)}</p>
+            <div className="mb-5 rounded border-l-4 border-blue-500 bg-[var(--brand-160)] px-5 py-3">
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--neutral-foreground-1)]">{normalizeNewlines(nl.greeting)}</p>
             </div>
           )}
 
           {/* Event Calendar */}
           {nl.event_calendar && (
             <Section title="今月の予定" icon="📅">
-              <div className="rounded border border-gray-200 bg-gray-50 p-4">
-                <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-gray-800">{normalizeNewlines(nl.event_calendar)}</pre>
+              <div className="rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] p-4">
+                <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-[var(--neutral-foreground-1)]">{normalizeNewlines(nl.event_calendar)}</pre>
               </div>
             </Section>
           )}
@@ -135,28 +135,28 @@ export default function GuardianNewslettersPage() {
           {/* Event Details */}
           {nl.event_details && (
             <Section title="イベント詳細" icon="📝">
-              <p className="whitespace-pre-wrap px-2 text-sm leading-relaxed text-gray-800">{normalizeNewlines(nl.event_details)}</p>
+              <p className="whitespace-pre-wrap px-2 text-sm leading-relaxed text-[var(--neutral-foreground-1)]">{normalizeNewlines(nl.event_details)}</p>
             </Section>
           )}
 
           {/* Weekly Reports */}
           {nl.weekly_reports && (
             <Section title="活動紹介まとめ" icon="📖">
-              <p className="whitespace-pre-wrap px-2 text-sm leading-relaxed text-gray-800">{normalizeNewlines(nl.weekly_reports)}</p>
+              <p className="whitespace-pre-wrap px-2 text-sm leading-relaxed text-[var(--neutral-foreground-1)]">{normalizeNewlines(nl.weekly_reports)}</p>
             </Section>
           )}
 
           {/* Weekly Intro */}
           {nl.weekly_intro && (
             <Section title="曜日別活動紹介" icon="📆">
-              <p className="whitespace-pre-wrap px-2 text-sm leading-relaxed text-gray-800">{normalizeNewlines(nl.weekly_intro)}</p>
+              <p className="whitespace-pre-wrap px-2 text-sm leading-relaxed text-[var(--neutral-foreground-1)]">{normalizeNewlines(nl.weekly_intro)}</p>
             </Section>
           )}
 
           {/* Event Results */}
           {nl.event_results && (
             <Section title="イベント結果報告" icon="🎉">
-              <p className="whitespace-pre-wrap px-2 text-sm leading-relaxed text-gray-800">{normalizeNewlines(nl.event_results)}</p>
+              <p className="whitespace-pre-wrap px-2 text-sm leading-relaxed text-[var(--neutral-foreground-1)]">{normalizeNewlines(nl.event_results)}</p>
             </Section>
           )}
 
@@ -164,19 +164,19 @@ export default function GuardianNewslettersPage() {
           {(nl.elementary_report || nl.junior_report) && (
             <div className="mb-5 grid grid-cols-1 gap-4 md:grid-cols-2">
               {nl.elementary_report && (
-                <div className="rounded border border-gray-200 bg-gray-50 p-3">
-                  <p className="mb-2 border-b-2 border-purple-600 pb-2 text-sm font-bold text-purple-600">
+                <div className="rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] p-3">
+                  <p className="mb-2 border-b-2 border-purple-600 pb-2 text-sm font-bold text-[var(--brand-70)]">
                     🎒 小学生の活動
                   </p>
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-800">{normalizeNewlines(nl.elementary_report)}</p>
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--neutral-foreground-1)]">{normalizeNewlines(nl.elementary_report)}</p>
                 </div>
               )}
               {nl.junior_report && (
-                <div className="rounded border border-gray-200 bg-gray-50 p-3">
-                  <p className="mb-2 border-b-2 border-purple-600 pb-2 text-sm font-bold text-purple-600">
+                <div className="rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] p-3">
+                  <p className="mb-2 border-b-2 border-purple-600 pb-2 text-sm font-bold text-[var(--brand-70)]">
                     📚 中高生の活動
                   </p>
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-800">{normalizeNewlines(nl.junior_report)}</p>
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--neutral-foreground-1)]">{normalizeNewlines(nl.junior_report)}</p>
                 </div>
               )}
             </div>
@@ -186,7 +186,7 @@ export default function GuardianNewslettersPage() {
           {nl.requests && (
             <Section title="施設からのお願い" icon="🙏">
               <div className="rounded border border-yellow-300 bg-yellow-50 px-4 py-3">
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-800">{normalizeNewlines(nl.requests)}</p>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--neutral-foreground-1)]">{normalizeNewlines(nl.requests)}</p>
               </div>
             </Section>
           )}
@@ -195,14 +195,14 @@ export default function GuardianNewslettersPage() {
           {nl.others && (
             <Section title="その他のお知らせ" icon="📌">
               <div className="rounded border border-yellow-300 bg-yellow-50 px-4 py-3">
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-800">{normalizeNewlines(nl.others)}</p>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--neutral-foreground-1)]">{normalizeNewlines(nl.others)}</p>
               </div>
             </Section>
           )}
 
           {/* Footer */}
-          <div className="mt-8 border-t border-gray-200 pt-4 text-center">
-            <p className="text-xs text-gray-500">
+          <div className="mt-8 border-t border-[var(--neutral-stroke-2)] pt-4 text-center">
+            <p className="text-xs text-[var(--neutral-foreground-3)]">
               発行日: {formatDate(nl.published_at)}
             </p>
           </div>
@@ -214,7 +214,7 @@ export default function GuardianNewslettersPage() {
   // List view
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">施設通信</h1>
+      <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">施設通信</h1>
 
       {newsletters.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -224,18 +224,18 @@ export default function GuardianNewslettersPage() {
               onClick={() => setSelectedId(nl.id)}
               className="block w-full rounded-xl bg-white p-5 text-left shadow-md transition-all hover:-translate-y-1 hover:shadow-lg"
             >
-              <p className="mb-2 font-semibold text-purple-600">{nl.title}</p>
+              <p className="mb-2 font-semibold text-[var(--brand-70)]">{nl.title}</p>
               {nl.report_start_date && nl.report_end_date && (
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-[var(--neutral-foreground-3)]">
                   報告: {formatShortDate(nl.report_start_date)} ~ {formatShortDate(nl.report_end_date)}
                 </p>
               )}
               {nl.schedule_start_date && nl.schedule_end_date && (
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-[var(--neutral-foreground-3)]">
                   予定: {formatShortDate(nl.schedule_start_date)} ~ {formatShortDate(nl.schedule_end_date)}
                 </p>
               )}
-              <p className="mt-2 border-t border-gray-100 pt-2 text-xs text-gray-400">
+              <p className="mt-2 border-t border-[var(--neutral-stroke-3)] pt-2 text-xs text-[var(--neutral-foreground-4)]">
                 発行日: {formatDate(nl.published_at)}
               </p>
             </button>
@@ -245,8 +245,8 @@ export default function GuardianNewslettersPage() {
         <Card>
           <CardBody>
             <div className="py-12 text-center">
-              <Megaphone className="mx-auto h-12 w-12 text-gray-300" />
-              <p className="mt-2 text-sm text-gray-500">まだ通信が発行されていません</p>
+              <Megaphone className="mx-auto h-12 w-12 text-[var(--neutral-foreground-disabled)]" />
+              <p className="mt-2 text-sm text-[var(--neutral-foreground-3)]">まだ通信が発行されていません</p>
             </div>
           </CardBody>
         </Card>
