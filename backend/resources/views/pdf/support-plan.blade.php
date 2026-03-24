@@ -259,11 +259,26 @@
         <tr>
             <td>
                 <span class="signature-label">児童発達支援管理責任者：</span>
-                <span class="signature-line">{{ $plan->staff_signature ?? '' }}</span>
+                <span class="signature-line">
+                @php $staffSig = $plan->staff_signature_image ?: $plan->staff_signature; @endphp
+                @if ($staffSig && str_starts_with($staffSig, 'data:image'))
+                    <img src="{{ $staffSig }}" alt="職員署名" style="max-height: 35px; max-width: 100px; vertical-align: middle;" />
+                    @if ($plan->staff_signer_name) ({{ $plan->staff_signer_name }}) @endif
+                @else
+                    {{ $plan->staff_signer_name ?? $plan->manager_name ?? '' }}
+                @endif
+                </span>
             </td>
             <td>
                 <span class="signature-label">保護者署名：</span>
-                <span class="signature-line">{{ $plan->guardian_signature ?? '' }}</span>
+                <span class="signature-line">
+                @php $guardSig = $plan->guardian_signature_image ?: $plan->guardian_signature; @endphp
+                @if ($guardSig && str_starts_with($guardSig, 'data:image'))
+                    <img src="{{ $guardSig }}" alt="保護者署名" style="max-height: 35px; max-width: 100px; vertical-align: middle;" />
+                @else
+                    {{ $guardSig ?? '' }}
+                @endif
+                </span>
             </td>
             <td style="text-align: right;">
                 <div class="issuer-name">{{ $classroom->classroom_name ?? '' }}</div>

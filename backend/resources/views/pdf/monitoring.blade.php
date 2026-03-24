@@ -250,14 +250,25 @@
     <table class="signature-table">
         <tr>
             <td>
-                <strong>記録者：</strong>
-                {{ $record->creator->full_name ?? $record->staff_signature ?? '' }}
+                <strong>児童発達支援管理責任者：</strong>
+                @if ($record->staff_signature && str_starts_with($record->staff_signature, 'data:image'))
+                    <img src="{{ $record->staff_signature }}" alt="職員署名" style="max-height: 35px; max-width: 100px; vertical-align: middle;" />
+                    @if ($record->staff_signer_name)
+                        ({{ $record->staff_signer_name }})
+                    @endif
+                @else
+                    {{ $record->staff_signer_name ?? $record->creator->full_name ?? '' }}
+                @endif
             </td>
             <td>
                 <strong>保護者確認：</strong>
                 @if ($record->guardian_confirmed)
-                    確認済み（{{ $record->guardian_confirmed_at ? $record->guardian_confirmed_at->format('Y/m/d') : '' }}）
-                    {{ $record->guardian_signature ?? '' }}
+                    @if ($record->guardian_signature && str_starts_with($record->guardian_signature, 'data:image'))
+                        <img src="{{ $record->guardian_signature }}" alt="保護者署名" style="max-height: 35px; max-width: 100px; vertical-align: middle;" />
+                    @else
+                        確認済み
+                    @endif
+                    （{{ $record->guardian_confirmed_at ? $record->guardian_confirmed_at->format('Y/m/d') : '' }}）
                 @else
                     未確認
                 @endif
