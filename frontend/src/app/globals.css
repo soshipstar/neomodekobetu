@@ -5,48 +5,48 @@
    ========================================================================= */
 
 :root {
-  /* Fluent 2 Brand colors (Blue ramp) */
-  --brand-10: #061724;
-  --brand-20: #082338;
-  --brand-30: #0a2e4a;
-  --brand-40: #0c3b5e;
-  --brand-50: #0e4775;
-  --brand-60: #0f548c;
-  --brand-70: #115ea3;
-  --brand-80: #0f6cbd;
-  --brand-90: #2886de;
-  --brand-100: #479ef5;
-  --brand-110: #62abf5;
-  --brand-120: #77b7f7;
-  --brand-130: #96c6fa;
-  --brand-140: #b4d6fa;
-  --brand-150: #cfe4fa;
-  --brand-160: #ebf3fc;
+  /* Brand colors — Warm Teal (やさしさ・成長・安心) */
+  --brand-10: #042f2e;
+  --brand-20: #064e3b;
+  --brand-30: #065f46;
+  --brand-40: #047857;
+  --brand-50: #059669;
+  --brand-60: #0d9488;
+  --brand-70: #0f9b8e;
+  --brand-80: #14a898;
+  --brand-90: #2dd4bf;
+  --brand-100: #5eead4;
+  --brand-110: #6ee7c2;
+  --brand-120: #86efac;
+  --brand-130: #a7f3d0;
+  --brand-140: #ccfbf1;
+  --brand-150: #d1fae5;
+  --brand-160: #f0fdfa;
 
-  /* Fluent 2 Neutral colors */
-  --neutral-foreground-1: #242424;
-  --neutral-foreground-2: #424242;
-  --neutral-foreground-3: #616161;
-  --neutral-foreground-4: #707070;
-  --neutral-foreground-disabled: #bdbdbd;
-  --neutral-background-1: #ffffff;
-  --neutral-background-2: #fafafa;
-  --neutral-background-3: #f5f5f5;
-  --neutral-background-4: #f0f0f0;
-  --neutral-background-5: #e0e0e0;
-  --neutral-stroke-1: #d1d1d1;
-  --neutral-stroke-2: #e0e0e0;
-  --neutral-stroke-3: #f0f0f0;
+  /* Neutral colors — わずかに暖色の灰色 */
+  --neutral-foreground-1: #1c1917;
+  --neutral-foreground-2: #44403c;
+  --neutral-foreground-3: #78716c;
+  --neutral-foreground-4: #a8a29e;
+  --neutral-foreground-disabled: #d6d3d1;
+  --neutral-background-1: #fffffe;
+  --neutral-background-2: #fafaf9;
+  --neutral-background-3: #f5f5f4;
+  --neutral-background-4: #e7e5e4;
+  --neutral-background-5: #d6d3d1;
+  --neutral-stroke-1: #d6d3d1;
+  --neutral-stroke-2: #e7e5e4;
+  --neutral-stroke-3: #f5f5f4;
 
-  /* Fluent 2 Semantic colors */
-  --status-success-bg: #dff6dd;
-  --status-success-fg: #0e700e;
-  --status-warning-bg: #fff1d6;
-  --status-warning-fg: #835b00;
-  --status-danger-bg: #fde7e9;
-  --status-danger-fg: #b10e1c;
-  --status-info-bg: #ebf3fc;
-  --status-info-fg: #0f548c;
+  /* Semantic colors — やわらかいトーン */
+  --status-success-bg: #dcfce7;
+  --status-success-fg: #166534;
+  --status-warning-bg: #fef9c3;
+  --status-warning-fg: #854d0e;
+  --status-danger-bg: #fee2e2;
+  --status-danger-fg: #b91c1c;
+  --status-info-bg: #e0f2fe;
+  --status-info-fg: #0c4a6e;
 
   /* Fluent 2 Shadows */
   --shadow-2: 0px 1px 2px rgba(0, 0, 0, 0.14), 0px 0px 2px rgba(0, 0, 0, 0.12);
@@ -81,6 +81,11 @@
   --primary-light: var(--brand-160);
   --primary-dark: var(--brand-70);
   --accent: #f59e0b;
+
+  /* Sidebar accent */
+  --sidebar-bg: #f0fdfa;
+  --sidebar-active-bg: #ccfbf1;
+  --sidebar-active-text: #0f766e;
   --success: var(--status-success-fg);
   --warning: var(--status-warning-fg);
   --danger: var(--status-danger-fg);
