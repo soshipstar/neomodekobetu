@@ -284,7 +284,7 @@ export default function UnconfirmedNotesPage() {
                         className="flex items-center gap-1 text-xs text-[var(--brand-80)] hover:underline shrink-0"
                       >
                         詳細
-                        <ExternalLink className="h-3 w-3" />
+                        <MaterialIcon name="open_in_new" size={12} />
                       </Link>
                     )}
                   </div>

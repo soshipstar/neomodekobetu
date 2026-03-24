@@ -198,7 +198,7 @@ export default function StudentSubmissionsPage() {
                     size="sm"
                     variant="outline"
                     onClick={() => openEditModal(sub)}
-                    leftIcon={<Edit3 className="h-3.5 w-3.5" />}
+                    leftIcon={<MaterialIcon name="edit" size={14} />}
                   >
                     編集
                   </Button>

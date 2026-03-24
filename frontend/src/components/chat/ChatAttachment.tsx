@@ -39,7 +39,7 @@ export function ChatAttachment({ attachment, isMine }: ChatAttachmentProps) {
           : 'border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] hover:bg-[var(--neutral-background-4)]'
       )}
     >
-      <FileText className={cn('h-5 w-5 shrink-0', isMine ? 'text-blue-200' : 'text-[var(--neutral-foreground-4)]')} />
+      <MaterialIcon name="description" size={20} className={cn('shrink-0', isMine ? 'text-blue-200' : 'text-[var(--neutral-foreground-4)]')} />
       <div className="flex-1 min-w-0">
         <p className={cn('truncate text-xs font-medium', isMine ? 'text-white' : 'text-[var(--neutral-foreground-2)]')}>
           {attachment.name}
@@ -48,7 +48,7 @@ export function ChatAttachment({ attachment, isMine }: ChatAttachmentProps) {
           {formatFileSize(attachment.size)}
         </p>
       </div>
-      <Download className={cn('h-4 w-4 shrink-0', isMine ? 'text-blue-200' : 'text-[var(--neutral-foreground-4)]')} />
+      <MaterialIcon name="download" size={16} className={cn('shrink-0', isMine ? 'text-blue-200' : 'text-[var(--neutral-foreground-4)]')} />
     </a>
   );
 }

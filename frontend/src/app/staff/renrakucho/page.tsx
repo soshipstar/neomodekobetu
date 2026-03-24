@@ -631,7 +631,7 @@ export default function RenrakuchoPage() {
                     title="記録を編集"
                     onClick={() => handleOpenActivity(activity)}
                   >
-                    <Edit3 className="h-4 w-4" />
+                    <MaterialIcon name="edit" size={16} />
                   </Button>
                   <Button
                     variant="outline"
@@ -832,7 +832,7 @@ export default function RenrakuchoPage() {
           <CardHeader>
             <CardTitle>
               <div className="flex items-center gap-2">
-                <Edit3 className="h-4 w-4" />
+                <MaterialIcon name="edit" size={16} />
                 {editingActivity.activity_name} - 生徒記録
               </div>
             </CardTitle>

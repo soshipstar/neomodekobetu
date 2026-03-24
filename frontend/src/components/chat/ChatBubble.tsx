@@ -13,7 +13,7 @@ interface ChatBubbleProps {
 
 const MESSAGE_TYPE_CONFIG: Record<string, {
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: string;
   bubbleClass: string;
   badgeClass: string;
 }> = {
@@ -102,7 +102,7 @@ export function ChatBubble({ message, isMine }: ChatBubbleProps) {
               'mb-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold',
               typeConfig.badgeClass
             )}>
-              <typeConfig.icon className="h-3 w-3" />
+              <MaterialIcon name={typeConfig.icon} size={12} />
               {typeConfig.label}
             </div>
           )}

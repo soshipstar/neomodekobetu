@@ -212,7 +212,7 @@ export default function SupportPlansPage() {
             </Button>
           </Link>
           <Link href="/staff/tag-settings">
-            <Button variant="outline" leftIcon={<Tag className="h-4 w-4" />}>
+            <Button variant="outline" leftIcon={<MaterialIcon name="label" size={16} />}>
               タグを設定
             </Button>
           </Link>

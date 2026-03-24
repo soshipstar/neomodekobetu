@@ -532,7 +532,7 @@ export default function WeeklyPlanStudentDetailPage() {
               <p className="mb-4 text-[var(--neutral-foreground-4)]">
                 この週の計画はまだ作成されていません
               </p>
-              <Button variant="primary" onClick={enterEditMode} leftIcon={<Edit3 className="h-4 w-4" />}>
+              <Button variant="primary" onClick={enterEditMode} leftIcon={<MaterialIcon name="edit" size={16} />}>
                 計画を作成する
               </Button>
             </div>
@@ -546,7 +546,7 @@ export default function WeeklyPlanStudentDetailPage() {
           <CardBody>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
               <h2 className="flex items-center gap-2 text-lg font-bold text-[var(--neutral-foreground-1)]">
-                <Edit3 className="h-5 w-5" />
+                <MaterialIcon name="edit" size={20} />
                 週間計画を編集
               </h2>
               <div className="flex gap-2">
@@ -709,14 +709,14 @@ export default function WeeklyPlanStudentDetailPage() {
             <CardBody>
               <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
                 <h2 className="flex items-center gap-2 text-lg font-bold text-[var(--neutral-foreground-1)]">
-                  <Edit3 className="h-5 w-5" />
+                  <MaterialIcon name="edit" size={20} />
                   週間計画
                 </h2>
                 <Button
                   variant="primary"
                   size="sm"
                   onClick={enterEditMode}
-                  leftIcon={<Edit3 className="h-4 w-4" />}
+                  leftIcon={<MaterialIcon name="edit" size={16} />}
                 >
                   編集する
                 </Button>
