@@ -129,7 +129,7 @@ export default function KobetsuMonitoringPage() {
   const { data: studentPlans = [] } = useQuery({
     queryKey: ['staff', 'monitoring', 'plans', selectedStudentId],
     queryFn: async () => {
-      const res = await api.get<{ data: PlanOption[] }>(`/api/staff/support-plans/individual?student_id=${selectedStudentId}`);
+      const res = await api.get<{ data: PlanOption[] }>(`/api/staff/students/${selectedStudentId}/support-plans`);
       return res.data.data;
     },
     enabled: !!selectedStudentId,
