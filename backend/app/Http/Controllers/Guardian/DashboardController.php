@@ -224,9 +224,9 @@ class DashboardController extends Controller
         // ==============================
         // 面談予約
         // ==============================
-        $pendingMeetingRequests = MeetingRequest::where('guardian_id', $guardianId)
-            ->whereIn('status', ['pending', 'staff_counter'])
-            ->where('updated_at', '>=', Carbon::now()->subDays(14))
+        $pendingMeetingRequests = MeetingRequest::where('meeting_requests.guardian_id', $guardianId)
+            ->whereIn('meeting_requests.status', ['pending', 'staff_counter'])
+            ->where('meeting_requests.updated_at', '>=', Carbon::now()->subDays(14))
             ->join('students', 'meeting_requests.student_id', '=', 'students.id')
             ->leftJoin('users', 'meeting_requests.staff_id', '=', 'users.id')
             ->select([
