@@ -2,7 +2,7 @@
  * Service Worker for KIDURI - 個別支援連絡帳システム PWA
  */
 
-const CACHE_VERSION = 'kiduri-cache-v1';
+const CACHE_VERSION = 'kiduri-cache-v2';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const OFFLINE_URL = '/offline.html';
