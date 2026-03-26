@@ -136,6 +136,10 @@ export default function RenrakuchoPage() {
   const [studentFormData, setStudentFormData] = useState<Record<string, string>>({});
   const [isSavingStudent, setIsSavingStudent] = useState(false);
 
+  // --- Add student to activity ---
+  const [allStudents, setAllStudents] = useState<Student[]>([]);
+  const [showAddStudent, setShowAddStudent] = useState(false);
+
   // --- Send/Integrate modal ---
   const [showSendModal, setShowSendModal] = useState(false);
   const [sendActivityId, setSendActivityId] = useState<number | null>(null);
@@ -226,11 +230,17 @@ export default function RenrakuchoPage() {
     setEditingActivity(activity);
     setEditingStudentId(null);
     setStudentFormData({});
+    setShowAddStudent(false);
     setIsLoadingRecords(true);
     try {
-      const res = await api.get(`/api/staff/renrakucho/${activity.id}/student-records`);
-      const items = res.data?.data;
+      const [recRes, stuRes] = await Promise.all([
+        api.get(`/api/staff/renrakucho/${activity.id}/student-records`),
+        api.get('/api/staff/students'),
+      ]);
+      const items = recRes.data?.data;
       setStudentRecords(Array.isArray(items) ? items : []);
+      const stuItems = stuRes.data?.data;
+      setAllStudents(Array.isArray(stuItems) ? stuItems : []);
     } catch {
       setStudentRecords([]);
       toast.error('記録の読み込みに失敗しました');
@@ -248,6 +258,34 @@ export default function RenrakuchoPage() {
       language_communication: nl(rec.language_communication),
       social_relations: nl(rec.social_relations),
       notes: nl(rec.notes),
+    });
+  };
+
+  const handleAddStudent = (student: Student) => {
+    // Add a blank student record to the list
+    const newRec: StudentRecord = {
+      id: 0,
+      daily_record_id: editingActivity!.id,
+      student_id: student.id,
+      student: student,
+      health_life: null,
+      motor_sensory: null,
+      cognitive_behavior: null,
+      language_communication: null,
+      social_relations: null,
+      notes: null,
+    };
+    setStudentRecords((prev) => [...prev, newRec]);
+    setShowAddStudent(false);
+    // Auto-select the new student for editing
+    setEditingStudentId(student.id);
+    setStudentFormData({
+      health_life: '',
+      motor_sensory: '',
+      cognitive_behavior: '',
+      language_communication: '',
+      social_relations: '',
+      notes: '',
     });
   };
 
@@ -874,6 +912,50 @@ export default function RenrakuchoPage() {
                       </button>
                     );
                   })}
+
+                  {/* Add student button & dropdown */}
+                  <div className="mt-2 border-t border-[var(--neutral-stroke-3)] pt-2">
+                    {showAddStudent ? (
+                      <div className="space-y-1">
+                        <p className="px-2 text-xs font-medium text-[var(--neutral-foreground-3)]">追加する生徒を選択</p>
+                        <div className="max-h-[200px] overflow-y-auto">
+                          {allStudents
+                            .filter((s) => !studentRecords.some((r) => r.student_id === s.id))
+                            .map((s) => (
+                              <button
+                                key={s.id}
+                                onClick={() => handleAddStudent(s)}
+                                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-[var(--neutral-foreground-1)] hover:bg-[var(--neutral-background-3)] transition-colors"
+                              >
+                                <MaterialIcon name="person_add" size={14} className="text-[var(--brand-80)]" />
+                                {s.student_name}
+                                {s.grade_level && (
+                                  <Badge variant={GRADE_BADGE_VARIANT[s.grade_level] || 'default'} className="text-[10px] ml-auto">
+                                    {GRADE_LABELS[s.grade_level] || s.grade_level}
+                                  </Badge>
+                                )}
+                              </button>
+                            ))}
+                          {allStudents.filter((s) => !studentRecords.some((r) => r.student_id === s.id)).length === 0 && (
+                            <p className="px-3 py-2 text-xs text-[var(--neutral-foreground-4)]">追加できる生徒がいません</p>
+                          )}
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={() => setShowAddStudent(false)} className="w-full">
+                          キャンセル
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowAddStudent(true)}
+                        className="w-full"
+                        leftIcon={<MaterialIcon name="person_add" size={14} />}
+                      >
+                        生徒を追加
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Form area */}
