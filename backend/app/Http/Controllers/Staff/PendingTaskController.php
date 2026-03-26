@@ -386,7 +386,7 @@ class PendingTaskController extends Controller
                     }
                 }
 
-                if (!$latestConfirmedInPeriod) {
+                if (!$latestConfirmedInPeriod && !$student->hide_initial_monitoring) {
                     if ($isOverdue) {
                         $statusCode = 'outdated';
                     } elseif ($daysLeft <= 7) {

@@ -208,7 +208,7 @@ class DashboardController extends Controller
         try {
             $facilityEvaluationIncomplete = DB::table('facility_evaluation_periods')
                 ->where('classroom_id', $classroomId)
-                ->where('status', '!=', 'completed')
+                ->where('status', '!=', 'published')
                 ->exists();
         } catch (\Exception $e) {
             Log::warning('facility_evaluations table not available: ' . $e->getMessage());
