@@ -37,11 +37,15 @@ export function removeToken(): void {
   }
 }
 
-// Request interceptor: attach Bearer token
+// Request interceptor: attach Bearer token & fix Content-Type for FormData
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = getToken();
   if (token) {
     config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  // FormData の場合は Content-Type を削除して axios に自動設定させる
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type'];
   }
   return config;
 });

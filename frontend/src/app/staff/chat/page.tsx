@@ -80,6 +80,8 @@ export default function StaffChatPage() {
   const [broadcastModal, setBroadcastModal] = useState(false);
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [broadcastSending, setBroadcastSending] = useState(false);
+  const [broadcastFile, setBroadcastFile] = useState<File | null>(null);
+  const [broadcastRoomIds, setBroadcastRoomIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     fetchRooms();
@@ -166,20 +168,32 @@ export default function StaffChatPage() {
 
   // Broadcast
   const handleBroadcast = useCallback(async () => {
-    if (!broadcastMessage.trim()) return;
+    if (!broadcastMessage.trim() && !broadcastFile) return;
+    if (broadcastRoomIds.size === 0) {
+      toast.error('送信先を選択してください');
+      return;
+    }
     setBroadcastSending(true);
     try {
-      const res = await api.post('/api/staff/chat/broadcast', { message: broadcastMessage });
+      const formData = new FormData();
+      formData.append('message', broadcastMessage);
+      Array.from(broadcastRoomIds).forEach((id) => formData.append('room_ids[]', String(id)));
+      if (broadcastFile) {
+        formData.append('attachment', broadcastFile);
+      }
+      const res = await api.post('/api/staff/chat/broadcast', formData);
       toast.success(res.data?.message || '一斉送信しました');
       setBroadcastModal(false);
       setBroadcastMessage('');
+      setBroadcastFile(null);
+      setBroadcastRoomIds(new Set());
       fetchRooms();
     } catch {
       toast.error('一斉送信に失敗しました');
     } finally {
       setBroadcastSending(false);
     }
-  }, [broadcastMessage, fetchRooms, toast]);
+  }, [broadcastMessage, broadcastFile, broadcastRoomIds, fetchRooms, toast]);
 
   // Toggle grade group accordion
   const toggleGroup = (key: string) => {
@@ -438,10 +452,12 @@ export default function StaffChatPage() {
         onSubmit={handleSubmissionSubmit} isSending={submissionSending}
       />
       <BroadcastModal
-        isOpen={broadcastModal} onClose={() => setBroadcastModal(false)}
+        isOpen={broadcastModal} onClose={() => { setBroadcastModal(false); setBroadcastFile(null); }}
         message={broadcastMessage} setMessage={setBroadcastMessage}
+        file={broadcastFile} setFile={setBroadcastFile}
+        selectedRoomIds={broadcastRoomIds} setSelectedRoomIds={setBroadcastRoomIds}
+        rooms={rooms}
         onSubmit={handleBroadcast} isSending={broadcastSending}
-        roomCount={rooms.length}
       />
     </div>
   );
@@ -548,28 +564,123 @@ function SubmissionModal({
 // ---------------------------------------------------------------------------
 
 function BroadcastModal({
-  isOpen, onClose, message, setMessage, onSubmit, isSending, roomCount,
+  isOpen, onClose, message, setMessage, file, setFile,
+  selectedRoomIds, setSelectedRoomIds, rooms, onSubmit, isSending,
 }: {
   isOpen: boolean; onClose: () => void;
   message: string; setMessage: (v: string) => void;
-  onSubmit: () => void; isSending: boolean; roomCount: number;
+  file: File | null; setFile: (f: File | null) => void;
+  selectedRoomIds: Set<number>; setSelectedRoomIds: (ids: Set<number>) => void;
+  rooms: ChatRoom[];
+  onSubmit: () => void; isSending: boolean;
 }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Initialize: select all rooms when modal opens
+  useEffect(() => {
+    if (isOpen && selectedRoomIds.size === 0 && rooms.length > 0) {
+      setSelectedRoomIds(new Set(rooms.map((r) => r.id)));
+    }
+  }, [isOpen, rooms, selectedRoomIds.size, setSelectedRoomIds]);
+
+  const toggleRoom = (id: number) => {
+    const next = new Set(selectedRoomIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedRoomIds(next);
+  };
+
+  const selectAll = () => setSelectedRoomIds(new Set(rooms.map((r) => r.id)));
+  const selectNone = () => setSelectedRoomIds(new Set());
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) {
+      if (f.size > 3 * 1024 * 1024) {
+        alert('ファイルサイズは3MB以下にしてください');
+        return;
+      }
+      setFile(f);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="全保護者に一斉送信" size="md">
+    <Modal isOpen={isOpen} onClose={onClose} title="保護者に一斉送信" size="md">
       <div className="space-y-4">
+        {/* Recipient selection */}
+        <div>
+          <div className="mb-1 flex items-center justify-between">
+            <label className="text-sm font-medium text-[var(--neutral-foreground-2)]">送信先を選択</label>
+            <div className="flex gap-2">
+              <button onClick={selectAll} className="text-xs text-[var(--brand-80)] hover:underline">全選択</button>
+              <button onClick={selectNone} className="text-xs text-[var(--neutral-foreground-4)] hover:underline">全解除</button>
+            </div>
+          </div>
+          <div className="max-h-[200px] overflow-y-auto rounded-lg border border-[var(--neutral-stroke-2)] p-2">
+            {rooms.map((room) => (
+              <label key={room.id} className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-[var(--neutral-background-3)] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedRoomIds.has(room.id)}
+                  onChange={() => toggleRoom(room.id)}
+                  className="rounded border-[var(--neutral-stroke-2)]"
+                />
+                <span className="text-[var(--neutral-foreground-1)]">
+                  {room.student?.student_name || `ID: ${room.student_id}`}
+                </span>
+                {room.guardian?.full_name && (
+                  <span className="text-xs text-[var(--neutral-foreground-4)]">({room.guardian.full_name})</span>
+                )}
+              </label>
+            ))}
+          </div>
+          <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
+            {selectedRoomIds.size}/{rooms.length}件 選択中
+          </p>
+        </div>
+
+        {/* Message */}
         <div>
           <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">メッセージ</label>
-          <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={5}
+          <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={4}
             className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
-            placeholder="全保護者に送信するメッセージ..." required />
+            placeholder="送信するメッセージを入力..." />
         </div>
-        <p className="text-sm text-[var(--neutral-foreground-3)]">
-          {roomCount}件のチャットルーム全てにメッセージが送信されます。
-        </p>
+
+        {/* File attachment */}
+        <div>
+          <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">ファイル添付（任意）</label>
+          {file ? (
+            <div className="flex items-center gap-2 rounded-lg bg-[var(--neutral-background-3)] px-3 py-2">
+              <MaterialIcon name="attach_file" size={16} className="text-[var(--neutral-foreground-4)]" />
+              <span className="flex-1 truncate text-sm text-[var(--neutral-foreground-2)]">{file.name}</span>
+              <span className="text-xs text-[var(--neutral-foreground-4)]">{(file.size / 1024).toFixed(0)}KB</span>
+              <button onClick={() => setFile(null)} className="rounded p-1 text-[var(--neutral-foreground-4)] hover:text-red-500">
+                <MaterialIcon name="close" size={16} />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex w-full items-center gap-2 rounded-lg border border-dashed border-[var(--neutral-stroke-2)] px-3 py-2 text-sm text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-3)]"
+            >
+              <MaterialIcon name="attach_file" size={16} />
+              ファイルを選択（3MB以下）
+            </button>
+          )}
+          <input ref={fileInputRef} type="file" className="hidden"
+            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" onChange={handleFileSelect} />
+          <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">※ 1つのファイルを全員に共有します</p>
+        </div>
+
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose}>キャンセル</Button>
           <Button onClick={onSubmit} isLoading={isSending}
-            disabled={!message.trim()} leftIcon={<MaterialIcon name="send" size={16} />}>送信</Button>
+            disabled={(!message.trim() && !file) || selectedRoomIds.size === 0}
+            leftIcon={<MaterialIcon name="send" size={16} />}>
+            {selectedRoomIds.size}件に送信
+          </Button>
         </div>
       </div>
     </Modal>

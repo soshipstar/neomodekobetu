@@ -340,7 +340,15 @@ class ChatController extends Controller
             $attachmentMime = $file->getMimeType();
         }
 
-        $rooms = ChatRoom::forUser($user)->get();
+        // 送信先の絞り込み（room_ids指定時は選択したルームのみ）
+        $query = ChatRoom::forUser($user);
+        if ($request->has('room_ids')) {
+            $roomIds = $request->input('room_ids', []);
+            if (is_array($roomIds) && count($roomIds) > 0) {
+                $query->whereIn('id', $roomIds);
+            }
+        }
+        $rooms = $query->get();
         $sentCount = 0;
 
         DB::transaction(function () use ($rooms, $user, $request, &$sentCount, $attachmentPath, $attachmentName, $attachmentSize, $attachmentMime) {
