@@ -992,7 +992,7 @@ export default function RenrakuchoPage() {
                           個別メモ
                         </label>
                         <textarea
-                          rows={2}
+                          rows={4}
                           value={studentFormData.notes || ''}
                           onChange={(e) =>
                             setStudentFormData((prev) => ({ ...prev, notes: e.target.value }))
