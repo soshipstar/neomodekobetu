@@ -977,11 +977,19 @@ export default function RenrakuchoPage() {
                           <textarea
                             rows={2}
                             value={studentFormData[key] || ''}
-                            onChange={(e) =>
-                              setStudentFormData((prev) => ({ ...prev, [key]: e.target.value }))
-                            }
+                            onChange={(e) => {
+                              setStudentFormData((prev) => ({ ...prev, [key]: e.target.value }));
+                              e.target.style.height = 'auto';
+                              e.target.style.height = e.target.scrollHeight + 'px';
+                            }}
+                            ref={(el) => {
+                              if (el) {
+                                el.style.height = 'auto';
+                                el.style.height = el.scrollHeight + 'px';
+                              }
+                            }}
                             placeholder={`${DOMAIN_LABELS[key]}の観察記録...`}
-                            className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] placeholder-[var(--neutral-foreground-4)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+                            className="block w-full resize-none overflow-hidden rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] placeholder-[var(--neutral-foreground-4)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
                           />
                         </div>
                       ))}
