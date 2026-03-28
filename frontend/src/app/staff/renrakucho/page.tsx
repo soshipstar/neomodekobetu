@@ -1111,14 +1111,22 @@ export default function RenrakuchoPage() {
                     </div>
 
                     <textarea
-                      rows={5}
+                      rows={3}
                       value={sendNotes[studentId] || ''}
-                      onChange={(e) =>
-                        setSendNotes((prev) => ({ ...prev, [studentId]: e.target.value }))
-                      }
+                      onChange={(e) => {
+                        setSendNotes((prev) => ({ ...prev, [studentId]: e.target.value }));
+                        e.target.style.height = 'auto';
+                        e.target.style.height = e.target.scrollHeight + 'px';
+                      }}
+                      ref={(el) => {
+                        if (el) {
+                          el.style.height = 'auto';
+                          el.style.height = el.scrollHeight + 'px';
+                        }
+                      }}
                       readOnly={isSent}
                       placeholder="統合文を入力またはAIで生成..."
-                      className={`block w-full rounded-md border border-[var(--neutral-stroke-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] placeholder-[var(--neutral-foreground-4)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)] ${
+                      className={`block w-full resize-none overflow-hidden rounded-md border border-[var(--neutral-stroke-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] placeholder-[var(--neutral-foreground-4)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)] ${
                         isSent ? 'bg-[var(--neutral-background-3)]' : 'bg-[var(--neutral-background-1)]'
                       }`}
                     />
