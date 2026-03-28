@@ -55,9 +55,7 @@ export default function StaffChatPage() {
 
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
-    new Set(GRADE_GROUPS.map((g) => g.key))
-  );
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   // Mobile: track whether we're showing chat view
   const [showChat, setShowChat] = useState(false);
   const toast = useToast();
