@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { format } from 'date-fns';
@@ -132,6 +133,10 @@ export default function WaitingListPage() {
     setCapacityForm(form);
   }, [summary]);
 
+  // Withdrawal modal state
+  const [withdrawalTarget, setWithdrawalTarget] = useState<WaitingStudent | null>(null);
+  const [withdrawalReason, setWithdrawalReason] = useState('');
+
   // Enroll mutation
   const enrollMutation = useMutation({
     mutationFn: (id: number) => api.put(`/api/staff/waiting-list/${id}`, { status: 'active' }),
@@ -141,6 +146,19 @@ export default function WaitingListPage() {
       toast.success('入所処理しました（希望曜日が利用曜日に自動設定されました）');
     },
     onError: () => toast.error('入所処理に失敗しました'),
+  });
+
+  // Withdrawal mutation
+  const withdrawalMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: number; reason: string }) =>
+      api.put(`/api/staff/waiting-list/${id}`, { status: 'pre_withdrawal', withdrawal_reason: reason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['staff', 'waiting-list'] });
+      toast.success('入所前辞退として処理しました');
+      setWithdrawalTarget(null);
+      setWithdrawalReason('');
+    },
+    onError: () => toast.error('辞退処理に失敗しました'),
   });
 
   // Save capacity mutation
@@ -545,8 +563,8 @@ export default function WaitingListPage() {
                             備考: {s.waiting_notes}
                           </div>
                         )}
-                        {/* Admit button */}
-                        <div>
+                        {/* Action buttons */}
+                        <div className="flex gap-2">
                           <Button
                             variant="primary"
                             size="sm"
@@ -559,6 +577,17 @@ export default function WaitingListPage() {
                           >
                             入所
                           </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            leftIcon={<MaterialIcon name="cancel" size={14} />}
+                            onClick={() => {
+                              setWithdrawalTarget(s);
+                              setWithdrawalReason('');
+                            }}
+                          >
+                            辞退
+                          </Button>
                         </div>
                       </div>
                     ))}
@@ -569,6 +598,48 @@ export default function WaitingListPage() {
           )}
         </CardBody>
       </Card>
+
+      {/* Withdrawal modal */}
+      <Modal
+        isOpen={!!withdrawalTarget}
+        onClose={() => setWithdrawalTarget(null)}
+        title="入所前辞退"
+        size="sm"
+      >
+        {withdrawalTarget && (
+          <div className="space-y-4">
+            <p className="text-sm text-[var(--neutral-foreground-2)]">
+              <span className="font-semibold">{withdrawalTarget.student_name}</span>さんを入所前辞退にします。
+            </p>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-2)]">
+                辞退理由
+              </label>
+              <textarea
+                rows={3}
+                value={withdrawalReason}
+                onChange={(e) => setWithdrawalReason(e.target.value)}
+                placeholder="辞退理由を入力してください..."
+                className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] placeholder-[var(--neutral-foreground-4)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" size="sm" onClick={() => setWithdrawalTarget(null)}>
+                キャンセル
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                leftIcon={<MaterialIcon name="cancel" size={14} />}
+                onClick={() => withdrawalMutation.mutate({ id: withdrawalTarget.id, reason: withdrawalReason })}
+                isLoading={withdrawalMutation.isPending}
+              >
+                辞退確定
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

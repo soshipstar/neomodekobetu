@@ -41,6 +41,7 @@ class Student extends Model
         'desired_start_date',
         'desired_weekly_count',
         'waiting_notes',
+        'withdrawal_reason',
         'last_login_at',
         'desired_monday',
         'desired_tuesday',

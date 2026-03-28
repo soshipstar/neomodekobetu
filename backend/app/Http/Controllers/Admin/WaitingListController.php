@@ -210,10 +210,11 @@ class WaitingListController extends Controller
     public function update(Request $request, Student $student): JsonResponse
     {
         $validated = $request->validate([
-            'status'               => 'sometimes|string|in:waiting,active',
+            'status'               => 'sometimes|string|in:waiting,active,pre_withdrawal',
             'desired_start_date'   => 'nullable|date',
             'desired_weekly_count' => 'nullable|integer|min:1|max:7',
             'waiting_notes'        => 'nullable|string|max:1000',
+            'withdrawal_reason'    => 'nullable|string|max:1000',
             'desired_monday'       => 'nullable|boolean',
             'desired_tuesday'      => 'nullable|boolean',
             'desired_wednesday'    => 'nullable|boolean',
@@ -256,6 +257,21 @@ class WaitingListController extends Controller
                 'success' => true,
                 'data'    => $student->fresh(),
                 'message' => '入所処理が完了しました。',
+            ]);
+        }
+
+        // 入所前辞退処理
+        if (($validated['status'] ?? null) === 'pre_withdrawal' && $student->status === 'waiting') {
+            $student->update([
+                'status' => 'pre_withdrawal',
+                'is_active' => false,
+                'withdrawal_reason' => $validated['withdrawal_reason'] ?? null,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data'    => $student->fresh(),
+                'message' => '入所前辞退として処理しました。',
             ]);
         }
 
