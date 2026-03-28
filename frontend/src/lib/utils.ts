@@ -36,8 +36,10 @@ export function formatDateTime(date: string | Date): string {
  * Format relative time in Japanese
  * @example formatRelativeTime('2026-03-10T14:30:00') => '3時間前'
  */
-export function formatRelativeTime(date: string | Date): string {
+export function formatRelativeTime(date: string | Date | null | undefined): string {
+  if (!date) return '';
   const d = typeof date === 'string' ? parseISO(date) : date;
+  if (isNaN(d.getTime())) return '';
   return formatDistanceToNow(d, { addSuffix: true, locale: ja });
 }
 

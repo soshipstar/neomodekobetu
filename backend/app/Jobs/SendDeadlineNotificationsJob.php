@@ -503,6 +503,8 @@ class SendDeadlineNotificationsJob implements ShouldQueue
                 'body' => $body,
                 'data' => $data,
                 'is_read' => false,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
 
             Log::info('SendDeadlineNotificationsJob: notification created', [
