@@ -168,8 +168,8 @@ export default function RenrakuchoPage() {
   // Data fetching
   // =========================================================================
 
-  const fetchActivities = useCallback(async () => {
-    setIsLoading(true);
+  const fetchActivities = useCallback(async (silent = false) => {
+    if (!silent) setIsLoading(true);
     try {
       const res = await api.get('/api/staff/renrakucho', { params: { date: dateStr } });
       const payload = res.data?.data;
@@ -178,7 +178,7 @@ export default function RenrakuchoPage() {
     } catch {
       setActivities([]);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, [dateStr]);
 
@@ -301,7 +301,7 @@ export default function RenrakuchoPage() {
       const res = await api.get(`/api/staff/renrakucho/${editingActivity.id}/student-records`);
       setStudentRecords(res.data?.data ?? []);
       setEditingStudentId(null);
-      fetchActivities();
+      fetchActivities(true);
     } catch {
       toast.error('保存に失敗しました');
     } finally {
@@ -511,7 +511,7 @@ export default function RenrakuchoPage() {
       });
       toast.success(res.data?.message || '送信しました');
       setShowSendModal(false);
-      fetchActivities();
+      fetchActivities(true);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       toast.error(msg || '送信に失敗しました');
