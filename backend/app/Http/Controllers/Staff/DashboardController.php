@@ -264,6 +264,15 @@ class DashboardController extends Controller
             ->values()
             ->toArray();
 
+        // --- 学校休業日活動日 ---
+        $schoolHolidayDates = DB::table('school_holiday_activities')
+            ->where('classroom_id', $classroomId)
+            ->whereBetween('activity_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
+            ->pluck('activity_date')
+            ->map(fn ($d) => Carbon::parse($d)->toDateString())
+            ->values()
+            ->toArray();
+
         // --- 休日 ---
         $holidayDates = DB::table('holidays')
             ->where('classroom_id', $classroomId)
@@ -309,10 +318,11 @@ class DashboardController extends Controller
         return response()->json([
             'success' => true,
             'data'    => [
-                'activity_dates' => $activityDates,
-                'holiday_dates'  => $holidayDates,
-                'event_dates'    => $eventDates,
-                'meeting_dates'  => $meetingDates,
+                'activity_dates'         => $activityDates,
+                'holiday_dates'          => $holidayDates,
+                'school_holiday_dates'   => $schoolHolidayDates,
+                'event_dates'            => $eventDates,
+                'meeting_dates'          => $meetingDates,
             ],
         ]);
     }

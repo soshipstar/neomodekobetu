@@ -33,8 +33,9 @@ interface MeetingInfo {
 }
 
 interface CalendarData {
-  activity_dates: string[];   // YYYY-MM-DD
-  holiday_dates: string[];    // YYYY-MM-DD
+  activity_dates: string[];          // YYYY-MM-DD
+  holiday_dates: string[];           // YYYY-MM-DD
+  school_holiday_dates: string[];    // YYYY-MM-DD
   event_dates: { date: string; label: string; color: string }[];
   meeting_dates: MeetingInfo[] | string[];
 }
@@ -76,8 +77,15 @@ const emptyDashboardSummary: DashboardSummary = {
 const emptyCalendarData: CalendarData = {
   activity_dates: [],
   holiday_dates: [],
+  school_holiday_dates: [],
   event_dates: [],
   meeting_dates: [],
+};
+
+// 活動時間（デフォルト値）
+const ACTIVITY_HOURS = {
+  regular: { start: '14:00', end: '17:30', label: '通常活動' },
+  school_holiday: { start: '10:00', end: '16:00', label: '学校休業日活動' },
 };
 
 // ---------------------------------------------------------------------------
@@ -122,6 +130,7 @@ async function fetchCalendar(year: number, month: number): Promise<CalendarData>
     return {
       activity_dates: Array.isArray(data.activity_dates) ? data.activity_dates : [],
       holiday_dates: Array.isArray(data.holiday_dates) ? data.holiday_dates : [],
+      school_holiday_dates: Array.isArray(data.school_holiday_dates) ? data.school_holiday_dates : [],
       event_dates: Array.isArray(data.event_dates) ? data.event_dates : [],
       meeting_dates: Array.isArray(data.meeting_dates) ? data.meeting_dates : [],
     };
@@ -270,6 +279,7 @@ export default function StaffDashboardPage() {
   // Sets for quick lookup in calendar
   const activityDateSet = useMemo(() => new Set(calendar.activity_dates), [calendar]);
   const holidayDateSet = useMemo(() => new Set(calendar.holiday_dates), [calendar]);
+  const schoolHolidayDateSet = useMemo(() => new Set(calendar.school_holiday_dates), [calendar]);
   const eventDateMap = useMemo(() => {
     const m = new Map<string, { label: string; color: string }[]>();
     calendar.event_dates.forEach((e) => {
@@ -408,6 +418,7 @@ export default function StaffDashboardPage() {
                             year === today.getFullYear();
                           const isHoliday = holidayDateSet.has(dateStr);
                           const hasActivity = activityDateSet.has(dateStr);
+                          const isSchoolHoliday = schoolHolidayDateSet.has(dateStr);
                           const eventInfos = eventDateMap.get(dateStr);
                           const meetingInfos = meetingDateMap.get(dateStr);
                           const hasMeeting = !!meetingInfos && meetingInfos.length > 0;
@@ -422,7 +433,9 @@ export default function StaffDashboardPage() {
                                   ? 'bg-[var(--brand-160)] ring-2 ring-inset ring-[var(--brand-80)]'
                                   : isHoliday
                                     ? 'bg-[var(--status-danger-bg)]'
-                                    : 'hover:bg-[var(--neutral-background-3)]'
+                                    : isSchoolHoliday
+                                      ? 'bg-orange-50'
+                                      : 'hover:bg-[var(--neutral-background-3)]'
                               }`}
                               onClick={() => setSelectedDate(dateStr)}
                             >
@@ -443,7 +456,13 @@ export default function StaffDashboardPage() {
                                 {/* Indicator dots */}
                                 <div className="flex flex-wrap justify-center gap-0.5">
                                   {hasActivity && (
-                                    <span className="h-1.5 w-1.5 rounded-full bg-[var(--status-success-fg)]" title="活動あり" />
+                                    <span
+                                      className={`h-1.5 w-1.5 rounded-full ${isSchoolHoliday ? 'bg-orange-500' : 'bg-[var(--status-success-fg)]'}`}
+                                      title={isSchoolHoliday ? '学校休業日活動' : '通常活動'}
+                                    />
+                                  )}
+                                  {isSchoolHoliday && !hasActivity && (
+                                    <span className="h-1.5 w-1.5 rounded-full bg-orange-400" title="学校休業日" />
                                   )}
                                 </div>
                                 {/* Meeting labels */}
@@ -481,7 +500,10 @@ export default function StaffDashboardPage() {
               {/* Legend */}
               <div className="mt-3 flex flex-wrap gap-4 text-xs text-[var(--neutral-foreground-3)]">
                 <span className="flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full bg-[var(--status-success-fg)]" /> 活動
+                  <span className="h-2 w-2 rounded-full bg-[var(--status-success-fg)]" /> 通常活動
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-orange-500" /> 学校休業日活動
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="h-2 w-2 rounded-full bg-[#6366f1]" /> イベント
@@ -568,6 +590,25 @@ export default function StaffDashboardPage() {
                   </div>
                 </CardBody>
               </Card>
+            );
+          })()}
+
+          {/* ---------- Activity time info for selected date ---------- */}
+          {(() => {
+            const isSchoolHol = schoolHolidayDateSet.has(selectedDate);
+            const isHol = holidayDateSet.has(selectedDate);
+            if (isHol) return null;
+            const hours = isSchoolHol ? ACTIVITY_HOURS.school_holiday : ACTIVITY_HOURS.regular;
+            return (
+              <div className={`flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm ${
+                isSchoolHol
+                  ? 'bg-orange-50 border border-orange-200 text-orange-800'
+                  : 'bg-green-50 border border-green-200 text-green-800'
+              }`}>
+                <MaterialIcon name="schedule" size={18} />
+                <span className="font-semibold">{hours.label}</span>
+                <span>{hours.start} 〜 {hours.end}</span>
+              </div>
             );
           })()}
 
