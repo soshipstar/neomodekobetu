@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
@@ -110,6 +111,7 @@ function nl(text: string | null | undefined): string {
 export default function KakehashiStaffPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const searchParams = useSearchParams();
 
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
   const [selectedPeriodId, setSelectedPeriodId] = useState<number | null>(null);
@@ -138,6 +140,27 @@ export default function KakehashiStaffPage() {
     },
     enabled: !!selectedStudentId,
   });
+
+  // Auto-select from URL params (e.g. from pending-tasks)
+  const autoOpenRef = useRef(false);
+  useEffect(() => {
+    if (autoOpenRef.current) return;
+    const sid = searchParams.get('student_id');
+    const pid = searchParams.get('period_id');
+    if (sid) {
+      autoOpenRef.current = true;
+      setSelectedStudentId(Number(sid));
+      if (pid) setSelectedPeriodId(Number(pid));
+    }
+  }, [searchParams]);
+
+  // Auto-expand period when navigated from URL
+  useEffect(() => {
+    if (autoOpenRef.current && selectedPeriodId && periods.length > 0) {
+      setEditingPeriodId(selectedPeriodId);
+      setExpandedPeriods(new Set([selectedPeriodId]));
+    }
+  }, [selectedPeriodId, periods]);
 
   // Save/submit mutation (POST to /api/staff/kakehashi/{periodId})
   const saveMutation = useMutation({

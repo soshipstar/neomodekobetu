@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -165,6 +166,7 @@ const tdClass =
 export default function KobetsuPlanPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const searchParams = useSearchParams();
 
   // View state: 'list' | 'editor'
   const [view, setView] = useState<'list' | 'editor'>('list');
@@ -328,6 +330,21 @@ export default function KobetsuPlanPage() {
       toast.error('計画の読み込みに失敗しました');
     }
   }, [toast]);
+
+  // Auto-open from URL params (e.g. from pending-tasks)
+  const autoOpenRef = useRef(false);
+  useEffect(() => {
+    if (autoOpenRef.current) return;
+    const sid = searchParams.get('student_id');
+    const pid = searchParams.get('plan_id');
+    if (sid) {
+      autoOpenRef.current = true;
+      setSelectedStudentId(Number(sid));
+      if (pid) {
+        openEdit(Number(pid));
+      }
+    }
+  }, [searchParams, openEdit]);
 
   const handleSaveDraft = (e: React.FormEvent) => {
     e.preventDefault();

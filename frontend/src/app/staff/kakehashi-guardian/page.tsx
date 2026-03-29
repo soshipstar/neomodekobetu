@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
@@ -75,10 +76,24 @@ function nl(text: string | null | undefined): string {
 export default function KakehashiGuardianViewPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const searchParams = useSearchParams();
 
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
   const [selectedPeriodId, setSelectedPeriodId] = useState<number | null>(null);
   const [showHidden, setShowHidden] = useState(false);
+
+  // Auto-select from URL params (e.g. from pending-tasks)
+  const autoOpenRef = useRef(false);
+  useEffect(() => {
+    if (autoOpenRef.current) return;
+    const sid = searchParams.get('student_id');
+    const pid = searchParams.get('period_id');
+    if (sid) {
+      autoOpenRef.current = true;
+      setSelectedStudentId(Number(sid));
+      if (pid) setSelectedPeriodId(Number(pid));
+    }
+  }, [searchParams]);
 
   // Fetch students
   const { data: students = [], isLoading: loadingStudents } = useQuery({

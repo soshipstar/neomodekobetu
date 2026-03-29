@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardBody } from '@/components/ui/Card';
@@ -84,6 +85,7 @@ const ACHIEVEMENT_OPTIONS = ['', '未着手', '進行中', '達成', '継続中'
 export default function KobetsuMonitoringPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const searchParams = useSearchParams();
 
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
@@ -137,6 +139,24 @@ export default function KobetsuMonitoringPage() {
     },
     enabled: !!selectedStudentId && !!selectedPlanId,
   });
+
+  // Auto-select from URL params (e.g. from pending-tasks)
+  const autoOpenRef = useRef(false);
+  useEffect(() => {
+    if (autoOpenRef.current) return;
+    const sid = searchParams.get('student_id');
+    if (sid) {
+      autoOpenRef.current = true;
+      setSelectedStudentId(Number(sid));
+    }
+  }, [searchParams]);
+
+  // Auto-select first plan when student plans load from URL navigation
+  useEffect(() => {
+    if (autoOpenRef.current && selectedStudentId && studentPlans.length > 0 && !selectedPlanId) {
+      setSelectedPlanId(studentPlans[0].id);
+    }
+  }, [selectedStudentId, studentPlans, selectedPlanId]);
 
   // Get the selected plan data
   const planData = studentPlans.find((p) => p.id === selectedPlanId) ?? null;
