@@ -31,6 +31,7 @@ const staffNav: NavItem[] = [
   { type: 'link', label: '振替管理', href: '/staff/attendance', icon: 'sync_alt' },
   { type: 'link', label: '保留タスク', href: '/staff/pending-tasks', icon: 'pending_actions' },
   { type: 'link', label: '未送信日誌一覧', href: '/staff/unsent-records', icon: 'assignment_late' },
+  { type: 'link', label: '欠席時対応加算', href: '/staff/absence-responses', icon: 'fact_check' },
   { type: 'divider', label: 'チャット' },
   { type: 'link', label: '保護者チャット', href: '/staff/chat', icon: 'chat' },
   { type: 'link', label: '生徒チャット', href: '/staff/student-chats', icon: 'forum' },

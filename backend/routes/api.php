@@ -230,9 +230,14 @@ Route::prefix('staff')
 
         // --- 未送信日誌・欠席時対応 ---
         Route::get('/unsent-records', [App\Http\Controllers\Staff\UnsentRecordsController::class, 'index']);
+        Route::get('/unsent-records/activities', [App\Http\Controllers\Staff\UnsentRecordsController::class, 'activitiesForDate']);
+        Route::post('/unsent-records/add-record', [App\Http\Controllers\Staff\UnsentRecordsController::class, 'addStudentRecord']);
+        Route::post('/unsent-records/mark-absent', [App\Http\Controllers\Staff\UnsentRecordsController::class, 'markAbsent']);
         Route::post('/absence-response', [App\Http\Controllers\Staff\UnsentRecordsController::class, 'storeAbsenceResponse']);
         Route::post('/absence-response/{record}/send', [App\Http\Controllers\Staff\UnsentRecordsController::class, 'sendAbsenceResponse']);
         Route::post('/absence-response/batch-send', [App\Http\Controllers\Staff\UnsentRecordsController::class, 'batchSendAbsenceResponse']);
+        Route::get('/absence-response/list', [App\Http\Controllers\Staff\UnsentRecordsController::class, 'absenceResponseList']);
+        Route::get('/absence-response/csv', [App\Http\Controllers\Staff\UnsentRecordsController::class, 'absenceResponseCsv']);
 
         // --- 週間計画 ---
         Route::get('/weekly-plans', [App\Http\Controllers\Staff\WeeklyPlanController::class, 'index']);

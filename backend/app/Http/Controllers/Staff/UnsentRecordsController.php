@@ -292,4 +292,151 @@ class UnsentRecordsController extends Controller
             'sent_count' => $sentCount,
         ]);
     }
+
+    /**
+     * 指定日の活動一覧を取得（日誌追加先の選択用）
+     */
+    public function activitiesForDate(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $date = $request->validate(['date' => 'required|date'])['date'];
+
+        $activities = DailyRecord::where('classroom_id', $user->classroom_id)
+            ->where('record_date', $date)
+            ->with('staff:id,full_name')
+            ->withCount('studentRecords')
+            ->get(['id', 'activity_name', 'record_date', 'staff_id', 'common_activity']);
+
+        return response()->json(['success' => true, 'data' => $activities]);
+    }
+
+    /**
+     * 生徒を既存の活動に追加、または新規活動を作成して追加
+     */
+    public function addStudentRecord(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'record_date' => 'required|date',
+            'daily_record_id' => 'nullable|integer|exists:daily_records,id',
+            'activity_name' => 'nullable|string|max:255',
+            'common_activity' => 'nullable|string',
+            'notes' => 'nullable|string',
+        ]);
+
+        $record = DB::transaction(function () use ($user, $validated) {
+            $dailyRecordId = $validated['daily_record_id'] ?? null;
+
+            if (!$dailyRecordId) {
+                // 新規活動を作成
+                $dailyRecord = DailyRecord::create([
+                    'record_date' => $validated['record_date'],
+                    'staff_id' => $user->id,
+                    'classroom_id' => $user->classroom_id,
+                    'activity_name' => $validated['activity_name'] ?? '日常活動',
+                    'common_activity' => $validated['common_activity'] ?? '',
+                ]);
+                $dailyRecordId = $dailyRecord->id;
+            }
+
+            return StudentRecord::updateOrCreate(
+                ['daily_record_id' => $dailyRecordId, 'student_id' => $validated['student_id']],
+                ['notes' => $validated['notes'] ?? null]
+            );
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $record,
+            'message' => '日誌を作成しました。',
+        ]);
+    }
+
+    /**
+     * 欠席扱いにして非表示にする（AbsenceNotificationを作成）
+     */
+    public function markAbsent(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'absence_date' => 'required|date',
+            'reason' => 'nullable|string',
+        ]);
+
+        AbsenceNotification::firstOrCreate(
+            ['student_id' => $validated['student_id'], 'absence_date' => $validated['absence_date']],
+            ['reason' => $validated['reason'] ?? '欠席', 'makeup_status' => 'none']
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => '欠席扱いにしました。',
+        ]);
+    }
+
+    /**
+     * 欠席時対応加算一覧
+     */
+    public function absenceResponseList(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $query = AbsenceResponseRecord::where('classroom_id', $user->classroom_id)
+            ->with(['student:id,student_name,grade_level', 'staff:id,full_name']);
+
+        if ($request->filled('date_from')) {
+            $query->where('absence_date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->where('absence_date', '<=', $request->date_to);
+        }
+
+        $records = $query->orderByDesc('absence_date')->paginate(50);
+
+        return response()->json(['success' => true, 'data' => $records]);
+    }
+
+    /**
+     * 欠席時対応加算一覧CSV
+     */
+    public function absenceResponseCsv(Request $request)
+    {
+        $user = $request->user();
+
+        $query = AbsenceResponseRecord::where('classroom_id', $user->classroom_id)
+            ->with(['student:id,student_name', 'staff:id,full_name']);
+
+        if ($request->filled('date_from')) {
+            $query->where('absence_date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->where('absence_date', '<=', $request->date_to);
+        }
+
+        $records = $query->orderByDesc('absence_date')->get();
+
+        $csv = "\xEF\xBB\xBF"; // BOM for Excel
+        $csv .= "日付,生徒名,欠席理由,対応内容,連絡方法,連絡内容,担当者,送信済,送信日時\n";
+
+        foreach ($records as $r) {
+            $csv .= implode(',', [
+                $r->absence_date->format('Y/m/d'),
+                '"' . str_replace('"', '""', $r->student?->student_name ?? '') . '"',
+                '"' . str_replace('"', '""', $r->absence_reason ?? '') . '"',
+                '"' . str_replace('"', '""', $r->response_content ?? '') . '"',
+                '"' . str_replace('"', '""', $r->contact_method ?? '') . '"',
+                '"' . str_replace('"', '""', $r->contact_content ?? '') . '"',
+                '"' . str_replace('"', '""', $r->staff?->full_name ?? '') . '"',
+                $r->is_sent ? 'はい' : 'いいえ',
+                $r->sent_at ? $r->sent_at->format('Y/m/d H:i') : '',
+            ]) . "\n";
+        }
+
+        return response($csv, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="absence_response_' . date('Ymd') . '.csv"',
+        ]);
+    }
 }
