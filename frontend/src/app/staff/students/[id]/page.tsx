@@ -76,7 +76,7 @@ export default function StudentDetailPage() {
       key: 'assessment',
       label: 'アセスメント',
       icon: <MaterialIcon name="assessment" size={18} />,
-      content: <StudentAssessment studentId={studentId} />,
+      content: <StudentAssessment studentId={studentId} studentName={student.student_name} />,
     },
     {
       key: 'account',
@@ -431,12 +431,13 @@ interface AssessmentData {
   updated_at?: string;
 }
 
-function StudentAssessment({ studentId }: { studentId: number }) {
+function StudentAssessment({ studentId, studentName }: { studentId: number; studentName: string }) {
   const toast = useToast();
   const queryClient = useQueryClient();
   const [activeDomain, setActiveDomain] = useState(ASSESSMENT_DOMAINS[0].key);
   const [editingItem, setEditingItem] = useState<{ domain: string; itemKey: string } | null>(null);
   const [editForm, setEditForm] = useState({ current_status: '', support_needs: '', level: 3, notes: '' });
+  const [showPrint, setShowPrint] = useState(false);
 
   const { data: assessments = [], isLoading } = useQuery({
     queryKey: ['staff', 'student', studentId, 'assessments'],
@@ -480,8 +481,24 @@ function StudentAssessment({ studentId }: { studentId: number }) {
   const levelLabels = ['', '要支援', 'やや課題', '年相応', 'やや得意', '得意'];
   const levelColors = ['', 'bg-red-100 text-red-700', 'bg-amber-100 text-amber-700', 'bg-gray-100 text-gray-700', 'bg-blue-100 text-blue-700', 'bg-green-100 text-green-700'];
 
+  const totalFilled = assessments.filter((a) => a.current_status || a.support_needs).length;
+
+  if (showPrint) {
+    return <AssessmentPrintView studentName={studentName} assessments={assessments} onClose={() => setShowPrint(false)} />;
+  }
+
   return (
     <div className="space-y-4">
+      {/* Header with print button */}
+      <div className="flex items-center justify-between">
+        <div className="text-xs text-[var(--neutral-foreground-3)]">{totalFilled}/44 項目入力済</div>
+        {totalFilled > 0 && (
+          <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="print" size={16} />} onClick={() => setShowPrint(true)}>
+            印刷プレビュー
+          </Button>
+        )}
+      </div>
+
       {/* Domain tabs */}
       <div className="flex flex-wrap gap-2">
         {ASSESSMENT_DOMAINS.map((d) => {
@@ -638,6 +655,131 @@ function StudentAssessment({ studentId }: { studentId: number }) {
         );
       })()}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// アセスメント印刷プレビュー（A4縦）
+// ---------------------------------------------------------------------------
+
+function AssessmentPrintView({
+  studentName,
+  assessments,
+  onClose,
+}: {
+  studentName: string;
+  assessments: AssessmentData[];
+  onClose: () => void;
+}) {
+  const levelLabels = ['', '要支援', 'やや課題', '年相応', 'やや得意', '得意'];
+
+  const getAssessment = (domain: string, itemKey: string) =>
+    assessments.find((a) => a.domain === domain && a.item_key === itemKey);
+
+  return (
+    <>
+      {/* Toolbar */}
+      <div className="print:hidden mb-4 flex items-center justify-between">
+        <Button variant="ghost" size="sm" leftIcon={<MaterialIcon name="arrow_back" size={16} />} onClick={onClose}>
+          一覧に戻る
+        </Button>
+        <Button leftIcon={<MaterialIcon name="print" size={16} />} onClick={() => window.print()}>
+          印刷する
+        </Button>
+      </div>
+
+      {/* Printable area */}
+      <div className="bg-white print:m-0">
+        <style>{`
+          @media print {
+            body { margin: 0; padding: 0; font-size: 8pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .print\\:hidden { display: none !important; }
+            @page { size: A4 portrait; margin: 10mm 12mm; }
+          }
+          .asmnt { font-family: 'MS Gothic', 'Noto Sans JP', sans-serif; color: #222; line-height: 1.3; font-size: 8pt; }
+          .asmnt-header { text-align: center; border-bottom: 2px solid #1a1a1a; padding-bottom: 4px; margin-bottom: 8px; }
+          .asmnt-header h1 { font-size: 14pt; font-weight: 700; margin: 0; letter-spacing: 2pt; }
+          .asmnt-meta { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 9pt; }
+          .asmnt-domain { margin-bottom: 8px; page-break-inside: avoid; }
+          .asmnt-domain-head { background: #4a5568; color: white; padding: 3px 8px; font-weight: bold; font-size: 9pt; margin-bottom: 0; }
+          .asmnt-table { width: 100%; border-collapse: collapse; font-size: 7.5pt; }
+          .asmnt-table th { background: #e2e8f0; border: 1px solid #888; padding: 2px 4px; text-align: center; font-size: 7pt; font-weight: bold; }
+          .asmnt-table td { border: 1px solid #888; padding: 2px 4px; vertical-align: top; line-height: 1.3; }
+          .asmnt-table td.item-name { width: 22%; font-size: 7pt; }
+          .asmnt-table td.level { width: 8%; text-align: center; font-size: 7pt; }
+          .asmnt-table td.status { width: 30%; white-space: pre-wrap; word-wrap: break-word; }
+          .asmnt-table td.needs { width: 30%; white-space: pre-wrap; word-wrap: break-word; }
+          .asmnt-table td.notes-col { width: 10%; white-space: pre-wrap; word-wrap: break-word; font-size: 6.5pt; }
+          .asmnt-table tr.filled { background: #fafbfc; }
+          .asmnt-table tr.empty { background: #fff; }
+          .asmnt-footer { text-align: right; margin-top: 6px; font-size: 6pt; color: #aaa; }
+          .level-1 { color: #b91c1c; font-weight: bold; }
+          .level-2 { color: #b45309; }
+          .level-3 { color: #6b7280; }
+          .level-4 { color: #2563eb; }
+          .level-5 { color: #059669; font-weight: bold; }
+        `}</style>
+
+        <div className="asmnt">
+          <div className="asmnt-header">
+            <h1>アセスメントシート</h1>
+            <div style={{ fontSize: '8pt', color: '#777' }}>放課後等デイサービス 5領域アセスメント</div>
+          </div>
+
+          <div className="asmnt-meta">
+            <div><strong>児童氏名：</strong>{studentName}</div>
+            <div><strong>評価日：</strong>{new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+          </div>
+
+          {ASSESSMENT_DOMAINS.map((domainDef) => {
+            const domainAssessments = assessments.filter((a) => a.domain === domainDef.key);
+            const filledCount = domainAssessments.filter((a) => a.current_status || a.support_needs).length;
+
+            return (
+              <div key={domainDef.key} className="asmnt-domain">
+                <div className="asmnt-domain-head">
+                  {domainDef.label}（{filledCount}/{domainDef.items.length}）
+                </div>
+                <table className="asmnt-table">
+                  <thead>
+                    <tr>
+                      <th>項目</th>
+                      <th>評価</th>
+                      <th>現在の状況</th>
+                      <th>支援の必要性・方針</th>
+                      <th>備考</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {domainDef.items.map((item) => {
+                      const a = getAssessment(domainDef.key, item.key);
+                      const hasFill = !!(a?.current_status || a?.support_needs);
+                      return (
+                        <tr key={item.key} className={hasFill ? 'filled' : 'empty'}>
+                          <td className="item-name">{item.label}</td>
+                          <td className="level">
+                            {a?.level ? (
+                              <span className={`level-${a.level}`}>{levelLabels[a.level]}</span>
+                            ) : ''}
+                          </td>
+                          <td className="status">{a?.current_status || ''}</td>
+                          <td className="needs">{a?.support_needs || ''}</td>
+                          <td className="notes-col">{a?.notes || ''}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })}
+
+          <div className="asmnt-footer">
+            出力日時: {new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
