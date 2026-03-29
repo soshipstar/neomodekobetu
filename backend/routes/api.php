@@ -150,6 +150,10 @@ Route::prefix('staff')
         Route::put('/students/{student}', [App\Http\Controllers\Staff\StudentController::class, 'update']);
         Route::delete('/students/{student}', [App\Http\Controllers\Staff\StudentController::class, 'destroy']);
 
+        // --- アセスメント ---
+        Route::get('/students/{student}/assessments', [App\Http\Controllers\Staff\StudentAssessmentController::class, 'index']);
+        Route::post('/students/{student}/assessments', [App\Http\Controllers\Staff\StudentAssessmentController::class, 'store']);
+
         // --- 支援計画 ---
         Route::get('/students/{student}/support-plans', [App\Http\Controllers\Staff\SupportPlanController::class, 'index']);
         Route::post('/students/{student}/support-plans', [App\Http\Controllers\Staff\SupportPlanController::class, 'store']);
