@@ -69,12 +69,12 @@ export default function PlanPreviewPage() {
       </div>
 
       {/* Printable area */}
-      <div className="mx-auto max-w-4xl bg-white print:max-w-none print:m-0">
+      <div className="mx-auto bg-white print:max-w-none print:m-0">
         <style>{`
           @media print {
             body { margin: 0; padding: 0; font-size: 8pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .print\\:hidden { display: none !important; }
-            @page { size: A4 portrait; margin: 15mm 18mm; }
+            @page { size: A4 landscape; margin: 8mm 10mm; }
           }
           .plan-page { font-family: sans-serif; color: #222; line-height: 1.3; }
           .plan-header { text-align: center; border-bottom: 2.5px solid #2c3e50; padding-bottom: 6px; margin-bottom: 10px; }
@@ -182,23 +182,41 @@ export default function PlanPreviewPage() {
             ※ 5領域の視点：「健康・生活」「運動・感覚」「認知・行動」「言語・コミュニケーション」「人間関係・社会性」
           </p>
 
-          {/* 同意 */}
+          {/* 署名欄 */}
           <div className="plan-consent">
             <div className="title">同意</div>
-            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', fontSize: '8pt' }}>
-              <div>管理責任者氏名: <span className="sig-box">{plan.consent_name || plan.manager_name || ''}</span></div>
+            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', fontSize: '8pt', alignItems: 'center' }}>
               <div>同意日: <span className="sig-box">{fmtDate(plan.consent_date)}</span></div>
-            </div>
-            {isOfficial && (
-              <div style={{ marginTop: '8px', fontSize: '8pt' }}>
-                <div>保護者署名: <span className="sig-box">{plan.guardian_signature || plan.guardian_signature_text || ''}</span></div>
-                {plan.staff_signer_name && (
-                  <div style={{ marginTop: '4px' }}>職員署名: <span className="sig-box">{plan.staff_signer_name}</span>
-                    {plan.staff_signature_date && ` （${fmtDate(plan.staff_signature_date)}）`}
-                  </div>
-                )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                児童発達支援管理責任者:
+                <span className="sig-box" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  {(() => {
+                    const staffSig = plan.staff_signature_image || plan.staff_signature;
+                    if (staffSig?.startsWith('data:image')) {
+                      return (
+                        <>
+                          <img src={staffSig} alt="職員署名" style={{ maxHeight: '35px', maxWidth: '100px' }} />
+                          {(plan.staff_signer_name || plan.manager_name) && <span>({plan.staff_signer_name || plan.manager_name})</span>}
+                        </>
+                      );
+                    }
+                    return plan.staff_signer_name || plan.manager_name || plan.consent_name || '';
+                  })()}
+                </span>
               </div>
-            )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                保護者署名:
+                <span className="sig-box" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  {(() => {
+                    const guardSig = plan.guardian_signature_image || plan.guardian_signature;
+                    if (guardSig?.startsWith('data:image')) {
+                      return <img src={guardSig} alt="保護者署名" style={{ maxHeight: '35px', maxWidth: '100px' }} />;
+                    }
+                    return guardSig || '';
+                  })()}
+                </span>
+              </div>
+            </div>
           </div>
 
           <div className="plan-footer">

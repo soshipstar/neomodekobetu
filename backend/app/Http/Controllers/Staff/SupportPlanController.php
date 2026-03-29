@@ -6,10 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\IndividualSupportPlan;
 use App\Models\Student;
 use App\Models\SupportPlanDetail;
+use App\Models\User;
+use App\Services\NotificationService;
 use App\Services\PuppeteerPdfService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 class SupportPlanController extends Controller
 {
     /**
@@ -502,7 +505,7 @@ class SupportPlanController extends Controller
             'student'   => $plan->student,
             'classroom' => $plan->student->classroom ?? null,
             'details'   => $plan->details->sortBy('sort_order'),
-        ], $filename);
+        ], $filename, 'A4', true);
     }
 
     /**
@@ -1173,6 +1176,55 @@ class SupportPlanController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'AI生成中にエラーが発生しました: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * 署名を要求する（保護者に通知を送信）
+     */
+    public function requestSignature(Request $request, IndividualSupportPlan $plan): JsonResponse
+    {
+        $plan->load('student');
+        $this->authorizeClassroom($request->user(), $plan->student);
+
+        $student = $plan->student;
+        if (!$student || !$student->guardian_id) {
+            return response()->json([
+                'success' => false,
+                'message' => '保護者が設定されていません。',
+            ], 422);
+        }
+
+        $guardian = User::where('id', $student->guardian_id)->where('is_active', true)->first();
+        if (!$guardian) {
+            return response()->json([
+                'success' => false,
+                'message' => '有効な保護者アカウントが見つかりません。',
+            ], 422);
+        }
+
+        try {
+            $notificationService = app(NotificationService::class);
+            $frontendUrl = rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/');
+
+            $notificationService->notify(
+                $guardian,
+                'signature_request',
+                '個別支援計画書の署名をお願いします',
+                "{$student->student_name}さんの個別支援計画書への署名をお願いいたします。アプリからご確認ください。",
+                ['url' => "{$frontendUrl}/guardian/support-plan"]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => '保護者に署名要求を送信しました。',
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('Signature request notification error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => '通知の送信に失敗しました。',
             ], 500);
         }
     }

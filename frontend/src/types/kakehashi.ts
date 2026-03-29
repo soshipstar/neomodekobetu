@@ -1,12 +1,16 @@
 export interface KakehashiPeriod {
   id: number;
   student_id: number;
-  period_label: string | null;
+  period_name: string | null;
   start_date: string;
   end_date: string;
-  status: string;
+  submission_deadline: string | null;
+  is_active: boolean;
   created_at: string;
-  updated_at: string;
+  // API returns snake_case relation names
+  staff_entries?: KakehashiStaff[];
+  guardian_entries?: KakehashiGuardian[];
+  // Legacy camelCase aliases (kept for backward compat)
   staffEntries?: KakehashiStaff[];
   guardianEntries?: KakehashiGuardian[];
 }
@@ -14,10 +18,22 @@ export interface KakehashiPeriod {
 export interface KakehashiStaff {
   id: number;
   period_id: number;
-  staff_id: number;
-  question_number: number;
-  response_value: number; // 1-5
-  comment: string | null;
+  student_id: number;
+  staff_id: number | null;
+  student_wish: string | null;
+  short_term_goal: string | null;
+  long_term_goal: string | null;
+  health_life: string | null;
+  motor_sensory: string | null;
+  cognitive_behavior: string | null;
+  language_communication: string | null;
+  social_relations: string | null;
+  other_challenges: string | null;
+  is_submitted: boolean;
+  submitted_at: string | null;
+  guardian_confirmed: boolean;
+  guardian_confirmed_at: string | null;
+  is_hidden: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -25,12 +41,27 @@ export interface KakehashiStaff {
 export interface KakehashiGuardian {
   id: number;
   period_id: number;
-  guardian_id: number;
-  question_number: number;
-  response_value: number; // 1-5
-  comment: string | null;
+  student_id: number;
+  guardian_id: number | null;
+  student_wish: string | null;
+  home_challenges: string | null;
+  short_term_goal: string | null;
+  long_term_goal: string | null;
+  domain_health_life: string | null;
+  domain_motor_sensory: string | null;
+  domain_cognitive_behavior: string | null;
+  domain_language_communication: string | null;
+  domain_social_relations: string | null;
+  other_challenges: string | null;
+  home_situation: string | null;
+  concerns: string | null;
+  requests: string | null;
+  is_submitted: boolean;
+  submitted_at: string | null;
+  is_hidden: boolean;
   created_at: string;
   updated_at: string;
+  guardian?: { id: number; full_name: string } | null;
 }
 
 export const KAKEHASHI_QUESTIONS_STAFF: string[] = [

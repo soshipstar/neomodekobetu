@@ -164,6 +164,7 @@ Route::prefix('staff')
         Route::get('/support-plans/{plan}/export', [App\Http\Controllers\Staff\SupportPlanController::class, 'export']);
         Route::post('/support-plans/{plan}/publish', [App\Http\Controllers\Staff\SupportPlanController::class, 'publish']);
         Route::post('/support-plans/{plan}/make-official', [App\Http\Controllers\Staff\SupportPlanController::class, 'makeOfficial']);
+        Route::post('/support-plans/{plan}/request-signature', [App\Http\Controllers\Staff\SupportPlanController::class, 'requestSignature']);
         Route::get('/support-plans/{plan}/basis', [App\Http\Controllers\Staff\SupportPlanController::class, 'basis']);
         Route::post('/support-plans/{plan}/generate-basis', [App\Http\Controllers\Staff\SupportPlanController::class, 'generateBasis']);
         Route::post('/students/{student}/generate-wish', [App\Http\Controllers\Staff\SupportPlanController::class, 'generateWishFromInterview']);
@@ -218,6 +219,12 @@ Route::prefix('staff')
         Route::get('/attendance', [App\Http\Controllers\Staff\AttendanceController::class, 'index']);
         Route::put('/absence/{absence}/makeup', [App\Http\Controllers\Staff\AttendanceController::class, 'approveMakeup']);
         Route::put('/absence/{absence}/note', [App\Http\Controllers\Staff\AttendanceController::class, 'updateMakeupNote']);
+
+        // --- 未送信日誌・欠席時対応 ---
+        Route::get('/unsent-records', [App\Http\Controllers\Staff\UnsentRecordsController::class, 'index']);
+        Route::post('/absence-response', [App\Http\Controllers\Staff\UnsentRecordsController::class, 'storeAbsenceResponse']);
+        Route::post('/absence-response/{record}/send', [App\Http\Controllers\Staff\UnsentRecordsController::class, 'sendAbsenceResponse']);
+        Route::post('/absence-response/batch-send', [App\Http\Controllers\Staff\UnsentRecordsController::class, 'batchSendAbsenceResponse']);
 
         // --- 週間計画 ---
         Route::get('/weekly-plans', [App\Http\Controllers\Staff\WeeklyPlanController::class, 'index']);

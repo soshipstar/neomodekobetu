@@ -175,6 +175,9 @@ export default function KobetsuPlanPage() {
   const [generating, setGenerating] = useState(false);
   const [generatingWish, setGeneratingWish] = useState(false);
 
+  // Detail editing modal state
+  const [editingDetailIdx, setEditingDetailIdx] = useState<number | null>(null);
+
   // Signature pad refs
   const staffSigRef = useRef<SignaturePadRef>(null);
   const guardianSigRef = useRef<SignaturePadRef>(null);
@@ -744,115 +747,111 @@ export default function KobetsuPlanPage() {
             </CardHeader>
             {openSections.C && <CardBody>
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[1000px] border-collapse">
+                <table className="w-full min-w-[900px] border-collapse">
                   <thead>
                     <tr>
-                      <th className={thClass} style={{ width: '120px' }}>項目</th>
+                      <th className={thClass} style={{ width: '110px' }}>項目</th>
                       <th className={thClass} style={{ width: '140px' }}>支援目標</th>
-                      <th className={thClass} style={{ width: '160px' }}>支援内容</th>
-                      <th className={thClass} style={{ width: '110px' }}>達成時期</th>
-                      <th className={thClass} style={{ width: '110px' }}>担当者</th>
-                      <th className={thClass} style={{ width: '120px' }}>留意事項</th>
-                      <th className={thClass} style={{ width: '60px' }}>優先順位</th>
-                      <th className={thClass} style={{ width: '40px' }}></th>
+                      <th className={thClass} style={{ width: '180px' }}>支援内容</th>
+                      <th className={thClass} style={{ width: '90px' }}>達成時期</th>
+                      <th className={thClass} style={{ width: '90px' }}>担当者</th>
+                      <th className={thClass} style={{ width: '130px' }}>留意事項</th>
+                      <th className={thClass} style={{ width: '50px' }}>優先</th>
+                      <th className={thClass} style={{ width: '60px' }}></th>
                     </tr>
                   </thead>
                   <tbody>
-                    {form.details.map((detail, index) => (
-                      <tr key={index} className="align-top">
-                        {/* 項目 (category + sub_category) */}
-                        <td className={tdClass}>
-                          <input
-                            type="text"
-                            className="mb-1 block w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-2 py-1 text-xs text-[var(--neutral-foreground-1)]"
-                            value={detail.category}
-                            onChange={(e) => updateDetail(index, 'category', e.target.value)}
-                            placeholder="カテゴリ"
-                          />
-                          <textarea
-                            className="block w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-2 py-1 text-xs text-[var(--neutral-foreground-1)]"
-                            rows={2}
-                            value={detail.sub_category}
-                            onChange={(e) => updateDetail(index, 'sub_category', e.target.value)}
-                            placeholder="サブカテゴリ"
-                          />
-                        </td>
-                        {/* 支援目標 */}
-                        <td className={tdClass}>
-                          <textarea
-                            className="block w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-2 py-1 text-xs text-[var(--neutral-foreground-1)]"
-                            rows={3}
-                            value={detail.support_goal}
-                            onChange={(e) => updateDetail(index, 'support_goal', e.target.value)}
-                            placeholder="支援目標を入力..."
-                          />
-                        </td>
-                        {/* 支援内容 */}
-                        <td className={tdClass}>
-                          <textarea
-                            className="block w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-2 py-1 text-xs text-[var(--neutral-foreground-1)]"
-                            rows={3}
-                            value={detail.support_content}
-                            onChange={(e) => updateDetail(index, 'support_content', e.target.value)}
-                            placeholder="支援内容を入力..."
-                          />
-                        </td>
-                        {/* 達成時期 */}
-                        <td className={tdClass}>
-                          <input
-                            type="date"
-                            className="block w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-2 py-1 text-xs text-[var(--neutral-foreground-1)]"
-                            value={detail.achievement_date}
-                            onChange={(e) => updateDetail(index, 'achievement_date', e.target.value)}
-                          />
-                        </td>
-                        {/* 担当者 */}
-                        <td className={tdClass}>
-                          <textarea
-                            className="block w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-2 py-1 text-xs text-[var(--neutral-foreground-1)]"
-                            rows={2}
-                            value={detail.staff_organization}
-                            onChange={(e) => updateDetail(index, 'staff_organization', e.target.value)}
-                            placeholder="担当者"
-                          />
-                        </td>
-                        {/* 留意事項 */}
-                        <td className={tdClass}>
-                          <textarea
-                            className="block w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-2 py-1 text-xs text-[var(--neutral-foreground-1)]"
-                            rows={2}
-                            value={detail.notes}
-                            onChange={(e) => updateDetail(index, 'notes', e.target.value)}
-                            placeholder="留意事項..."
-                          />
-                        </td>
-                        {/* 優先順位 */}
-                        <td className={tdClass}>
-                          <input
-                            type="number"
-                            min={1}
-                            className="block w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-2 py-1 text-xs text-center text-[var(--neutral-foreground-1)]"
-                            value={detail.priority}
-                            onChange={(e) => updateDetail(index, 'priority', parseInt(e.target.value, 10) || 0)}
-                          />
-                        </td>
-                        {/* Delete */}
-                        <td className={tdClass}>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeDetail(index)}
-                            title="削除"
-                          >
-                            <MaterialIcon name="delete" size={16} className="text-[var(--status-danger-fg)]" />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
+                    {form.details.map((detail, index) => {
+                      const cellClick = 'cursor-pointer hover:bg-[var(--brand-160)] transition-colors rounded';
+                      const truncText = (t: string, max = 40) => t && t.length > max ? t.slice(0, max) + '...' : t;
+                      return (
+                        <tr key={index} className="align-top">
+                          <td className={tdClass}>
+                            <div className={cellClick} onClick={() => setEditingDetailIdx(index)}>
+                              {detail.category ? (
+                                <div className="text-xs font-semibold text-[var(--neutral-foreground-1)]">{detail.category}</div>
+                              ) : (
+                                <div className="text-xs text-[var(--neutral-foreground-4)] italic">カテゴリ</div>
+                              )}
+                              {detail.sub_category && <div className="text-xs text-[var(--neutral-foreground-3)] mt-0.5">{truncText(detail.sub_category, 20)}</div>}
+                            </div>
+                          </td>
+                          <td className={tdClass}>
+                            <div className={cellClick} onClick={() => setEditingDetailIdx(index)}>
+                              {detail.support_goal ? (
+                                <div className="text-xs text-[var(--neutral-foreground-1)] whitespace-pre-wrap line-clamp-3">{truncText(detail.support_goal, 60)}</div>
+                              ) : (
+                                <div className="text-xs text-[var(--neutral-foreground-4)] italic">クリックして入力</div>
+                              )}
+                            </div>
+                          </td>
+                          <td className={tdClass}>
+                            <div className={cellClick} onClick={() => setEditingDetailIdx(index)}>
+                              {detail.support_content ? (
+                                <div className="text-xs text-[var(--neutral-foreground-1)] whitespace-pre-wrap line-clamp-3">{truncText(detail.support_content, 80)}</div>
+                              ) : (
+                                <div className="text-xs text-[var(--neutral-foreground-4)] italic">クリックして入力</div>
+                              )}
+                            </div>
+                          </td>
+                          <td className={tdClass}>
+                            <div className={cellClick} onClick={() => setEditingDetailIdx(index)}>
+                              <div className="text-xs text-[var(--neutral-foreground-1)]">{detail.achievement_date || <span className="text-[var(--neutral-foreground-4)] italic">未設定</span>}</div>
+                            </div>
+                          </td>
+                          <td className={tdClass}>
+                            <div className={cellClick} onClick={() => setEditingDetailIdx(index)}>
+                              {detail.staff_organization ? (
+                                <div className="text-xs text-[var(--neutral-foreground-1)]">{truncText(detail.staff_organization, 20)}</div>
+                              ) : (
+                                <div className="text-xs text-[var(--neutral-foreground-4)] italic">未設定</div>
+                              )}
+                            </div>
+                          </td>
+                          <td className={tdClass}>
+                            <div className={cellClick} onClick={() => setEditingDetailIdx(index)}>
+                              {detail.notes ? (
+                                <div className="text-xs text-[var(--neutral-foreground-1)] whitespace-pre-wrap line-clamp-2">{truncText(detail.notes, 40)}</div>
+                              ) : (
+                                <div className="text-xs text-[var(--neutral-foreground-4)] italic">-</div>
+                              )}
+                            </div>
+                          </td>
+                          <td className={tdClass}>
+                            <div className="text-xs text-center text-[var(--neutral-foreground-1)]">{detail.priority || '-'}</div>
+                          </td>
+                          <td className={tdClass}>
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => setEditingDetailIdx(index)}
+                                className="rounded p-1 text-[var(--brand-80)] hover:bg-[var(--brand-160)]"
+                                title="編集"
+                              >
+                                <MaterialIcon name="edit" size={16} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => removeDetail(index)}
+                                className="rounded p-1 text-[var(--status-danger-fg)] hover:bg-red-50"
+                                title="削除"
+                              >
+                                <MaterialIcon name="delete" size={16} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
+
+              {form.details.length === 0 && (
+                <div className="py-6 text-center text-sm text-[var(--neutral-foreground-4)]">
+                  支援内容がありません。「行を追加」ボタンで追加してください。
+                </div>
+              )}
 
               <div className="mt-3 flex justify-start">
                 <Button
@@ -865,6 +864,147 @@ export default function KobetsuPlanPage() {
                   + 行を追加
                 </Button>
               </div>
+
+              {/* Detail editing modal */}
+              {editingDetailIdx !== null && form.details[editingDetailIdx] && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setEditingDetailIdx(null)}>
+                  <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-[var(--neutral-background-1)] shadow-[var(--shadow-28)]" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-between border-b border-[var(--neutral-stroke-2)] px-5 py-4">
+                      <h3 className="text-lg font-bold text-[var(--neutral-foreground-1)]">
+                        支援内容の編集（{editingDetailIdx + 1}行目）
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => setEditingDetailIdx(null)}
+                        className="rounded-lg p-1 text-[var(--neutral-foreground-4)] hover:text-[var(--neutral-foreground-1)]"
+                      >
+                        <MaterialIcon name="close" size={20} />
+                      </button>
+                    </div>
+                    <div className="p-5 space-y-4">
+                      {/* Category */}
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <label className={labelClass}>カテゴリ</label>
+                          <select
+                            className={selectClass}
+                            value={form.details[editingDetailIdx].category}
+                            onChange={(e) => updateDetail(editingDetailIdx, 'category', e.target.value)}
+                          >
+                            <option value="">選択してください</option>
+                            <option value="本人支援">本人支援</option>
+                            <option value="家族支援">家族支援</option>
+                            <option value="地域支援">地域支援</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className={labelClass}>サブカテゴリ / 領域</label>
+                          <input
+                            type="text"
+                            className={textareaClass}
+                            value={form.details[editingDetailIdx].sub_category}
+                            onChange={(e) => updateDetail(editingDetailIdx, 'sub_category', e.target.value)}
+                            placeholder="例：健康・生活、運動・感覚"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Support Goal */}
+                      <div>
+                        <label className={labelClass}>支援目標（具体的な到達目標）</label>
+                        <textarea
+                          className={textareaClass}
+                          rows={4}
+                          value={form.details[editingDetailIdx].support_goal}
+                          onChange={(e) => updateDetail(editingDetailIdx, 'support_goal', e.target.value)}
+                          placeholder="具体的な支援目標を入力してください..."
+                          autoFocus
+                        />
+                      </div>
+
+                      {/* Support Content */}
+                      <div>
+                        <label className={labelClass}>支援内容（内容・5領域との関連性等）</label>
+                        <textarea
+                          className={textareaClass}
+                          rows={5}
+                          value={form.details[editingDetailIdx].support_content}
+                          onChange={(e) => updateDetail(editingDetailIdx, 'support_content', e.target.value)}
+                          placeholder="支援内容を詳しく入力してください..."
+                        />
+                      </div>
+
+                      {/* Achievement date, Staff, Priority */}
+                      <div className="grid gap-4 sm:grid-cols-3">
+                        <div>
+                          <label className={labelClass}>達成時期</label>
+                          <input
+                            type="date"
+                            className={textareaClass}
+                            value={form.details[editingDetailIdx].achievement_date}
+                            onChange={(e) => updateDetail(editingDetailIdx, 'achievement_date', e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className={labelClass}>担当者</label>
+                          <input
+                            type="text"
+                            className={textareaClass}
+                            value={form.details[editingDetailIdx].staff_organization}
+                            onChange={(e) => updateDetail(editingDetailIdx, 'staff_organization', e.target.value)}
+                            placeholder="担当者名"
+                          />
+                        </div>
+                        <div>
+                          <label className={labelClass}>優先順位</label>
+                          <input
+                            type="number"
+                            min={1}
+                            className={textareaClass}
+                            value={form.details[editingDetailIdx].priority}
+                            onChange={(e) => updateDetail(editingDetailIdx, 'priority', parseInt(e.target.value, 10) || 0)}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Notes */}
+                      <div>
+                        <label className={labelClass}>留意事項</label>
+                        <textarea
+                          className={textareaClass}
+                          rows={3}
+                          value={form.details[editingDetailIdx].notes}
+                          onChange={(e) => updateDetail(editingDetailIdx, 'notes', e.target.value)}
+                          placeholder="留意事項を入力..."
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between border-t border-[var(--neutral-stroke-2)] px-5 py-4">
+                      <div className="flex items-center gap-2">
+                        {editingDetailIdx > 0 && (
+                          <Button type="button" variant="ghost" size="sm" onClick={() => setEditingDetailIdx(editingDetailIdx - 1)} leftIcon={<MaterialIcon name="chevron_left" size={16} />}>
+                            前へ
+                          </Button>
+                        )}
+                        {editingDetailIdx < form.details.length - 1 && (
+                          <Button type="button" variant="ghost" size="sm" onClick={() => setEditingDetailIdx(editingDetailIdx + 1)}>
+                            次へ <MaterialIcon name="chevron_right" size={16} className="ml-1" />
+                          </Button>
+                        )}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="primary"
+                        size="sm"
+                        leftIcon={<MaterialIcon name="check" size={16} />}
+                        onClick={() => setEditingDetailIdx(null)}
+                      >
+                        入力完了
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardBody>}
           </Card>
 

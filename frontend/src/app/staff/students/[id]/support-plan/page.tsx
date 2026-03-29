@@ -13,6 +13,7 @@ import { PlanForm } from '@/components/support-plan/PlanForm';
 import { PlanPreview } from '@/components/support-plan/PlanPreview';
 import { AiGenerateButton } from '@/components/support-plan/AiGenerateButton';
 import { formatDate } from '@/lib/utils';
+import { useToast } from '@/components/ui/Toast';
 import type { SupportPlan } from '@/types/support-plan';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
@@ -30,6 +31,7 @@ export default function SupportPlanPage() {
   const [showForm, setShowForm] = useState(false);
   const [previewPlan, setPreviewPlan] = useState<SupportPlan | null>(null);
   const [editPlan, setEditPlan] = useState<SupportPlan | null>(null);
+  const toast = useToast();
 
   const { data: plans, isLoading, refetch } = useQuery({
     queryKey: ['staff', 'student', studentId, 'support-plans'],
@@ -46,6 +48,16 @@ export default function SupportPlanPage() {
     setShowForm(false);
     setEditPlan(null);
     refetch();
+  };
+
+  const handleRequestSignature = async (planId: number) => {
+    try {
+      await api.post(`/api/staff/support-plans/${planId}/request-signature`);
+      toast.success('署名要求を送信しました');
+      refetch();
+    } catch {
+      toast.error('署名要求の送信に失敗しました');
+    }
   };
 
   if (isLoading) {
@@ -85,6 +97,12 @@ export default function SupportPlanPage() {
                   <Badge variant={statusVariants[plan.status] || 'default'}>
                     {statusLabels[plan.status] || plan.status}
                   </Badge>
+                  {(plan.status === 'official' || plan.status === 'submitted') && !plan.staff_signature_image && !(plan as any).staff_signature && (
+                    <Badge variant="danger">職員署名なし</Badge>
+                  )}
+                  {(plan.status === 'official' || plan.status === 'submitted') && !plan.guardian_signature_image && !plan.guardian_signature && (
+                    <Badge variant="danger">保護者署名なし</Badge>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -152,7 +170,7 @@ export default function SupportPlanPage() {
         title="個別支援計画プレビュー"
         size="full"
       >
-        {previewPlan && <PlanPreview plan={previewPlan} />}
+        {previewPlan && <PlanPreview plan={previewPlan} onRequestSignature={handleRequestSignature} />}
       </Modal>
     </div>
   );
