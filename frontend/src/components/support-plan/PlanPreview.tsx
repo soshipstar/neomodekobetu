@@ -17,10 +17,10 @@ const statusLabels: Record<string, string> = {
 export function PlanPreview({ plan, onRequestSignature }: PlanPreviewProps) {
   const details = plan.details?.sort((a, b) => a.sort_order - b.sort_order) ?? [];
 
-  const staffSig = plan.staff_signature_image || (plan as any).staff_signature || null;
-  const guardianSig = plan.guardian_signature_image || plan.guardian_signature || null;
-  const isStaffSigImage = staffSig?.startsWith('data:image');
-  const isGuardianSigImage = guardianSig?.startsWith('data:image');
+  const staffSig = plan.staff_signature_image || (plan as any).staff_signature || undefined;
+  const guardianSig = plan.guardian_signature_image || plan.guardian_signature || undefined;
+  const isStaffSigImage = !!staffSig && staffSig.startsWith('data:image');
+  const isGuardianSigImage = !!guardianSig && guardianSig.startsWith('data:image');
   const hasStaffSig = !!staffSig;
   const hasGuardianSig = !!guardianSig;
   const isPublished = plan.status === 'official' || plan.status === 'submitted';
