@@ -258,7 +258,7 @@ export default function KobetsuPlanPage() {
       toast.success('計画書案として提出しました');
       setView('list');
     },
-    onError: () => toast.error('提出に失敗しました'),
+    onError: (e: any) => toast.error(e?.response?.data?.message || '提出に失敗しました（下書き状態でない可能性があります）'),
   });
 
   const makeOfficialMutation = useMutation({
@@ -365,7 +365,10 @@ export default function KobetsuPlanPage() {
 
   const handleSign = () => {
     if (!editingPlanId) return;
-    if (!staffSigRef.current || staffSigRef.current.isEmpty()) {
+    // Check if staff signature exists (either drawn new or loaded from existing)
+    const hasNewStaffSig = staffSigRef.current && !staffSigRef.current.isEmpty();
+    const hasExistingStaffSig = !!existingStaffSig;
+    if (!hasNewStaffSig && !hasExistingStaffSig) {
       toast.error('職員の署名を記入してください');
       return;
     }
@@ -375,11 +378,15 @@ export default function KobetsuPlanPage() {
     }
     const payload: { id: number; staff_signature: string; staff_signer_name: string; guardian_signature?: string } = {
       id: editingPlanId,
-      staff_signature: staffSigRef.current.toDataURL(),
+      staff_signature: hasNewStaffSig ? staffSigRef.current!.toDataURL() : existingStaffSig!,
       staff_signer_name: form.manager_name,
     };
-    if (guardianSigRef.current && !guardianSigRef.current.isEmpty()) {
-      payload.guardian_signature = guardianSigRef.current.toDataURL();
+    // Guardian signature: use new if drawn, else use existing
+    const hasNewGuardianSig = guardianSigRef.current && !guardianSigRef.current.isEmpty();
+    if (hasNewGuardianSig) {
+      payload.guardian_signature = guardianSigRef.current!.toDataURL();
+    } else if (existingGuardianSig) {
+      payload.guardian_signature = existingGuardianSig;
     }
     signMutation.mutate(payload);
   };
@@ -535,7 +542,7 @@ export default function KobetsuPlanPage() {
   // =========================================================================
   // Editor section open/close state
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    A: true, B: true, C: false, D: false,
+    A: true, B: true, C: true, D: true,
   });
   const toggleSection = (key: string) => setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
 
@@ -566,11 +573,14 @@ export default function KobetsuPlanPage() {
             <h1 className="text-xl font-bold text-[var(--neutral-foreground-1)]">
               {isReadOnly ? '個別支援計画（閲覧）' : editingPlanId ? '個別支援計画を編集' : '個別支援計画を作成'}
             </h1>
-            {selectedStudent && (
-              <span className="text-sm text-[var(--neutral-foreground-3)]">
-                {selectedStudent.student_name}
-              </span>
-            )}
+            <div className="flex items-center gap-2 mt-1">
+              {selectedStudent && (
+                <span className="text-sm text-[var(--neutral-foreground-3)]">{selectedStudent.student_name}</span>
+              )}
+              {isReadOnly && <Badge variant="success">署名済み（正式版）</Badge>}
+              {!isReadOnly && existingStaffSig && <Badge variant="info">職員署名あり</Badge>}
+              {!isReadOnly && existingGuardianSig && <Badge variant="info">保護者署名あり</Badge>}
+            </div>
           </div>
         </div>
 
@@ -1103,18 +1113,20 @@ export default function KobetsuPlanPage() {
                 下書き保存
               </Button>
 
-              {editingPlanId && (
+              {editingPlanId && !isReadOnly && (
                 <>
-                  <Button
-                    type="button"
-                    variant="primary"
-                    size="sm"
-                    leftIcon={<MaterialIcon name="send" size={18} />}
-                    onClick={handlePublish}
-                    isLoading={publishMutation.isPending}
-                  >
-                    確認依頼
-                  </Button>
+                  {!existingStaffSig && (
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="sm"
+                      leftIcon={<MaterialIcon name="send" size={18} />}
+                      onClick={handlePublish}
+                      isLoading={publishMutation.isPending}
+                    >
+                      確認依頼
+                    </Button>
+                  )}
                   <Button
                     type="button"
                     variant="outline"
@@ -1126,6 +1138,9 @@ export default function KobetsuPlanPage() {
                     署名して確定
                   </Button>
                 </>
+              )}
+              {isReadOnly && (
+                <Badge variant="success">この計画は署名済みです</Badge>
               )}
 
               <div className="flex-1" />
