@@ -154,6 +154,10 @@ Route::prefix('staff')
         Route::get('/students/{student}/assessments', [App\Http\Controllers\Staff\StudentAssessmentController::class, 'index']);
         Route::post('/students/{student}/assessments', [App\Http\Controllers\Staff\StudentAssessmentController::class, 'store']);
 
+        // --- フェイスシート ---
+        Route::get('/students/{student}/face-sheet', [App\Http\Controllers\Staff\FaceSheetController::class, 'show']);
+        Route::post('/students/{student}/face-sheet', [App\Http\Controllers\Staff\FaceSheetController::class, 'store']);
+
         // --- 支援計画 ---
         Route::get('/students/{student}/support-plans', [App\Http\Controllers\Staff\SupportPlanController::class, 'index']);
         Route::post('/students/{student}/support-plans', [App\Http\Controllers\Staff\SupportPlanController::class, 'store']);

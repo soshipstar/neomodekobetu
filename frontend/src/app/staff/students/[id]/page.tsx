@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -73,10 +73,10 @@ export default function StudentDetailPage() {
       content: <StudentSchedule studentId={studentId} student={student} />,
     },
     {
-      key: 'assessment',
-      label: 'アセスメント',
-      icon: <MaterialIcon name="assessment" size={18} />,
-      content: <StudentAssessment studentId={studentId} studentName={student.student_name} />,
+      key: 'facesheet',
+      label: 'フェイスシート',
+      icon: <MaterialIcon name="assignment" size={18} />,
+      content: <StudentFaceSheet studentId={studentId} studentName={student.student_name} />,
     },
     {
       key: 'account',
@@ -316,379 +316,412 @@ function StudentSchedule({ studentId, student }: { studentId: number; student: S
 }
 
 // ---------------------------------------------------------------------------
-// アセスメント（5領域）
+// フェイスシート（横浜市青葉区かけはし準拠）
 // ---------------------------------------------------------------------------
 
-interface AssessmentItem {
-  key: string;
-  label: string;
+// ADL選択肢ヘルパー
+const ADL4 = ['自立', '見守り', '一部介助', '全介助'] as const;
+const ADL3 = ['自立', '一部介助', '全介助'] as const;
+
+interface FaceSheetData {
+  daily_life: Record<string, string>;
+  physical: Record<string, string>;
+  profile: Record<string, string>;
+  considerations: Record<string, string>;
+  memo: string;
 }
 
-interface AssessmentDomain {
+// 各セクションの項目定義
+interface FieldDef {
   key: string;
   label: string;
-  icon: string;
-  color: string;
-  items: AssessmentItem[];
+  type: 'select' | 'text' | 'textarea' | 'checkbox-group';
+  options?: readonly string[];
+  placeholder?: string;
 }
 
-const ASSESSMENT_DOMAINS: AssessmentDomain[] = [
+interface SectionDef {
+  key: string;
+  title: string;
+  fields: FieldDef[];
+}
+
+const DAILY_LIFE_SECTIONS: SectionDef[] = [
   {
-    key: 'health_life',
-    label: '健康・生活',
-    icon: 'favorite',
-    color: 'text-red-600',
-    items: [
-      { key: 'eating', label: '食事（偏食・食事量・食べ方等）' },
-      { key: 'toileting', label: '排泄（自立度・おむつ使用等）' },
-      { key: 'bathing', label: '入浴・清潔（洗髪・歯磨き等）' },
-      { key: 'dressing', label: '衣類の着脱（自立度・選択等）' },
-      { key: 'sleep', label: '睡眠（就寝時間・質・リズム等）' },
-      { key: 'health_management', label: '健康管理（服薬・通院・発作等）' },
-      { key: 'safety_awareness', label: '安全意識（危険認知・行動範囲）' },
-      { key: 'daily_routine', label: '生活リズム・日課の理解' },
+    key: 'eating', title: '食事',
+    fields: [
+      { key: 'food_intake', label: '食事摂取', type: 'select', options: ADL4 },
+      { key: 'food_count', label: '食事回数（回）', type: 'text', placeholder: '3' },
+      { key: 'appetite', label: '食欲', type: 'select', options: ['旺盛', '普通', '無'] },
+      { key: 'drinking', label: '飲水', type: 'select', options: ADL4 },
+      { key: 'allergy', label: 'アレルギー', type: 'text', placeholder: '無 / 有（内容）' },
+      { key: 'swallowing', label: '嚥下', type: 'select', options: ['自立', '見守り'] },
+      { key: 'food_form', label: '食事形態', type: 'select', options: ['普通', '一口大', '粗刻み', '極刻み', 'ミキサー', '注入', '他'] },
+      { key: 'food_content', label: '食事内容', type: 'text', placeholder: '常食 / 特別食（内容）' },
+      { key: 'utensils', label: '使用器具', type: 'text', placeholder: '箸・フォーク・スプーン・手づかみ・自助具' },
+      { key: 'medication', label: '服薬管理・服用方法', type: 'textarea', placeholder: '服薬の有無、管理方法等' },
     ],
   },
   {
-    key: 'motor_sensory',
-    label: '運動・感覚',
-    icon: 'directions_run',
-    color: 'text-blue-600',
-    items: [
-      { key: 'gross_motor', label: '粗大運動（走る・跳ぶ・階段等）' },
-      { key: 'fine_motor', label: '微細運動（書く・切る・つまむ等）' },
-      { key: 'posture', label: '姿勢の保持（座位・立位の安定性）' },
-      { key: 'eye_hand_coordination', label: '目と手の協応（書字・道具操作）' },
-      { key: 'eye_foot_coordination', label: '目と足の協応（ボール・移動）' },
-      { key: 'sensory_hypersensitivity', label: '感覚過敏（聴覚・触覚・視覚・味覚・嗅覚）' },
-      { key: 'sensory_hyposensitivity', label: '感覚鈍麻（痛覚・温度覚等）' },
-      { key: 'oral_function', label: '口腔機能（咀嚼・構音・唾液等）' },
-      { key: 'body_awareness', label: 'ボディイメージ・身体意識' },
+    key: 'toileting', title: '排泄',
+    fields: [
+      { key: 'urination', label: '排尿', type: 'select', options: ADL4 },
+      { key: 'urination_freq', label: '排尿回数', type: 'text', placeholder: '1日○回' },
+      { key: 'urination_aware', label: '尿意', type: 'select', options: ['有', '時々', '無'] },
+      { key: 'urination_comm', label: '尿意伝達', type: 'select', options: ['可', '不可'] },
+      { key: 'defecation', label: '排便', type: 'select', options: ADL4 },
+      { key: 'defecation_freq', label: '排便回数', type: 'text', placeholder: '日に1回' },
+      { key: 'defecation_aware', label: '便意', type: 'select', options: ['有', '時々', '無'] },
+      { key: 'defecation_comm', label: '便意伝達', type: 'select', options: ['可', '不可'] },
+      { key: 'incontinence', label: '失禁', type: 'select', options: ['無', '時々', '常時'] },
+      { key: 'bowel_cond', label: '便通', type: 'select', options: ['普通', '便秘', '下痢'] },
+      { key: 'time_guidance', label: '時間誘導', type: 'select', options: ['不要', '要'] },
+      { key: 'menstruation', label: '生理', type: 'select', options: ADL4 },
+      { key: 'toileting_method', label: '具体方法', type: 'textarea', placeholder: '方法（便所・ポータブルトイレ・尿器・オムツ・ストマ等）' },
     ],
   },
   {
-    key: 'cognitive_behavior',
-    label: '認知・行動',
-    icon: 'psychology',
-    color: 'text-purple-600',
-    items: [
-      { key: 'attention', label: '注意力・集中力の持続' },
-      { key: 'anticipation', label: '見通し（予測・スケジュール理解）' },
-      { key: 'change_adaptation', label: '急な変化への対応' },
-      { key: 'hazard_avoidance', label: '危険回避行動' },
-      { key: 'reading_writing', label: '読み書き（文字の認識・書字）' },
-      { key: 'number_concept', label: '数概念（数える・計算・金銭等）' },
-      { key: 'time_concept', label: '時間概念（時計・曜日・季節等）' },
-      { key: 'executive_function', label: '実行機能（計画・段取り・切替）' },
-      { key: 'impulse_control', label: '衝動性・多動性' },
-      { key: 'perseveration', label: 'こだわり・パターン行動' },
+    key: 'bathing', title: '入浴',
+    fields: [
+      { key: 'bathtub_entry', label: '浴槽出入り', type: 'select', options: ADL4 },
+      { key: 'body_wash', label: '洗体', type: 'select', options: ADL4 },
+      { key: 'hair_wash', label: '洗髪', type: 'select', options: ADL4 },
+      { key: 'bath_freq', label: '頻度', type: 'text', placeholder: '毎日 / 月・水・金' },
+      { key: 'bath_method', label: '方法', type: 'text', placeholder: '一般浴槽・機械浴槽・リフター・シャワー・清拭' },
+      { key: 'bath_notes', label: '留意点', type: 'textarea' },
     ],
   },
   {
-    key: 'language_communication',
-    label: '言語・コミュニケーション',
-    icon: 'chat_bubble',
-    color: 'text-green-600',
-    items: [
-      { key: 'receptive_language', label: '言語理解（指示理解・質問理解）' },
-      { key: 'expressive_language', label: '言語表出（語彙・文構成・発話量）' },
-      { key: 'articulation', label: '構音・発声の明瞭さ' },
-      { key: 'dyadic_interaction', label: '二項関係（1対1のやりとり）' },
-      { key: 'triadic_interaction', label: '三項関係（共同注意・指さし）' },
-      { key: 'nonverbal_communication', label: '非言語コミュニケーション（表情・ジェスチャー）' },
-      { key: 'intent_expression', label: '意思表示の手段と適切さ' },
-      { key: 'narrative_ability', label: '説明・報告・会話力' },
+    key: 'hygiene', title: '清潔',
+    fields: [
+      { key: 'tooth_brushing', label: '歯磨き/口腔清潔', type: 'select', options: ADL4 },
+      { key: 'face_wash', label: '洗顔', type: 'select', options: ADL4 },
+      { key: 'hair_grooming', label: '整髪', type: 'select', options: ADL4 },
+      { key: 'nail_cutting', label: '爪きり', type: 'select', options: ADL4 },
     ],
   },
   {
-    key: 'social_relations',
-    label: '人間関係・社会性',
-    icon: 'groups',
-    color: 'text-amber-600',
-    items: [
-      { key: 'interest_in_others', label: '他者への関心・興味' },
-      { key: 'peer_relationships', label: '友達関係（遊び方・関わり方）' },
-      { key: 'group_participation', label: '集団参加（状況理解・ルール順守）' },
-      { key: 'conflict_frequency', label: 'トラブル頻度と対処' },
-      { key: 'emotion_expression', label: '感情表現・感情調整' },
-      { key: 'empathy', label: '共感性・他者理解' },
-      { key: 'help_seeking', label: '援助希求（困った時に助けを求める）' },
-      { key: 'social_rules', label: '社会的ルール・マナーの理解' },
-      { key: 'role_taking', label: '役割取得・当番活動' },
+    key: 'dressing', title: '着脱',
+    fields: [
+      { key: 'upper', label: '上着', type: 'select', options: ADL4 },
+      { key: 'lower', label: 'ズボン等', type: 'select', options: ADL4 },
+    ],
+  },
+  {
+    key: 'daily_tasks', title: '日常生活',
+    fields: [
+      { key: 'laundry', label: '洗濯', type: 'select', options: ADL3 },
+      { key: 'cleaning', label: '掃除', type: 'select', options: ADL3 },
+      { key: 'organizing', label: '整理整頓', type: 'select', options: ADL3 },
+      { key: 'phone', label: '電話の利用', type: 'select', options: ADL3 },
+      { key: 'shopping', label: '買い物', type: 'select', options: ADL3 },
+      { key: 'money', label: '金銭管理', type: 'select', options: ADL3 },
+      { key: 'cooking', label: '調理', type: 'select', options: ADL3 },
+    ],
+  },
+  {
+    key: 'social', title: '社会生活',
+    fields: [
+      { key: 'outdoor_move', label: '屋外移動', type: 'select', options: ADL3 },
+      { key: 'transportation', label: '交通機関の利用', type: 'select', options: ADL3 },
+      { key: 'interpersonal', label: '対人関係', type: 'select', options: ADL3 },
+      { key: 'group_life', label: '集団生活', type: 'select', options: ADL3 },
+      { key: 'literacy', label: '文字', type: 'select', options: ADL3 },
+      { key: 'time_concept', label: '時間', type: 'select', options: ADL3 },
+    ],
+  },
+  {
+    key: 'special_notes', title: '要配慮事項',
+    fields: [
+      { key: 'notes', label: '要配慮事項', type: 'textarea', placeholder: '配慮が必要な事項を記入' },
     ],
   },
 ];
 
-interface AssessmentData {
-  id?: number;
-  student_id: number;
-  domain: string;
-  item_key: string;
-  current_status: string;
-  support_needs: string;
-  level: number; // 1-5
-  notes: string;
-  updated_at?: string;
-}
+const PHYSICAL_SECTIONS: SectionDef[] = [
+  {
+    key: 'floor', title: '床上動作',
+    fields: [
+      { key: 'turning', label: '寝返り', type: 'select', options: ['自立', '何かにつかまれば可', 'できない'] },
+      { key: 'getting_up', label: '起き上がり', type: 'select', options: ['自立', '何かにつかまれば可', 'できない'] },
+      { key: 'sitting', label: '座位保持', type: 'select', options: ['自立', '自分で支えれば可・支えが必要', 'できない'] },
+      { key: 'standing', label: '立位保持', type: 'select', options: ['自立', '支えが必要', 'できない'] },
+      { key: 'electric_bed', label: '電動ベット', type: 'select', options: ['無', '有'] },
+      { key: 'air_mattress', label: 'エアーマット', type: 'select', options: ['無', '有'] },
+    ],
+  },
+  {
+    key: 'mobility', title: '移動',
+    fields: [
+      { key: 'transfer', label: '移乗', type: 'select', options: ['自立', '見守り・一部介助', 'できない'] },
+      { key: 'indoor', label: '屋内移動', type: 'select', options: ADL4 },
+      { key: 'outdoor', label: '屋外移動', type: 'select', options: ADL4 },
+      { key: 'assistive_devices', label: '補装具の使用', type: 'text', placeholder: '杖・短下肢装具・歩行器・車椅子・その他・無' },
+    ],
+  },
+];
 
-function StudentAssessment({ studentId, studentName }: { studentId: number; studentName: string }) {
+const PROFILE_SECTIONS: SectionDef[] = [
+  {
+    key: 'personality', title: '性格・趣味等',
+    fields: [
+      { key: 'hobbies', label: '趣味・好きなこと', type: 'textarea' },
+      { key: 'personality', label: '性格', type: 'textarea' },
+      { key: 'strengths', label: '得意なこと', type: 'textarea' },
+      { key: 'weaknesses', label: '苦手なこと', type: 'textarea' },
+    ],
+  },
+  {
+    key: 'communication', title: 'コミュニケーション手段',
+    fields: [
+      { key: 'to_others_method', label: '本人から相手に伝えるとき', type: 'text', placeholder: 'ことば（文章）/ ことば（単語）/ ジェスチャー / 写真・絵カード' },
+      { key: 'to_others_example', label: '具体的なやりとり例（→相手）', type: 'textarea' },
+      { key: 'from_others_method', label: '相手から本人に伝えるとき', type: 'text', placeholder: 'ことば（文章）/ ことば（単語）/ ジェスチャー / 写真・絵カード' },
+      { key: 'from_others_example', label: '具体的なやりとり例（←相手）', type: 'textarea' },
+      { key: 'friend_interaction', label: '友達とのやりとり・関わり方', type: 'textarea' },
+    ],
+  },
+];
+
+const CONSIDERATION_SECTIONS: SectionDef[] = [
+  {
+    key: 'medical', title: '身体面・医療面',
+    fields: [
+      { key: 'epilepsy', label: 'てんかんの有無', type: 'select', options: ['無', '有'] },
+      { key: 'epilepsy_notes', label: 'てんかん配慮事項', type: 'textarea', placeholder: '対応の方法など' },
+      { key: 'seizure', label: '発作の有無', type: 'select', options: ['無', '有'] },
+      { key: 'seizure_notes', label: '発作配慮事項', type: 'textarea', placeholder: '対応の方法など' },
+      { key: 'physical_medical', label: '身体面・医療面の詳細', type: 'textarea' },
+    ],
+  },
+  {
+    key: 'medical_care', title: '医療的ケア',
+    fields: [
+      { key: 'tube_feeding', label: '経管栄養', type: 'text', placeholder: '経鼻・胃ろう・腸ろう・その他・無' },
+      { key: 'suction', label: '喀痰等吸引', type: 'text', placeholder: '口腔・鼻腔・エアウェイ・気管切開・無' },
+      { key: 'oxygen', label: '酸素療法', type: 'text', placeholder: '○ℓ / 無' },
+      { key: 'inhalation', label: '吸入', type: 'text', placeholder: '薬液・精製水・生理食塩水・無' },
+      { key: 'seizure_response', label: '発作時の対応', type: 'text', placeholder: '坐薬・VNS・その他' },
+      { key: 'other_care', label: 'その他の医療的ケア', type: 'textarea' },
+    ],
+  },
+  {
+    key: 'behavior', title: '行動面',
+    fields: [
+      { key: 'panic_causes', label: '混乱・かんしゃく・パニックの原因になりやすいこと', type: 'textarea' },
+      { key: 'behavior_tendencies', label: '表現・行動（どのような傾向があるか）', type: 'textarea' },
+      { key: 'coping', label: '対処方法', type: 'textarea' },
+      { key: 'prevention', label: '予防の方法', type: 'textarea' },
+    ],
+  },
+];
+
+function StudentFaceSheet({ studentId, studentName }: { studentId: number; studentName: string }) {
   const toast = useToast();
   const queryClient = useQueryClient();
-  const [activeDomain, setActiveDomain] = useState(ASSESSMENT_DOMAINS[0].key);
-  const [editingItem, setEditingItem] = useState<{ domain: string; itemKey: string } | null>(null);
-  const [editForm, setEditForm] = useState({ current_status: '', support_needs: '', level: 3, notes: '' });
+  const [activeTab, setActiveTab] = useState<'daily_life' | 'physical' | 'profile' | 'considerations'>('daily_life');
   const [showPrint, setShowPrint] = useState(false);
 
-  const { data: assessments = [], isLoading } = useQuery({
-    queryKey: ['staff', 'student', studentId, 'assessments'],
+  const { data: sheet, isLoading } = useQuery({
+    queryKey: ['staff', 'student', studentId, 'face-sheet'],
     queryFn: async () => {
-      const res = await api.get<{ data: AssessmentData[] }>(`/api/staff/students/${studentId}/assessments`);
-      return res.data.data || [];
+      const res = await api.get(`/api/staff/students/${studentId}/face-sheet`);
+      return res.data.data as FaceSheetData | null;
     },
     enabled: !!studentId,
   });
 
+  const [form, setForm] = useState<FaceSheetData>({
+    daily_life: {}, physical: {}, profile: {}, considerations: {}, memo: '',
+  });
+
+  // Sync form with loaded data
+  const dataLoaded = useRef(false);
+  if (sheet && !dataLoaded.current) {
+    dataLoaded.current = true;
+    setForm({
+      daily_life: sheet.daily_life || {},
+      physical: sheet.physical || {},
+      profile: sheet.profile || {},
+      considerations: sheet.considerations || {},
+      memo: (sheet as any).memo || '',
+    });
+  }
+
   const saveMutation = useMutation({
-    mutationFn: async (payload: { domain: string; item_key: string; current_status: string; support_needs: string; level: number; notes: string }) => {
-      return api.post(`/api/staff/students/${studentId}/assessments`, payload);
-    },
+    mutationFn: async () => api.post(`/api/staff/students/${studentId}/face-sheet`, form),
     onSuccess: () => {
-      toast.success('アセスメントを保存しました');
-      setEditingItem(null);
-      queryClient.invalidateQueries({ queryKey: ['staff', 'student', studentId, 'assessments'] });
+      toast.success('フェイスシートを保存しました');
+      queryClient.invalidateQueries({ queryKey: ['staff', 'student', studentId, 'face-sheet'] });
     },
     onError: () => toast.error('保存に失敗しました'),
   });
 
-  const getAssessment = (domain: string, itemKey: string) =>
-    assessments.find((a) => a.domain === domain && a.item_key === itemKey);
-
-  const openEdit = (domain: string, itemKey: string) => {
-    const existing = getAssessment(domain, itemKey);
-    setEditForm({
-      current_status: existing?.current_status || '',
-      support_needs: existing?.support_needs || '',
-      level: existing?.level || 3,
-      notes: existing?.notes || '',
-    });
-    setEditingItem({ domain, itemKey });
+  const updateField = (section: keyof FaceSheetData, key: string, value: string) => {
+    if (section === 'memo') return;
+    setForm((prev) => ({
+      ...prev,
+      [section]: { ...(prev[section] as Record<string, string>), [key]: value },
+    }));
   };
 
-  const domain = ASSESSMENT_DOMAINS.find((d) => d.key === activeDomain)!;
-  const domainAssessments = assessments.filter((a) => a.domain === activeDomain);
-  const filledCount = domainAssessments.filter((a) => a.current_status || a.support_needs).length;
+  const getVal = (section: keyof FaceSheetData, key: string): string => {
+    if (section === 'memo') return '';
+    return ((form[section] as Record<string, string>) || {})[key] || '';
+  };
 
-  const levelLabels = ['', '要支援', 'やや課題', '年相応', 'やや得意', '得意'];
-  const levelColors = ['', 'bg-red-100 text-red-700', 'bg-amber-100 text-amber-700', 'bg-gray-100 text-gray-700', 'bg-blue-100 text-blue-700', 'bg-green-100 text-green-700'];
+  const tabs = [
+    { key: 'daily_life' as const, label: '日常生活', icon: 'restaurant' },
+    { key: 'physical' as const, label: '身体', icon: 'accessible' },
+    { key: 'profile' as const, label: '性格等', icon: 'person' },
+    { key: 'considerations' as const, label: '配慮事項', icon: 'warning' },
+  ];
 
-  const totalFilled = assessments.filter((a) => a.current_status || a.support_needs).length;
+  const renderSections = (sections: SectionDef[], dataKey: keyof FaceSheetData) => (
+    <div className="space-y-4">
+      {sections.map((section) => (
+        <div key={section.key} className="rounded-lg border border-[var(--neutral-stroke-2)]">
+          <div className="bg-[var(--neutral-background-3)] px-4 py-2 text-sm font-semibold text-[var(--neutral-foreground-1)]">
+            {section.title}
+          </div>
+          <div className="p-4 space-y-3">
+            {section.fields.map((field) => (
+              <div key={field.key}>
+                <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-3)]">{field.label}</label>
+                {field.type === 'select' && field.options ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {field.options.map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => updateField(dataKey, field.key, opt)}
+                        className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                          getVal(dataKey, field.key) === opt
+                            ? 'bg-[var(--brand-80)] text-white'
+                            : 'bg-[var(--neutral-background-3)] text-[var(--neutral-foreground-2)] hover:bg-[var(--neutral-background-4)]'
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                ) : field.type === 'textarea' ? (
+                  <textarea
+                    className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none"
+                    rows={3}
+                    value={getVal(dataKey, field.key)}
+                    onChange={(e) => updateField(dataKey, field.key, e.target.value)}
+                    placeholder={field.placeholder}
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none"
+                    value={getVal(dataKey, field.key)}
+                    onChange={(e) => updateField(dataKey, field.key, e.target.value)}
+                    placeholder={field.placeholder}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   if (showPrint) {
-    return <AssessmentPrintView studentName={studentName} assessments={assessments} onClose={() => setShowPrint(false)} />;
+    return <FaceSheetPrintView studentName={studentName} form={form} onClose={() => setShowPrint(false)} />;
   }
 
   return (
     <div className="space-y-4">
-      {/* Header with print button */}
       <div className="flex items-center justify-between">
-        <div className="text-xs text-[var(--neutral-foreground-3)]">{totalFilled}/44 項目入力済</div>
-        {totalFilled > 0 && (
-          <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="print" size={16} />} onClick={() => setShowPrint(true)}>
-            印刷プレビュー
-          </Button>
-        )}
-      </div>
-
-      {/* Domain tabs */}
-      <div className="flex flex-wrap gap-2">
-        {ASSESSMENT_DOMAINS.map((d) => {
-          const filled = assessments.filter((a) => a.domain === d.key && (a.current_status || a.support_needs)).length;
-          return (
+        <div className="flex flex-wrap gap-2">
+          {tabs.map((t) => (
             <button
-              key={d.key}
-              onClick={() => setActiveDomain(d.key)}
+              key={t.key}
+              onClick={() => setActiveTab(t.key)}
               className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                activeDomain === d.key
+                activeTab === t.key
                   ? 'bg-[var(--brand-80)] text-white'
                   : 'bg-[var(--neutral-background-3)] text-[var(--neutral-foreground-2)] hover:bg-[var(--neutral-background-4)]'
               }`}
             >
-              <MaterialIcon name={d.icon} size={16} />
-              {d.label}
-              {filled > 0 && (
-                <span className={`rounded-full px-1.5 text-[10px] ${
-                  activeDomain === d.key ? 'bg-white/30 text-white' : 'bg-[var(--brand-160)] text-[var(--brand-80)]'
-                }`}>
-                  {filled}/{d.items.length}
-                </span>
-              )}
+              <MaterialIcon name={t.icon} size={16} />
+              {t.label}
             </button>
-          );
-        })}
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="print" size={16} />} onClick={() => setShowPrint(true)}>
+            印刷
+          </Button>
+          <Button size="sm" leftIcon={<MaterialIcon name="save" size={16} />} onClick={() => saveMutation.mutate()} isLoading={saveMutation.isPending}>
+            保存
+          </Button>
+        </div>
       </div>
 
-      {/* Domain content */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <MaterialIcon name={domain.icon} size={20} className={domain.color} />
-            <CardTitle>{domain.label}</CardTitle>
-            <Badge variant="info">{filledCount}/{domain.items.length} 入力済</Badge>
-          </div>
-        </CardHeader>
-        <CardBody>
-          <div className="space-y-2">
-            {domain.items.map((item) => {
-              const assessment = getAssessment(domain.key, item.key);
-              const hasData = !!(assessment?.current_status || assessment?.support_needs);
+      {activeTab === 'daily_life' && renderSections(DAILY_LIFE_SECTIONS, 'daily_life')}
+      {activeTab === 'physical' && renderSections(PHYSICAL_SECTIONS, 'physical')}
+      {activeTab === 'profile' && renderSections(PROFILE_SECTIONS, 'profile')}
+      {activeTab === 'considerations' && renderSections(CONSIDERATION_SECTIONS, 'considerations')}
 
-              return (
-                <div
-                  key={item.key}
-                  onClick={() => openEdit(domain.key, item.key)}
-                  className="flex items-center justify-between rounded-lg border border-[var(--neutral-stroke-2)] p-3 cursor-pointer hover:bg-[var(--neutral-background-3)] transition-colors"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-[var(--neutral-foreground-1)]">{item.label}</span>
-                      {hasData && <MaterialIcon name="check_circle" size={16} className="text-green-500 shrink-0" />}
-                    </div>
-                    {assessment?.current_status && (
-                      <p className="mt-1 text-xs text-[var(--neutral-foreground-3)] line-clamp-1">{assessment.current_status}</p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0 ml-2">
-                    {assessment?.level && (
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${levelColors[assessment.level]}`}>
-                        {levelLabels[assessment.level]}
-                      </span>
-                    )}
-                    <MaterialIcon name="chevron_right" size={18} className="text-[var(--neutral-foreground-4)]" />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </CardBody>
-      </Card>
-
-      {/* Edit modal */}
-      {editingItem && (() => {
-        const domainDef = ASSESSMENT_DOMAINS.find((d) => d.key === editingItem.domain)!;
-        const itemDef = domainDef.items.find((i) => i.key === editingItem.itemKey)!;
-        return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setEditingItem(null)}>
-            <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-[var(--neutral-background-1)] shadow-[var(--shadow-28)]" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between border-b border-[var(--neutral-stroke-2)] px-5 py-4">
-                <div>
-                  <h3 className="text-lg font-bold text-[var(--neutral-foreground-1)]">{itemDef.label}</h3>
-                  <p className="text-xs text-[var(--neutral-foreground-3)]">{domainDef.label}</p>
-                </div>
-                <button type="button" onClick={() => setEditingItem(null)} className="rounded-lg p-1 text-[var(--neutral-foreground-4)] hover:text-[var(--neutral-foreground-1)]">
-                  <MaterialIcon name="close" size={20} />
-                </button>
-              </div>
-              <div className="p-5 space-y-4">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">評価レベル</label>
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4, 5].map((lv) => (
-                      <button
-                        key={lv}
-                        type="button"
-                        onClick={() => setEditForm({ ...editForm, level: lv })}
-                        className={`flex-1 rounded-md px-2 py-2 text-xs font-medium transition-colors ${
-                          editForm.level === lv ? levelColors[lv] + ' ring-2 ring-offset-1 ring-current' : 'bg-[var(--neutral-background-3)] text-[var(--neutral-foreground-3)]'
-                        }`}
-                      >
-                        {levelLabels[lv]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">現在の状況</label>
-                  <textarea
-                    className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none"
-                    rows={4}
-                    value={editForm.current_status}
-                    onChange={(e) => setEditForm({ ...editForm, current_status: e.target.value })}
-                    placeholder="現在の状況を具体的に記入..."
-                    autoFocus
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">支援の必要性・方針</label>
-                  <textarea
-                    className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none"
-                    rows={4}
-                    value={editForm.support_needs}
-                    onChange={(e) => setEditForm({ ...editForm, support_needs: e.target.value })}
-                    placeholder="必要な支援内容や方針を記入..."
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">備考</label>
-                  <textarea
-                    className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none"
-                    rows={2}
-                    value={editForm.notes}
-                    onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                    placeholder="その他メモ..."
-                  />
-                </div>
-              </div>
-              <div className="flex items-center justify-end gap-2 border-t border-[var(--neutral-stroke-2)] px-5 py-4">
-                <Button variant="outline" size="sm" onClick={() => setEditingItem(null)}>キャンセル</Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  leftIcon={<MaterialIcon name="check" size={16} />}
-                  onClick={() => saveMutation.mutate({ domain: editingItem.domain, item_key: editingItem.itemKey, ...editForm })}
-                  isLoading={saveMutation.isPending}
-                >
-                  入力完了
-                </Button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
+      {/* MEMO */}
+      <div className="rounded-lg border border-[var(--neutral-stroke-2)]">
+        <div className="bg-[var(--neutral-background-3)] px-4 py-2 text-sm font-semibold text-[var(--neutral-foreground-1)]">MEMO</div>
+        <div className="p-4">
+          <textarea
+            className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none"
+            rows={4}
+            value={form.memo}
+            onChange={(e) => setForm({ ...form, memo: e.target.value })}
+            placeholder="メモ欄"
+          />
+        </div>
+      </div>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// アセスメント印刷プレビュー（A4縦）
+// フェイスシート印刷プレビュー（A4縦）
 // ---------------------------------------------------------------------------
 
-function AssessmentPrintView({
-  studentName,
-  assessments,
-  onClose,
-}: {
-  studentName: string;
-  assessments: AssessmentData[];
-  onClose: () => void;
-}) {
-  const levelLabels = ['', '要支援', 'やや課題', '年相応', 'やや得意', '得意'];
+function renderPrintSections(sections: SectionDef[], data: Record<string, string>) {
+  return sections.map((section) => {
+    const hasData = section.fields.some((f) => data[f.key]);
+    if (!hasData) return null;
+    return (
+      <div key={section.key} style={{ marginBottom: '6px', pageBreakInside: 'avoid' }}>
+        <div style={{ background: '#4a5568', color: 'white', padding: '2px 6px', fontWeight: 'bold', fontSize: '8pt' }}>{section.title}</div>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '7.5pt' }}>
+          <tbody>
+            {section.fields.map((field) => {
+              const val = data[field.key];
+              if (!val) return null;
+              return (
+                <tr key={field.key}>
+                  <td style={{ border: '1px solid #999', padding: '2px 4px', width: '25%', background: '#f5f6f8', fontWeight: 'bold', fontSize: '7pt' }}>{field.label}</td>
+                  <td style={{ border: '1px solid #999', padding: '2px 4px', whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>{val}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  });
+}
 
-  const getAssessment = (domain: string, itemKey: string) =>
-    assessments.find((a) => a.domain === domain && a.item_key === itemKey);
-
+function FaceSheetPrintView({ studentName, form, onClose }: { studentName: string; form: FaceSheetData; onClose: () => void }) {
   return (
     <>
-      {/* Toolbar */}
       <div className="print:hidden mb-4 flex items-center justify-between">
-        <Button variant="ghost" size="sm" leftIcon={<MaterialIcon name="arrow_back" size={16} />} onClick={onClose}>
-          一覧に戻る
-        </Button>
-        <Button leftIcon={<MaterialIcon name="print" size={16} />} onClick={() => window.print()}>
-          印刷する
-        </Button>
+        <Button variant="ghost" size="sm" leftIcon={<MaterialIcon name="arrow_back" size={16} />} onClick={onClose}>戻る</Button>
+        <Button leftIcon={<MaterialIcon name="print" size={16} />} onClick={() => window.print()}>印刷する</Button>
       </div>
-
-      {/* Printable area */}
       <div className="bg-white print:m-0">
         <style>{`
           @media print {
@@ -696,85 +729,41 @@ function AssessmentPrintView({
             .print\\:hidden { display: none !important; }
             @page { size: A4 portrait; margin: 10mm 12mm; }
           }
-          .asmnt { font-family: 'MS Gothic', 'Noto Sans JP', sans-serif; color: #222; line-height: 1.3; font-size: 8pt; }
-          .asmnt-header { text-align: center; border-bottom: 2px solid #1a1a1a; padding-bottom: 4px; margin-bottom: 8px; }
-          .asmnt-header h1 { font-size: 14pt; font-weight: 700; margin: 0; letter-spacing: 2pt; }
-          .asmnt-meta { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 9pt; }
-          .asmnt-domain { margin-bottom: 8px; page-break-inside: avoid; }
-          .asmnt-domain-head { background: #4a5568; color: white; padding: 3px 8px; font-weight: bold; font-size: 9pt; margin-bottom: 0; }
-          .asmnt-table { width: 100%; border-collapse: collapse; font-size: 7.5pt; }
-          .asmnt-table th { background: #e2e8f0; border: 1px solid #888; padding: 2px 4px; text-align: center; font-size: 7pt; font-weight: bold; }
-          .asmnt-table td { border: 1px solid #888; padding: 2px 4px; vertical-align: top; line-height: 1.3; }
-          .asmnt-table td.item-name { width: 22%; font-size: 7pt; }
-          .asmnt-table td.level { width: 8%; text-align: center; font-size: 7pt; }
-          .asmnt-table td.status { width: 30%; white-space: pre-wrap; word-wrap: break-word; }
-          .asmnt-table td.needs { width: 30%; white-space: pre-wrap; word-wrap: break-word; }
-          .asmnt-table td.notes-col { width: 10%; white-space: pre-wrap; word-wrap: break-word; font-size: 6.5pt; }
-          .asmnt-table tr.filled { background: #fafbfc; }
-          .asmnt-table tr.empty { background: #fff; }
-          .asmnt-footer { text-align: right; margin-top: 6px; font-size: 6pt; color: #aaa; }
-          .level-1 { color: #b91c1c; font-weight: bold; }
-          .level-2 { color: #b45309; }
-          .level-3 { color: #6b7280; }
-          .level-4 { color: #2563eb; }
-          .level-5 { color: #059669; font-weight: bold; }
         `}</style>
-
-        <div className="asmnt">
-          <div className="asmnt-header">
-            <h1>アセスメントシート</h1>
-            <div style={{ fontSize: '8pt', color: '#777' }}>放課後等デイサービス 5領域アセスメント</div>
+        <div style={{ fontFamily: "'MS Gothic', 'Noto Sans JP', sans-serif", color: '#222', lineHeight: 1.3, fontSize: '8pt' }}>
+          <div style={{ textAlign: 'center', borderBottom: '2px solid #1a1a1a', paddingBottom: '4px', marginBottom: '8px' }}>
+            <h1 style={{ fontSize: '14pt', fontWeight: 700, margin: 0, letterSpacing: '2pt' }}>フェイスシート</h1>
+            <div style={{ fontSize: '8pt', color: '#777' }}>放課後等デイサービス（横浜市青葉区 かけはし準拠）</div>
           </div>
-
-          <div className="asmnt-meta">
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '9pt' }}>
             <div><strong>児童氏名：</strong>{studentName}</div>
-            <div><strong>評価日：</strong>{new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+            <div><strong>記入日：</strong>{new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
           </div>
 
-          {ASSESSMENT_DOMAINS.map((domainDef) => {
-            const domainAssessments = assessments.filter((a) => a.domain === domainDef.key);
-            const filledCount = domainAssessments.filter((a) => a.current_status || a.support_needs).length;
+          <div style={{ fontSize: '9pt', fontWeight: 'bold', background: '#2c3e50', color: 'white', padding: '3px 8px', marginBottom: '4px' }}>日常生活のこと</div>
+          {renderPrintSections(DAILY_LIFE_SECTIONS, form.daily_life || {})}
 
-            return (
-              <div key={domainDef.key} className="asmnt-domain">
-                <div className="asmnt-domain-head">
-                  {domainDef.label}（{filledCount}/{domainDef.items.length}）
-                </div>
-                <table className="asmnt-table">
-                  <thead>
-                    <tr>
-                      <th>項目</th>
-                      <th>評価</th>
-                      <th>現在の状況</th>
-                      <th>支援の必要性・方針</th>
-                      <th>備考</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {domainDef.items.map((item) => {
-                      const a = getAssessment(domainDef.key, item.key);
-                      const hasFill = !!(a?.current_status || a?.support_needs);
-                      return (
-                        <tr key={item.key} className={hasFill ? 'filled' : 'empty'}>
-                          <td className="item-name">{item.label}</td>
-                          <td className="level">
-                            {a?.level ? (
-                              <span className={`level-${a.level}`}>{levelLabels[a.level]}</span>
-                            ) : ''}
-                          </td>
-                          <td className="status">{a?.current_status || ''}</td>
-                          <td className="needs">{a?.support_needs || ''}</td>
-                          <td className="notes-col">{a?.notes || ''}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            );
-          })}
+          {Object.keys(form.physical || {}).length > 0 && (
+            <>
+              <div style={{ fontSize: '9pt', fontWeight: 'bold', background: '#2c3e50', color: 'white', padding: '3px 8px', marginBottom: '4px', marginTop: '8px' }}>身体面</div>
+              {renderPrintSections(PHYSICAL_SECTIONS, form.physical || {})}
+            </>
+          )}
 
-          <div className="asmnt-footer">
+          <div style={{ fontSize: '9pt', fontWeight: 'bold', background: '#2c3e50', color: 'white', padding: '3px 8px', marginBottom: '4px', marginTop: '8px' }}>性格・コミュニケーション</div>
+          {renderPrintSections(PROFILE_SECTIONS, form.profile || {})}
+
+          <div style={{ fontSize: '9pt', fontWeight: 'bold', background: '#2c3e50', color: 'white', padding: '3px 8px', marginBottom: '4px', marginTop: '8px' }}>配慮事項</div>
+          {renderPrintSections(CONSIDERATION_SECTIONS, form.considerations || {})}
+
+          {form.memo && (
+            <div style={{ marginTop: '8px', pageBreakInside: 'avoid' }}>
+              <div style={{ background: '#4a5568', color: 'white', padding: '2px 6px', fontWeight: 'bold', fontSize: '8pt' }}>MEMO</div>
+              <div style={{ border: '1px solid #999', padding: '4px 6px', whiteSpace: 'pre-wrap', fontSize: '7.5pt', minHeight: '30px' }}>{form.memo}</div>
+            </div>
+          )}
+
+          <div style={{ textAlign: 'right', marginTop: '6px', fontSize: '6pt', color: '#aaa' }}>
             出力日時: {new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}
           </div>
         </div>
@@ -782,6 +771,7 @@ function AssessmentPrintView({
     </>
   );
 }
+
 
 // ---------------------------------------------------------------------------
 // アカウント
