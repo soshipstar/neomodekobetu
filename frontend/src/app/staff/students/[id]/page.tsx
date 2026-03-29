@@ -218,7 +218,7 @@ function StudentInfo({ studentId, student }: { studentId: number; student: Stude
             <select
               className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
               value={form.status}
-              onChange={(e) => setForm({ ...form, status: e.target.value })}
+              onChange={(e) => setForm({ ...form, status: e.target.value as any })}
             >
               {statusOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
