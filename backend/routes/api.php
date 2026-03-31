@@ -513,6 +513,7 @@ Route::prefix('student')
 
         // --- 週間計画 ---
         Route::get('/weekly-plans', [App\Http\Controllers\Student\StudentWeeklyPlanController::class, 'index']);
+        Route::post('/weekly-plans', [App\Http\Controllers\Student\StudentWeeklyPlanController::class, 'store']);
         Route::post('/weekly-plans/{plan}/save', [App\Http\Controllers\Student\StudentWeeklyPlanController::class, 'save']);
         Route::put('/weekly-plans/{plan}', [App\Http\Controllers\Student\StudentWeeklyPlanController::class, 'update']); // (#41)
 

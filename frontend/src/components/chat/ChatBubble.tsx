@@ -60,6 +60,8 @@ const MESSAGE_TYPE_CONFIG: Record<string, {
 export function ChatBubble({ message, isMine }: ChatBubbleProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const deleteMessage = useChatStore((s) => s.deleteMessage);
+  const apiPrefix = useChatStore((s) => s.apiPrefix);
+  const isGuardian = apiPrefix.includes('guardian');
 
   if (message.is_deleted) {
     return (
@@ -151,7 +153,7 @@ export function ChatBubble({ message, isMine }: ChatBubbleProps) {
             {message.meeting_request_id && (message.message_type === 'meeting_request' || message.message_type === 'meeting_counter' || message.message_type === 'meeting_confirmed') && (
               <div className="mt-2">
                 <Link
-                  href={`/staff/meetings?meeting_id=${message.meeting_request_id}`}
+                  href={isGuardian ? `/guardian/meetings` : `/staff/meetings?meeting_id=${message.meeting_request_id}`}
                   className={cn(
                     'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors',
                     message.message_type === 'meeting_confirmed'

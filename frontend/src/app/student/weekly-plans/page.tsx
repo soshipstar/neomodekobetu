@@ -90,14 +90,21 @@ export default function StudentWeeklyPlansPage() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!plan?.id) return;
-      return api.put(`/api/student/weekly-plans/${plan.id}`, {
+      const payload = {
         weekly_goal: form.weekly_goal || null,
         must_do: form.must_do || null,
         should_do: form.should_do || null,
         want_to_do: form.want_to_do || null,
         plan_data: form.plan_data,
-      });
+      };
+      if (plan?.id) {
+        return api.put(`/api/student/weekly-plans/${plan.id}`, payload);
+      } else {
+        return api.post('/api/student/weekly-plans', {
+          ...payload,
+          week_start_date: weekStart,
+        });
+      }
     },
     onSuccess: () => {
       toast.success('保存しました');
@@ -127,11 +134,14 @@ export default function StudentWeeklyPlansPage() {
 
       {isLoading ? (
         <SkeletonList items={5} />
-      ) : !plan ? (
+      ) : !plan && !isEditing ? (
         <Card>
           <div className="py-12 text-center">
             <MaterialIcon name="calendar_month" size={48} className="mx-auto mb-2 text-[var(--neutral-foreground-4)]" />
-            <p className="text-sm text-[var(--neutral-foreground-3)]">この週の計画はまだありません</p>
+            <p className="mb-4 text-sm text-[var(--neutral-foreground-3)]">この週の計画はまだありません</p>
+            <Button variant="primary" size="sm" leftIcon={<MaterialIcon name="add" size={16} />} onClick={() => { setForm({ weekly_goal: '', must_do: '', should_do: '', want_to_do: '', plan_data: { day_0: '', day_1: '', day_2: '', day_3: '', day_4: '', day_5: '', day_6: '' } }); setIsEditing(true); }}>
+              計画を作成する
+            </Button>
           </div>
         </Card>
       ) : isEditing ? (
@@ -195,7 +205,7 @@ export default function StudentWeeklyPlansPage() {
             <Button leftIcon={<MaterialIcon name="save" size={16} />} onClick={() => saveMutation.mutate()} isLoading={saveMutation.isPending}>保存する</Button>
           </div>
         </div>
-      ) : (
+      ) : plan ? (
         /* ===== View mode ===== */
         <>
           {/* Edit button */}
@@ -279,7 +289,7 @@ export default function StudentWeeklyPlansPage() {
             </Card>
           )}
         </>
-      )}
+      ) : null}
     </div>
   );
 }

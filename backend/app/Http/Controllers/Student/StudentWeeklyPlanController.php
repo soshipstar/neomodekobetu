@@ -52,6 +52,52 @@ class StudentWeeklyPlanController extends Controller
     }
 
     /**
+     * 週間計画を新規作成（生徒）
+     */
+    public function store(Request $request): JsonResponse
+    {
+        $student = $this->getStudent($request);
+
+        if (! $student) {
+            return response()->json(['success' => false, 'message' => '生徒情報が見つかりません。'], 404);
+        }
+
+        $validated = $request->validate([
+            'week_start_date' => 'required|date',
+            'weekly_goal'     => 'nullable|string',
+            'shared_goal'     => 'nullable|string',
+            'must_do'         => 'nullable|string',
+            'should_do'       => 'nullable|string',
+            'want_to_do'      => 'nullable|string',
+            'plan_data'       => 'nullable|array',
+        ]);
+
+        // 同じ週の計画が既に存在する場合はエラー
+        $existing = WeeklyPlan::where('student_id', $student->id)
+            ->where('week_start_date', $validated['week_start_date'])
+            ->first();
+
+        if ($existing) {
+            return response()->json([
+                'success' => false,
+                'message' => 'この週の計画は既に存在します。',
+            ], 422);
+        }
+
+        $plan = WeeklyPlan::create(array_merge($validated, [
+            'student_id'   => $student->id,
+            'classroom_id' => $student->classroom_id,
+            'created_by'   => $request->user()->id,
+        ]));
+
+        return response()->json([
+            'success' => true,
+            'data'    => $plan->load(['submissions', 'comments.user']),
+            'message' => '週間計画を作成しました。',
+        ], 201);
+    }
+
+    /**
      * 週間計画の提出物を保存
      */
     public function save(Request $request, WeeklyPlan $plan): JsonResponse

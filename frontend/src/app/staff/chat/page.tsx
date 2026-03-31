@@ -134,8 +134,11 @@ export default function StaffChatPage() {
       setMeetingDetail('');
       setMeetingDates(['', '', '']);
       fetchMessages(activeRoom.id);
-    } catch {
-      toast.error('面談予約の送信に失敗しました');
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } };
+      const msg = axiosErr?.response?.data?.message || '面談予約の送信に失敗しました';
+      toast.error(msg);
+      console.error('Meeting request failed:', axiosErr?.response?.data);
     } finally {
       setMeetingSending(false);
     }

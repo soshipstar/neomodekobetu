@@ -388,6 +388,74 @@ export default function WeeklyPlanStudentDetailPage() {
     saveMutation.mutate();
   }, [saveMutation, validationErrors]);
 
+  // Review (振り返り) mode
+  const [isReviewMode, setIsReviewMode] = useState(false);
+  const [reviewForm, setReviewForm] = useState({
+    weekly_goal_achievement: 0,
+    weekly_goal_comment: '',
+    shared_goal_achievement: 0,
+    shared_goal_comment: '',
+    must_do_achievement: 0,
+    must_do_comment: '',
+    should_do_achievement: 0,
+    should_do_comment: '',
+    want_to_do_achievement: 0,
+    want_to_comment: '',
+    overall_comment: '',
+  });
+
+  const enterReviewMode = useCallback(() => {
+    setReviewForm({
+      weekly_goal_achievement: plan?.weekly_goal_achievement ?? 0,
+      weekly_goal_comment: plan?.weekly_goal_comment ?? '',
+      shared_goal_achievement: plan?.shared_goal_achievement ?? 0,
+      shared_goal_comment: plan?.shared_goal_comment ?? '',
+      must_do_achievement: plan?.must_do_achievement ?? 0,
+      must_do_comment: plan?.must_do_comment ?? '',
+      should_do_achievement: plan?.should_do_achievement ?? 0,
+      should_do_comment: plan?.should_do_comment ?? '',
+      want_to_do_achievement: plan?.want_to_do_achievement ?? 0,
+      want_to_comment: plan?.want_to_do_comment ?? '',
+      overall_comment: plan?.overall_comment ?? '',
+    });
+    setIsReviewMode(true);
+    setMessage(null);
+  }, [plan]);
+
+  const cancelReview = useCallback(() => {
+    setIsReviewMode(false);
+    setMessage(null);
+  }, []);
+
+  const reviewMutation = useMutation({
+    mutationFn: async () => {
+      if (!plan?.id) return;
+      return api.put(`/api/staff/weekly-plans/${plan.id}`, {
+        weekly_goal_achievement: reviewForm.weekly_goal_achievement || null,
+        weekly_goal_comment: reviewForm.weekly_goal_comment || null,
+        shared_goal_achievement: reviewForm.shared_goal_achievement || null,
+        shared_goal_comment: reviewForm.shared_goal_comment || null,
+        must_do_achievement: reviewForm.must_do_achievement || null,
+        must_do_comment: reviewForm.must_do_comment || null,
+        should_do_achievement: reviewForm.should_do_achievement || null,
+        should_do_comment: reviewForm.should_do_comment || null,
+        want_to_do_achievement: reviewForm.want_to_do_achievement || null,
+        want_to_do_comment: reviewForm.want_to_comment || null,
+        overall_comment: reviewForm.overall_comment || null,
+        evaluated_at: new Date().toISOString(),
+      });
+    },
+    onSuccess: () => {
+      setMessage({ type: 'success', text: '振り返りを保存しました' });
+      setIsReviewMode(false);
+      refetchPlan();
+      queryClient.invalidateQueries({ queryKey: ['staff', 'weekly-plans'] });
+    },
+    onError: () => {
+      setMessage({ type: 'error', text: '振り返りの保存に失敗しました' });
+    },
+  });
+
   // Comment mutation
   const [commentText, setCommentText] = useState('');
   const commentMutation = useMutation({
@@ -409,16 +477,19 @@ export default function WeeklyPlanStudentDetailPage() {
   const goToPrevWeek = () => {
     setWeekOffset((o) => o - 1);
     setIsEditMode(false);
+    setIsReviewMode(false);
     setMessage(null);
   };
   const goToNextWeek = () => {
     setWeekOffset((o) => o + 1);
     setIsEditMode(false);
+    setIsReviewMode(false);
     setMessage(null);
   };
   const goToCurrentWeek = () => {
     setWeekOffset(0);
     setIsEditMode(false);
+    setIsReviewMode(false);
     setMessage(null);
   };
 
@@ -700,6 +771,174 @@ export default function WeeklyPlanStudentDetailPage() {
             </div>
           </CardBody>
         </Card>
+      ) : isReviewMode && plan ? (
+        /* ============================================================
+           Review Mode (振り返り)
+           ============================================================ */
+        <Card>
+          <CardBody>
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="flex items-center gap-2 text-lg font-bold text-[var(--neutral-foreground-1)]">
+                <MaterialIcon name="rate_review" size={20} />
+                振り返り・達成度評価
+              </h2>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={cancelReview} leftIcon={<MaterialIcon name="close" size={16} />}>
+                  キャンセル
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => reviewMutation.mutate()}
+                  leftIcon={<MaterialIcon name="save" size={16} />}
+                  disabled={reviewMutation.isPending}
+                >
+                  {reviewMutation.isPending ? '保存中...' : '振り返りを保存'}
+                </Button>
+              </div>
+            </div>
+
+            {/* 今週の目標 */}
+            {displayGoal?.trim() && (
+              <div className="mb-6 rounded-lg bg-[var(--neutral-background-3)] p-4">
+                <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--brand-60)]">
+                  <MaterialIcon name="target" size={16} />
+                  今週の目標
+                </h3>
+                <div className="mb-3 rounded bg-white p-3 text-sm whitespace-pre-wrap">{nl(displayGoal)}</div>
+                <div className="mb-2">
+                  <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-3)]">達成度</label>
+                  <RatingScale name="weekly_goal" value={reviewForm.weekly_goal_achievement} onChange={(v) => setReviewForm((f) => ({ ...f, weekly_goal_achievement: v }))} />
+                </div>
+                <textarea
+                  className="w-full rounded-lg border border-[var(--neutral-stroke-1)] p-2 text-sm focus:border-[var(--brand-90)] focus:ring-1 focus:ring-[var(--brand-80)] resize-y"
+                  rows={2}
+                  placeholder="コメント（任意）"
+                  value={reviewForm.weekly_goal_comment}
+                  onChange={(e) => setReviewForm((f) => ({ ...f, weekly_goal_comment: e.target.value }))}
+                />
+              </div>
+            )}
+
+            {/* いっしょに決めた目標 */}
+            {displaySharedGoal?.trim() && (
+              <div className="mb-6 rounded-lg bg-[var(--neutral-background-3)] p-4">
+                <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--brand-60)]">
+                  <MaterialIcon name="handshake" size={16} />
+                  いっしょに決めた目標
+                </h3>
+                <div className="mb-3 rounded bg-white p-3 text-sm whitespace-pre-wrap">{nl(displaySharedGoal)}</div>
+                <div className="mb-2">
+                  <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-3)]">達成度</label>
+                  <RatingScale name="shared_goal" value={reviewForm.shared_goal_achievement} onChange={(v) => setReviewForm((f) => ({ ...f, shared_goal_achievement: v }))} />
+                </div>
+                <textarea
+                  className="w-full rounded-lg border border-[var(--neutral-stroke-1)] p-2 text-sm focus:border-[var(--brand-90)] focus:ring-1 focus:ring-[var(--brand-80)] resize-y"
+                  rows={2}
+                  placeholder="コメント（任意）"
+                  value={reviewForm.shared_goal_comment}
+                  onChange={(e) => setReviewForm((f) => ({ ...f, shared_goal_comment: e.target.value }))}
+                />
+              </div>
+            )}
+
+            {/* やるべきこと */}
+            {displayMustDo?.trim() && (
+              <div className="mb-6 rounded-lg bg-[var(--neutral-background-3)] p-4">
+                <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--brand-60)]">
+                  <MaterialIcon name="check_circle" size={16} />
+                  やるべきこと
+                </h3>
+                <div className="mb-3 rounded bg-white p-3 text-sm whitespace-pre-wrap">{nl(displayMustDo)}</div>
+                <div className="mb-2">
+                  <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-3)]">達成度</label>
+                  <RatingScale name="must_do" value={reviewForm.must_do_achievement} onChange={(v) => setReviewForm((f) => ({ ...f, must_do_achievement: v }))} />
+                </div>
+                <textarea
+                  className="w-full rounded-lg border border-[var(--neutral-stroke-1)] p-2 text-sm focus:border-[var(--brand-90)] focus:ring-1 focus:ring-[var(--brand-80)] resize-y"
+                  rows={2}
+                  placeholder="コメント（任意）"
+                  value={reviewForm.must_do_comment}
+                  onChange={(e) => setReviewForm((f) => ({ ...f, must_do_comment: e.target.value }))}
+                />
+              </div>
+            )}
+
+            {/* やったほうがいいこと */}
+            {displayShouldDo?.trim() && (
+              <div className="mb-6 rounded-lg bg-[var(--neutral-background-3)] p-4">
+                <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--brand-60)]">
+                  <MaterialIcon name="thumb_up" size={16} />
+                  やったほうがいいこと
+                </h3>
+                <div className="mb-3 rounded bg-white p-3 text-sm whitespace-pre-wrap">{nl(displayShouldDo)}</div>
+                <div className="mb-2">
+                  <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-3)]">達成度</label>
+                  <RatingScale name="should_do" value={reviewForm.should_do_achievement} onChange={(v) => setReviewForm((f) => ({ ...f, should_do_achievement: v }))} />
+                </div>
+                <textarea
+                  className="w-full rounded-lg border border-[var(--neutral-stroke-1)] p-2 text-sm focus:border-[var(--brand-90)] focus:ring-1 focus:ring-[var(--brand-80)] resize-y"
+                  rows={2}
+                  placeholder="コメント（任意）"
+                  value={reviewForm.should_do_comment}
+                  onChange={(e) => setReviewForm((f) => ({ ...f, should_do_comment: e.target.value }))}
+                />
+              </div>
+            )}
+
+            {/* やりたいこと */}
+            {displayWantToDo?.trim() && (
+              <div className="mb-6 rounded-lg bg-[var(--neutral-background-3)] p-4">
+                <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--brand-60)]">
+                  <MaterialIcon name="lightbulb" size={16} />
+                  やりたいこと
+                </h3>
+                <div className="mb-3 rounded bg-white p-3 text-sm whitespace-pre-wrap">{nl(displayWantToDo)}</div>
+                <div className="mb-2">
+                  <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-3)]">達成度</label>
+                  <RatingScale name="want_to_do" value={reviewForm.want_to_do_achievement} onChange={(v) => setReviewForm((f) => ({ ...f, want_to_do_achievement: v }))} />
+                </div>
+                <textarea
+                  className="w-full rounded-lg border border-[var(--neutral-stroke-1)] p-2 text-sm focus:border-[var(--brand-90)] focus:ring-1 focus:ring-[var(--brand-80)] resize-y"
+                  rows={2}
+                  placeholder="コメント（任意）"
+                  value={reviewForm.want_to_comment}
+                  onChange={(e) => setReviewForm((f) => ({ ...f, want_to_comment: e.target.value }))}
+                />
+              </div>
+            )}
+
+            {/* 総合コメント */}
+            <div className="mb-6">
+              <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--brand-60)]">
+                <MaterialIcon name="forum" size={16} />
+                週全体の総合コメント
+              </h3>
+              <textarea
+                className="w-full rounded-lg border border-[var(--neutral-stroke-1)] p-3 text-sm focus:border-[var(--brand-90)] focus:ring-1 focus:ring-[var(--brand-80)] resize-y"
+                rows={4}
+                placeholder="今週の総合的な振り返りを記入してください"
+                value={reviewForm.overall_comment}
+                onChange={(e) => setReviewForm((f) => ({ ...f, overall_comment: e.target.value }))}
+              />
+            </div>
+
+            {/* Bottom save */}
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={cancelReview} leftIcon={<MaterialIcon name="close" size={16} />}>
+                キャンセル
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => reviewMutation.mutate()}
+                leftIcon={<MaterialIcon name="save" size={16} />}
+                disabled={reviewMutation.isPending}
+              >
+                {reviewMutation.isPending ? '保存中...' : '振り返りを保存'}
+              </Button>
+            </div>
+          </CardBody>
+        </Card>
       ) : (
         /* ============================================================
            View Mode
@@ -712,14 +951,24 @@ export default function WeeklyPlanStudentDetailPage() {
                   <MaterialIcon name="edit" size={20} />
                   週間計画
                 </h2>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={enterEditMode}
-                  leftIcon={<MaterialIcon name="edit" size={16} />}
-                >
-                  編集する
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={enterReviewMode}
+                    leftIcon={<MaterialIcon name="rate_review" size={16} />}
+                  >
+                    振り返り
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={enterEditMode}
+                    leftIcon={<MaterialIcon name="edit" size={16} />}
+                  >
+                    編集する
+                  </Button>
+                </div>
               </div>
 
               {/* Goals */}

@@ -80,6 +80,7 @@ const guardianNav: NavItem[] = [
   { type: 'link', label: '連絡帳一覧', href: '/guardian/notes', icon: 'menu_book' },
   { type: 'link', label: '連絡帳検索', href: '/guardian/communication-logs', icon: 'search' },
   { type: 'link', label: 'チャット', href: '/guardian/chat', icon: 'chat' },
+  { type: 'link', label: '面談予約', href: '/guardian/meetings', icon: 'event' },
   { type: 'link', label: '週間計画表', href: '/guardian/weekly-plans', icon: 'checklist' },
   { type: 'link', label: 'かけはし入力', href: '/guardian/kakehashi', icon: 'handshake' },
   { type: 'link', label: 'かけはし履歴', href: '/guardian/kakehashi-history', icon: 'history' },

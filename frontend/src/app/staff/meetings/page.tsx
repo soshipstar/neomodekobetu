@@ -122,7 +122,7 @@ export default function MeetingsPage() {
       await api.post('/api/staff/meetings', payload);
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['staff', 'meetings'] }); setShowCreate(false); setForm(emptyForm); toast.success('面談予約を送信しました'); },
-    onError: () => toast.error('作成に失敗しました'),
+    onError: (err: any) => { const msg = err?.response?.data?.message || '作成に失敗しました'; toast.error(msg); console.error('Meeting create failed:', err?.response?.data); },
   });
 
   const updateMutation = useMutation({
