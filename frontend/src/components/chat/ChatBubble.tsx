@@ -59,7 +59,9 @@ const MESSAGE_TYPE_CONFIG: Record<string, {
 
 export function ChatBubble({ message, isMine }: ChatBubbleProps) {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
   const deleteMessage = useChatStore((s) => s.deleteMessage);
+  const toggleArchive = useChatStore((s) => s.toggleArchive);
   const apiPrefix = useChatStore((s) => s.apiPrefix);
   const isGuardian = apiPrefix.includes('guardian');
 
@@ -94,6 +96,17 @@ export function ChatBubble({ message, isMine }: ChatBubbleProps) {
     }
   };
 
+  const handleArchive = async () => {
+    setIsArchiving(true);
+    try {
+      await toggleArchive(message.room_id, message.id);
+    } catch {
+      alert('アーカイブの切り替えに失敗しました');
+    } finally {
+      setIsArchiving(false);
+    }
+  };
+
   // 既読表示: 自分が送ったメッセージが相手に読まれたか
   const isReadByRecipient = isMine && (message.is_read_by_recipient || message.is_read_by_staff || message.is_read);
 
@@ -107,8 +120,9 @@ export function ChatBubble({ message, isMine }: ChatBubbleProps) {
           </span>
         )}
 
-        {/* Bubble with delete button */}
+        {/* Bubble with action buttons */}
         <div className="relative">
+          {/* Delete button (own messages only) */}
           {isMine && (
             <button
               type="button"
@@ -125,6 +139,27 @@ export function ChatBubble({ message, isMine }: ChatBubbleProps) {
               <MaterialIcon name="delete" size={16} />
             </button>
           )}
+          {/* Archive button */}
+          <button
+            type="button"
+            onClick={handleArchive}
+            disabled={isArchiving}
+            className={cn(
+              'absolute top-1/2 -translate-y-1/2 rounded-full p-1 transition-all',
+              isMine ? '-left-8' : '-right-8',
+              isMine && 'top-[calc(50%+14px)]',
+              message.is_archived
+                ? 'text-[var(--brand-80)] opacity-100'
+                : cn(
+                    'text-[var(--neutral-foreground-4)] hover:text-[var(--brand-80)]',
+                    'opacity-0 group-hover:opacity-100 focus:opacity-100'
+                  ),
+              isArchiving && 'opacity-50 cursor-not-allowed'
+            )}
+            title={message.is_archived ? 'アーカイブ解除' : 'アーカイブ'}
+          >
+            <MaterialIcon name={message.is_archived ? 'bookmark' : 'bookmark_border'} size={16} />
+          </button>
           <div
             className={cn(
               'rounded-2xl px-4 py-2.5 text-sm leading-relaxed',

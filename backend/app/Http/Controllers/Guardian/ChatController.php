@@ -479,4 +479,63 @@ class ChatController extends Controller
             'meeting_request_id' => $result['meeting_request_id'],
         ], 201);
     }
+
+    /**
+     * メッセージのアーカイブ切り替え
+     */
+    public function toggleArchive(Request $request, ChatRoom $room, ChatMessage $message): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($room->guardian_id !== $user->id) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
+        if ($message->room_id !== $room->id) {
+            return response()->json(['success' => false, 'message' => 'メッセージが見つかりません。'], 404);
+        }
+
+        $message->update(['is_archived' => !$message->is_archived]);
+
+        return response()->json([
+            'success'     => true,
+            'is_archived' => $message->is_archived,
+        ]);
+    }
+
+    /**
+     * アーカイブ済みメッセージ一覧
+     */
+    public function archivedMessages(Request $request, ChatRoom $room): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($room->guardian_id !== $user->id) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
+        $messages = $room->messages()
+            ->notDeleted()
+            ->where('is_archived', true)
+            ->with('staffReads')
+            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $messages->each(function ($msg) {
+            if ($msg->sender_type === 'staff' || $msg->sender_type === 'guardian') {
+                $msg->sender_name = User::where('id', $msg->sender_id)->value('full_name');
+            } elseif ($msg->sender_type === 'student') {
+                $msg->sender_name = \App\Models\Student::where('id', $msg->sender_id)->value('student_name');
+            }
+            $msg->is_read_by_staff = $msg->staffReads->isNotEmpty();
+            $msg->is_read_by_recipient = ($msg->sender_type === 'guardian') ? $msg->is_read_by_staff : (bool) $msg->is_read;
+            unset($msg->staffReads);
+        });
+
+        return response()->json([
+            'success' => true,
+            'data'    => $messages,
+        ]);
+    }
 }

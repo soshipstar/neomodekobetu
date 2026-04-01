@@ -440,6 +440,75 @@ class ChatController extends Controller
     }
 
     /**
+     * メッセージのアーカイブ切り替え
+     */
+    public function toggleArchive(Request $request, ChatRoom $room, ChatMessage $message): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! $this->canAccessRoom($user, $room)) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
+        if ($message->room_id !== $room->id) {
+            return response()->json(['success' => false, 'message' => 'メッセージが見つかりません。'], 404);
+        }
+
+        $message->update(['is_archived' => !$message->is_archived]);
+
+        return response()->json([
+            'success'     => true,
+            'is_archived' => $message->is_archived,
+        ]);
+    }
+
+    /**
+     * アーカイブ済みメッセージ一覧
+     */
+    public function archivedMessages(Request $request, ChatRoom $room): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! $this->canAccessRoom($user, $room)) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
+        $messages = $room->messages()
+            ->notDeleted()
+            ->where('is_archived', true)
+            ->with('staffReads')
+            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $userCache = [];
+        $messages->each(function ($msg) use (&$userCache) {
+            if (!isset($userCache[$msg->sender_id . '_' . $msg->sender_type])) {
+                if ($msg->sender_type === 'student') {
+                    $student = \App\Models\Student::where('id', $msg->sender_id)->first(['id', 'student_name']);
+                    $userCache[$msg->sender_id . '_' . $msg->sender_type] = $student
+                        ? ['id' => $student->id, 'full_name' => $student->student_name]
+                        : null;
+                } else {
+                    $u = User::where('id', $msg->sender_id)->first(['id', 'full_name']);
+                    $userCache[$msg->sender_id . '_' . $msg->sender_type] = $u
+                        ? ['id' => $u->id, 'full_name' => $u->full_name]
+                        : null;
+                }
+            }
+            $msg->sender = $userCache[$msg->sender_id . '_' . $msg->sender_type];
+            $msg->is_read_by_staff = $msg->staffReads->isNotEmpty();
+            unset($msg->staffReads);
+            $msg->is_read_by_recipient = ($msg->sender_type === 'staff') ? (bool) $msg->is_read : $msg->is_read_by_staff;
+        });
+
+        return response()->json([
+            'success' => true,
+            'data'    => $messages,
+        ]);
+    }
+
+    /**
      * スタッフがルームにアクセスできるか確認
      */
     private function canAccessRoom($user, ChatRoom $room): bool

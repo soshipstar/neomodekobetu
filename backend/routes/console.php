@@ -25,3 +25,9 @@ Schedule::job(new SendDeadlineNotificationsJob())
     ->dailyAt('09:00')
     ->withoutOverlapping()
     ->onOneServer();
+
+// 古いチャットメッセージの自動削除 - 毎日午前3時に実行
+Schedule::command('chat:delete-old')
+    ->dailyAt('03:00')
+    ->withoutOverlapping()
+    ->onOneServer();

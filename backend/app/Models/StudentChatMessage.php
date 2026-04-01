@@ -16,12 +16,14 @@ class StudentChatMessage extends Model
         'sender_type',
         'message',
         'is_deleted',
+        'is_archived',
     ];
 
     protected function casts(): array
     {
         return [
             'is_deleted' => 'boolean',
+            'is_archived' => 'boolean',
             'created_at' => 'datetime',
         ];
     }

@@ -1,0 +1,38 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('chat_messages', function (Blueprint $table) {
+            $table->boolean('is_archived')->default(false)->after('is_deleted');
+        });
+
+        Schema::table('student_chat_messages', function (Blueprint $table) {
+            $table->boolean('is_archived')->default(false)->after('is_deleted');
+        });
+
+        Schema::table('staff_chat_messages', function (Blueprint $table) {
+            $table->boolean('is_archived')->default(false)->after('is_deleted');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('chat_messages', function (Blueprint $table) {
+            $table->dropColumn('is_archived');
+        });
+
+        Schema::table('student_chat_messages', function (Blueprint $table) {
+            $table->dropColumn('is_archived');
+        });
+
+        Schema::table('staff_chat_messages', function (Blueprint $table) {
+            $table->dropColumn('is_archived');
+        });
+    }
+};

@@ -21,12 +21,14 @@ class StaffChatMessage extends Model
         'attachment_original_name',
         'attachment_size',
         'is_deleted',
+        'is_archived',
     ];
 
     protected function casts(): array
     {
         return [
             'is_deleted'      => 'boolean',
+            'is_archived'     => 'boolean',
             'attachment_size' => 'integer',
             'created_at'      => 'datetime',
         ];

@@ -21,6 +21,8 @@ interface ChatState {
   sendMessage: (roomId: number, message: string, attachment?: File) => Promise<void>;
   markAsRead: (roomId: number) => Promise<void>;
   deleteMessage: (roomId: number, messageId: number) => Promise<void>;
+  toggleArchive: (roomId: number, messageId: number) => Promise<void>;
+  fetchArchivedMessages: (roomId: number) => Promise<ChatMessage[]>;
   addMessage: (message: ChatMessage) => void;
   updateUnreadCount: (roomId: number, count: number) => void;
 }
@@ -138,6 +140,27 @@ export const useChatStore = create<ChatState>((set, get) => ({
     } catch {
       throw new Error('メッセージの削除に失敗しました');
     }
+  },
+
+  toggleArchive: async (roomId: number, messageId: number) => {
+    try {
+      const { apiPrefix } = get();
+      const response = await api.post<{ is_archived: boolean }>(`${apiPrefix}/chat/rooms/${roomId}/messages/${messageId}/archive`);
+      const isArchived = response.data.is_archived;
+      set((state) => ({
+        messages: state.messages.map((msg) =>
+          msg.id === messageId ? { ...msg, is_archived: isArchived } : msg
+        ),
+      }));
+    } catch {
+      throw new Error('アーカイブの切り替えに失敗しました');
+    }
+  },
+
+  fetchArchivedMessages: async (roomId: number) => {
+    const { apiPrefix } = get();
+    const response = await api.get<{ data: ChatMessage[] }>(`${apiPrefix}/chat/rooms/${roomId}/archived`);
+    return response.data.data;
   },
 
   addMessage: (message: ChatMessage) => {

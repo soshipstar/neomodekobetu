@@ -27,12 +27,14 @@ class ChatMessage extends Model
         'meeting_request_id',
         'is_deleted',
         'deleted_at',
+        'is_archived',
     ];
 
     protected function casts(): array
     {
         return [
             'is_deleted' => 'boolean',
+            'is_archived' => 'boolean',
             'deleted_at' => 'datetime',
             'attachment_size' => 'integer',
         ];

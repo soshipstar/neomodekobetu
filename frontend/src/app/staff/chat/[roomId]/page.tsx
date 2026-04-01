@@ -3,6 +3,7 @@
 import { useEffect, useCallback, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useChat } from '@/hooks/useChat';
+import { useChatStore } from '@/stores/chatStore';
 import { useAuthStore } from '@/stores/authStore';
 import { ChatMessageList } from '@/components/chat/ChatMessageList';
 import { ChatInput } from '@/components/chat/ChatInput';
@@ -10,6 +11,7 @@ import { SkeletonList } from '@/components/ui/Skeleton';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import type { ChatMessage } from '@/types/chat';
 
 export default function StaffChatRoomPage() {
   const params = useParams();
@@ -17,6 +19,9 @@ export default function StaffChatRoomPage() {
   const roomId = Number(params.roomId);
   const { user } = useAuthStore();
   const [loadingOlder, setLoadingOlder] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+  const [archivedMessages, setArchivedMessages] = useState<ChatMessage[]>([]);
+  const [loadingArchived, setLoadingArchived] = useState(false);
 
   const {
     activeRoom,
@@ -67,6 +72,21 @@ export default function StaffChatRoomPage() {
     setLoadingOlder(false);
   }, [roomId, fetchOlderMessages]);
 
+  const handleToggleArchived = useCallback(async () => {
+    if (!showArchived) {
+      setLoadingArchived(true);
+      try {
+        const msgs = await useChatStore.getState().fetchArchivedMessages(roomId);
+        setArchivedMessages(msgs);
+      } catch {
+        // silently fail
+      } finally {
+        setLoadingArchived(false);
+      }
+    }
+    setShowArchived((prev) => !prev);
+  }, [showArchived, roomId]);
+
   return (
     <div className="flex h-[calc(100vh-8rem)] flex-col lg:h-[calc(100vh-5rem)]">
       {/* Chat header */}
@@ -85,6 +105,17 @@ export default function StaffChatRoomPage() {
             {activeRoom?.guardian?.full_name && `保護者: ${activeRoom.guardian.full_name}`}
           </p>
         </div>
+        <button
+          onClick={handleToggleArchived}
+          className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+            showArchived
+              ? 'bg-[var(--brand-80)] text-white'
+              : 'text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-3)]'
+          }`}
+        >
+          <MaterialIcon name="bookmark" size={14} />
+          アーカイブ
+        </button>
         {activeRoom && (
           <Link
             href={`/staff/meetings?action=create&student_id=${activeRoom.student_id}&guardian_id=${activeRoom.guardian_id}`}
@@ -98,7 +129,17 @@ export default function StaffChatRoomPage() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto bg-[var(--neutral-background-2)]">
-        {isLoadingMessages ? (
+        {showArchived ? (
+          loadingArchived ? (
+            <div className="p-4"><SkeletonList items={5} /></div>
+          ) : archivedMessages.length === 0 ? (
+            <div className="flex h-full items-center justify-center">
+              <p className="text-sm text-[var(--neutral-foreground-4)]">アーカイブされたメッセージはありません</p>
+            </div>
+          ) : (
+            <ChatMessageList messages={archivedMessages} currentUserId={user?.id || 0} />
+          )
+        ) : isLoadingMessages ? (
           <div className="p-4">
             <SkeletonList items={5} />
           </div>

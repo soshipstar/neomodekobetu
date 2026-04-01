@@ -133,6 +133,8 @@ Route::prefix('staff')
             Route::post('/rooms/{room}/pin', [App\Http\Controllers\Staff\ChatController::class, 'togglePin']);
             Route::post('/rooms/{room}/read', [App\Http\Controllers\Staff\ChatController::class, 'markRead']);
             Route::delete('/rooms/{room}/messages/{message}', [App\Http\Controllers\Staff\ChatController::class, 'deleteMessage']);
+            Route::post('/rooms/{room}/messages/{message}/archive', [App\Http\Controllers\Staff\ChatController::class, 'toggleArchive']);
+            Route::get('/rooms/{room}/archived', [App\Http\Controllers\Staff\ChatController::class, 'archivedMessages']);
             Route::post('/broadcast', [App\Http\Controllers\Staff\ChatController::class, 'broadcast']);
         });
 
@@ -424,6 +426,8 @@ Route::prefix('guardian')
         Route::post('/chat/rooms/{room}/absence', [App\Http\Controllers\Guardian\ChatController::class, 'sendAbsenceNotification']);
         Route::post('/chat/rooms/{room}/event-registration', [App\Http\Controllers\Guardian\ChatController::class, 'sendEventRegistration']);
         Route::post('/chat/rooms/{room}/meeting-request', [App\Http\Controllers\Guardian\ChatController::class, 'sendMeetingRequest']);
+        Route::post('/chat/rooms/{room}/messages/{message}/archive', [App\Http\Controllers\Guardian\ChatController::class, 'toggleArchive']);
+        Route::get('/chat/rooms/{room}/archived', [App\Http\Controllers\Guardian\ChatController::class, 'archivedMessages']);
 
         // イベント
         Route::get('/events', [App\Http\Controllers\Guardian\GuardianEventController::class, 'index']);

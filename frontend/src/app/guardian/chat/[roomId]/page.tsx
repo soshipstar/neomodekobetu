@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { useChat } from '@/hooks/useChat';
 import { useChatStore } from '@/stores/chatStore';
+import type { ChatMessage } from '@/types/chat';
 import { useAuthStore } from '@/stores/authStore';
 import { ChatMessageList } from '@/components/chat/ChatMessageList';
 import { ChatInput } from '@/components/chat/ChatInput';
@@ -45,6 +46,9 @@ export default function GuardianChatRoomPage() {
   const { user } = useAuthStore();
   const toast = useToast();
   const [loadingOlder, setLoadingOlder] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+  const [archivedMessages, setArchivedMessages] = useState<ChatMessage[]>([]);
+  const [loadingArchived, setLoadingArchived] = useState(false);
 
   const {
     activeRoom,
@@ -93,6 +97,21 @@ export default function GuardianChatRoomPage() {
     setLoadingOlder(false);
   }, [roomId, fetchOlderMessages]);
 
+  const handleToggleArchived = useCallback(async () => {
+    if (!showArchived) {
+      setLoadingArchived(true);
+      try {
+        const msgs = await useChatStore.getState().fetchArchivedMessages(roomId);
+        setArchivedMessages(msgs);
+      } catch {
+        toast.error('アーカイブの取得に失敗しました');
+      } finally {
+        setLoadingArchived(false);
+      }
+    }
+    setShowArchived((prev) => !prev);
+  }, [showArchived, roomId, toast]);
+
   const handleFormSuccess = useCallback(() => {
     fetchMessages(roomId);
     setMessageType('normal');
@@ -111,10 +130,31 @@ export default function GuardianChatRoomPage() {
             {activeRoom?.student?.student_name || 'チャット'}
           </h2>
         </div>
+        <button
+          onClick={handleToggleArchived}
+          className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+            showArchived
+              ? 'bg-[var(--brand-80)] text-white'
+              : 'text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-3)]'
+          }`}
+        >
+          <MaterialIcon name="bookmark" size={14} />
+          <span className="hidden sm:inline">アーカイブ</span>
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto bg-[var(--neutral-background-3)]">
-        {isLoadingMessages ? (
+        {showArchived ? (
+          loadingArchived ? (
+            <div className="p-4"><SkeletonList items={5} /></div>
+          ) : archivedMessages.length === 0 ? (
+            <div className="flex h-full items-center justify-center">
+              <p className="text-sm text-[var(--neutral-foreground-4)]">アーカイブされたメッセージはありません</p>
+            </div>
+          ) : (
+            <ChatMessageList messages={archivedMessages} currentUserId={user?.id || 0} />
+          )
+        ) : isLoadingMessages ? (
           <div className="p-4"><SkeletonList items={5} /></div>
         ) : (
           <>

@@ -32,6 +32,7 @@ export interface ChatMessage {
   is_read_by_staff: boolean;
   is_read_by_recipient: boolean;
   is_deleted: boolean;
+  is_archived: boolean;
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
