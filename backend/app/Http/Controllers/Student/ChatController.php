@@ -41,7 +41,19 @@ class ChatController extends Controller
             $query->where('id', '>', $request->last_id);
         }
 
-        $messages = $query->limit(50)->get();
+        // 過去メッセージ読み込み用
+        if ($request->filled('before_id')) {
+            $query = StudentChatMessage::where('room_id', $room->id)
+                ->where('id', '<', $request->before_id)
+                ->orderBy('id', 'desc');
+        }
+
+        $limit = $request->integer('limit', 100);
+        $messages = $query->limit(min($limit, 200))->get();
+
+        if ($request->filled('before_id')) {
+            $messages = $messages->reverse()->values();
+        }
 
         // 送信者名を付加
         $messages->each(function ($msg) {
@@ -58,12 +70,15 @@ class ChatController extends Controller
             ->where('is_read', false)
             ->update(['is_read' => true, 'read_at' => now()]);
 
+        $hasMore = $messages->count() >= min($limit, 200);
+
         return response()->json([
-            'success' => true,
-            'data'    => [
+            'success'  => true,
+            'data'     => [
                 'room_id'  => $room->id,
                 'messages' => $messages,
             ],
+            'has_more' => $hasMore,
         ]);
     }
 

@@ -44,6 +44,7 @@ export default function GuardianChatRoomPage() {
   const roomId = Number(params.roomId);
   const { user } = useAuthStore();
   const toast = useToast();
+  const [loadingOlder, setLoadingOlder] = useState(false);
 
   const {
     activeRoom,
@@ -53,6 +54,8 @@ export default function GuardianChatRoomPage() {
     fetchRooms,
     setActiveRoom,
     fetchMessages,
+    fetchOlderMessages,
+    hasMoreMessages,
     sendMessage,
     markAsRead,
     rooms,
@@ -84,6 +87,12 @@ export default function GuardianChatRoomPage() {
     return () => { setActiveRoom(null); };
   }, [setActiveRoom]);
 
+  const handleLoadOlder = useCallback(async () => {
+    setLoadingOlder(true);
+    await fetchOlderMessages(roomId);
+    setLoadingOlder(false);
+  }, [roomId, fetchOlderMessages]);
+
   const handleFormSuccess = useCallback(() => {
     fetchMessages(roomId);
     setMessageType('normal');
@@ -108,7 +117,21 @@ export default function GuardianChatRoomPage() {
         {isLoadingMessages ? (
           <div className="p-4"><SkeletonList items={5} /></div>
         ) : (
-          <ChatMessageList messages={messages} currentUserId={user?.id || 0} />
+          <>
+            {hasMoreMessages && (
+              <div className="flex justify-center py-3">
+                <button
+                  onClick={handleLoadOlder}
+                  disabled={loadingOlder}
+                  className="flex items-center gap-1 rounded-full bg-white px-4 py-1.5 text-xs text-[var(--neutral-foreground-3)] shadow-sm hover:bg-[var(--neutral-background-3)] transition-colors disabled:opacity-50"
+                >
+                  <MaterialIcon name="expand_less" size={14} />
+                  {loadingOlder ? '読み込み中...' : '過去のメッセージを読み込む'}
+                </button>
+              </div>
+            )}
+            <ChatMessageList messages={messages} currentUserId={user?.id || 0} />
+          </>
         )}
       </div>
 
