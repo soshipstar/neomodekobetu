@@ -283,6 +283,36 @@ class RenrakuchoController extends Controller
     }
 
     /**
+     * 個別生徒の記録を削除（関連する統合ノートも削除）
+     */
+    public function destroyStudentRecord(Request $request, DailyRecord $record, int $studentId): JsonResponse
+    {
+        $user = $request->user();
+        if ($user->classroom_id) {
+            $staffClassroom = $record->staff->classroom_id ?? null;
+            if ($staffClassroom !== $user->classroom_id) {
+                return response()->json(['success' => false, 'message' => 'この記録を削除する権限がありません。'], 403);
+            }
+        }
+
+        $studentRecord = $record->studentRecords()->where('student_id', $studentId)->first();
+        if (!$studentRecord) {
+            return response()->json(['success' => false, 'message' => '生徒記録が見つかりません。'], 404);
+        }
+
+        DB::transaction(function () use ($record, $studentId, $studentRecord) {
+            // 関連する統合ノート（送信履歴含む）を削除
+            $record->integratedNotes()->where('student_id', $studentId)->delete();
+            $studentRecord->delete();
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => '生徒記録を削除しました。',
+        ]);
+    }
+
+    /**
      * 活動記録を削除
      */
     public function destroy(Request $request, DailyRecord $record): JsonResponse

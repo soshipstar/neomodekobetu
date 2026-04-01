@@ -309,6 +309,23 @@ export default function RenrakuchoPage() {
     }
   };
 
+  const handleDeleteStudentRecord = async (studentId: number, studentName: string) => {
+    if (!editingActivity) return;
+    if (!window.confirm(`${studentName} の記録を削除してもよろしいですか？\n関連する統合ノートも削除されます。`)) return;
+    try {
+      await api.delete(`/api/staff/renrakucho/${editingActivity.id}/student-records/${studentId}`);
+      toast.success(`${studentName} の記録を削除しました`);
+      setStudentRecords((prev) => prev.filter((r) => r.student_id !== studentId));
+      if (editingStudentId === studentId) {
+        setEditingStudentId(null);
+        setStudentFormData({});
+      }
+      fetchActivities(true);
+    } catch {
+      toast.error('削除に失敗しました');
+    }
+  };
+
   // =========================================================================
   // Send to guardians (with draft save, auto-save, Ctrl+S)
   // =========================================================================
@@ -893,23 +910,35 @@ export default function RenrakuchoPage() {
                       (k) => rec[k as keyof StudentRecord] && String(rec[k as keyof StudentRecord]).trim()
                     );
                     const isActive = editingStudentId === rec.student_id;
+                    const studentName = rec.student?.student_name || `生徒ID: ${rec.student_id}`;
                     return (
-                      <button
+                      <div
                         key={rec.student_id}
-                        onClick={() => handleSelectStudent(rec)}
-                        className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                        className={`group/item flex items-center rounded-md transition-colors ${
                           isActive
                             ? 'bg-[var(--brand-160)] text-[var(--brand-60)]'
                             : 'hover:bg-[var(--neutral-background-3)] text-[var(--neutral-foreground-1)]'
                         }`}
                       >
-                        <span>{rec.student?.student_name || `生徒ID: ${rec.student_id}`}</span>
-                        {hasContent ? (
-                          <MaterialIcon name="check_circle" size={16} className="text-[var(--status-success-fg)]" />
-                        ) : (
-                          <MaterialIcon name="schedule" size={16} className="text-[var(--neutral-foreground-4)]" />
-                        )}
-                      </button>
+                        <button
+                          onClick={() => handleSelectStudent(rec)}
+                          className="flex flex-1 items-center justify-between px-3 py-2 text-left text-sm min-w-0"
+                        >
+                          <span className="truncate">{studentName}</span>
+                          {hasContent ? (
+                            <MaterialIcon name="check_circle" size={16} className="flex-shrink-0 text-[var(--status-success-fg)]" />
+                          ) : (
+                            <MaterialIcon name="schedule" size={16} className="flex-shrink-0 text-[var(--neutral-foreground-4)]" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteStudentRecord(rec.student_id, studentName)}
+                          className="flex-shrink-0 rounded-full p-1 mr-1 text-[var(--neutral-foreground-4)] hover:text-[var(--status-danger-fg)] hover:bg-[var(--status-danger-bg)] opacity-0 group-hover/item:opacity-100 transition-all"
+                          title={`${studentName} の記録を削除`}
+                        >
+                          <MaterialIcon name="close" size={14} />
+                        </button>
+                      </div>
                     );
                   })}
 

@@ -205,6 +205,7 @@ Route::prefix('staff')
         Route::delete('/renrakucho/{record}', [App\Http\Controllers\Staff\RenrakuchoController::class, 'destroy']);
         Route::get('/renrakucho/{record}/student-records', [App\Http\Controllers\Staff\RenrakuchoController::class, 'studentRecords']);
         Route::post('/renrakucho/{record}/student-records', [App\Http\Controllers\Staff\RenrakuchoController::class, 'storeStudentRecords']);
+        Route::delete('/renrakucho/{record}/student-records/{student}', [App\Http\Controllers\Staff\RenrakuchoController::class, 'destroyStudentRecord']);
         Route::post('/renrakucho/{record}/send-to-guardians', [App\Http\Controllers\Staff\RenrakuchoController::class, 'sendToGuardians']);
         Route::post('/renrakucho/{record}/generate-integrated', [App\Http\Controllers\Staff\RenrakuchoController::class, 'generateIntegrated']);
         Route::post('/renrakucho/{record}/save-draft', [App\Http\Controllers\Staff\RenrakuchoController::class, 'saveDraft']);
