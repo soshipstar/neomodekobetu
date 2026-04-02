@@ -381,7 +381,6 @@ class ChatController extends Controller
                 'message_id' => $msg->id,
                 'notes'      => $notes ?: null,
                 'created_at' => now(),
-                'updated_at' => now(),
             ]);
 
             $room->update(['last_message_at' => now()]);
