@@ -36,6 +36,17 @@ export default function ClassroomsPage() {
     resolver: zodResolver(classroomSchema),
   });
 
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ id, is_active }: { id: number; is_active: boolean }) => {
+      await api.put(`/api/admin/classrooms/${id}`, { is_active });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'classrooms'] });
+      toast.success('ステータスを変更しました');
+    },
+    onError: () => toast.error('変更に失敗しました'),
+  });
+
   const createMutation = useMutation({
     mutationFn: async (data: ClassroomFormData) => {
       await api.post('/api/admin/classrooms', data);
@@ -67,9 +78,17 @@ export default function ClassroomsPage() {
       key: 'is_active',
       label: 'ステータス',
       render: (c) => (
-        <Badge variant={c.is_active ? 'success' : 'default'}>
-          {c.is_active ? '有効' : '無効'}
-        </Badge>
+        <button
+          onClick={() => {
+            if (confirm(`${c.classroom_name}を${c.is_active ? '無効' : '有効'}にしますか？`))
+              toggleActiveMutation.mutate({ id: c.id, is_active: !c.is_active });
+          }}
+          className="cursor-pointer"
+        >
+          <Badge variant={c.is_active ? 'success' : 'default'}>
+            {c.is_active ? '有効' : '無効'}
+          </Badge>
+        </button>
       ),
     },
   ];
