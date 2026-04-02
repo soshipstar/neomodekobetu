@@ -14,10 +14,16 @@ class HolidayController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $user = $request->user();
+
         $query = Holiday::query();
 
-        if ($request->filled('classroom_id')) {
-            $query->where('classroom_id', $request->classroom_id);
+        if ($user->is_master) {
+            if ($request->filled('classroom_id')) {
+                $query->where('classroom_id', $request->classroom_id);
+            }
+        } else {
+            $query->where('classroom_id', $user->classroom_id);
         }
 
         if ($request->filled('year')) {
@@ -55,8 +61,13 @@ class HolidayController extends Controller
     /**
      * 休日を削除
      */
-    public function destroy(Holiday $holiday): JsonResponse
+    public function destroy(Request $request, Holiday $holiday): JsonResponse
     {
+        $user = $request->user();
+        if (!$user->is_master && $holiday->classroom_id !== $user->classroom_id) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
         $holiday->delete();
 
         return response()->json([

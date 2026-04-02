@@ -14,10 +14,16 @@ class EventController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $user = $request->user();
+
         $query = Event::with('classroom:id,classroom_name');
 
-        if ($request->filled('classroom_id')) {
-            $query->where('classroom_id', $request->classroom_id);
+        if ($user->is_master) {
+            if ($request->filled('classroom_id')) {
+                $query->where('classroom_id', $request->classroom_id);
+            }
+        } else {
+            $query->where('classroom_id', $user->classroom_id);
         }
 
         // month パラメータは 'YYYY-MM' 形式を受け付ける

@@ -117,7 +117,7 @@ const adminNav: NavItem[] = [
   { type: 'link', label: '管理者アカウント', href: '/admin/admin-accounts', icon: 'shield_person', visibility: 'master_only' },
   { type: 'link', label: 'スタッフアカウント', href: '/admin/staff-accounts', icon: 'badge', visibility: 'master_only' },
   { type: 'divider', label: 'システム' },
-  { type: 'link', label: 'エラーログ', href: '/admin/error-logs', icon: 'warning' },
+  { type: 'link', label: 'エラーログ', href: '/admin/error-logs', icon: 'warning', visibility: 'master_only' },
 ];
 
 function getNavItems(userType: UserType): NavItem[] {

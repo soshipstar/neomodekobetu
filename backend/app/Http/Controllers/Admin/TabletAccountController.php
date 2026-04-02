@@ -15,11 +15,18 @@ class TabletAccountController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $user = $request->user();
+
         $query = User::where('user_type', 'tablet')
             ->with('classroom:id,classroom_name');
 
-        if ($request->filled('classroom_id')) {
-            $query->where('classroom_id', $request->classroom_id);
+        // マスター管理者は全教室、通常管理者は自分の教室のみ
+        if ($user->is_master) {
+            if ($request->filled('classroom_id')) {
+                $query->where('classroom_id', $request->classroom_id);
+            }
+        } else {
+            $query->where('classroom_id', $user->classroom_id);
         }
 
         $accounts = $query->orderBy('classroom_id')->orderBy('username')->get();
@@ -67,6 +74,11 @@ class TabletAccountController extends Controller
             return response()->json(['success' => false, 'message' => 'タブレットアカウントではありません。'], 422);
         }
 
+        $user = $request->user();
+        if (!$user->is_master && $account->classroom_id !== $user->classroom_id) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
         $validated = $request->validate([
             'classroom_id' => 'sometimes|exists:classrooms,id',
             'full_name'    => 'sometimes|string|max:100',
@@ -91,10 +103,15 @@ class TabletAccountController extends Controller
     /**
      * タブレットアカウントの有効/無効を切り替え
      */
-    public function toggle(User $account): JsonResponse
+    public function toggle(Request $request, User $account): JsonResponse
     {
         if ($account->user_type !== 'tablet') {
             return response()->json(['success' => false, 'message' => 'タブレットアカウントではありません。'], 422);
+        }
+
+        $user = $request->user();
+        if (!$user->is_master && $account->classroom_id !== $user->classroom_id) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
         $account->update(['is_active' => ! $account->is_active]);

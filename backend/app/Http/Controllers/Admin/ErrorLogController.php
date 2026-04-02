@@ -9,11 +9,21 @@ use Illuminate\Http\Request;
 
 class ErrorLogController extends Controller
 {
+    private function requireMaster(Request $request): ?JsonResponse
+    {
+        $user = $request->user();
+        if (!$user || !$user->is_master) {
+            return response()->json(['success' => false, 'message' => 'マスター管理者権限が必要です。'], 403);
+        }
+        return null;
+    }
+
     /**
      * エラーログ一覧を取得（フィルタ・ページネーション付き）
      */
     public function index(Request $request): JsonResponse
     {
+        if ($deny = $this->requireMaster($request)) return $deny;
         $query = ErrorLog::with('user:id,full_name,user_type')
             ->orderByDesc('created_at');
 
@@ -54,8 +64,9 @@ class ErrorLogController extends Controller
     /**
      * エラーログ詳細を取得
      */
-    public function show(ErrorLog $errorLog): JsonResponse
+    public function show(Request $request, ErrorLog $errorLog): JsonResponse
     {
+        if ($deny = $this->requireMaster($request)) return $deny;
         $errorLog->load('user:id,full_name,user_type');
 
         return response()->json([
@@ -69,6 +80,7 @@ class ErrorLogController extends Controller
      */
     public function cleanup(Request $request): JsonResponse
     {
+        if ($deny = $this->requireMaster($request)) return $deny;
         $days = $request->integer('days', 30);
         $cutoff = now()->subDays($days);
 
@@ -83,8 +95,9 @@ class ErrorLogController extends Controller
     /**
      * エラー統計サマリー
      */
-    public function summary(): JsonResponse
+    public function summary(Request $request): JsonResponse
     {
+        if ($deny = $this->requireMaster($request)) return $deny;
         $today = now()->startOfDay();
         $week = now()->subDays(7);
 

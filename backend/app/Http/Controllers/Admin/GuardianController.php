@@ -15,14 +15,21 @@ class GuardianController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $user = $request->user();
+
         $query = User::guardian()
             ->with([
                 'classroom:id,classroom_name',
                 'students:id,student_name,guardian_id',
             ]);
 
-        if ($request->filled('classroom_id')) {
-            $query->where('classroom_id', $request->classroom_id);
+        // マスター管理者は全教室、通常管理者は自分の教室のみ
+        if ($user->is_master) {
+            if ($request->filled('classroom_id')) {
+                $query->where('classroom_id', $request->classroom_id);
+            }
+        } else {
+            $query->where('classroom_id', $user->classroom_id);
         }
 
         if ($request->filled('search')) {
@@ -76,10 +83,15 @@ class GuardianController extends Controller
     /**
      * 保護者詳細を取得
      */
-    public function show(User $guardian): JsonResponse
+    public function show(Request $request, User $guardian): JsonResponse
     {
         if ($guardian->user_type !== 'guardian') {
             return response()->json(['success' => false, 'message' => '保護者ではありません。'], 422);
+        }
+
+        $user = $request->user();
+        if (!$user->is_master && $guardian->classroom_id !== $user->classroom_id) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
         $guardian->load([
@@ -100,6 +112,11 @@ class GuardianController extends Controller
     {
         if ($guardian->user_type !== 'guardian') {
             return response()->json(['success' => false, 'message' => '保護者ではありません。'], 422);
+        }
+
+        $user = $request->user();
+        if (!$user->is_master && $guardian->classroom_id !== $user->classroom_id) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
         $validated = $request->validate([
@@ -128,10 +145,15 @@ class GuardianController extends Controller
     /**
      * 保護者を削除（論理削除: is_active=false）
      */
-    public function destroy(User $guardian): JsonResponse
+    public function destroy(Request $request, User $guardian): JsonResponse
     {
         if ($guardian->user_type !== 'guardian') {
             return response()->json(['success' => false, 'message' => '保護者ではありません。'], 422);
+        }
+
+        $user = $request->user();
+        if (!$user->is_master && $guardian->classroom_id !== $user->classroom_id) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
         $guardian->update(['is_active' => false]);
