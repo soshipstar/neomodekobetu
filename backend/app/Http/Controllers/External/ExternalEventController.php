@@ -25,6 +25,8 @@ class ExternalEventController extends Controller
             ->select([
                 'id',
                 'event_date',
+                'start_time',
+                'end_time',
                 'event_name',
                 'event_description',
                 'target_audience',

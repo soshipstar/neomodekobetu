@@ -20,6 +20,8 @@ interface AdminEvent {
   event_name: string;
   event_description: string | null;
   event_date: string;
+  start_time: string | null;
+  end_time: string | null;
   event_color: string;
   target_audience: string;
   staff_comment: string | null;
@@ -46,6 +48,7 @@ export default function AdminEventsPage() {
   const [editingEvent, setEditingEvent] = useState<AdminEvent | null>(null);
   const [form, setForm] = useState({
     event_name: '', event_description: '', event_date: '',
+    start_time: '', end_time: '',
     target_audience: 'all', event_color: '#28a745',
     staff_comment: '', guardian_message: '', classroom_id: '',
   });
@@ -89,6 +92,7 @@ export default function AdminEventsPage() {
 
   const emptyForm = {
     event_name: '', event_description: '', event_date: '',
+    start_time: '', end_time: '',
     target_audience: 'all', event_color: '#28a745',
     staff_comment: '', guardian_message: '', classroom_id: '',
   };
@@ -101,6 +105,8 @@ export default function AdminEventsPage() {
       event_name: event.event_name,
       event_description: event.event_description || '',
       event_date: typeof event.event_date === 'string' ? event.event_date.slice(0, 10) : '',
+      start_time: event.start_time || '',
+      end_time: event.end_time || '',
       target_audience: event.target_audience || 'all',
       event_color: event.event_color || '#28a745',
       staff_comment: event.staff_comment || '',
@@ -128,6 +134,7 @@ export default function AdminEventsPage() {
   const columns: Column<AdminEvent>[] = [
     { key: 'event_name', label: 'イベント名', render: (e) => <span className="font-medium">{e.event_name}</span> },
     { key: 'event_date', label: '日付', render: (e) => format(new Date(e.event_date), 'yyyy/MM/dd(E)', { locale: ja }) },
+    { key: 'time', label: '時間', render: (e) => e.start_time ? `${e.start_time}${e.end_time ? ` - ${e.end_time}` : ''}` : '-' },
     { key: 'target_audience', label: '対象者', render: (e) => <Badge variant="default">{TARGET_LABELS[e.target_audience] || e.target_audience}</Badge> },
     { key: 'event_color', label: '色', render: (e) => <div className="h-5 w-5 rounded" style={{ backgroundColor: e.event_color }} /> },
     { key: 'classroom', label: '事業所', render: (e) => e.classroom?.classroom_name || '全体' },
@@ -193,6 +200,10 @@ export default function AdminEventsPage() {
             <textarea value={form.event_description} onChange={(e) => setForm({ ...form, event_description: e.target.value })} className="block w-full rounded-lg border border-[var(--neutral-stroke-1)] px-3 py-2 text-sm" rows={3} />
           </div>
           <Input label="日付 *" type="date" value={form.event_date} onChange={(e) => setForm({ ...form, event_date: e.target.value })} required />
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="開始時間" type="time" value={form.start_time} onChange={(e) => setForm({ ...form, start_time: e.target.value })} />
+            <Input label="終了時間" type="time" value={form.end_time} onChange={(e) => setForm({ ...form, end_time: e.target.value })} />
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">対象者</label>

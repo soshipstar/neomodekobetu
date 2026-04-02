@@ -50,6 +50,8 @@ class EventController extends Controller
         $validated = $request->validate([
             'classroom_id'      => 'required|exists:classrooms,id',
             'event_date'        => 'required|date',
+            'start_time'        => 'nullable|date_format:H:i',
+            'end_time'          => 'nullable|date_format:H:i',
             'event_name'        => 'required|string|max:255',
             'event_description' => 'nullable|string|max:2000',
             'target_audience'   => 'nullable|string|max:100',
@@ -89,6 +91,8 @@ class EventController extends Controller
         $validated = $request->validate([
             'classroom_id'      => 'sometimes|exists:classrooms,id',
             'event_date'        => 'sometimes|date',
+            'start_time'        => 'nullable|date_format:H:i',
+            'end_time'          => 'nullable|date_format:H:i',
             'event_name'        => 'sometimes|string|max:255',
             'event_description' => 'nullable|string|max:2000',
             'target_audience'   => 'nullable|string|max:100',

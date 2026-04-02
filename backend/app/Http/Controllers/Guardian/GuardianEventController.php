@@ -34,6 +34,8 @@ class GuardianEventController extends Controller
             'id'          => $e->id,
             'event_name'  => $e->event_name,
             'event_date'  => $e->event_date?->format('Y-m-d'),
+            'start_time'  => $e->start_time ? substr($e->start_time, 0, 5) : null,
+            'end_time'    => $e->end_time ? substr($e->end_time, 0, 5) : null,
             'description' => $e->event_description,
         ]);
 

@@ -46,8 +46,8 @@ class StaffEventController extends Controller
             'title'              => $e->event_name,
             'description'        => $e->event_description,
             'date'               => $e->event_date?->format('Y-m-d'),
-            'start_time'         => null,
-            'end_time'           => null,
+            'start_time'         => $e->start_time ? substr($e->start_time, 0, 5) : null,
+            'end_time'           => $e->end_time ? substr($e->end_time, 0, 5) : null,
             'location'           => null,
             'capacity'           => $e->max_capacity,
             'registration_count' => $e->registrations_count ?? 0,
@@ -76,6 +76,8 @@ class StaffEventController extends Controller
             'event_description' => 'nullable|string|max:2000',
             'date'              => 'required_without:event_date|nullable|date',
             'event_date'        => 'required_without:date|nullable|date',
+            'start_time'        => 'nullable|date_format:H:i',
+            'end_time'          => 'nullable|date_format:H:i',
             'target_audience'   => 'nullable|string|max:100',
             'event_color'       => 'nullable|string|max:20',
             'staff_comment'     => 'nullable|string|max:1000',
@@ -89,6 +91,8 @@ class StaffEventController extends Controller
             'event_name'        => $validated['title'] ?? $validated['event_name'] ?? '',
             'event_description' => $validated['description'] ?? $validated['event_description'] ?? null,
             'event_date'        => $validated['date'] ?? $validated['event_date'],
+            'start_time'        => $validated['start_time'] ?? null,
+            'end_time'          => $validated['end_time'] ?? null,
             'target_audience'   => $validated['target_audience'] ?? null,
             'event_color'       => $validated['event_color'] ?? null,
             'staff_comment'     => $validated['staff_comment'] ?? null,
@@ -121,6 +125,8 @@ class StaffEventController extends Controller
             'event_description' => 'nullable|string|max:2000',
             'date'              => 'nullable|date',
             'event_date'        => 'nullable|date',
+            'start_time'        => 'nullable|date_format:H:i',
+            'end_time'          => 'nullable|date_format:H:i',
             'target_audience'   => 'nullable|string|max:100',
             'event_color'       => 'nullable|string|max:20',
             'staff_comment'     => 'nullable|string|max:1000',
@@ -138,7 +144,7 @@ class StaffEventController extends Controller
         if (isset($validated['date']) || isset($validated['event_date'])) {
             $updateData['event_date'] = $validated['date'] ?? $validated['event_date'];
         }
-        foreach (['target_audience', 'event_color', 'staff_comment', 'guardian_message', 'max_capacity'] as $f) {
+        foreach (['start_time', 'end_time', 'target_audience', 'event_color', 'staff_comment', 'guardian_message', 'max_capacity'] as $f) {
             if (array_key_exists($f, $validated)) $updateData[$f] = $validated[$f];
         }
 

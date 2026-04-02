@@ -14,6 +14,8 @@ class Event extends Model
     protected $fillable = [
         'classroom_id',
         'event_date',
+        'start_time',
+        'end_time',
         'event_name',
         'event_description',
         'target_audience',
