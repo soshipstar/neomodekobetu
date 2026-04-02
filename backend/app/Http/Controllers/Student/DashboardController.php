@@ -41,7 +41,7 @@ class DashboardController extends Controller
 
         // 未提出の課題数
         $pendingSubmissions = SubmissionRequest::where('student_id', $student->id)
-            ->where('status', 'pending')
+            ->where('is_completed', false)
             ->where('due_date', '>=', now())
             ->count();
 
