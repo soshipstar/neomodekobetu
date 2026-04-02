@@ -44,6 +44,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'user_type' => \App\Http\Middleware\CheckUserType::class,
             'classroom_access' => \App\Http\Middleware\CheckClassroomAccess::class,
+            'external_api_key' => \App\Http\Middleware\VerifyExternalApiKey::class,
         ]);
 
         // API レート制限

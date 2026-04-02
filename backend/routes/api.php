@@ -585,6 +585,15 @@ Route::prefix('analytics')
     });
 
 // ==========================================================================
+// 外部公開 API (APIキー認証)
+// ==========================================================================
+Route::prefix('external')
+    ->middleware(['external_api_key'])
+    ->group(function () {
+        Route::get('/events', [App\Http\Controllers\External\ExternalEventController::class, 'index']);
+    });
+
+// ==========================================================================
 // 共通 API (auth:sanctum)
 // ==========================================================================
 Route::middleware('auth:sanctum')->group(function () {
