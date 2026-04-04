@@ -59,7 +59,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   setActiveRoom: (room: ChatRoom | null) => {
-    set({ activeRoom: room, messages: [] });
+    const current = get().activeRoom;
+    if (current?.id === room?.id) {
+      // Same room — update room data without clearing messages
+      set({ activeRoom: room });
+    } else {
+      // Different room — clear messages for fresh load
+      set({ activeRoom: room, messages: [] });
+    }
   },
 
   hasMoreMessages: false,
@@ -164,11 +171,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   addMessage: (message: ChatMessage) => {
-    const { activeRoom } = get();
+    const { activeRoom, messages } = get();
     if (activeRoom && message.room_id === activeRoom.id) {
-      set((state) => ({
-        messages: [...state.messages, message],
-      }));
+      // Avoid duplicate: sendMessage already added this message from API response
+      const isDuplicate = messages.some((m) => m.id === message.id);
+      if (!isDuplicate) {
+        set((state) => ({
+          messages: [...state.messages, message],
+        }));
+      }
     }
     // Update room list with last message
     set((state) => ({
