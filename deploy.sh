@@ -1,84 +1,107 @@
 #!/bin/bash
+# ==============================================================================
+# KIDURI 2026 デプロイスクリプト
+# ローカルでDockerイメージをビルド → サーバーに転送 → コンテナ更新
+#
+# 使い方:
+#   ./deploy.sh frontend    # フロントエンドのみビルド＆デプロイ
+#   ./deploy.sh backend     # バックエンドのみビルド＆デプロイ
+#   ./deploy.sh all         # 両方ビルド＆デプロイ
+#   ./deploy.sh restart     # ビルドなし再起動（設定変更のみ、コード変更には使えない）
+# ==============================================================================
+
 set -e
 
-echo "=== KIDURI 2026 Production Deploy ==="
+SERVER="kiduri"
+REMOTE_DIR="/root/kiduri2026"
+PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-APP_DIR="/root/kiduri2026"
+log()  { echo -e "\033[1;34m[deploy]\033[0m $1"; }
+ok()   { echo -e "\033[1;32m[done]\033[0m $1"; }
 
-# 1. Install Docker if not present
-if ! command -v docker &> /dev/null; then
-    echo ">>> Installing Docker..."
-    curl -fsSL https://get.docker.com | sh
-    systemctl enable docker
-    systemctl start docker
-    echo ">>> Docker installed."
-fi
-
-# 2. Clone or pull repo
-if [ -d "$APP_DIR" ]; then
-    echo ">>> Pulling latest code..."
-    cd "$APP_DIR"
-    git pull origin master
-else
-    echo ">>> Cloning repository..."
-    git clone https://github.com/soshipstar/neomodekobetu.git "$APP_DIR"
-    cd "$APP_DIR"
-fi
-
-# 3. Create production .env if not exists
-if [ ! -f "$APP_DIR/backend/.env.production" ]; then
-    echo ">>> Creating production .env..."
-    cp "$APP_DIR/backend/.env" "$APP_DIR/backend/.env.production"
-    echo "!!! IMPORTANT: Edit backend/.env.production with production values !!!"
-fi
-
-# 4. SSL Certificate (initial setup - HTTP only first)
-echo ">>> Starting initial deployment (HTTP only for SSL cert)..."
-
-# Temporarily use HTTP-only nginx config for certbot
-cat > /tmp/nginx-initial.conf << 'NGINX'
-server {
-    listen 80;
-    server_name kiduri.xyz;
-
-    location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
-    }
-
-    location / {
-        return 200 'Kiduri deploy in progress...';
-        add_header Content-Type text/plain;
-    }
+# git push & pull
+push_code() {
+    log "Pushing code..."
+    cd "$PROJECT_DIR"
+    git push origin master
+    ssh $SERVER "cd $REMOTE_DIR && git pull origin master"
+    ok "Code synced"
 }
-NGINX
 
-# 5. Build and start
-echo ">>> Building containers..."
-docker compose -f docker-compose.prod.yml build
+# フロントエンドのビルド＆デプロイ
+deploy_frontend() {
+    log "Building frontend locally..."
+    cd "$PROJECT_DIR"
+    docker build --platform linux/amd64 -t kiduri2026-frontend:latest -f frontend/Dockerfile.prod frontend/
+    ok "Frontend built"
 
-echo ">>> Starting services..."
-docker compose -f docker-compose.prod.yml up -d
+    log "Transferring image to server..."
+    docker save kiduri2026-frontend:latest | gzip | ssh $SERVER "gunzip | docker load"
+    ok "Image transferred"
 
-# 6. Wait for services
-echo ">>> Waiting for services to start..."
-sleep 10
+    log "Restarting frontend..."
+    ssh $SERVER "cd $REMOTE_DIR && docker compose -f docker-compose.prod.yml up -d --no-deps frontend"
+    ok "Frontend deployed"
+}
 
-# 7. Run migrations
-echo ">>> Running database migrations..."
-docker compose -f docker-compose.prod.yml exec backend php artisan migrate --force
+# バックエンドのビルド＆デプロイ
+deploy_backend() {
+    log "Building backend locally..."
+    cd "$PROJECT_DIR"
+    docker build --platform linux/amd64 -t kiduri2026-backend:latest -f docker/php/Dockerfile.prod .
+    ok "Backend built"
 
-# 8. Laravel optimizations
-echo ">>> Optimizing Laravel..."
-docker compose -f docker-compose.prod.yml exec backend php artisan config:cache
-docker compose -f docker-compose.prod.yml exec backend php artisan route:cache
-docker compose -f docker-compose.prod.yml exec backend php artisan view:cache
-docker compose -f docker-compose.prod.yml exec backend php artisan storage:link
+    log "Transferring image to server..."
+    docker save kiduri2026-backend:latest | gzip | ssh $SERVER "gunzip | docker load"
+    ok "Image transferred"
+
+    log "Restarting backend containers..."
+    ssh $SERVER "cd $REMOTE_DIR && docker compose -f docker-compose.prod.yml up -d --no-deps backend queue reverb"
+    ok "Backend deployed"
+}
+
+# 再起動のみ（.env変更やコンテナ設定変更のみ。コード変更にはbackendを使うこと）
+deploy_restart() {
+    push_code
+    log "Restarting containers (no rebuild)..."
+    ssh $SERVER "cd $REMOTE_DIR && docker compose -f docker-compose.prod.yml restart backend queue reverb"
+    ok "Restarted"
+}
+
+# マイグレーション実行
+run_migrate() {
+    log "Running migrations..."
+    ssh $SERVER "cd $REMOTE_DIR && docker compose -f docker-compose.prod.yml exec backend php artisan migrate --force"
+    ok "Migrations done"
+}
+
+# メイン
+TARGET="${1:-all}"
+
+case "$TARGET" in
+    frontend)
+        push_code
+        deploy_frontend
+        ;;
+    backend)
+        push_code
+        deploy_backend
+        run_migrate
+        ;;
+    all)
+        push_code
+        deploy_frontend
+        deploy_backend
+        run_migrate
+        ;;
+    restart)
+        deploy_restart
+        ;;
+    *)
+        echo "Usage: $0 {frontend|backend|all|restart}"
+        exit 1
+        ;;
+esac
 
 echo ""
-echo "=== Deploy complete! ==="
-echo "Next steps:"
-echo "1. Point DNS A record for kiduri.xyz to this server's IP"
-echo "2. Run: docker compose -f docker-compose.prod.yml run --rm certbot certonly --webroot -w /var/www/certbot -d kiduri.xyz"
-echo "3. Restart nginx: docker compose -f docker-compose.prod.yml restart nginx"
-echo "4. Set up SSL auto-renewal: crontab -e"
-echo "   0 0 1 * * docker compose -f /root/kiduri2026/docker-compose.prod.yml run --rm certbot renew && docker compose -f /root/kiduri2026/docker-compose.prod.yml restart nginx"
+ok "Deploy complete!"
