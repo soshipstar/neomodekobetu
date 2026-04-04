@@ -104,32 +104,38 @@ class ChatController extends Controller
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
-        $query = $room->messages()
-            ->notDeleted()
-            ->with('staffReads')
-            ->orderBy('created_at', 'asc')
-            ->orderBy('id', 'asc');
+        $limit = min($request->integer('limit', 100), 200);
 
-        // last_id より後のメッセージを取得（ポーリング用）
         if ($request->filled('last_id')) {
-            $query->where('id', '>', $request->last_id);
-        }
-
-        // before_id より前のメッセージを取得（過去メッセージ読み込み用）
-        if ($request->filled('before_id')) {
-            $query = $room->messages()
+            // last_id より後のメッセージを取得（ポーリング/WebSocket用）
+            $messages = $room->messages()
+                ->notDeleted()
+                ->with('staffReads')
+                ->where('id', '>', $request->last_id)
+                ->orderBy('id', 'asc')
+                ->limit($limit)
+                ->get();
+        } elseif ($request->filled('before_id')) {
+            // before_id より前のメッセージを取得（過去メッセージ読み込み用）
+            $messages = $room->messages()
                 ->notDeleted()
                 ->with('staffReads')
                 ->where('id', '<', $request->before_id)
-                ->orderBy('id', 'desc');
-        }
-
-        $limit = $request->integer('limit', 100);
-        $messages = $query->limit(min($limit, 200))->get();
-
-        // before_id の場合は逆順で取得したのでASCに戻す
-        if ($request->filled('before_id')) {
-            $messages = $messages->reverse()->values();
+                ->orderBy('id', 'desc')
+                ->limit($limit)
+                ->get()
+                ->reverse()
+                ->values();
+        } else {
+            // 初期表示: 最新N件を取得（DESC→reverse で古い順に並べる）
+            $messages = $room->messages()
+                ->notDeleted()
+                ->with('staffReads')
+                ->orderBy('id', 'desc')
+                ->limit($limit)
+                ->get()
+                ->reverse()
+                ->values();
         }
 
         // 送信者情報をオブジェクトとして付加 + 既読フラグ
