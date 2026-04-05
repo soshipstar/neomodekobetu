@@ -309,7 +309,6 @@ class ChatController extends Controller
                 'makeup_request_date' => $saveMakeupDate,
                 'makeup_status'       => $makeupStatus,
                 'created_at'          => now(),
-                'updated_at'          => now(),
             ]);
 
             $room->update(['last_message_at' => now()]);
