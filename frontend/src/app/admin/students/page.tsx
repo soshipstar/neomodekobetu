@@ -57,13 +57,13 @@ export default function AdminStudentsPage() {
   const executeMutation = useMutation({
     mutationFn: () => api.post('/api/admin/students/grade-promotion/execute'),
     onSuccess: (res) => {
-      toast({ title: res.data?.message || '学年を更新しました', variant: 'success' });
+      toast(res.data?.message || '学年を更新しました', 'success');
       setShowPromotion(false);
       setPreview(null);
       queryClient.invalidateQueries({ queryKey: ['admin', 'students'] });
     },
     onError: () => {
-      toast({ title: '学年更新に失敗しました', variant: 'danger' });
+      toast('学年更新に失敗しました', 'error');
     },
   });
 
@@ -74,7 +74,7 @@ export default function AdminStudentsPage() {
       const res = await api.get('/api/admin/students/grade-promotion/preview');
       setPreview(res.data?.data || []);
     } catch {
-      toast({ title: 'プレビューの取得に失敗しました', variant: 'danger' });
+      toast('プレビューの取得に失敗しました', 'error');
       setShowPromotion(false);
     } finally {
       setPreviewLoading(false);
