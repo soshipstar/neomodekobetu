@@ -43,6 +43,8 @@ Route::prefix('admin')
         Route::post('/users/bulk-register', [App\Http\Controllers\Admin\UserController::class, 'bulkRegister']);
 
         // 生徒管理
+        Route::get('/students/grade-promotion/preview', [App\Http\Controllers\Admin\StudentController::class, 'gradePromotionPreview']);
+        Route::post('/students/grade-promotion/execute', [App\Http\Controllers\Admin\StudentController::class, 'gradePromotionExecute']);
         Route::apiResource('students', App\Http\Controllers\Admin\StudentController::class);
 
         // システム設定
@@ -591,6 +593,7 @@ Route::prefix('external')
     ->middleware(['external_api_key'])
     ->group(function () {
         Route::get('/events', [App\Http\Controllers\External\ExternalEventController::class, 'index']);
+        Route::get('/support-plans', [App\Http\Controllers\External\ExternalSupportPlanController::class, 'index']);
     });
 
 // ==========================================================================

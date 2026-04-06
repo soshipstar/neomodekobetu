@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Student;
+use App\Services\StudentHelperService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -127,6 +128,87 @@ class StudentController extends Controller
             'success' => true,
             'data'    => $student->fresh(['classroom', 'guardian']),
             'message' => '生徒情報を更新しました。',
+        ]);
+    }
+
+    /**
+     * 学年更新プレビュー: 全active生徒のgrade_levelを再計算し、変更がある生徒を返す
+     */
+    public function gradePromotionPreview(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $isMaster = $user->user_type === 'admin' && $user->is_master;
+        $helper = app(StudentHelperService::class);
+
+        $query = Student::whereIn('status', ['active', 'trial', 'short_term'])
+            ->whereNotNull('birth_date');
+
+        if (!$isMaster && $user->classroom_id) {
+            $query->where('classroom_id', $user->classroom_id);
+        }
+
+        $students = $query->orderBy('student_name')->get();
+
+        $changes = [];
+        foreach ($students as $student) {
+            $newGrade = $helper->calculateGradeLevel(
+                $student->birth_date->toDateString(),
+                null,
+                $student->grade_adjustment ?? 0
+            );
+            if ($newGrade !== $student->grade_level) {
+                $changes[] = [
+                    'id' => $student->id,
+                    'student_name' => $student->student_name,
+                    'old_grade' => $student->grade_level,
+                    'new_grade' => $newGrade,
+                ];
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $changes,
+            'total_students' => $students->count(),
+            'change_count' => count($changes),
+        ]);
+    }
+
+    /**
+     * 学年更新実行: 全active生徒のgrade_levelを再計算して更新
+     */
+    public function gradePromotionExecute(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $isMaster = $user->user_type === 'admin' && $user->is_master;
+        $helper = app(StudentHelperService::class);
+
+        $query = Student::whereIn('status', ['active', 'trial', 'short_term'])
+            ->whereNotNull('birth_date');
+
+        if (!$isMaster && $user->classroom_id) {
+            $query->where('classroom_id', $user->classroom_id);
+        }
+
+        $students = $query->get();
+        $updatedCount = 0;
+
+        foreach ($students as $student) {
+            $newGrade = $helper->calculateGradeLevel(
+                $student->birth_date->toDateString(),
+                null,
+                $student->grade_adjustment ?? 0
+            );
+            if ($newGrade !== $student->grade_level) {
+                $student->update(['grade_level' => $newGrade]);
+                $updatedCount++;
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'updated_count' => $updatedCount,
+            'message' => "{$updatedCount}名の学年を更新しました。",
         ]);
     }
 
