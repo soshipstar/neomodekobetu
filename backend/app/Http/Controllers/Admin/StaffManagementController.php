@@ -19,7 +19,9 @@ class StaffManagementController extends Controller
         $user = $request->user();
         $isMaster = $user->user_type === 'admin' && $user->is_master;
 
-        $query = User::whereIn('user_type', ['staff', 'admin'])->with('classroom');
+        $query = User::whereIn('user_type', ['staff', 'admin'])
+            ->where('is_master', false)
+            ->with('classroom');
 
         // 通常管理者は自教室のみ
         if (!$isMaster && $user->classroom_id) {
@@ -58,6 +60,10 @@ class StaffManagementController extends Controller
      */
     public function update(Request $request, User $user): JsonResponse
     {
+        if ($user->is_master) {
+            return response()->json(['success' => false, 'message' => 'マスター管理者は編集できません。'], 403);
+        }
+
         $validated = $request->validate([
             'classroom_id' => 'nullable|exists:classrooms,id',
             'full_name'    => 'sometimes|required|string|max:255',
@@ -79,6 +85,10 @@ class StaffManagementController extends Controller
      */
     public function destroy(User $user): JsonResponse
     {
+        if ($user->is_master) {
+            return response()->json(['success' => false, 'message' => 'マスター管理者は削除できません。'], 403);
+        }
+
         $user->update(['is_active' => false]);
 
         return response()->json([
