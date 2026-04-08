@@ -143,8 +143,57 @@ class PendingTaskController extends Controller
                 continue;
             }
 
+            // 提出済み計画も非表示の下書きしかない場合は「計画なし」と同等に扱う
+            $visiblePlans = $plans->where('is_hidden', false);
+            if ($visiblePlans->isEmpty()) {
+                if ($this->isNextPlanDeadlineWithinOneMonth($student->id, $supportStartDate, null, $oneMonthLater)) {
+                    $nextPeriod = $this->getNextTargetPeriod($supportStartDate, 0);
+                    $deadlineDate = $nextPeriod['start'] ?? now()->format('Y-m-d');
+
+                    $autoPlan = IndividualSupportPlan::create([
+                        'student_id'    => $student->id,
+                        'classroom_id'  => $student->classroom_id,
+                        'student_name'  => $student->student_name,
+                        'created_date'  => $deadlineDate,
+                        'status'        => 'draft',
+                        'is_draft'      => true,
+                        'is_official'   => false,
+                        'is_hidden'     => false,
+                    ]);
+
+                    $defaultDetails = [
+                        ['domain' => '健康・生活', 'category' => '本人支援', 'sub_category' => '生活習慣（健康・生活）'],
+                        ['domain' => '言語・コミュニケーション', 'category' => '本人支援', 'sub_category' => 'コミュニケーション（言語・コミュニケーション）'],
+                        ['domain' => '人間関係・社会性', 'category' => '本人支援', 'sub_category' => '対人関係（人間関係・社会性）'],
+                        ['domain' => '運動・感覚', 'category' => '本人支援', 'sub_category' => '運動機能（運動・感覚）'],
+                        ['domain' => '認知・行動', 'category' => '本人支援', 'sub_category' => '学習面（認知・行動）'],
+                        ['domain' => '家族支援', 'category' => '家族支援', 'sub_category' => '保護者支援'],
+                        ['domain' => '地域支援', 'category' => '地域支援', 'sub_category' => '地域連携'],
+                    ];
+                    foreach ($defaultDetails as $i => $detail) {
+                        $autoPlan->details()->create(array_merge($detail, ['sort_order' => $i]));
+                    }
+
+                    $result[] = [
+                        'student_id'          => $student->id,
+                        'student_name'        => $student->student_name,
+                        'support_start_date'  => $supportStartDate?->format('Y-m-d'),
+                        'plan_id'             => $autoPlan->id,
+                        'latest_plan_date'    => $deadlineDate,
+                        'days_since_plan'     => null,
+                        'status_code'         => 'draft',
+                        'has_newer'           => false,
+                        'is_hidden'           => false,
+                        'target_period_start' => $nextPeriod['start'],
+                        'target_period_end'   => $nextPeriod['end'],
+                        'plan_number'         => $nextPeriod['number'],
+                    ];
+                }
+                continue;
+            }
+
             // 下書きがあるかチェック（非表示を除外）
-            $draftPlan = $plans->where('is_draft', true)->where('is_hidden', false)->first();
+            $draftPlan = $visiblePlans->where('is_draft', true)->first();
 
             if ($draftPlan) {
                 if ($this->isNextPlanDeadlineWithinOneMonth($student->id, $supportStartDate, $latestSubmittedPlanDate?->format('Y-m-d'), $oneMonthLater)) {

@@ -385,6 +385,7 @@ export default function KobetsuMonitoringPage() {
   };
 
   const selectedStudent = students.find((s) => s.id === selectedStudentId);
+  const isReadOnly = !!monitoringData && monitoringData.is_official && !monitoringData.is_draft;
 
   return (
     <div className="space-y-6">
@@ -430,11 +431,15 @@ export default function KobetsuMonitoringPage() {
                   onChange={(e) => handlePlanChange(e.target.value ? Number(e.target.value) : null)}
                 >
                   <option value="">-- 計画書を選択してください --</option>
-                  {studentPlans.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {format(new Date(p.created_date), 'yyyy年MM月dd日')} 作成
-                    </option>
-                  ))}
+                  {studentPlans.map((p) => {
+                    const plan = p as PlanOption & { is_official?: boolean; is_draft?: boolean; status?: string };
+                    const label = plan.is_official ? '(提出済)' : plan.status === 'draft' || plan.is_draft ? '(下書き)' : '';
+                    return (
+                      <option key={p.id} value={p.id}>
+                        {format(new Date(p.created_date), 'yyyy年MM月dd日')} 作成 {label}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
             )}
@@ -515,6 +520,14 @@ export default function KobetsuMonitoringPage() {
             </CardBody>
           </Card>
 
+          {/* Read-only banner */}
+          {isReadOnly && (
+            <div className="flex items-center gap-2 rounded-lg border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-800 dark:border-green-700 dark:bg-green-900/20 dark:text-green-300">
+              <MaterialIcon name="check_circle" size={20} />
+              <span>このモニタリング表は提出済みのため、閲覧のみ可能です。</span>
+            </div>
+          )}
+
           {/* Monitoring Date */}
           <Card>
             <CardBody>
@@ -525,6 +538,7 @@ export default function KobetsuMonitoringPage() {
                   value={monitoringDate}
                   onChange={(e) => setMonitoringDate(e.target.value)}
                   required
+                  disabled={isReadOnly}
                 />
               </div>
             </CardBody>
@@ -534,16 +548,18 @@ export default function KobetsuMonitoringPage() {
           <div>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b-2 border-blue-500 pb-2">
               <h2 className="text-lg font-semibold text-[var(--brand-80)]">支援目標の達成状況</h2>
-              <Button
-                variant="primary"
-                size="sm"
-                leftIcon={<MaterialIcon name="auto_awesome" size={16} />}
-                onClick={handleAIGenerateAll}
-                isLoading={generating}
-                className="bg-purple-600 hover:bg-purple-700"
-              >
-                AIで評価を自動生成
-              </Button>
+              {!isReadOnly && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<MaterialIcon name="auto_awesome" size={16} />}
+                  onClick={handleAIGenerateAll}
+                  isLoading={generating}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  AIで評価を自動生成
+                </Button>
+              )}
             </div>
 
             {/* Progress bar */}
@@ -600,6 +616,7 @@ export default function KobetsuMonitoringPage() {
                         <select
                           className="w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-1.5 py-1.5 text-xs text-[var(--neutral-foreground-1)]"
                           value={detailsMap[detail.id]?.achievement_level ?? ''}
+                          disabled={isReadOnly}
                           onChange={(e) =>
                             setDetailsMap((prev) => ({
                               ...prev,
@@ -616,6 +633,7 @@ export default function KobetsuMonitoringPage() {
                         <textarea
                           className="w-full resize-y rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-1.5 py-1 text-xs text-[var(--neutral-foreground-1)]"
                           rows={3}
+                          readOnly={isReadOnly}
                           value={detailsMap[detail.id]?.comment ?? ''}
                           onChange={(e) =>
                             setDetailsMap((prev) => ({
@@ -624,14 +642,16 @@ export default function KobetsuMonitoringPage() {
                             }))
                           }
                         />
-                        <button
-                          type="button"
-                          onClick={() => handleAIGenerateSingle(detail.id)}
-                          disabled={generatingDetailId === detail.id}
-                          className="mt-1 w-full rounded border border-blue-500 bg-[var(--neutral-background-1)] px-2 py-1 text-[10px] text-[var(--brand-80)] hover:bg-[var(--brand-80)] hover:text-white disabled:cursor-not-allowed disabled:border-gray-400 disabled:bg-gray-400 disabled:text-white"
-                        >
-                          {generatingDetailId === detail.id ? 'AI生成中...' : 'AI生成'}
-                        </button>
+                        {!isReadOnly && (
+                          <button
+                            type="button"
+                            onClick={() => handleAIGenerateSingle(detail.id)}
+                            disabled={generatingDetailId === detail.id}
+                            className="mt-1 w-full rounded border border-blue-500 bg-[var(--neutral-background-1)] px-2 py-1 text-[10px] text-[var(--brand-80)] hover:bg-[var(--brand-80)] hover:text-white disabled:cursor-not-allowed disabled:border-gray-400 disabled:bg-gray-400 disabled:text-white"
+                          >
+                            {generatingDetailId === detail.id ? 'AI生成中...' : 'AI生成'}
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -665,6 +685,7 @@ export default function KobetsuMonitoringPage() {
                 <select
                   className="w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
                   value={longTermGoalAchievement}
+                  disabled={isReadOnly}
                   onChange={(e) => setLongTermGoalAchievement(e.target.value)}
                 >
                   {ACHIEVEMENT_OPTIONS.map((opt) => (
@@ -678,6 +699,7 @@ export default function KobetsuMonitoringPage() {
                   className="w-full resize-y rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
                   rows={4}
                   placeholder="長期目標に対する振り返りや意見を記入してください"
+                  readOnly={isReadOnly}
                   value={longTermGoalComment}
                   onChange={(e) => setLongTermGoalComment(e.target.value)}
                 />
@@ -703,6 +725,7 @@ export default function KobetsuMonitoringPage() {
                 <select
                   className="w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
                   value={shortTermGoalAchievement}
+                  disabled={isReadOnly}
                   onChange={(e) => setShortTermGoalAchievement(e.target.value)}
                 >
                   {ACHIEVEMENT_OPTIONS.map((opt) => (
@@ -716,6 +739,7 @@ export default function KobetsuMonitoringPage() {
                   className="w-full resize-y rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
                   rows={4}
                   placeholder="短期目標に対する振り返りや意見を記入してください"
+                  readOnly={isReadOnly}
                   value={shortTermGoalComment}
                   onChange={(e) => setShortTermGoalComment(e.target.value)}
                 />
@@ -729,6 +753,7 @@ export default function KobetsuMonitoringPage() {
             <textarea
               className="w-full resize-y rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
               rows={6}
+              readOnly={isReadOnly}
               value={overallComment}
               onChange={(e) => setOverallComment(e.target.value)}
             />
@@ -815,23 +840,27 @@ export default function KobetsuMonitoringPage() {
 
           {/* Action Buttons */}
           <div className="flex flex-wrap justify-end gap-3">
-            <Button
-              variant="secondary"
-              onClick={() => saveMutation.mutate(true)}
-              isLoading={saveMutation.isPending}
-              leftIcon={<MaterialIcon name="description" size={16} />}
-            >
-              下書き保存（保護者非公開）
-            </Button>
-            <Button
-              variant="primary"
-              onClick={() => saveMutation.mutate(false)}
-              isLoading={saveMutation.isPending}
-              leftIcon={<MaterialIcon name="assignment_turned_in" size={16} className="h-4 w-4" />}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              作成・提出（保護者公開）
-            </Button>
+            {!isReadOnly && (
+              <>
+                <Button
+                  variant="secondary"
+                  onClick={() => saveMutation.mutate(true)}
+                  isLoading={saveMutation.isPending}
+                  leftIcon={<MaterialIcon name="description" size={16} />}
+                >
+                  下書き保存（保護者非公開）
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => saveMutation.mutate(false)}
+                  isLoading={saveMutation.isPending}
+                  leftIcon={<MaterialIcon name="assignment_turned_in" size={16} className="h-4 w-4" />}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  作成・提出（保護者公開）
+                </Button>
+              </>
+            )}
             {selectedMonitoringId && (
               <Button
                 variant="primary"
