@@ -90,6 +90,17 @@ class MonitoringController extends Controller
             ->where('student_id', $student->id)
             ->firstOrFail();
 
+        // 同じ計画に対するモニタリングが既にある場合はエラー
+        $existingMonitoring = MonitoringRecord::where('student_id', $student->id)
+            ->where('plan_id', $validated['plan_id'])
+            ->first();
+        if ($existingMonitoring) {
+            return response()->json([
+                'success' => false,
+                'message' => 'この計画に対するモニタリング表は既に存在します（ID: ' . $existingMonitoring->id . '）。既存のモニタリング表を編集してください。',
+            ], 422);
+        }
+
         // 退所日チェック
         if ($student->withdrawal_date) {
             $withdrawalDate = new \DateTime($student->withdrawal_date);
