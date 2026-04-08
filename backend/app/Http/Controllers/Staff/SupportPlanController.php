@@ -104,6 +104,9 @@ class SupportPlanController extends Controller
             }
         }
 
+        // 達成時期のデフォルト値を自動設定
+        $validated = $this->fillDefaultDates($validated);
+
         $plan = DB::transaction(function () use ($request, $student, $validated) {
             $managerName = $validated['manager_name'] ?? $validated['consent_name'] ?? null;
             $plan = IndividualSupportPlan::create([
@@ -195,6 +198,10 @@ class SupportPlanController extends Controller
             'details.*.notes'              => 'nullable|string',
             'details.*.priority'           => 'nullable|integer',
         ]);
+
+        // 達成時期のデフォルト値を自動設定
+        $validated['created_date'] = $validated['created_date'] ?? $plan->created_date?->format('Y-m-d');
+        $validated = $this->fillDefaultDates($validated);
 
         // 提出時は達成時期を必須チェック
         $status = $validated['status'] ?? $plan->status;
@@ -1267,6 +1274,42 @@ class SupportPlanController extends Controller
         if ($user->classroom_id && $student->classroom_id !== $user->classroom_id) {
             abort(403, 'この生徒へのアクセス権限がありません。');
         }
+    }
+
+    /**
+     * 達成時期が未設定の場合にデフォルト値を自動設定
+     * - short_term_goal_date: 作成日 + 6ヶ月
+     * - long_term_goal_date: 作成日 + 1年
+     * - details.*.achievement_date: 作成日 + 6ヶ月
+     */
+    private function fillDefaultDates(array $data): array
+    {
+        $createdDate = $data['created_date'] ?? null;
+        if (!$createdDate) {
+            return $data;
+        }
+
+        $base = \Carbon\Carbon::parse($createdDate);
+        $shortTermDefault = $base->copy()->addMonths(6)->format('Y-m-d');
+        $longTermDefault = $base->copy()->addYear()->format('Y-m-d');
+
+        if (empty($data['short_term_goal_date'])) {
+            $data['short_term_goal_date'] = $shortTermDefault;
+        }
+        if (empty($data['long_term_goal_date'])) {
+            $data['long_term_goal_date'] = $longTermDefault;
+        }
+
+        if (!empty($data['details'])) {
+            foreach ($data['details'] as &$detail) {
+                if (empty($detail['achievement_date'])) {
+                    $detail['achievement_date'] = $shortTermDefault;
+                }
+            }
+            unset($detail);
+        }
+
+        return $data;
     }
 
     /**
