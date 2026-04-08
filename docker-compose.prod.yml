@@ -5,6 +5,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.prod
     restart: always
+    mem_limit: 512m
+    memswap_limit: 768m
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=https://kiduri.xyz/api
@@ -22,6 +24,8 @@ services:
       context: .
       dockerfile: docker/php/Dockerfile.prod
     restart: always
+    mem_limit: 512m
+    memswap_limit: 768m
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
@@ -45,6 +49,8 @@ services:
       context: .
       dockerfile: docker/php/Dockerfile.prod
     restart: always
+    mem_limit: 128m
+    memswap_limit: 256m
     command: php artisan reverb:start --host=0.0.0.0 --port=8080
     environment:
       - APP_ENV=production
@@ -67,6 +73,8 @@ services:
       context: .
       dockerfile: docker/php/Dockerfile.prod
     restart: always
+    mem_limit: 256m
+    memswap_limit: 384m
     command: php artisan queue:work redis --tries=3 --timeout=90
     environment:
       - APP_ENV=production
@@ -88,6 +96,8 @@ services:
       context: .
       dockerfile: docker/php/Dockerfile.prod
     restart: always
+    mem_limit: 128m
+    memswap_limit: 256m
     command: php artisan schedule:work
     environment:
       - APP_ENV=production
@@ -107,6 +117,8 @@ services:
   postgres:
     image: pgvector/pgvector:pg16
     restart: always
+    mem_limit: 512m
+    memswap_limit: 768m
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/01_init.sql
@@ -124,6 +136,8 @@ services:
   redis:
     image: redis:7-alpine
     restart: always
+    mem_limit: 128m
+    memswap_limit: 192m
     volumes:
       - redis_data:/data
     healthcheck:
@@ -138,6 +152,8 @@ services:
       context: ./analytics
       dockerfile: Dockerfile
     restart: always
+    mem_limit: 256m
+    memswap_limit: 384m
     environment:
       - DATABASE_URL=postgresql://kiduri:${DB_PASSWORD:-kiduri_secret}@postgres:5432/kiduri
     depends_on:
@@ -148,6 +164,8 @@ services:
   nginx:
     image: nginx:alpine
     restart: always
+    mem_limit: 64m
+    memswap_limit: 128m
     ports:
       - "80:80"
       - "443:443"
