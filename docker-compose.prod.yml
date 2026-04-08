@@ -158,6 +158,9 @@ services:
     depends_on:
       - frontend
       - backend
+    networks:
+      - default
+      - shared-proxy
 
   # --- Certbot (SSL) ---
   certbot:
@@ -172,3 +175,9 @@ volumes:
   storage_data:
   certbot_webroot:
   certbot_certs:
+
+networks:
+  default:
+    name: kiduri2026_default
+  shared-proxy:
+    external: true

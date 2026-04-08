@@ -56,7 +56,7 @@ frontend/.env.local
 # ============================================
 # Analytics (Python)
 # ============================================
-analytics/__pycache__/
+**/__pycache__/
 analytics/.venv/
 analytics/*.pyc
 
