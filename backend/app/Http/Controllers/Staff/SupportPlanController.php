@@ -95,6 +95,15 @@ class SupportPlanController extends Controller
             ], 422);
         }
 
+        // 提出時は達成時期を必須チェック
+        $status = $validated['status'] ?? 'draft';
+        if ($status !== 'draft') {
+            $errors = $this->validateDatesForSubmission($validated);
+            if (!empty($errors)) {
+                return response()->json(['success' => false, 'message' => implode(' ', $errors)], 422);
+            }
+        }
+
         $plan = DB::transaction(function () use ($request, $student, $validated) {
             $managerName = $validated['manager_name'] ?? $validated['consent_name'] ?? null;
             $plan = IndividualSupportPlan::create([
@@ -186,6 +195,16 @@ class SupportPlanController extends Controller
             'details.*.notes'              => 'nullable|string',
             'details.*.priority'           => 'nullable|integer',
         ]);
+
+        // 提出時は達成時期を必須チェック
+        $status = $validated['status'] ?? $plan->status;
+        if ($status !== 'draft') {
+            $checkData = array_merge($plan->toArray(), $validated);
+            $errors = $this->validateDatesForSubmission($checkData);
+            if (!empty($errors)) {
+                return response()->json(['success' => false, 'message' => implode(' ', $errors)], 422);
+            }
+        }
 
         DB::transaction(function () use ($plan, $validated) {
             $updateData = collect($validated)->except('details')->toArray();
@@ -1248,5 +1267,53 @@ class SupportPlanController extends Controller
         if ($user->classroom_id && $student->classroom_id !== $user->classroom_id) {
             abort(403, 'この生徒へのアクセス権限がありません。');
         }
+    }
+
+    /**
+     * 提出時の達成時期バリデーション
+     */
+    private function validateDatesForSubmission(array $data): array
+    {
+        $errors = [];
+        $createdDate = $data['created_date'] ?? null;
+
+        if (empty($data['long_term_goal_date'])) {
+            $errors[] = '長期目標の達成時期を設定してください。';
+        }
+        if (empty($data['short_term_goal_date'])) {
+            $errors[] = '短期目標の達成時期を設定してください。';
+        }
+
+        // 達成時期は作成日より後であること
+        if ($createdDate && !empty($data['short_term_goal_date'])) {
+            if ($data['short_term_goal_date'] <= $createdDate) {
+                $errors[] = '短期目標の達成時期は作成日より後の日付にしてください。';
+            }
+        }
+        if ($createdDate && !empty($data['long_term_goal_date'])) {
+            if ($data['long_term_goal_date'] <= $createdDate) {
+                $errors[] = '長期目標の達成時期は作成日より後の日付にしてください。';
+            }
+        }
+
+        // 長期目標は短期目標以降であること
+        if (!empty($data['short_term_goal_date']) && !empty($data['long_term_goal_date'])) {
+            if ($data['long_term_goal_date'] < $data['short_term_goal_date']) {
+                $errors[] = '長期目標の達成時期は短期目標の達成時期以降にしてください。';
+            }
+        }
+
+        // 明細の達成時期チェック
+        if (!empty($data['details'])) {
+            foreach ($data['details'] as $i => $detail) {
+                $hasContent = !empty($detail['goal'] ?? $detail['support_goal'] ?? null);
+                if ($hasContent && empty($detail['achievement_date'])) {
+                    $errors[] = '支援目標の達成時期が未設定の項目があります。';
+                    break;
+                }
+            }
+        }
+
+        return $errors;
     }
 }
