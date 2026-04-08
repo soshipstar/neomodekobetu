@@ -163,29 +163,29 @@ class PendingTaskController extends Controller
             $draftPlan = $visiblePlans->where('is_draft', true)->first();
 
             if ($draftPlan) {
-                if ($this->isNextPlanDeadlineWithinOneMonth($student->id, $supportStartDate, $latestSubmittedPlanDate?->format('Y-m-d'), $oneMonthLater)) {
-                    $hasNewer = $latestSubmittedId && $draftPlan->id != $latestSubmittedId;
-                    $daysSince = $draftPlan->created_date ? (int) abs($today->diffInDays($draftPlan->created_date, false)) : null;
+                $hasNewer = $latestSubmittedId && $draftPlan->id != $latestSubmittedId;
 
-                    // 対象期間を計算
-                    $submittedCount = $visiblePlans->where('is_draft', false)->count();
-                    $nextPeriod = $this->getNextTargetPeriod($supportStartDate, $submittedCount);
+                // 下書き計画の作成日から正しい期間を逆算
+                $period = $this->getPeriodFromPlanDate($supportStartDate, $draftPlan->created_date);
 
-                    $result[] = [
-                        'student_id'          => $student->id,
-                        'student_name'        => $student->student_name,
-                        'support_start_date'  => $supportStartDate?->format('Y-m-d'),
-                        'plan_id'             => $draftPlan->id,
-                        'latest_plan_date'    => $draftPlan->created_date?->format('Y-m-d'),
-                        'days_since_plan'     => $daysSince,
-                        'status_code'         => 'draft',
-                        'has_newer'           => $hasNewer,
-                        'is_hidden'           => false,
-                        'target_period_start' => $nextPeriod['start'],
-                        'target_period_end'   => $nextPeriod['end'],
-                        'plan_number'         => $nextPeriod['number'],
-                    ];
-                }
+                // 期間の終了日（=提出期限）からの日数を計算
+                $periodEnd = $period['end'] ? Carbon::parse($period['end']) : null;
+                $daysLeft = $periodEnd ? (int) $today->diffInDays($periodEnd, false) : null;
+
+                $result[] = [
+                    'student_id'          => $student->id,
+                    'student_name'        => $student->student_name,
+                    'support_start_date'  => $supportStartDate?->format('Y-m-d'),
+                    'plan_id'             => $draftPlan->id,
+                    'latest_plan_date'    => $draftPlan->created_date?->format('Y-m-d'),
+                    'days_since_plan'     => $daysLeft,
+                    'status_code'         => $daysLeft !== null && $daysLeft < 0 ? 'outdated' : 'draft',
+                    'has_newer'           => $hasNewer,
+                    'is_hidden'           => false,
+                    'target_period_start' => $period['start'],
+                    'target_period_end'   => $period['end'],
+                    'plan_number'         => $period['number'],
+                ];
                 continue;
             }
 
@@ -658,6 +658,32 @@ class PendingTaskController extends Controller
             'start'  => $periodStart->format('Y-m-d'),
             'end'    => $periodEnd->format('Y-m-d'),
             'number' => $planNumber,
+        ];
+    }
+
+    /**
+     * 計画の作成日からどの期間に属するか逆算する
+     */
+    private function getPeriodFromPlanDate($supportStartDate, $planDate): array
+    {
+        if (!$supportStartDate || !$planDate) {
+            return ['start' => null, 'end' => null, 'number' => null];
+        }
+
+        $start = Carbon::parse($supportStartDate);
+        $plan = Carbon::parse($planDate);
+
+        // 支援開始日から何ヶ月経過しているかで期間番号を算出
+        $monthsDiff = $start->diffInMonths($plan);
+        $periodIndex = (int) floor($monthsDiff / 6);
+
+        $periodStart = $start->copy()->addMonths($periodIndex * 6);
+        $periodEnd = $periodStart->copy()->addMonths(6)->subDay();
+
+        return [
+            'start'  => $periodStart->format('Y-m-d'),
+            'end'    => $periodEnd->format('Y-m-d'),
+            'number' => $periodIndex + 1,
         ];
     }
 
