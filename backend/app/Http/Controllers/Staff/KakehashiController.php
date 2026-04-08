@@ -169,13 +169,17 @@ class KakehashiController extends Controller
             })
             ->with('dailyRecord:id,record_date')
             ->where(function ($q) {
-                $q->whereNotNull('domain1_content')->orWhereNotNull('domain2_content');
+                $q->whereNotNull('health_life')
+                  ->orWhereNotNull('motor_sensory')
+                  ->orWhereNotNull('cognitive_behavior')
+                  ->orWhereNotNull('language_communication')
+                  ->orWhereNotNull('social_relations');
             })
             ->orderByDesc('id')
             ->limit(100)
             ->get();
 
-        // 領域ごとにデータを集約（レガシー準拠）
+        // 領域ごとにデータを集約
         $domainNames = [
             'health_life' => '健康・生活',
             'motor_sensory' => '運動・感覚',
@@ -188,11 +192,10 @@ class KakehashiController extends Controller
 
         foreach ($records as $record) {
             $date = $record->dailyRecord ? date('Y年m月d日', strtotime($record->dailyRecord->record_date)) : '';
-            if ($record->domain1 && $record->domain1_content) {
-                $domainData[$record->domain1][] = "【{$date}】" . $record->domain1_content;
-            }
-            if ($record->domain2 && $record->domain2_content) {
-                $domainData[$record->domain2][] = "【{$date}】" . $record->domain2_content;
+            foreach (array_keys($domainNames) as $domain) {
+                if (!empty($record->{$domain})) {
+                    $domainData[$domain][] = "【{$date}】" . $record->{$domain};
+                }
             }
         }
 
@@ -228,14 +231,14 @@ class KakehashiController extends Controller
 
             foreach ($interviewRecords as $interview) {
                 $date = date('Y年m月d日', strtotime($interview->interview_date));
-                if ($interview->check_school && !empty($interview->check_school_note)) {
-                    $schoolNotes[] = "【{$date}】" . $interview->check_school_note;
+                if ($interview->check_school && !empty($interview->check_school_notes)) {
+                    $schoolNotes[] = "【{$date}】" . $interview->check_school_notes;
                 }
-                if ($interview->check_home && !empty($interview->check_home_note)) {
-                    $homeNotes[] = "【{$date}】" . $interview->check_home_note;
+                if ($interview->check_home && !empty($interview->check_home_notes)) {
+                    $homeNotes[] = "【{$date}】" . $interview->check_home_notes;
                 }
-                if ($interview->check_troubles && !empty($interview->check_troubles_note)) {
-                    $troubleNotes[] = "【{$date}】" . $interview->check_troubles_note;
+                if ($interview->check_troubles && !empty($interview->check_troubles_notes)) {
+                    $troubleNotes[] = "【{$date}】" . $interview->check_troubles_notes;
                 }
                 if (!empty($interview->child_wish)) {
                     $childWishes[] = "【{$date}】" . $interview->child_wish;
