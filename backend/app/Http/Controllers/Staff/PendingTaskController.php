@@ -215,11 +215,14 @@ class PendingTaskController extends Controller
 
             // 保護者確認が必要でない場合、期限切れかチェック
             if (!$needsGuardianConfirm && $latestSubmittedPlan && !$latestSubmittedPlan->is_hidden) {
-                $daysSince = $latestSubmittedPlan->created_date ? (int) abs($today->diffInDays($latestSubmittedPlan->created_date, false)) : 0;
+                // 最新提出済み計画の期間を逆算し、次の期間を計算
+                $currentPeriod = $this->getPeriodFromPlanDate($supportStartDate, $latestSubmittedPlan->created_date);
+                $currentPeriodEnd = $currentPeriod['end'] ? Carbon::parse($currentPeriod['end']) : null;
+
                 $needsNewPlan = false;
 
-                // 方法1: 150日以上経過
-                if ($daysSince >= 150) {
+                // 方法1: 現在の期間の終了日を過ぎている
+                if ($currentPeriodEnd && $currentPeriodEnd->lt($today)) {
                     $needsNewPlan = true;
                 }
 
@@ -236,8 +239,16 @@ class PendingTaskController extends Controller
                 }
 
                 if ($needsNewPlan) {
-                    $submittedCount = $visiblePlans->where('is_draft', false)->count();
-                    $nextPeriod = $this->getNextTargetPeriod($supportStartDate, $submittedCount);
+                    // 最新計画の次の期間を計算
+                    $nextPeriodNumber = ($currentPeriod['number'] ?? 0) + 1;
+                    $nextPeriodStart = $currentPeriodEnd ? $currentPeriodEnd->copy()->addDay() : null;
+                    $nextPeriodEnd = $nextPeriodStart ? $nextPeriodStart->copy()->addMonths(6)->subDay() : null;
+                    $nextPeriod = [
+                        'start'  => $nextPeriodStart?->format('Y-m-d'),
+                        'end'    => $nextPeriodEnd?->format('Y-m-d'),
+                        'number' => $nextPeriodNumber,
+                    ];
+                    $daysLeft = $nextPeriodEnd ? (int) $today->diffInDays($nextPeriodEnd, false) : null;
 
                     $result[] = [
                         'student_id'          => $student->id,
@@ -245,7 +256,7 @@ class PendingTaskController extends Controller
                         'support_start_date'  => $supportStartDate?->format('Y-m-d'),
                         'plan_id'             => $latestSubmittedPlan->id,
                         'latest_plan_date'    => $latestSubmittedPlan->created_date?->format('Y-m-d'),
-                        'days_since_plan'     => $daysSince,
+                        'days_since_plan'     => $daysLeft,
                         'status_code'         => 'outdated',
                         'has_newer'           => false,
                         'is_hidden'           => false,

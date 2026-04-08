@@ -812,15 +812,17 @@ class SupportPlanController extends Controller
         }
 
         $plan->update([
-            'status'      => 'official',
-            'is_official' => true,
-            'is_draft'    => false,
+            'status'               => 'official',
+            'is_official'          => true,
+            'is_draft'             => false,
+            'guardian_confirmed'    => true,
+            'guardian_confirmed_at' => now(),
         ]);
 
         return response()->json([
             'success' => true,
             'data'    => $plan->fresh('details'),
-            'message' => '正式版として確定しました。',
+            'message' => '紙面サイン済みとして確定しました。',
         ]);
     }
 
