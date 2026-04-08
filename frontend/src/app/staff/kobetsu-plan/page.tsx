@@ -1137,6 +1137,20 @@ export default function KobetsuPlanPage() {
                   >
                     署名して確定
                   </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    leftIcon={<MaterialIcon name="description" size={18} />}
+                    onClick={() => {
+                      if (confirm('紙面で署名済みとして確定しますか？\nこの操作により下書き状態が解除され、正式な計画書として扱われます。')) {
+                        makeOfficialMutation.mutate(editingPlanId);
+                      }
+                    }}
+                    isLoading={makeOfficialMutation.isPending}
+                  >
+                    紙面でサイン済み
+                  </Button>
                 </>
               )}
               {isReadOnly && (
