@@ -68,7 +68,7 @@ class ChatController extends Controller
         StudentChatMessage::where('room_id', $room->id)
             ->where('sender_type', 'staff')
             ->where('is_read', false)
-            ->update(['is_read' => true, 'read_at' => now()]);
+            ->update(['is_read' => true]);
 
         $hasMore = $messages->count() >= min($limit, 200);
 
