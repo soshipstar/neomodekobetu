@@ -249,22 +249,55 @@ class PendingTaskController extends Controller
                         'number' => $nextPeriodNumber,
                     ];
                     $daysLeft = $nextPeriodEnd ? (int) $today->diffInDays($nextPeriodEnd, false) : null;
+                    $deadlineDate = $nextPeriodStart?->format('Y-m-d') ?? now()->format('Y-m-d');
 
-                    $result[] = [
-                        'student_id'          => $student->id,
-                        'student_name'        => $student->student_name,
-                        'support_start_date'  => $supportStartDate?->format('Y-m-d'),
-                        'plan_id'             => $latestSubmittedPlan->id,
-                        'latest_plan_date'    => $latestSubmittedPlan->created_date?->format('Y-m-d'),
-                        'days_since_plan'     => $daysLeft,
-                        'status_code'         => 'outdated',
-                        'has_newer'           => false,
-                        'is_hidden'           => false,
-                        'guardian_confirmed'   => (bool) $latestSubmittedPlan->guardian_confirmed,
-                        'target_period_start' => $nextPeriod['start'],
-                        'target_period_end'   => $nextPeriod['end'],
-                        'plan_number'         => $nextPeriod['number'],
-                    ];
+                    // 同じ日付の計画が既にあるかチェック
+                    $existsForPeriod = IndividualSupportPlan::where('student_id', $student->id)
+                        ->where('created_date', $deadlineDate)
+                        ->exists();
+
+                    if (!$existsForPeriod) {
+                        // 次の期間の下書きを自動生成
+                        $autoPlan = IndividualSupportPlan::create([
+                            'student_id'    => $student->id,
+                            'classroom_id'  => $student->classroom_id,
+                            'student_name'  => $student->student_name,
+                            'created_date'  => $deadlineDate,
+                            'status'        => 'draft',
+                            'is_draft'      => true,
+                            'is_official'   => false,
+                            'is_hidden'     => false,
+                            'source_monitoring_id' => $student->monitoringRecords()->where('plan_id', $latestSubmittedPlan->id)->value('id'),
+                        ]);
+
+                        $defaultDetails = [
+                            ['domain' => '健康・生活', 'category' => '本人支援', 'sub_category' => '生活習慣（健康・生活）'],
+                            ['domain' => '言語・コミュニケーション', 'category' => '本人支援', 'sub_category' => 'コミュニケーション（言語・コミュニケーション）'],
+                            ['domain' => '人間関係・社会性', 'category' => '本人支援', 'sub_category' => '対人関係（人間関係・社会性）'],
+                            ['domain' => '運動・感覚', 'category' => '本人支援', 'sub_category' => '運動機能（運動・感覚）'],
+                            ['domain' => '認知・行動', 'category' => '本人支援', 'sub_category' => '学習面（認知・行動）'],
+                            ['domain' => '家族支援', 'category' => '家族支援', 'sub_category' => '保護者支援'],
+                            ['domain' => '地域支援', 'category' => '地域支援', 'sub_category' => '地域連携'],
+                        ];
+                        foreach ($defaultDetails as $i => $detail) {
+                            $autoPlan->details()->create(array_merge($detail, ['sort_order' => $i]));
+                        }
+
+                        $result[] = [
+                            'student_id'          => $student->id,
+                            'student_name'        => $student->student_name,
+                            'support_start_date'  => $supportStartDate?->format('Y-m-d'),
+                            'plan_id'             => $autoPlan->id,
+                            'latest_plan_date'    => $deadlineDate,
+                            'days_since_plan'     => $daysLeft,
+                            'status_code'         => 'draft',
+                            'has_newer'           => false,
+                            'is_hidden'           => false,
+                            'target_period_start' => $nextPeriod['start'],
+                            'target_period_end'   => $nextPeriod['end'],
+                            'plan_number'         => $nextPeriod['number'],
+                        ];
+                    }
                 }
             }
         }
