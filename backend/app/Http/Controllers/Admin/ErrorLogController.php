@@ -48,6 +48,10 @@ class ErrorLogController extends Controller
             $query->where('created_at', '<=', $request->date_to . ' 23:59:59');
         }
 
+        if ($request->has('is_resolved')) {
+            $query->where('is_resolved', $request->boolean('is_resolved'));
+        }
+
         $logs = $query->paginate($request->integer('per_page', 50));
 
         return response()->json([
@@ -89,6 +93,24 @@ class ErrorLogController extends Controller
         return response()->json([
             'success' => true,
             'message' => "{$deleted}件のログを削除しました。",
+        ]);
+    }
+
+    /**
+     * エラーログの対処済みステータスを更新
+     */
+    public function resolve(Request $request, ErrorLog $errorLog): JsonResponse
+    {
+        if ($deny = $this->requireMaster($request)) return $deny;
+
+        $errorLog->update([
+            'is_resolved'  => $request->boolean('is_resolved', true),
+            'resolved_note' => $request->input('resolved_note', $errorLog->resolved_note),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $errorLog,
         ]);
     }
 

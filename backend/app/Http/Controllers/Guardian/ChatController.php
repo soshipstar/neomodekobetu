@@ -381,11 +381,12 @@ class ChatController extends Controller
             ]);
 
             DB::table('event_registrations')->insert([
-                'event_id'   => $eventId,
-                'student_id' => $studentId,
-                'message_id' => $msg->id,
-                'notes'      => $notes ?: null,
-                'created_at' => now(),
+                'event_id'    => $eventId,
+                'student_id'  => $studentId,
+                'guardian_id' => $user->id,
+                'message_id'  => $msg->id,
+                'notes'       => $notes ?: null,
+                'created_at'  => now(),
             ]);
 
             $room->update(['last_message_at' => now()]);

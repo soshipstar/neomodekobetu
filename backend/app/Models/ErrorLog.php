@@ -22,6 +22,8 @@ class ErrorLog extends Model
         'ip_address',
         'user_agent',
         'request_data',
+        'is_resolved',
+        'resolved_note',
     ];
 
     protected function casts(): array
@@ -30,6 +32,7 @@ class ErrorLog extends Model
             'trace'        => 'array',
             'request_data' => 'array',
             'created_at'   => 'datetime',
+            'is_resolved'  => 'boolean',
         ];
     }
 

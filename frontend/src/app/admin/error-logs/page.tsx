@@ -34,6 +34,8 @@ interface ErrorLogEntry {
   user_agent: string | null;
   request_data: Record<string, unknown> | null;
   created_at: string;
+  is_resolved: boolean;
+  resolved_note: string | null;
 }
 
 interface Summary {
@@ -61,6 +63,7 @@ export default function ErrorLogsPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [selectedLog, setSelectedLog] = useState<ErrorLogEntry | null>(null);
+  const [resolvedFilter, setResolvedFilter] = useState('unresolved');
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(search, 300);
 
@@ -75,13 +78,15 @@ export default function ErrorLogsPage() {
 
   // Fetch logs
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['admin', 'error-logs', page, debouncedSearch, levelFilter, dateFrom, dateTo],
+    queryKey: ['admin', 'error-logs', page, debouncedSearch, levelFilter, dateFrom, dateTo, resolvedFilter],
     queryFn: async () => {
       const params: Record<string, string | number> = { page, per_page: 30 };
       if (debouncedSearch) params.search = debouncedSearch;
       if (levelFilter) params.level = levelFilter;
       if (dateFrom) params.date_from = dateFrom;
       if (dateTo) params.date_to = dateTo;
+      if (resolvedFilter === 'unresolved') params.is_resolved = 0;
+      else if (resolvedFilter === 'resolved') params.is_resolved = 1;
       const res = await api.get('/api/admin/error-logs', { params });
       return {
         logs: (res.data?.data || []) as ErrorLogEntry[],
@@ -101,6 +106,17 @@ export default function ErrorLogsPage() {
       toast.success(res.data?.message || '古いログを削除しました');
     },
     onError: () => toast.error('削除に失敗しました'),
+  });
+
+  // Resolve mutation
+  const resolveMutation = useMutation({
+    mutationFn: ({ id, is_resolved, resolved_note }: { id: number; is_resolved: boolean; resolved_note?: string }) =>
+      api.patch(`/api/admin/error-logs/${id}/resolve`, { is_resolved, resolved_note }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'error-logs'] });
+      toast.success('対処済みステータスを更新しました');
+    },
+    onError: () => toast.error('更新に失敗しました'),
   });
 
   return (
@@ -156,6 +172,12 @@ export default function ErrorLogsPage() {
               <option value="error">エラー</option>
               <option value="warning">警告</option>
             </select>
+            <select value={resolvedFilter} onChange={(e) => { setResolvedFilter(e.target.value); setPage(1); }}
+              className="rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm">
+              <option value="">全て</option>
+              <option value="unresolved">未対処</option>
+              <option value="resolved">対処済み</option>
+            </select>
             <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
               className="rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm" />
             <span className="self-center text-sm text-[var(--neutral-foreground-4)]">〜</span>
@@ -188,6 +210,7 @@ export default function ErrorLogsPage() {
                   <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">メッセージ</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">URL</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">ユーザー</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">対処</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">操作</th>
                 </tr>
               </thead>
@@ -217,6 +240,23 @@ export default function ErrorLogsPage() {
                       </td>
                       <td className="px-3 py-2 text-xs text-[var(--neutral-foreground-3)]">
                         {log.user?.full_name || (log.user_id ? `ID:${log.user_id}` : '-')}
+                      </td>
+                      <td className="px-3 py-2">
+                        {log.is_resolved ? (
+                          <button onClick={() => resolveMutation.mutate({ id: log.id, is_resolved: false })}
+                            title={log.resolved_note || '対処済み'}
+                            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold bg-green-100 text-green-700 hover:bg-green-200 transition-colors">
+                            <MaterialIcon name="check_circle" size={12} /> 対処済
+                          </button>
+                        ) : (
+                          <button onClick={() => {
+                            const note = prompt('対処メモ（任意）:');
+                            if (note !== null) resolveMutation.mutate({ id: log.id, is_resolved: true, resolved_note: note || undefined });
+                          }}
+                            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors">
+                            <MaterialIcon name="radio_button_unchecked" size={12} /> 未対処
+                          </button>
+                        )}
                       </td>
                       <td className="px-3 py-2">
                         <Button variant="ghost" size="sm" onClick={() => setSelectedLog(log)}>
@@ -256,6 +296,24 @@ export default function ErrorLogsPage() {
                 <p className="font-mono">{selectedLog.ip_address || '-'}</p></div>
               <div className="col-span-2"><span className="text-xs text-[var(--neutral-foreground-3)]">URL</span>
                 <p className="font-mono text-xs break-all">{selectedLog.method} {selectedLog.url || '-'}</p></div>
+            </div>
+
+            <div>
+              <span className="text-xs text-[var(--neutral-foreground-3)]">対処状況</span>
+              <div className="flex items-center gap-2 mt-1">
+                {selectedLog.is_resolved ? (
+                  <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold bg-green-100 text-green-700">
+                    <MaterialIcon name="check_circle" size={14} /> 対処済み
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold bg-gray-100 text-gray-500">
+                    <MaterialIcon name="radio_button_unchecked" size={14} /> 未対処
+                  </span>
+                )}
+                {selectedLog.resolved_note && (
+                  <span className="text-xs text-[var(--neutral-foreground-3)]">{selectedLog.resolved_note}</span>
+                )}
+              </div>
             </div>
 
             <div>

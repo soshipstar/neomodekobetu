@@ -829,8 +829,7 @@ class FacilityEvaluationController extends Controller
         // 別紙3: 自己評価総括表データ（strength/weakness）
         $selfSummaryItems = DB::table('facility_self_evaluation_summary')
             ->where('period_id', $period->id)
-            ->orderBy('item_type')
-            ->orderBy('item_number')
+            ->orderBy('sort_order')
             ->get();
 
         // カテゴリ別の集計データ（別紙3用 - self_summary_categoryテーブルから）
@@ -861,10 +860,10 @@ class FacilityEvaluationController extends Controller
         $validated = $request->validate([
             'period_id' => 'required|integer',
             'items'     => 'required|array',
-            'items.*.item_type'        => 'required|in:strength,weakness',
-            'items.*.item_number'      => 'required|integer|min:1|max:3',
-            'items.*.description'      => 'nullable|string',
-            'items.*.current_efforts'  => 'nullable|string',
+            'items.*.category'         => 'required|string',
+            'items.*.sort_order'       => 'required|integer|min:1',
+            'items.*.current_status'   => 'nullable|string',
+            'items.*.issues'           => 'nullable|string',
             'items.*.improvement_plan' => 'nullable|string',
         ]);
 
@@ -872,13 +871,13 @@ class FacilityEvaluationController extends Controller
             foreach ($validated['items'] as $item) {
                 DB::table('facility_self_evaluation_summary')->updateOrInsert(
                     [
-                        'period_id'   => $validated['period_id'],
-                        'item_type'   => $item['item_type'],
-                        'item_number' => $item['item_number'],
+                        'period_id'  => $validated['period_id'],
+                        'category'   => $item['category'],
+                        'sort_order' => $item['sort_order'],
                     ],
                     [
-                        'description'      => $item['description'] ?? '',
-                        'current_efforts'  => $item['current_efforts'] ?? '',
+                        'current_status'   => $item['current_status'] ?? '',
+                        'issues'           => $item['issues'] ?? '',
                         'improvement_plan' => $item['improvement_plan'] ?? '',
                         'updated_at'       => now(),
                     ]
