@@ -84,6 +84,17 @@ class SupportPlanController extends Controller
             'details.*.priority'           => 'nullable|integer',
         ]);
 
+        // 同じ生徒・同じ作成日の計画が既にある場合はエラー
+        $existingPlan = IndividualSupportPlan::where('student_id', $student->id)
+            ->where('created_date', $validated['created_date'])
+            ->first();
+        if ($existingPlan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'この生徒には同じ日付の個別支援計画が既に存在します（ID: ' . $existingPlan->id . '）。既存の計画を編集してください。',
+            ], 422);
+        }
+
         $plan = DB::transaction(function () use ($request, $student, $validated) {
             $managerName = $validated['manager_name'] ?? $validated['consent_name'] ?? null;
             $plan = IndividualSupportPlan::create([

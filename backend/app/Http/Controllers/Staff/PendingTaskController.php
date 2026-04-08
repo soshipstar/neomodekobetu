@@ -104,6 +104,14 @@ class PendingTaskController extends Controller
                     $nextPeriod = $this->getNextTargetPeriod($supportStartDate, 0);
                     $deadlineDate = $nextPeriod['start'] ?? now()->format('Y-m-d');
 
+                    // 同じ期間の計画が既にあれば自動生成しない
+                    $existsForPeriod = IndividualSupportPlan::where('student_id', $student->id)
+                        ->where('created_date', $deadlineDate)
+                        ->exists();
+                    if ($existsForPeriod) {
+                        continue;
+                    }
+
                     // 空の支援計画を下書きで自動作成
                     $autoPlan = IndividualSupportPlan::create([
                         'student_id'    => $student->id,
