@@ -334,7 +334,7 @@ export default function PendingTasksPage() {
                                 >
                                   {plan.status_code === 'needs_confirm' ? '確認依頼' : '計画書を作成'}
                                 </Link>
-                                {plan.plan_id && (
+                                {plan.plan_id && plan.status_code !== 'draft' && (
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -405,7 +405,7 @@ export default function PendingTasksPage() {
                                 >
                                   {mon.status_code === 'needs_confirm' ? '確認依頼' : 'モニタリング作成'}
                                 </Link>
-                                {mon.monitoring_id ? (
+                                {mon.status_code !== 'draft' && (mon.monitoring_id ? (
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -431,7 +431,7 @@ export default function PendingTasksPage() {
                                   >
                                     非表示
                                   </Button>
-                                )}
+                                ))}
                               </div>
                             </td>
                           </tr>
