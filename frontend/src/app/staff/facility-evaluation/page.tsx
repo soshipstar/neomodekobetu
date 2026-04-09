@@ -676,6 +676,43 @@ function ResponseTable({ responses, nameKey }: { responses: ResponseUser[]; name
 // Summary View
 // ---------------------------------------------------------------------------
 
+function SummaryTable({ items }: { items: SummaryItem[] }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)]">
+            <th className="px-3 py-2 text-left font-semibold">No.</th>
+            <th className="px-3 py-2 text-left font-semibold">質問</th>
+            <th className="px-3 py-2 text-center font-semibold">はい</th>
+            <th className="px-3 py-2 text-center font-semibold">どちらとも</th>
+            <th className="px-3 py-2 text-center font-semibold">いいえ</th>
+            <th className="px-3 py-2 text-center font-semibold">わからない</th>
+            <th className="px-3 py-2 text-center font-semibold">はい%</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item) => (
+            <tr key={item.question_id} className="border-b border-[var(--neutral-stroke-3)]">
+              <td className="px-3 py-2 text-[var(--neutral-foreground-3)]">{item.question_number}</td>
+              <td className="max-w-xs px-3 py-2 text-[var(--neutral-foreground-1)]">{item.question_text}</td>
+              <td className="px-3 py-2 text-center">{item.yes_count}</td>
+              <td className="px-3 py-2 text-center">{item.neutral_count}</td>
+              <td className="px-3 py-2 text-center">{item.no_count}</td>
+              <td className="px-3 py-2 text-center">{item.unknown_count}</td>
+              <td className="px-3 py-2 text-center font-medium">
+                <span className={item.yes_percentage >= 80 ? 'text-[var(--status-success-fg)]' : item.yes_percentage >= 50 ? 'text-[var(--status-warning-fg)]' : 'text-[var(--status-danger-fg)]'}>
+                  {item.yes_percentage}%
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function SummaryView({
   period,
   onBack,
@@ -687,15 +724,20 @@ function SummaryView({
 }) {
   const toast = useToast();
   const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState<SummaryItem[]>([]);
+  const [guardianSummary, setGuardianSummary] = useState<SummaryItem[]>([]);
+  const [staffSummary, setStaffSummary] = useState<SummaryItem[]>([]);
   const [totalRespondents, setTotalRespondents] = useState(0);
+  const [totalStaffRespondents, setTotalStaffRespondents] = useState(0);
   const [aggregating, setAggregating] = useState(false);
+  const [activeTab, setActiveTab] = useState<'guardian' | 'staff'>('guardian');
 
   const fetchSummary = useCallback(async () => {
     try {
       const res = await api.get('/api/staff/facility-evaluation/summary', { params: { period_id: period.id } });
-      setSummary(res.data.data.summary || []);
+      setGuardianSummary(res.data.data.summary || []);
+      setStaffSummary(res.data.data.staff_summary || []);
       setTotalRespondents(res.data.data.total_respondents || 0);
+      setTotalStaffRespondents(res.data.data.total_staff_respondents || 0);
     } catch {
       toast.error('集計結果の取得に失敗しました');
     } finally {
@@ -728,9 +770,12 @@ function SummaryView({
     );
   }
 
+  const currentSummary = activeTab === 'guardian' ? guardianSummary : staffSummary;
+  const currentRespondents = activeTab === 'guardian' ? totalRespondents : totalStaffRespondents;
+
   // Group by category
   const categories: Record<string, SummaryItem[]> = {};
-  for (const item of summary) {
+  for (const item of currentSummary) {
     const cat = item.category || '未分類';
     if (!categories[cat]) categories[cat] = [];
     categories[cat].push(item);
@@ -746,7 +791,6 @@ function SummaryView({
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h1 className="text-lg font-semibold">集計結果 — {period.title}</h1>
-          <p className="text-xs text-[var(--neutral-foreground-3)]">回答者数: {totalRespondents}名</p>
         </div>
         {period.status === 'aggregating' && (
           <Button variant="primary" size="sm" onClick={handleAggregate} disabled={aggregating}>
@@ -756,7 +800,25 @@ function SummaryView({
         )}
       </div>
 
-      {summary.length === 0 ? (
+      {/* タブ切り替え */}
+      <div className="mb-4 flex gap-1 rounded-lg bg-[var(--neutral-background-3)] p-1">
+        <button
+          className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'guardian' ? 'bg-[var(--neutral-background-1)] text-[var(--neutral-foreground-1)] shadow-sm' : 'text-[var(--neutral-foreground-3)] hover:text-[var(--neutral-foreground-2)]'}`}
+          onClick={() => setActiveTab('guardian')}
+        >
+          保護者評価
+        </button>
+        <button
+          className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'staff' ? 'bg-[var(--neutral-background-1)] text-[var(--neutral-foreground-1)] shadow-sm' : 'text-[var(--neutral-foreground-3)] hover:text-[var(--neutral-foreground-2)]'}`}
+          onClick={() => setActiveTab('staff')}
+        >
+          事業所内評価（スタッフ）
+        </button>
+      </div>
+
+      <p className="mb-3 text-xs text-[var(--neutral-foreground-3)]">回答者数: {currentRespondents}名</p>
+
+      {currentSummary.length === 0 ? (
         <Card>
           <CardBody>
             <div className="py-8 text-center text-[var(--neutral-foreground-4)]">
@@ -775,38 +837,7 @@ function SummaryView({
               <CardTitle>{cat}</CardTitle>
             </CardHeader>
             <CardBody>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)]">
-                      <th className="px-3 py-2 text-left font-semibold">No.</th>
-                      <th className="px-3 py-2 text-left font-semibold">質問</th>
-                      <th className="px-3 py-2 text-center font-semibold">はい</th>
-                      <th className="px-3 py-2 text-center font-semibold">どちらとも</th>
-                      <th className="px-3 py-2 text-center font-semibold">いいえ</th>
-                      <th className="px-3 py-2 text-center font-semibold">わからない</th>
-                      <th className="px-3 py-2 text-center font-semibold">はい%</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map((item) => (
-                      <tr key={item.question_id} className="border-b border-[var(--neutral-stroke-3)]">
-                        <td className="px-3 py-2 text-[var(--neutral-foreground-3)]">{item.question_number}</td>
-                        <td className="max-w-xs px-3 py-2 text-[var(--neutral-foreground-1)]">{item.question_text}</td>
-                        <td className="px-3 py-2 text-center">{item.yes_count}</td>
-                        <td className="px-3 py-2 text-center">{item.neutral_count}</td>
-                        <td className="px-3 py-2 text-center">{item.no_count}</td>
-                        <td className="px-3 py-2 text-center">{item.unknown_count}</td>
-                        <td className="px-3 py-2 text-center font-medium">
-                          <span className={item.yes_percentage >= 80 ? 'text-[var(--status-success-fg)]' : item.yes_percentage >= 50 ? 'text-[var(--status-warning-fg)]' : 'text-[var(--status-danger-fg)]'}>
-                            {item.yes_percentage}%
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <SummaryTable items={items} />
             </CardBody>
           </Card>
         ))

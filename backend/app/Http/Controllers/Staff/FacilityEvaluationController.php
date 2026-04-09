@@ -293,14 +293,80 @@ class FacilityEvaluationController extends Controller
             ->orderBy('q.question_number')
             ->get();
 
+        // スタッフ評価の集計（教室フィルタリング）
+        $staffSummaryQuery = DB::table('facility_staff_evaluation_answers as a')
+            ->join('facility_staff_evaluations as e', 'a.evaluation_id', '=', 'e.id')
+            ->join('facility_evaluation_questions as q', 'a.question_id', '=', 'q.id')
+            ->where('e.period_id', $period->id)
+            ->where('e.is_submitted', true);
+
+        if ($classroomId) {
+            $staffSummaryQuery->join('users as u', 'e.staff_id', '=', 'u.id')
+                              ->where('u.classroom_id', $classroomId);
+        }
+
+        $staffSummary = $staffSummaryQuery->select(
+            'q.id as question_id',
+            'q.question_number',
+            'q.question_text',
+            'q.category',
+            DB::raw("SUM(CASE WHEN a.answer = 'yes' THEN 1 ELSE 0 END) as yes_count"),
+            DB::raw("SUM(CASE WHEN a.answer = 'neutral' THEN 1 ELSE 0 END) as neutral_count"),
+            DB::raw("SUM(CASE WHEN a.answer = 'no' THEN 1 ELSE 0 END) as no_count"),
+            DB::raw("SUM(CASE WHEN a.answer = 'unknown' THEN 1 ELSE 0 END) as unknown_count"),
+            DB::raw('COUNT(*) as total_count')
+        )
+            ->groupBy('q.id', 'q.question_number', 'q.question_text', 'q.category')
+            ->orderBy('q.question_number')
+            ->get();
+
+        // スタッフ回答者数
+        $staffRespondentsQuery = DB::table('facility_staff_evaluations')
+            ->where('period_id', $period->id)
+            ->where('is_submitted', true);
+        if ($classroomId) {
+            $staffRespondentsQuery->join('users as u', 'facility_staff_evaluations.staff_id', '=', 'u.id')
+                                  ->where('u.classroom_id', $classroomId);
+        }
+        $totalStaffRespondents = $staffRespondentsQuery->count();
+
+        // スタッフコメント一覧
+        $staffCommentsQuery = DB::table('facility_staff_evaluation_answers as a')
+            ->join('facility_staff_evaluations as e', 'a.evaluation_id', '=', 'e.id')
+            ->join('facility_evaluation_questions as q', 'a.question_id', '=', 'q.id')
+            ->where('e.period_id', $period->id)
+            ->where('e.is_submitted', true)
+            ->whereNotNull('a.comment')
+            ->where('a.comment', '!=', '');
+
+        if ($classroomId) {
+            $staffCommentsQuery->join('users as u', 'e.staff_id', '=', 'u.id')
+                               ->where('u.classroom_id', $classroomId);
+        }
+
+        $staffComments = $staffCommentsQuery
+            ->select('q.id as question_id', 'q.question_number', 'q.question_text', 'a.comment')
+            ->orderBy('q.question_number')
+            ->get();
+
         // 集計結果テーブルからfacility_commentとcomment_summaryを取得
         $savedSummaries = DB::table('facility_evaluation_summaries')
             ->where('period_id', $period->id)
             ->get()
             ->keyBy('question_id');
 
-        // summaryにfacility_commentとcomment_summaryを付加
+        // 保護者summaryにfacility_commentとcomment_summaryを付加
         foreach ($guardianSummary as $item) {
+            $saved = $savedSummaries->get($item->question_id);
+            $item->facility_comment = $saved->facility_comment ?? null;
+            $item->comment_summary = $saved->comment_summary ?? null;
+            $item->yes_percentage = $item->total_count > 0
+                ? round(($item->yes_count / ($item->yes_count + $item->neutral_count + $item->no_count)) * 100, 1)
+                : 0;
+        }
+
+        // スタッフsummaryにyes_percentageを付加
+        foreach ($staffSummary as $item) {
             $saved = $savedSummaries->get($item->question_id);
             $item->facility_comment = $saved->facility_comment ?? null;
             $item->comment_summary = $saved->comment_summary ?? null;
@@ -315,14 +381,23 @@ class FacilityEvaluationController extends Controller
             $commentsByQuestion[$c->question_id][] = $c->comment;
         }
 
+        $staffCommentsByQuestion = [];
+        foreach ($staffComments as $c) {
+            $staffCommentsByQuestion[$c->question_id][] = $c->comment;
+        }
+
         return response()->json([
             'success' => true,
             'data'    => [
-                'period'              => $period,
-                'total_respondents'   => $totalRespondents,
-                'summary'             => $guardianSummary,
-                'comments'            => $comments,
-                'comments_by_question' => $commentsByQuestion,
+                'period'                    => $period,
+                'total_respondents'         => $totalRespondents,
+                'summary'                   => $guardianSummary,
+                'comments'                  => $comments,
+                'comments_by_question'      => $commentsByQuestion,
+                'total_staff_respondents'   => $totalStaffRespondents,
+                'staff_summary'             => $staffSummary,
+                'staff_comments'            => $staffComments,
+                'staff_comments_by_question' => $staffCommentsByQuestion,
             ],
         ]);
     }
