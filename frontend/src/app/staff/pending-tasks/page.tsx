@@ -667,17 +667,24 @@ function TaskSection({
 function getPlanStatusDisplay(plan: PlanTask): { mainLabel: string; mainVariant: StatusVariant; deadlineLabel?: string; deadlineVariant?: StatusVariant } {
   const daysSince = plan.days_since_plan;
 
-  // Deadline sub-badge for draft/needs_confirm
+  // 期間終了日までの残り日数を計算
+  let daysUntilEnd: number | null = null;
+  if (plan.target_period_end) {
+    const endDate = new Date(plan.target_period_end);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    daysUntilEnd = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  }
+
+  // Deadline sub-badge: 期限切れまたは残り30日以内
   let deadlineLabel: string | undefined;
   let deadlineVariant: StatusVariant | undefined;
-  if (daysSince !== null && daysSince !== undefined) {
-    if (daysSince >= 180) {
-      deadlineLabel = `期限切れ（${Math.floor(daysSince / 30)}ヶ月経過）`;
-      deadlineVariant = 'default';
-    } else if (daysSince >= 150) {
-      deadlineLabel = `残り${180 - daysSince}日`;
-      deadlineVariant = 'danger';
-    }
+  if (daysUntilEnd !== null && daysUntilEnd < 0) {
+    deadlineLabel = `期限切れ（${Math.abs(daysUntilEnd)}日超過）`;
+    deadlineVariant = 'default';
+  } else if (daysUntilEnd !== null && daysUntilEnd <= 30) {
+    deadlineLabel = `残り${daysUntilEnd}日`;
+    deadlineVariant = 'danger';
   }
 
   if (plan.status_code === 'none') {
@@ -686,10 +693,12 @@ function getPlanStatusDisplay(plan: PlanTask): { mainLabel: string; mainVariant:
     return { mainLabel: '要保護者確認', mainVariant: 'primary', deadlineLabel, deadlineVariant };
   } else if (plan.status_code === 'draft') {
     return { mainLabel: '下書き', mainVariant: 'info', deadlineLabel, deadlineVariant };
-  } else if (daysSince !== null && daysSince >= 180) {
-    return { mainLabel: `期限切れ（${Math.floor(daysSince / 30)}ヶ月経過）`, mainVariant: 'default' };
-  } else if (daysSince !== null && daysSince >= 150) {
-    return { mainLabel: `1か月以内（残り${180 - daysSince}日）`, mainVariant: 'danger' };
+  } else if (plan.status_code === 'outdated' && daysSince !== null) {
+    return { mainLabel: `期限切れ（${daysSince}日超過）`, mainVariant: 'default' };
+  } else if (daysUntilEnd !== null && daysUntilEnd < 0) {
+    return { mainLabel: `期限切れ（${Math.abs(daysUntilEnd)}日超過）`, mainVariant: 'default' };
+  } else if (daysUntilEnd !== null && daysUntilEnd <= 30) {
+    return { mainLabel: `1か月以内（残り${daysUntilEnd}日）`, mainVariant: 'danger' };
   }
   return { mainLabel: '対応が必要', mainVariant: 'warning' };
 }

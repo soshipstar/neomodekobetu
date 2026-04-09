@@ -172,13 +172,16 @@ class PendingTaskController extends Controller
                 $periodEnd = $period['end'] ? Carbon::parse($period['end']) : null;
                 $daysLeft = $periodEnd ? (int) $today->diffInDays($periodEnd, false) : null;
 
+                // days_since_plan: 期限切れの場合のみ超過日数（正数）を返す。期限内はnull。
+                $daysSincePlan = ($daysLeft !== null && $daysLeft < 0) ? abs($daysLeft) : null;
+
                 $result[] = [
                     'student_id'          => $student->id,
                     'student_name'        => $student->student_name,
                     'support_start_date'  => $supportStartDate?->format('Y-m-d'),
                     'plan_id'             => $draftPlan->id,
                     'latest_plan_date'    => $draftPlan->created_date?->format('Y-m-d'),
-                    'days_since_plan'     => $daysLeft,
+                    'days_since_plan'     => $daysSincePlan,
                     'status_code'         => $daysLeft !== null && $daysLeft < 0 ? 'outdated' : 'draft',
                     'has_newer'           => $hasNewer,
                     'is_hidden'           => false,
@@ -289,7 +292,7 @@ class PendingTaskController extends Controller
                             'support_start_date'  => $supportStartDate?->format('Y-m-d'),
                             'plan_id'             => $autoPlan->id,
                             'latest_plan_date'    => $deadlineDate,
-                            'days_since_plan'     => $daysLeft,
+                            'days_since_plan'     => null,
                             'status_code'         => 'draft',
                             'has_newer'           => false,
                             'is_hidden'           => false,
