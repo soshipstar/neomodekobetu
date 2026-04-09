@@ -41,7 +41,7 @@ class AiGenerationService
             ],
             'response_format' => ['type' => 'json_object'],
             'temperature' => 0.7,
-            'max_tokens' => 4000,
+            'max_completion_tokens' => 4000,
         ]);
 
         $durationMs = (int) ((microtime(true) - $startTime) * 1000);
@@ -82,7 +82,7 @@ class AiGenerationService
             ],
             'response_format' => ['type' => 'json_object'],
             'temperature' => 0.7,
-            'max_tokens' => 3000,
+            'max_completion_tokens' => 3000,
         ]);
 
         $durationMs = (int) ((microtime(true) - $startTime) * 1000);
@@ -125,7 +125,7 @@ class AiGenerationService
             ],
             'response_format' => ['type' => 'json_object'],
             'temperature' => 0.8,
-            'max_tokens' => 3000,
+            'max_completion_tokens' => 3000,
         ]);
 
         $durationMs = (int) ((microtime(true) - $startTime) * 1000);
@@ -168,7 +168,7 @@ class AiGenerationService
             ],
             'response_format' => ['type' => 'json_object'],
             'temperature' => 0.7,
-            'max_tokens' => 3000,
+            'max_completion_tokens' => 3000,
         ]);
 
         $durationMs = (int) ((microtime(true) - $startTime) * 1000);
