@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -691,7 +691,42 @@ function ResponseTable({ responses, nameKey }: { responses: ResponseUser[]; name
 // Summary View
 // ---------------------------------------------------------------------------
 
-function SummaryTable({ items }: { items: SummaryItem[] }) {
+function SummaryTable({
+  items,
+  commentsByQuestion,
+  periodId,
+  editable,
+  onFacilityCommentSaved,
+}: {
+  items: SummaryItem[];
+  commentsByQuestion?: Record<number, string[]>;
+  periodId: number;
+  editable?: boolean;
+  onFacilityCommentSaved?: () => void;
+}) {
+  const toast = useToast();
+  const [editingComment, setEditingComment] = useState<{ questionId: number; value: string } | null>(null);
+  const [savingComment, setSavingComment] = useState(false);
+
+  const handleSaveFacilityComment = async () => {
+    if (!editingComment) return;
+    setSavingComment(true);
+    try {
+      await api.post('/api/staff/facility-evaluation/facility-comment', {
+        period_id: periodId,
+        question_id: editingComment.questionId,
+        facility_comment: editingComment.value,
+      });
+      toast.success('事業所コメントを保存しました');
+      setEditingComment(null);
+      onFacilityCommentSaved?.();
+    } catch {
+      toast.error('保存に失敗しました');
+    } finally {
+      setSavingComment(false);
+    }
+  };
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -707,21 +742,81 @@ function SummaryTable({ items }: { items: SummaryItem[] }) {
           </tr>
         </thead>
         <tbody>
-          {items.map((item) => (
-            <tr key={item.question_id} className="border-b border-[var(--neutral-stroke-3)]">
-              <td className="px-3 py-2 text-[var(--neutral-foreground-3)]">{item.question_number}</td>
-              <td className="max-w-xs px-3 py-2 text-[var(--neutral-foreground-1)]">{item.question_text}</td>
-              <td className="px-3 py-2 text-center">{item.yes_count}</td>
-              <td className="px-3 py-2 text-center">{item.neutral_count}</td>
-              <td className="px-3 py-2 text-center">{item.no_count}</td>
-              <td className="px-3 py-2 text-center">{item.unknown_count}</td>
-              <td className="px-3 py-2 text-center font-medium">
-                <span className={item.yes_percentage >= 80 ? 'text-[var(--status-success-fg)]' : item.yes_percentage >= 50 ? 'text-[var(--status-warning-fg)]' : 'text-[var(--status-danger-fg)]'}>
-                  {item.yes_percentage}%
-                </span>
-              </td>
-            </tr>
-          ))}
+          {items.map((item) => {
+            const userComments = commentsByQuestion?.[item.question_id] || [];
+            return (
+              <React.Fragment key={item.question_id}>
+                <tr className="border-b border-[var(--neutral-stroke-3)]">
+                  <td className="px-3 py-2 text-[var(--neutral-foreground-3)]">{item.question_number}</td>
+                  <td className="max-w-xs px-3 py-2 text-[var(--neutral-foreground-1)]">{item.question_text}</td>
+                  <td className="px-3 py-2 text-center">{item.yes_count}</td>
+                  <td className="px-3 py-2 text-center">{item.neutral_count}</td>
+                  <td className="px-3 py-2 text-center">{item.no_count}</td>
+                  <td className="px-3 py-2 text-center">{item.unknown_count}</td>
+                  <td className="px-3 py-2 text-center font-medium">
+                    <span className={item.yes_percentage >= 80 ? 'text-[var(--status-success-fg)]' : item.yes_percentage >= 50 ? 'text-[var(--status-warning-fg)]' : 'text-[var(--status-danger-fg)]'}>
+                      {item.yes_percentage}%
+                    </span>
+                  </td>
+                </tr>
+                {/* コメント行 */}
+                {(userComments.length > 0 || item.facility_comment || editable) && (
+                  <tr className="bg-[var(--neutral-background-2)]">
+                    <td></td>
+                    <td colSpan={6} className="px-3 py-2">
+                      {userComments.length > 0 && (
+                        <div className="mb-2">
+                          <span className="text-xs font-semibold text-[var(--neutral-foreground-3)]">回答者コメント:</span>
+                          <ul className="mt-1 list-inside list-disc text-xs text-[var(--neutral-foreground-2)]">
+                            {userComments.map((c, i) => (
+                              <li key={i}>{c}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {editable ? (
+                        <div className="flex items-start gap-2">
+                          <div className="flex-1">
+                            <span className="text-xs font-semibold text-[var(--neutral-foreground-3)]">事業所コメント:</span>
+                            {editingComment?.questionId === item.question_id ? (
+                              <div className="mt-1 flex gap-2">
+                                <textarea
+                                  className="flex-1 rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] p-1.5 text-xs"
+                                  rows={2}
+                                  value={editingComment.value}
+                                  onChange={(e) => setEditingComment({ ...editingComment, value: e.target.value })}
+                                />
+                                <div className="flex flex-col gap-1">
+                                  <Button size="sm" variant="primary" onClick={handleSaveFacilityComment} disabled={savingComment}>
+                                    保存
+                                  </Button>
+                                  <Button size="sm" variant="ghost" onClick={() => setEditingComment(null)}>
+                                    取消
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div
+                                className="mt-1 cursor-pointer rounded border border-dashed border-[var(--neutral-stroke-3)] p-1.5 text-xs text-[var(--neutral-foreground-2)] hover:bg-[var(--neutral-background-3)]"
+                                onClick={() => setEditingComment({ questionId: item.question_id, value: item.facility_comment || '' })}
+                              >
+                                {item.facility_comment || 'クリックして事業所コメントを入力...'}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ) : item.facility_comment ? (
+                        <div>
+                          <span className="text-xs font-semibold text-[var(--neutral-foreground-3)]">事業所コメント:</span>
+                          <p className="mt-1 text-xs text-[var(--neutral-foreground-2)]">{item.facility_comment}</p>
+                        </div>
+                      ) : null}
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -741,6 +836,8 @@ function SummaryView({
   const [loading, setLoading] = useState(true);
   const [guardianSummary, setGuardianSummary] = useState<SummaryItem[]>([]);
   const [staffSummary, setStaffSummary] = useState<SummaryItem[]>([]);
+  const [guardianComments, setGuardianComments] = useState<Record<number, string[]>>({});
+  const [staffComments, setStaffComments] = useState<Record<number, string[]>>({});
   const [totalRespondents, setTotalRespondents] = useState(0);
   const [totalStaffRespondents, setTotalStaffRespondents] = useState(0);
   const [aggregating, setAggregating] = useState(false);
@@ -751,6 +848,8 @@ function SummaryView({
       const res = await api.get('/api/staff/facility-evaluation/summary', { params: { period_id: period.id } });
       setGuardianSummary(res.data.data.summary || []);
       setStaffSummary(res.data.data.staff_summary || []);
+      setGuardianComments(res.data.data.comments_by_question || {});
+      setStaffComments(res.data.data.staff_comments_by_question || {});
       setTotalRespondents(res.data.data.total_respondents || 0);
       setTotalStaffRespondents(res.data.data.total_staff_respondents || 0);
     } catch {
@@ -787,6 +886,7 @@ function SummaryView({
 
   const currentSummary = activeTab === 'guardian' ? guardianSummary : staffSummary;
   const currentRespondents = activeTab === 'guardian' ? totalRespondents : totalStaffRespondents;
+  const currentComments = activeTab === 'guardian' ? guardianComments : staffComments;
 
   // Group by category
   const categories: Record<string, SummaryItem[]> = {};
@@ -866,7 +966,13 @@ function SummaryView({
               <CardTitle>{cat}</CardTitle>
             </CardHeader>
             <CardBody>
-              <SummaryTable items={items} />
+              <SummaryTable
+                items={items}
+                commentsByQuestion={currentComments}
+                periodId={period.id}
+                editable={period.status === 'aggregating'}
+                onFacilityCommentSaved={fetchSummary}
+              />
             </CardBody>
           </Card>
         ))

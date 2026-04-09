@@ -1058,7 +1058,11 @@ class FacilityEvaluationController extends Controller
             'total_respondents' => $totalRespondents,
         ])->render();
 
-        return PuppeteerPdfService::download($html, "facility-evaluation-{$type}-{$period->id}.pdf");
+        $pdfBinary = PuppeteerPdfService::htmlToPdf($html);
+        return new Response($pdfBinary, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => "attachment; filename=\"facility-evaluation-{$type}-{$period->id}.pdf\"",
+        ]);
     }
 
     /**
@@ -1255,6 +1259,10 @@ class FacilityEvaluationController extends Controller
             'weaknesses'            => $weaknesses,
         ])->render();
 
-        return PuppeteerPdfService::download($html, "facility-self-evaluation-{$period->id}.pdf", 'A4', true);
+        $pdfBinary = PuppeteerPdfService::htmlToPdf($html, 'A4', true);
+        return new Response($pdfBinary, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => "attachment; filename=\"facility-self-evaluation-{$period->id}.pdf\"",
+        ]);
     }
 }
