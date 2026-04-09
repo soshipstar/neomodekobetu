@@ -307,13 +307,16 @@ class PendingTaskController extends Controller
 
     /**
      * モニタリングの未作成タスクを取得
+     * ルール: 初回=利用開始日+5ヶ月、以降=6ヶ月ごと
+     * 前提: 提出済み個別支援計画がある生徒のみ対象
      */
     private function getMonitoringTasks(?int $classroomId, Carbon $today, Carbon $oneMonthLater): array
     {
+        // 提出済み（非下書き）の個別支援計画がある生徒のみ対象
         $query = Student::query()
             ->where('is_active', true)
             ->whereHas('guardian')
-            ->whereHas('supportPlans'); // 個別支援計画書が存在する生徒のみ
+            ->whereHas('supportPlans', fn ($q) => $q->where('is_draft', false));
 
         if ($classroomId) {
             $query->whereHas('guardian', fn ($q) => $q->where('classroom_id', $classroomId));
@@ -331,66 +334,31 @@ class PendingTaskController extends Controller
                 continue;
             }
 
-            // かけはし期間からモニタリング期限を取得
-            $currentPeriod = KakehashiPeriod::where('student_id', $student->id)
-                ->where('is_active', true)
-                ->where('submission_deadline', '<=', $oneMonthLater)
-                ->orderByDesc('submission_deadline')
-                ->first();
+            $start = Carbon::parse($supportStartDate);
 
-            if (!$currentPeriod) {
-                continue;
-            }
-
-            $monitoringDeadline = $currentPeriod->submission_deadline;
-            $daysLeft = (int) $today->diffInDays($monitoringDeadline, false);
-            $isOverdue = $monitoringDeadline->lt($today);
-            $nextPlanDeadline = $currentPeriod->end_date->copy()->addDay()->format('Y-m-d');
-
-            // この期間のモニタリングが完了済みか確認
-            $hasCompletedMonitoring = MonitoringRecord::where('student_id', $student->id)
+            // 完了済みモニタリング数（提出済み＋保護者確認済み）
+            $completedCount = MonitoringRecord::where('student_id', $student->id)
                 ->where('is_draft', false)
                 ->where('guardian_confirmed', true)
-                ->where('monitoring_date', '>=', $currentPeriod->start_date->copy()->subDays(30))
-                ->exists();
+                ->count();
 
-            if ($hasCompletedMonitoring) {
+            // 次のモニタリング期限: 初回=開始+5ヶ月、以降=+6ヶ月ごと
+            $monitoringDeadline = $start->copy()->addMonths(5 + $completedCount * 6);
+
+            // 期限が1ヶ月以上先ならスキップ
+            if ($monitoringDeadline->gt($oneMonthLater)) {
                 continue;
             }
+
+            $daysLeft = (int) $today->diffInDays($monitoringDeadline, false);
+            $isOverdue = $monitoringDeadline->lt($today);
+            $nextPlanDeadline = $monitoringDeadline->copy()->addMonth()->format('Y-m-d');
 
             $monitorings = $student->monitoringRecords;
             $latestSubmitted = $monitorings->where('is_draft', false)->sortByDesc('id')->first();
             $latestSubmittedId = $latestSubmitted?->id;
 
-            // モニタリングがない場合
-            if ($monitorings->isEmpty()) {
-                if (!$student->hide_initial_monitoring) {
-                    if ($isOverdue) {
-                        $statusCode = 'outdated';
-                    } elseif ($daysLeft <= 7) {
-                        $statusCode = 'urgent';
-                    } else {
-                        $statusCode = 'none';
-                    }
-                    $result[] = [
-                        'student_id'           => $student->id,
-                        'student_name'         => $student->student_name,
-                        'support_start_date'   => $supportStartDate->format('Y-m-d'),
-                        'monitoring_id'        => null,
-                        'monitoring_deadline'   => $monitoringDeadline->format('Y-m-d'),
-                        'days_since_monitoring' => null,
-                        'status_code'          => $statusCode,
-                        'has_newer'            => false,
-                        'is_hidden'            => false,
-                        'guardian_confirmed'    => false,
-                        'next_plan_deadline'   => $nextPlanDeadline,
-                        'days_left'            => $daysLeft,
-                    ];
-                }
-                continue;
-            }
-
-            // 下書きがあるかチェック
+            // 下書きモニタリングがあるか
             $draftMonitoring = $monitorings->where('is_draft', true)->where('is_hidden', false)->first();
 
             if ($draftMonitoring) {
@@ -414,8 +382,7 @@ class PendingTaskController extends Controller
                 continue;
             }
 
-            // 提出済みで保護者確認が必要かチェック
-            $needsGuardianConfirm = false;
+            // 提出済みだが保護者未確認
             if ($latestSubmitted && !$latestSubmitted->is_hidden && !$latestSubmitted->guardian_confirmed) {
                 $daysSince = $latestSubmitted->monitoring_date ? (int) abs($today->diffInDays($latestSubmitted->monitoring_date, false)) : null;
                 $result[] = [
@@ -433,43 +400,33 @@ class PendingTaskController extends Controller
                     'next_plan_deadline'   => $nextPlanDeadline,
                     'days_left'            => $daysLeft,
                 ];
-                $needsGuardianConfirm = true;
+                continue;
             }
 
-            // 新しいモニタリングが必要かチェック
-            if (!$needsGuardianConfirm) {
-                // 最新の提出済みモニタリングが保護者確認済みかつ期間開始日以降なら完了
-                $latestConfirmedInPeriod = false;
-                if ($latestSubmitted && $latestSubmitted->guardian_confirmed) {
-                    if ($latestSubmitted->monitoring_date >= $currentPeriod->start_date) {
-                        $latestConfirmedInPeriod = true;
-                    }
+            // モニタリング未作成 or 新規作成が必要
+            if (!$student->hide_initial_monitoring) {
+                if ($isOverdue) {
+                    $statusCode = 'outdated';
+                } elseif ($daysLeft <= 7) {
+                    $statusCode = 'urgent';
+                } else {
+                    $statusCode = 'none';
                 }
-
-                if (!$latestConfirmedInPeriod && !$student->hide_initial_monitoring) {
-                    if ($isOverdue) {
-                        $statusCode = 'outdated';
-                    } elseif ($daysLeft <= 7) {
-                        $statusCode = 'urgent';
-                    } else {
-                        $statusCode = 'none';
-                    }
-                    $result[] = [
-                        'student_id'           => $student->id,
-                        'student_name'         => $student->student_name,
-                        'support_start_date'   => $supportStartDate->format('Y-m-d'),
-                        'monitoring_id'        => null,
-                        'plan_id'              => null,
-                        'monitoring_deadline'   => $monitoringDeadline->format('Y-m-d'),
-                        'days_since_monitoring' => null,
-                        'status_code'          => $statusCode,
-                        'has_newer'            => false,
-                        'is_hidden'            => false,
-                        'guardian_confirmed'    => false,
-                        'next_plan_deadline'   => $nextPlanDeadline,
-                        'days_left'            => $daysLeft,
-                    ];
-                }
+                $result[] = [
+                    'student_id'           => $student->id,
+                    'student_name'         => $student->student_name,
+                    'support_start_date'   => $supportStartDate->format('Y-m-d'),
+                    'monitoring_id'        => null,
+                    'plan_id'              => null,
+                    'monitoring_deadline'   => $monitoringDeadline->format('Y-m-d'),
+                    'days_since_monitoring' => null,
+                    'status_code'          => $statusCode,
+                    'has_newer'            => false,
+                    'is_hidden'            => false,
+                    'guardian_confirmed'    => false,
+                    'next_plan_deadline'   => $nextPlanDeadline,
+                    'days_left'            => $daysLeft,
+                ];
             }
         }
 
