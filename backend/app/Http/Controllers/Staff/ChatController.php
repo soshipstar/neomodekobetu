@@ -63,6 +63,8 @@ class ChatController extends Controller
             $latest = $latestMessages->get($room->id);
             return [
                 'id'              => $room->id,
+                'student_id'      => $room->student_id,
+                'guardian_id'     => $room->guardian_id,
                 'student'         => $room->student,
                 'guardian'        => $room->guardian,
                 'is_pinned'       => in_array($room->id, $pinnedRoomIds),
