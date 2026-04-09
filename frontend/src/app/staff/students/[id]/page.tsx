@@ -130,11 +130,12 @@ function StudentInfo({ studentId, student }: { studentId: number; student: Stude
   const toast = useToast();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
+  const toDateStr = (d: string | null | undefined) => d ? d.slice(0, 10) : '';
   const [form, setForm] = useState({
     student_name: student.student_name || '',
-    birth_date: student.birth_date || '',
+    birth_date: toDateStr(student.birth_date),
     status: student.status || 'active',
-    support_start_date: (student as any).support_start_date || '',
+    support_start_date: toDateStr((student as any).support_start_date),
     notes: (student as any).notes || '',
   });
 

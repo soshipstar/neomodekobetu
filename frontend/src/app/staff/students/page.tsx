@@ -255,15 +255,16 @@ export default function StudentsPage() {
 
   const openEdit = (student: Student) => {
     setEditingStudent(student);
+    const toDateStr = (d: string | null) => d ? d.slice(0, 10) : '';
     setForm({
       student_name: student.student_name,
-      birth_date: student.birth_date || '',
+      birth_date: toDateStr(student.birth_date),
       grade_adjustment: student.grade_adjustment ?? 0,
-      support_start_date: student.support_start_date || '',
+      support_start_date: toDateStr(student.support_start_date),
       support_plan_start_type: student.support_plan_start_type || 'current',
       guardian_id: student.guardian_id ? String(student.guardian_id) : '',
       status: student.status,
-      withdrawal_date: student.withdrawal_date || '',
+      withdrawal_date: toDateStr(student.withdrawal_date),
       username: student.username || '',
       password: '',
       scheduled_monday: student.scheduled_monday,
