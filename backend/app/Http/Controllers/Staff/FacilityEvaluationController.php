@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
+use App\Services\AiGenerationService;
+use App\Services\PuppeteerPdfService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -970,5 +973,288 @@ class FacilityEvaluationController extends Controller
                 'message' => '保存中にエラーが発生しました。',
             ], 500);
         }
+    }
+
+    /**
+     * 集計結果PDF出力（保護者 or スタッフ）
+     */
+    public function summaryPdf(Request $request): Response
+    {
+        $user = $request->user();
+        $classroomId = $user->classroom_id;
+        $periodId = $request->input('period_id');
+        $type = $request->input('type', 'guardian'); // 'guardian' or 'staff'
+
+        $period = DB::table('facility_evaluation_periods')->find($periodId);
+        if (!$period) {
+            abort(404, '評価期間が見つかりません。');
+        }
+
+        $classroom = $classroomId ? DB::table('classrooms')->find($classroomId) : null;
+        $classroomName = $classroom->classroom_name ?? '事業所';
+
+        if ($type === 'staff') {
+            $summaryQuery = DB::table('facility_staff_evaluation_answers as a')
+                ->join('facility_staff_evaluations as e', 'a.evaluation_id', '=', 'e.id')
+                ->join('facility_evaluation_questions as q', 'a.question_id', '=', 'q.id')
+                ->where('e.period_id', $period->id)
+                ->where('e.is_submitted', true);
+
+            if ($classroomId) {
+                $summaryQuery->join('users as u', 'e.staff_id', '=', 'u.id')
+                              ->where('u.classroom_id', $classroomId);
+            }
+
+            $respondentsQuery = DB::table('facility_staff_evaluations')
+                ->where('period_id', $period->id)
+                ->where('is_submitted', true);
+            if ($classroomId) {
+                $respondentsQuery->join('users as u', 'facility_staff_evaluations.staff_id', '=', 'u.id')
+                                  ->where('u.classroom_id', $classroomId);
+            }
+        } else {
+            $summaryQuery = DB::table('facility_guardian_evaluation_answers as a')
+                ->join('facility_guardian_evaluations as e', 'a.evaluation_id', '=', 'e.id')
+                ->join('facility_evaluation_questions as q', 'a.question_id', '=', 'q.id')
+                ->where('e.period_id', $period->id)
+                ->where('e.is_submitted', true);
+
+            if ($classroomId) {
+                $summaryQuery->join('users as u', 'e.guardian_id', '=', 'u.id')
+                              ->where('u.classroom_id', $classroomId);
+            }
+
+            $respondentsQuery = DB::table('facility_guardian_evaluations')
+                ->where('period_id', $period->id)
+                ->where('is_submitted', true);
+            if ($classroomId) {
+                $respondentsQuery->join('users as u', 'facility_guardian_evaluations.guardian_id', '=', 'u.id')
+                                  ->where('u.classroom_id', $classroomId);
+            }
+        }
+
+        $summary = $summaryQuery->select(
+            'q.id as question_id',
+            'q.question_number',
+            'q.question_text',
+            'q.category',
+            DB::raw("SUM(CASE WHEN a.answer = 'yes' THEN 1 ELSE 0 END) as yes_count"),
+            DB::raw("SUM(CASE WHEN a.answer = 'neutral' THEN 1 ELSE 0 END) as neutral_count"),
+            DB::raw("SUM(CASE WHEN a.answer = 'no' THEN 1 ELSE 0 END) as no_count"),
+            DB::raw("SUM(CASE WHEN a.answer = 'unknown' THEN 1 ELSE 0 END) as unknown_count"),
+            DB::raw('COUNT(*) as total_count')
+        )
+            ->groupBy('q.id', 'q.question_number', 'q.question_text', 'q.category')
+            ->orderBy('q.question_number')
+            ->get();
+
+        $totalRespondents = $respondentsQuery->count();
+
+        $html = view('pdf.facility-evaluation-summary', [
+            'type'              => $type,
+            'classroom_name'    => $classroomName,
+            'period'            => $period,
+            'summary'           => $summary,
+            'total_respondents' => $totalRespondents,
+        ])->render();
+
+        return PuppeteerPdfService::download($html, "facility-evaluation-{$type}-{$period->id}.pdf");
+    }
+
+    /**
+     * 別紙3: AI生成
+     */
+    public function generateSelfEvaluation(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $classroomId = $user->classroom_id;
+        $periodId = $request->input('period_id');
+
+        $period = DB::table('facility_evaluation_periods')->find($periodId);
+        if (!$period) {
+            return response()->json(['success' => false, 'message' => '評価期間が見つかりません。'], 404);
+        }
+
+        $classroom = $classroomId ? DB::table('classrooms')->find($classroomId) : null;
+        $classroomName = $classroom->classroom_name ?? '事業所';
+
+        // 保護者評価集計
+        $guardianQuery = DB::table('facility_guardian_evaluation_answers as a')
+            ->join('facility_guardian_evaluations as e', 'a.evaluation_id', '=', 'e.id')
+            ->join('facility_evaluation_questions as q', 'a.question_id', '=', 'q.id')
+            ->where('e.period_id', $period->id)
+            ->where('e.is_submitted', true);
+
+        if ($classroomId) {
+            $guardianQuery->join('users as u', 'e.guardian_id', '=', 'u.id')
+                          ->where('u.classroom_id', $classroomId);
+        }
+
+        $guardianSummary = $guardianQuery->select(
+            'q.id as question_id', 'q.question_number', 'q.question_text', 'q.category',
+            DB::raw("SUM(CASE WHEN a.answer = 'yes' THEN 1 ELSE 0 END) as yes_count"),
+            DB::raw("SUM(CASE WHEN a.answer = 'neutral' THEN 1 ELSE 0 END) as neutral_count"),
+            DB::raw("SUM(CASE WHEN a.answer = 'no' THEN 1 ELSE 0 END) as no_count"),
+            DB::raw("SUM(CASE WHEN a.answer = 'unknown' THEN 1 ELSE 0 END) as unknown_count"),
+        )->groupBy('q.id', 'q.question_number', 'q.question_text', 'q.category')
+            ->orderBy('q.question_number')->get();
+
+        // スタッフ評価集計
+        $staffQuery = DB::table('facility_staff_evaluation_answers as a')
+            ->join('facility_staff_evaluations as e', 'a.evaluation_id', '=', 'e.id')
+            ->join('facility_evaluation_questions as q', 'a.question_id', '=', 'q.id')
+            ->where('e.period_id', $period->id)
+            ->where('e.is_submitted', true);
+
+        if ($classroomId) {
+            $staffQuery->join('users as u', 'e.staff_id', '=', 'u.id')
+                       ->where('u.classroom_id', $classroomId);
+        }
+
+        $staffSummary = $staffQuery->select(
+            'q.id as question_id', 'q.question_number', 'q.question_text', 'q.category',
+            DB::raw("SUM(CASE WHEN a.answer = 'yes' THEN 1 ELSE 0 END) as yes_count"),
+            DB::raw("SUM(CASE WHEN a.answer = 'neutral' THEN 1 ELSE 0 END) as neutral_count"),
+            DB::raw("SUM(CASE WHEN a.answer = 'no' THEN 1 ELSE 0 END) as no_count"),
+            DB::raw("SUM(CASE WHEN a.answer = 'unknown' THEN 1 ELSE 0 END) as unknown_count"),
+        )->groupBy('q.id', 'q.question_number', 'q.question_text', 'q.category')
+            ->orderBy('q.question_number')->get();
+
+        try {
+            $aiService = app(AiGenerationService::class);
+            $result = $aiService->generateSelfEvaluationSummary(
+                $guardianSummary->toArray(),
+                $staffSummary->toArray(),
+                $classroomName
+            );
+
+            // 生成結果をDBに保存
+            $items = [];
+            foreach (($result['strengths'] ?? []) as $i => $s) {
+                $items[] = [
+                    'category'         => 'strength',
+                    'sort_order'       => $i + 1,
+                    'current_status'   => $s['current_status'] ?? '',
+                    'issues'           => '',
+                    'improvement_plan' => $s['improvement_plan'] ?? '',
+                ];
+            }
+            foreach (($result['weaknesses'] ?? []) as $i => $w) {
+                $items[] = [
+                    'category'         => 'weakness',
+                    'sort_order'       => $i + 1,
+                    'current_status'   => '',
+                    'issues'           => $w['issues'] ?? '',
+                    'improvement_plan' => $w['improvement_plan'] ?? '',
+                ];
+            }
+
+            foreach ($items as $item) {
+                DB::table('facility_self_evaluation_summary')->updateOrInsert(
+                    [
+                        'period_id'  => $periodId,
+                        'category'   => $item['category'],
+                        'sort_order' => $item['sort_order'],
+                    ],
+                    [
+                        'current_status'   => $item['current_status'],
+                        'issues'           => $item['issues'],
+                        'improvement_plan' => $item['improvement_plan'],
+                        'updated_at'       => now(),
+                    ]
+                );
+            }
+
+            return response()->json([
+                'success' => true,
+                'data'    => $result,
+                'message' => '自己評価総括表をAIで生成しました。',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('AI self-evaluation generation error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'AI生成に失敗しました: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * 別紙3: PDF出力
+     */
+    public function selfEvaluationPdf(Request $request): Response
+    {
+        $user = $request->user();
+        $classroomId = $user->classroom_id;
+        $periodId = $request->input('period_id');
+
+        $period = DB::table('facility_evaluation_periods')->find($periodId);
+        if (!$period) {
+            abort(404, '評価期間が見つかりません。');
+        }
+
+        $classroom = $classroomId ? DB::table('classrooms')->find($classroomId) : null;
+        $classroomName = $classroom->classroom_name ?? '事業所';
+
+        // 保護者回答者数
+        $guardianRespondentsQuery = DB::table('facility_guardian_evaluations')
+            ->where('period_id', $period->id)->where('is_submitted', true);
+        $guardianTotalQuery = DB::table('facility_guardian_evaluations')
+            ->where('period_id', $period->id);
+        if ($classroomId) {
+            $guardianRespondentsQuery->join('users as u', 'facility_guardian_evaluations.guardian_id', '=', 'u.id')
+                                     ->where('u.classroom_id', $classroomId);
+            $guardianTotalQuery->join('users as u2', 'facility_guardian_evaluations.guardian_id', '=', 'u2.id')
+                               ->where('u2.classroom_id', $classroomId);
+        }
+        $guardianRespondents = $guardianRespondentsQuery->count();
+        $guardianTotal = $guardianTotalQuery->count();
+
+        // スタッフ回答者数
+        $staffRespondentsQuery = DB::table('facility_staff_evaluations')
+            ->where('period_id', $period->id)->where('is_submitted', true);
+        $staffTotalQuery = DB::table('facility_staff_evaluations')
+            ->where('period_id', $period->id);
+        if ($classroomId) {
+            $staffRespondentsQuery->join('users as u', 'facility_staff_evaluations.staff_id', '=', 'u.id')
+                                  ->where('u.classroom_id', $classroomId);
+            $staffTotalQuery->join('users as u2', 'facility_staff_evaluations.staff_id', '=', 'u2.id')
+                            ->where('u2.classroom_id', $classroomId);
+        }
+        $staffRespondents = $staffRespondentsQuery->count();
+        $staffTotal = $staffTotalQuery->count();
+
+        // 別紙3データ
+        $selfSummaryItems = DB::table('facility_self_evaluation_summary')
+            ->where('period_id', $period->id)
+            ->orderBy('sort_order')
+            ->get();
+
+        $strengths = $selfSummaryItems->where('category', 'strength')->values()->toArray();
+        $weaknesses = $selfSummaryItems->where('category', 'weakness')->values()->toArray();
+
+        // 期間
+        $guardianStart = $period->guardian_deadline ? \Carbon\Carbon::parse($period->guardian_deadline)->subMonths(2)->format('Y年m月d日') : null;
+        $guardianEnd = $period->guardian_deadline ? \Carbon\Carbon::parse($period->guardian_deadline)->format('Y年m月d日') : null;
+        $staffStart = $period->staff_deadline ? \Carbon\Carbon::parse($period->staff_deadline)->subMonths(2)->format('Y年m月d日') : null;
+        $staffEnd = $period->staff_deadline ? \Carbon\Carbon::parse($period->staff_deadline)->format('Y年m月d日') : null;
+
+        $html = view('pdf.facility-self-evaluation', [
+            'classroom_name'       => $classroomName,
+            'period'               => $period,
+            'guardian_period_start' => $guardianStart,
+            'guardian_period_end'   => $guardianEnd,
+            'guardian_total'        => $guardianTotal,
+            'guardian_respondents'  => $guardianRespondents,
+            'staff_period_start'    => $staffStart,
+            'staff_period_end'      => $staffEnd,
+            'staff_total'           => $staffTotal,
+            'staff_respondents'     => $staffRespondents,
+            'self_eval_date'        => now()->format('Y年m月d日'),
+            'strengths'             => $strengths,
+            'weaknesses'            => $weaknesses,
+        ])->render();
+
+        return PuppeteerPdfService::download($html, "facility-self-evaluation-{$period->id}.pdf", 'A4', true);
     }
 }

@@ -136,6 +136,49 @@ class AiGenerationService
         return $content;
     }
 
+    /**
+     * Generate self-evaluation summary (別紙3) using GPT.
+     *
+     * @param  array  $guardianSummary  保護者評価集計データ
+     * @param  array  $staffSummary  スタッフ評価集計データ
+     * @param  string  $classroomName  事業所名
+     * @return array  Generated: strengths[] and weaknesses[] (each with current_status, issues, improvement_plan)
+     */
+    public function generateSelfEvaluationSummary(array $guardianSummary, array $staffSummary, string $classroomName): array
+    {
+        $prompt = $this->buildSelfEvaluationPrompt($guardianSummary, $staffSummary, $classroomName);
+
+        $startTime = microtime(true);
+
+        $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY"));
+        $client = \OpenAI::client($apiKey);
+        $response = $client->chat()->create([
+            'model' => config('services.openai.model', 'gpt-5.4-mini-2026-03-17'),
+            'messages' => [
+                [
+                    'role' => 'system',
+                    'content' => '放課後等デイサービスの事業所における自己評価結果（別紙3）を作成するAIアシスタントです。'
+                        . '保護者評価と従業者評価の集計結果から、事業所の強みと弱みを分析してください。'
+                        . 'JSON形式で回答してください。',
+                ],
+                [
+                    'role' => 'user',
+                    'content' => $prompt,
+                ],
+            ],
+            'response_format' => ['type' => 'json_object'],
+            'temperature' => 0.7,
+            'max_tokens' => 3000,
+        ]);
+
+        $durationMs = (int) ((microtime(true) - $startTime) * 1000);
+        $content = json_decode($response->choices[0]->message->content, true) ?? [];
+
+        $this->logGeneration('self_evaluation_summary', $response, $prompt, $content, $durationMs);
+
+        return $content;
+    }
+
     // =========================================================================
     // Private helpers
     // =========================================================================
@@ -259,6 +302,62 @@ class AiGenerationService
         $prompt .= "}\n";
 
         return $prompt;
+    }
+
+    private function buildSelfEvaluationPrompt(array $guardianSummary, array $staffSummary, string $classroomName): string
+    {
+        $guardianLines = [];
+        foreach ($guardianSummary as $item) {
+            $total = ($item->yes_count ?? 0) + ($item->neutral_count ?? 0) + ($item->no_count ?? 0);
+            $pct = $total > 0 ? round(($item->yes_count / $total) * 100, 1) : 0;
+            $guardianLines[] = "Q{$item->question_number}({$item->category}): {$item->question_text} → はい{$pct}%";
+        }
+
+        $staffLines = [];
+        foreach ($staffSummary as $item) {
+            $total = ($item->yes_count ?? 0) + ($item->neutral_count ?? 0) + ($item->no_count ?? 0);
+            $pct = $total > 0 ? round(($item->yes_count / $total) * 100, 1) : 0;
+            $staffLines[] = "Q{$item->question_number}({$item->category}): {$item->question_text} → はい{$pct}%";
+        }
+
+        return <<<PROMPT
+事業所名: {$classroomName}
+
+以下は保護者評価と従業者（スタッフ）評価の集計結果です。
+これを分析し、事業所の「強み」3つと「弱み」3つを特定してください。
+
+【保護者評価】
+{$this->joinLines($guardianLines)}
+
+【従業者評価】
+{$this->joinLines($staffLines)}
+
+以下のJSON形式で回答してください:
+{
+  "strengths": [
+    {
+      "current_status": "工夫していることや意識的に行っている取組等",
+      "improvement_plan": "さらに充実を図るための取組等"
+    },
+    // 計3項目
+  ],
+  "weaknesses": [
+    {
+      "issues": "事業所として考えている課題の要因等",
+      "improvement_plan": "改善に向けて必要な取組や工夫が必要な点等"
+    },
+    // 計3項目
+  ]
+}
+
+強みは「はい」の割合が高い項目から、弱みは低い項目から選んでください。
+具体的な取組内容を記載してください。一般的な文言ではなく、質問内容に即した具体策を書いてください。
+PROMPT;
+    }
+
+    private function joinLines(array $lines): string
+    {
+        return implode("\n", $lines);
     }
 
     private function logGeneration(string $type, object $response, string $prompt, array $output, int $durationMs): void

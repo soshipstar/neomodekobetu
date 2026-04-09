@@ -109,7 +109,7 @@ export default function FacilityEvaluationPage() {
   const [periods, setPeriods] = useState<Period[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<Period | null>(null);
-  const [activeView, setActiveView] = useState<'list' | 'eval' | 'responses' | 'summary'>('list');
+  const [activeView, setActiveView] = useState<'list' | 'eval' | 'responses' | 'summary' | 'self_eval'>('list');
 
   const fetchPeriods = useCallback(async () => {
     try {
@@ -161,6 +161,15 @@ export default function FacilityEvaluationPage() {
     );
   }
 
+  if (activeView === 'self_eval' && selectedPeriod) {
+    return (
+      <SelfEvaluationView
+        period={selectedPeriod}
+        onBack={() => setActiveView('list')}
+      />
+    );
+  }
+
   return (
     <div className="mx-auto max-w-4xl p-4">
       <div className="mb-4 flex items-center justify-between">
@@ -207,7 +216,7 @@ function PeriodCard({
   onStatusChange,
 }: {
   period: Period;
-  onSelect: (view: 'eval' | 'responses' | 'summary') => void;
+  onSelect: (view: 'eval' | 'responses' | 'summary' | 'self_eval') => void;
   onStatusChange: () => void;
 }) {
   const toast = useToast();
@@ -264,10 +273,16 @@ function PeriodCard({
               回答状況
             </Button>
             {(period.status === 'aggregating' || period.status === 'published') && (
-              <Button variant="outline" size="sm" onClick={() => onSelect('summary')}>
-                <MaterialIcon name="bar_chart" size={16} className="mr-1" />
-                集計結果
-              </Button>
+              <>
+                <Button variant="outline" size="sm" onClick={() => onSelect('summary')}>
+                  <MaterialIcon name="bar_chart" size={16} className="mr-1" />
+                  集計結果
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => onSelect('self_eval')}>
+                  <MaterialIcon name="description" size={16} className="mr-1" />
+                  自己評価総括表
+                </Button>
+              </>
             )}
             {next && (
               <Button
@@ -816,7 +831,21 @@ function SummaryView({
         </button>
       </div>
 
-      <p className="mb-3 text-xs text-[var(--neutral-foreground-3)]">回答者数: {currentRespondents}名</p>
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-xs text-[var(--neutral-foreground-3)]">回答者数: {currentRespondents}名</p>
+        {currentSummary.length > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              window.open(`/api/staff/facility-evaluation/summary-pdf?period_id=${period.id}&type=${activeTab}`, '_blank');
+            }}
+          >
+            <MaterialIcon name="picture_as_pdf" size={16} className="mr-1" />
+            PDF出力
+          </Button>
+        )}
+      </div>
 
       {currentSummary.length === 0 ? (
         <Card>
@@ -842,6 +871,237 @@ function SummaryView({
           </Card>
         ))
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Self Evaluation View (別紙3)
+// ---------------------------------------------------------------------------
+
+interface SelfEvalItem {
+  category: string;
+  sort_order: number;
+  current_status: string;
+  issues: string;
+  improvement_plan: string;
+}
+
+function SelfEvaluationView({
+  period,
+  onBack,
+}: {
+  period: Period;
+  onBack: () => void;
+}) {
+  const toast = useToast();
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [strengths, setStrengths] = useState<SelfEvalItem[]>([
+    { category: 'strength', sort_order: 1, current_status: '', issues: '', improvement_plan: '' },
+    { category: 'strength', sort_order: 2, current_status: '', issues: '', improvement_plan: '' },
+    { category: 'strength', sort_order: 3, current_status: '', issues: '', improvement_plan: '' },
+  ]);
+  const [weaknesses, setWeaknesses] = useState<SelfEvalItem[]>([
+    { category: 'weakness', sort_order: 1, current_status: '', issues: '', improvement_plan: '' },
+    { category: 'weakness', sort_order: 2, current_status: '', issues: '', improvement_plan: '' },
+    { category: 'weakness', sort_order: 3, current_status: '', issues: '', improvement_plan: '' },
+  ]);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const res = await api.get('/api/staff/facility-evaluation/self-summary', { params: { period_id: period.id } });
+      const items: SelfEvalItem[] = res.data.data.self_summary_items || [];
+      const s = items.filter((i: SelfEvalItem) => i.category === 'strength').sort((a: SelfEvalItem, b: SelfEvalItem) => a.sort_order - b.sort_order);
+      const w = items.filter((i: SelfEvalItem) => i.category === 'weakness').sort((a: SelfEvalItem, b: SelfEvalItem) => a.sort_order - b.sort_order);
+      if (s.length > 0) setStrengths(prev => prev.map((p, i) => s[i] || p));
+      if (w.length > 0) setWeaknesses(prev => prev.map((p, i) => w[i] || p));
+    } catch {
+      toast.error('データの取得に失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  }, [period.id, toast]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const handleGenerate = async () => {
+    if (!confirm('AIで自己評価総括表を生成しますか？既存の内容は上書きされます。')) return;
+    setGenerating(true);
+    try {
+      const res = await api.post('/api/staff/facility-evaluation/generate-self-evaluation', { period_id: period.id });
+      const data = res.data.data;
+      if (data.strengths) {
+        setStrengths(data.strengths.map((s: { current_status?: string; improvement_plan?: string }, i: number) => ({
+          category: 'strength', sort_order: i + 1,
+          current_status: s.current_status || '', issues: '', improvement_plan: s.improvement_plan || '',
+        })));
+      }
+      if (data.weaknesses) {
+        setWeaknesses(data.weaknesses.map((w: { issues?: string; improvement_plan?: string }, i: number) => ({
+          category: 'weakness', sort_order: i + 1,
+          current_status: '', issues: w.issues || '', improvement_plan: w.improvement_plan || '',
+        })));
+      }
+      toast.success('AIで生成しました');
+    } catch {
+      toast.error('AI生成に失敗しました');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await api.post('/api/staff/facility-evaluation/self-summary', {
+        period_id: period.id,
+        items: [...strengths, ...weaknesses],
+      });
+      toast.success('保存しました');
+    } catch {
+      toast.error('保存に失敗しました');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateStrength = (index: number, field: keyof SelfEvalItem, value: string) => {
+    setStrengths(prev => prev.map((s, i) => i === index ? { ...s, [field]: value } : s));
+  };
+
+  const updateWeakness = (index: number, field: keyof SelfEvalItem, value: string) => {
+    setWeaknesses(prev => prev.map((w, i) => i === index ? { ...w, [field]: value } : w));
+  };
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-5xl p-4">
+        <SkeletonList items={5} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-5xl p-4">
+      <Button variant="ghost" onClick={onBack} className="mb-4">
+        <MaterialIcon name="arrow_back" size={16} className="mr-1" />
+        戻る
+      </Button>
+
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold">自己評価結果（別紙3） — {period.title}</h1>
+          <p className="text-xs text-[var(--neutral-foreground-3)]">事業所における自己評価結果（公表）</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleGenerate} disabled={generating}>
+            <MaterialIcon name="auto_awesome" size={16} className="mr-1" />
+            {generating ? 'AI生成中...' : 'AI生成'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => {
+            window.open(`/api/staff/facility-evaluation/self-evaluation-pdf?period_id=${period.id}`, '_blank');
+          }}>
+            <MaterialIcon name="picture_as_pdf" size={16} className="mr-1" />
+            PDF出力
+          </Button>
+          <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>
+            <MaterialIcon name="save" size={16} className="mr-1" />
+            {saving ? '保存中...' : '保存'}
+          </Button>
+        </div>
+      </div>
+
+      {/* 強み */}
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle className="text-[var(--status-success-fg)]">
+            事業所の強み — より強化・充実を図ることが期待されること
+          </CardTitle>
+        </CardHeader>
+        <CardBody>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)]">
+                  <th className="w-8 px-2 py-2 text-center">#</th>
+                  <th className="px-3 py-2 text-left">工夫していることや意識的に行っている取組等</th>
+                  <th className="px-3 py-2 text-left">さらに充実を図るための取組等</th>
+                </tr>
+              </thead>
+              <tbody>
+                {strengths.map((item, i) => (
+                  <tr key={i} className="border-b border-[var(--neutral-stroke-3)]">
+                    <td className="px-2 py-2 text-center font-medium text-[var(--neutral-foreground-3)]">{i + 1}</td>
+                    <td className="px-3 py-2">
+                      <textarea
+                        className="w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] p-2 text-sm"
+                        rows={3}
+                        value={item.current_status}
+                        onChange={(e) => updateStrength(i, 'current_status', e.target.value)}
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <textarea
+                        className="w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] p-2 text-sm"
+                        rows={3}
+                        value={item.improvement_plan}
+                        onChange={(e) => updateStrength(i, 'improvement_plan', e.target.value)}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* 弱み */}
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle className="text-[var(--status-danger-fg)]">
+            事業所の弱み — 事業所の課題や改善が必要だと思われること
+          </CardTitle>
+        </CardHeader>
+        <CardBody>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)]">
+                  <th className="w-8 px-2 py-2 text-center">#</th>
+                  <th className="px-3 py-2 text-left">事業所として考えている課題の要因等</th>
+                  <th className="px-3 py-2 text-left">改善に向けて必要な取組や工夫が必要な点等</th>
+                </tr>
+              </thead>
+              <tbody>
+                {weaknesses.map((item, i) => (
+                  <tr key={i} className="border-b border-[var(--neutral-stroke-3)]">
+                    <td className="px-2 py-2 text-center font-medium text-[var(--neutral-foreground-3)]">{i + 1}</td>
+                    <td className="px-3 py-2">
+                      <textarea
+                        className="w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] p-2 text-sm"
+                        rows={3}
+                        value={item.issues}
+                        onChange={(e) => updateWeakness(i, 'issues', e.target.value)}
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <textarea
+                        className="w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] p-2 text-sm"
+                        rows={3}
+                        value={item.improvement_plan}
+                        onChange={(e) => updateWeakness(i, 'improvement_plan', e.target.value)}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardBody>
+      </Card>
     </div>
   );
 }
