@@ -937,8 +937,18 @@ function SummaryView({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
-              window.open(`/api/staff/facility-evaluation/summary-pdf?period_id=${period.id}&type=${activeTab}`, '_blank');
+            onClick={async () => {
+              try {
+                const res = await api.get(`/api/staff/facility-evaluation/summary-pdf?period_id=${period.id}&type=${activeTab}`, { responseType: 'blob' });
+                const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `facility-evaluation-${activeTab}-${period.id}.pdf`;
+                a.click();
+                URL.revokeObjectURL(url);
+              } catch {
+                toast.error('PDF出力に失敗しました');
+              }
             }}
           >
             <MaterialIcon name="picture_as_pdf" size={16} className="mr-1" />
@@ -1106,8 +1116,18 @@ function SelfEvaluationView({
             <MaterialIcon name="auto_awesome" size={16} className="mr-1" />
             {generating ? 'AI生成中...' : 'AI生成'}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => {
-            window.open(`/api/staff/facility-evaluation/self-evaluation-pdf?period_id=${period.id}`, '_blank');
+          <Button variant="outline" size="sm" onClick={async () => {
+            try {
+              const res = await api.get(`/api/staff/facility-evaluation/self-evaluation-pdf?period_id=${period.id}`, { responseType: 'blob' });
+              const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `facility-self-evaluation-${period.id}.pdf`;
+              a.click();
+              URL.revokeObjectURL(url);
+            } catch {
+              toast.error('PDF出力に失敗しました');
+            }
           }}>
             <MaterialIcon name="picture_as_pdf" size={16} className="mr-1" />
             PDF出力

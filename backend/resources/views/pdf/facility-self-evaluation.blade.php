@@ -158,8 +158,8 @@
                 @endphp
                 <tr>
                     <td class="num">{{ $i + 1 }}</td>
-                    <td>{{ $item['current_status'] ?? '' }}</td>
-                    <td>{{ $item['improvement_plan'] ?? '' }}</td>
+                    <td>{{ $item->current_status ?? '' }}</td>
+                    <td>{{ $item->improvement_plan ?? '' }}</td>
                 </tr>
             @endfor
         </tbody>
@@ -183,8 +183,8 @@
                 @endphp
                 <tr>
                     <td class="num">{{ $i + 1 }}</td>
-                    <td>{{ $item['issues'] ?? '' }}</td>
-                    <td>{{ $item['improvement_plan'] ?? '' }}</td>
+                    <td>{{ $item->issues ?? '' }}</td>
+                    <td>{{ $item->improvement_plan ?? '' }}</td>
                 </tr>
             @endfor
         </tbody>
