@@ -8,6 +8,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
@@ -49,10 +50,36 @@ class User extends Authenticatable
     // Relationships
     // =========================================================================
 
-    /** @return BelongsTo<Classroom, self> */
+    /**
+     * 現在アクティブな教室（単一）
+     * @return BelongsTo<Classroom, self>
+     */
     public function classroom(): BelongsTo
     {
         return $this->belongsTo(Classroom::class);
+    }
+
+    /**
+     * 所属している全ての教室（複数）
+     * @return BelongsToMany<Classroom>
+     */
+    public function classrooms(): BelongsToMany
+    {
+        return $this->belongsToMany(Classroom::class, 'classroom_user')->withTimestamps();
+    }
+
+    /**
+     * このユーザーがアクセス可能な教室IDのリストを取得
+     * @return array<int>
+     */
+    public function accessibleClassroomIds(): array
+    {
+        $ids = $this->classrooms()->pluck('classrooms.id')->toArray();
+        // classroom_userになくてもusers.classroom_idがあれば含める（後方互換）
+        if ($this->classroom_id && !in_array($this->classroom_id, $ids)) {
+            $ids[] = $this->classroom_id;
+        }
+        return $ids;
     }
 
     /**

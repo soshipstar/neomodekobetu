@@ -1,16 +1,55 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { useUiStore } from '@/stores/uiStore';
 import { useAuth } from '@/hooks/useAuth';
 import { NotificationBell } from './NotificationBell';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { getInitials } from '@/lib/utils';
+import api from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
+
+interface ClassroomOption {
+  id: number;
+  classroom_name: string;
+}
 
 export function Header() {
-  const { user } = useAuthStore();
+  const { user, fetchUser } = useAuthStore();
   const { toggleSidebar } = useUiStore();
   const { logout } = useAuth();
+  const toast = useToast();
+  const [classrooms, setClassrooms] = useState<ClassroomOption[]>([]);
+  const [switching, setSwitching] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      try {
+        const res = await api.get('/api/my-classrooms');
+        setClassrooms(res.data.data.classrooms || []);
+      } catch {
+        // silent fail
+      }
+    })();
+  }, [user]);
+
+  const handleSwitchClassroom = async (classroomId: number) => {
+    if (!user || user.classroom_id === classroomId || switching) return;
+    setSwitching(true);
+    try {
+      await api.post('/api/switch-classroom', { classroom_id: classroomId });
+      await fetchUser();
+      toast.success('教室を切り替えました');
+      // 画面をリロードして全クエリを再取得
+      window.location.reload();
+    } catch {
+      toast.error('教室の切り替えに失敗しました');
+    } finally {
+      setSwitching(false);
+    }
+  };
 
   if (!user) return null;
 
@@ -25,11 +64,23 @@ export function Header() {
         >
           <MaterialIcon name="menu" size={20} />
         </button>
-        {user.classroom && (
+        {classrooms.length > 1 ? (
+          <select
+            value={user.classroom_id || ''}
+            onChange={(e) => handleSwitchClassroom(Number(e.target.value))}
+            disabled={switching}
+            className="hidden rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-2 py-1 text-sm font-medium text-[var(--neutral-foreground-2)] sm:block"
+            title="教室を切り替え"
+          >
+            {classrooms.map((c) => (
+              <option key={c.id} value={c.id}>{c.classroom_name}</option>
+            ))}
+          </select>
+        ) : user.classroom ? (
           <span className="hidden text-sm font-medium text-[var(--neutral-foreground-2)] sm:block">
             {user.classroom.classroom_name}
           </span>
-        )}
+        ) : null}
       </div>
 
       {/* Right side */}

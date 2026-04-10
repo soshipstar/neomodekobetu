@@ -26,6 +26,12 @@ Route::prefix('auth')->group(function () {
     Route::post('/password/reset', [App\Http\Controllers\Auth\AuthController::class, 'resetPassword']);
 });
 
+// --- 教室切り替え（全認証ユーザー共通） ---
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/my-classrooms', [App\Http\Controllers\ClassroomSwitchController::class, 'myClassrooms']);
+    Route::post('/switch-classroom', [App\Http\Controllers\ClassroomSwitchController::class, 'switch']);
+});
+
 // ==========================================================================
 // 4.2 管理者 API (auth:sanctum + user_type:admin)
 // ==========================================================================
@@ -106,6 +112,8 @@ Route::prefix('admin')
         Route::get('/staff/{user}', [App\Http\Controllers\Admin\StaffManagementController::class, 'show']);
         Route::put('/staff/{user}', [App\Http\Controllers\Admin\StaffManagementController::class, 'update']);
         Route::delete('/staff/{user}', [App\Http\Controllers\Admin\StaffManagementController::class, 'destroy']);
+        Route::get('/users/{user}/classrooms', [App\Http\Controllers\Admin\UserClassroomController::class, 'index']);
+        Route::put('/users/{user}/classrooms', [App\Http\Controllers\Admin\UserClassroomController::class, 'sync']);
 
         // --- 教室設定 (#10-11) ---
         Route::get('/classroom-settings', [App\Http\Controllers\Admin\ClassroomSettingController::class, 'index']);
