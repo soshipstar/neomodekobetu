@@ -770,17 +770,20 @@ class SupportPlanController extends Controller
     }
 
     /**
-     * 下書き → 確認依頼（proposal）に変更
+     * 下書き or 提出済み → 確認依頼（proposal）を保護者に送信
+     * - draft の場合: status を submitted に更新
+     * - 既に submitted の場合: 再送扱い（status は維持）
+     * - official (正式版) は再送不可
      */
     public function publish(Request $request, IndividualSupportPlan $plan): JsonResponse
     {
         $plan->load('student');
         $this->authorizeClassroom($request->user(), $plan->student);
 
-        if ($plan->status !== 'draft') {
+        if ($plan->status === 'official') {
             return response()->json([
                 'success' => false,
-                'message' => '下書き状態の計画のみ確認依頼に変更できます。',
+                'message' => '正式版の計画は確認依頼を再送できません。',
             ], 422);
         }
 
@@ -792,7 +795,7 @@ class SupportPlanController extends Controller
         return response()->json([
             'success' => true,
             'data'    => $plan->fresh('details'),
-            'message' => '確認依頼として公開しました。',
+            'message' => '確認依頼を送信しました。',
         ]);
     }
 
