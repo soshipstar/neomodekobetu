@@ -285,6 +285,8 @@ Route::prefix('staff')
         Route::post('/facility-evaluation/staff-evaluation', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'saveStaffEvaluation']);
         Route::post('/facility-evaluation/aggregate', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'aggregate']);
         Route::post('/facility-evaluation/facility-comment', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'saveFacilityComment']);
+        Route::get('/facility-evaluation/staff-evaluation-detail', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'staffEvaluationDetail']);
+        Route::post('/facility-evaluation/update-summary-counts', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'updateSummaryCounts']);
         Route::get('/facility-evaluation/summary-pdf', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'summaryPdf']);
         Route::post('/facility-evaluation/generate-self-evaluation', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'generateSelfEvaluation']);
         Route::get('/facility-evaluation/self-evaluation-pdf', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'selfEvaluationPdf']);

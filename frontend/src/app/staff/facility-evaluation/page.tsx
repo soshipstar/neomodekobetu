@@ -624,13 +624,13 @@ function ResponseStatusView({ period, onBack }: { period: Period; onBack: () => 
             key: 'guardian',
             label: '保護者',
             badge: guardianResponses.filter((r) => r.is_submitted).length,
-            content: <ResponseTable responses={guardianResponses} nameKey="guardian_name" />,
+            content: <ResponseTable responses={guardianResponses} nameKey="guardian_name" periodId={period.id} type="guardian" />,
           },
           {
             key: 'staff',
             label: 'スタッフ',
             badge: staffResponses.filter((r) => r.is_submitted).length,
-            content: <ResponseTable responses={staffResponses} nameKey="staff_name" />,
+            content: <ResponseTable responses={staffResponses} nameKey="staff_name" periodId={period.id} type="staff" />,
           },
         ]}
       />
@@ -638,8 +638,32 @@ function ResponseStatusView({ period, onBack }: { period: Period; onBack: () => 
   );
 }
 
-function ResponseTable({ responses, nameKey }: { responses: ResponseUser[]; nameKey: string }) {
+function ResponseTable({ responses, nameKey, periodId, type }: { responses: ResponseUser[]; nameKey: string; periodId: number; type: 'guardian' | 'staff' }) {
+  const toast = useToast();
   const submitted = responses.filter((r) => r.is_submitted).length;
+  const [detailModal, setDetailModal] = useState<{ name: string; answers: { question_number: number; question_text: string; category: string; answer: string; comment: string | null; improvement_plan?: string | null }[] } | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
+  const viewDetail = async (r: ResponseUser) => {
+    if (!r.is_submitted) return;
+    setLoadingDetail(true);
+    try {
+      const name = (r as unknown as Record<string, unknown>)[nameKey] as string;
+      if (type === 'guardian') {
+        const res = await api.get(`/api/staff/facility-evaluation/responses/${r.id}/pdf`);
+        setDetailModal({ name, answers: res.data.data.answers || [] });
+      } else {
+        // スタッフ回答詳細を取得
+        const res = await api.get('/api/staff/facility-evaluation/staff-evaluation-detail', { params: { evaluation_id: r.id } });
+        setDetailModal({ name, answers: res.data.data.answers || [] });
+      }
+    } catch {
+      toast.error('回答詳細の取得に失敗しました');
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
   return (
     <div>
       <div className="mb-3 flex items-center gap-3 text-sm">
@@ -662,6 +686,7 @@ function ResponseTable({ responses, nameKey }: { responses: ResponseUser[]; name
               <th className="px-4 py-2 text-left font-semibold">氏名</th>
               <th className="px-4 py-2 text-left font-semibold">状態</th>
               <th className="px-4 py-2 text-left font-semibold">提出日</th>
+              <th className="px-4 py-2 text-center font-semibold">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -678,11 +703,56 @@ function ResponseTable({ responses, nameKey }: { responses: ResponseUser[]; name
                 <td className="px-4 py-2 text-[var(--neutral-foreground-3)]">
                   {r.submitted_at ? formatDate(r.submitted_at) : '—'}
                 </td>
+                <td className="px-4 py-2 text-center">
+                  {r.is_submitted && (
+                    <Button variant="ghost" size="sm" onClick={() => viewDetail(r)} disabled={loadingDetail}>
+                      <MaterialIcon name="visibility" size={16} className="mr-1" />
+                      閲覧
+                    </Button>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* 回答詳細モーダル */}
+      <Modal isOpen={!!detailModal} onClose={() => setDetailModal(null)} title={`${detailModal?.name ?? ''} の回答内容`} size="lg">
+        {detailModal && (
+          <div className="max-h-[70vh] overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)]">
+                  <th className="px-3 py-2 text-left text-xs font-semibold">No.</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold">質問</th>
+                  <th className="px-3 py-2 text-center text-xs font-semibold">回答</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold">コメント</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detailModal.answers.map((a, i) => (
+                  <tr key={i} className="border-b border-[var(--neutral-stroke-3)]">
+                    <td className="px-3 py-2 text-xs text-[var(--neutral-foreground-3)]">{a.question_number}</td>
+                    <td className="max-w-xs px-3 py-2 text-xs">{a.question_text}</td>
+                    <td className="px-3 py-2 text-center">
+                      <Badge variant={a.answer === 'yes' ? 'success' : a.answer === 'no' ? 'danger' : a.answer === 'neutral' ? 'warning' : 'default'}>
+                        {ANSWER_LABELS[a.answer] || a.answer}
+                      </Badge>
+                    </td>
+                    <td className="max-w-xs px-3 py-2 text-xs text-[var(--neutral-foreground-2)]">
+                      {a.comment || ''}
+                      {a.improvement_plan && (
+                        <div className="mt-1 text-[var(--status-danger-fg)]">改善計画: {a.improvement_plan}</div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
@@ -707,6 +777,30 @@ function SummaryTable({
   const toast = useToast();
   const [editingComment, setEditingComment] = useState<{ questionId: number; value: string } | null>(null);
   const [savingComment, setSavingComment] = useState(false);
+  const [editingCounts, setEditingCounts] = useState<{ questionId: number; yes: number; neutral: number; no: number; unknown: number } | null>(null);
+  const [savingCounts, setSavingCounts] = useState(false);
+
+  const handleSaveCounts = async () => {
+    if (!editingCounts) return;
+    setSavingCounts(true);
+    try {
+      await api.post('/api/staff/facility-evaluation/update-summary-counts', {
+        period_id: periodId,
+        question_id: editingCounts.questionId,
+        yes_count: editingCounts.yes,
+        neutral_count: editingCounts.neutral,
+        no_count: editingCounts.no,
+        unknown_count: editingCounts.unknown,
+      });
+      toast.success('集計値を更新しました');
+      setEditingCounts(null);
+      onFacilityCommentSaved?.();
+    } catch {
+      toast.error('更新に失敗しました');
+    } finally {
+      setSavingCounts(false);
+    }
+  };
 
   const handleSaveFacilityComment = async () => {
     if (!editingComment) return;
@@ -749,15 +843,40 @@ function SummaryTable({
                 <tr className="border-b border-[var(--neutral-stroke-3)]">
                   <td className="px-3 py-2 text-[var(--neutral-foreground-3)]">{item.question_number}</td>
                   <td className="max-w-xs px-3 py-2 text-[var(--neutral-foreground-1)]">{item.question_text}</td>
-                  <td className="px-3 py-2 text-center">{item.yes_count}</td>
-                  <td className="px-3 py-2 text-center">{item.neutral_count}</td>
-                  <td className="px-3 py-2 text-center">{item.no_count}</td>
-                  <td className="px-3 py-2 text-center">{item.unknown_count}</td>
-                  <td className="px-3 py-2 text-center font-medium">
-                    <span className={item.yes_percentage >= 80 ? 'text-[var(--status-success-fg)]' : item.yes_percentage >= 50 ? 'text-[var(--status-warning-fg)]' : 'text-[var(--status-danger-fg)]'}>
-                      {item.yes_percentage}%
-                    </span>
-                  </td>
+                  {editingCounts?.questionId === item.question_id ? (
+                    <>
+                      <td className="px-1 py-1 text-center">
+                        <input type="number" min={0} className="w-14 rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-1 py-0.5 text-center text-sm" value={editingCounts.yes} onChange={(e) => setEditingCounts({ ...editingCounts, yes: Number(e.target.value) })} />
+                      </td>
+                      <td className="px-1 py-1 text-center">
+                        <input type="number" min={0} className="w-14 rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-1 py-0.5 text-center text-sm" value={editingCounts.neutral} onChange={(e) => setEditingCounts({ ...editingCounts, neutral: Number(e.target.value) })} />
+                      </td>
+                      <td className="px-1 py-1 text-center">
+                        <input type="number" min={0} className="w-14 rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-1 py-0.5 text-center text-sm" value={editingCounts.no} onChange={(e) => setEditingCounts({ ...editingCounts, no: Number(e.target.value) })} />
+                      </td>
+                      <td className="px-1 py-1 text-center">
+                        <input type="number" min={0} className="w-14 rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-1 py-0.5 text-center text-sm" value={editingCounts.unknown} onChange={(e) => setEditingCounts({ ...editingCounts, unknown: Number(e.target.value) })} />
+                      </td>
+                      <td className="px-1 py-1 text-center">
+                        <div className="flex gap-1 justify-center">
+                          <Button size="sm" variant="primary" onClick={handleSaveCounts} disabled={savingCounts}>保存</Button>
+                          <Button size="sm" variant="ghost" onClick={() => setEditingCounts(null)}>取消</Button>
+                        </div>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td className={`px-3 py-2 text-center ${editable ? 'cursor-pointer hover:bg-[var(--neutral-background-3)]' : ''}`} onClick={() => editable && setEditingCounts({ questionId: item.question_id, yes: item.yes_count, neutral: item.neutral_count, no: item.no_count, unknown: item.unknown_count })}>{item.yes_count}</td>
+                      <td className={`px-3 py-2 text-center ${editable ? 'cursor-pointer hover:bg-[var(--neutral-background-3)]' : ''}`} onClick={() => editable && setEditingCounts({ questionId: item.question_id, yes: item.yes_count, neutral: item.neutral_count, no: item.no_count, unknown: item.unknown_count })}>{item.neutral_count}</td>
+                      <td className={`px-3 py-2 text-center ${editable ? 'cursor-pointer hover:bg-[var(--neutral-background-3)]' : ''}`} onClick={() => editable && setEditingCounts({ questionId: item.question_id, yes: item.yes_count, neutral: item.neutral_count, no: item.no_count, unknown: item.unknown_count })}>{item.no_count}</td>
+                      <td className={`px-3 py-2 text-center ${editable ? 'cursor-pointer hover:bg-[var(--neutral-background-3)]' : ''}`} onClick={() => editable && setEditingCounts({ questionId: item.question_id, yes: item.yes_count, neutral: item.neutral_count, no: item.no_count, unknown: item.unknown_count })}>{item.unknown_count}</td>
+                      <td className="px-3 py-2 text-center font-medium">
+                        <span className={item.yes_percentage >= 80 ? 'text-[var(--status-success-fg)]' : item.yes_percentage >= 50 ? 'text-[var(--status-warning-fg)]' : 'text-[var(--status-danger-fg)]'}>
+                          {item.yes_percentage}%
+                        </span>
+                      </td>
+                    </>
+                  )}
                 </tr>
                 {/* コメント行 */}
                 {(userComments.length > 0 || item.facility_comment || editable) && (

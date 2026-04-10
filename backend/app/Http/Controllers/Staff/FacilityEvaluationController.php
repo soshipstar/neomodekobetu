@@ -638,6 +638,72 @@ class FacilityEvaluationController extends Controller
     }
 
     /**
+     * 集計結果の手動修正（紙回答分の加算等）
+     */
+    public function updateSummaryCounts(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'period_id'     => 'required|integer',
+            'question_id'   => 'required|integer',
+            'yes_count'     => 'required|integer|min:0',
+            'neutral_count' => 'required|integer|min:0',
+            'no_count'      => 'required|integer|min:0',
+            'unknown_count' => 'required|integer|min:0',
+        ]);
+
+        $total = $validated['yes_count'] + $validated['neutral_count'] + $validated['no_count'];
+        $yesPercentage = $total > 0 ? round(($validated['yes_count'] / $total) * 100, 1) : 0;
+
+        DB::table('facility_evaluation_summaries')->updateOrInsert(
+            [
+                'period_id'   => $validated['period_id'],
+                'question_id' => $validated['question_id'],
+            ],
+            [
+                'yes_count'      => $validated['yes_count'],
+                'neutral_count'  => $validated['neutral_count'],
+                'no_count'       => $validated['no_count'],
+                'unknown_count'  => $validated['unknown_count'],
+                'yes_percentage' => $yesPercentage,
+                'updated_at'     => now(),
+            ]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => '集計値を更新しました。',
+        ]);
+    }
+
+    /**
+     * スタッフ回答詳細の取得（閲覧用）
+     */
+    public function staffEvaluationDetail(Request $request): JsonResponse
+    {
+        $evaluationId = $request->input('evaluation_id');
+
+        $eval = DB::table('facility_staff_evaluations')->find($evaluationId);
+        if (!$eval) {
+            return response()->json(['success' => false, 'message' => '評価が見つかりません。'], 404);
+        }
+
+        $answers = DB::table('facility_staff_evaluation_answers as a')
+            ->join('facility_evaluation_questions as q', 'a.question_id', '=', 'q.id')
+            ->where('a.evaluation_id', $eval->id)
+            ->select('q.question_number', 'q.question_text', 'q.category', 'a.answer', 'a.comment', 'a.improvement_plan')
+            ->orderBy('q.question_number')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'evaluation' => $eval,
+                'answers'    => $answers,
+            ],
+        ]);
+    }
+
+    /**
      * スタッフ自己評価フォームの取得
      */
     public function staffEvaluation(Request $request): JsonResponse
