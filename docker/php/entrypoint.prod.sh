@@ -28,6 +28,9 @@ if [ ! -f storage/fonts/ipag.ttf ]; then
     fi
 fi
 
+# package:discover（.env が volume mount された後に実行する必要がある）
+php artisan package:discover --ansi 2>/dev/null || true
+
 # 既存キャッシュをクリア（設定変更が確実に反映されるように）
 php artisan config:clear 2>/dev/null || true
 php artisan route:clear 2>/dev/null || true

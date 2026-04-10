@@ -87,7 +87,8 @@ RUN mkdir -p \
     && chown -R www-data:www-data storage bootstrap/cache
 
 # optimized autoloader（コード確定後にやるとクラスマップが最適化される）
-RUN composer dump-autoload --optimize --classmap-authoritative --no-dev
+# --no-scripts: package:discover は .env が必要なため、ビルド時ではなく entrypoint で実行する
+RUN composer dump-autoload --optimize --classmap-authoritative --no-dev --no-scripts
 
 # Entrypoint（起動時に storage:link / migrate / config:cache 等を実施）
 COPY docker/php/entrypoint.prod.sh /usr/local/bin/entrypoint.sh
