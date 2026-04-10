@@ -1,1 +1,78 @@
+# ---------------------------------------------------------------------------
+# Docker build context exclusions
+#
+# 方針: build に不要なものを全て除外してコンテキスト転送量と daemon 負荷を最小化する。
+# このファイルはルート = backend build context (`./`) で適用される。
+# frontend は frontend/.dockerignore 側で定義。
+# ---------------------------------------------------------------------------
+
+# --- VCS / エディタ ---
+.git
+.gitignore
+.github
+.gitattributes
+.idea
+.vscode
+.editorconfig
+.claude
+.cursor
+
+# --- フロントエンド関連（backend build context で不要） ---
+frontend
+
+# --- Node / Composer 成果物（イメージ内で再生成） ---
+**/node_modules
+**/vendor
+backend/vendor
+backend/node_modules
+
+# --- ビルド成果物 ---
+**/.next
+**/dist
+**/build
+**/out
+
+# --- ログ・一時ファイル ---
+**/storage/logs/*
+!**/storage/logs/.gitkeep
+**/storage/framework/sessions/*
+!**/storage/framework/sessions/.gitkeep
+**/storage/framework/views/*
+!**/storage/framework/views/.gitkeep
+**/storage/framework/cache/*
+!**/storage/framework/cache/.gitkeep
+**/storage/app/public/*
 backend/public/storage
+**/*.log
+**/.DS_Store
+**/Thumbs.db
+
+# --- 環境変数・認証情報 ---
+**/.env
+**/.env.*
+!**/.env.example
+
+# --- テスト・開発専用 ---
+**/tests
+**/coverage
+**/.phpunit.cache
+**/.phpunit.result.cache
+
+# --- ドキュメント ---
+*.md
+docs/
+SPECIFICATION.md
+
+# --- Python analytics（backend build context では不要） ---
+analytics
+
+# --- Docker 自身 ---
+docker-compose*.yml
+compose*.yml
+
+# --- 一時ディレクトリ・バックアップ ---
+tmp
+temp
+*.bak
+*.tmp
+*.swp

@@ -1,0 +1,34 @@
+# ---------------------------------------------------------------------------
+# Frontend build context (./frontend)
+#
+# node_modules と .next を含めないことで context 転送を数 MB に抑える。
+# Dockerfile 内で npm ci → next build するので、ローカルの成果物は不要。
+# ---------------------------------------------------------------------------
+
+node_modules
+.next
+out
+dist
+coverage
+
+.git
+.gitignore
+.dockerignore
+
+.env
+.env.*
+!.env.example
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+*.md
+README.md
+
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+tsconfig.tsbuildinfo

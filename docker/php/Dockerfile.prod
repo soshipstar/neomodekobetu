@@ -1,56 +1,95 @@
-FROM php:8.4-fpm AS builder
+# syntax=docker/dockerfile:1.6
 
-# System dependencies
-RUN apt-get update && apt-get install -y \
-    git curl zip unzip libpq-dev libzip-dev libicu-dev \
-    libfreetype6-dev libjpeg62-turbo-dev libpng-dev \
-    libonig-dev libxml2-dev \
+# ===========================================================================
+# Backend (Laravel 12 + PHP 8.4) - Production build
+# ---------------------------------------------------------------------------
+# 方針:
+#  - base ステージに拡張・Node・Chromium をまとめて入れてキャッシュ
+#  - composer.json/lock を先にコピーして vendor キャッシュを効かせる
+#  - コード変更では composer install が再実行されないようにする
+# ===========================================================================
+
+# --- base: OS 依存と PHP 拡張 ---
+FROM php:8.4-fpm AS base
+
+# 実行時に必要な全依存をまとめて入れる（ここを変えない限り再利用される）
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git curl zip unzip \
+        libpq-dev libzip-dev libicu-dev \
+        libfreetype6-dev libjpeg62-turbo-dev libpng-dev \
+        libonig-dev libxml2-dev \
+        ca-certificates gnupg \
+        fonts-ipafont-gothic fonts-ipafont-mincho \
+        chromium \
+        libatk-bridge2.0-0 libatk1.0-0 libcups2 libdbus-1-3 libdrm2 \
+        libgbm1 libgtk-3-0 libnspr4 libnss3 libxcomposite1 libxdamage1 \
+        libxrandr2 libxshmfence1 xdg-utils \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo pdo_pgsql pgsql zip intl gd mbstring bcmath opcache pcntl \
+    && docker-php-ext-install -j$(nproc) \
+        pdo pdo_pgsql pgsql zip intl gd mbstring bcmath opcache pcntl \
     && pecl install redis && docker-php-ext-enable redis \
+    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# OPcache（本番向け）
+RUN { \
+      echo "opcache.enable=1"; \
+      echo "opcache.memory_consumption=256"; \
+      echo "opcache.max_accelerated_files=20000"; \
+      echo "opcache.validate_timestamps=0"; \
+      echo "opcache.interned_strings_buffer=16"; \
+    } > /usr/local/etc/php/conf.d/opcache-prod.ini
 
 # Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+
 WORKDIR /var/www/html
 
-# Copy backend code
+# --- deps: composer 依存だけを解決（キャッシュ目的）---
+FROM base AS deps
+COPY backend/composer.json backend/composer.lock ./
+# post-autoload-dump の artisan 呼び出しが App/ を要求するため、--no-scripts で回避
+RUN --mount=type=cache,target=/root/.composer/cache \
+    composer install \
+        --no-dev \
+        --no-scripts \
+        --no-autoloader \
+        --prefer-dist \
+        --no-interaction \
+        --no-progress
+
+# --- runtime: アプリ本体＋vendor＋optimized autoload ---
+FROM base AS runtime
+
+# vendor を deps ステージから取得
+COPY --from=deps /var/www/html/vendor ./vendor
+
+# Puppeteer (puppeteer-core) を deps と別に入れる（chromium は base に同梱）
+RUN --mount=type=cache,target=/root/.npm \
+    npm install --no-audit --no-fund puppeteer-core
+
+# アプリ本体（backend/ 配下のみ）
 COPY backend/ .
 
-# Ensure required directories exist before composer
-RUN mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache storage/logs bootstrap/cache
-
-# Install dependencies (no dev)
-RUN composer install --no-dev --optimize-autoloader --no-interaction
-
-# OPcache config for production
-RUN echo "opcache.enable=1\nopcache.memory_consumption=256\nopcache.max_accelerated_files=20000\nopcache.validate_timestamps=0" > /usr/local/etc/php/conf.d/opcache-prod.ini
-
-# Japanese fonts for DomPDF
-RUN apt-get update && apt-get install -y fonts-ipafont-gothic fonts-ipafont-mincho \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Node.js + Puppeteer for PDF generation
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
-    && apt-get install -y nodejs \
-    && apt-get install -y chromium \
-       libatk-bridge2.0-0 libatk1.0-0 libcups2 libdbus-1-3 libdrm2 \
-       libgbm1 libgtk-3-0 libnspr4 libnss3 libxcomposite1 libxdamage1 \
-       libxrandr2 libxshmfence1 xdg-utils \
-    && cd /var/www/html && npm install puppeteer-core \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
-
-# Storage directories (including DomPDF font cache)
-RUN mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache storage/logs bootstrap/cache storage/fonts \
+# storage / cache ディレクトリ整備
+RUN mkdir -p \
+        storage/framework/sessions \
+        storage/framework/views \
+        storage/framework/cache \
+        storage/logs \
+        storage/fonts \
+        bootstrap/cache \
+    && cp /usr/share/fonts/opentype/ipafont-gothic/ipag.ttf storage/fonts/ipag.ttf 2>/dev/null || true \
     && chown -R www-data:www-data storage bootstrap/cache
 
-# Pre-copy IPA Gothic font to DomPDF font cache
-RUN cp /usr/share/fonts/opentype/ipafont-gothic/ipag.ttf storage/fonts/ipag.ttf 2>/dev/null || true
+# optimized autoloader（コード確定後にやるとクラスマップが最適化される）
+RUN composer dump-autoload --optimize --classmap-authoritative --no-dev
 
-# Entrypoint script (handles storage:link, migrations, optimize on every container start)
+# Entrypoint（起動時に storage:link / migrate / config:cache 等を実施）
 COPY docker/php/entrypoint.prod.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
