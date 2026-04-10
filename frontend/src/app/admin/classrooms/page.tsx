@@ -1,12 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import api from '@/lib/api';
 import { classroomSchema, type ClassroomFormData } from '@/lib/validators';
-import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
@@ -23,6 +22,7 @@ export default function ClassroomsPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const [showCreate, setShowCreate] = useState(false);
+  const [editingClassroom, setEditingClassroom] = useState<Classroom | null>(null);
 
   const { data: classrooms, isLoading } = useQuery({
     queryKey: ['admin', 'classrooms'],
@@ -32,9 +32,23 @@ export default function ClassroomsPage() {
     },
   });
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<ClassroomFormData>({
+  const createForm = useForm<ClassroomFormData>({
     resolver: zodResolver(classroomSchema),
   });
+
+  const editForm = useForm<ClassroomFormData>({
+    resolver: zodResolver(classroomSchema),
+  });
+
+  useEffect(() => {
+    if (editingClassroom) {
+      editForm.reset({
+        classroom_name: editingClassroom.classroom_name,
+        address: editingClassroom.address || '',
+        phone: editingClassroom.phone || '',
+      });
+    }
+  }, [editingClassroom, editForm]);
 
   const toggleActiveMutation = useMutation({
     mutationFn: async ({ id, is_active }: { id: number; is_active: boolean }) => {
@@ -54,10 +68,23 @@ export default function ClassroomsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'classrooms'] });
       setShowCreate(false);
-      reset();
+      createForm.reset();
       toast.success('事業所を作成しました');
     },
     onError: () => toast.error('作成に失敗しました'),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: ClassroomFormData }) => {
+      await api.put(`/api/admin/classrooms/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'classrooms'] });
+      setEditingClassroom(null);
+      editForm.reset();
+      toast.success('事業所を更新しました');
+    },
+    onError: () => toast.error('更新に失敗しました'),
   });
 
   const columns: Column<Classroom>[] = [
@@ -91,6 +118,20 @@ export default function ClassroomsPage() {
         </button>
       ),
     },
+    {
+      key: 'actions',
+      label: '操作',
+      render: (c) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setEditingClassroom(c)}
+          leftIcon={<MaterialIcon name="edit" size={14} />}
+        >
+          編集
+        </Button>
+      ),
+    },
   ];
 
   if (!isReady || !isMaster) return null;
@@ -103,7 +144,7 @@ export default function ClassroomsPage() {
       </div>
 
       {isLoading ? (
-        <SkeletonTable rows={5} cols={4} />
+        <SkeletonTable rows={5} cols={5} />
       ) : (
         <Table
           columns={columns}
@@ -113,14 +154,33 @@ export default function ClassroomsPage() {
         />
       )}
 
+      {/* Create Modal */}
       <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="事業所を作成">
-        <form onSubmit={handleSubmit((data) => createMutation.mutate(data))} className="space-y-4">
-          <Input label="事業所名" error={errors.classroom_name?.message} {...register('classroom_name')} />
-          <Input label="住所" {...register('address')} />
-          <Input label="電話番号" {...register('phone')} />
+        <form onSubmit={createForm.handleSubmit((data) => createMutation.mutate(data))} className="space-y-4">
+          <Input label="事業所名" error={createForm.formState.errors.classroom_name?.message} {...createForm.register('classroom_name')} />
+          <Input label="住所" {...createForm.register('address')} />
+          <Input label="電話番号" {...createForm.register('phone')} />
           <div className="flex justify-end gap-2">
             <Button variant="ghost" type="button" onClick={() => setShowCreate(false)}>キャンセル</Button>
             <Button type="submit" isLoading={createMutation.isPending}>作成</Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit Modal */}
+      <Modal isOpen={!!editingClassroom} onClose={() => setEditingClassroom(null)} title={`事業所を編集: ${editingClassroom?.classroom_name ?? ''}`}>
+        <form
+          onSubmit={editForm.handleSubmit((data) => {
+            if (editingClassroom) updateMutation.mutate({ id: editingClassroom.id, data });
+          })}
+          className="space-y-4"
+        >
+          <Input label="事業所名" error={editForm.formState.errors.classroom_name?.message} {...editForm.register('classroom_name')} />
+          <Input label="住所" {...editForm.register('address')} />
+          <Input label="電話番号" {...editForm.register('phone')} />
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" type="button" onClick={() => setEditingClassroom(null)}>キャンセル</Button>
+            <Button type="submit" isLoading={updateMutation.isPending}>更新</Button>
           </div>
         </form>
       </Modal>
