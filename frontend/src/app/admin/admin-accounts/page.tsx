@@ -14,6 +14,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { usePagination } from '@/hooks/usePagination';
 import { useMasterGuard } from '@/hooks/useMasterGuard';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { UserClassroomModal } from '@/components/admin/UserClassroomModal';
 
 interface Classroom {
   id: number;
@@ -64,6 +65,7 @@ export default function AdminAccountsPage() {
   const [editingAdmin, setEditingAdmin] = useState<AdminAccount | null>(null);
   const [deletingAdmin, setDeletingAdmin] = useState<AdminAccount | null>(null);
   const [convertingAdmin, setConvertingAdmin] = useState<AdminAccount | null>(null);
+  const [classroomAdmin, setClassroomAdmin] = useState<AdminAccount | null>(null);
   const [formData, setFormData] = useState<AdminFormData>(emptyFormData);
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof AdminFormData, string>>>({});
 
@@ -241,6 +243,9 @@ export default function AdminAccountsPage() {
         <div className="flex items-center gap-1 flex-wrap">
           <Button variant="ghost" size="sm" onClick={() => openEditModal(a)} leftIcon={<MaterialIcon name="edit" size={14} />}>
             編集
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setClassroomAdmin(a)} leftIcon={<MaterialIcon name="apartment" size={14} />}>
+            所属教室
           </Button>
           <Button
             variant="ghost"
@@ -453,6 +458,14 @@ export default function AdminAccountsPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Classroom Assignment Modal */}
+      {classroomAdmin && (
+        <UserClassroomModal
+          user={classroomAdmin}
+          onClose={() => setClassroomAdmin(null)}
+        />
+      )}
     </div>
   );
 }
