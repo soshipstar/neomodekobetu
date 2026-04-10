@@ -32,6 +32,10 @@ backend/node_modules
 **/build
 **/out
 
+# --- Laravel bootstrap cache（古い package:discover 結果が混入するため除外）---
+**/bootstrap/cache/*.php
+!**/bootstrap/cache/.gitkeep
+
 # --- ログ・一時ファイル ---
 **/storage/logs/*
 !**/storage/logs/.gitkeep
