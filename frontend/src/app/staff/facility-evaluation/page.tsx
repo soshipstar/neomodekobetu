@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useAuthStore } from '@/stores/authStore';
 import api from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -106,6 +107,8 @@ function formatDate(d: string | null): string {
 
 export default function FacilityEvaluationPage() {
   const toast = useToast();
+  const { user } = useAuthStore();
+  const isAdmin = user?.user_type === 'admin';
   const [periods, setPeriods] = useState<Period[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<Period | null>(null);
@@ -155,6 +158,7 @@ export default function FacilityEvaluationPage() {
     return (
       <SummaryView
         period={selectedPeriod}
+        isAdmin={isAdmin}
         onBack={() => setActiveView('list')}
         onRefresh={fetchPeriods}
       />
@@ -165,6 +169,7 @@ export default function FacilityEvaluationPage() {
     return (
       <SelfEvaluationView
         period={selectedPeriod}
+        isAdmin={isAdmin}
         onBack={() => setActiveView('list')}
       />
     );
@@ -193,6 +198,7 @@ export default function FacilityEvaluationPage() {
             <PeriodCard
               key={period.id}
               period={period}
+              isAdmin={isAdmin}
               onSelect={(view) => {
                 setSelectedPeriod(period);
                 setActiveView(view);
@@ -212,10 +218,12 @@ export default function FacilityEvaluationPage() {
 
 function PeriodCard({
   period,
+  isAdmin = false,
   onSelect,
   onStatusChange,
 }: {
   period: Period;
+  isAdmin?: boolean;
   onSelect: (view: 'eval' | 'responses' | 'summary' | 'self_eval') => void;
   onStatusChange: () => void;
 }) {
@@ -284,7 +292,7 @@ function PeriodCard({
                 </Button>
               </>
             )}
-            {next && (
+            {isAdmin && next && (
               <Button
                 variant="primary"
                 size="sm"
@@ -294,7 +302,7 @@ function PeriodCard({
                 {STATUS_LABELS[next]}へ
               </Button>
             )}
-            {period.status === 'published' && (
+            {isAdmin && period.status === 'published' && (
               <Button
                 variant="outline"
                 size="sm"
@@ -955,10 +963,12 @@ function SummaryTable({
 
 function SummaryView({
   period,
+  isAdmin = false,
   onBack,
   onRefresh,
 }: {
   period: Period;
+  isAdmin?: boolean;
   onBack: () => void;
   onRefresh: () => void;
 }) {
@@ -1110,7 +1120,7 @@ function SummaryView({
                 items={items}
                 commentsByQuestion={currentComments}
                 periodId={period.id}
-                editable={period.status === 'aggregating' || period.status === 'published'}
+                editable={isAdmin && (period.status === 'aggregating' || period.status === 'published')}
                 onFacilityCommentSaved={fetchSummary}
               />
             </CardBody>
@@ -1135,9 +1145,11 @@ interface SelfEvalItem {
 
 function SelfEvaluationView({
   period,
+  isAdmin = false,
   onBack,
 }: {
   period: Period;
+  isAdmin?: boolean;
   onBack: () => void;
 }) {
   const toast = useToast();
@@ -1242,10 +1254,12 @@ function SelfEvaluationView({
           <p className="text-xs text-[var(--neutral-foreground-3)]">事業所における自己評価結果（公表）</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleGenerate} disabled={generating}>
-            <MaterialIcon name="auto_awesome" size={16} className="mr-1" />
-            {generating ? 'AI生成中...' : 'AI生成'}
-          </Button>
+          {isAdmin && (
+            <Button variant="outline" size="sm" onClick={handleGenerate} disabled={generating}>
+              <MaterialIcon name="auto_awesome" size={16} className="mr-1" />
+              {generating ? 'AI生成中...' : 'AI生成'}
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={async () => {
             try {
               const res = await api.get(`/api/staff/facility-evaluation/self-evaluation-pdf?period_id=${period.id}`, { responseType: 'blob' });
@@ -1262,10 +1276,12 @@ function SelfEvaluationView({
             <MaterialIcon name="picture_as_pdf" size={16} className="mr-1" />
             PDF出力
           </Button>
-          <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>
-            <MaterialIcon name="save" size={16} className="mr-1" />
-            {saving ? '保存中...' : '保存'}
-          </Button>
+          {isAdmin && (
+            <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>
+              <MaterialIcon name="save" size={16} className="mr-1" />
+              {saving ? '保存中...' : '保存'}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -1295,7 +1311,8 @@ function SelfEvaluationView({
                         className="w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] p-2 text-sm"
                         rows={3}
                         value={item.current_status}
-                        onChange={(e) => updateStrength(i, 'current_status', e.target.value)}
+                        readOnly={!isAdmin}
+                        onChange={(e) => isAdmin && updateStrength(i, 'current_status', e.target.value)}
                       />
                     </td>
                     <td className="px-3 py-2">
@@ -1303,7 +1320,8 @@ function SelfEvaluationView({
                         className="w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] p-2 text-sm"
                         rows={3}
                         value={item.improvement_plan}
-                        onChange={(e) => updateStrength(i, 'improvement_plan', e.target.value)}
+                        readOnly={!isAdmin}
+                        onChange={(e) => isAdmin && updateStrength(i, 'improvement_plan', e.target.value)}
                       />
                     </td>
                   </tr>
@@ -1340,7 +1358,8 @@ function SelfEvaluationView({
                         className="w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] p-2 text-sm"
                         rows={3}
                         value={item.issues}
-                        onChange={(e) => updateWeakness(i, 'issues', e.target.value)}
+                        readOnly={!isAdmin}
+                        onChange={(e) => isAdmin && updateWeakness(i, 'issues', e.target.value)}
                       />
                     </td>
                     <td className="px-3 py-2">
@@ -1348,7 +1367,8 @@ function SelfEvaluationView({
                         className="w-full rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] p-2 text-sm"
                         rows={3}
                         value={item.improvement_plan}
-                        onChange={(e) => updateWeakness(i, 'improvement_plan', e.target.value)}
+                        readOnly={!isAdmin}
+                        onChange={(e) => isAdmin && updateWeakness(i, 'improvement_plan', e.target.value)}
                       />
                     </td>
                   </tr>
