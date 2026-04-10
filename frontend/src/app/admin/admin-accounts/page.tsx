@@ -27,10 +27,17 @@ interface AdminAccount {
   full_name: string;
   email: string | null;
   is_master: boolean;
+  is_company_admin: boolean;
   is_active: boolean;
   classroom_id: number | null;
   classroom_name: string | null;
+  company_id: number | null;
   created_at: string;
+}
+
+interface Company {
+  id: number;
+  name: string;
 }
 
 interface AdminFormData {
@@ -39,7 +46,9 @@ interface AdminFormData {
   full_name: string;
   email: string;
   is_master: boolean;
+  is_company_admin: boolean;
   classroom_id: string;
+  company_id: string;
   is_active: boolean;
 }
 
@@ -49,7 +58,9 @@ const emptyFormData: AdminFormData = {
   full_name: '',
   email: '',
   is_master: false,
+  is_company_admin: false,
   classroom_id: '',
+  company_id: '',
   is_active: true,
 };
 
@@ -85,7 +96,16 @@ export default function AdminAccountsPage() {
     },
   });
 
+  const { data: companiesData } = useQuery({
+    queryKey: ['admin', 'companies-list'],
+    queryFn: async () => {
+      const response = await api.get<{ data: Company[] }>('/api/admin/companies');
+      return response.data.data;
+    },
+  });
+
   const classrooms = classroomsData ?? [];
+  const companies = companiesData ?? [];
 
   const saveMutation = useMutation({
     mutationFn: async (data: AdminFormData & { id?: number }) => {
@@ -94,7 +114,9 @@ export default function AdminAccountsPage() {
           full_name: data.full_name,
           email: data.email || null,
           is_master: data.is_master,
+          is_company_admin: data.is_company_admin,
           classroom_id: data.classroom_id ? Number(data.classroom_id) : null,
+          company_id: data.company_id ? Number(data.company_id) : null,
           is_active: data.is_active,
         };
         if (data.password) payload.password = data.password;
@@ -103,6 +125,7 @@ export default function AdminAccountsPage() {
       return api.post('/api/admin/admin-accounts', {
         ...data,
         classroom_id: data.classroom_id ? Number(data.classroom_id) : null,
+        company_id: data.company_id ? Number(data.company_id) : null,
       });
     },
     onSuccess: () => {
@@ -161,7 +184,9 @@ export default function AdminAccountsPage() {
       full_name: admin.full_name,
       email: admin.email || '',
       is_master: admin.is_master,
+      is_company_admin: admin.is_company_admin,
       classroom_id: admin.classroom_id ? String(admin.classroom_id) : '',
+      company_id: admin.company_id ? String(admin.company_id) : '',
       is_active: admin.is_active,
     });
     setFormErrors({});
@@ -348,14 +373,39 @@ export default function AdminAccountsPage() {
               権限 *
             </label>
             <select
-              value={formData.is_master ? '1' : '0'}
-              onChange={(e) => setFormData({ ...formData, is_master: e.target.value === '1' })}
+              value={formData.is_master ? 'master' : formData.is_company_admin ? 'company' : 'normal'}
+              onChange={(e) => {
+                const v = e.target.value;
+                setFormData({
+                  ...formData,
+                  is_master: v === 'master',
+                  is_company_admin: v === 'company',
+                });
+              }}
               className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
             >
-              <option value="0">通常管理者</option>
-              <option value="1">マスター管理者</option>
+              <option value="normal">通常管理者（自教室のみ）</option>
+              <option value="company">企業管理者（自企業の全教室）</option>
+              <option value="master">マスター管理者（全企業統括）</option>
             </select>
           </div>
+          {formData.is_company_admin && (
+            <div className="w-full">
+              <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-1)]">
+                所属企業 *
+              </label>
+              <select
+                value={formData.company_id}
+                onChange={(e) => setFormData({ ...formData, company_id: e.target.value })}
+                className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+              >
+                <option value="">選択してください</option>
+                {companies.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="w-full">
             <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-1)]">
               所属教室 *

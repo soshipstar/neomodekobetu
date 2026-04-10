@@ -33,7 +33,7 @@ class AdminAccountController extends Controller
     {
         if ($deny = $this->requireMaster($request)) return $deny;
 
-        $query = User::where('user_type', 'admin')->with('classroom');
+        $query = User::where('user_type', 'admin')->with(['classroom', 'company']);
 
         if ($request->filled('is_active')) {
             $query->where('is_active', $request->boolean('is_active'));
@@ -67,7 +67,7 @@ class AdminAccountController extends Controller
             return response()->json(['success' => false, 'message' => '管理者アカウントではありません。'], 404);
         }
 
-        $user->load('classroom');
+        $user->load(['classroom', 'company']);
 
         return response()->json([
             'success' => true,
@@ -83,13 +83,15 @@ class AdminAccountController extends Controller
         if ($deny = $this->requireMaster($request)) return $deny;
 
         $validated = $request->validate([
-            'classroom_id' => 'nullable|exists:classrooms,id',
-            'username'     => 'required|string|max:100|unique:users',
-            'password'     => 'required|string|min:6',
-            'full_name'    => 'required|string|max:255',
-            'email'        => 'nullable|email|max:255',
-            'is_master'    => 'boolean',
-            'is_active'    => 'boolean',
+            'classroom_id'     => 'nullable|exists:classrooms,id',
+            'company_id'       => 'nullable|exists:companies,id',
+            'username'         => 'required|string|max:100|unique:users',
+            'password'         => 'required|string|min:6',
+            'full_name'        => 'required|string|max:255',
+            'email'            => 'nullable|email|max:255',
+            'is_master'        => 'boolean',
+            'is_company_admin' => 'boolean',
+            'is_active'        => 'boolean',
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
@@ -99,7 +101,7 @@ class AdminAccountController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => $user->load('classroom'),
+            'data'    => $user->load(['classroom', 'company']),
             'message' => '管理者アカウントを作成しました。',
         ], 201);
     }
@@ -116,13 +118,15 @@ class AdminAccountController extends Controller
         }
 
         $validated = $request->validate([
-            'classroom_id' => 'nullable|exists:classrooms,id',
-            'username'     => ['sometimes', 'required', 'string', 'max:100', Rule::unique('users')->ignore($user->id)],
-            'password'     => 'nullable|string|min:6',
-            'full_name'    => 'sometimes|required|string|max:255',
-            'email'        => 'nullable|email|max:255',
-            'is_master'    => 'boolean',
-            'is_active'    => 'boolean',
+            'classroom_id'     => 'nullable|exists:classrooms,id',
+            'company_id'       => 'nullable|exists:companies,id',
+            'username'         => ['sometimes', 'required', 'string', 'max:100', Rule::unique('users')->ignore($user->id)],
+            'password'         => 'nullable|string|min:6',
+            'full_name'        => 'sometimes|required|string|max:255',
+            'email'            => 'nullable|email|max:255',
+            'is_master'        => 'boolean',
+            'is_company_admin' => 'boolean',
+            'is_active'        => 'boolean',
         ]);
 
         if (!empty($validated['password'])) {
@@ -135,7 +139,7 @@ class AdminAccountController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => $user->fresh('classroom'),
+            'data'    => $user->fresh(['classroom', 'company']),
             'message' => '管理者アカウントを更新しました。',
         ]);
     }

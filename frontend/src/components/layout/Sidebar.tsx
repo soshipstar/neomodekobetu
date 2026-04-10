@@ -113,6 +113,7 @@ const adminNav: NavItem[] = [
   { type: 'link', label: 'イベント管理', href: '/admin/events', icon: 'celebration', visibility: 'non_master' },
   { type: 'link', label: '休日管理', href: '/admin/holidays', icon: 'event_busy', visibility: 'non_master' },
   { type: 'link', label: '教室基本設定', href: '/admin/settings', icon: 'settings', visibility: 'non_master' },
+  { type: 'link', label: '企業管理', href: '/admin/companies', icon: 'business', visibility: 'master_only' },
   { type: 'link', label: '教室管理', href: '/admin/classrooms', icon: 'apartment', visibility: 'master_only' },
   { type: 'link', label: '管理者アカウント', href: '/admin/admin-accounts', icon: 'shield_person', visibility: 'master_only' },
   { type: 'link', label: 'スタッフアカウント', href: '/admin/staff-accounts', icon: 'badge', visibility: 'master_only' },

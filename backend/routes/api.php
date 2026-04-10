@@ -44,6 +44,10 @@ Route::prefix('admin')
         // 教室管理
         Route::apiResource('classrooms', App\Http\Controllers\Admin\ClassroomController::class);
 
+        // --- 企業管理（マスター管理者専用） ---
+        Route::apiResource('companies', App\Http\Controllers\Admin\CompanyController::class);
+        Route::post('/companies/{company}/assign-classrooms', [App\Http\Controllers\Admin\CompanyController::class, 'assignClassrooms']);
+
         // ユーザー管理
         Route::apiResource('users', App\Http\Controllers\Admin\UserController::class);
         Route::post('/users/bulk-register', [App\Http\Controllers\Admin\UserController::class, 'bulkRegister']);
