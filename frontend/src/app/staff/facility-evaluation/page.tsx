@@ -294,6 +294,17 @@ function PeriodCard({
                 {STATUS_LABELS[next]}へ
               </Button>
             )}
+            {period.status === 'published' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleStatusUpdate('aggregating')}
+                disabled={updating}
+              >
+                <MaterialIcon name="undo" size={16} className="mr-1" />
+                集計中に戻す
+              </Button>
+            )}
           </div>
         </div>
       </CardBody>
@@ -1099,7 +1110,7 @@ function SummaryView({
                 items={items}
                 commentsByQuestion={currentComments}
                 periodId={period.id}
-                editable={period.status === 'aggregating'}
+                editable={period.status === 'aggregating' || period.status === 'published'}
                 onFacilityCommentSaved={fetchSummary}
               />
             </CardBody>
