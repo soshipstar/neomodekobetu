@@ -17,6 +17,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'classroom_id',
+        'company_id',
         'username',
         'password',
         'password_plain',
@@ -24,6 +25,7 @@ class User extends Authenticatable
         'email',
         'user_type',
         'is_master',
+        'is_company_admin',
         'is_active',
         'email_verified_at',
         'last_login_at',
@@ -39,11 +41,45 @@ class User extends Authenticatable
     {
         return [
             'is_master' => 'boolean',
+            'is_company_admin' => 'boolean',
             'is_active' => 'boolean',
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * 所属企業
+     * @return BelongsTo<Company, self>
+     */
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
+
+    /**
+     * マスター管理者（複数企業を統括）
+     */
+    public function isMasterAdmin(): bool
+    {
+        return $this->user_type === 'admin' && $this->is_master;
+    }
+
+    /**
+     * 企業管理者（1企業の全教室を管理）
+     */
+    public function isCompanyAdmin(): bool
+    {
+        return $this->user_type === 'admin' && $this->is_company_admin;
+    }
+
+    /**
+     * 教室追加権限があるか（マスター管理者のみ）
+     */
+    public function canCreateClassroom(): bool
+    {
+        return $this->isMasterAdmin();
     }
 
     // =========================================================================

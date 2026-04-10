@@ -26,13 +26,30 @@ class ClassroomController extends Controller
     }
 
     /**
-     * 教室一覧を取得（マスター管理者専用）
+     * 教室一覧を取得
+     * マスター管理者: 全教室
+     * 企業管理者: 自企業内の教室のみ
+     * 通常管理者: 自分の所属教室のみ
      */
     public function index(Request $request): JsonResponse
     {
-        if ($deny = $this->requireMaster($request)) return $deny;
+        $user = $request->user();
+        if (!$user || $user->user_type !== 'admin') {
+            return response()->json(['success' => false, 'message' => '権限がありません。'], 403);
+        }
 
         $query = Classroom::withCount(['students', 'users']);
+
+        if ($user->is_master) {
+            // マスター管理者: 全教室
+        } elseif ($user->is_company_admin && $user->company_id) {
+            // 企業管理者: 自企業の教室のみ
+            $query->where('company_id', $user->company_id);
+        } else {
+            // 通常管理者: 所属教室のみ
+            $ids = $user->accessibleClassroomIds();
+            $query->whereIn('id', $ids);
+        }
 
         if ($request->filled('is_active')) {
             $query->where('is_active', $request->boolean('is_active'));

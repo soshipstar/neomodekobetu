@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Table, type Column } from '@/components/ui/Table';
@@ -13,6 +13,7 @@ import { useToast } from '@/components/ui/Toast';
 import { useDebounce } from '@/hooks/useDebounce';
 import { usePagination } from '@/hooks/usePagination';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { UserClassroomModal } from '@/components/admin/UserClassroomModal';
 
 interface StaffMember {
   id: number;
@@ -48,6 +49,7 @@ export default function StaffManagementPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
   const [deletingStaff, setDeletingStaff] = useState<StaffMember | null>(null);
+  const [classroomStaff, setClassroomStaff] = useState<StaffMember | null>(null);
   const [formData, setFormData] = useState<StaffFormData>(emptyFormData);
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof StaffFormData, string>>>({});
 
@@ -181,6 +183,9 @@ export default function StaffManagementPage() {
           <Button variant="ghost" size="sm" onClick={() => openEditModal(s)} leftIcon={<MaterialIcon name="edit" size={14} />}>
             編集
           </Button>
+          <Button variant="ghost" size="sm" onClick={() => setClassroomStaff(s)} leftIcon={<MaterialIcon name="apartment" size={14} />}>
+            所属教室
+          </Button>
           <Button variant="ghost" size="sm" onClick={() => openDeleteModal(s)} leftIcon={<MaterialIcon name="delete" size={14} />} className="text-[var(--status-danger-fg)]">
             削除
           </Button>
@@ -312,6 +317,15 @@ export default function StaffManagementPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Classroom Assignment Modal */}
+      {classroomStaff && (
+        <UserClassroomModal
+          user={classroomStaff}
+          onClose={() => setClassroomStaff(null)}
+        />
+      )}
     </div>
   );
 }
+
