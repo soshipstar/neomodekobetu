@@ -14,6 +14,8 @@ import { format, addDays, subDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import Link from 'next/link';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { HiyariHattoCandidateModal } from '@/components/staff/HiyariHattoCandidateModal';
+import { useAuthStore } from '@/stores/authStore';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -54,6 +56,18 @@ interface StudentRecord {
   language_communication: string | null;
   social_relations: string | null;
   notes: string | null;
+}
+
+interface HiyariHattoCandidate {
+  detected: boolean;
+  studentId: number;
+  recordId: number;
+  reason: string;
+  severity: 'low' | 'medium' | 'high';
+  category: string;
+  situation: string;
+  immediate_response: string;
+  prevention_measures: string;
 }
 
 interface UnconfirmedNote {
@@ -118,6 +132,7 @@ export default function RenrakuchoPage() {
   // --- Date navigation ---
   const searchParams = useSearchParams();
   const initialDate = searchParams.get('date') ? new Date(searchParams.get('date')!) : new Date();
+  const { user } = useAuthStore();
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
   const dateLabelFull = format(selectedDate, 'yyyy年M月d日(E)', { locale: ja });
@@ -148,6 +163,7 @@ export default function RenrakuchoPage() {
   const [isSending, setIsSending] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isGenerating, setIsGenerating] = useState<number | null>(null);
+  const [hiyariHattoCandidate, setHiyariHattoCandidate] = useState<HiyariHattoCandidate | null>(null);
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
   const autoSaveRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -477,6 +493,15 @@ export default function RenrakuchoPage() {
       if (content) {
         setSendNotes((prev) => ({ ...prev, [studentId]: content }));
         toast.success(res.data?.message || 'AI統合文を生成しました');
+      }
+      // AI が検出したヒヤリハット候補を表示
+      const candidate = res.data?.data?.hiyari_hatto_candidate;
+      if (candidate?.detected) {
+        setHiyariHattoCandidate({
+          studentId,
+          recordId: sendActivityId,
+          ...candidate,
+        });
       }
     } catch {
       toast.error('生成に失敗しました');
@@ -1346,6 +1371,15 @@ export default function RenrakuchoPage() {
           </p>
         )}
       </Modal>
+
+      {/* ヒヤリハット候補モーダル (AI 検出) */}
+      {hiyariHattoCandidate && user?.classroom_id && (
+        <HiyariHattoCandidateModal
+          candidate={hiyariHattoCandidate}
+          classroomId={user.classroom_id}
+          onClose={() => setHiyariHattoCandidate(null)}
+        />
+      )}
     </div>
   );
 }
