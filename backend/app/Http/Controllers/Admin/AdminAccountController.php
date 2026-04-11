@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Classroom;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class AdminAccountController extends Controller
 {
@@ -36,6 +38,41 @@ class AdminAccountController extends Controller
         $user->company_name   = $user->classroom?->company?->name;
         // API 契約維持のため company_id を動的属性として公開（永続化はされない）
         $user->setAttribute('company_id', $user->classroom?->company_id);
+    }
+
+    /**
+     * 権限に応じて classroom_id の必須条件と所属企業の整合性を検証する。
+     *
+     * - マスター管理者 (is_master=true): classroom 不要
+     * - それ以外 (通常管理者 / 企業管理者): classroom 必須 + その classroom に
+     *   company_id が必ず設定されていること。企業未所属の教室は拒否。
+     */
+    private function assertClassroomByRole(array $validated): void
+    {
+        $isMaster = (bool) ($validated['is_master'] ?? false);
+        if ($isMaster) {
+            return;
+        }
+
+        $classroomId = $validated['classroom_id'] ?? null;
+        if (empty($classroomId)) {
+            throw ValidationException::withMessages([
+                'classroom_id' => ['所属教室は必須です。マスター管理者以外は必ず所属教室を選択してください。'],
+            ]);
+        }
+
+        $classroom = Classroom::find($classroomId);
+        if (!$classroom) {
+            throw ValidationException::withMessages([
+                'classroom_id' => ['指定した教室は存在しません。'],
+            ]);
+        }
+
+        if ($classroom->company_id === null) {
+            throw ValidationException::withMessages([
+                'classroom_id' => ['選択した教室には所属企業が設定されていません。企業に属する教室を選択してください。'],
+            ]);
+        }
     }
 
     /**
@@ -113,6 +150,8 @@ class AdminAccountController extends Controller
             'is_active'        => 'boolean',
         ]);
         // 所属企業は classroom 経由で一意に決まるため company_id は受け付けない
+        // 権限別の classroom 必須チェック + 教室の企業所属確認
+        $this->assertClassroomByRole($validated);
 
         $validated['password'] = Hash::make($validated['password']);
         $validated['user_type'] = 'admin';
@@ -150,6 +189,17 @@ class AdminAccountController extends Controller
             'is_active'        => 'boolean',
         ]);
         // company_id は受け付けない（classroom 経由で導出）
+        // 更新時も権限別の classroom 必須チェックを適用。
+        // classroom_id が request に含まれないときは既存値と権限で判定する。
+        $roleCheckInput = array_merge(
+            [
+                'classroom_id' => $user->classroom_id,
+                'is_master' => (bool) $user->is_master,
+                'is_company_admin' => (bool) $user->is_company_admin,
+            ],
+            $validated
+        );
+        $this->assertClassroomByRole($roleCheckInput);
 
         if (!empty($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);

@@ -211,7 +211,15 @@ export default function AdminAccountsPage() {
   function validateForm(): boolean {
     const errors: Partial<Record<keyof AdminFormData, string>> = {};
     if (!formData.full_name.trim()) errors.full_name = '氏名は必須です';
-    if (!formData.classroom_id) errors.classroom_id = '所属教室は必須です';
+    // 権限ごとの必須チェック
+    if (!formData.is_master) {
+      // マスター以外は必ず所属企業が必要
+      if (!formData.company_id) errors.company_id = '所属企業は必須です';
+      // 通常管理者（企業管理者でもマスターでもない）は所属教室も必須
+      if (!formData.is_company_admin && !formData.classroom_id) {
+        errors.classroom_id = '所属教室は必須です';
+      }
+    }
     if (!editingAdmin) {
       if (!formData.username.trim()) errors.username = 'ユーザー名は必須です';
       if (!formData.password) errors.password = 'パスワードは必須です';
@@ -393,6 +401,9 @@ export default function AdminAccountsPage() {
                   ...formData,
                   is_master: v === 'master',
                   is_company_admin: v === 'company',
+                  // 権限切替時に所属情報を整理
+                  ...(v === 'master' ? { company_id: '', classroom_id: '' } : {}),
+                  ...(v === 'company' ? { classroom_id: '' } : {}),
                 });
               }}
               className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
@@ -404,55 +415,55 @@ export default function AdminAccountsPage() {
           </div>
           <div className="w-full">
             <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-1)]">
-              所属企業{formData.is_company_admin ? ' *' : ''}
+              所属企業{!formData.is_master ? ' *' : ''}
             </label>
             <select
               value={formData.company_id}
+              disabled={formData.is_master}
               onChange={(e) => {
                 const nextCompanyId = e.target.value;
-                // 企業を変更したら、現在の教室がその企業に属していない場合はクリア
-                const nextCompanyNum = nextCompanyId ? Number(nextCompanyId) : null;
-                const currentClassroomNum = formData.classroom_id ? Number(formData.classroom_id) : null;
-                const keepClassroom = currentClassroomNum !== null
-                  && (nextCompanyNum === null
-                    || classrooms.find((c) => c.id === currentClassroomNum)?.company_id === nextCompanyNum);
+                // 企業を変更したら、教室は必ずクリア（教室は企業内から再選択）
                 setFormData({
                   ...formData,
                   company_id: nextCompanyId,
-                  classroom_id: keepClassroom ? formData.classroom_id : '',
+                  classroom_id: '',
                 });
               }}
-              className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+              className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)] disabled:opacity-50"
             >
-              <option value="">未設定</option>
+              <option value="">
+                {formData.is_master ? '不要（マスター管理者）' : '選択してください'}
+              </option>
               {companies.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
+            {formErrors.company_id && (
+              <p className="mt-1 text-xs text-[var(--status-danger-fg)]">{formErrors.company_id}</p>
+            )}
           </div>
           <div className="w-full">
             <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-1)]">
-              所属教室 *
+              所属教室{!formData.is_master && !formData.is_company_admin ? ' *' : ''}
             </label>
             <select
               value={formData.classroom_id}
+              disabled={formData.is_master || !formData.company_id}
               onChange={(e) => {
-                const nextClassroomId = e.target.value;
-                // 教室を選んだら、その教室の企業に合わせて所属企業も自動同期
-                const chosen = nextClassroomId
-                  ? classrooms.find((c) => c.id === Number(nextClassroomId))
-                  : null;
                 setFormData({
                   ...formData,
-                  classroom_id: nextClassroomId,
-                  company_id: chosen?.company_id != null
-                    ? String(chosen.company_id)
-                    : formData.company_id,
+                  classroom_id: e.target.value,
                 });
               }}
-              className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+              className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)] disabled:opacity-50"
             >
-              <option value="">選択してください</option>
+              <option value="">
+                {formData.is_master
+                  ? '不要（マスター管理者）'
+                  : !formData.company_id
+                    ? '先に所属企業を選択してください'
+                    : '選択してください'}
+              </option>
               {filteredClassrooms.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.classroom_name}
