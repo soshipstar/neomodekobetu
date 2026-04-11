@@ -40,10 +40,24 @@ class AiGenerationController extends Controller
             ->limit(20)
             ->get();
 
-        $recordsText = $records->map(function ($r) {
+        // 新スキーマ（5 領域カラム）を使用。legacy の domain1/domain2 は存在しない。
+        $domainLabels = [
+            'health_life' => '健康・生活',
+            'motor_sensory' => '運動・感覚',
+            'cognitive_behavior' => '認知・行動',
+            'language_communication' => '言語・コミュニケーション',
+            'social_relations' => '人間関係・社会性',
+        ];
+        $recordsText = $records->map(function ($r) use ($domainLabels) {
             $date = $r->dailyRecord->record_date ?? '';
-            return "[{$date}] {$r->domain1}: {$r->domain1_content}";
-        })->implode("\n");
+            $parts = [];
+            foreach ($domainLabels as $col => $label) {
+                if (!empty($r->{$col})) {
+                    $parts[] = "{$label}: {$r->{$col}}";
+                }
+            }
+            return "[{$date}] " . implode(' / ', $parts);
+        })->filter(fn ($line) => trim($line) !== '[]')->implode("\n");
 
         // 過去の支援計画書
         $pastPlans = $student->supportPlans()
@@ -139,10 +153,24 @@ class AiGenerationController extends Controller
             ->with('dailyRecord:id,record_date,activity_name')
             ->get();
 
-        $recordsText = $records->map(function ($r) {
+        // 新スキーマ（5 領域カラム）を使用。legacy の domain1/domain2 は存在しない。
+        $domainLabels = [
+            'health_life' => '健康・生活',
+            'motor_sensory' => '運動・感覚',
+            'cognitive_behavior' => '認知・行動',
+            'language_communication' => '言語・コミュニケーション',
+            'social_relations' => '人間関係・社会性',
+        ];
+        $recordsText = $records->map(function ($r) use ($domainLabels) {
             $date = $r->dailyRecord->record_date ?? '';
-            return "[{$date}] {$r->domain1}: {$r->domain1_content} / {$r->domain2}: {$r->domain2_content}";
-        })->implode("\n");
+            $parts = [];
+            foreach ($domainLabels as $col => $label) {
+                if (!empty($r->{$col})) {
+                    $parts[] = "{$label}: {$r->{$col}}";
+                }
+            }
+            return "[{$date}] " . implode(' / ', $parts);
+        })->filter(fn ($line) => trim($line) !== '[]')->implode("\n");
 
         $details = $plan->details;
         if ($validated['detail_id'] ?? null) {

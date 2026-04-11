@@ -14,17 +14,28 @@ use Illuminate\Support\Facades\Log;
  */
 class WebPushService
 {
-    private string $publicKey;
+    private ?string $publicKey;
 
-    private string $privateKey;
+    private ?string $privateKey;
 
     private string $subject;
 
     public function __construct()
     {
-        $this->publicKey = config('services.webpush.public_key', '');
-        $this->privateKey = config('services.webpush.private_key', '');
+        // VAPID キーが未設定の環境（dev / test）では null のままにして、
+        // sendToUser が呼ばれても早期 return で無視する（プロパティ型制約で
+        // 落ちないようにする）
+        $this->publicKey = config('services.webpush.public_key') ?: null;
+        $this->privateKey = config('services.webpush.private_key') ?: null;
         $this->subject = config('services.webpush.subject', 'mailto:admin@kiduri.xyz');
+    }
+
+    /**
+     * VAPID キーが設定されているかどうか。未設定なら push を送らず静かに 0 を返す。
+     */
+    private function isConfigured(): bool
+    {
+        return !empty($this->publicKey) && !empty($this->privateKey);
     }
 
     /**
@@ -32,6 +43,11 @@ class WebPushService
      */
     public function sendToUser(int $userId, string $title, string $body, ?string $url = null): int
     {
+        if (!$this->isConfigured()) {
+            Log::debug('Web Push skipped: VAPID keys not configured', ['user_id' => $userId]);
+            return 0;
+        }
+
         $subscriptions = PushSubscription::where('user_id', $userId)->get();
 
         if ($subscriptions->isEmpty()) {

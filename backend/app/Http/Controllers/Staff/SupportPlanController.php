@@ -344,12 +344,25 @@ class SupportPlanController extends Controller
             ->limit(30)
             ->get();
 
-        $recordsText = $records->map(function ($r) {
+        // 新スキーマ（5 領域カラム）を使用。legacy の domain1/domain2 は存在しない。
+        $domainLabels = [
+            'health_life' => '健康・生活',
+            'motor_sensory' => '運動・感覚',
+            'cognitive_behavior' => '認知・行動',
+            'language_communication' => '言語・コミュニケーション',
+            'social_relations' => '人間関係・社会性',
+        ];
+        $recordsText = $records->map(function ($r) use ($domainLabels) {
             $date = $r->dailyRecord->record_date ?? '';
             $parts = ["[{$date}]"];
-            if ($r->domain1) $parts[] = "{$r->domain1}: {$r->domain1_content}";
-            if ($r->domain2) $parts[] = "{$r->domain2}: {$r->domain2_content}";
-            if ($r->daily_note) $parts[] = "メモ: {$r->daily_note}";
+            foreach ($domainLabels as $col => $label) {
+                if (!empty($r->{$col})) {
+                    $parts[] = "{$label}: {$r->{$col}}";
+                }
+            }
+            if (!empty($r->notes)) {
+                $parts[] = "メモ: {$r->notes}";
+            }
             return implode(' / ', $parts);
         })->implode("\n");
 

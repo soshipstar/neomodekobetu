@@ -93,8 +93,10 @@ class StaffEventController extends Controller
             'event_date'        => $validated['date'] ?? $validated['event_date'],
             'start_time'        => $validated['start_time'] ?? null,
             'end_time'          => $validated['end_time'] ?? null,
-            'target_audience'   => $validated['target_audience'] ?? null,
-            'event_color'       => $validated['event_color'] ?? null,
+            // DB 側に NOT NULL 制約（デフォルト値あり）があるので、
+            // リクエストに無ければ DB デフォルトと同じ値にフォールバックする
+            'target_audience'   => $validated['target_audience'] ?? 'all',
+            'event_color'       => $validated['event_color'] ?? '#28a745',
             'staff_comment'     => $validated['staff_comment'] ?? null,
             'guardian_message'  => $validated['guardian_message'] ?? null,
             'max_capacity'     => $validated['max_capacity'] ?? null,
