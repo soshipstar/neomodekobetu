@@ -692,9 +692,16 @@ class RenrakuchoController extends Controller
                 ['integrated_content' => $content, 'is_sent' => false]
             );
 
+            // ヒヤリハット検出: 統合文と元の観察記録を追加プロンプトで分析し、
+            // ヒヤリハットに値する内容があれば構造化された候補データを返す
+            $hiyariCandidate = $this->detectHiyariHattoCandidate($client, $student, $record, $domainText, $notes, $content);
+
             return response()->json([
                 'success' => true,
-                'data'    => ['content' => $content],
+                'data'    => [
+                    'content' => $content,
+                    'hiyari_hatto_candidate' => $hiyariCandidate,
+                ],
                 'message' => 'AIが連絡帳文を生成しました。',
             ]);
         } catch (\Exception $e) {
@@ -713,9 +720,100 @@ class RenrakuchoController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data'    => ['content' => $integrated],
+                'data'    => [
+                    'content' => $integrated,
+                    'hiyari_hatto_candidate' => null,
+                ],
                 'message' => '観察記録をまとめました（AI接続エラーのため簡易統合）。',
             ]);
+        }
+    }
+
+    /**
+     * 観察記録と統合文からヒヤリハットに値する内容を AI で判定し、
+     * 候補データを返す。判定不能 / 該当なし / API エラーなら null。
+     *
+     * 返り値構造:
+     *  [
+     *    'detected' => bool,
+     *    'summary' => string,           // 検出された状況の要約
+     *    'severity' => 'low|medium|high',
+     *    'category' => string,
+     *    'situation' => string,          // 発生状況の詳細
+     *    'immediate_response' => string, // 即時対応の候補
+     *    'prevention_measures' => string,// 再発防止の候補
+     *    'reason' => string,             // なぜヒヤリハットと判定したか
+     *  ]
+     */
+    private function detectHiyariHattoCandidate(
+        $client,
+        ?\App\Models\Student $student,
+        DailyRecord $record,
+        string $domainText,
+        string $notes,
+        string $integratedContent,
+    ): ?array {
+        try {
+            $studentName = $student?->student_name ?? '';
+            $activityName = $record->activity_name ?? '';
+
+            $detectPrompt = "あなたは放課後等デイサービスの児童安全管理の専門家です。\n"
+                . "以下の連絡帳の記録を読み、ヒヤリハット（危険事象・事故未遂・軽微な怪我など、"
+                . "今後の事故防止のために記録すべき事象）が含まれているかどうかを判定してください。\n\n"
+                . "【児童】{$studentName}\n"
+                . "【活動】{$activityName}\n\n"
+                . "【観察記録】\n{$domainText}\n\n"
+                . (!empty($notes) ? "【メモ】\n{$notes}\n\n" : '')
+                . "【統合文】\n{$integratedContent}\n\n"
+                . "判定は以下の JSON 形式のみで応答してください（他の文字は出さないこと）:\n"
+                . "{\n"
+                . "  \"detected\": true|false,\n"
+                . "  \"reason\": \"検出/非検出の理由 (50文字以内)\",\n"
+                . "  \"severity\": \"low\"|\"medium\"|\"high\",\n"
+                . "  \"category\": \"fall|collision|choking|ingestion|allergy|missing|conflict|self_harm|vehicle|medication|other\",\n"
+                . "  \"situation\": \"発生状況の詳細 (200文字以内)\",\n"
+                . "  \"immediate_response\": \"推奨される即時対応 (100文字以内)\",\n"
+                . "  \"prevention_measures\": \"推奨される再発防止策 (100文字以内)\"\n"
+                . "}\n\n"
+                . "判定基準:\n"
+                . "- 転倒/衝突/誤食/行方不明/アレルギー/喧嘩/自傷/送迎トラブル/投薬ミス 等の事象を検出\n"
+                . "- 明確に事故を示唆する記述がない場合は detected=false を返す\n"
+                . "- 通常の活動・成長記録は detected=false\n"
+                . "- 少しでも不安・危険・事故リスクを示唆する記述があれば detected=true";
+
+            $response = $client->chat()->create([
+                'model' => 'gpt-5.4-mini-2026-03-17',
+                'messages' => [
+                    ['role' => 'system', 'content' => 'あなたは児童安全管理の専門家です。厳密な JSON のみで応答します。'],
+                    ['role' => 'user', 'content' => $detectPrompt],
+                ],
+                'temperature' => 0.2,
+                'max_completion_tokens' => 500,
+            ]);
+
+            $raw = $response->choices[0]->message->content ?? '';
+            // Markdown コードブロックの除去
+            $raw = preg_replace('/^```(?:json)?\s*|\s*```$/m', '', trim($raw));
+            $parsed = json_decode($raw, true);
+
+            if (!is_array($parsed) || !array_key_exists('detected', $parsed) || !$parsed['detected']) {
+                return null;
+            }
+
+            return [
+                'detected' => true,
+                'reason' => $parsed['reason'] ?? '',
+                'severity' => in_array($parsed['severity'] ?? '', ['low', 'medium', 'high'], true)
+                    ? $parsed['severity']
+                    : 'low',
+                'category' => (string) ($parsed['category'] ?? 'other'),
+                'situation' => (string) ($parsed['situation'] ?? ''),
+                'immediate_response' => (string) ($parsed['immediate_response'] ?? ''),
+                'prevention_measures' => (string) ($parsed['prevention_measures'] ?? ''),
+            ];
+        } catch (\Throwable $e) {
+            \Log::warning('Hiyari hatto detection failed: ' . $e->getMessage());
+            return null;
         }
     }
 }

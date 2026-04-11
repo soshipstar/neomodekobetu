@@ -234,6 +234,14 @@ Route::prefix('staff')
         Route::post('/renrakucho/{record}/regenerate-integrated', [App\Http\Controllers\Staff\RenrakuchoController::class, 'regenerateIntegrated']);
         Route::get('/renrakucho/{record}/view-integrated', [App\Http\Controllers\Staff\RenrakuchoController::class, 'viewIntegrated']);
 
+        // ヒヤリハット記録
+        Route::get('/hiyari-hatto', [App\Http\Controllers\Staff\HiyariHattoController::class, 'index']);
+        Route::post('/hiyari-hatto', [App\Http\Controllers\Staff\HiyariHattoController::class, 'store']);
+        Route::get('/hiyari-hatto/{hiyariHatto}', [App\Http\Controllers\Staff\HiyariHattoController::class, 'show']);
+        Route::put('/hiyari-hatto/{hiyariHatto}', [App\Http\Controllers\Staff\HiyariHattoController::class, 'update']);
+        Route::delete('/hiyari-hatto/{hiyariHatto}', [App\Http\Controllers\Staff\HiyariHattoController::class, 'destroy']);
+        Route::get('/hiyari-hatto/{hiyariHatto}/pdf', [App\Http\Controllers\Staff\HiyariHattoController::class, 'pdf']);
+
         // --- お便り ---
         Route::get('/newsletter-settings', [App\Http\Controllers\Staff\NewsletterSettingController::class, 'show']);
         Route::put('/newsletter-settings', [App\Http\Controllers\Staff\NewsletterSettingController::class, 'update']);
