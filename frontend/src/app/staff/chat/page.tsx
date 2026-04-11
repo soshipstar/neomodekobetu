@@ -80,6 +80,9 @@ export default function StaffChatPage() {
   const [broadcastSending, setBroadcastSending] = useState(false);
   const [broadcastFile, setBroadcastFile] = useState<File | null>(null);
   const [broadcastRoomIds, setBroadcastRoomIds] = useState<Set<number>>(new Set());
+  const [quickModal, setQuickModal] = useState<'departure' | 'arrival' | null>(null);
+  const [quickRoomIds, setQuickRoomIds] = useState<Set<number>>(new Set());
+  const [quickSending, setQuickSending] = useState(false);
 
   useEffect(() => {
     fetchRooms();
@@ -196,6 +199,54 @@ export default function StaffChatPage() {
     }
   }, [broadcastMessage, broadcastFile, broadcastRoomIds, fetchRooms, toast]);
 
+  // クイック通知モーダルを開く（ルーム選択）
+  const openQuickModal = useCallback((action: 'departure' | 'arrival') => {
+    setQuickRoomIds(new Set());
+    setQuickModal(action);
+  }, []);
+
+  const toggleQuickRoom = useCallback((roomId: number) => {
+    setQuickRoomIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(roomId)) next.delete(roomId);
+      else next.add(roomId);
+      return next;
+    });
+  }, []);
+
+  const selectAllQuickRooms = useCallback((ids: number[]) => {
+    setQuickRoomIds(new Set(ids));
+  }, []);
+
+  const clearQuickRooms = useCallback(() => {
+    setQuickRoomIds(new Set());
+  }, []);
+
+  // クイック通知送信 (選択した保護者に)
+  const handleQuickBroadcastSubmit = useCallback(async () => {
+    if (!quickModal) return;
+    if (quickRoomIds.size === 0) {
+      toast.error('送信先を選択してください');
+      return;
+    }
+    const label = quickModal === 'departure' ? 'これから帰ります' : '到着しました';
+    setQuickSending(true);
+    try {
+      const res = await api.post('/api/staff/chat/quick-broadcast', {
+        action: quickModal,
+        room_ids: Array.from(quickRoomIds),
+      });
+      toast.success(res.data?.message || `${label} を送信しました`);
+      setQuickModal(null);
+      setQuickRoomIds(new Set());
+      fetchRooms();
+    } catch {
+      toast.error(`${label}の送信に失敗しました`);
+    } finally {
+      setQuickSending(false);
+    }
+  }, [quickModal, quickRoomIds, fetchRooms, toast]);
+
   // Toggle grade group accordion
   const toggleGroup = (key: string) => {
     setExpandedGroups((prev) => {
@@ -251,6 +302,25 @@ export default function StaffChatPage() {
               >
                 <MaterialIcon name="campaign" size={14} />
                 一斉送信
+              </button>
+            </div>
+            {/* クイック通知 (選択した保護者に送信) */}
+            <div className="flex gap-1.5">
+              <button
+                onClick={() => openQuickModal('departure')}
+                className="flex-1 flex items-center justify-center gap-1 rounded-md border border-[var(--brand-80)]/40 bg-[var(--brand-10)] px-2 py-1.5 text-[10px] font-medium text-[var(--brand-100)] hover:bg-[var(--brand-20)] transition-colors"
+                title="選択した保護者に「これから帰ります」を送信"
+              >
+                <MaterialIcon name="directions_bus" size={14} />
+                これから帰ります
+              </button>
+              <button
+                onClick={() => openQuickModal('arrival')}
+                className="flex-1 flex items-center justify-center gap-1 rounded-md border border-[var(--brand-80)]/40 bg-[var(--brand-10)] px-2 py-1.5 text-[10px] font-medium text-[var(--brand-100)] hover:bg-[var(--brand-20)] transition-colors"
+                title="選択した保護者に「到着しました」を送信"
+              >
+                <MaterialIcon name="check_circle" size={14} />
+                到着しました
               </button>
             </div>
             <div className="relative">
@@ -459,6 +529,17 @@ export default function StaffChatPage() {
         selectedRoomIds={broadcastRoomIds} setSelectedRoomIds={setBroadcastRoomIds}
         rooms={rooms}
         onSubmit={handleBroadcast} isSending={broadcastSending}
+      />
+      <QuickNotifyModal
+        action={quickModal}
+        onClose={() => setQuickModal(null)}
+        rooms={rooms}
+        selectedRoomIds={quickRoomIds}
+        toggleRoom={toggleQuickRoom}
+        selectAll={() => selectAllQuickRooms(rooms.map((r) => r.id))}
+        selectNone={clearQuickRooms}
+        onSubmit={handleQuickBroadcastSubmit}
+        isSending={quickSending}
       />
     </div>
   );
@@ -679,6 +760,89 @@ function BroadcastModal({
           <Button variant="secondary" onClick={onClose}>キャンセル</Button>
           <Button onClick={onSubmit} isLoading={isSending}
             disabled={(!message.trim() && !file) || selectedRoomIds.size === 0}
+            leftIcon={<MaterialIcon name="send" size={16} />}>
+            {selectedRoomIds.size}件に送信
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Quick Notify Modal (これから帰ります / 到着しました)
+// ---------------------------------------------------------------------------
+
+function QuickNotifyModal({
+  action, onClose, rooms, selectedRoomIds, toggleRoom, selectAll, selectNone, onSubmit, isSending,
+}: {
+  action: 'departure' | 'arrival' | null;
+  onClose: () => void;
+  rooms: ChatRoom[];
+  selectedRoomIds: Set<number>;
+  toggleRoom: (id: number) => void;
+  selectAll: () => void;
+  selectNone: () => void;
+  onSubmit: () => void;
+  isSending: boolean;
+}) {
+  const label = action === 'departure' ? 'これから帰ります' : '到着しました';
+  const iconName = action === 'departure' ? 'directions_bus' : 'check_circle';
+  const bodyPreview =
+    action === 'departure'
+      ? '【これから帰ります】\n\nお迎え準備をお願いいたします。'
+      : '【到着しました】\n\nご対応ありがとうございました。';
+
+  return (
+    <Modal isOpen={action !== null} onClose={onClose} title={`${label} を送信`} size="md">
+      <div className="space-y-4">
+        <div className="rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] p-3">
+          <div className="flex items-center gap-2 text-sm font-semibold text-[var(--neutral-foreground-1)]">
+            <MaterialIcon name={iconName} size={18} className="text-[var(--brand-80)]" />
+            送信内容（固定）
+          </div>
+          <pre className="mt-2 whitespace-pre-wrap text-xs text-[var(--neutral-foreground-2)]">{bodyPreview}</pre>
+        </div>
+
+        <div>
+          <div className="mb-1 flex items-center justify-between">
+            <label className="text-sm font-medium text-[var(--neutral-foreground-2)]">送信先を選択</label>
+            <div className="flex gap-2">
+              <button onClick={selectAll} className="text-xs text-[var(--brand-80)] hover:underline">全選択</button>
+              <button onClick={selectNone} className="text-xs text-[var(--neutral-foreground-4)] hover:underline">全解除</button>
+            </div>
+          </div>
+          <div className="max-h-[250px] overflow-y-auto rounded-lg border border-[var(--neutral-stroke-2)] p-2">
+            {rooms.length === 0 ? (
+              <p className="p-2 text-center text-xs text-[var(--neutral-foreground-4)]">保護者チャットがありません</p>
+            ) : (
+              rooms.map((room) => (
+                <label key={room.id} className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-[var(--neutral-background-3)] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedRoomIds.has(room.id)}
+                    onChange={() => toggleRoom(room.id)}
+                    className="rounded border-[var(--neutral-stroke-2)]"
+                  />
+                  <span className="text-[var(--neutral-foreground-1)]">
+                    {room.student?.student_name || `ID: ${room.student_id}`}
+                  </span>
+                  {room.guardian?.full_name && (
+                    <span className="text-xs text-[var(--neutral-foreground-4)]">({room.guardian.full_name})</span>
+                  )}
+                </label>
+              ))
+            )}
+          </div>
+          <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
+            {selectedRoomIds.size}/{rooms.length}件 選択中
+          </p>
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" onClick={onClose}>キャンセル</Button>
+          <Button onClick={onSubmit} isLoading={isSending}
+            disabled={selectedRoomIds.size === 0}
             leftIcon={<MaterialIcon name="send" size={16} />}>
             {selectedRoomIds.size}件に送信
           </Button>

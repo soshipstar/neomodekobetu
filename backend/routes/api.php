@@ -157,6 +157,7 @@ Route::prefix('staff')
             Route::post('/rooms/{room}/messages/{message}/archive', [App\Http\Controllers\Staff\ChatController::class, 'toggleArchive']);
             Route::get('/rooms/{room}/archived', [App\Http\Controllers\Staff\ChatController::class, 'archivedMessages']);
             Route::post('/broadcast', [App\Http\Controllers\Staff\ChatController::class, 'broadcast']);
+            Route::post('/quick-broadcast', [App\Http\Controllers\Staff\ChatController::class, 'quickBroadcast']);
         });
 
         // --- 生徒管理 ---
@@ -451,6 +452,7 @@ Route::prefix('guardian')
         Route::post('/chat/rooms/{room}/messages', [App\Http\Controllers\Guardian\ChatController::class, 'sendMessage']);
         Route::post('/chat/rooms/{room}/read', [App\Http\Controllers\Guardian\ChatController::class, 'markAsRead']);
         Route::post('/chat/rooms/{room}/absence', [App\Http\Controllers\Guardian\ChatController::class, 'sendAbsenceNotification']);
+        Route::post('/chat/rooms/{room}/quick-action', [App\Http\Controllers\Guardian\ChatController::class, 'sendQuickAction']);
         Route::post('/chat/rooms/{room}/event-registration', [App\Http\Controllers\Guardian\ChatController::class, 'sendEventRegistration']);
         Route::post('/chat/rooms/{room}/meeting-request', [App\Http\Controllers\Guardian\ChatController::class, 'sendMeetingRequest']);
         Route::post('/chat/rooms/{room}/messages/{message}/archive', [App\Http\Controllers\Guardian\ChatController::class, 'toggleArchive']);
@@ -641,4 +643,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/push/vapid-key', [App\Http\Controllers\Api\PushSubscriptionController::class, 'vapidPublicKey']);
     Route::post('/push/subscribe', [App\Http\Controllers\Api\PushSubscriptionController::class, 'subscribe']);
     Route::post('/push/unsubscribe', [App\Http\Controllers\Api\PushSubscriptionController::class, 'unsubscribe']);
+
+    // --- 通知カテゴリ設定 ---
+    Route::get('/notification-preferences', [App\Http\Controllers\Api\NotificationPreferenceController::class, 'show']);
+    Route::put('/notification-preferences', [App\Http\Controllers\Api\NotificationPreferenceController::class, 'update']);
 });

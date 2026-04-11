@@ -321,6 +321,85 @@ class ChatController extends Controller
     }
 
     /**
+     * クイック通知の一斉送信 (これから帰ります / 到着しました)
+     *
+     * body は固定テンプレート、message_type は 'quick_departure' または
+     * 'quick_arrival' を使用する。room_ids を省略した場合は担当教室の
+     * 全保護者ルームに配信する。
+     */
+    public function quickBroadcast(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'action' => 'required|string|in:departure,arrival',
+            'room_ids' => 'required|array|min:1',
+            'room_ids.*' => 'integer',
+        ]);
+
+        $templates = [
+            'departure' => [
+                'type' => 'quick_departure',
+                'title' => 'これから帰ります',
+                'body' => "【これから帰ります】\n\nお迎え準備をお願いいたします。",
+            ],
+            'arrival' => [
+                'type' => 'quick_arrival',
+                'title' => '到着しました',
+                'body' => "【到着しました】\n\nご対応ありがとうございました。",
+            ],
+        ];
+        $tpl = $templates[$validated['action']];
+
+        $rooms = ChatRoom::forUser($user)
+            ->whereIn('id', $validated['room_ids'])
+            ->get();
+        $sentCount = 0;
+
+        DB::transaction(function () use ($rooms, $user, $tpl, &$sentCount) {
+            foreach ($rooms as $room) {
+                ChatMessage::create([
+                    'room_id' => $room->id,
+                    'sender_id' => $user->id,
+                    'sender_type' => 'staff',
+                    'message' => $tpl['body'],
+                    'message_type' => $tpl['type'],
+                ]);
+                $room->update(['last_message_at' => now()]);
+                $sentCount++;
+            }
+        });
+
+        // 各保護者に通知
+        try {
+            $notificationService = app(NotificationService::class);
+            $senderName = $user->full_name ?? 'スタッフ';
+            $frontendUrl = rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/');
+            $guardianIds = $rooms->pluck('guardian_id')->unique()->filter();
+            $guardians = User::whereIn('id', $guardianIds)
+                ->where('is_active', true)
+                ->get();
+            foreach ($guardians as $guardian) {
+                $notificationService->notify(
+                    $guardian,
+                    'chat_message',
+                    $tpl['title'],
+                    $senderName,
+                    ['url' => "{$frontendUrl}/guardian/chat"],
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::warning('quickBroadcast notify error: ' . $e->getMessage());
+        }
+
+        return response()->json([
+            'success' => true,
+            'sent_count' => $sentCount,
+            'message' => "{$sentCount}件のチャットに「{$tpl['title']}」を送信しました。",
+        ]);
+    }
+
+    /**
      * 全保護者チャットルームに一斉送信
      */
     public function broadcast(Request $request): JsonResponse

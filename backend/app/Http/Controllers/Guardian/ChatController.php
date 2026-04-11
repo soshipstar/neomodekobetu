@@ -229,6 +229,84 @@ class ChatController extends Controller
     /**
      * 欠席連絡送信 (legacy chat_api.php send_absence_notification と同等)
      */
+    /**
+     * 保護者から施設へのクイック通知
+     * 「今出発しました」「帰宅しました」
+     */
+    public function sendQuickAction(Request $request, ChatRoom $room): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($room->guardian_id !== $user->id) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
+        $validated = $request->validate([
+            'action' => 'required|string|in:departed,arrived_home',
+        ]);
+
+        $templates = [
+            'departed' => [
+                'type' => 'quick_departed',
+                'title' => '今出発しました',
+                'body' => '【今出発しました】\n\nお迎え・送迎の準備をお願いします。',
+            ],
+            'arrived_home' => [
+                'type' => 'quick_home_arrival',
+                'title' => '帰宅しました',
+                'body' => '【帰宅しました】\n\n無事に到着しました。ありがとうございました。',
+            ],
+        ];
+        $tpl = $templates[$validated['action']];
+        // リテラルの \n をエスケープ文字として扱う
+        $body = str_replace('\n', "\n", $tpl['body']);
+
+        $message = DB::transaction(function () use ($user, $room, $tpl, $body) {
+            $msg = ChatMessage::create([
+                'room_id' => $room->id,
+                'sender_id' => $user->id,
+                'sender_type' => 'guardian',
+                'message' => $body,
+                'message_type' => $tpl['type'],
+            ]);
+            $room->update(['last_message_at' => now()]);
+            return $msg;
+        });
+
+        // 教室のスタッフに通知
+        try {
+            $notificationService = app(NotificationService::class);
+            $senderName = $user->full_name ?? '保護者';
+            $frontendUrl = rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/');
+
+            $room->loadMissing('student');
+            $classroomId = $room->student?->classroom_id;
+            if ($classroomId) {
+                $staffUsers = User::where('classroom_id', $classroomId)
+                    ->whereIn('user_type', ['staff', 'admin'])
+                    ->where('is_active', true)
+                    ->get();
+                foreach ($staffUsers as $staff) {
+                    $notificationService->notify(
+                        $staff,
+                        'chat_message',
+                        $tpl['title'],
+                        $senderName . ' (' . ($room->student?->student_name ?? '') . ')',
+                        ['url' => "{$frontendUrl}/staff/chat?room_id={$room->id}"],
+                    );
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('sendQuickAction notify error: ' . $e->getMessage());
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $message,
+            'message_id' => $message->id,
+        ], 201);
+    }
+
     public function sendAbsenceNotification(Request $request, ChatRoom $room): JsonResponse
     {
         $user = $request->user();

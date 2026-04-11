@@ -175,6 +175,9 @@ export default function GuardianChatRoomPage() {
         )}
       </div>
 
+      {/* Quick Action Buttons (今出発しました / 帰宅しました) */}
+      <QuickActionBar roomId={roomId} onSuccess={handleFormSuccess} toast={toast} />
+
       {/* Message Type Selector */}
       <div className="border-t border-[var(--neutral-stroke-2)] bg-white px-2 pt-2 sm:px-3">
         <div className="flex gap-1 overflow-x-auto">
@@ -582,6 +585,60 @@ function MeetingRequestForm({ roomId, studentId, onSuccess, toast }: FormProps) 
             送信
           </Button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Quick Action Bar (今出発しました / 帰宅しました)
+// ---------------------------------------------------------------------------
+
+function QuickActionBar({
+  roomId,
+  onSuccess,
+  toast,
+}: {
+  roomId: number;
+  onSuccess: () => void;
+  toast: ReturnType<typeof useToast>;
+}) {
+  const [sending, setSending] = useState<'departed' | 'arrived_home' | null>(null);
+
+  const handleSend = async (action: 'departed' | 'arrived_home') => {
+    const label = action === 'departed' ? '今出発しました' : '帰宅しました';
+    if (!window.confirm(`施設側に「${label}」と通知します。よろしいですか？`)) return;
+    setSending(action);
+    try {
+      await api.post(`/api/guardian/chat/rooms/${roomId}/quick-action`, { action });
+      toast.success(`${label} を送信しました`);
+      onSuccess();
+    } catch {
+      toast.error(`${label}の送信に失敗しました`);
+    } finally {
+      setSending(null);
+    }
+  };
+
+  return (
+    <div className="border-t border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] px-2 py-2 sm:px-3">
+      <div className="flex gap-2">
+        <button
+          onClick={() => handleSend('departed')}
+          disabled={sending !== null}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[var(--brand-80)]/40 bg-white px-3 py-2 text-sm font-medium text-[var(--brand-100)] shadow-sm hover:bg-[var(--brand-10)] transition-colors disabled:opacity-50"
+        >
+          <MaterialIcon name="directions_walk" size={16} />
+          {sending === 'departed' ? '送信中…' : '今出発しました'}
+        </button>
+        <button
+          onClick={() => handleSend('arrived_home')}
+          disabled={sending !== null}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[var(--brand-80)]/40 bg-white px-3 py-2 text-sm font-medium text-[var(--brand-100)] shadow-sm hover:bg-[var(--brand-10)] transition-colors disabled:opacity-50"
+        >
+          <MaterialIcon name="home" size={16} />
+          {sending === 'arrived_home' ? '送信中…' : '帰宅しました'}
+        </button>
       </div>
     </div>
   );
