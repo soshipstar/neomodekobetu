@@ -48,10 +48,10 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <head>
-        <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.svg" />
-        <link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/icon-152x152.svg" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/icon-192x192.svg" />
-        <link rel="apple-touch-icon" sizes="167x167" href="/assets/icons/icon-192x192.svg" />
+        {/* iOS Safari は PNG の apple-touch-icon を要求する（SVG 非推奨）。
+            180x180 が標準サイズで、他サイズは iOS が縮小/拡大して使う。 */}
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
       </head>
       <body className={`${notoSansJp.variable} font-sans antialiased`}>
