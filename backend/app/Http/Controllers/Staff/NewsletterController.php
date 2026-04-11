@@ -23,7 +23,7 @@ class NewsletterController extends Controller
         $query = Newsletter::with('creator:id,full_name');
 
         if ($user->classroom_id) {
-            $query->where('classroom_id', $user->classroom_id);
+            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
         }
 
         if ($request->filled('is_published')) {

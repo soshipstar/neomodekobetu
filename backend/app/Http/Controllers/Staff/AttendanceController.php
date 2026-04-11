@@ -25,10 +25,11 @@ class AttendanceController extends Controller
             'student.guardian:id,full_name',
         ]);
 
-        // 教室フィルタ
+        // 教室フィルタ（主教室 + classroom_user ピボット）
         if ($user->classroom_id) {
-            $query->whereHas('student', function ($q) use ($user) {
-                $q->where('classroom_id', $user->classroom_id);
+            $accessibleIds = $user->accessibleClassroomIds();
+            $query->whereHas('student', function ($q) use ($accessibleIds) {
+                $q->whereIn('classroom_id', $accessibleIds);
             });
         }
 
@@ -69,7 +70,7 @@ class AttendanceController extends Controller
         // 教室アクセス権チェック
         if ($user->classroom_id) {
             $absence->load('student');
-            if ($absence->student->classroom_id !== $user->classroom_id) {
+            if (!in_array($absence->student->classroom_id, $user->accessibleClassroomIds(), true)) {
                 return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
             }
         }
@@ -143,7 +144,7 @@ class AttendanceController extends Controller
         // 教室アクセス権チェック
         if ($user->classroom_id) {
             $absence->load('student');
-            if ($absence->student->classroom_id !== $user->classroom_id) {
+            if (!in_array($absence->student->classroom_id, $user->accessibleClassroomIds(), true)) {
                 return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
             }
         }

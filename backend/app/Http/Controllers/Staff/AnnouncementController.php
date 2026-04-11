@@ -20,7 +20,7 @@ class AnnouncementController extends Controller
             ->withCount('reads');
 
         if ($user->classroom_id) {
-            $query->where('classroom_id', $user->classroom_id);
+            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
         }
 
         $announcements = $query->orderByDesc('created_at')
