@@ -118,6 +118,7 @@ Route::prefix('admin')
 
         // --- スタッフ管理（配置・シフト） (#8-9) ---
         Route::get('/staff', [App\Http\Controllers\Admin\StaffManagementController::class, 'index']);
+        Route::post('/staff', [App\Http\Controllers\Admin\StaffManagementController::class, 'store']);
         Route::get('/staff/{user}', [App\Http\Controllers\Admin\StaffManagementController::class, 'show']);
         Route::put('/staff/{user}', [App\Http\Controllers\Admin\StaffManagementController::class, 'update']);
         Route::delete('/staff/{user}', [App\Http\Controllers\Admin\StaffManagementController::class, 'destroy']);
