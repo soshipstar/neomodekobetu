@@ -8,6 +8,8 @@ use App\Models\MonitoringDetail;
 use App\Models\MonitoringRecord;
 use App\Models\Student;
 use App\Models\StudentRecord;
+use App\Models\User;
+use App\Services\NotificationService;
 use App\Services\PuppeteerPdfService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -166,6 +168,20 @@ class MonitoringController extends Controller
         $message = $record->is_draft
             ? 'モニタリング表を下書き保存しました。（保護者には非公開）'
             : 'モニタリング表を提出しました。（保護者にも公開）';
+
+        // 公開時は保護者に通知（下書きは通知しない）
+        if (!$record->is_draft && $student->guardian_id) {
+            $guardian = User::find($student->guardian_id);
+            if ($guardian) {
+                app(NotificationService::class)->notify(
+                    $guardian,
+                    'monitoring',
+                    'モニタリング表が公開されました',
+                    $student->student_name . ' のモニタリング表 (' . $validated['monitoring_date'] . ') を確認してください。',
+                    ['url' => '/guardian/monitoring', 'monitoring_id' => $record->id],
+                );
+            }
+        }
 
         return response()->json([
             'success' => true,

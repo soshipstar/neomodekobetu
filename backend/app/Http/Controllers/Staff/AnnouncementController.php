@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
 use App\Models\Announcement;
+use App\Models\Student;
+use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -137,11 +140,51 @@ class AnnouncementController extends Controller
             'published_at' => now(),
         ]);
 
+        // 対象保護者に通知（in-app + Web Push）
+        $this->notifyGuardians($announcement);
+
         return response()->json([
             'success' => true,
             'data'    => $announcement->fresh(),
             'message' => 'お知らせを公開しました。',
         ]);
+    }
+
+    /**
+     * お知らせの対象保護者に通知を送る。
+     * target_type=all: 教室の全アクティブ保護者
+     * target_type=selected: 指定生徒の保護者
+     */
+    private function notifyGuardians(Announcement $announcement): void
+    {
+        $notificationService = app(NotificationService::class);
+
+        if ($announcement->target_type === 'selected') {
+            $studentIds = $announcement->targetStudents()->pluck('students.id');
+            $guardianIds = Student::whereIn('id', $studentIds)
+                ->whereNotNull('guardian_id')
+                ->pluck('guardian_id')
+                ->unique();
+            $guardians = User::whereIn('id', $guardianIds)
+                ->where('user_type', 'guardian')
+                ->where('is_active', true)
+                ->get();
+        } else {
+            $guardians = User::where('user_type', 'guardian')
+                ->where('classroom_id', $announcement->classroom_id)
+                ->where('is_active', true)
+                ->get();
+        }
+
+        foreach ($guardians as $guardian) {
+            $notificationService->notify(
+                $guardian,
+                'announcement',
+                'お知らせ: ' . $announcement->title,
+                mb_substr(strip_tags($announcement->content), 0, 120),
+                ['url' => '/guardian/announcements', 'announcement_id' => $announcement->id],
+            );
+        }
     }
 
     /**

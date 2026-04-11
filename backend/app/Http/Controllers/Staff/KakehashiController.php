@@ -9,6 +9,8 @@ use App\Models\KakehashiPeriod;
 use App\Models\KakehashiStaff;
 use App\Models\Student;
 use App\Models\StudentRecord;
+use App\Models\User;
+use App\Services\NotificationService;
 use App\Services\PuppeteerPdfService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -103,6 +105,20 @@ class KakehashiController extends Controller
             'submit' => 'かけはしを提出しました。',
             default  => '下書きを保存しました。',
         };
+
+        // 提出時は保護者に通知（かけはしの記入依頼）
+        if ($action === 'submit' && $period->student && $period->student->guardian_id) {
+            $guardian = User::find($period->student->guardian_id);
+            if ($guardian) {
+                app(NotificationService::class)->notify(
+                    $guardian,
+                    'kakehashi_request',
+                    'かけはしの入力依頼が届きました',
+                    'スタッフからの記入が完了しました。ご家庭での記入をお願いいたします。',
+                    ['url' => '/guardian/kakehashi', 'period_id' => $period->id],
+                );
+            }
+        }
 
         return response()->json([
             'success' => true,

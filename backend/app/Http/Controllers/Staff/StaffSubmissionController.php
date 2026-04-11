@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Staff;
 use App\Http\Controllers\Controller;
 use App\Models\ChatMessage;
 use App\Models\ChatRoom;
+use App\Models\Student;
 use App\Models\SubmissionRequest;
+use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -161,6 +164,25 @@ class StaffSubmissionController extends Controller
 
             return $submission;
         });
+
+        // 生徒の保護者に通知（in-app + Web Push）
+        $student = Student::find($validated['student_id']);
+        if ($student && $student->guardian_id) {
+            $guardian = User::find($student->guardian_id);
+            if ($guardian) {
+                $body = $validated['title'];
+                if (!empty($validated['due_date'])) {
+                    $body .= ' (期限: ' . Carbon::parse($validated['due_date'])->format('Y年n月j日') . ')';
+                }
+                app(NotificationService::class)->notify(
+                    $guardian,
+                    'submission_request',
+                    '提出物の依頼が届きました',
+                    $body,
+                    ['url' => '/guardian/dashboard', 'submission_id' => $submission->id],
+                );
+            }
+        }
 
         return response()->json([
             'success' => true,

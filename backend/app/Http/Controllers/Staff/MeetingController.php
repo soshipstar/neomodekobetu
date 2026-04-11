@@ -10,6 +10,8 @@ use App\Models\KakehashiGuardian;
 use App\Models\KakehashiPeriod;
 use App\Models\MeetingRequest;
 use App\Models\Student;
+use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -155,6 +157,21 @@ class MeetingController extends Controller
 
             return $meeting;
         });
+
+        // 保護者に通知（in-app + Web Push）
+        $guardian = User::find($validated['guardian_id']);
+        if ($guardian) {
+            $notificationTitle = !empty($validated['confirmed_date'])
+                ? '面談日時が確定しました'
+                : '面談予約の依頼が届きました';
+            app(NotificationService::class)->notify(
+                $guardian,
+                'meeting',
+                $notificationTitle,
+                $validated['purpose'],
+                ['url' => '/guardian/meetings', 'meeting_id' => $meeting->id],
+            );
+        }
 
         return response()->json([
             'success' => true,
