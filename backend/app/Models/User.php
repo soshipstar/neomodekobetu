@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -125,7 +126,10 @@ class User extends Authenticatable
      *
      * - マスター管理者 (is_master=true) は全教室にアクセス可能なので、
      *   存在する全 classroom の id を返す
-     * - それ以外は classroom_user ピボット + 後方互換用の users.classroom_id
+     * - 保護者 (user_type=guardian) は自身の classroom_user ではなく、
+     *   担当する全児童の在籍教室集合を返す（子どもたちの所属教室を束ねる）
+     * - それ以外（スタッフ・通常管理者）は classroom_user ピボット +
+     *   後方互換用の users.classroom_id
      *
      * @return array<int>
      */
@@ -133,6 +137,23 @@ class User extends Authenticatable
     {
         if ($this->is_master === true) {
             return Classroom::query()->pluck('id')->all();
+        }
+
+        if ($this->user_type === 'guardian') {
+            // 保護者は子ども（Student::guardian_id = user.id）の在籍教室全てが
+            // アクセス対象になる。students.classroom_id と classroom_student pivot
+            // の和集合を取る。
+            $studentIds = Student::where('guardian_id', $this->id)->pluck('id');
+            if ($studentIds->isEmpty()) {
+                return [];
+            }
+            $primary = Student::whereIn('id', $studentIds)
+                ->whereNotNull('classroom_id')
+                ->pluck('classroom_id');
+            $pivot = DB::table('classroom_student')
+                ->whereIn('student_id', $studentIds)
+                ->pluck('classroom_id');
+            return $primary->merge($pivot)->unique()->values()->map(fn ($v) => (int) $v)->all();
         }
 
         $ids = $this->classrooms()->pluck('classrooms.id')->toArray();

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Builder;
@@ -89,10 +90,23 @@ class Student extends Model
     // Relationships
     // =========================================================================
 
-    /** @return BelongsTo<Classroom, self> */
+    /**
+     * 主たる所属教室（単一）。既存ロジック互換のため必ず 1 つを指す。
+     * @return BelongsTo<Classroom, self>
+     */
     public function classroom(): BelongsTo
     {
         return $this->belongsTo(Classroom::class);
+    }
+
+    /**
+     * 児童が在籍する全教室（複数）。
+     * 1 名の児童が複数教室にまたがって支援を受けるケースに対応する。
+     * @return BelongsToMany<Classroom>
+     */
+    public function classrooms(): BelongsToMany
+    {
+        return $this->belongsToMany(Classroom::class, 'classroom_student')->withTimestamps();
     }
 
     /** @return BelongsTo<User, self> */
@@ -202,6 +216,23 @@ class Student extends Model
     // =========================================================================
     // Helpers
     // =========================================================================
+
+    /**
+     * この児童がアクセス可能な（＝在籍している）教室 ID のリストを返す。
+     *
+     * - classroom_student pivot の内容
+     * - 後方互換: students.classroom_id が pivot に無ければ併せて含める
+     *
+     * @return array<int>
+     */
+    public function accessibleClassroomIds(): array
+    {
+        $ids = $this->classrooms()->pluck('classrooms.id')->toArray();
+        if ($this->classroom_id && !in_array($this->classroom_id, $ids, true)) {
+            $ids[] = $this->classroom_id;
+        }
+        return array_values(array_unique(array_map('intval', $ids)));
+    }
 
     /**
      * Get scheduled days as an array of day names.
