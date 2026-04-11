@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Classroom;
 use App\Models\Student;
 use App\Services\StudentHelperService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class StudentController extends Controller
 {
@@ -129,6 +132,86 @@ class StudentController extends Controller
             'data'    => $student->fresh(['classroom', 'guardian']),
             'message' => '生徒情報を更新しました。',
         ]);
+    }
+
+    /**
+     * 既存の児童を別の教室に複製する。
+     *
+     * 同じ物理的な子どもが複数の教室に在籍するケースで、氏名・生年月日・
+     * 学年・保護者・曜日スケジュールなどを引き継いだ新 Student レコードを
+     * 指定教室に作成する。退所履歴や待機リスト用フィールドはクリアし、
+     * username / password は新規に設定する。
+     *
+     * 制約:
+     * - 複製先は必ず source と同じ企業の教室（会社跨ぎ不可）
+     * - source 教室と同じ教室には複製できない
+     * - 通常管理者は自身の accessibleClassroomIds() に含まれる教室のみ
+     * - 新しい username は students テーブルで unique
+     */
+    public function copyToClassroom(Request $request, Student $student): JsonResponse
+    {
+        $user = $request->user();
+        $isMaster = $user->user_type === 'admin' && $user->is_master;
+
+        $validated = $request->validate([
+            'classroom_id' => 'required|integer|exists:classrooms,id',
+            'username'     => 'required|string|max:100|unique:students,username',
+            'password'     => 'nullable|string|min:4',
+        ]);
+
+        // 複製元と同じ教室には複製できない
+        if ((int) $validated['classroom_id'] === (int) $student->classroom_id) {
+            throw ValidationException::withMessages([
+                'classroom_id' => ['複製元と同じ教室には複製できません。別の教室を選択してください。'],
+            ]);
+        }
+
+        // 非マスターは自分がアクセス可能な教室のみ
+        if (!$isMaster && !in_array((int) $validated['classroom_id'], $user->accessibleClassroomIds(), true)) {
+            return response()->json([
+                'success' => false,
+                'message' => '指定した教室への権限がありません。',
+            ], 403);
+        }
+
+        // 同一企業制約
+        $student->loadMissing('classroom');
+        $sourceCompanyId = $student->classroom?->company_id;
+        if ($sourceCompanyId === null) {
+            throw ValidationException::withMessages([
+                'classroom_id' => ['複製元の教室に所属企業が設定されていません。先に教室を企業に所属させてください。'],
+            ]);
+        }
+        $target = Classroom::find($validated['classroom_id']);
+        if ($target->company_id !== $sourceCompanyId) {
+            throw ValidationException::withMessages([
+                'classroom_id' => ['複製先は複製元と同じ企業の教室である必要があります。'],
+            ]);
+        }
+
+        // 複製: 退所履歴 / 待機フィールド / ログイン履歴などはクリア
+        $copy = $student->replicate([
+            'username', 'password_hash', 'password_plain',
+            'last_login_at',
+            'withdrawal_date', 'withdrawal_reason',
+            'desired_start_date', 'desired_weekly_count', 'waiting_notes',
+            'desired_monday', 'desired_tuesday', 'desired_wednesday',
+            'desired_thursday', 'desired_friday', 'desired_saturday', 'desired_sunday',
+        ]);
+        $copy->classroom_id = (int) $validated['classroom_id'];
+        $copy->username = $validated['username'];
+        $copy->password_hash = !empty($validated['password'])
+            ? Hash::make($validated['password'])
+            : Hash::make(Str::random(16));
+        $copy->status = 'active';
+        $copy->is_active = true;
+        $copy->save();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $copy->load(['classroom', 'guardian']),
+            'message' => '児童を別教室に複製しました。',
+        ], 201);
     }
 
     /**

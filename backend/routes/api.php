@@ -55,6 +55,8 @@ Route::prefix('admin')
         // 生徒管理
         Route::get('/students/grade-promotion/preview', [App\Http\Controllers\Admin\StudentController::class, 'gradePromotionPreview']);
         Route::post('/students/grade-promotion/execute', [App\Http\Controllers\Admin\StudentController::class, 'gradePromotionExecute']);
+        // 児童を別教室に複製（同一企業内）
+        Route::post('/students/{student}/copy-to-classroom', [App\Http\Controllers\Admin\StudentController::class, 'copyToClassroom']);
         Route::apiResource('students', App\Http\Controllers\Admin\StudentController::class);
 
         // システム設定
