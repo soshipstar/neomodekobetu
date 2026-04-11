@@ -50,6 +50,12 @@ class AdminAccountController extends Controller
 
         $users = $query->orderByDesc('is_master')->orderBy('created_at', 'desc')->paginate($request->integer('per_page', 50));
 
+        // フロントエンドはフラットな classroom_name を参照するため、
+        // ネストした classroom リレーションから取り出して属性として付与する
+        $users->getCollection()->each(function (User $u) {
+            $u->classroom_name = $u->classroom?->classroom_name;
+        });
+
         return response()->json([
             'success' => true,
             'data'    => $users,
@@ -68,6 +74,7 @@ class AdminAccountController extends Controller
         }
 
         $user->load(['classroom', 'company']);
+        $user->classroom_name = $user->classroom?->classroom_name;
 
         return response()->json([
             'success' => true,
@@ -98,10 +105,12 @@ class AdminAccountController extends Controller
         $validated['user_type'] = 'admin';
 
         $user = User::create($validated);
+        $user->load(['classroom', 'company']);
+        $user->classroom_name = $user->classroom?->classroom_name;
 
         return response()->json([
             'success' => true,
-            'data'    => $user->load(['classroom', 'company']),
+            'data'    => $user,
             'message' => '管理者アカウントを作成しました。',
         ], 201);
     }
@@ -136,10 +145,12 @@ class AdminAccountController extends Controller
         }
 
         $user->update($validated);
+        $fresh = $user->fresh(['classroom', 'company']);
+        $fresh->classroom_name = $fresh->classroom?->classroom_name;
 
         return response()->json([
             'success' => true,
-            'data'    => $user->fresh(['classroom', 'company']),
+            'data'    => $fresh,
             'message' => '管理者アカウントを更新しました。',
         ]);
     }
