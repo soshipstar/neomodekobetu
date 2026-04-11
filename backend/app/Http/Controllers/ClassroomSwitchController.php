@@ -9,22 +9,32 @@ class ClassroomSwitchController extends Controller
 {
     /**
      * 現在のユーザーが所属する教室一覧を取得
+     *
+     * マスター管理者は全教室を取得できる。
      */
     public function myClassrooms(Request $request): JsonResponse
     {
         $user = $request->user();
+        $isMaster = (bool) ($user->is_master ?? false);
 
-        $classrooms = $user->classrooms()
-            ->select('classrooms.id', 'classrooms.classroom_name', 'classrooms.address', 'classrooms.phone')
-            ->orderBy('classrooms.classroom_name')
-            ->get();
+        if ($isMaster) {
+            $classrooms = \App\Models\Classroom::query()
+                ->select('id', 'classroom_name', 'address', 'phone')
+                ->orderBy('classroom_name')
+                ->get();
+        } else {
+            $classrooms = $user->classrooms()
+                ->select('classrooms.id', 'classrooms.classroom_name', 'classrooms.address', 'classrooms.phone')
+                ->orderBy('classrooms.classroom_name')
+                ->get();
 
-        // users.classroom_id にあるが classroom_user にない場合は補完
-        if ($user->classroom_id && !$classrooms->pluck('id')->contains($user->classroom_id)) {
-            $current = \App\Models\Classroom::select('id', 'classroom_name', 'address', 'phone')
-                ->find($user->classroom_id);
-            if ($current) {
-                $classrooms->push($current);
+            // users.classroom_id にあるが classroom_user にない場合は補完
+            if ($user->classroom_id && !$classrooms->pluck('id')->contains($user->classroom_id)) {
+                $current = \App\Models\Classroom::select('id', 'classroom_name', 'address', 'phone')
+                    ->find($user->classroom_id);
+                if ($current) {
+                    $classrooms->push($current);
+                }
             }
         }
 

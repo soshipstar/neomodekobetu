@@ -122,10 +122,19 @@ class User extends Authenticatable
 
     /**
      * このユーザーがアクセス可能な教室IDのリストを取得
+     *
+     * - マスター管理者 (is_master=true) は全教室にアクセス可能なので、
+     *   存在する全 classroom の id を返す
+     * - それ以外は classroom_user ピボット + 後方互換用の users.classroom_id
+     *
      * @return array<int>
      */
     public function accessibleClassroomIds(): array
     {
+        if ($this->is_master === true) {
+            return Classroom::query()->pluck('id')->all();
+        }
+
         $ids = $this->classrooms()->pluck('classrooms.id')->toArray();
         // classroom_userになくてもusers.classroom_idがあれば含める（後方互換）
         if ($this->classroom_id && !in_array($this->classroom_id, $ids)) {

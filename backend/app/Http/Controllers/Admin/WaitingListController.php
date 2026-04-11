@@ -22,10 +22,12 @@ class WaitingListController extends Controller
         $query = Student::where('status', 'waiting')
             ->with(['guardian:id,full_name,email']);
 
-        // スタッフは自教室のみ
-        if ($user->classroom_id) {
+        // マスター管理者は全教室の待機者を閲覧可能。
+        // それ以外は自教室のみ（リクエスト経由の指定もマスター時のみ反映）
+        $isMaster = (bool) ($user->is_master ?? false);
+        if (!$isMaster && $user->classroom_id) {
             $query->where('classroom_id', $user->classroom_id);
-        } elseif ($request->filled('classroom_id')) {
+        } elseif ($isMaster && $request->filled('classroom_id')) {
             $query->where('classroom_id', $request->classroom_id);
         }
 
@@ -66,11 +68,21 @@ class WaitingListController extends Controller
     /**
      * 曜日別の待機数・在籍利用者数・定員サマリーを返す
      * Legacy: active, trial, short_term を利用者としてカウント
+     *
+     * マスター管理者の場合、特定の classroom_id をクエリで指定したときのみ
+     * その教室のサマリーを返す。指定しない場合は教室別の集計を行わず
+     * 全教室横断のサマリーを返す（classroomId=null）。
      */
     public function summary(Request $request): JsonResponse
     {
         $user = $request->user();
-        $classroomId = $user->classroom_id;
+        $isMaster = (bool) ($user->is_master ?? false);
+        if ($isMaster) {
+            // master はリクエスト指定の教室、または全教室
+            $classroomId = $request->filled('classroom_id') ? (int) $request->classroom_id : null;
+        } else {
+            $classroomId = $user->classroom_id;
+        }
 
         $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
         // day_of_week mapping: sunday=0, monday=1, ..., saturday=6
