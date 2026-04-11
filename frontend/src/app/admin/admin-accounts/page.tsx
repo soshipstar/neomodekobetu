@@ -19,6 +19,7 @@ import { UserClassroomModal } from '@/components/admin/UserClassroomModal';
 interface Classroom {
   id: number;
   classroom_name: string;
+  company_id: number | null;
 }
 
 interface AdminAccount {
@@ -107,6 +108,12 @@ export default function AdminAccountsPage() {
 
   const classrooms = classroomsData ?? [];
   const companies = companiesData ?? [];
+
+  // 選択中の企業に属する教室のみを表示（企業未選択なら全教室）
+  const selectedCompanyId = formData.company_id ? Number(formData.company_id) : null;
+  const filteredClassrooms = selectedCompanyId
+    ? classrooms.filter((c) => c.company_id === selectedCompanyId)
+    : classrooms;
 
   const saveMutation = useMutation({
     mutationFn: async (data: AdminFormData & { id?: number }) => {
@@ -401,7 +408,20 @@ export default function AdminAccountsPage() {
             </label>
             <select
               value={formData.company_id}
-              onChange={(e) => setFormData({ ...formData, company_id: e.target.value })}
+              onChange={(e) => {
+                const nextCompanyId = e.target.value;
+                // 企業を変更したら、現在の教室がその企業に属していない場合はクリア
+                const nextCompanyNum = nextCompanyId ? Number(nextCompanyId) : null;
+                const currentClassroomNum = formData.classroom_id ? Number(formData.classroom_id) : null;
+                const keepClassroom = currentClassroomNum !== null
+                  && (nextCompanyNum === null
+                    || classrooms.find((c) => c.id === currentClassroomNum)?.company_id === nextCompanyNum);
+                setFormData({
+                  ...formData,
+                  company_id: nextCompanyId,
+                  classroom_id: keepClassroom ? formData.classroom_id : '',
+                });
+              }}
               className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
             >
               <option value="">未設定</option>
@@ -416,11 +436,24 @@ export default function AdminAccountsPage() {
             </label>
             <select
               value={formData.classroom_id}
-              onChange={(e) => setFormData({ ...formData, classroom_id: e.target.value })}
+              onChange={(e) => {
+                const nextClassroomId = e.target.value;
+                // 教室を選んだら、その教室の企業に合わせて所属企業も自動同期
+                const chosen = nextClassroomId
+                  ? classrooms.find((c) => c.id === Number(nextClassroomId))
+                  : null;
+                setFormData({
+                  ...formData,
+                  classroom_id: nextClassroomId,
+                  company_id: chosen?.company_id != null
+                    ? String(chosen.company_id)
+                    : formData.company_id,
+                });
+              }}
               className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
             >
               <option value="">選択してください</option>
-              {classrooms.map((c) => (
+              {filteredClassrooms.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.classroom_name}
                 </option>
@@ -428,6 +461,11 @@ export default function AdminAccountsPage() {
             </select>
             {formErrors.classroom_id && (
               <p className="mt-1 text-xs text-[var(--status-danger-fg)]">{formErrors.classroom_id}</p>
+            )}
+            {selectedCompanyId && filteredClassrooms.length === 0 && (
+              <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">
+                選択した企業に属する事業所がありません。
+              </p>
             )}
           </div>
           {editingAdmin && (

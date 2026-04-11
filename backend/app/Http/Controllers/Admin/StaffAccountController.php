@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Classroom;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class StaffAccountController extends Controller
 {
@@ -24,6 +26,35 @@ class StaffAccountController extends Controller
             ], 403);
         }
         return null;
+    }
+
+    /**
+     * classroom_id と company_id の整合性を検証する。
+     * - classroom が指定されていれば、その classroom.company_id と
+     *   送信された company_id は一致していなければならない
+     * - 指定が無ければ classroom.company_id を採用する
+     *
+     * @throws ValidationException
+     */
+    private function normalizeCompanyFromClassroom(array &$validated): void
+    {
+        if (empty($validated['classroom_id'])) {
+            return;
+        }
+
+        $classroom = Classroom::find($validated['classroom_id']);
+        if (!$classroom || $classroom->company_id === null) {
+            return;
+        }
+
+        $submitted = $validated['company_id'] ?? null;
+        if ($submitted !== null && (int) $submitted !== (int) $classroom->company_id) {
+            throw ValidationException::withMessages([
+                'classroom_id' => ['所属教室は選択した所属企業に属している必要があります。'],
+            ]);
+        }
+
+        $validated['company_id'] = $classroom->company_id;
     }
 
     /**
@@ -105,6 +136,8 @@ class StaffAccountController extends Controller
             'is_active'    => 'boolean',
         ]);
 
+        $this->normalizeCompanyFromClassroom($validated);
+
         $validated['password'] = Hash::make($validated['password']);
         $validated['user_type'] = 'staff';
 
@@ -140,6 +173,11 @@ class StaffAccountController extends Controller
             'email'        => 'nullable|email|max:255',
             'is_active'    => 'boolean',
         ]);
+
+        if (!array_key_exists('classroom_id', $validated)) {
+            $validated['classroom_id'] = $user->classroom_id;
+        }
+        $this->normalizeCompanyFromClassroom($validated);
 
         if (!empty($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
