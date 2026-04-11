@@ -30,7 +30,7 @@ class HiddenDocumentController extends Controller
                 ->select('id', 'document_type', 'document_id', 'hidden_by', 'created_at');
 
             if ($classroomId) {
-                $query->where('classroom_id', $classroomId);
+                $query->whereIn('classroom_id', $user->accessibleClassroomIds());
             }
 
             if ($docTypeFilter) {

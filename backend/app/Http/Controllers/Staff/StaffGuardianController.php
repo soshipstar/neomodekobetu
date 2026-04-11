@@ -60,7 +60,7 @@ class StaffGuardianController extends Controller
         $query = User::guardian()->with('students:id,student_name,guardian_id');
 
         if ($classroomId) {
-            $query->where('classroom_id', $classroomId);
+            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
         }
 
         if ($request->filled('search')) {
@@ -97,7 +97,7 @@ class StaffGuardianController extends Controller
             return response()->json(['success' => false, 'message' => '保護者ではありません。'], 422);
         }
 
-        if ($user->classroom_id && $guardian->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($guardian->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -162,7 +162,7 @@ class StaffGuardianController extends Controller
             return response()->json(['success' => false, 'message' => '保護者ではありません。'], 422);
         }
 
-        if ($user->classroom_id && $guardian->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($guardian->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -214,14 +214,14 @@ class StaffGuardianController extends Controller
             return response()->json(['success' => false, 'message' => '保護者ではありません。'], 422);
         }
 
-        if ($user->classroom_id && $guardian->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($guardian->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
-        // 生徒との紐付けを解除
+        // 生徒との紐付けを解除（アクセス可能な教室全て）
         if ($user->classroom_id) {
             Student::where('guardian_id', $guardian->id)
-                ->where('classroom_id', $user->classroom_id)
+                ->whereIn('classroom_id', $user->accessibleClassroomIds())
                 ->update(['guardian_id' => null]);
         } else {
             Student::where('guardian_id', $guardian->id)

@@ -21,7 +21,7 @@ class WeeklyPlanController extends Controller
         $query = WeeklyPlan::with(['creator:id,full_name', 'comments.user:id,full_name']);
 
         if ($user->classroom_id) {
-            $query->where('classroom_id', $user->classroom_id);
+            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
         }
 
         if ($request->filled('week_start_date')) {
@@ -52,7 +52,7 @@ class WeeklyPlanController extends Controller
             ->where('student_id', $studentId);
 
         if ($user->classroom_id) {
-            $query->where('classroom_id', $user->classroom_id);
+            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
         }
 
         if ($request->filled('week_start_date')) {
@@ -158,7 +158,7 @@ class WeeklyPlanController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && $plan->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($plan->classroom_id, $user->accessibleClassroomIds(), true)) {
             abort(403, 'アクセス権限がありません。');
         }
 

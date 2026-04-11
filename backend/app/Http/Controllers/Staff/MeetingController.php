@@ -32,7 +32,7 @@ class MeetingController extends Controller
         ]);
 
         if ($user->classroom_id) {
-            $query->where('classroom_id', $user->classroom_id);
+            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
         }
 
         if ($request->filled('status')) {

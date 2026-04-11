@@ -61,7 +61,7 @@ class UnsentRecordsController extends Controller
             $studentIds = $scheduledStudents->pluck('id');
 
             // Get daily records for this date and classroom
-            $dailyRecords = DailyRecord::where('classroom_id', $classroomId)
+            $dailyRecords = DailyRecord::whereIn('classroom_id', $user->accessibleClassroomIds())
                 ->where('record_date', $currentDate)
                 ->pluck('id');
 
@@ -81,7 +81,7 @@ class UnsentRecordsController extends Controller
                 ->keyBy('student_id');
 
             // Get existing absence response records
-            $absenceResponses = AbsenceResponseRecord::where('classroom_id', $classroomId)
+            $absenceResponses = AbsenceResponseRecord::whereIn('classroom_id', $user->accessibleClassroomIds())
                 ->where('absence_date', $currentDate)
                 ->get()
                 ->keyBy('student_id');
@@ -301,7 +301,7 @@ class UnsentRecordsController extends Controller
         $user = $request->user();
         $date = $request->validate(['date' => 'required|date'])['date'];
 
-        $activities = DailyRecord::where('classroom_id', $user->classroom_id)
+        $activities = DailyRecord::whereIn('classroom_id', $user->accessibleClassroomIds())
             ->where('record_date', $date)
             ->with('staff:id,full_name')
             ->withCount('studentRecords')
@@ -383,7 +383,7 @@ class UnsentRecordsController extends Controller
     {
         $user = $request->user();
 
-        $query = AbsenceResponseRecord::where('classroom_id', $user->classroom_id)
+        $query = AbsenceResponseRecord::whereIn('classroom_id', $user->accessibleClassroomIds())
             ->with(['student:id,student_name,grade_level', 'staff:id,full_name']);
 
         if ($request->filled('date_from')) {
@@ -405,7 +405,7 @@ class UnsentRecordsController extends Controller
     {
         $user = $request->user();
 
-        $query = AbsenceResponseRecord::where('classroom_id', $user->classroom_id)
+        $query = AbsenceResponseRecord::whereIn('classroom_id', $user->accessibleClassroomIds())
             ->with(['student:id,student_name', 'staff:id,full_name']);
 
         if ($request->filled('date_from')) {

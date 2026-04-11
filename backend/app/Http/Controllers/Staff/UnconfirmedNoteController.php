@@ -24,8 +24,9 @@ class UnconfirmedNoteController extends Controller
         ]);
 
         if ($classroomId) {
-            $query->whereHas('student', function ($q) use ($classroomId) {
-                $q->where('classroom_id', $classroomId);
+            $accessibleIds = $user->accessibleClassroomIds();
+            $query->whereHas('student', function ($q) use ($accessibleIds) {
+                $q->whereIn('classroom_id', $accessibleIds);
             });
         }
 
@@ -53,7 +54,7 @@ class UnconfirmedNoteController extends Controller
 
         if ($user->classroom_id) {
             $note->loadMissing('student');
-            if ($note->student && $note->student->classroom_id !== $user->classroom_id) {
+            if ($note->student && !in_array($note->student->classroom_id, $user->accessibleClassroomIds(), true)) {
                 return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
             }
         }

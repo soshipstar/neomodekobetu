@@ -27,9 +27,11 @@ class StaffSubmissionController extends Controller
             'creator:id,full_name',
         ]);
 
+        $accessibleIds = $user->accessibleClassroomIds();
+
         if ($classroomId) {
-            $query->whereHas('student', function ($q) use ($classroomId) {
-                $q->where('classroom_id', $classroomId);
+            $query->whereHas('student', function ($q) use ($accessibleIds) {
+                $q->whereIn('classroom_id', $accessibleIds);
             });
         }
 
@@ -69,8 +71,8 @@ class StaffSubmissionController extends Controller
         // 統計
         $allForStats = SubmissionRequest::query();
         if ($classroomId) {
-            $allForStats->whereHas('student', function ($q) use ($classroomId) {
-                $q->where('classroom_id', $classroomId);
+            $allForStats->whereHas('student', function ($q) use ($accessibleIds) {
+                $q->whereIn('classroom_id', $accessibleIds);
             });
         }
         $statsRaw = $allForStats->selectRaw("

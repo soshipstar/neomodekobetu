@@ -25,7 +25,7 @@ class PendingTaskController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $classroomId = $user->classroom_id;
+        $accessibleIds = $user->classroom_id ? $user->accessibleClassroomIds() : null;
         $today = Carbon::today();
         $oneMonthLater = Carbon::today()->addMonth();
 
@@ -38,16 +38,16 @@ class PendingTaskController extends Controller
         }
 
         // 1. 個別支援計画書タスク
-        $planTasks = $this->getPlanTasks($classroomId, $today, $oneMonthLater);
+        $planTasks = $this->getPlanTasks($accessibleIds, $today, $oneMonthLater);
 
         // 2. モニタリングタスク
-        $monitoringTasks = $this->getMonitoringTasks($classroomId, $today, $oneMonthLater);
+        $monitoringTasks = $this->getMonitoringTasks($accessibleIds, $today, $oneMonthLater);
 
         // 3. 保護者かけはしタスク
-        $guardianKakehashiTasks = $this->getGuardianKakehashiTasks($classroomId, $today, $oneMonthLater);
+        $guardianKakehashiTasks = $this->getGuardianKakehashiTasks($accessibleIds, $today, $oneMonthLater);
 
         // 4. スタッフかけはしタスク
-        $staffKakehashiTasks = $this->getStaffKakehashiTasks($classroomId, $today, $oneMonthLater);
+        $staffKakehashiTasks = $this->getStaffKakehashiTasks($accessibleIds, $today, $oneMonthLater);
 
         return response()->json([
             'success' => true,
@@ -70,14 +70,14 @@ class PendingTaskController extends Controller
     /**
      * 個別支援計画書の未作成タスクを取得
      */
-    private function getPlanTasks(?int $classroomId, Carbon $today, Carbon $oneMonthLater): array
+    private function getPlanTasks(?array $accessibleIds, Carbon $today, Carbon $oneMonthLater): array
     {
         $query = Student::query()
             ->where('is_active', true)
             ->whereHas('guardian');
 
-        if ($classroomId) {
-            $query->whereHas('guardian', fn ($q) => $q->where('classroom_id', $classroomId));
+        if ($accessibleIds) {
+            $query->whereHas('guardian', fn ($q) => $q->whereIn('classroom_id', $accessibleIds));
         }
 
         $students = $query->with(['supportPlans' => function ($q) {
@@ -313,7 +313,7 @@ class PendingTaskController extends Controller
      * ルール: 初回=利用開始日+5ヶ月、以降=6ヶ月ごと
      * 前提: 提出済み個別支援計画がある生徒のみ対象
      */
-    private function getMonitoringTasks(?int $classroomId, Carbon $today, Carbon $oneMonthLater): array
+    private function getMonitoringTasks(?array $accessibleIds, Carbon $today, Carbon $oneMonthLater): array
     {
         // 提出済み（非下書き）の個別支援計画がある生徒のみ対象
         $query = Student::query()
@@ -321,8 +321,8 @@ class PendingTaskController extends Controller
             ->whereHas('guardian')
             ->whereHas('supportPlans', fn ($q) => $q->where('is_draft', false));
 
-        if ($classroomId) {
-            $query->whereHas('guardian', fn ($q) => $q->where('classroom_id', $classroomId));
+        if ($accessibleIds) {
+            $query->whereHas('guardian', fn ($q) => $q->whereIn('classroom_id', $accessibleIds));
         }
 
         $students = $query->with(['monitoringRecords' => function ($q) {
@@ -439,7 +439,7 @@ class PendingTaskController extends Controller
     /**
      * 保護者かけはしの未提出タスクを取得
      */
-    private function getGuardianKakehashiTasks(?int $classroomId, Carbon $today, Carbon $oneMonthLater): array
+    private function getGuardianKakehashiTasks(?array $accessibleIds, Carbon $today, Carbon $oneMonthLater): array
     {
         $query = DB::table('students as s')
             ->join('users as u', 's.guardian_id', '=', 'u.id')
@@ -466,8 +466,8 @@ class PendingTaskController extends Controller
                 AND kp2.submission_deadline <= ?
             )', [$oneMonthLater]);
 
-        if ($classroomId) {
-            $query->where('u.classroom_id', $classroomId);
+        if ($accessibleIds) {
+            $query->whereIn('u.classroom_id', $accessibleIds);
         }
 
         $rows = $query->select([
@@ -518,7 +518,7 @@ class PendingTaskController extends Controller
     /**
      * スタッフかけはしの未作成タスクを取得
      */
-    private function getStaffKakehashiTasks(?int $classroomId, Carbon $today, Carbon $oneMonthLater): array
+    private function getStaffKakehashiTasks(?array $accessibleIds, Carbon $today, Carbon $oneMonthLater): array
     {
         $query = DB::table('students as s')
             ->join('users as u', 's.guardian_id', '=', 'u.id')
@@ -552,8 +552,8 @@ class PendingTaskController extends Controller
                 AND kp2.submission_deadline <= ?
             )', [$oneMonthLater]);
 
-        if ($classroomId) {
-            $query->where('u.classroom_id', $classroomId);
+        if ($accessibleIds) {
+            $query->whereIn('u.classroom_id', $accessibleIds);
         }
 
         $rows = $query->select([

@@ -24,6 +24,7 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
         $today = Carbon::today();
 
         // --- 未読チャット数 ---
@@ -39,39 +40,39 @@ class DashboardController extends Controller
 
         // --- 本日の出席予定生徒数 ---
         $dayColumn = 'scheduled_' . strtolower($today->format('l'));
-        $todayAttendance = Student::where('classroom_id', $classroomId)
+        $todayAttendance = Student::whereIn('classroom_id', $accessibleIds)
             ->active()
             ->where($dayColumn, true)
             ->count();
 
         // --- 本日の欠席連絡数 ---
-        $todayAbsences = AbsenceNotification::whereHas('student', function ($q) use ($classroomId) {
-            $q->where('classroom_id', $classroomId);
+        $todayAbsences = AbsenceNotification::whereHas('student', function ($q) use ($accessibleIds) {
+            $q->whereIn('classroom_id', $accessibleIds);
         })
             ->whereDate('absence_date', $today)
             ->count();
 
         // --- 振替依頼（未対応）---
-        $pendingMakeups = AbsenceNotification::whereHas('student', function ($q) use ($classroomId) {
-            $q->where('classroom_id', $classroomId);
+        $pendingMakeups = AbsenceNotification::whereHas('student', function ($q) use ($accessibleIds) {
+            $q->whereIn('classroom_id', $accessibleIds);
         })
             ->where('makeup_status', 'pending')
             ->count();
 
         // --- 未対応面談リクエスト ---
-        $pendingMeetings = MeetingRequest::where('classroom_id', $classroomId)
+        $pendingMeetings = MeetingRequest::whereIn('classroom_id', $accessibleIds)
             ->where('status', 'pending')
             ->count();
 
         // --- 在籍生徒数 ---
-        $activeStudents = Student::where('classroom_id', $classroomId)
+        $activeStudents = Student::whereIn('classroom_id', $accessibleIds)
             ->active()
             ->count();
 
         // --- 最近のチャットメッセージ（直近5件）---
         $recentMessages = ChatMessage::notDeleted()
-            ->whereHas('room.student', function ($q) use ($classroomId) {
-                $q->where('classroom_id', $classroomId);
+            ->whereHas('room.student', function ($q) use ($accessibleIds) {
+                $q->whereIn('classroom_id', $accessibleIds);
             })
             ->with(['room.student:id,student_name', 'room.guardian:id,full_name'])
             ->orderByDesc('created_at')
@@ -99,6 +100,7 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
         $today = Carbon::today();
 
         // --- 未読チャット（ルーム別詳細付き） ---
@@ -133,14 +135,14 @@ class DashboardController extends Controller
         }
 
         // --- 振替依頼（未対応） ---
-        $pendingMakeup = AbsenceNotification::whereHas('student', function ($q) use ($classroomId) {
-            $q->where('classroom_id', $classroomId);
+        $pendingMakeup = AbsenceNotification::whereHas('student', function ($q) use ($accessibleIds) {
+            $q->whereIn('classroom_id', $accessibleIds);
         })
             ->where('makeup_status', 'pending')
             ->count();
 
         // --- 面談リクエスト（保護者カウンター提案） ---
-        $pendingMeetingCounter = MeetingRequest::where('classroom_id', $classroomId)
+        $pendingMeetingCounter = MeetingRequest::whereIn('classroom_id', $accessibleIds)
             ->where('status', 'guardian_counter')
             ->count();
 
@@ -149,7 +151,7 @@ class DashboardController extends Controller
         try {
             $unconfirmedRenrakucho = DB::table('integrated_notes')
                 ->join('students', 'integrated_notes.student_id', '=', 'students.id')
-                ->where('students.classroom_id', $classroomId)
+                ->whereIn('students.classroom_id', $accessibleIds)
                 ->where('integrated_notes.is_sent', true)
                 ->where('integrated_notes.guardian_confirmed', false)
                 ->count();
@@ -207,7 +209,7 @@ class DashboardController extends Controller
         $facilityEvaluationIncomplete = false;
         try {
             $facilityEvaluationIncomplete = DB::table('facility_evaluation_periods')
-                ->where('classroom_id', $classroomId)
+                ->whereIn('classroom_id', $accessibleIds)
                 ->where('status', '!=', 'published')
                 ->exists();
         } catch (\Exception $e) {
@@ -248,6 +250,7 @@ class DashboardController extends Controller
     public function calendar(Request $request): JsonResponse
     {
         $classroomId = $request->user()->classroom_id;
+        $accessibleIds = $request->user()->accessibleClassroomIds();
         $year = (int) $request->query('year', Carbon::now()->year);
         $month = (int) $request->query('month', Carbon::now()->month);
 
@@ -256,7 +259,7 @@ class DashboardController extends Controller
 
         // --- 活動日（daily_records がある日） ---
         $activityDates = DB::table('daily_records')
-            ->where('classroom_id', $classroomId)
+            ->whereIn('classroom_id', $accessibleIds)
             ->whereBetween('record_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
             ->distinct()
             ->pluck('record_date')
@@ -266,7 +269,7 @@ class DashboardController extends Controller
 
         // --- 学校休業日活動日 ---
         $schoolHolidayDates = DB::table('school_holiday_activities')
-            ->where('classroom_id', $classroomId)
+            ->whereIn('classroom_id', $accessibleIds)
             ->whereBetween('activity_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
             ->pluck('activity_date')
             ->map(fn ($d) => Carbon::parse($d)->toDateString())
@@ -275,7 +278,7 @@ class DashboardController extends Controller
 
         // --- 休日 ---
         $holidayDates = DB::table('holidays')
-            ->where('classroom_id', $classroomId)
+            ->whereIn('classroom_id', $accessibleIds)
             ->whereBetween('holiday_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
             ->pluck('holiday_date')
             ->map(fn ($d) => Carbon::parse($d)->toDateString())
@@ -284,7 +287,7 @@ class DashboardController extends Controller
 
         // --- イベント ---
         $eventDates = DB::table('events')
-            ->where('classroom_id', $classroomId)
+            ->whereIn('classroom_id', $accessibleIds)
             ->whereBetween('event_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
             ->get()
             ->map(fn ($e) => [
@@ -300,7 +303,7 @@ class DashboardController extends Controller
             ->toArray();
 
         // --- 面談確定日（相手情報付き） ---
-        $meetingDates = MeetingRequest::where('classroom_id', $classroomId)
+        $meetingDates = MeetingRequest::whereIn('classroom_id', $accessibleIds)
             ->where('status', 'confirmed')
             ->whereNotNull('confirmed_date')
             ->whereBetween('confirmed_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
@@ -333,6 +336,7 @@ class DashboardController extends Controller
     public function attendance(Request $request): JsonResponse
     {
         $classroomId = $request->user()->classroom_id;
+        $accessibleIds = $request->user()->accessibleClassroomIds();
         $date = Carbon::parse($request->query('date', Carbon::today()->toDateString()));
         $dayColumn = 'scheduled_' . strtolower($date->format('l'));
 
@@ -360,7 +364,7 @@ class DashboardController extends Controller
         $results = [];
 
         // --- Regular scheduled students ---
-        $regularStudents = Student::where('classroom_id', $classroomId)
+        $regularStudents = Student::whereIn('classroom_id', $accessibleIds)
             ->active()
             ->where($dayColumn, true)
             ->get(['id', 'student_name', 'grade_level']);
@@ -377,8 +381,8 @@ class DashboardController extends Controller
 
         // --- Makeup students (approved) ---
         try {
-            $makeupStudents = AbsenceNotification::whereHas('student', function ($q) use ($classroomId) {
-                $q->where('classroom_id', $classroomId)->active();
+            $makeupStudents = AbsenceNotification::whereHas('student', function ($q) use ($accessibleIds) {
+                $q->whereIn('classroom_id', $accessibleIds)->active();
             })
                 ->where('makeup_status', 'approved')
                 ->whereDate('makeup_request_date', $date)
@@ -405,7 +409,7 @@ class DashboardController extends Controller
         try {
             $additionalStudents = DB::table('additional_usages')
                 ->join('students', 'additional_usages.student_id', '=', 'students.id')
-                ->where('students.classroom_id', $classroomId)
+                ->whereIn('students.classroom_id', $accessibleIds)
                 ->where('students.is_active', true)
                 ->whereDate('additional_usages.usage_date', $date)
                 ->select('students.id', 'students.student_name', 'students.grade_level')
@@ -444,7 +448,7 @@ class DashboardController extends Controller
         $activities = [];
         try {
             $dailyRecords = DB::table('daily_records')
-                ->where('daily_records.classroom_id', $classroomId)
+                ->whereIn('daily_records.classroom_id', $accessibleIds)
                 ->whereDate('daily_records.record_date', $date)
                 ->leftJoin('users', 'daily_records.staff_id', '=', 'users.id')
                 ->select(
