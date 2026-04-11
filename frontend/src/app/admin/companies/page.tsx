@@ -238,9 +238,11 @@ function CompanyClassroomModal({ company, onClose }: { company: Company; onClose
       try {
         const res = await api.get('/api/admin/classrooms');
         const list: Classroom[] = res.data.data || [];
-        setClassrooms(list);
+        // 他企業に既に割り当てられている教室は選択肢から除外（未所属 or 自企業所属のみ表示）
+        const selectable = list.filter((c) => c.company_id === null || c.company_id === company.id);
+        setClassrooms(selectable);
         // 既にこの企業に属している教室を初期選択
-        setSelectedIds(list.filter((c) => c.company_id === company.id).map((c) => c.id));
+        setSelectedIds(selectable.filter((c) => c.company_id === company.id).map((c) => c.id));
       } catch {
         toast.error('教室一覧の取得に失敗しました');
       } finally {
@@ -273,18 +275,21 @@ function CompanyClassroomModal({ company, onClose }: { company: Company; onClose
       ) : (
         <div className="space-y-3">
           <p className="text-xs text-[var(--neutral-foreground-3)]">
-            この企業に属する教室を選択してください。
+            この企業に属する教室を選択してください。他の企業に割り当て済みの教室は、その関係を解除するまで一覧に表示されません。
           </p>
           <div className="max-h-[50vh] space-y-1 overflow-y-auto rounded border border-[var(--neutral-stroke-2)] p-2">
-            {classrooms.map((c) => (
-              <label key={c.id} className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-[var(--neutral-background-3)]">
-                <input type="checkbox" checked={selectedIds.includes(c.id)} onChange={() => toggleId(c.id)} className="h-4 w-4" />
-                <span>{c.classroom_name}</span>
-                {c.company_id && c.company_id !== company.id && (
-                  <Badge variant="warning">他の企業所属</Badge>
-                )}
-              </label>
-            ))}
+            {classrooms.length === 0 ? (
+              <p className="px-2 py-3 text-center text-xs text-[var(--neutral-foreground-3)]">
+                割り当て可能な教室がありません
+              </p>
+            ) : (
+              classrooms.map((c) => (
+                <label key={c.id} className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-[var(--neutral-background-3)]">
+                  <input type="checkbox" checked={selectedIds.includes(c.id)} onChange={() => toggleId(c.id)} className="h-4 w-4" />
+                  <span>{c.classroom_name}</span>
+                </label>
+              ))
+            )}
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={onClose}>キャンセル</Button>
