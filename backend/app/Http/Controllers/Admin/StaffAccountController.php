@@ -54,6 +54,12 @@ class StaffAccountController extends Controller
 
         $users = $query->orderBy('created_at', 'desc')->paginate($request->integer('per_page', 50));
 
+        // フロントエンドはフラットな classroom_name を参照するため、
+        // ネストした classroom リレーションから取り出して属性として付与する
+        $users->getCollection()->each(function (User $u) {
+            $u->classroom_name = $u->classroom?->classroom_name;
+        });
+
         return response()->json([
             'success' => true,
             'data'    => $users,
@@ -72,6 +78,7 @@ class StaffAccountController extends Controller
         }
 
         $user->load('classroom');
+        $user->classroom_name = $user->classroom?->classroom_name;
 
         return response()->json([
             'success' => true,
@@ -99,10 +106,12 @@ class StaffAccountController extends Controller
         $validated['user_type'] = 'staff';
 
         $user = User::create($validated);
+        $user->load('classroom');
+        $user->classroom_name = $user->classroom?->classroom_name;
 
         return response()->json([
             'success' => true,
-            'data'    => $user->load('classroom'),
+            'data'    => $user,
             'message' => 'スタッフアカウントを作成しました。',
         ], 201);
     }
@@ -134,10 +143,12 @@ class StaffAccountController extends Controller
         }
 
         $user->update($validated);
+        $fresh = $user->fresh('classroom');
+        $fresh->classroom_name = $fresh->classroom?->classroom_name;
 
         return response()->json([
             'success' => true,
-            'data'    => $user->fresh('classroom'),
+            'data'    => $fresh,
             'message' => 'スタッフアカウントを更新しました。',
         ]);
     }
