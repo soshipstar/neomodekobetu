@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Classroom;
 use App\Models\Company;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CompanyController extends Controller
 {
@@ -130,19 +132,54 @@ class CompanyController extends Controller
     }
 
     /**
-     * 企業に教室を割り当て
+     * 企業に教室を割り当て（この企業に属する教室集合を同期する）
+     *
+     * - 他企業に既に所属している教室を新たに割り当てようとした場合は 422 で拒否する。
+     *   （その関係性を切るまで他企業では選択できないという業務ルールを強制）
+     * - この企業に現在所属していて、新しい一覧に含まれない教室は company_id = null に戻す。
      */
     public function assignClassrooms(Request $request, Company $company): JsonResponse
     {
         if ($deny = $this->requireMaster($request)) return $deny;
 
         $validated = $request->validate([
-            'classroom_ids' => 'required|array',
+            'classroom_ids' => 'present|array',
             'classroom_ids.*' => 'integer|exists:classrooms,id',
         ]);
 
-        \App\Models\Classroom::whereIn('id', $validated['classroom_ids'])
-            ->update(['company_id' => $company->id]);
+        $requestedIds = array_values(array_unique(array_map('intval', $validated['classroom_ids'])));
+
+        // 他企業所属の教室が混ざっていないか確認
+        $conflicting = Classroom::whereIn('id', $requestedIds)
+            ->whereNotNull('company_id')
+            ->where('company_id', '!=', $company->id)
+            ->pluck('classroom_name', 'id');
+
+        if ($conflicting->isNotEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => '他の企業に割り当て済みの教室が含まれています: ' . $conflicting->values()->implode('、'),
+                'conflicting_classroom_ids' => $conflicting->keys()->values(),
+            ], 422);
+        }
+
+        DB::transaction(function () use ($company, $requestedIds) {
+            // 現在この企業に属している教室のうち、新一覧に含まれないものを外す
+            $unassignQuery = Classroom::where('company_id', $company->id);
+            if (!empty($requestedIds)) {
+                $unassignQuery->whereNotIn('id', $requestedIds);
+            }
+            $unassignQuery->update(['company_id' => null]);
+
+            // 新一覧の教室をこの企業に割り当てる（未所属または既に自企業所属のみが対象）
+            if (!empty($requestedIds)) {
+                Classroom::whereIn('id', $requestedIds)
+                    ->where(function ($q) use ($company) {
+                        $q->whereNull('company_id')->orWhere('company_id', $company->id);
+                    })
+                    ->update(['company_id' => $company->id]);
+            }
+        });
 
         return response()->json([
             'success' => true,

@@ -61,9 +61,12 @@ return new class extends Migration
 
     public function down(): void
     {
+        // up() で追加したカラムに対応して drop する
+        // （is_company_admin と company_id。過去に存在しない is_super_master を
+        //   誤って参照していたため down() が常に失敗していた）
         Schema::table('users', function (Blueprint $table) {
             $table->dropForeign(['company_id']);
-            $table->dropColumn(['is_super_master', 'company_id']);
+            $table->dropColumn(['is_company_admin', 'company_id']);
         });
 
         Schema::table('classrooms', function (Blueprint $table) {
