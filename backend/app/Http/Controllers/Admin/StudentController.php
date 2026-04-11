@@ -189,6 +189,12 @@ class StudentController extends Controller
             ]);
         }
 
+        // 同一人物識別用の person_id: source に無ければ新規 uuid を両方に割り当てる
+        if (empty($student->person_id)) {
+            $student->person_id = (string) Str::uuid();
+            $student->save();
+        }
+
         // 複製: 退所履歴 / 待機フィールド / ログイン履歴などはクリア
         $copy = $student->replicate([
             'username', 'password_hash', 'password_plain',
@@ -205,6 +211,7 @@ class StudentController extends Controller
             : Hash::make(Str::random(16));
         $copy->status = 'active';
         $copy->is_active = true;
+        $copy->person_id = $student->person_id;
         $copy->save();
 
         return response()->json([
@@ -212,6 +219,102 @@ class StudentController extends Controller
             'data'    => $copy->load(['classroom', 'guardian']),
             'message' => '児童を別教室に複製しました。',
         ], 201);
+    }
+
+    /**
+     * 同一人物としてリンクされている他教室の Student レコードを返す。
+     *
+     * person_id が同じ Student を self を除いて返す。
+     * 非マスター管理者には自身の accessibleClassroomIds() に入っているものだけ見せる。
+     */
+    public function linkedStudents(Request $request, Student $student): JsonResponse
+    {
+        $user = $request->user();
+        $isMaster = $user->user_type === 'admin' && $user->is_master;
+
+        if (empty($student->person_id)) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'person_id' => null,
+                    'linked' => [],
+                ],
+            ]);
+        }
+
+        $query = Student::with(['classroom:id,classroom_name,company_id'])
+            ->where('person_id', $student->person_id)
+            ->where('id', '!=', $student->id)
+            ->orderBy('classroom_id');
+
+        if (!$isMaster) {
+            $accessible = $user->accessibleClassroomIds();
+            $query->whereIn('classroom_id', $accessible);
+        }
+
+        $linked = $query->get(['id', 'student_name', 'classroom_id', 'status', 'person_id']);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'person_id' => $student->person_id,
+                'linked' => $linked,
+            ],
+        ]);
+    }
+
+    /**
+     * 同一人物としてリンクされている他の Student レコードに、
+     * このレコードの身元情報（氏名・生年月日・学年・保護者など）を同期する。
+     *
+     * 同期する: student_name, birth_date, grade_level, grade_adjustment,
+     *          guardian_id, notes, hide_initial_monitoring
+     *
+     * 同期しない（各教室で独立管理する）:
+     * - classroom_id, username, password, status, is_active
+     * - scheduled_* (教室ごとのスケジュール)
+     * - support_start_date, kakehashi_initial_date, support_plan_start_type
+     * - withdrawal_*, last_login_at, desired_*
+     */
+    public function syncLinked(Request $request, Student $student): JsonResponse
+    {
+        $user = $request->user();
+        $isMaster = $user->user_type === 'admin' && $user->is_master;
+
+        if (empty($student->person_id)) {
+            throw ValidationException::withMessages([
+                'person_id' => ['この児童は他の教室のレコードとリンクされていません。'],
+            ]);
+        }
+
+        $query = Student::where('person_id', $student->person_id)
+            ->where('id', '!=', $student->id);
+
+        // 非マスターは自分がアクセスできる教室のレコードにだけ同期する
+        if (!$isMaster) {
+            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
+        }
+
+        $payload = [
+            'student_name'            => $student->student_name,
+            'birth_date'              => $student->birth_date,
+            'grade_level'             => $student->grade_level,
+            'grade_adjustment'        => $student->grade_adjustment,
+            'guardian_id'             => $student->guardian_id,
+            'notes'                   => $student->notes,
+            'hide_initial_monitoring' => $student->hide_initial_monitoring,
+        ];
+
+        $updatedCount = $query->update($payload);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'updated_count' => $updatedCount,
+                'person_id' => $student->person_id,
+            ],
+            'message' => "{$updatedCount} 件のレコードに同期しました。",
+        ]);
     }
 
     /**

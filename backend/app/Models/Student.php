@@ -22,6 +22,7 @@ class Student extends Model
         'grade_level',
         'grade_adjustment',
         'guardian_id',
+        'person_id',
         'support_start_date',
         'kakehashi_initial_date',
         'support_plan_start_type',
