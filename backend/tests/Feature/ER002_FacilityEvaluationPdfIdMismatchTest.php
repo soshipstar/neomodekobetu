@@ -31,11 +31,15 @@ class ER002_FacilityEvaluationPdfIdMismatchTest extends TestCase
             'is_active' => true,
         ]);
 
+        // 結果閲覧系エンドポイントは施設の管理者 (user_type=admin, is_master=false)
+        // のみアクセス可 (requireAdmin)。マスター管理者もスタッフも 403。
         $staff = User::create([
-            'username' => 'staff_er002',
+            'username' => 'admin_er002',
             'password' => bcrypt('pass'),
-            'full_name' => 'スタッフ',
-            'user_type' => 'staff',
+            'full_name' => '施設管理者',
+            'user_type' => 'admin',
+            'is_master' => false,
+            'is_company_admin' => false,
             'classroom_id' => $classroom->id,
             'is_active' => true,
         ]);

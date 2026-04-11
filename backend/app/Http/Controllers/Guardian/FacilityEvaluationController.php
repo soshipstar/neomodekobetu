@@ -54,8 +54,10 @@ class FacilityEvaluationController extends Controller
             ->where('guardian_id', $user->id)
             ->first();
 
+        // 回答は未提出時のみ返す。提出済みの場合は自分の回答内容を
+        // 保護者には見せない仕様 (要件)。
         $answers = [];
-        if ($evaluation) {
+        if ($evaluation && ! $evaluation->is_submitted) {
             $answerRows = DB::table('facility_guardian_evaluation_answers')
                 ->where('evaluation_id', $evaluation->id)
                 ->get();

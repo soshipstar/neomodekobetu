@@ -14,6 +14,28 @@ use Illuminate\Support\Facades\Log;
 class FacilityEvaluationController extends Controller
 {
     /**
+     * 結果閲覧系メソッドの共通ガード。
+     *
+     * 許可: 施設の一般管理者 / 企業管理者 (user_type=admin, is_master=false)
+     * 不許可: マスター管理者 (マスターはシステム全体管理で施設単位の事業所評価結果
+     *          には関与しない)、スタッフ、保護者、生徒
+     *
+     * スタッフは回収状況 (responseStatus) と自分の回答フォーム (staffEvaluation)
+     * のみ触れる。
+     */
+    private function requireAdmin(Request $request): ?JsonResponse
+    {
+        $user = $request->user();
+        if (!$user || $user->user_type !== 'admin' || $user->is_master) {
+            return response()->json([
+                'success' => false,
+                'message' => '事業所評価の結果閲覧は施設の管理者のみ許可されています。',
+            ], 403);
+        }
+        return null;
+    }
+
+    /**
      * 評価期間の一覧を取得（教室フィルタリング対応）
      */
     public function periods(Request $request): JsonResponse
@@ -88,6 +110,7 @@ class FacilityEvaluationController extends Controller
      */
     public function createPeriod(Request $request): JsonResponse
     {
+        if ($deny = $this->requireAdmin($request)) return $deny;
         $validated = $request->validate([
             'fiscal_year'       => 'required|integer|min:2020|max:2099',
             'title'             => 'nullable|string|max:255',
@@ -139,6 +162,7 @@ class FacilityEvaluationController extends Controller
      */
     public function updatePeriod(Request $request, int $periodId): JsonResponse
     {
+        if ($deny = $this->requireAdmin($request)) return $deny;
         $validated = $request->validate([
             'status'            => 'sometimes|in:draft,collecting,aggregating,published',
             'title'             => 'sometimes|string|max:255',
@@ -227,6 +251,7 @@ class FacilityEvaluationController extends Controller
      */
     public function summary(Request $request): JsonResponse
     {
+        if ($deny = $this->requireAdmin($request)) return $deny;
         $user = $request->user();
         $classroomId = $user->classroom_id;
         $accessibleIds = $user->accessibleClassroomIds();
@@ -418,6 +443,7 @@ class FacilityEvaluationController extends Controller
      */
     public function aggregate(Request $request): JsonResponse
     {
+        if ($deny = $this->requireAdmin($request)) return $deny;
         $periodId = $request->input('period_id');
         $user = $request->user();
         $classroomId = $user->classroom_id;
@@ -527,6 +553,7 @@ class FacilityEvaluationController extends Controller
      */
     public function saveFacilityComment(Request $request): JsonResponse
     {
+        if ($deny = $this->requireAdmin($request)) return $deny;
         $validated = $request->validate([
             'period_id'        => 'required|integer',
             'question_id'     => 'required|integer',
@@ -555,6 +582,7 @@ class FacilityEvaluationController extends Controller
      */
     public function responses(Request $request): JsonResponse
     {
+        if ($deny = $this->requireAdmin($request)) return $deny;
         $user = $request->user();
         $classroomId = $user->classroom_id;
         $accessibleIds = $user->accessibleClassroomIds();
@@ -612,6 +640,7 @@ class FacilityEvaluationController extends Controller
      */
     public function responsePdf(Request $request, int $evaluation): JsonResponse
     {
+        if ($deny = $this->requireAdmin($request)) return $deny;
         $user = $request->user();
         $classroomId = $user->classroom_id;
         $accessibleIds = $user->accessibleClassroomIds();
@@ -653,6 +682,7 @@ class FacilityEvaluationController extends Controller
      */
     public function updateSummaryCounts(Request $request): JsonResponse
     {
+        if ($deny = $this->requireAdmin($request)) return $deny;
         $validated = $request->validate([
             'period_id'     => 'required|integer',
             'question_id'   => 'required|integer',
@@ -691,6 +721,7 @@ class FacilityEvaluationController extends Controller
      */
     public function staffEvaluationDetail(Request $request): JsonResponse
     {
+        if ($deny = $this->requireAdmin($request)) return $deny;
         $evaluationId = $request->input('evaluation_id');
 
         $eval = DB::table('facility_staff_evaluations')->find($evaluationId);
@@ -883,6 +914,7 @@ class FacilityEvaluationController extends Controller
      */
     public function selfSummary(Request $request): JsonResponse
     {
+        if ($deny = $this->requireAdmin($request)) return $deny;
         $user = $request->user();
         $classroomId = $user->classroom_id;
         $accessibleIds = $user->accessibleClassroomIds();
@@ -1013,6 +1045,7 @@ class FacilityEvaluationController extends Controller
      */
     public function saveSelfSummary(Request $request): JsonResponse
     {
+        if ($deny = $this->requireAdmin($request)) return $deny;
         $validated = $request->validate([
             'period_id' => 'required|integer',
             'items'     => 'required|array',
@@ -1058,6 +1091,7 @@ class FacilityEvaluationController extends Controller
      */
     public function summaryPdf(Request $request): Response
     {
+        if ($deny = $this->requireAdmin($request)) return $deny;
         $user = $request->user();
         $classroomId = $user->classroom_id;
         $accessibleIds = $user->accessibleClassroomIds();
@@ -1149,6 +1183,7 @@ class FacilityEvaluationController extends Controller
      */
     public function generateSelfEvaluation(Request $request): JsonResponse
     {
+        if ($deny = $this->requireAdmin($request)) return $deny;
         $user = $request->user();
         $classroomId = $user->classroom_id;
         $accessibleIds = $user->accessibleClassroomIds();
@@ -1268,6 +1303,7 @@ class FacilityEvaluationController extends Controller
      */
     public function selfEvaluationPdf(Request $request): Response
     {
+        if ($deny = $this->requireAdmin($request)) return $deny;
         $user = $request->user();
         $classroomId = $user->classroom_id;
         $accessibleIds = $user->accessibleClassroomIds();
