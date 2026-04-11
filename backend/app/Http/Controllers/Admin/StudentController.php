@@ -74,6 +74,10 @@ class StudentController extends Controller
 
         $student = Student::create($validated);
 
+        // 主教室を必ず classroom_student pivot にも登録しておく
+        // （以降 /api/admin/students/{student}/classrooms で複数教室を追加可能）
+        $student->classrooms()->syncWithoutDetaching([$student->classroom_id]);
+
         return response()->json([
             'success' => true,
             'data'    => $student->load(['classroom', 'guardian']),
@@ -123,6 +127,11 @@ class StudentController extends Controller
         unset($validated['password']);
 
         $student->update($validated);
+
+        // 主教室が pivot に無ければ追加する（主教室は常に所属教室に含まれる）
+        if (isset($validated['classroom_id'])) {
+            $student->classrooms()->syncWithoutDetaching([$validated['classroom_id']]);
+        }
 
         return response()->json([
             'success' => true,

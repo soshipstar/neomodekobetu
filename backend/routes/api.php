@@ -55,6 +55,9 @@ Route::prefix('admin')
         // 生徒管理
         Route::get('/students/grade-promotion/preview', [App\Http\Controllers\Admin\StudentController::class, 'gradePromotionPreview']);
         Route::post('/students/grade-promotion/execute', [App\Http\Controllers\Admin\StudentController::class, 'gradePromotionExecute']);
+        // 児童の複数教室割当（UserClassroomController と同じ形）
+        Route::get('/students/{student}/classrooms', [App\Http\Controllers\Admin\StudentClassroomController::class, 'index']);
+        Route::put('/students/{student}/classrooms', [App\Http\Controllers\Admin\StudentClassroomController::class, 'sync']);
         Route::apiResource('students', App\Http\Controllers\Admin\StudentController::class);
 
         // システム設定

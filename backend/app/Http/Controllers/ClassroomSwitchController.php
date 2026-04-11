@@ -10,7 +10,11 @@ class ClassroomSwitchController extends Controller
     /**
      * 現在のユーザーが所属する教室一覧を取得
      *
-     * マスター管理者は全教室を取得できる。
+     * - マスター管理者: 全教室
+     * - 保護者 (user_type=guardian): 担当する全児童の在籍教室集合
+     *   （User::accessibleClassroomIds() が導出する）
+     * - それ以外 (スタッフ/通常管理者): classroom_user ピボット +
+     *   users.classroom_id の後方互換
      */
     public function myClassrooms(Request $request): JsonResponse
     {
@@ -19,6 +23,13 @@ class ClassroomSwitchController extends Controller
 
         if ($isMaster) {
             $classrooms = \App\Models\Classroom::query()
+                ->select('id', 'classroom_name', 'address', 'phone')
+                ->orderBy('classroom_name')
+                ->get();
+        } elseif ($user->user_type === 'guardian') {
+            $ids = $user->accessibleClassroomIds();
+            $classrooms = \App\Models\Classroom::query()
+                ->whereIn('id', $ids)
                 ->select('id', 'classroom_name', 'address', 'phone')
                 ->orderBy('classroom_name')
                 ->get();
