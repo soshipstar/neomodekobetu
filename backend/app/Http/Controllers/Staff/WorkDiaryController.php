@@ -18,8 +18,9 @@ class WorkDiaryController extends Controller
 
         $query = WorkDiary::with(['creator:id,full_name', 'updater:id,full_name']);
 
+        // 主教室 + classroom_user ピボットで所属する全教室を対象にする
         if ($user->classroom_id) {
-            $query->where('classroom_id', $user->classroom_id);
+            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
         }
 
         if ($request->filled('date')) {
