@@ -16,7 +16,7 @@ class StudentAssessmentController extends Controller
     public function index(Request $request, Student $student): JsonResponse
     {
         $user = $request->user();
-        if ($user->classroom_id && $student->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($student->classroom_id, $user->accessibleClassroomIds(), true)) {
             abort(403, 'この生徒へのアクセス権限がありません。');
         }
 
@@ -37,7 +37,7 @@ class StudentAssessmentController extends Controller
     public function store(Request $request, Student $student): JsonResponse
     {
         $user = $request->user();
-        if ($user->classroom_id && $student->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($student->classroom_id, $user->accessibleClassroomIds(), true)) {
             abort(403, 'この生徒へのアクセス権限がありません。');
         }
 

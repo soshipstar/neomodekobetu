@@ -49,7 +49,7 @@ class UnsentRecordsController extends Controller
 
             // Get all active students scheduled for this day
             $scheduledStudents = Student::active()
-                ->where('classroom_id', $classroomId)
+                ->whereIn('classroom_id', $user->accessibleClassroomIds())
                 ->where("scheduled_{$dayOfWeek}", true)
                 ->get();
 
@@ -193,7 +193,7 @@ class UnsentRecordsController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && $record->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($record->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -253,7 +253,7 @@ class UnsentRecordsController extends Controller
         DB::transaction(function () use ($validated, $user, &$sentCount) {
             $records = AbsenceResponseRecord::whereIn('id', $validated['record_ids'])
                 ->where('is_sent', false)
-                ->where('classroom_id', $user->classroom_id)
+                ->whereIn('classroom_id', $user->accessibleClassroomIds())
                 ->get();
 
             foreach ($records as $record) {

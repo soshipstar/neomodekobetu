@@ -20,13 +20,14 @@ class FacilityEvaluationController extends Controller
     {
         $user = $request->user();
         $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
 
         $query = DB::table('facility_evaluation_periods')
             ->orderByDesc('fiscal_year')
             ->orderByDesc('created_at');
 
         if ($classroomId) {
-            $query->where('classroom_id', $classroomId);
+            $query->whereIn('classroom_id', $accessibleIds);
         }
 
         $periods = $query->get();
@@ -38,23 +39,23 @@ class FacilityEvaluationController extends Controller
                     ->join('users as u', 'e.guardian_id', '=', 'u.id')
                     ->where('e.period_id', $period->id)
                     ->where('e.is_submitted', true)
-                    ->where('u.classroom_id', $classroomId)
+                    ->whereIn('u.classroom_id', $accessibleIds)
                     ->count();
                 $period->guardian_total = DB::table('users')
                     ->where('user_type', 'guardian')
                     ->where('is_active', true)
-                    ->where('classroom_id', $classroomId)
+                    ->whereIn('classroom_id', $accessibleIds)
                     ->count();
                 $period->staff_submitted = DB::table('facility_staff_evaluations as e')
                     ->join('users as u', 'e.staff_id', '=', 'u.id')
                     ->where('e.period_id', $period->id)
                     ->where('e.is_submitted', true)
-                    ->where('u.classroom_id', $classroomId)
+                    ->whereIn('u.classroom_id', $accessibleIds)
                     ->count();
                 $period->staff_total = DB::table('users')
                     ->whereIn('user_type', ['staff', 'admin'])
                     ->where('is_active', true)
-                    ->where('classroom_id', $classroomId)
+                    ->whereIn('classroom_id', $accessibleIds)
                     ->count();
             } else {
                 $period->guardian_submitted = DB::table('facility_guardian_evaluations')
@@ -96,6 +97,7 @@ class FacilityEvaluationController extends Controller
 
         $user = $request->user();
         $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
 
         // タイトル自動生成（レガシーと同じ）
         $title = $validated['title'] ?: "{$validated['fiscal_year']}年度 事業所評価";
@@ -163,6 +165,7 @@ class FacilityEvaluationController extends Controller
     {
         $user = $request->user();
         $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
 
         // 保護者の回答状況（全アクティブ保護者を表示）
         $guardianQuery = DB::table('users as u')
@@ -174,7 +177,7 @@ class FacilityEvaluationController extends Controller
             ->where('u.is_active', true);
 
         if ($classroomId) {
-            $guardianQuery->where('u.classroom_id', $classroomId);
+            $guardianQuery->whereIn('u.classroom_id', $accessibleIds);
         }
 
         $guardianResponses = $guardianQuery->select(
@@ -195,7 +198,7 @@ class FacilityEvaluationController extends Controller
             ->where('u.is_active', true);
 
         if ($classroomId) {
-            $staffQuery->where('u.classroom_id', $classroomId);
+            $staffQuery->whereIn('u.classroom_id', $accessibleIds);
         }
 
         $staffResponses = $staffQuery->select(
@@ -222,6 +225,7 @@ class FacilityEvaluationController extends Controller
     {
         $user = $request->user();
         $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
         $periodId = $request->input('period_id');
 
         // 評価期間を取得
@@ -249,7 +253,7 @@ class FacilityEvaluationController extends Controller
 
         if ($classroomId) {
             $summaryQuery->join('users as u', 'e.guardian_id', '=', 'u.id')
-                         ->where('u.classroom_id', $classroomId);
+                         ->whereIn('u.classroom_id', $accessibleIds);
         }
 
         $guardianSummary = $summaryQuery->select(
@@ -273,7 +277,7 @@ class FacilityEvaluationController extends Controller
             ->where('is_submitted', true);
         if ($classroomId) {
             $respondentsQuery->join('users as u', 'facility_guardian_evaluations.guardian_id', '=', 'u.id')
-                             ->where('u.classroom_id', $classroomId);
+                             ->whereIn('u.classroom_id', $accessibleIds);
         }
         $totalRespondents = $respondentsQuery->count();
 
@@ -288,7 +292,7 @@ class FacilityEvaluationController extends Controller
 
         if ($classroomId) {
             $commentsQuery->join('users as u', 'e.guardian_id', '=', 'u.id')
-                          ->where('u.classroom_id', $classroomId);
+                          ->whereIn('u.classroom_id', $accessibleIds);
         }
 
         $comments = $commentsQuery
@@ -305,7 +309,7 @@ class FacilityEvaluationController extends Controller
 
         if ($classroomId) {
             $staffSummaryQuery->join('users as u', 'e.staff_id', '=', 'u.id')
-                              ->where('u.classroom_id', $classroomId);
+                              ->whereIn('u.classroom_id', $accessibleIds);
         }
 
         $staffSummary = $staffSummaryQuery->select(
@@ -329,7 +333,7 @@ class FacilityEvaluationController extends Controller
             ->where('is_submitted', true);
         if ($classroomId) {
             $staffRespondentsQuery->join('users as u', 'facility_staff_evaluations.staff_id', '=', 'u.id')
-                                  ->where('u.classroom_id', $classroomId);
+                                  ->whereIn('u.classroom_id', $accessibleIds);
         }
         $totalStaffRespondents = $staffRespondentsQuery->count();
 
@@ -344,7 +348,7 @@ class FacilityEvaluationController extends Controller
 
         if ($classroomId) {
             $staffCommentsQuery->join('users as u', 'e.staff_id', '=', 'u.id')
-                               ->where('u.classroom_id', $classroomId);
+                               ->whereIn('u.classroom_id', $accessibleIds);
         }
 
         $staffComments = $staffCommentsQuery
@@ -413,6 +417,7 @@ class FacilityEvaluationController extends Controller
         $periodId = $request->input('period_id');
         $user = $request->user();
         $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
 
         $period = DB::table('facility_evaluation_periods')->find($periodId);
         if (! $period) {
@@ -432,8 +437,8 @@ class FacilityEvaluationController extends Controller
 
             if ($classroomId) {
                 $guardianQuery->leftJoin('users as u', 'e.guardian_id', '=', 'u.id')
-                              ->where(function ($q) use ($classroomId) {
-                                  $q->where('u.classroom_id', $classroomId)->orWhereNull('u.id');
+                              ->where(function ($q) use ($accessibleIds) {
+                                  $q->whereIn('u.classroom_id', $accessibleIds)->orWhereNull('u.id');
                               });
             }
 
@@ -459,8 +464,8 @@ class FacilityEvaluationController extends Controller
 
             if ($classroomId) {
                 $staffQuery->leftJoin('users as u', 'e.staff_id', '=', 'u.id')
-                           ->where(function ($q) use ($classroomId) {
-                               $q->where('u.classroom_id', $classroomId)->orWhereNull('u.id');
+                           ->where(function ($q) use ($accessibleIds) {
+                               $q->whereIn('u.classroom_id', $accessibleIds)->orWhereNull('u.id');
                            });
             }
 
@@ -548,6 +553,7 @@ class FacilityEvaluationController extends Controller
     {
         $user = $request->user();
         $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
         $periodId = $request->input('period_id');
 
         if (! $periodId) {
@@ -568,7 +574,7 @@ class FacilityEvaluationController extends Controller
             ->where('e.is_submitted', true);
 
         if ($classroomId) {
-            $query->where('u.classroom_id', $classroomId);
+            $query->whereIn('u.classroom_id', $accessibleIds);
         }
 
         $evaluations = $query->select(
@@ -604,6 +610,7 @@ class FacilityEvaluationController extends Controller
     {
         $user = $request->user();
         $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
 
         $query = DB::table('facility_guardian_evaluations as e')
             ->join('users as u', 'e.guardian_id', '=', 'u.id')
@@ -611,7 +618,7 @@ class FacilityEvaluationController extends Controller
             ->where('e.is_submitted', true);
 
         if ($classroomId) {
-            $query->where('u.classroom_id', $classroomId);
+            $query->whereIn('u.classroom_id', $accessibleIds);
         }
 
         $eval = $query->select('e.id', 'e.guardian_id', 'u.full_name as guardian_name', 'e.submitted_at')
@@ -874,6 +881,7 @@ class FacilityEvaluationController extends Controller
     {
         $user = $request->user();
         $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
         $periodId = $request->input('period_id');
 
         $periodQuery = DB::table('facility_evaluation_periods');
@@ -900,7 +908,7 @@ class FacilityEvaluationController extends Controller
 
         if ($classroomId) {
             $query->join('users as u', 'e.staff_id', '=', 'u.id')
-                  ->where('u.classroom_id', $classroomId);
+                  ->whereIn('u.classroom_id', $accessibleIds);
         }
 
         $selfSummary = $query->select(
@@ -924,7 +932,7 @@ class FacilityEvaluationController extends Controller
             ->where('is_submitted', true);
         if ($classroomId) {
             $staffRespondentsQuery->join('users as u', 'facility_staff_evaluations.staff_id', '=', 'u.id')
-                                  ->where('u.classroom_id', $classroomId);
+                                  ->whereIn('u.classroom_id', $accessibleIds);
         }
         $staffRespondents = $staffRespondentsQuery->count();
 
@@ -943,7 +951,7 @@ class FacilityEvaluationController extends Controller
 
         if ($classroomId) {
             $staffCommentsQuery->join('users as u', 'e.staff_id', '=', 'u.id')
-                               ->where('u.classroom_id', $classroomId);
+                               ->whereIn('u.classroom_id', $accessibleIds);
         }
 
         $staffComments = $staffCommentsQuery
@@ -1048,6 +1056,7 @@ class FacilityEvaluationController extends Controller
     {
         $user = $request->user();
         $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
         $periodId = $request->input('period_id');
         $type = $request->input('type', 'guardian'); // 'guardian' or 'staff'
 
@@ -1068,7 +1077,7 @@ class FacilityEvaluationController extends Controller
 
             if ($classroomId) {
                 $summaryQuery->join('users as u', 'e.staff_id', '=', 'u.id')
-                              ->where('u.classroom_id', $classroomId);
+                              ->whereIn('u.classroom_id', $accessibleIds);
             }
 
             $respondentsQuery = DB::table('facility_staff_evaluations')
@@ -1076,7 +1085,7 @@ class FacilityEvaluationController extends Controller
                 ->where('is_submitted', true);
             if ($classroomId) {
                 $respondentsQuery->join('users as u', 'facility_staff_evaluations.staff_id', '=', 'u.id')
-                                  ->where('u.classroom_id', $classroomId);
+                                  ->whereIn('u.classroom_id', $accessibleIds);
             }
         } else {
             $summaryQuery = DB::table('facility_guardian_evaluation_answers as a')
@@ -1087,7 +1096,7 @@ class FacilityEvaluationController extends Controller
 
             if ($classroomId) {
                 $summaryQuery->join('users as u', 'e.guardian_id', '=', 'u.id')
-                              ->where('u.classroom_id', $classroomId);
+                              ->whereIn('u.classroom_id', $accessibleIds);
             }
 
             $respondentsQuery = DB::table('facility_guardian_evaluations')
@@ -1095,7 +1104,7 @@ class FacilityEvaluationController extends Controller
                 ->where('is_submitted', true);
             if ($classroomId) {
                 $respondentsQuery->join('users as u', 'facility_guardian_evaluations.guardian_id', '=', 'u.id')
-                                  ->where('u.classroom_id', $classroomId);
+                                  ->whereIn('u.classroom_id', $accessibleIds);
             }
         }
 
@@ -1138,6 +1147,7 @@ class FacilityEvaluationController extends Controller
     {
         $user = $request->user();
         $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
         $periodId = $request->input('period_id');
 
         $period = DB::table('facility_evaluation_periods')->find($periodId);
@@ -1157,7 +1167,7 @@ class FacilityEvaluationController extends Controller
 
         if ($classroomId) {
             $guardianQuery->join('users as u', 'e.guardian_id', '=', 'u.id')
-                          ->where('u.classroom_id', $classroomId);
+                          ->whereIn('u.classroom_id', $accessibleIds);
         }
 
         $guardianSummary = $guardianQuery->select(
@@ -1178,7 +1188,7 @@ class FacilityEvaluationController extends Controller
 
         if ($classroomId) {
             $staffQuery->join('users as u', 'e.staff_id', '=', 'u.id')
-                       ->where('u.classroom_id', $classroomId);
+                       ->whereIn('u.classroom_id', $accessibleIds);
         }
 
         $staffSummary = $staffQuery->select(
@@ -1256,6 +1266,7 @@ class FacilityEvaluationController extends Controller
     {
         $user = $request->user();
         $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
         $periodId = $request->input('period_id');
 
         $period = DB::table('facility_evaluation_periods')->find($periodId);
@@ -1273,9 +1284,9 @@ class FacilityEvaluationController extends Controller
             ->where('period_id', $period->id);
         if ($classroomId) {
             $guardianRespondentsQuery->join('users as u', 'facility_guardian_evaluations.guardian_id', '=', 'u.id')
-                                     ->where('u.classroom_id', $classroomId);
+                                     ->whereIn('u.classroom_id', $accessibleIds);
             $guardianTotalQuery->join('users as u2', 'facility_guardian_evaluations.guardian_id', '=', 'u2.id')
-                               ->where('u2.classroom_id', $classroomId);
+                               ->whereIn('u2.classroom_id', $accessibleIds);
         }
         $guardianRespondents = $guardianRespondentsQuery->count();
         $guardianTotal = $guardianTotalQuery->count();
@@ -1287,9 +1298,9 @@ class FacilityEvaluationController extends Controller
             ->where('period_id', $period->id);
         if ($classroomId) {
             $staffRespondentsQuery->join('users as u', 'facility_staff_evaluations.staff_id', '=', 'u.id')
-                                  ->where('u.classroom_id', $classroomId);
+                                  ->whereIn('u.classroom_id', $accessibleIds);
             $staffTotalQuery->join('users as u2', 'facility_staff_evaluations.staff_id', '=', 'u2.id')
-                            ->where('u2.classroom_id', $classroomId);
+                            ->whereIn('u2.classroom_id', $accessibleIds);
         }
         $staffRespondents = $staffRespondentsQuery->count();
         $staffTotal = $staffTotalQuery->count();

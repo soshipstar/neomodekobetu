@@ -21,7 +21,7 @@ class DailyRoutineController extends Controller
         $query = DailyRoutine::query();
 
         if ($classroomId) {
-            $query->where('classroom_id', $classroomId);
+            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
         }
 
         $query->where('is_active', true);
@@ -87,7 +87,7 @@ class DailyRoutineController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && $routine->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($routine->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -135,7 +135,7 @@ class DailyRoutineController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && $routine->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($routine->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -209,7 +209,7 @@ class DailyRoutineController extends Controller
 
         foreach ($validated['order'] as $index => $id) {
             DailyRoutine::where('id', $id)
-                ->when($user->classroom_id, fn ($q) => $q->where('classroom_id', $user->classroom_id))
+                ->when($user->classroom_id, fn ($q) => $q->whereIn('classroom_id', $user->accessibleClassroomIds()))
                 ->update(['sort_order' => $index]);
         }
 

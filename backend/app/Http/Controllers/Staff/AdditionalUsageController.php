@@ -23,12 +23,13 @@ class AdditionalUsageController extends Controller
     {
         $user = $request->user();
         $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
 
         $query = AdditionalUsage::with('student:id,student_name,classroom_id');
 
         if ($classroomId) {
-            $query->whereHas('student', function ($q) use ($classroomId) {
-                $q->where('classroom_id', $classroomId);
+            $query->whereHas('student', function ($q) use ($accessibleIds) {
+                $q->whereIn('classroom_id', $accessibleIds);
             });
         }
 
@@ -65,7 +66,7 @@ class AdditionalUsageController extends Controller
         // 教室アクセス権チェック
         if ($user->classroom_id) {
             $student = Student::where('id', $validated['student_id'])
-                ->where('classroom_id', $user->classroom_id)
+                ->whereIn('classroom_id', $user->accessibleClassroomIds())
                 ->first();
 
             if (! $student) {
@@ -118,7 +119,7 @@ class AdditionalUsageController extends Controller
         ]);
 
         $student = Student::findOrFail($validated['student_id']);
-        if ($user->classroom_id && $student->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($student->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -204,7 +205,7 @@ class AdditionalUsageController extends Controller
         ]);
 
         $student = Student::findOrFail($request->student_id);
-        if ($user->classroom_id && $student->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($student->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -235,7 +236,7 @@ class AdditionalUsageController extends Controller
             'saturday'  => (bool) $student->scheduled_saturday,
         ];
 
-        // 休日
+        // 休日（学生の教室を優先、なければユーザーの主教室）
         $classroomId = $student->classroom_id ?? $user->classroom_id;
         $holidayDates = [];
         if ($classroomId) {
@@ -268,7 +269,7 @@ class AdditionalUsageController extends Controller
 
         if ($user->classroom_id) {
             $student = $usage->student;
-            if ($student && $student->classroom_id !== $user->classroom_id) {
+            if ($student && !in_array($student->classroom_id, $user->accessibleClassroomIds(), true)) {
                 return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
             }
         }
