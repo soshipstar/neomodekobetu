@@ -117,6 +117,7 @@ const adminNav: NavItem[] = [
   { type: 'link', label: '教室管理', href: '/admin/classrooms', icon: 'apartment', visibility: 'master_only' },
   { type: 'link', label: '管理者アカウント', href: '/admin/admin-accounts', icon: 'shield_person', visibility: 'master_only' },
   { type: 'link', label: 'スタッフアカウント', href: '/admin/staff-accounts', icon: 'badge', visibility: 'master_only' },
+  { type: 'link', label: '事業所評価', href: '/admin/facility-evaluation', icon: 'analytics', visibility: 'non_master' },
   { type: 'divider', label: 'システム' },
   { type: 'link', label: 'エラーログ', href: '/admin/error-logs', icon: 'warning', visibility: 'master_only' },
 ];

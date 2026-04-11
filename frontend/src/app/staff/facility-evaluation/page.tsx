@@ -110,7 +110,9 @@ function formatDate(d: string | null): string {
 export default function FacilityEvaluationPage() {
   const toast = useToast();
   const { user } = useAuthStore();
-  const isAdmin = user?.user_type === 'admin';
+  // 結果閲覧は施設の管理者 (非マスター admin) のみ。マスター管理者はシステム管理の
+  // 立場で事業所評価の結果には関与しない方針。
+  const isAdmin = user?.user_type === 'admin' && !user?.is_master;
   const [periods, setPeriods] = useState<Period[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<Period | null>(null);
@@ -151,12 +153,15 @@ export default function FacilityEvaluationPage() {
     return (
       <ResponseStatusView
         period={selectedPeriod}
+        isAdmin={isAdmin}
         onBack={() => setActiveView('list')}
       />
     );
   }
 
-  if (activeView === 'summary' && selectedPeriod) {
+  // 集計結果・自己評価総括表は管理者 (user_type=admin) のみ閲覧可。
+  // スタッフは回収状況の閲覧と自分の評価回答のみ。
+  if (activeView === 'summary' && selectedPeriod && isAdmin) {
     return (
       <SummaryView
         period={selectedPeriod}
@@ -167,7 +172,7 @@ export default function FacilityEvaluationPage() {
     );
   }
 
-  if (activeView === 'self_eval' && selectedPeriod) {
+  if (activeView === 'self_eval' && selectedPeriod && isAdmin) {
     return (
       <SelfEvaluationView
         period={selectedPeriod}
@@ -181,7 +186,8 @@ export default function FacilityEvaluationPage() {
     <div className="mx-auto max-w-4xl p-4">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-lg font-semibold">事業所評価</h1>
-        <CreatePeriodButton onCreated={fetchPeriods} />
+        {/* 新規評価期間の作成は管理者のみ */}
+        {isAdmin && <CreatePeriodButton onCreated={fetchPeriods} />}
       </div>
 
       {periods.length === 0 ? (
@@ -282,7 +288,7 @@ function PeriodCard({
               <MaterialIcon name="people" size={16} className="mr-1" />
               回答状況
             </Button>
-            {(period.status === 'aggregating' || period.status === 'published') && (
+            {isAdmin && (period.status === 'aggregating' || period.status === 'published') && (
               <>
                 <Button variant="outline" size="sm" onClick={() => onSelect('summary')}>
                   <MaterialIcon name="bar_chart" size={16} className="mr-1" />
@@ -603,7 +609,7 @@ function StaffEvaluationForm({ period, onBack }: { period: Period; onBack: () =>
 // Response Status View
 // ---------------------------------------------------------------------------
 
-function ResponseStatusView({ period, onBack }: { period: Period; onBack: () => void }) {
+function ResponseStatusView({ period, isAdmin = false, onBack }: { period: Period; isAdmin?: boolean; onBack: () => void }) {
   const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [guardianResponses, setGuardianResponses] = useState<ResponseUser[]>([]);
@@ -645,13 +651,13 @@ function ResponseStatusView({ period, onBack }: { period: Period; onBack: () => 
             key: 'guardian',
             label: '保護者',
             badge: guardianResponses.filter((r) => r.is_submitted).length,
-            content: <ResponseTable responses={guardianResponses} nameKey="guardian_name" periodId={period.id} type="guardian" />,
+            content: <ResponseTable responses={guardianResponses} nameKey="guardian_name" periodId={period.id} type="guardian" isAdmin={isAdmin} />,
           },
           {
             key: 'staff',
             label: 'スタッフ',
             badge: staffResponses.filter((r) => r.is_submitted).length,
-            content: <ResponseTable responses={staffResponses} nameKey="staff_name" periodId={period.id} type="staff" />,
+            content: <ResponseTable responses={staffResponses} nameKey="staff_name" periodId={period.id} type="staff" isAdmin={isAdmin} />,
           },
         ]}
       />
@@ -659,7 +665,7 @@ function ResponseStatusView({ period, onBack }: { period: Period; onBack: () => 
   );
 }
 
-function ResponseTable({ responses, nameKey, periodId, type }: { responses: ResponseUser[]; nameKey: string; periodId: number; type: 'guardian' | 'staff' }) {
+function ResponseTable({ responses, nameKey, periodId, type, isAdmin = false }: { responses: ResponseUser[]; nameKey: string; periodId: number; type: 'guardian' | 'staff'; isAdmin?: boolean }) {
   const toast = useToast();
   const submitted = responses.filter((r) => r.is_submitted).length;
   const [detailModal, setDetailModal] = useState<{ name: string; answers: { question_number: number; question_text: string; category: string; answer: string; comment: string | null; improvement_plan?: string | null }[] } | null>(null);
@@ -707,7 +713,7 @@ function ResponseTable({ responses, nameKey, periodId, type }: { responses: Resp
               <th className="px-4 py-2 text-left font-semibold">氏名</th>
               <th className="px-4 py-2 text-left font-semibold">状態</th>
               <th className="px-4 py-2 text-left font-semibold">提出日</th>
-              <th className="px-4 py-2 text-center font-semibold">操作</th>
+              {isAdmin && <th className="px-4 py-2 text-center font-semibold">操作</th>}
             </tr>
           </thead>
           <tbody>
@@ -724,14 +730,17 @@ function ResponseTable({ responses, nameKey, periodId, type }: { responses: Resp
                 <td className="px-4 py-2 text-[var(--neutral-foreground-3)]">
                   {r.submitted_at ? formatDate(r.submitted_at) : '—'}
                 </td>
-                <td className="px-4 py-2 text-center">
-                  {r.is_submitted && (
-                    <Button variant="ghost" size="sm" onClick={() => viewDetail(r)} disabled={loadingDetail}>
-                      <MaterialIcon name="visibility" size={16} className="mr-1" />
-                      閲覧
-                    </Button>
-                  )}
-                </td>
+                {/* 個別回答の閲覧は管理者のみ。スタッフは回収状況のみ参照可 */}
+                {isAdmin && (
+                  <td className="px-4 py-2 text-center">
+                    {r.is_submitted && (
+                      <Button variant="ghost" size="sm" onClick={() => viewDetail(r)} disabled={loadingDetail}>
+                        <MaterialIcon name="visibility" size={16} className="mr-1" />
+                        閲覧
+                      </Button>
+                    )}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

@@ -216,15 +216,33 @@ export default function FacilityEvaluationPage() {
         {data.period.title}
       </h1>
 
-      {/* Submitted notice */}
+      {/* Submitted notice: 提出済みは完了メッセージのみ表示し、回答内容は隠す */}
       {isSubmitted && (
-        <div className="rounded-lg bg-[var(--status-info-bg,rgba(59,130,246,0.1))] border border-[var(--status-info-fg,#3b82f6)] px-4 py-3 text-sm text-[var(--status-info-fg,#3b82f6)] text-center">
-          <MaterialIcon name="check_circle" size={16} className="inline mr-1" />
-          この評価は{data.evaluation?.submitted_at
-            ? new Date(data.evaluation.submitted_at).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-            : ''}に提出済みです。
-          <br />ご協力ありがとうございました。
-        </div>
+        <Card>
+          <CardBody>
+            <div className="py-6 text-center">
+              <MaterialIcon
+                name="check_circle"
+                size={48}
+                className="mx-auto mb-3 text-[var(--status-success-fg,#22c55e)]"
+              />
+              <p className="text-base font-medium text-[var(--neutral-foreground-1)] mb-1">
+                {data.evaluation?.submitted_at
+                  ? new Date(data.evaluation.submitted_at).toLocaleDateString('ja-JP', {
+                      year: 'numeric', month: 'long', day: 'numeric',
+                    })
+                  : ''}
+                に提出済みです
+              </p>
+              <p className="text-sm text-[var(--neutral-foreground-3)]">
+                ご協力ありがとうございました。
+              </p>
+              <p className="mt-3 text-xs text-[var(--neutral-foreground-4)]">
+                ※ 回答内容の確認・修正はできません。
+              </p>
+            </div>
+          </CardBody>
+        </Card>
       )}
 
       {/* Introduction + deadline (only if not submitted) */}
@@ -251,8 +269,8 @@ export default function FacilityEvaluationPage() {
         </Card>
       )}
 
-      {/* Questions by category */}
-      {Object.entries(questionsByCategory).map(([category, questions]) => (
+      {/* Questions by category: 未提出時のみ表示 */}
+      {!isSubmitted && Object.entries(questionsByCategory).map(([category, questions]) => (
         <Card key={category}>
           <div className="bg-[var(--brand-primary,#7c3aed)] text-white px-5 py-3 font-semibold text-base">
             {category}
