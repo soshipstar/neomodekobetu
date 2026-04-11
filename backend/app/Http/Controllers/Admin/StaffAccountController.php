@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Classroom;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class StaffAccountController extends Controller
 {
@@ -35,6 +37,38 @@ class StaffAccountController extends Controller
         $user->classroom_name = $user->classroom?->classroom_name;
         $user->company_name   = $user->classroom?->company?->name;
         $user->setAttribute('company_id', $user->classroom?->company_id);
+    }
+
+    /**
+     * スタッフアカウントの classroom_id が企業に所属していることを保証する。
+     *
+     * - classroom_id が必須（スタッフは必ず教室に所属する）
+     * - 指定された教室は存在すること
+     * - その教室は必ずどこかの企業に所属していること（company_id が null でない）
+     *
+     * 新規作成と更新の両方から呼ぶ。更新時は request に classroom_id が含まれない
+     * ときは呼び出し側で既存値をマージして渡すこと。
+     */
+    private function assertClassroomHasCompany(?int $classroomId): void
+    {
+        if (empty($classroomId)) {
+            throw ValidationException::withMessages([
+                'classroom_id' => ['所属教室は必須です。'],
+            ]);
+        }
+
+        $classroom = Classroom::find($classroomId);
+        if (!$classroom) {
+            throw ValidationException::withMessages([
+                'classroom_id' => ['指定した教室は存在しません。'],
+            ]);
+        }
+
+        if ($classroom->company_id === null) {
+            throw ValidationException::withMessages([
+                'classroom_id' => ['選択した教室には所属企業が設定されていません。企業に属する教室を選択してください。'],
+            ]);
+        }
     }
 
     /**
@@ -105,7 +139,7 @@ class StaffAccountController extends Controller
         if ($deny = $this->requireMaster($request)) return $deny;
 
         $validated = $request->validate([
-            'classroom_id' => 'nullable|exists:classrooms,id',
+            'classroom_id' => 'required|integer|exists:classrooms,id',
             'username'     => 'required|string|max:100|unique:users',
             'password'     => 'required|string|min:6',
             'full_name'    => 'required|string|max:255',
@@ -113,6 +147,8 @@ class StaffAccountController extends Controller
             'is_active'    => 'boolean',
         ]);
         // 所属企業は classroom 経由で一意に決まるため company_id は受け付けない
+        // classroom は必ずどこかの企業に属していること
+        $this->assertClassroomHasCompany((int) $validated['classroom_id']);
 
         $validated['password'] = Hash::make($validated['password']);
         $validated['user_type'] = 'staff';
@@ -140,7 +176,7 @@ class StaffAccountController extends Controller
         }
 
         $validated = $request->validate([
-            'classroom_id' => 'nullable|exists:classrooms,id',
+            'classroom_id' => 'sometimes|required|integer|exists:classrooms,id',
             'username'     => ['sometimes', 'required', 'string', 'max:100', Rule::unique('users')->ignore($user->id)],
             'password'     => 'nullable|string|min:6',
             'full_name'    => 'sometimes|required|string|max:255',
@@ -148,6 +184,10 @@ class StaffAccountController extends Controller
             'is_active'    => 'boolean',
         ]);
         // company_id は受け付けない（classroom 経由で導出）
+        // classroom_id が含まれるときは、その教室が企業に属していることを保証する
+        if (array_key_exists('classroom_id', $validated)) {
+            $this->assertClassroomHasCompany((int) $validated['classroom_id']);
+        }
 
         if (!empty($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
