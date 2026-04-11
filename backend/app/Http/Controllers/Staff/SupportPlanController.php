@@ -1276,7 +1276,7 @@ class SupportPlanController extends Controller
      */
     private function authorizeClassroom($user, Student $student): void
     {
-        if ($user->classroom_id && $student->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($student->classroom_id, $user->accessibleClassroomIds(), true)) {
             abort(403, 'この生徒へのアクセス権限がありません。');
         }
     }

@@ -21,7 +21,7 @@ class StaffEventController extends Controller
         $query = Event::with('classroom:id,classroom_name');
 
         if ($classroomId) {
-            $query->where('classroom_id', $classroomId);
+            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
         }
 
         // month パラメータ: "YYYY-MM" or separate month/year
@@ -114,7 +114,7 @@ class StaffEventController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && $event->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($event->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -164,7 +164,7 @@ class StaffEventController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && $event->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($event->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -227,7 +227,7 @@ class StaffEventController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && $event->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($event->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 

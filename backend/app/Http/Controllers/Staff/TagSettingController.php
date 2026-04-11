@@ -21,7 +21,7 @@ class TagSettingController extends Controller
         $query = ClassroomTag::query();
 
         if ($classroomId) {
-            $query->where('classroom_id', $classroomId);
+            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
         }
 
         $tags = $query->orderBy('sort_order')->get();
@@ -75,7 +75,7 @@ class TagSettingController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && $tag->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($tag->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -113,7 +113,7 @@ class TagSettingController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && $tag->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($tag->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -139,7 +139,7 @@ class TagSettingController extends Controller
 
         foreach ($validated['order'] as $index => $id) {
             ClassroomTag::where('id', $id)
-                ->when($user->classroom_id, fn ($q) => $q->where('classroom_id', $user->classroom_id))
+                ->when($user->classroom_id, fn ($q) => $q->whereIn('classroom_id', $user->accessibleClassroomIds()))
                 ->update(['sort_order' => $index]);
         }
 

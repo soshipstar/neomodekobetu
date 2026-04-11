@@ -22,7 +22,7 @@ class StaffHolidayController extends Controller
             ->select('holidays.*', 'users.full_name as created_by_name');
 
         if ($classroomId) {
-            $query->where('holidays.classroom_id', $classroomId);
+            $query->whereIn('holidays.classroom_id', $user->accessibleClassroomIds());
         }
 
         if ($request->filled('year')) {
@@ -191,7 +191,7 @@ class StaffHolidayController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && $holiday->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($holiday->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 

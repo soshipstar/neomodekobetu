@@ -21,7 +21,7 @@ class SchoolHolidayActivityController extends Controller
         $query = SchoolHolidayActivity::with('classroom:id,classroom_name');
 
         if ($classroomId) {
-            $query->where('classroom_id', $classroomId);
+            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
         }
 
         if ($request->filled('month')) {
@@ -114,7 +114,7 @@ class SchoolHolidayActivityController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && $activity->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($activity->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -139,7 +139,7 @@ class SchoolHolidayActivityController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && $activity->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($activity->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -158,7 +158,7 @@ class SchoolHolidayActivityController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && $activity->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($activity->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
