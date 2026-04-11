@@ -38,7 +38,7 @@ class ClassroomController extends Controller
             return response()->json(['success' => false, 'message' => '権限がありません。'], 403);
         }
 
-        $query = Classroom::withCount(['students', 'users']);
+        $query = Classroom::with('company')->withCount(['students', 'users']);
 
         if ($user->is_master) {
             // マスター管理者: 全教室
@@ -56,6 +56,11 @@ class ClassroomController extends Controller
         }
 
         $classrooms = $query->orderBy('classroom_name')->get();
+
+        // フロントエンドはフラットな company_name を参照するため属性として付与
+        $classrooms->each(function (Classroom $c) {
+            $c->company_name = $c->company?->name;
+        });
 
         return response()->json([
             'success' => true,

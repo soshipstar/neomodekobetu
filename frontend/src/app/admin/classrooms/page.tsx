@@ -99,6 +99,7 @@ export default function ClassroomsPage() {
         </div>
       ),
     },
+    { key: 'company_name', label: '所属企業', render: (c) => c.company_name || '-' },
     { key: 'address', label: '住所', render: (c) => c.address || '-' },
     { key: 'phone', label: '電話番号', render: (c) => c.phone || '-' },
     {

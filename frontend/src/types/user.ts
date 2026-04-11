@@ -47,6 +47,8 @@ export interface Student {
 export interface Classroom {
   id: number;
   classroom_name: string;
+  company_id: number | null;
+  company_name: string | null;
   address: string | null;
   phone: string | null;
   logo_path: string | null;

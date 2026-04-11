@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,6 +15,7 @@ class Classroom extends Model
 
     protected $fillable = [
         'classroom_name',
+        'company_id',
         'address',
         'phone',
         'logo_path',
@@ -32,6 +34,12 @@ class Classroom extends Model
     // =========================================================================
     // Relationships
     // =========================================================================
+
+    /** @return BelongsTo<Company, self> */
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
 
     /** @return HasMany<User> */
     public function users(): HasMany
