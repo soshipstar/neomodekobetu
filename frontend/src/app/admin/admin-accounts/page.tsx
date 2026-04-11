@@ -117,6 +117,7 @@ export default function AdminAccountsPage() {
 
   const saveMutation = useMutation({
     mutationFn: async (data: AdminFormData & { id?: number }) => {
+      // 所属企業は classroom 経由で一意に決まるためサーバーには送信しない
       if (data.id) {
         const payload: Record<string, unknown> = {
           full_name: data.full_name,
@@ -124,16 +125,15 @@ export default function AdminAccountsPage() {
           is_master: data.is_master,
           is_company_admin: data.is_company_admin,
           classroom_id: data.classroom_id ? Number(data.classroom_id) : null,
-          company_id: data.company_id ? Number(data.company_id) : null,
           is_active: data.is_active,
         };
         if (data.password) payload.password = data.password;
         return api.put(`/api/admin/admin-accounts/${data.id}`, payload);
       }
+      const { company_id: _ignoredCompanyId, ...rest } = data;
       return api.post('/api/admin/admin-accounts', {
-        ...data,
+        ...rest,
         classroom_id: data.classroom_id ? Number(data.classroom_id) : null,
-        company_id: data.company_id ? Number(data.company_id) : null,
       });
     },
     onSuccess: () => {

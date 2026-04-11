@@ -71,7 +71,12 @@ class CompanyController extends Controller
     {
         if ($deny = $this->requireMaster($request)) return $deny;
 
-        $company->load(['classrooms:id,company_id,classroom_name', 'users:id,company_id,full_name,user_type,is_company_admin']);
+        // Company::users() は classrooms 経由の hasManyThrough。
+        // eager load 時は through テーブルの FK (users.classroom_id) を含める必要がある
+        $company->load([
+            'classrooms:id,company_id,classroom_name',
+            'users:id,classroom_id,full_name,user_type,is_company_admin',
+        ]);
 
         return response()->json([
             'success' => true,

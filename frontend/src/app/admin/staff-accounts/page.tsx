@@ -110,21 +110,21 @@ export default function StaffAccountsPage() {
 
   const saveMutation = useMutation({
     mutationFn: async (data: StaffAccountFormData & { id?: number }) => {
+      // 所属企業は classroom 経由で一意に決まるためサーバーには送信しない
       if (data.id) {
         const payload: Record<string, unknown> = {
           full_name: data.full_name,
           email: data.email || null,
           classroom_id: data.classroom_id ? Number(data.classroom_id) : null,
-          company_id: data.company_id ? Number(data.company_id) : null,
           is_active: data.is_active,
         };
         if (data.password) payload.password = data.password;
         return api.put(`/api/admin/staff-accounts/${data.id}`, payload);
       }
+      const { company_id: _ignoredCompanyId, ...rest } = data;
       return api.post('/api/admin/staff-accounts', {
-        ...data,
+        ...rest,
         classroom_id: data.classroom_id ? Number(data.classroom_id) : null,
-        company_id: data.company_id ? Number(data.company_id) : null,
       });
     },
     onSuccess: () => {

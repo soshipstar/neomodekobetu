@@ -3,13 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Classroom;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
 class StaffAccountController extends Controller
 {
@@ -29,32 +27,14 @@ class StaffAccountController extends Controller
     }
 
     /**
-     * classroom_id と company_id の整合性を検証する。
-     * - classroom が指定されていれば、その classroom.company_id と
-     *   送信された company_id は一致していなければならない
-     * - 指定が無ければ classroom.company_id を採用する
-     *
-     * @throws ValidationException
+     * フロントエンド向けに classroom / company の情報をフラットな属性として付与する。
+     * users.company_id カラムは削除済みのため、classroom 経由で導出する。
      */
-    private function normalizeCompanyFromClassroom(array &$validated): void
+    private function appendFlatClassroomAndCompany(User $user): void
     {
-        if (empty($validated['classroom_id'])) {
-            return;
-        }
-
-        $classroom = Classroom::find($validated['classroom_id']);
-        if (!$classroom || $classroom->company_id === null) {
-            return;
-        }
-
-        $submitted = $validated['company_id'] ?? null;
-        if ($submitted !== null && (int) $submitted !== (int) $classroom->company_id) {
-            throw ValidationException::withMessages([
-                'classroom_id' => ['所属教室は選択した所属企業に属している必要があります。'],
-            ]);
-        }
-
-        $validated['company_id'] = $classroom->company_id;
+        $user->classroom_name = $user->classroom?->classroom_name;
+        $user->company_name   = $user->classroom?->company?->name;
+        $user->setAttribute('company_id', $user->classroom?->company_id);
     }
 
     /**
@@ -64,7 +44,7 @@ class StaffAccountController extends Controller
     {
         if ($deny = $this->requireMaster($request)) return $deny;
 
-        $query = User::where('user_type', 'staff')->with(['classroom', 'company']);
+        $query = User::where('user_type', 'staff')->with(['classroom.company']);
 
         if ($request->filled('classroom_id')) {
             $query->where('classroom_id', $request->classroom_id);
@@ -85,11 +65,10 @@ class StaffAccountController extends Controller
 
         $users = $query->orderBy('created_at', 'desc')->paginate($request->integer('per_page', 50));
 
-        // フロントエンドはフラットな classroom_name / company_name を参照するため、
-        // ネストしたリレーションから取り出して属性として付与する
+        // フロントエンドはフラットな classroom_name / company_name / company_id を
+        // 参照するため、ネストしたリレーションから取り出して属性として付与する
         $users->getCollection()->each(function (User $u) {
-            $u->classroom_name = $u->classroom?->classroom_name;
-            $u->company_name   = $u->company?->name;
+            $this->appendFlatClassroomAndCompany($u);
         });
 
         return response()->json([
@@ -109,9 +88,8 @@ class StaffAccountController extends Controller
             return response()->json(['success' => false, 'message' => 'スタッフアカウントではありません。'], 404);
         }
 
-        $user->load(['classroom', 'company']);
-        $user->classroom_name = $user->classroom?->classroom_name;
-        $user->company_name   = $user->company?->name;
+        $user->load(['classroom.company']);
+        $this->appendFlatClassroomAndCompany($user);
 
         return response()->json([
             'success' => true,
@@ -128,23 +106,20 @@ class StaffAccountController extends Controller
 
         $validated = $request->validate([
             'classroom_id' => 'nullable|exists:classrooms,id',
-            'company_id'   => 'nullable|exists:companies,id',
             'username'     => 'required|string|max:100|unique:users',
             'password'     => 'required|string|min:6',
             'full_name'    => 'required|string|max:255',
             'email'        => 'nullable|email|max:255',
             'is_active'    => 'boolean',
         ]);
-
-        $this->normalizeCompanyFromClassroom($validated);
+        // 所属企業は classroom 経由で一意に決まるため company_id は受け付けない
 
         $validated['password'] = Hash::make($validated['password']);
         $validated['user_type'] = 'staff';
 
         $user = User::create($validated);
-        $user->load(['classroom', 'company']);
-        $user->classroom_name = $user->classroom?->classroom_name;
-        $user->company_name   = $user->company?->name;
+        $user->load(['classroom.company']);
+        $this->appendFlatClassroomAndCompany($user);
 
         return response()->json([
             'success' => true,
@@ -166,18 +141,13 @@ class StaffAccountController extends Controller
 
         $validated = $request->validate([
             'classroom_id' => 'nullable|exists:classrooms,id',
-            'company_id'   => 'nullable|exists:companies,id',
             'username'     => ['sometimes', 'required', 'string', 'max:100', Rule::unique('users')->ignore($user->id)],
             'password'     => 'nullable|string|min:6',
             'full_name'    => 'sometimes|required|string|max:255',
             'email'        => 'nullable|email|max:255',
             'is_active'    => 'boolean',
         ]);
-
-        if (!array_key_exists('classroom_id', $validated)) {
-            $validated['classroom_id'] = $user->classroom_id;
-        }
-        $this->normalizeCompanyFromClassroom($validated);
+        // company_id は受け付けない（classroom 経由で導出）
 
         if (!empty($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
@@ -186,9 +156,8 @@ class StaffAccountController extends Controller
         }
 
         $user->update($validated);
-        $fresh = $user->fresh(['classroom', 'company']);
-        $fresh->classroom_name = $fresh->classroom?->classroom_name;
-        $fresh->company_name   = $fresh->company?->name;
+        $fresh = $user->fresh(['classroom.company']);
+        $this->appendFlatClassroomAndCompany($fresh);
 
         return response()->json([
             'success' => true,

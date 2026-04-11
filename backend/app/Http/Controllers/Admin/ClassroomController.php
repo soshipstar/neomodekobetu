@@ -40,11 +40,15 @@ class ClassroomController extends Controller
 
         $query = Classroom::with('company')->withCount(['students', 'users']);
 
+        // 企業管理者が自企業を特定するため classroom を eager load
+        $user->loadMissing('classroom');
+        $companyId = $user->classroom?->company_id;
+
         if ($user->is_master) {
             // マスター管理者: 全教室
-        } elseif ($user->is_company_admin && $user->company_id) {
+        } elseif ($user->is_company_admin && $companyId) {
             // 企業管理者: 自企業の教室のみ
-            $query->where('company_id', $user->company_id);
+            $query->where('company_id', $companyId);
         } else {
             // 通常管理者: 所属教室のみ
             $ids = $user->accessibleClassroomIds();

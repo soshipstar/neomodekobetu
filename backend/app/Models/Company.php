@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Company extends Model
 {
@@ -30,9 +31,14 @@ class Company extends Model
         return $this->hasMany(Classroom::class);
     }
 
-    /** @return HasMany<User> */
-    public function users(): HasMany
+    /**
+     * 所属ユーザー（classrooms を経由）。
+     * users.company_id カラムは削除済みのため hasManyThrough で導出する。
+     *
+     * @return HasManyThrough<User>
+     */
+    public function users(): HasManyThrough
     {
-        return $this->hasMany(User::class);
+        return $this->hasManyThrough(User::class, Classroom::class);
     }
 }

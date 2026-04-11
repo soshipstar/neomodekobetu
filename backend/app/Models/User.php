@@ -17,7 +17,6 @@ class User extends Authenticatable
 
     protected $fillable = [
         'classroom_id',
-        'company_id',
         'username',
         'password',
         'password_plain',
@@ -50,12 +49,29 @@ class User extends Authenticatable
     }
 
     /**
-     * 所属企業
-     * @return BelongsTo<Company, self>
+     * 所属企業を classroom 経由で取得（accessor）。
+     * users.company_id カラムは正規化のため削除済み。
      */
-    public function company(): BelongsTo
+    public function getCompanyAttribute(): ?Company
     {
-        return $this->belongsTo(Company::class);
+        return $this->classroom?->company;
+    }
+
+    /**
+     * 所属企業 ID を classroom 経由で取得（accessor）。
+     */
+    public function getCompanyIdAttribute(): ?int
+    {
+        // eager load 済みなら relation から、そうでなければ classroom をロードして取得
+        if ($this->relationLoaded('classroom') && $this->classroom) {
+            return $this->classroom->company_id;
+        }
+
+        if ($this->classroom_id) {
+            return $this->classroom?->company_id;
+        }
+
+        return null;
     }
 
     /**
