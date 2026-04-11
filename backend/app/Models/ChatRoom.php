@@ -70,9 +70,11 @@ class ChatRoom extends Model
             return $query->where('guardian_id', $user->id);
         }
 
-        // Staff and admin see rooms for students in their classroom
-        return $query->whereHas('student', function (Builder $q) use ($user) {
-            $q->where('classroom_id', $user->classroom_id);
+        // Staff and admin see rooms for students in any of their accessible classrooms
+        $accessibleIds = $user->accessibleClassroomIds();
+
+        return $query->whereHas('student', function (Builder $q) use ($accessibleIds) {
+            $q->whereIn('classroom_id', $accessibleIds);
         });
     }
 }

@@ -22,12 +22,13 @@ class StaffStudentChatController extends Controller
     {
         $user = $request->user();
         $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
 
         $query = StudentChatRoom::with('student:id,student_name,classroom_id,is_active,status');
 
         if ($classroomId) {
-            $query->whereHas('student', function ($q) use ($classroomId) {
-                $q->where('classroom_id', $classroomId);
+            $query->whereHas('student', function ($q) use ($accessibleIds) {
+                $q->whereIn('classroom_id', $accessibleIds);
             });
         }
 
@@ -168,6 +169,7 @@ class StaffStudentChatController extends Controller
     {
         $user = $request->user();
         $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
 
         $request->validate([
             'message' => 'required|string|max:5000',
@@ -175,8 +177,8 @@ class StaffStudentChatController extends Controller
 
         $query = StudentChatRoom::query();
         if ($classroomId) {
-            $query->whereHas('student', function ($q) use ($classroomId) {
-                $q->where('classroom_id', $classroomId)->where('status', 'active');
+            $query->whereHas('student', function ($q) use ($accessibleIds) {
+                $q->whereIn('classroom_id', $accessibleIds)->where('status', 'active');
             });
         }
 
@@ -247,6 +249,7 @@ class StaffStudentChatController extends Controller
 
         $room->loadMissing('student');
 
-        return $room->student && $room->student->classroom_id === $user->classroom_id;
+        return $room->student
+            && in_array($room->student->classroom_id, $user->accessibleClassroomIds(), true);
     }
 }

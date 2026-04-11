@@ -23,9 +23,9 @@ class StaffChatController extends Controller
     public function staffList(Request $request): JsonResponse
     {
         $user = $request->user();
-        $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
 
-        $staff = User::where('classroom_id', $classroomId)
+        $staff = User::whereIn('classroom_id', $accessibleIds)
             ->where('id', '!=', $user->id)
             ->where('is_active', true)
             ->whereIn('user_type', ['staff', 'admin'])
@@ -46,14 +46,14 @@ class StaffChatController extends Controller
     public function rooms(Request $request): JsonResponse
     {
         $user = $request->user();
-        $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
 
         // ユーザーが所属するルームのみ取得
         $roomIds = StaffChatMember::where('user_id', $user->id)
             ->pluck('room_id');
 
         $rooms = StaffChatRoom::whereIn('id', $roomIds)
-            ->where('classroom_id', $classroomId)
+            ->whereIn('classroom_id', $accessibleIds)
             ->with(['members.user:id,full_name'])
             ->get();
 
@@ -133,6 +133,7 @@ class StaffChatController extends Controller
     {
         $user = $request->user();
         $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
 
         $request->validate([
             'room_type'   => 'required|in:direct,group',
@@ -143,16 +144,16 @@ class StaffChatController extends Controller
 
         $memberIds = collect($request->member_ids)->unique()->values();
 
-        // メンバーが同一教室に所属しているか確認
+        // メンバーがアクセス可能な教室のいずれかに所属しているか確認
         $validMembers = User::whereIn('id', $memberIds)
-            ->where('classroom_id', $classroomId)
+            ->whereIn('classroom_id', $accessibleIds)
             ->whereIn('user_type', ['staff', 'admin'])
             ->count();
 
         if ($validMembers !== $memberIds->count()) {
             return response()->json([
                 'success' => false,
-                'message' => '指定されたメンバーは同じ教室に所属している必要があります。',
+                'message' => '指定されたメンバーはアクセス可能な教室に所属している必要があります。',
             ], 422);
         }
 
@@ -167,8 +168,8 @@ class StaffChatController extends Controller
 
             $partnerId = $memberIds->first();
 
-            // 自分と相手の両方がメンバーの direct ルームを探す
-            $existingRoom = StaffChatRoom::where('classroom_id', $classroomId)
+            // 自分と相手の両方がメンバーの direct ルームを探す（アクセス可能な教室内）
+            $existingRoom = StaffChatRoom::whereIn('classroom_id', $accessibleIds)
                 ->where('room_type', 'direct')
                 ->whereHas('members', function ($q) use ($user) {
                     $q->where('user_id', $user->id);
@@ -447,8 +448,8 @@ class StaffChatController extends Controller
      */
     private function canAccessRoom($user, StaffChatRoom $room): bool
     {
-        // 教室スコープチェック
-        if ($user->classroom_id && $room->classroom_id !== $user->classroom_id) {
+        // 教室スコープチェック（アクセス可能な教室のいずれか）
+        if ($user->classroom_id && !in_array($room->classroom_id, $user->accessibleClassroomIds(), true)) {
             return false;
         }
 

@@ -527,6 +527,7 @@ class ChatController extends Controller
 
         $room->loadMissing('student');
 
-        return $room->student && $room->student->classroom_id === $user->classroom_id;
+        return $room->student
+            && in_array($room->student->classroom_id, $user->accessibleClassroomIds(), true);
     }
 }
