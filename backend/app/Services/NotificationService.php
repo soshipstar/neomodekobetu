@@ -23,6 +23,9 @@ class NotificationService
      */
     public function notify(User $user, string $type, string $title, string $body, array $data = []): Notification
     {
+        // 通知カテゴリを type から導出する
+        $category = $this->categoryFromType($type);
+
         $notification = Notification::create([
             'user_id' => $user->id,
             'type' => $type,
@@ -35,11 +38,35 @@ class NotificationService
         // Broadcast to the user's private WebSocket channel
         broadcast(new NotificationCreated($notification))->toOthers();
 
-        // Also send Web Push notification
-        $url = $data['url'] ?? '/';
-        $this->sendPushNotification($user, $title, $body, $url);
+        // ユーザーの通知設定がカテゴリを有効にしている場合のみ Web Push を送る
+        // (in-app 通知は履歴として残すため常に作成する)
+        if ($user->acceptsNotification($category)) {
+            $url = $data['url'] ?? '/';
+            $this->sendPushNotification($user, $title, $body, $url);
+        }
 
         return $notification;
+    }
+
+    /**
+     * type 文字列から通知カテゴリへのマッピング。
+     * 既存の type を notification_preferences の 8 カテゴリに集約する。
+     */
+    private function categoryFromType(string $type): string
+    {
+        // チャット系
+        if (str_starts_with($type, 'chat')) return 'chat';
+        // 既存 type 名からの変換
+        return match ($type) {
+            'announcement' => 'announcement',
+            'meeting' => 'meeting',
+            'kakehashi_request', 'kakehashi' => 'kakehashi',
+            'monitoring' => 'monitoring',
+            'support_plan_request', 'support_plan' => 'support_plan',
+            'submission_request', 'submission' => 'submission',
+            'absence', 'absence_notification' => 'absence',
+            default => 'chat',
+        };
     }
 
     /**

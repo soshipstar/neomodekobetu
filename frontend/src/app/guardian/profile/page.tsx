@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { NotificationToggleCard } from '@/components/notifications/NotificationToggleCard';
+import { NotificationPreferencesCard } from '@/components/notifications/NotificationPreferencesCard';
 
 interface GuardianProfile {
   id: number;
@@ -76,6 +77,7 @@ export default function GuardianProfilePage() {
 
       {/* Web Push 通知設定 */}
       <NotificationToggleCard />
+      <NotificationPreferencesCard />
 
       {/* Linked Students */}
       {profile?.students && profile.students.length > 0 && (

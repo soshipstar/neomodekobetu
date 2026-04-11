@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { NotificationToggleCard } from '@/components/notifications/NotificationToggleCard';
+import { NotificationPreferencesCard } from '@/components/notifications/NotificationPreferencesCard';
 
 interface Profile {
   id: number;
@@ -75,6 +76,7 @@ export default function StaffProfilePage() {
 
       {/* Web Push 通知設定 */}
       <NotificationToggleCard />
+      <NotificationPreferencesCard />
 
       {/* Profile Info */}
       <Card>

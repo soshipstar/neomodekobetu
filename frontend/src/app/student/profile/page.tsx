@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/Badge';
 import { useToast } from '@/components/ui/Toast';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { NotificationToggleCard } from '@/components/notifications/NotificationToggleCard';
+import { NotificationPreferencesCard } from '@/components/notifications/NotificationPreferencesCard';
 
 interface StudentProfile {
   id: number;
@@ -79,6 +80,7 @@ export default function StudentProfilePage() {
 
       {/* Web Push 通知設定 */}
       <NotificationToggleCard />
+      <NotificationPreferencesCard />
 
       {/* Profile Card */}
       <Card>

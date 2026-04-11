@@ -26,6 +26,7 @@ class User extends Authenticatable
         'is_master',
         'is_company_admin',
         'is_active',
+        'notification_preferences',
         'email_verified_at',
         'last_login_at',
     ];
@@ -42,10 +43,28 @@ class User extends Authenticatable
             'is_master' => 'boolean',
             'is_company_admin' => 'boolean',
             'is_active' => 'boolean',
+            'notification_preferences' => 'array',
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * 指定カテゴリの通知が許可されているか判定する。
+     * notification_preferences が null または該当キーが無ければデフォルトで有効。
+     */
+    public function acceptsNotification(string $category): bool
+    {
+        $prefs = $this->notification_preferences ?? [];
+        if (!is_array($prefs)) {
+            return true;
+        }
+        // 未設定キーは有効扱い
+        if (!array_key_exists($category, $prefs)) {
+            return true;
+        }
+        return (bool) $prefs[$category];
     }
 
     /**
