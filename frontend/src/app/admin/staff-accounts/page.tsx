@@ -14,6 +14,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { usePagination } from '@/hooks/usePagination';
 import { useMasterGuard } from '@/hooks/useMasterGuard';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { UserClassroomModal } from '@/components/admin/UserClassroomModal';
 
 interface Classroom {
   id: number;
@@ -61,6 +62,7 @@ export default function StaffAccountsPage() {
   const [editingStaff, setEditingStaff] = useState<StaffAccount | null>(null);
   const [deletingStaff, setDeletingStaff] = useState<StaffAccount | null>(null);
   const [convertingStaff, setConvertingStaff] = useState<StaffAccount | null>(null);
+  const [classroomStaff, setClassroomStaff] = useState<StaffAccount | null>(null);
   const [formData, setFormData] = useState<StaffAccountFormData>(emptyFormData);
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof StaffAccountFormData, string>>>({});
 
@@ -227,6 +229,14 @@ export default function StaffAccountsPage() {
         <div className="flex items-center gap-1 flex-wrap">
           <Button variant="ghost" size="sm" onClick={() => openEditModal(s)} leftIcon={<MaterialIcon name="edit" size={14} />}>
             編集
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setClassroomStaff(s)}
+            leftIcon={<MaterialIcon name="apartment" size={14} />}
+          >
+            所属教室
           </Button>
           <Button
             variant="ghost"
@@ -426,6 +436,17 @@ export default function StaffAccountsPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Classroom Assignment Modal */}
+      {classroomStaff && (
+        <UserClassroomModal
+          user={classroomStaff}
+          onClose={() => {
+            setClassroomStaff(null);
+            queryClient.invalidateQueries({ queryKey: ['admin', 'staff-accounts'] });
+          }}
+        />
+      )}
     </div>
   );
 }
