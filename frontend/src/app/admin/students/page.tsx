@@ -14,6 +14,7 @@ import { SkeletonTable } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import type { Student } from '@/types/user';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { StudentCopyModal } from '@/components/admin/StudentCopyModal';
 
 const statusLabels: Record<string, string> = {
   active: '在籍', trial: '体験', short_term: '短期', withdrawn: '退所', waiting: '待機',
@@ -45,6 +46,7 @@ export default function AdminStudentsPage() {
   const [showPromotion, setShowPromotion] = useState(false);
   const [preview, setPreview] = useState<GradeChange[] | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [copySource, setCopySource] = useState<Student | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -91,6 +93,21 @@ export default function AdminStudentsPage() {
       render: (s) => <Badge variant={statusVariants[s.status] || 'default'}>{statusLabels[s.status]}</Badge>,
     },
     { key: 'guardian', label: '保護者', render: (s) => s.guardian?.full_name || '-' },
+    {
+      key: 'actions',
+      label: '操作',
+      render: (s) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setCopySource(s)}
+          leftIcon={<MaterialIcon name="content_copy" size={14} />}
+          title="同一企業内の別教室にこの児童を複製します"
+        >
+          別教室に複製
+        </Button>
+      ),
+    },
   ];
 
   return (
@@ -108,7 +125,7 @@ export default function AdminStudentsPage() {
       </div>
 
       {isLoading ? (
-        <SkeletonTable rows={8} cols={5} />
+        <SkeletonTable rows={8} cols={6} />
       ) : (
         <Table
           columns={columns}
@@ -175,6 +192,15 @@ export default function AdminStudentsPage() {
           ) : null}
         </div>
       </Modal>
+
+      {/* 別教室に複製モーダル */}
+      {copySource && (
+        <StudentCopyModal
+          student={copySource}
+          onClose={() => setCopySource(null)}
+          onCopied={() => queryClient.invalidateQueries({ queryKey: ['admin', 'students'] })}
+        />
+      )}
     </div>
   );
 }
