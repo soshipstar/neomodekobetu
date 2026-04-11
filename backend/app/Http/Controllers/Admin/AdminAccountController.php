@@ -50,10 +50,11 @@ class AdminAccountController extends Controller
 
         $users = $query->orderByDesc('is_master')->orderBy('created_at', 'desc')->paginate($request->integer('per_page', 50));
 
-        // フロントエンドはフラットな classroom_name を参照するため、
-        // ネストした classroom リレーションから取り出して属性として付与する
+        // フロントエンドはフラットな classroom_name / company_name を参照するため、
+        // ネストしたリレーションから取り出して属性として付与する
         $users->getCollection()->each(function (User $u) {
             $u->classroom_name = $u->classroom?->classroom_name;
+            $u->company_name   = $u->company?->name;
         });
 
         return response()->json([
@@ -75,6 +76,7 @@ class AdminAccountController extends Controller
 
         $user->load(['classroom', 'company']);
         $user->classroom_name = $user->classroom?->classroom_name;
+        $user->company_name   = $user->company?->name;
 
         return response()->json([
             'success' => true,
@@ -107,6 +109,7 @@ class AdminAccountController extends Controller
         $user = User::create($validated);
         $user->load(['classroom', 'company']);
         $user->classroom_name = $user->classroom?->classroom_name;
+        $user->company_name   = $user->company?->name;
 
         return response()->json([
             'success' => true,
@@ -147,6 +150,7 @@ class AdminAccountController extends Controller
         $user->update($validated);
         $fresh = $user->fresh(['classroom', 'company']);
         $fresh->classroom_name = $fresh->classroom?->classroom_name;
+        $fresh->company_name   = $fresh->company?->name;
 
         return response()->json([
             'success' => true,

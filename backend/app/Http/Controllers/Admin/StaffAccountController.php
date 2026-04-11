@@ -33,7 +33,7 @@ class StaffAccountController extends Controller
     {
         if ($deny = $this->requireMaster($request)) return $deny;
 
-        $query = User::where('user_type', 'staff')->with('classroom');
+        $query = User::where('user_type', 'staff')->with(['classroom', 'company']);
 
         if ($request->filled('classroom_id')) {
             $query->where('classroom_id', $request->classroom_id);
@@ -54,10 +54,11 @@ class StaffAccountController extends Controller
 
         $users = $query->orderBy('created_at', 'desc')->paginate($request->integer('per_page', 50));
 
-        // フロントエンドはフラットな classroom_name を参照するため、
-        // ネストした classroom リレーションから取り出して属性として付与する
+        // フロントエンドはフラットな classroom_name / company_name を参照するため、
+        // ネストしたリレーションから取り出して属性として付与する
         $users->getCollection()->each(function (User $u) {
             $u->classroom_name = $u->classroom?->classroom_name;
+            $u->company_name   = $u->company?->name;
         });
 
         return response()->json([
@@ -77,8 +78,9 @@ class StaffAccountController extends Controller
             return response()->json(['success' => false, 'message' => 'スタッフアカウントではありません。'], 404);
         }
 
-        $user->load('classroom');
+        $user->load(['classroom', 'company']);
         $user->classroom_name = $user->classroom?->classroom_name;
+        $user->company_name   = $user->company?->name;
 
         return response()->json([
             'success' => true,
@@ -95,6 +97,7 @@ class StaffAccountController extends Controller
 
         $validated = $request->validate([
             'classroom_id' => 'nullable|exists:classrooms,id',
+            'company_id'   => 'nullable|exists:companies,id',
             'username'     => 'required|string|max:100|unique:users',
             'password'     => 'required|string|min:6',
             'full_name'    => 'required|string|max:255',
@@ -106,8 +109,9 @@ class StaffAccountController extends Controller
         $validated['user_type'] = 'staff';
 
         $user = User::create($validated);
-        $user->load('classroom');
+        $user->load(['classroom', 'company']);
         $user->classroom_name = $user->classroom?->classroom_name;
+        $user->company_name   = $user->company?->name;
 
         return response()->json([
             'success' => true,
@@ -129,6 +133,7 @@ class StaffAccountController extends Controller
 
         $validated = $request->validate([
             'classroom_id' => 'nullable|exists:classrooms,id',
+            'company_id'   => 'nullable|exists:companies,id',
             'username'     => ['sometimes', 'required', 'string', 'max:100', Rule::unique('users')->ignore($user->id)],
             'password'     => 'nullable|string|min:6',
             'full_name'    => 'sometimes|required|string|max:255',
@@ -143,8 +148,9 @@ class StaffAccountController extends Controller
         }
 
         $user->update($validated);
-        $fresh = $user->fresh('classroom');
+        $fresh = $user->fresh(['classroom', 'company']);
         $fresh->classroom_name = $fresh->classroom?->classroom_name;
+        $fresh->company_name   = $fresh->company?->name;
 
         return response()->json([
             'success' => true,

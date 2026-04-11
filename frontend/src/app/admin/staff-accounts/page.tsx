@@ -21,6 +21,11 @@ interface Classroom {
   classroom_name: string;
 }
 
+interface Company {
+  id: number;
+  name: string;
+}
+
 interface StaffAccount {
   id: number;
   username: string;
@@ -29,6 +34,8 @@ interface StaffAccount {
   is_active: boolean;
   classroom_id: number | null;
   classroom_name: string | null;
+  company_id: number | null;
+  company_name: string | null;
   created_at: string;
 }
 
@@ -38,6 +45,7 @@ interface StaffAccountFormData {
   full_name: string;
   email: string;
   classroom_id: string;
+  company_id: string;
   is_active: boolean;
 }
 
@@ -47,6 +55,7 @@ const emptyFormData: StaffAccountFormData = {
   full_name: '',
   email: '',
   classroom_id: '',
+  company_id: '',
   is_active: true,
 };
 
@@ -82,7 +91,16 @@ export default function StaffAccountsPage() {
     },
   });
 
+  const { data: companiesData } = useQuery({
+    queryKey: ['admin', 'companies-list'],
+    queryFn: async () => {
+      const response = await api.get<{ data: Company[] }>('/api/admin/companies');
+      return response.data.data;
+    },
+  });
+
   const classrooms = classroomsData ?? [];
+  const companies = companiesData ?? [];
 
   const saveMutation = useMutation({
     mutationFn: async (data: StaffAccountFormData & { id?: number }) => {
@@ -91,6 +109,7 @@ export default function StaffAccountsPage() {
           full_name: data.full_name,
           email: data.email || null,
           classroom_id: data.classroom_id ? Number(data.classroom_id) : null,
+          company_id: data.company_id ? Number(data.company_id) : null,
           is_active: data.is_active,
         };
         if (data.password) payload.password = data.password;
@@ -99,6 +118,7 @@ export default function StaffAccountsPage() {
       return api.post('/api/admin/staff-accounts', {
         ...data,
         classroom_id: data.classroom_id ? Number(data.classroom_id) : null,
+        company_id: data.company_id ? Number(data.company_id) : null,
       });
     },
     onSuccess: () => {
@@ -157,6 +177,7 @@ export default function StaffAccountsPage() {
       full_name: staff.full_name,
       email: staff.email || '',
       classroom_id: staff.classroom_id ? String(staff.classroom_id) : '',
+      company_id: staff.company_id ? String(staff.company_id) : '',
       is_active: staff.is_active,
     });
     setFormErrors({});
@@ -203,6 +224,11 @@ export default function StaffAccountsPage() {
     },
     { key: 'username', label: 'ユーザー名' },
     { key: 'email', label: 'メールアドレス', render: (s) => s.email || '-' },
+    {
+      key: 'company_name',
+      label: '所属企業',
+      render: (s) => s.company_name || '-',
+    },
     {
       key: 'classroom_name',
       label: '所属教室',
@@ -334,6 +360,21 @@ export default function StaffAccountsPage() {
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
           />
+          <div className="w-full">
+            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-1)]">
+              所属企業
+            </label>
+            <select
+              value={formData.company_id}
+              onChange={(e) => setFormData({ ...formData, company_id: e.target.value })}
+              className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+            >
+              <option value="">未設定</option>
+              {companies.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
           <div className="w-full">
             <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-1)]">
               所属教室 *

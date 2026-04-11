@@ -32,6 +32,7 @@ interface AdminAccount {
   classroom_id: number | null;
   classroom_name: string | null;
   company_id: number | null;
+  company_name: string | null;
   created_at: string;
 }
 
@@ -243,6 +244,11 @@ export default function AdminAccountsPage() {
       ),
     },
     {
+      key: 'company_name',
+      label: '所属企業',
+      render: (a) => a.company_name || '-',
+    },
+    {
       key: 'classroom_name',
       label: '所属教室',
       render: (a) => a.classroom_name || '-',
@@ -389,23 +395,21 @@ export default function AdminAccountsPage() {
               <option value="master">マスター管理者（全企業統括）</option>
             </select>
           </div>
-          {formData.is_company_admin && (
-            <div className="w-full">
-              <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-1)]">
-                所属企業 *
-              </label>
-              <select
-                value={formData.company_id}
-                onChange={(e) => setFormData({ ...formData, company_id: e.target.value })}
-                className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
-              >
-                <option value="">選択してください</option>
-                {companies.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
+          <div className="w-full">
+            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-1)]">
+              所属企業{formData.is_company_admin ? ' *' : ''}
+            </label>
+            <select
+              value={formData.company_id}
+              onChange={(e) => setFormData({ ...formData, company_id: e.target.value })}
+              className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+            >
+              <option value="">未設定</option>
+              {companies.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
           <div className="w-full">
             <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-1)]">
               所属教室 *
