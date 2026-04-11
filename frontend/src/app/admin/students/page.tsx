@@ -14,6 +14,7 @@ import { SkeletonTable } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import type { Student } from '@/types/user';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { StudentClassroomModal } from '@/components/admin/StudentClassroomModal';
 
 const statusLabels: Record<string, string> = {
   active: '在籍', trial: '体験', short_term: '短期', withdrawn: '退所', waiting: '待機',
@@ -45,6 +46,7 @@ export default function AdminStudentsPage() {
   const [showPromotion, setShowPromotion] = useState(false);
   const [preview, setPreview] = useState<GradeChange[] | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [classroomStudent, setClassroomStudent] = useState<Student | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -83,7 +85,7 @@ export default function AdminStudentsPage() {
 
   const columns: Column<Student>[] = [
     { key: 'student_name', label: '生徒名', sortable: true, render: (s) => <span className="font-medium">{s.student_name}</span> },
-    { key: 'classroom', label: '事業所', render: (s) => s.classroom?.classroom_name || '-' },
+    { key: 'classroom', label: '主教室', render: (s) => s.classroom?.classroom_name || '-' },
     { key: 'grade_level', label: '学年', render: (s) => gradeLabels[s.grade_level || ''] || s.grade_level || '-' },
     {
       key: 'status',
@@ -91,6 +93,20 @@ export default function AdminStudentsPage() {
       render: (s) => <Badge variant={statusVariants[s.status] || 'default'}>{statusLabels[s.status]}</Badge>,
     },
     { key: 'guardian', label: '保護者', render: (s) => s.guardian?.full_name || '-' },
+    {
+      key: 'actions',
+      label: '操作',
+      render: (s) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setClassroomStudent(s)}
+          leftIcon={<MaterialIcon name="apartment" size={14} />}
+        >
+          所属教室
+        </Button>
+      ),
+    },
   ];
 
   return (
@@ -108,7 +124,7 @@ export default function AdminStudentsPage() {
       </div>
 
       {isLoading ? (
-        <SkeletonTable rows={8} cols={5} />
+        <SkeletonTable rows={8} cols={6} />
       ) : (
         <Table
           columns={columns}
@@ -175,6 +191,17 @@ export default function AdminStudentsPage() {
           ) : null}
         </div>
       </Modal>
+
+      {/* 児童の複数教室割当モーダル */}
+      {classroomStudent && (
+        <StudentClassroomModal
+          student={classroomStudent}
+          onClose={() => {
+            setClassroomStudent(null);
+            queryClient.invalidateQueries({ queryKey: ['admin', 'students'] });
+          }}
+        />
+      )}
     </div>
   );
 }
