@@ -49,6 +49,8 @@ interface StaffEvalData {
 
 interface ResponseUser {
   id: number;
+  // 回答レコードの ID（未回答なら null）。id は user.id、こちらは評価テーブルの PK。
+  evaluation_id: number | null;
   guardian_name?: string;
   staff_name?: string;
   is_submitted: boolean;
@@ -664,16 +666,16 @@ function ResponseTable({ responses, nameKey, periodId, type }: { responses: Resp
   const [loadingDetail, setLoadingDetail] = useState(false);
 
   const viewDetail = async (r: ResponseUser) => {
-    if (!r.is_submitted) return;
+    if (!r.is_submitted || !r.evaluation_id) return;
     setLoadingDetail(true);
     try {
       const name = (r as unknown as Record<string, unknown>)[nameKey] as string;
       if (type === 'guardian') {
-        const res = await api.get(`/api/staff/facility-evaluation/responses/${r.id}/pdf`);
+        const res = await api.get(`/api/staff/facility-evaluation/responses/${r.evaluation_id}/pdf`);
         setDetailModal({ name, answers: res.data.data.answers || [] });
       } else {
         // スタッフ回答詳細を取得
-        const res = await api.get('/api/staff/facility-evaluation/staff-evaluation-detail', { params: { evaluation_id: r.id } });
+        const res = await api.get('/api/staff/facility-evaluation/staff-evaluation-detail', { params: { evaluation_id: r.evaluation_id } });
         setDetailModal({ name, answers: res.data.data.answers || [] });
       }
     } catch {

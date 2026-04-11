@@ -182,6 +182,8 @@ class FacilityEvaluationController extends Controller
 
         $guardianResponses = $guardianQuery->select(
             'u.id',
+            // フロントが PDF 取得などで使う実際の評価 ID（未回答時は null）
+            'e.id as evaluation_id',
             'u.full_name as guardian_name',
             DB::raw('COALESCE(e.is_submitted, false) as is_submitted'),
             'e.submitted_at',
@@ -203,6 +205,8 @@ class FacilityEvaluationController extends Controller
 
         $staffResponses = $staffQuery->select(
             'u.id',
+            // フロントが詳細取得などで使う実際の評価 ID（未回答時は null）
+            'e.id as evaluation_id',
             'u.full_name as staff_name',
             DB::raw('COALESCE(e.is_submitted, false) as is_submitted'),
             'e.submitted_at',
