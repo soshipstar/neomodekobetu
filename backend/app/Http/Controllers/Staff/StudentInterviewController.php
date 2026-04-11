@@ -25,7 +25,7 @@ class StudentInterviewController extends Controller
         }]);
 
         if ($classroomId) {
-            $query->where('classroom_id', $classroomId);
+            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
         }
 
         $students = $query->where('is_active', true)
@@ -105,7 +105,7 @@ class StudentInterviewController extends Controller
      */
     public function showSingle(Request $request, StudentInterview $interview): JsonResponse
     {
-        if ($request->user()->classroom_id && $interview->classroom_id !== $request->user()->classroom_id) {
+        if ($request->user()->classroom_id && !in_array($interview->classroom_id, $request->user()->accessibleClassroomIds(), true)) {
             abort(403);
         }
         $interview->load(['student:id,student_name', 'interviewer:id,full_name']);
@@ -117,7 +117,7 @@ class StudentInterviewController extends Controller
      */
     public function update(Request $request, StudentInterview $interview): JsonResponse
     {
-        if ($request->user()->classroom_id && $interview->classroom_id !== $request->user()->classroom_id) {
+        if ($request->user()->classroom_id && !in_array($interview->classroom_id, $request->user()->accessibleClassroomIds(), true)) {
             abort(403, 'アクセス権限がありません。');
         }
 
@@ -148,7 +148,7 @@ class StudentInterviewController extends Controller
      */
     public function destroy(Request $request, StudentInterview $interview): JsonResponse
     {
-        if ($request->user()->classroom_id && $interview->classroom_id !== $request->user()->classroom_id) {
+        if ($request->user()->classroom_id && !in_array($interview->classroom_id, $request->user()->accessibleClassroomIds(), true)) {
             abort(403, 'アクセス権限がありません。');
         }
 
@@ -167,7 +167,7 @@ class StudentInterviewController extends Controller
     {
         $interview->load(['student', 'interviewer:id,full_name']);
 
-        if ($request->user()->classroom_id && $interview->classroom_id !== $request->user()->classroom_id) {
+        if ($request->user()->classroom_id && !in_array($interview->classroom_id, $request->user()->accessibleClassroomIds(), true)) {
             abort(403, 'アクセス権限がありません。');
         }
 
@@ -181,7 +181,7 @@ class StudentInterviewController extends Controller
 
     private function authorizeClassroom($user, Student $student): void
     {
-        if ($user->classroom_id && $student->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($student->classroom_id, $user->accessibleClassroomIds(), true)) {
             abort(403, 'この生徒へのアクセス権限がありません。');
         }
     }

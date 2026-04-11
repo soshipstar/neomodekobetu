@@ -20,12 +20,12 @@ class TabletController extends Controller
     public function students(Request $request): JsonResponse
     {
         $user = $request->user();
-        $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
 
         $query = Student::where('status', 'active');
 
-        if ($classroomId) {
-            $query->where('classroom_id', $classroomId);
+        if ($user->classroom_id) {
+            $query->whereIn('classroom_id', $accessibleIds);
         }
 
         $students = $query->orderBy('student_name')
@@ -44,7 +44,7 @@ class TabletController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && $student->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($student->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -86,7 +86,7 @@ class TabletController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && $student->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($student->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -124,6 +124,7 @@ class TabletController extends Controller
     {
         $user = $request->user();
         $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
         $today = now()->toDateString();
 
         $query = DB::table('attendance_records')
@@ -140,7 +141,7 @@ class TabletController extends Controller
             );
 
         if ($classroomId) {
-            $query->where('students.classroom_id', $classroomId);
+            $query->whereIn('students.classroom_id', $accessibleIds);
         }
 
         $students = $query->orderBy('students.student_name')->get();
@@ -158,10 +159,13 @@ class TabletController extends Controller
     {
         $user = $request->user();
         $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
 
         // ActivityType モデルが存在する場合はそこから取得
         $options = DB::table('activity_types')
-            ->when($classroomId, fn ($q) => $q->where('classroom_id', $classroomId)->orWhereNull('classroom_id'))
+            ->when($classroomId, fn ($q) => $q->where(function ($qq) use ($accessibleIds) {
+                $qq->whereIn('classroom_id', $accessibleIds)->orWhereNull('classroom_id');
+            }))
             ->when(! $classroomId, fn ($q) => $q)
             ->where('is_active', true)
             ->orderBy('sort_order')
@@ -180,13 +184,14 @@ class TabletController extends Controller
     {
         $user = $request->user();
         $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
         $date = $request->input('date', now()->toDateString());
 
         $query = DailyRecord::where('record_date', $date)
             ->with(['studentRecords.student:id,student_name', 'staff:id,full_name']);
 
         if ($classroomId) {
-            $query->where('classroom_id', $classroomId);
+            $query->whereIn('classroom_id', $accessibleIds);
         }
 
         $records = $query->orderBy('id')->get();
@@ -204,12 +209,13 @@ class TabletController extends Controller
     {
         $user = $request->user();
         $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
 
         $query = DailyRecord::where('record_date', $date)
             ->with(['studentRecords.student:id,student_name', 'staff:id,full_name']);
 
         if ($classroomId) {
-            $query->where('classroom_id', $classroomId);
+            $query->whereIn('classroom_id', $accessibleIds);
         }
 
         $records = $query->orderByDesc('created_at')->get();
@@ -232,7 +238,7 @@ class TabletController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && $activity->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($activity->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -251,6 +257,7 @@ class TabletController extends Controller
     {
         $user = $request->user();
         $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
         $year = (int) $request->input('year', now()->year);
         $month = (int) $request->input('month', now()->month);
 
@@ -259,7 +266,7 @@ class TabletController extends Controller
             ->select(DB::raw('DISTINCT record_date'));
 
         if ($classroomId) {
-            $query->where('classroom_id', $classroomId);
+            $query->whereIn('classroom_id', $accessibleIds);
         }
 
         $dates = $query->pluck('record_date')
@@ -279,13 +286,14 @@ class TabletController extends Controller
     {
         $user = $request->user();
         $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
         $date = $request->input('date', now()->toDateString());
 
         $query = ActivitySupportPlan::where('activity_date', $date)
             ->with('staff:id,full_name');
 
         if ($classroomId) {
-            $query->where('classroom_id', $classroomId);
+            $query->whereIn('classroom_id', $accessibleIds);
         }
 
         $plans = $query->orderByDesc('created_at')->get();
@@ -345,7 +353,7 @@ class TabletController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && $activity->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($activity->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -388,7 +396,7 @@ class TabletController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && $activity->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($activity->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -424,7 +432,7 @@ class TabletController extends Controller
 
         // 権限チェック
         $record = DailyRecord::findOrFail($validated['daily_record_id']);
-        if ($user->classroom_id && $record->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($record->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -471,7 +479,7 @@ class TabletController extends Controller
         ]);
 
         $record = DailyRecord::findOrFail($validated['daily_record_id']);
-        if ($user->classroom_id && $record->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($record->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -511,7 +519,7 @@ class TabletController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && $activity->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($activity->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -548,7 +556,7 @@ class TabletController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && $activity->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($activity->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -598,12 +606,13 @@ class TabletController extends Controller
         ]);
 
         $classroomId = $user->classroom_id;
+        $accessibleIds = $user->accessibleClassroomIds();
         $recordDate = $validated['record_date'];
         $studentIds = $validated['student_ids'];
 
         // 指定日の活動記録を取得
         $records = DailyRecord::where('record_date', $recordDate)
-            ->when($classroomId, fn ($q) => $q->where('classroom_id', $classroomId))
+            ->when($classroomId, fn ($q) => $q->whereIn('classroom_id', $accessibleIds))
             ->with(['studentRecords' => function ($q) use ($studentIds) {
                 $q->whereIn('student_id', $studentIds);
             }])

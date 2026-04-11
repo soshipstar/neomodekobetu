@@ -24,7 +24,7 @@ class ActivitySupportPlanController extends Controller
         $query = ActivitySupportPlan::with('staff:id,full_name');
 
         if ($classroomId) {
-            $query->where('classroom_id', $classroomId);
+            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
         }
 
         // 検索フィルタ
@@ -82,7 +82,7 @@ class ActivitySupportPlanController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && $plan->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($plan->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -134,7 +134,7 @@ class ActivitySupportPlanController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && $plan->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($plan->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -169,7 +169,7 @@ class ActivitySupportPlanController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && $plan->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($plan->classroom_id, $user->accessibleClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -206,7 +206,7 @@ class ActivitySupportPlanController extends Controller
         ]);
 
         if ($classroomId) {
-            $query->where('classroom_id', $classroomId);
+            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
         }
 
         // 期間フィルタ
@@ -235,7 +235,7 @@ class ActivitySupportPlanController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && $plan->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id && !in_array($plan->classroom_id, $user->accessibleClassroomIds(), true)) {
             abort(403, 'アクセス権限がありません。');
         }
 

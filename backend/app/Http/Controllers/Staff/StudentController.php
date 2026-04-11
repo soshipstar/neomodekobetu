@@ -20,12 +20,12 @@ class StudentController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $classroomId = $user->classroom_id;
 
         $query = Student::query()->with('guardian:id,full_name,email');
 
-        if ($classroomId) {
-            $query->byClassroom($classroomId);
+        // 主教室 + classroom_user ピボットで所属する全教室を対象にする
+        if ($user->classroom_id) {
+            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
         }
 
         if ($request->filled('search')) {
@@ -268,7 +268,7 @@ class StudentController extends Controller
 
         $guardians = User::where('user_type', 'guardian')
             ->when($user->classroom_id, function ($q) use ($user) {
-                $q->where('classroom_id', $user->classroom_id);
+                $q->whereIn('classroom_id', $user->accessibleClassroomIds());
             })
             ->where('is_active', true)
             ->select('id', 'full_name', 'email')
@@ -328,7 +328,8 @@ class StudentController extends Controller
 
     private function authorizeClassroom($user, Student $student): void
     {
-        if ($user->classroom_id && $student->classroom_id !== $user->classroom_id) {
+        if ($user->classroom_id
+            && !in_array($student->classroom_id, $user->accessibleClassroomIds(), true)) {
             abort(403, 'この生徒へのアクセス権限がありません。');
         }
     }
