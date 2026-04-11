@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { useToast } from '@/components/ui/Toast';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { NotificationToggleCard } from '@/components/notifications/NotificationToggleCard';
 
 interface StudentProfile {
   id: number;
@@ -75,6 +76,9 @@ export default function StudentProfilePage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">プロフィール</h1>
+
+      {/* Web Push 通知設定 */}
+      <NotificationToggleCard />
 
       {/* Profile Card */}
       <Card>

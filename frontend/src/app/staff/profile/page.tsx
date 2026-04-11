@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { NotificationToggleCard } from '@/components/notifications/NotificationToggleCard';
 
 interface Profile {
   id: number;
@@ -71,6 +72,9 @@ export default function StaffProfilePage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">プロフィール</h1>
+
+      {/* Web Push 通知設定 */}
+      <NotificationToggleCard />
 
       {/* Profile Info */}
       <Card>
