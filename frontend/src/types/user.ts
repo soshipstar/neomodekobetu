@@ -26,6 +26,7 @@ export interface Student {
   birth_date: string | null;
   grade_level: GradeLevel;
   guardian_id: number | null;
+  person_id: string | null;
   status: StudentStatus;
   scheduled_monday: boolean;
   scheduled_tuesday: boolean;

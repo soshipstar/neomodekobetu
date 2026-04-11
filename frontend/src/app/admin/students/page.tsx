@@ -15,6 +15,7 @@ import { useToast } from '@/components/ui/Toast';
 import type { Student } from '@/types/user';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { StudentCopyModal } from '@/components/admin/StudentCopyModal';
+import { StudentLinkedSyncModal } from '@/components/admin/StudentLinkedSyncModal';
 
 const statusLabels: Record<string, string> = {
   active: '在籍', trial: '体験', short_term: '短期', withdrawn: '退所', waiting: '待機',
@@ -47,6 +48,7 @@ export default function AdminStudentsPage() {
   const [preview, setPreview] = useState<GradeChange[] | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [copySource, setCopySource] = useState<Student | null>(null);
+  const [linkedTarget, setLinkedTarget] = useState<Student | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -84,7 +86,22 @@ export default function AdminStudentsPage() {
   };
 
   const columns: Column<Student>[] = [
-    { key: 'student_name', label: '生徒名', sortable: true, render: (s) => <span className="font-medium">{s.student_name}</span> },
+    {
+      key: 'student_name',
+      label: '生徒名',
+      sortable: true,
+      render: (s) => (
+        <div className="flex items-center gap-2">
+          <span className="font-medium">{s.student_name}</span>
+          {s.person_id && (
+            <Badge variant="info" title={`同一人物としてリンク (person_id=${s.person_id.slice(0, 8)}…)`}>
+              <MaterialIcon name="link" size={10} className="mr-0.5 inline" />
+              同一人物
+            </Badge>
+          )}
+        </div>
+      ),
+    },
     { key: 'classroom', label: '事業所', render: (s) => s.classroom?.classroom_name || '-' },
     { key: 'grade_level', label: '学年', render: (s) => gradeLabels[s.grade_level || ''] || s.grade_level || '-' },
     {
@@ -97,15 +114,28 @@ export default function AdminStudentsPage() {
       key: 'actions',
       label: '操作',
       render: (s) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setCopySource(s)}
-          leftIcon={<MaterialIcon name="content_copy" size={14} />}
-          title="同一企業内の別教室にこの児童を複製します"
-        >
-          別教室に複製
-        </Button>
+        <div className="flex items-center gap-1 flex-wrap">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setCopySource(s)}
+            leftIcon={<MaterialIcon name="content_copy" size={14} />}
+            title="同一企業内の別教室にこの児童を複製します"
+          >
+            別教室に複製
+          </Button>
+          {s.person_id && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLinkedTarget(s)}
+              leftIcon={<MaterialIcon name="sync" size={14} />}
+              title="リンク先のレコードにこの児童の情報を同期します"
+            >
+              同期
+            </Button>
+          )}
+        </div>
       ),
     },
   ];
@@ -199,6 +229,15 @@ export default function AdminStudentsPage() {
           student={copySource}
           onClose={() => setCopySource(null)}
           onCopied={() => queryClient.invalidateQueries({ queryKey: ['admin', 'students'] })}
+        />
+      )}
+
+      {/* 同一人物同期モーダル */}
+      {linkedTarget && (
+        <StudentLinkedSyncModal
+          student={linkedTarget}
+          onClose={() => setLinkedTarget(null)}
+          onSynced={() => queryClient.invalidateQueries({ queryKey: ['admin', 'students'] })}
         />
       )}
     </div>
