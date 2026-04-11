@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Classroom;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class GuardianController extends Controller
 {
@@ -52,19 +54,47 @@ class GuardianController extends Controller
 
     /**
      * 保護者を作成
+     *
+     * classroom_id はリクエストで指定可能だが、未指定の場合は認証ユーザーの
+     * classroom_id をデフォルトとして使用する（/admin/guardians 画面の
+     * フォームには classroom 選択が無いため）。
+     * 教室は必ず所属企業を持っていることを要求する。
      */
     public function store(Request $request): JsonResponse
     {
+        $authUser = $request->user();
+
         $validated = $request->validate([
-            'classroom_id' => 'required|exists:classrooms,id',
+            'classroom_id' => 'nullable|integer|exists:classrooms,id',
             'username'     => 'required|string|max:100|unique:users,username',
             'password'     => 'required|string|min:6',
             'full_name'    => 'required|string|max:100',
             'email'        => 'nullable|email|max:255',
         ]);
 
+        // classroom_id をリクエスト → 認証ユーザー → 422 の順に決定
+        $classroomId = $validated['classroom_id'] ?? $authUser->classroom_id ?? null;
+        if (empty($classroomId)) {
+            throw ValidationException::withMessages([
+                'classroom_id' => ['所属教室が未設定です。教室切替で教室を選択してから登録してください。'],
+            ]);
+        }
+
+        // 教室は必ず所属企業を持っていること
+        $classroom = Classroom::find($classroomId);
+        if (!$classroom) {
+            throw ValidationException::withMessages([
+                'classroom_id' => ['指定した教室は存在しません。'],
+            ]);
+        }
+        if ($classroom->company_id === null) {
+            throw ValidationException::withMessages([
+                'classroom_id' => ['選択した教室には所属企業が設定されていません。企業に属する教室を選択してください。'],
+            ]);
+        }
+
         $guardian = User::create([
-            'classroom_id' => $validated['classroom_id'],
+            'classroom_id' => $classroomId,
             'username'     => $validated['username'],
             'password'     => Hash::make($validated['password']),
             'full_name'    => $validated['full_name'],
