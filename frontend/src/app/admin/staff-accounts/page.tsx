@@ -104,9 +104,11 @@ export default function StaffAccountsPage() {
   const companies = companiesData ?? [];
 
   const selectedCompanyId = formData.company_id ? Number(formData.company_id) : null;
+  // 所属企業が未選択のときは何も出さない。選択時はその企業所属の教室のみ。
+  // company_id が null（どこにも属していない）教室は常に除外する。
   const filteredClassrooms = selectedCompanyId
     ? classrooms.filter((c) => c.company_id === selectedCompanyId)
-    : classrooms;
+    : [];
 
   const saveMutation = useMutation({
     mutationFn: async (data: StaffAccountFormData & { id?: number }) => {
@@ -200,6 +202,7 @@ export default function StaffAccountsPage() {
   function validateForm(): boolean {
     const errors: Partial<Record<keyof StaffAccountFormData, string>> = {};
     if (!formData.full_name.trim()) errors.full_name = '氏名は必須です';
+    if (!formData.company_id) errors.company_id = '所属企業は必須です';
     if (!formData.classroom_id) errors.classroom_id = '所属教室は必須です';
     if (!editingStaff) {
       if (!formData.username.trim()) errors.username = 'ユーザー名は必須です';
@@ -368,30 +371,28 @@ export default function StaffAccountsPage() {
           />
           <div className="w-full">
             <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-1)]">
-              所属企業
+              所属企業 *
             </label>
             <select
               value={formData.company_id}
               onChange={(e) => {
-                const nextCompanyId = e.target.value;
-                const nextCompanyNum = nextCompanyId ? Number(nextCompanyId) : null;
-                const currentClassroomNum = formData.classroom_id ? Number(formData.classroom_id) : null;
-                const keepClassroom = currentClassroomNum !== null
-                  && (nextCompanyNum === null
-                    || classrooms.find((c) => c.id === currentClassroomNum)?.company_id === nextCompanyNum);
+                // 企業を変更したら、教室は必ずクリア（企業内から再選択させる）
                 setFormData({
                   ...formData,
-                  company_id: nextCompanyId,
-                  classroom_id: keepClassroom ? formData.classroom_id : '',
+                  company_id: e.target.value,
+                  classroom_id: '',
                 });
               }}
               className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
             >
-              <option value="">未設定</option>
+              <option value="">選択してください</option>
               {companies.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
+            {formErrors.company_id && (
+              <p className="mt-1 text-xs text-[var(--status-danger-fg)]">{formErrors.company_id}</p>
+            )}
           </div>
           <div className="w-full">
             <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-1)]">
@@ -399,22 +400,18 @@ export default function StaffAccountsPage() {
             </label>
             <select
               value={formData.classroom_id}
+              disabled={!formData.company_id}
               onChange={(e) => {
-                const nextClassroomId = e.target.value;
-                const chosen = nextClassroomId
-                  ? classrooms.find((c) => c.id === Number(nextClassroomId))
-                  : null;
                 setFormData({
                   ...formData,
-                  classroom_id: nextClassroomId,
-                  company_id: chosen?.company_id != null
-                    ? String(chosen.company_id)
-                    : formData.company_id,
+                  classroom_id: e.target.value,
                 });
               }}
-              className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+              className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)] disabled:opacity-50"
             >
-              <option value="">選択してください</option>
+              <option value="">
+                {formData.company_id ? '選択してください' : '先に所属企業を選択してください'}
+              </option>
               {filteredClassrooms.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.classroom_name}
@@ -426,7 +423,7 @@ export default function StaffAccountsPage() {
             )}
             {selectedCompanyId && filteredClassrooms.length === 0 && (
               <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">
-                選択した企業に属する事業所がありません。
+                選択した企業に属する教室がありません。
               </p>
             )}
           </div>
