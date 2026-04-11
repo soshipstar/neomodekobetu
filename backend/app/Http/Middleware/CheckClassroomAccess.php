@@ -47,8 +47,8 @@ class CheckClassroomAccess
             return $next($request);
         }
 
-        // ユーザーの所属教室とリソースの教室が一致するか確認
-        if ((int) $user->classroom_id !== (int) $classroomId) {
+        // ユーザーの所属教室（主教室 + classroom_user ピボット）に含まれるか確認
+        if (!in_array((int) $classroomId, $user->accessibleClassroomIds(), true)) {
             return response()->json([
                 'message' => 'この教室のリソースにアクセスする権限がありません。',
             ], 403);
