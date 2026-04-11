@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -140,20 +139,16 @@ class User extends Authenticatable
         }
 
         if ($this->user_type === 'guardian') {
-            // 保護者は子ども（Student::guardian_id = user.id）の在籍教室全てが
-            // アクセス対象になる。students.classroom_id と classroom_student pivot
-            // の和集合を取る。
-            $studentIds = Student::where('guardian_id', $this->id)->pluck('id');
-            if ($studentIds->isEmpty()) {
-                return [];
-            }
-            $primary = Student::whereIn('id', $studentIds)
+            // 保護者は子ども (Student::guardian_id = user.id) の在籍教室の
+            // 和集合がアクセス範囲になる。1 児童 = 1 Student レコード = 1 教室の
+            // 方針なので、子どもたちの classroom_id を全部集めれば十分。
+            return Student::where('guardian_id', $this->id)
                 ->whereNotNull('classroom_id')
-                ->pluck('classroom_id');
-            $pivot = DB::table('classroom_student')
-                ->whereIn('student_id', $studentIds)
-                ->pluck('classroom_id');
-            return $primary->merge($pivot)->unique()->values()->map(fn ($v) => (int) $v)->all();
+                ->pluck('classroom_id')
+                ->unique()
+                ->values()
+                ->map(fn ($v) => (int) $v)
+                ->all();
         }
 
         $ids = $this->classrooms()->pluck('classrooms.id')->toArray();
