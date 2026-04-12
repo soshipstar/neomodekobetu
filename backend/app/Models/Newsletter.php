@@ -28,6 +28,10 @@ class Newsletter extends Model
         'weekly_intro',
         'elementary_report',
         'junior_report',
+        'report_start_date',
+        'report_end_date',
+        'schedule_start_date',
+        'schedule_end_date',
     ];
 
     protected function casts(): array
@@ -36,6 +40,10 @@ class Newsletter extends Model
             'year' => 'integer',
             'month' => 'integer',
             'published_at' => 'datetime',
+            'report_start_date' => 'date',
+            'report_end_date' => 'date',
+            'schedule_start_date' => 'date',
+            'schedule_end_date' => 'date',
         ];
     }
 

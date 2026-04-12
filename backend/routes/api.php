@@ -256,6 +256,7 @@ Route::prefix('staff')
         Route::put('/newsletter-settings', [App\Http\Controllers\Staff\NewsletterSettingController::class, 'update']);
         Route::apiResource('newsletters', App\Http\Controllers\Staff\NewsletterController::class);
         Route::post('/newsletters/{newsletter}/generate-ai', [App\Http\Controllers\Staff\NewsletterController::class, 'generateAi']);
+        Route::post('/newsletters/{newsletter}/generate-all', [App\Http\Controllers\Staff\NewsletterController::class, 'generateAll']);
         Route::post('/newsletters/{newsletter}/publish', [App\Http\Controllers\Staff\NewsletterController::class, 'publish']);
         Route::get('/newsletters/{newsletter}/pdf', [App\Http\Controllers\Staff\NewsletterController::class, 'pdf']);
         Route::post('/newsletters/pdf-preview', [App\Http\Controllers\Staff\NewsletterController::class, 'pdfPreview']);

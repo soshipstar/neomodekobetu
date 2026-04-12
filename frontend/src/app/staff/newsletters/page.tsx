@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardBody } from '@/components/ui/Card';
@@ -32,6 +32,10 @@ interface Newsletter {
   others: string | null;
   elementary_report: string | null;
   junior_report: string | null;
+  report_start_date: string | null;
+  report_end_date: string | null;
+  schedule_start_date: string | null;
+  schedule_end_date: string | null;
   status: string;
   is_published: boolean;
   published_at: string | null;
@@ -52,6 +56,10 @@ interface NewsletterForm {
   others: string;
   elementary_report: string;
   junior_report: string;
+  report_start_date: string;
+  report_end_date: string;
+  schedule_start_date: string;
+  schedule_end_date: string;
 }
 
 const SECTIONS = [
@@ -72,14 +80,29 @@ function nl(text: string | null | undefined): string {
   return text.replace(/\\r\\n|\\n|\\r/g, '\n').replace(/\r\n|\r/g, '\n');
 }
 
+/** 年月からデフォルト日付範囲を算出 */
+function defaultDates(year: number, month: number) {
+  const start = `${year}-${String(month).padStart(2, '0')}-01`;
+  const end = new Date(year, month, 0); // last day of month
+  const endStr = `${year}-${String(month).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
+  return {
+    report_start_date: start,
+    report_end_date: endStr,
+    schedule_start_date: start,
+    schedule_end_date: endStr,
+  };
+}
+
 const emptyForm = (): NewsletterForm => {
   const now = new Date();
+  const dates = defaultDates(now.getFullYear(), now.getMonth() + 1);
   return {
     year: now.getFullYear(), month: now.getMonth() + 1,
     title: `${now.getFullYear()}年${now.getMonth() + 1}月号`,
     greeting: '', event_calendar: '', event_details: '', weekly_reports: '',
     weekly_intro: '', event_results: '', requests: '', others: '',
     elementary_report: '', junior_report: '',
+    ...dates,
   };
 };
 
@@ -94,7 +117,17 @@ export default function NewslettersPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<NewsletterForm>(emptyForm());
   const [generatingSection, setGeneratingSection] = useState<string | null>(null);
+  const [generatingAll, setGeneratingAll] = useState(false);
   const [photoPickerFor, setPhotoPickerFor] = useState<string | null>(null);
+
+  // 設定からデフォルトテキストを読み込む
+  const { data: settings } = useQuery({
+    queryKey: ['staff', 'newsletter-settings'],
+    queryFn: async () => {
+      const res = await api.get('/api/staff/newsletter-settings');
+      return res.data?.data ?? null;
+    },
+  });
 
   const { data: newsletters = [], isLoading } = useQuery({
     queryKey: ['staff', 'newsletters'],
@@ -138,6 +171,7 @@ export default function NewslettersPage() {
     onError: () => toast.error('削除に失敗しました'),
   });
 
+  // 個別セクションAI生成
   const handleAiGenerate = async (section: string) => {
     if (!editingId) { toast.error('先に保存してからAI生成してください'); return; }
     setGeneratingSection(section);
@@ -156,9 +190,52 @@ export default function NewslettersPage() {
     }
   };
 
-  const openCreate = () => { setEditingId(null); setForm(emptyForm()); setEditModal(true); };
+  // 全セクション一括AI生成（旧アプリの「AIで通信を生成」相当）
+  const handleAiGenerateAll = async () => {
+    if (!editingId) { toast.error('先に保存してからAI生成してください'); return; }
+    if (!confirm('全セクションをAIで生成します。既存の内容は上書きされます。\n（1〜2分かかる場合があります）')) return;
+    setGeneratingAll(true);
+    try {
+      const res = await api.post(`/api/staff/newsletters/${editingId}/generate-all`, {
+        context: `${form.year}年${form.month}月号のお便り`,
+      });
+      const data = res.data?.data || {};
+      setForm((prev) => ({
+        ...prev,
+        greeting: data.greeting ?? prev.greeting,
+        event_calendar: data.event_calendar ?? prev.event_calendar,
+        event_details: data.event_details ?? prev.event_details,
+        weekly_reports: data.weekly_reports ?? prev.weekly_reports,
+        weekly_intro: data.weekly_intro ?? prev.weekly_intro,
+        event_results: data.event_results ?? prev.event_results,
+        elementary_report: data.elementary_report ?? prev.elementary_report,
+        junior_report: data.junior_report ?? prev.junior_report,
+        requests: data.requests ?? prev.requests,
+        others: data.others ?? prev.others,
+      }));
+      toast.success('全セクションのAI生成が完了しました');
+    } catch {
+      toast.error('一括AI生成に失敗しました');
+    } finally {
+      setGeneratingAll(false);
+    }
+  };
+
+  const openCreate = () => {
+    setEditingId(null);
+    const f = emptyForm();
+    // 設定からデフォルトテキストを適用
+    if (settings) {
+      if (settings.default_requests) f.requests = settings.default_requests;
+      if (settings.default_others) f.others = settings.default_others;
+    }
+    setForm(f);
+    setEditModal(true);
+  };
+
   const openEdit = (n: Newsletter) => {
     setEditingId(n.id);
+    const dates = defaultDates(n.year, n.month);
     setForm({
       year: n.year, month: n.month, title: n.title,
       greeting: nl(n.greeting), event_calendar: nl(n.event_calendar),
@@ -166,8 +243,27 @@ export default function NewslettersPage() {
       weekly_intro: nl(n.weekly_intro), event_results: nl(n.event_results),
       requests: nl(n.requests), others: nl(n.others),
       elementary_report: nl(n.elementary_report), junior_report: nl(n.junior_report),
+      report_start_date: n.report_start_date ?? dates.report_start_date,
+      report_end_date: n.report_end_date ?? dates.report_end_date,
+      schedule_start_date: n.schedule_start_date ?? dates.schedule_start_date,
+      schedule_end_date: n.schedule_end_date ?? dates.schedule_end_date,
     });
     setEditModal(true);
+  };
+
+  // 年月が変わったら日付範囲も更新
+  const updateYearMonth = (key: 'year' | 'month', value: number) => {
+    setForm((prev) => {
+      const next = { ...prev, [key]: value };
+      const y = key === 'year' ? value : prev.year;
+      const m = key === 'month' ? value : prev.month;
+      const dates = defaultDates(y, m);
+      return {
+        ...next,
+        title: `${y}年${m}月号`,
+        ...dates,
+      };
+    });
   };
 
   const updateField = (key: string, value: string | number) => setForm((prev) => ({ ...prev, [key]: value }));
@@ -220,21 +316,66 @@ export default function NewslettersPage() {
       {/* Edit/Create Modal */}
       <Modal isOpen={editModal} onClose={() => setEditModal(false)} title={editingId ? 'お便り編集' : 'お便り新規作成'} size="full">
         <div className="space-y-4 max-h-[80vh] overflow-y-auto pr-2">
-          {/* Meta */}
+          {/* Meta: 年・月・タイトル */}
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-3)]">年</label>
-              <input type="number" value={form.year} onChange={(e) => updateField('year', Number(e.target.value))} className={inputCls} />
+              <input type="number" value={form.year} onChange={(e) => updateYearMonth('year', Number(e.target.value))} className={inputCls} />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-3)]">月</label>
-              <input type="number" value={form.month} min={1} max={12} onChange={(e) => updateField('month', Number(e.target.value))} className={inputCls} />
+              <input type="number" value={form.month} min={1} max={12} onChange={(e) => updateYearMonth('month', Number(e.target.value))} className={inputCls} />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-3)]">タイトル</label>
               <input value={form.title} onChange={(e) => updateField('title', e.target.value)} className={inputCls} />
             </div>
           </div>
+
+          {/* 日付範囲 */}
+          <div className="grid grid-cols-2 gap-3 rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] p-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-3)]">報告期間（活動記録の対象）</label>
+              <div className="flex items-center gap-2">
+                <input type="date" value={form.report_start_date} onChange={(e) => updateField('report_start_date', e.target.value)} className={inputCls + ' flex-1'} />
+                <span className="text-xs text-[var(--neutral-foreground-4)]">〜</span>
+                <input type="date" value={form.report_end_date} onChange={(e) => updateField('report_end_date', e.target.value)} className={inputCls + ' flex-1'} />
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-3)]">予定期間（イベント予定の対象）</label>
+              <div className="flex items-center gap-2">
+                <input type="date" value={form.schedule_start_date} onChange={(e) => updateField('schedule_start_date', e.target.value)} className={inputCls + ' flex-1'} />
+                <span className="text-xs text-[var(--neutral-foreground-4)]">〜</span>
+                <input type="date" value={form.schedule_end_date} onChange={(e) => updateField('schedule_end_date', e.target.value)} className={inputCls + ' flex-1'} />
+              </div>
+            </div>
+          </div>
+
+          {/* 一括AI生成ボタン */}
+          {editingId && (
+            <div className="rounded-lg border border-[var(--brand-80)]/30 bg-[var(--brand-10)] p-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-[var(--brand-100)]">
+                    <MaterialIcon name="auto_awesome" size={16} className="inline mr-1" />
+                    支援案ベースの一括AI生成
+                  </p>
+                  <p className="text-xs text-[var(--neutral-foreground-3)] mt-0.5">
+                    支援案・活動記録・イベント情報をもとに全セクションを自動生成します（1〜2分）
+                  </p>
+                </div>
+                <Button
+                  onClick={handleAiGenerateAll}
+                  isLoading={generatingAll}
+                  disabled={generatingAll || !!generatingSection}
+                  leftIcon={<MaterialIcon name="auto_awesome" size={16} />}
+                >
+                  AIで通信を生成
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Sections */}
           {SECTIONS.map(({ key, label, ai }) => (
@@ -250,7 +391,7 @@ export default function NewslettersPage() {
                   {editingId && ai && (
                     <Button variant="ghost" size="sm" leftIcon={<MaterialIcon name="auto_awesome" size={14} />}
                       onClick={() => handleAiGenerate(key)}
-                      isLoading={generatingSection === key} disabled={!!generatingSection}>
+                      isLoading={generatingSection === key} disabled={!!generatingSection || generatingAll}>
                       AI生成
                     </Button>
                   )}

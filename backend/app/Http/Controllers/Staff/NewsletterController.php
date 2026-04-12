@@ -7,10 +7,12 @@ use App\Models\ActivitySupportPlan;
 use App\Models\DailyRecord;
 use App\Models\Event;
 use App\Models\Newsletter;
+use App\Models\NewsletterSetting;
 use App\Services\PuppeteerPdfService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+
 class NewsletterController extends Controller
 {
     /**
@@ -44,12 +46,19 @@ class NewsletterController extends Controller
         ]);
     }
 
+    private const DATE_RULES = [
+        'report_start_date'   => 'nullable|date',
+        'report_end_date'     => 'nullable|date',
+        'schedule_start_date' => 'nullable|date',
+        'schedule_end_date'   => 'nullable|date',
+    ];
+
     /**
      * お便りを新規作成
      */
     public function store(Request $request): JsonResponse
     {
-        $validated = $request->validate([
+        $validated = $request->validate(array_merge([
             'year'              => 'required|integer|min:2020|max:2100',
             'month'             => 'required|integer|min:1|max:12',
             'title'             => 'required|string|max:255',
@@ -63,7 +72,7 @@ class NewsletterController extends Controller
             'others'            => 'nullable|string',
             'elementary_report' => 'nullable|string',
             'junior_report'     => 'nullable|string',
-        ]);
+        ], self::DATE_RULES));
 
         $newsletter = Newsletter::create(array_merge($validated, [
             'classroom_id' => $request->user()->classroom_id,
@@ -96,7 +105,7 @@ class NewsletterController extends Controller
      */
     public function update(Request $request, Newsletter $newsletter): JsonResponse
     {
-        $validated = $request->validate([
+        $validated = $request->validate(array_merge([
             'title'             => 'sometimes|required|string|max:255',
             'greeting'          => 'nullable|string',
             'event_calendar'    => 'nullable|string',
@@ -108,7 +117,7 @@ class NewsletterController extends Controller
             'others'            => 'nullable|string',
             'elementary_report' => 'nullable|string',
             'junior_report'     => 'nullable|string',
-        ]);
+        ], self::DATE_RULES));
 
         $newsletter->update($validated);
 
@@ -139,8 +148,12 @@ class NewsletterController extends Controller
         ]);
     }
 
+    // =========================================================================
+    // AI 生成
+    // =========================================================================
+
     /**
-     * AI でお便り内容を生成（活動記録・イベント・支援案の文脈データ付き）
+     * AI でお便り内容を生成（単一セクション）
      */
     public function generateAi(Request $request, Newsletter $newsletter): JsonResponse
     {
@@ -152,159 +165,80 @@ class NewsletterController extends Controller
         $section = $request->section;
         $context = $request->context ?? '';
 
-        $sectionLabels = [
-            'greeting'           => 'あいさつ文',
-            'event_details'      => '行事の詳細',
-            'weekly_reports'     => '週報',
-            'event_results'      => '行事の結果報告',
-            'others'             => 'その他のお知らせ',
-            'weekly_intro'       => '曜日別活動紹介',
-            'elementary_report'  => '小学生の活動報告',
-            'junior_report'      => '中学生の活動報告',
-            'event_calendar'     => 'イベントカレンダー',
-            'requests'           => '施設からのお願い',
+        $settings = $this->getSettings($newsletter->classroom_id);
+        $content = $this->generateSection($section, $newsletter, $context, $settings);
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'section' => $section,
+                'content' => $content,
+            ],
+        ]);
+    }
+
+    /**
+     * 全セクション一括AI生成（旧アプリの「AIで通信を生成」相当）
+     */
+    public function generateAll(Request $request, Newsletter $newsletter): JsonResponse
+    {
+        $context = $request->input('context', '');
+        $settings = $this->getSettings($newsletter->classroom_id);
+
+        $sections = [
+            'greeting', 'event_calendar', 'event_details',
+            'weekly_reports', 'weekly_intro', 'event_results',
+            'elementary_report', 'junior_report', 'requests', 'others',
         ];
 
-        $sectionLabel = $sectionLabels[$section] ?? $section;
-
-        // Build rich context from database
-        $richContext = $this->buildRichContext($newsletter);
-
-        // Build section-specific prompt for legacy-compatible sections
-        $sectionPrompt = $this->buildSectionPrompt($section, $newsletter, $sectionLabel, $richContext, $context);
-
-        // event_calendar returns formatted text directly (no AI needed, legacy compat)
-        if ($section === 'event_calendar') {
-            return response()->json([
-                'success' => true,
-                'data'    => [
-                    'section' => $section,
-                    'content' => $sectionPrompt,
-                ],
-            ]);
+        $result = [];
+        foreach ($sections as $section) {
+            $result[$section] = $this->generateSection($section, $newsletter, $context, $settings);
         }
 
-        try {
-            $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
-                'model'    => 'gpt-5.4-mini-2026-03-17',
-                'messages' => [
-                    [
-                        'role'    => 'system',
-                        'content' => 'あなたは個別支援教育の経験豊富な教員です。保護者に向けて温かく丁寧で、参加したくなるような魅力的な文章を書きます。専門用語は避け、分かりやすい表現を心がけます。',
-                    ],
-                    [
-                        'role'    => 'user',
-                        'content' => $sectionPrompt,
-                    ],
-                ],
-                'temperature'           => 0.7,
-                'max_completion_tokens' => 1500,
-            ]);
+        // DB にも保存
+        $newsletter->update($result);
 
-            $generatedText = $response->choices[0]->message->content;
-
-            return response()->json([
-                'success' => true,
-                'data'    => [
-                    'section' => $section,
-                    'content' => $generatedText,
-                ],
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'AI生成中にエラーが発生しました: ' . $e->getMessage(),
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'data'    => $result,
+            'message' => '全セクションのAI生成が完了しました。',
+        ]);
     }
 
+    // =========================================================================
+    // 生成ロジック（旧アプリ準拠）
+    // =========================================================================
+
     /**
-     * お便りの年月・教室に基づいてAI生成用の文脈データを構築する
+     * 施設通信設定を取得
      */
-    private function buildRichContext(Newsletter $newsletter): string
+    private function getSettings(?int $classroomId): array
     {
-        $classroomId = $newsletter->classroom_id;
         if (!$classroomId) {
-            return '';
+            return [];
         }
 
-        $parts = [];
-
-        // 期間の開始・終了日を算出
-        $periodStart = Carbon::create($newsletter->year, $newsletter->month, 1)->startOfMonth();
-        $periodEnd = $periodStart->copy()->endOfMonth();
-
-        // 【教室情報】
-        $newsletter->loadMissing('classroom');
-        $classroom = $newsletter->classroom;
-        if ($classroom) {
-            $studentCount = $classroom->students()->count();
-            $parts[] = "【教室情報】{$classroom->classroom_name}、在籍{$studentCount}名";
+        $setting = NewsletterSetting::where('classroom_id', $classroomId)->first();
+        if (!$setting) {
+            return [];
         }
 
-        // 【期間の活動記録】
-        $dailyRecords = DailyRecord::where('classroom_id', $classroomId)
-            ->whereBetween('record_date', [$periodStart, $periodEnd])
-            ->orderBy('record_date')
-            ->get(['record_date', 'activity_name', 'common_activity']);
-
-        if ($dailyRecords->isNotEmpty()) {
-            $lines = ['【期間の活動記録】'];
-            foreach ($dailyRecords as $record) {
-                $date = $record->record_date->format('n/j');
-                $activity = $record->activity_name ?? '';
-                $common = $record->common_activity ?? '';
-                $detail = collect([$activity, $common])->filter()->implode(' - ');
-                if ($detail) {
-                    $lines[] = "- {$date}: {$detail}";
-                }
-            }
-            if (count($lines) > 1) {
-                $parts[] = implode("\n", $lines);
-            }
-        }
-
-        // 【今後のイベント】 (当月以降のイベント)
-        $events = Event::where('classroom_id', $classroomId)
-            ->where('event_date', '>=', $periodStart)
-            ->where('event_date', '<=', $periodEnd->copy()->addMonth())
-            ->orderBy('event_date')
-            ->get(['event_date', 'event_name']);
-
-        if ($events->isNotEmpty()) {
-            $lines = ['【今後のイベント】'];
-            foreach ($events as $event) {
-                $date = $event->event_date->format('n/j');
-                $lines[] = "- {$date}: {$event->event_name}";
-            }
-            $parts[] = implode("\n", $lines);
-        }
-
-        // 【活動支援案のテーマ】
-        $supportPlans = ActivitySupportPlan::where('classroom_id', $classroomId)
-            ->whereBetween('activity_date', [$periodStart, $periodEnd])
-            ->orderBy('activity_date')
-            ->get(['activity_name', 'activity_purpose']);
-
-        if ($supportPlans->isNotEmpty()) {
-            $themes = $supportPlans->map(function ($plan) {
-                $name = $plan->activity_name ?? '';
-                $purpose = $plan->activity_purpose ?? '';
-                return collect([$name, $purpose])->filter()->implode('（') . ($purpose ? '）' : '');
-            })->filter()->implode('、');
-
-            if ($themes) {
-                $parts[] = "【活動支援案のテーマ】{$themes}";
-            }
-        }
-
-        return implode("\n\n", $parts);
+        return array_merge(
+            $setting->display_settings ?? [],
+            $setting->ai_instructions ?? [],
+            [
+                'calendar_format'  => $setting->calendar_format ?? 'list',
+                'default_requests' => $setting->default_requests ?? '',
+                'default_others'   => $setting->default_others ?? '',
+            ],
+        );
     }
 
     /**
-     * セクション別のプロンプトを構築する（旧アプリ準拠）
+     * 1 セクションを生成
      */
-    private function buildSectionPrompt(string $section, Newsletter $newsletter, string $sectionLabel, string $richContext, string $context): string
+    private function generateSection(string $section, Newsletter $newsletter, string $context, array $settings): string
     {
         $classroomId = $newsletter->classroom_id;
         $newsletter->loadMissing('classroom');
@@ -312,21 +246,180 @@ class NewsletterController extends Controller
         $year = $newsletter->year;
         $month = $newsletter->month;
 
-        $periodStart = Carbon::create($year, $month, 1)->startOfMonth();
-        $periodEnd = $periodStart->copy()->endOfMonth();
+        // 日付範囲の算出（旧アプリと同様に report / schedule 期間を使い分け）
+        $reportStart = $newsletter->report_start_date
+            ?? Carbon::create($year, $month, 1)->startOfMonth();
+        $reportEnd = $newsletter->report_end_date
+            ?? Carbon::create($year, $month, 1)->endOfMonth();
+        $scheduleStart = $newsletter->schedule_start_date
+            ?? Carbon::create($year, $month, 1)->startOfMonth();
+        $scheduleEnd = $newsletter->schedule_end_date
+            ?? Carbon::create($year, $month, 1)->endOfMonth();
+
+        // 支援案データを取得
+        $supportPlans = $classroomId
+            ? ActivitySupportPlan::where('classroom_id', $classroomId)
+                ->orderBy('day_of_week')
+                ->orderBy('activity_name')
+                ->get()
+            : collect();
+
+        $normalPlans = $supportPlans->filter(fn ($p) => ($p->plan_type ?? 'normal') === 'normal');
+        $eventPlans = $supportPlans->filter(fn ($p) => ($p->plan_type ?? 'normal') === 'event');
+
+        // セクション別のカスタム指示
+        $instructionKey = match ($section) {
+            'greeting'          => 'greeting_instructions',
+            'event_details'     => 'event_details_instructions',
+            'weekly_reports'    => 'weekly_reports_instructions',
+            'weekly_intro'      => 'weekly_intro_instructions',
+            'event_results'     => 'event_results_instructions',
+            'elementary_report' => 'elementary_report_instructions',
+            'junior_report'     => 'junior_report_instructions',
+            default             => null,
+        };
+        $customInstructions = ($instructionKey && !empty($settings[$instructionKey]))
+            ? "\n【カスタム指示】{$settings[$instructionKey]}"
+            : '';
         $contextSuffix = $context ? "\n【スタッフからの補足情報】{$context}" : '';
 
         switch ($section) {
-            case 'weekly_intro':
-                // 曜日別活動紹介 - 支援案を曜日別にグループ化してプロンプト生成
-                $plans = ActivitySupportPlan::where('classroom_id', $classroomId)
-                    ->whereNotNull('day_of_week')
-                    ->orderBy('day_of_week')
-                    ->get(['activity_name', 'activity_purpose', 'activity_content', 'five_domains_consideration', 'day_of_week']);
+            // -----------------------------------------------------------------
+            // あいさつ文（旧アプリ準拠: 季節感のある挨拶、150〜200文字）
+            // -----------------------------------------------------------------
+            case 'greeting':
+                $prompt = <<<PROMPT
+あなたは{$classroomName}の施設通信を作成しています。
+{$year}年{$month}月号のあいさつ文を作成してください。
 
+【要件】
+- {$month}月の季節感を盛り込む
+- 保護者への感謝と子どもたちの成長への期待を伝える
+- 150〜200文字程度
+- 「です・ます」調で温かく丁寧な表現
+- 施設名「{$classroomName}」を冒頭で使用{$customInstructions}{$contextSuffix}
+
+文章のみを出力してください。
+PROMPT;
+                return $this->callAi($prompt);
+
+            // -----------------------------------------------------------------
+            // イベントカレンダー（AI不要、予定期間のイベントを一覧化）
+            // -----------------------------------------------------------------
+            case 'event_calendar':
+                $events = $classroomId
+                    ? Event::where('classroom_id', $classroomId)
+                        ->whereBetween('event_date', [$scheduleStart, $scheduleEnd])
+                        ->orderBy('event_date')
+                        ->get(['event_date', 'event_name'])
+                    : collect();
+
+                if ($events->isEmpty()) {
+                    return "予定イベントはありません。";
+                }
+
+                $daysOfWeek = ['日', '月', '火', '水', '木', '金', '土'];
+                $calendar = '';
+                foreach ($events as $event) {
+                    $d = $event->event_date;
+                    $calendar .= "{$d->format('j')}日({$daysOfWeek[$d->dayOfWeek]}) {$event->event_name}\n";
+                }
+                return $calendar;
+
+            // -----------------------------------------------------------------
+            // 行事の詳細（予定期間のイベント詳細を生成）
+            // -----------------------------------------------------------------
+            case 'event_details':
+                $events = $classroomId
+                    ? Event::where('classroom_id', $classroomId)
+                        ->whereBetween('event_date', [$scheduleStart, $scheduleEnd])
+                        ->orderBy('event_date')
+                        ->get()
+                    : collect();
+
+                if ($events->isEmpty()) {
+                    return "今月の行事予定はありません。";
+                }
+
+                $eventList = '';
+                foreach ($events as $e) {
+                    $eventList .= "・{$e->event_date->format('n/j')} {$e->event_name}";
+                    if ($e->event_description) $eventList .= "（{$e->event_description}）";
+                    $eventList .= "\n";
+                }
+
+                $prompt = <<<PROMPT
+あなたは{$classroomName}の施設通信を作成しています。
+以下のイベント予定について、保護者に向けた魅力的な紹介文を作成してください。
+
+【予定イベント】
+{$eventList}
+
+【要件】
+- 各イベントについて150〜200文字程度で説明
+- 参加者が楽しみに思える内容
+- 持ち物や注意事項があれば含める
+- 「です・ます」調で温かい表現{$customInstructions}{$contextSuffix}
+
+文章のみを出力してください。
+PROMPT;
+                return $this->callAi($prompt);
+
+            // -----------------------------------------------------------------
+            // 活動の様子（報告期間の連絡帳＋通常支援案ベース）
+            // -----------------------------------------------------------------
+            case 'weekly_reports':
+                $dailyRecords = $classroomId
+                    ? DailyRecord::where('classroom_id', $classroomId)
+                        ->whereBetween('record_date', [$reportStart, $reportEnd])
+                        ->orderBy('record_date')
+                        ->get(['record_date', 'activity_name', 'common_activity'])
+                    : collect();
+
+                $activitySummary = '';
+                foreach ($dailyRecords as $r) {
+                    $detail = collect([$r->activity_name, $r->common_activity])->filter()->implode(' - ');
+                    if ($detail) {
+                        $activitySummary .= "- {$r->record_date->format('n/j')}: {$detail}\n";
+                    }
+                }
+
+                $planInfo = '';
+                foreach ($normalPlans as $p) {
+                    $planInfo .= "・{$p->activity_name}";
+                    if ($p->activity_purpose) $planInfo .= "（{$p->activity_purpose}）";
+                    $planInfo .= "\n";
+                }
+
+                $prompt = <<<PROMPT
+あなたは{$classroomName}の施設通信を作成しています。
+以下のデータを参考に、{$year}年{$month}月の「活動の様子」をまとめてください。
+
+【報告期間の活動記録】
+{$activitySummary}
+
+【関連する支援案（通常活動）】
+{$planInfo}
+
+【要件】
+- 活動内容と子どもたちの様子を具体的に伝える
+- 保護者が読んで嬉しくなるような温かい文章
+- 500〜800文字程度
+- 「です・ます」調で丁寧な表現
+- 支援案の目的・ねらいを踏まえた記述{$customInstructions}{$contextSuffix}
+
+文章のみを出力してください。
+PROMPT;
+                return $this->callAi($prompt);
+
+            // -----------------------------------------------------------------
+            // 曜日別活動紹介（支援案を曜日別にグループ化）
+            // -----------------------------------------------------------------
+            case 'weekly_intro':
                 $dayMapping = ['monday' => '月', 'tuesday' => '火', 'wednesday' => '水', 'thursday' => '木', 'friday' => '金', 'saturday' => '土', 'sunday' => '日'];
                 $plansByDay = [];
-                foreach ($plans as $plan) {
+                foreach ($normalPlans as $plan) {
+                    if (!$plan->day_of_week) continue;
                     $days = explode(',', $plan->day_of_week);
                     foreach ($days as $day) {
                         $dayName = $dayMapping[trim($day)] ?? trim($day);
@@ -335,8 +428,7 @@ class NewsletterController extends Controller
                 }
 
                 $plansList = '';
-                $dayOrder = ['月', '火', '水', '木', '金', '土'];
-                foreach ($dayOrder as $day) {
+                foreach (['月', '火', '水', '木', '金', '土'] as $day) {
                     if (empty($plansByDay[$day])) continue;
                     $plansList .= "■ {$day}曜日\n";
                     foreach ($plansByDay[$day] as $p) {
@@ -348,10 +440,10 @@ class NewsletterController extends Controller
                 }
 
                 if (empty($plansList)) {
-                    return "{$year}年{$month}月号の「{$sectionLabel}」を生成してください。支援案データがないため、一般的な曜日別活動紹介を作成してください。{$contextSuffix}";
+                    return "曜日別活動紹介の支援案データがありません。";
                 }
 
-                return <<<PROMPT
+                $prompt = <<<PROMPT
 あなたは{$classroomName}の施設通信を作成しています。
 以下の曜日別の支援案（活動計画）を、「まだその曜日に参加していない生徒と保護者」に向けて、参加したくなるような魅力的な紹介文を作成してください。
 
@@ -363,48 +455,95 @@ class NewsletterController extends Controller
 - 「ぜひ○曜日も来てみてください」と思わせる内容
 - 各曜日300字程度
 - 「です・ます」調で丁寧かつ温かい表現
-- 専門用語は避け、分かりやすい言葉で
-{$contextSuffix}
+- 専門用語は避け、分かりやすい言葉で{$customInstructions}{$contextSuffix}
 
 文章のみを出力してください。
 PROMPT;
+                return $this->callAi($prompt);
 
+            // -----------------------------------------------------------------
+            // 行事の結果報告（報告期間の過去イベント＋イベント支援案）
+            // -----------------------------------------------------------------
+            case 'event_results':
+                $pastEvents = $classroomId
+                    ? Event::where('classroom_id', $classroomId)
+                        ->whereBetween('event_date', [$reportStart, $reportEnd])
+                        ->orderBy('event_date')
+                        ->get()
+                    : collect();
+
+                if ($pastEvents->isEmpty() && $eventPlans->isEmpty()) {
+                    return "報告期間中の行事はありません。";
+                }
+
+                $eventList = '';
+                foreach ($pastEvents as $e) {
+                    $eventList .= "・{$e->event_date->format('n/j')} {$e->event_name}";
+                    if ($e->staff_comment) $eventList .= "（{$e->staff_comment}）";
+                    $eventList .= "\n";
+                }
+
+                $eventPlanInfo = '';
+                foreach ($eventPlans as $p) {
+                    $eventPlanInfo .= "・{$p->activity_name}";
+                    if ($p->activity_purpose) $eventPlanInfo .= "（{$p->activity_purpose}）";
+                    $eventPlanInfo .= "\n";
+                }
+
+                $prompt = <<<PROMPT
+あなたは{$classroomName}の施設通信を作成しています。
+以下のデータを参考に、行事の結果報告を作成してください。
+
+【報告期間の行事】
+{$eventList}
+
+【イベント関連の支援案】
+{$eventPlanInfo}
+
+【要件】
+- 各行事について200〜300文字程度で報告
+- 子どもたちの反応や成長を具体的に
+- 保護者への感謝を忘れずに
+- 「です・ます」調で温かい表現{$customInstructions}{$contextSuffix}
+
+文章のみを出力してください。
+PROMPT;
+                return $this->callAi($prompt);
+
+            // -----------------------------------------------------------------
+            // 小学生・中学生の活動報告
+            // -----------------------------------------------------------------
             case 'elementary_report':
             case 'junior_report':
-                // 学年別活動報告 - 連絡帳データと支援案から生成
                 $gradeLabel = $section === 'elementary_report' ? '小学生' : '中学生・高校生';
 
-                $dailyRecords = DailyRecord::where('classroom_id', $classroomId)
-                    ->whereBetween('record_date', [$periodStart, $periodEnd])
-                    ->orderBy('record_date')
-                    ->get(['record_date', 'activity_name', 'common_activity']);
+                $dailyRecords = $classroomId
+                    ? DailyRecord::where('classroom_id', $classroomId)
+                        ->whereBetween('record_date', [$reportStart, $reportEnd])
+                        ->orderBy('record_date')
+                        ->get(['record_date', 'activity_name', 'common_activity'])
+                    : collect();
 
                 $activitySummary = '';
-                foreach ($dailyRecords as $record) {
-                    if ($record->common_activity) {
-                        $activitySummary .= "【{$record->record_date->format('Y-m-d')} {$record->activity_name}】\n{$record->common_activity}\n\n";
+                foreach ($dailyRecords as $r) {
+                    if ($r->common_activity) {
+                        $activitySummary .= "【{$r->record_date->format('Y-m-d')} {$r->activity_name}】\n{$r->common_activity}\n\n";
                     }
                 }
 
-                $supportPlans = ActivitySupportPlan::where('classroom_id', $classroomId)
-                    ->get(['activity_name', 'activity_purpose']);
                 $planInfo = '';
-                foreach ($supportPlans as $plan) {
-                    $planInfo .= "・{$plan->activity_name}";
-                    if ($plan->activity_purpose) $planInfo .= "（{$plan->activity_purpose}）";
+                foreach ($supportPlans as $p) {
+                    $planInfo .= "・{$p->activity_name}";
+                    if ($p->activity_purpose) $planInfo .= "（{$p->activity_purpose}）";
                     $planInfo .= "\n";
                 }
 
-                if (empty($activitySummary)) {
-                    return "{$year}年{$month}月号の「{$gradeLabel}の活動報告」を生成してください。活動記録がないため、一般的な内容で作成してください。{$contextSuffix}";
-                }
-
-                return <<<PROMPT
+                $prompt = <<<PROMPT
 あなたは{$classroomName}の施設通信を作成しています。
 以下のデータを参考に、{$gradeLabel}向けの活動報告を作成してください。
 
 【報告期間】
-{$periodStart->format('Y-m-d')} ～ {$periodEnd->format('Y-m-d')}
+{$reportStart->format('Y-m-d')} ～ {$reportEnd->format('Y-m-d')}
 
 【期間中の活動記録（連絡帳より）】
 {$activitySummary}
@@ -418,63 +557,97 @@ PROMPT;
 - 保護者が読んで嬉しくなるような温かい文章
 - 300〜500字程度
 - 「です・ます」調で丁寧な表現
-- 活動内容を箇条書きではなく、流れのある文章で
-{$contextSuffix}
+- 活動内容を箇条書きではなく、流れのある文章で{$customInstructions}{$contextSuffix}
 
 文章のみを出力してください（見出しは不要です）。
 PROMPT;
+                return $this->callAi($prompt);
 
-            case 'event_calendar':
-                // イベントカレンダー - 予定イベントから生成
-                $events = Event::where('classroom_id', $classroomId)
-                    ->where('event_date', '>=', $periodStart)
-                    ->where('event_date', '<=', $periodEnd)
-                    ->orderBy('event_date')
-                    ->get(['event_date', 'event_name']);
-
-                if ($events->isEmpty()) {
-                    return "{$year}年{$month}月号の「イベントカレンダー」を生成してください。予定イベントがありません。{$contextSuffix}";
-                }
-
-                $daysOfWeek = ['日', '月', '火', '水', '木', '金', '土'];
-                $calendar = '';
-                foreach ($events as $event) {
-                    $date = $event->event_date;
-                    $day = $date->format('j');
-                    $dayOfWeek = $daysOfWeek[$date->dayOfWeek];
-                    $calendar .= "{$day}日({$dayOfWeek}) {$event->event_name}\n";
-                }
-
-                return $calendar;
-
+            // -----------------------------------------------------------------
+            // 施設からのお願い（設定のデフォルト値を優先）
+            // -----------------------------------------------------------------
             case 'requests':
-                // 施設からのお願い - テンプレートまたはAI生成
-                return <<<PROMPT
+                $default = $settings['default_requests'] ?? '';
+                if (!empty($default)) {
+                    return $default;
+                }
+                $prompt = <<<PROMPT
 あなたは{$classroomName}の施設通信を作成しています。
 {$year}年{$month}月号の「施設からのお願い」セクションを作成してください。
-
-{$richContext}
 
 【要件】
 - 保護者への日常的なお願い事項（持ち物、送迎、連絡事項など）
 - 季節に応じた注意事項
 - 温かく丁寧な表現で、お願いとして伝える
 - 200〜300字程度
-- 「です・ます」調
-{$contextSuffix}
+- 「です・ます」調{$contextSuffix}
 
 文章のみを出力してください。
 PROMPT;
+                return $this->callAi($prompt);
+
+            // -----------------------------------------------------------------
+            // その他（設定のデフォルト値を優先）
+            // -----------------------------------------------------------------
+            case 'others':
+                $default = $settings['default_others'] ?? '';
+                if (!empty($default)) {
+                    return $default;
+                }
+                $prompt = <<<PROMPT
+あなたは{$classroomName}の施設通信を作成しています。
+{$year}年{$month}月号の「その他」セクションを作成してください。
+
+【要件】
+- 施設からの追加連絡事項
+- 季節に応じた情報
+- 温かく丁寧な表現
+- 100〜200字程度
+- 「です・ます」調{$contextSuffix}
+
+文章のみを出力してください。
+PROMPT;
+                return $this->callAi($prompt);
 
             default:
-                // 既存セクション（greeting, event_details, weekly_reports, event_results, others）
-                return "{$year}年{$month}月号のお便り「{$newsletter->title}」の"
-                    . "「{$sectionLabel}」セクションの文章を生成してください。\n\n"
-                    . ($richContext ? "{$richContext}\n\n" : '')
-                    . ($context ? "【スタッフからの補足情報】{$context}\n\n" : '')
-                    . "上記の情報を踏まえて適切な文章を生成してください。HTMLタグは使わず、プレーンテキストで出力してください。";
+                return '';
         }
     }
+
+    /**
+     * OpenAI API を呼び出す
+     */
+    private function callAi(string $prompt): string
+    {
+        try {
+            $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
+            $client = \OpenAI::client($apiKey);
+            $response = $client->chat()->create([
+                'model'    => 'gpt-4.1-mini',
+                'messages' => [
+                    [
+                        'role'    => 'system',
+                        'content' => 'あなたは個別支援教育の経験豊富な教員です。保護者に向けて温かく丁寧で、参加したくなるような魅力的な文章を書きます。専門用語は避け、分かりやすい表現を心がけます。',
+                    ],
+                    [
+                        'role'    => 'user',
+                        'content' => $prompt,
+                    ],
+                ],
+                'temperature'           => 0.7,
+                'max_completion_tokens' => 1500,
+            ]);
+
+            return $response->choices[0]->message->content ?? '';
+        } catch (\Exception $e) {
+            \Log::error('Newsletter AI generation failed: ' . $e->getMessage());
+            return "AI生成に失敗しました: {$e->getMessage()}";
+        }
+    }
+
+    // =========================================================================
+    // 配信・PDF
+    // =========================================================================
 
     /**
      * お便りを発行（公開）
@@ -516,11 +689,10 @@ PROMPT;
 
     /**
      * お便り PDF プレビューデータを返す（POST）
-     * 保存前のデータからPDFプレビュー用のデータを生成する
      */
     public function pdfPreview(Request $request): JsonResponse
     {
-        $validated = $request->validate([
+        $validated = $request->validate(array_merge([
             'year'              => 'required|integer|min:2020|max:2100',
             'month'             => 'required|integer|min:1|max:12',
             'title'             => 'required|string|max:255',
@@ -534,11 +706,10 @@ PROMPT;
             'others'            => 'nullable|string',
             'elementary_report' => 'nullable|string',
             'junior_report'     => 'nullable|string',
-        ]);
+        ], self::DATE_RULES));
 
         $user = $request->user();
 
-        // 保存せずにプレビュー用のデータを組み立て
         $previewData = array_merge($validated, [
             'id'            => null,
             'classroom_id'  => $user->classroom_id,
