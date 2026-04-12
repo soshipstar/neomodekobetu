@@ -164,6 +164,8 @@ export default function RenrakuchoPage() {
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isGenerating, setIsGenerating] = useState<number | null>(null);
   const [hiyariHattoCandidate, setHiyariHattoCandidate] = useState<HiyariHattoCandidate | null>(null);
+  // 連絡帳に自動添付する写真 (student_id -> photo list)
+  const [sendPhotos, setSendPhotos] = useState<Record<number, Array<{ id: number; url: string; file_size: number; activity_description: string | null }>>>({});
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
   const autoSaveRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -503,11 +505,30 @@ export default function RenrakuchoPage() {
           ...candidate,
         });
       }
+      // 日付+児童名が一致する写真を自動で添付候補としてセット
+      try {
+        const sr = await api.get(`/api/staff/renrakucho/${sendActivityId}/photos/suggest`, {
+          params: { student_id: studentId },
+        });
+        const suggested = sr.data?.data || [];
+        if (suggested.length > 0) {
+          setSendPhotos((prev) => ({ ...prev, [studentId]: suggested }));
+        }
+      } catch {
+        // 写真が無くてもエラーにしない
+      }
     } catch {
       toast.error('生成に失敗しました');
     } finally {
       setIsGenerating(null);
     }
+  };
+
+  const removeSendPhoto = (studentId: number, photoId: number) => {
+    setSendPhotos((prev) => ({
+      ...prev,
+      [studentId]: (prev[studentId] || []).filter((p) => p.id !== photoId),
+    }));
   };
 
   const handleRegenerateAll = async () => {
@@ -539,6 +560,7 @@ export default function RenrakuchoPage() {
       .map(([studentId, content]) => ({
         student_id: Number(studentId),
         content,
+        photo_ids: (sendPhotos[Number(studentId)] || []).map((p) => p.id),
       }));
 
     if (notesArray.length === 0) {
@@ -1192,6 +1214,36 @@ export default function RenrakuchoPage() {
                         isSent ? 'bg-[var(--neutral-background-3)]' : 'bg-[var(--neutral-background-1)]'
                       }`}
                     />
+
+                    {/* 自動添付された写真 (日付+児童名が一致) */}
+                    {sendPhotos[studentId] && sendPhotos[studentId].length > 0 && (
+                      <div className="mt-2">
+                        <p className="mb-1 text-xs text-[var(--neutral-foreground-3)]">
+                          <MaterialIcon name="photo_library" size={12} className="inline mr-1" />
+                          自動添付された写真 ({sendPhotos[studentId].length}枚 / 不要な画像は X で外せます)
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {sendPhotos[studentId].map((photo) => (
+                            <div key={photo.id} className="relative group">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={photo.url}
+                                alt={photo.activity_description ?? ''}
+                                className="h-16 w-16 rounded object-cover border border-[var(--neutral-stroke-2)]"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeSendPhoto(studentId, photo.id)}
+                                className="absolute -top-1 -right-1 rounded-full bg-[var(--status-danger-fg)] text-white p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="添付から外す"
+                              >
+                                <MaterialIcon name="close" size={12} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </CardBody>
                 </Card>
               );

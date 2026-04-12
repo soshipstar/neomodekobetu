@@ -12,16 +12,21 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import type { ChatMessage } from '@/types/chat';
+import { PhotoPickerModal, type PhotoOption } from '@/components/photos/PhotoPickerModal';
+import api from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 
 export default function StaffChatRoomPage() {
   const params = useParams();
   const router = useRouter();
   const roomId = Number(params.roomId);
   const { user } = useAuthStore();
+  const { toast } = useToast();
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [archivedMessages, setArchivedMessages] = useState<ChatMessage[]>([]);
   const [loadingArchived, setLoadingArchived] = useState(false);
+  const [photoPickerOpen, setPhotoPickerOpen] = useState(false);
 
   const {
     activeRoom,
@@ -64,6 +69,22 @@ export default function StaffChatRoomPage() {
 
   const handleSend = async (message: string, attachment?: File) => {
     await sendMessage(message, attachment);
+  };
+
+  // 事業所ライブラリから写真を選択して送信 (参照共有)
+  const handlePhotosSelected = async (photos: PhotoOption[]) => {
+    try {
+      for (const photo of photos) {
+        await api.post(`/api/staff/chat/rooms/${roomId}/messages`, {
+          classroom_photo_id: photo.id,
+          message: photo.activity_description ?? '',
+        });
+      }
+      toast(`${photos.length} 件の写真を送信しました`, 'success');
+      fetchMessages(roomId);
+    } catch {
+      toast('写真送信に失敗しました', 'error');
+    }
   };
 
   const handleLoadOlder = useCallback(async () => {
@@ -117,13 +138,23 @@ export default function StaffChatRoomPage() {
           アーカイブ
         </button>
         {activeRoom && (
-          <Link
-            href={`/staff/meetings?action=create&student_id=${activeRoom.student_id}&guardian_id=${activeRoom.guardian_id}`}
-          >
-            <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="event" size={16} />}>
-              面談予約
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPhotoPickerOpen(true)}
+              leftIcon={<MaterialIcon name="photo_library" size={16} />}
+            >
+              写真
             </Button>
-          </Link>
+            <Link
+              href={`/staff/meetings?action=create&student_id=${activeRoom.student_id}&guardian_id=${activeRoom.guardian_id}`}
+            >
+              <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="event" size={16} />}>
+                面談予約
+              </Button>
+            </Link>
+          </>
         )}
       </div>
 
@@ -170,6 +201,14 @@ export default function StaffChatRoomPage() {
         onSend={handleSend}
         isSending={isSending}
         disabled={!activeRoom}
+      />
+
+      {/* 事業所写真ピッカー */}
+      <PhotoPickerModal
+        isOpen={photoPickerOpen}
+        multiple={true}
+        onClose={() => setPhotoPickerOpen(false)}
+        onConfirm={handlePhotosSelected}
       />
     </div>
   );

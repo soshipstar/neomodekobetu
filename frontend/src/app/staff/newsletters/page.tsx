@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { format } from 'date-fns';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { PhotoPickerModal, type PhotoOption } from '@/components/photos/PhotoPickerModal';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -93,6 +94,7 @@ export default function NewslettersPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<NewsletterForm>(emptyForm());
   const [generatingSection, setGeneratingSection] = useState<string | null>(null);
+  const [photoPickerFor, setPhotoPickerFor] = useState<string | null>(null);
 
   const { data: newsletters = [], isLoading } = useQuery({
     queryKey: ['staff', 'newsletters'],
@@ -239,13 +241,20 @@ export default function NewslettersPage() {
             <div key={key}>
               <div className="mb-1 flex items-center justify-between">
                 <label className="text-sm font-medium text-[var(--neutral-foreground-2)]">{label}</label>
-                {editingId && ai && (
-                  <Button variant="ghost" size="sm" leftIcon={<MaterialIcon name="auto_awesome" size={14} />}
-                    onClick={() => handleAiGenerate(key)}
-                    isLoading={generatingSection === key} disabled={!!generatingSection}>
-                    AI生成
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="sm"
+                    leftIcon={<MaterialIcon name="photo_library" size={14} />}
+                    onClick={() => setPhotoPickerFor(key)}>
+                    写真を引用
                   </Button>
-                )}
+                  {editingId && ai && (
+                    <Button variant="ghost" size="sm" leftIcon={<MaterialIcon name="auto_awesome" size={14} />}
+                      onClick={() => handleAiGenerate(key)}
+                      isLoading={generatingSection === key} disabled={!!generatingSection}>
+                      AI生成
+                    </Button>
+                  )}
+                </div>
               </div>
               <textarea
                 value={form[key as keyof NewsletterForm] as string || ''}
@@ -254,6 +263,20 @@ export default function NewslettersPage() {
               />
             </div>
           ))}
+
+          {/* 写真引用ピッカー (セクション指定) */}
+          <PhotoPickerModal
+            isOpen={photoPickerFor !== null}
+            multiple={true}
+            onClose={() => setPhotoPickerFor(null)}
+            onConfirm={(photos: PhotoOption[]) => {
+              if (!photoPickerFor) return;
+              const current = (form[photoPickerFor as keyof NewsletterForm] as string) || '';
+              const imageMarkdown = photos.map((p) => `![${p.activity_description ?? '写真'}](${p.url})`).join('\n');
+              updateField(photoPickerFor, current + (current ? '\n\n' : '') + imageMarkdown);
+              setPhotoPickerFor(null);
+            }}
+          />
 
           {/* Actions */}
           <div className="sticky bottom-0 flex items-center justify-between border-t border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] pt-3">
