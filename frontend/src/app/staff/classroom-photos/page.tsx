@@ -316,8 +316,17 @@ function PhotoUploadModal({
   const [file, setFile] = useState<File | null>(null);
   const [activityDescription, setActivityDescription] = useState('');
   const [activityDate, setActivityDate] = useState(new Date().toISOString().slice(0, 10));
+  const [gradeLevel, setGradeLevel] = useState('');
+  const [activityTagId, setActivityTagId] = useState('');
+  const [tags, setTags] = useState<{ id: number; tag_name: string }[]>([]);
   const [selectedStudents, setSelectedStudents] = useState<Set<number>>(new Set());
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    api.get('/api/staff/tag-settings').then((res) => {
+      setTags(Array.isArray(res.data?.data) ? res.data.data : []);
+    }).catch(() => {});
+  }, []);
 
   const handleSubmit = async () => {
     if (!file) {
@@ -331,6 +340,8 @@ function PhotoUploadModal({
       formData.append('classroom_id', String(classroomId));
       formData.append('activity_description', activityDescription);
       formData.append('activity_date', activityDate);
+      if (gradeLevel) formData.append('grade_level', gradeLevel);
+      if (activityTagId) formData.append('activity_tag_id', activityTagId);
       Array.from(selectedStudents).forEach((id) => formData.append('student_ids[]', String(id)));
       const res = await api.post('/api/staff/classroom-photos', formData);
       toast(res.data.message || 'アップロードしました', 'success');
@@ -390,6 +401,30 @@ function PhotoUploadModal({
           value={activityDate}
           onChange={(e) => setActivityDate(e.target.value)}
         />
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="mb-1 block text-sm font-medium">学年</label>
+            <select value={gradeLevel} onChange={(e) => setGradeLevel(e.target.value)}
+              className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm">
+              <option value="">未指定</option>
+              <option value="preschool">未就学</option>
+              <option value="elementary">小学生</option>
+              <option value="junior_high">中学生</option>
+              <option value="high_school">高校生</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium">活動タグ</label>
+            <select value={activityTagId} onChange={(e) => setActivityTagId(e.target.value)}
+              className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm">
+              <option value="">未指定</option>
+              {tags.map((t) => (
+                <option key={t.id} value={t.id}>{t.tag_name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
 
         <div>
           <label className="mb-1 block text-sm font-medium">写った児童 (複数選択可)</label>

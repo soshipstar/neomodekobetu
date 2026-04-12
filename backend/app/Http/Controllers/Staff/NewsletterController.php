@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivitySupportPlan;
+use App\Models\ClassroomPhoto;
 use App\Models\DailyRecord;
 use App\Models\Event;
 use App\Models\Newsletter;
@@ -301,7 +302,7 @@ class NewsletterController extends Controller
 
 文章のみを出力してください。
 PROMPT;
-                return $this->callAi($prompt);
+                $text = $this->callAi($prompt); break;
 
             // -----------------------------------------------------------------
             // イベントカレンダー（AI不要、予定期間のイベントを一覧化）
@@ -315,7 +316,7 @@ PROMPT;
                     : collect();
 
                 if ($events->isEmpty()) {
-                    return "予定イベントはありません。";
+                    $text = "予定イベントはありません。"; break;
                 }
 
                 $daysOfWeek = ['日', '月', '火', '水', '木', '金', '土'];
@@ -324,7 +325,7 @@ PROMPT;
                     $d = $event->event_date;
                     $calendar .= "{$d->format('j')}日({$daysOfWeek[$d->dayOfWeek]}) {$event->event_name}\n";
                 }
-                return $calendar;
+                $text = $calendar; break;
 
             // -----------------------------------------------------------------
             // 行事の詳細（予定期間のイベント詳細を生成）
@@ -338,7 +339,7 @@ PROMPT;
                     : collect();
 
                 if ($events->isEmpty()) {
-                    return "今月の行事予定はありません。";
+                    $text = "今月の行事予定はありません。"; break;
                 }
 
                 $eventList = '';
@@ -363,7 +364,7 @@ PROMPT;
 
 文章のみを出力してください。
 PROMPT;
-                return $this->callAi($prompt);
+                $text = $this->callAi($prompt); break;
 
             // -----------------------------------------------------------------
             // 活動の様子（報告期間の連絡帳＋通常支援案ベース）
@@ -410,7 +411,7 @@ PROMPT;
 
 文章のみを出力してください。
 PROMPT;
-                return $this->callAi($prompt);
+                $text = $this->callAi($prompt); break;
 
             // -----------------------------------------------------------------
             // 曜日別活動紹介（支援案を曜日別にグループ化）
@@ -440,7 +441,7 @@ PROMPT;
                 }
 
                 if (empty($plansList)) {
-                    return "曜日別活動紹介の支援案データがありません。";
+                    $text = "曜日別活動紹介の支援案データがありません。"; break;
                 }
 
                 $prompt = <<<PROMPT
@@ -459,7 +460,7 @@ PROMPT;
 
 文章のみを出力してください。
 PROMPT;
-                return $this->callAi($prompt);
+                $text = $this->callAi($prompt); break;
 
             // -----------------------------------------------------------------
             // 行事の結果報告（報告期間の過去イベント＋イベント支援案）
@@ -473,7 +474,7 @@ PROMPT;
                     : collect();
 
                 if ($pastEvents->isEmpty() && $eventPlans->isEmpty()) {
-                    return "報告期間中の行事はありません。";
+                    $text = "報告期間中の行事はありません。"; break;
                 }
 
                 $eventList = '';
@@ -508,7 +509,7 @@ PROMPT;
 
 文章のみを出力してください。
 PROMPT;
-                return $this->callAi($prompt);
+                $text = $this->callAi($prompt); break;
 
             // -----------------------------------------------------------------
             // 小学生・中学生の活動報告
@@ -561,7 +562,7 @@ PROMPT;
 
 文章のみを出力してください（見出しは不要です）。
 PROMPT;
-                return $this->callAi($prompt);
+                $text = $this->callAi($prompt); break;
 
             // -----------------------------------------------------------------
             // 施設からのお願い（設定のデフォルト値を優先）
@@ -569,7 +570,7 @@ PROMPT;
             case 'requests':
                 $default = $settings['default_requests'] ?? '';
                 if (!empty($default)) {
-                    return $default;
+                    $text = $default; break;
                 }
                 $prompt = <<<PROMPT
 あなたは{$classroomName}の施設通信を作成しています。
@@ -584,7 +585,7 @@ PROMPT;
 
 文章のみを出力してください。
 PROMPT;
-                return $this->callAi($prompt);
+                $text = $this->callAi($prompt); break;
 
             // -----------------------------------------------------------------
             // その他（設定のデフォルト値を優先）
@@ -592,7 +593,7 @@ PROMPT;
             case 'others':
                 $default = $settings['default_others'] ?? '';
                 if (!empty($default)) {
-                    return $default;
+                    $text = $default; break;
                 }
                 $prompt = <<<PROMPT
 あなたは{$classroomName}の施設通信を作成しています。
@@ -607,11 +608,20 @@ PROMPT;
 
 文章のみを出力してください。
 PROMPT;
-                return $this->callAi($prompt);
+                $text = $this->callAi($prompt); break;
 
             default:
-                return '';
+                $text = '';
+                break;
         }
+
+        // 該当セクションに写真を自動引用（カレンダー・お願い事項を除く）
+        $noPhotoSections = ['event_calendar', 'requests'];
+        if (!in_array($section, $noPhotoSections)) {
+            $text .= $this->findMatchingPhotos($section, $newsletter);
+        }
+
+        return $text;
     }
 
     /**
@@ -646,6 +656,60 @@ PROMPT;
             \Log::error('Newsletter AI generation failed: ' . $e->getMessage());
             return "AI生成に失敗しました: {$e->getMessage()}";
         }
+    }
+
+    /**
+     * セクションに該当する写真を検索し、マークダウン画像として返す
+     */
+    private function findMatchingPhotos(string $section, Newsletter $newsletter): string
+    {
+        $classroomId = $newsletter->classroom_id;
+        if (!$classroomId) return '';
+
+        $reportStart = $newsletter->report_start_date
+            ?? Carbon::create($newsletter->year, $newsletter->month, 1)->startOfMonth();
+        $reportEnd = $newsletter->report_end_date
+            ?? Carbon::create($newsletter->year, $newsletter->month, 1)->endOfMonth();
+
+        $query = ClassroomPhoto::where('classroom_id', $classroomId)
+            ->whereBetween('activity_date', [$reportStart, $reportEnd])
+            ->orderBy('activity_date');
+
+        // セクション別のフィルタ条件
+        switch ($section) {
+            case 'elementary_report':
+                $query->where('grade_level', 'elementary');
+                break;
+            case 'junior_report':
+                $query->whereIn('grade_level', ['junior_high', 'high_school']);
+                break;
+            case 'weekly_intro':
+                // 曜日別なので全写真を対象（day_of_weekで後続フィルタ可能）
+                break;
+            case 'event_details':
+            case 'event_results':
+                // イベントタグの写真を優先（タグ名に「イベント」を含む）
+                $query->where(function ($q) {
+                    $q->whereHas('activityTag', function ($tq) {
+                        $tq->where('tag_name', 'like', '%イベント%');
+                    })->orWhereNull('activity_tag_id');
+                });
+                break;
+            default:
+                // weekly_reports, greeting, others → 期間内の全写真
+                break;
+        }
+
+        $photos = $query->limit(4)->get();
+        if ($photos->isEmpty()) return '';
+
+        $lines = [];
+        foreach ($photos as $p) {
+            $alt = $p->activity_description ?? '活動写真';
+            $lines[] = "![{$alt}]({$p->url})";
+        }
+
+        return "\n\n" . implode("\n", $lines);
     }
 
     // =========================================================================

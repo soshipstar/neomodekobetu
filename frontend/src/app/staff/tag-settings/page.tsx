@@ -86,7 +86,7 @@ export default function TagSettingsPage() {
   };
 
   const handleSave = () => {
-    const nonEmpty = localTags.filter((t) => t.trim() !== '');
+    const nonEmpty = localTags.filter((t) => t && t.trim() !== '');
     if (nonEmpty.length === 0) {
       toast.error('タグを1つ以上入力してください');
       return;

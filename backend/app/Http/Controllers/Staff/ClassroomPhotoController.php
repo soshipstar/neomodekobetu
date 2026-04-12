@@ -92,6 +92,8 @@ class ClassroomPhotoController extends Controller
             'classroom_id' => 'required|integer|exists:classrooms,id',
             'activity_description' => 'nullable|string|max:2000',
             'activity_date' => 'nullable|date',
+            'grade_level' => 'nullable|string|in:preschool,elementary,junior_high,high_school',
+            'activity_tag_id' => 'nullable|integer|exists:classroom_tags,id',
             'student_ids' => 'nullable|array',
             'student_ids.*' => 'integer|exists:students,id',
         ]);
@@ -153,6 +155,13 @@ class ClassroomPhotoController extends Controller
         @unlink($tmpDest);
 
         $photo = DB::transaction(function () use ($user, $validated, $compressed, $relPath) {
+            // 曜日を自動推定
+            $dayOfWeek = null;
+            if (!empty($validated['activity_date'])) {
+                $dayMapping = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                $dayOfWeek = $dayMapping[\Carbon\Carbon::parse($validated['activity_date'])->dayOfWeek];
+            }
+
             $photo = ClassroomPhoto::create([
                 'classroom_id' => $validated['classroom_id'],
                 'uploader_id' => $user->id,
@@ -163,6 +172,9 @@ class ClassroomPhotoController extends Controller
                 'height' => $compressed['height'],
                 'activity_description' => $validated['activity_description'] ?? null,
                 'activity_date' => $validated['activity_date'] ?? null,
+                'day_of_week' => $dayOfWeek,
+                'grade_level' => $validated['grade_level'] ?? null,
+                'activity_tag_id' => $validated['activity_tag_id'] ?? null,
             ]);
             if (!empty($validated['student_ids'])) {
                 $photo->students()->sync($validated['student_ids']);
@@ -201,11 +213,19 @@ class ClassroomPhotoController extends Controller
         $validated = $request->validate([
             'activity_description' => 'nullable|string|max:2000',
             'activity_date' => 'nullable|date',
+            'grade_level' => 'nullable|string|in:preschool,elementary,junior_high,high_school',
+            'activity_tag_id' => 'nullable|integer|exists:classroom_tags,id',
             'student_ids' => 'nullable|array',
             'student_ids.*' => 'integer|exists:students,id',
         ]);
 
-        $photo->update(collect($validated)->except('student_ids')->toArray());
+        // 曜日を自動推定
+        $updateData = collect($validated)->except('student_ids')->toArray();
+        if (array_key_exists('activity_date', $updateData) && $updateData['activity_date']) {
+            $dayMapping = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            $updateData['day_of_week'] = $dayMapping[\Carbon\Carbon::parse($updateData['activity_date'])->dayOfWeek];
+        }
+        $photo->update($updateData);
         if (array_key_exists('student_ids', $validated)) {
             $photo->students()->sync($validated['student_ids'] ?? []);
         }

@@ -33,6 +33,9 @@ class ClassroomPhoto extends Model
         'height',
         'activity_description',
         'activity_date',
+        'day_of_week',
+        'grade_level',
+        'activity_tag_id',
     ];
 
     protected function casts(): array
@@ -52,6 +55,11 @@ class ClassroomPhoto extends Model
     public function uploader(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploader_id');
+    }
+
+    public function activityTag(): BelongsTo
+    {
+        return $this->belongsTo(ClassroomTag::class, 'activity_tag_id');
     }
 
     public function students(): BelongsToMany
