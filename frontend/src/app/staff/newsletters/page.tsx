@@ -472,7 +472,7 @@ export default function NewslettersPage() {
                       try {
                         const res = await api.get(`/api/staff/newsletters/${editingId}/word`, { responseType: 'blob' });
                         const url = URL.createObjectURL(res.data);
-                        const a = document.createElement('a'); a.href = url; a.download = `${form.title}.doc`; a.click(); URL.revokeObjectURL(url);
+                        const a = document.createElement('a'); a.href = url; a.download = `${form.title}.html`; a.click(); URL.revokeObjectURL(url);
                       } catch { toast.error('Word出力に失敗しました'); }
                     }}>
                     Word

@@ -776,10 +776,10 @@ PROMPT;
             'classroom'  => $newsletter->classroom,
         ])->render();
 
-        $filename = $newsletter->year . '年' . $newsletter->month . '月_' . ($newsletter->classroom?->classroom_name ?? '施設') . '通信.doc';
+        $filename = $newsletter->year . '年' . $newsletter->month . '月_' . ($newsletter->classroom?->classroom_name ?? '施設') . '通信.html';
 
         return response($html)
-            ->header('Content-Type', 'application/msword; charset=UTF-8')
+            ->header('Content-Type', 'text/html; charset=UTF-8')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
             ->header('Cache-Control', 'max-age=0');
     }
