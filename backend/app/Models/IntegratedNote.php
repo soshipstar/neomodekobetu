@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class IntegratedNote extends Model
 {
@@ -41,5 +42,16 @@ class IntegratedNote extends Model
     public function dailyRecord(): BelongsTo
     {
         return $this->belongsTo(DailyRecord::class, 'daily_record_id');
+    }
+
+    /**
+     * 連絡帳に添付された写真 (classroom_photos への参照)
+     * @return BelongsToMany<ClassroomPhoto>
+     */
+    public function photos(): BelongsToMany
+    {
+        return $this->belongsToMany(ClassroomPhoto::class, 'integrated_note_photos', 'integrated_note_id', 'classroom_photo_id')
+            ->withPivot('sort_order')
+            ->orderBy('integrated_note_photos.sort_order');
     }
 }
