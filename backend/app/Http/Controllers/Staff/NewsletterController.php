@@ -620,7 +620,10 @@ PROMPT;
     private function callAi(string $prompt): string
     {
         try {
-            $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
+            $apiKey = config('services.openai.api_key');
+            if (!$apiKey) {
+                return 'OpenAI APIキーが設定されていません。';
+            }
             $client = \OpenAI::client($apiKey);
             $response = $client->chat()->create([
                 'model'    => 'gpt-4.1-mini',

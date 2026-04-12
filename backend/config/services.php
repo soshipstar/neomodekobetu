@@ -31,6 +31,10 @@ return [
         'subject' => env('VAPID_SUBJECT', 'mailto:admin@kiduri.xyz'),
     ],
 
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+    ],
+
     'external_api' => [
         'key' => env('EXTERNAL_API_KEY'),
     ],
