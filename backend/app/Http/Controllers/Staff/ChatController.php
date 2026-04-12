@@ -189,8 +189,9 @@ class ChatController extends Controller
         }
 
         $request->validate([
-            'message'    => 'required_without:attachment|nullable|string|max:5000',
+            'message'    => 'required_without_all:attachment,classroom_photo_id|nullable|string|max:5000',
             'attachment' => 'nullable|file|max:3072', // 3MB
+            'classroom_photo_id' => 'nullable|integer|exists:classroom_photos,id',
         ]);
 
         $attachmentPath = null;
@@ -205,6 +206,18 @@ class ChatController extends Controller
             $attachmentName = $file->getClientOriginalName();
             $attachmentSize = $file->getSize();
             $attachmentMime = $file->getMimeType();
+        } elseif ($request->filled('classroom_photo_id')) {
+            // 事業所写真ライブラリから参照 (新たにコピーせず同じファイルを指す)
+            $photo = \App\Models\ClassroomPhoto::find($request->classroom_photo_id);
+            if ($photo) {
+                // アクセス可能教室の写真であることを確認
+                if (in_array($photo->classroom_id, $user->accessibleClassroomIds(), true)) {
+                    $attachmentPath = $photo->file_path;
+                    $attachmentName = basename($photo->file_path);
+                    $attachmentSize = $photo->file_size;
+                    $attachmentMime = $photo->mime;
+                }
+            }
         }
 
         $message = DB::transaction(function () use ($request, $user, $room, $attachmentPath, $attachmentName, $attachmentSize, $attachmentMime) {

@@ -433,7 +433,7 @@ class RenrakuchoController extends Controller
         }
 
         $notes = IntegratedNote::where('daily_record_id', $record->id)
-            ->with('student:id,student_name,grade_level')
+            ->with(['student:id,student_name,grade_level', 'photos'])
             ->orderBy('guardian_confirmed')
             ->get();
 
@@ -478,9 +478,11 @@ class RenrakuchoController extends Controller
         }
 
         $validated = $request->validate([
-            'notes'              => 'required|array|min:1',
-            'notes.*.student_id' => 'required|exists:students,id',
-            'notes.*.content'    => 'required|string',
+            'notes'               => 'required|array|min:1',
+            'notes.*.student_id'  => 'required|exists:students,id',
+            'notes.*.content'     => 'required|string',
+            'notes.*.photo_ids'   => 'nullable|array',
+            'notes.*.photo_ids.*' => 'integer|exists:classroom_photos,id',
         ]);
 
         $sentCount = 0;
@@ -513,6 +515,7 @@ class RenrakuchoController extends Controller
                         'sent_at'            => now(),
                     ]);
                     $integratedNoteId = $existing->id;
+                    $integratedNote = $existing;
                 } else {
                     $note = IntegratedNote::create([
                         'daily_record_id'    => $record->id,
@@ -522,6 +525,23 @@ class RenrakuchoController extends Controller
                         'sent_at'            => now(),
                     ]);
                     $integratedNoteId = $note->id;
+                    $integratedNote = $note;
+                }
+
+                // 添付写真を連絡帳にリンク (参照のみ)
+                if (!empty($noteData['photo_ids'])) {
+                    // 指定された写真が同じ事業所のものか確認して attach
+                    $validPhotoIds = \App\Models\ClassroomPhoto::whereIn('id', $noteData['photo_ids'])
+                        ->where('classroom_id', $record->classroom_id)
+                        ->pluck('id')
+                        ->all();
+                    if (!empty($validPhotoIds)) {
+                        $syncData = [];
+                        foreach (array_values($validPhotoIds) as $idx => $pid) {
+                            $syncData[$pid] = ['sort_order' => $idx];
+                        }
+                        $integratedNote->photos()->sync($syncData);
+                    }
                 }
 
                 if ($student->guardian_id) {
@@ -727,6 +747,37 @@ class RenrakuchoController extends Controller
                 'message' => '観察記録をまとめました（AI接続エラーのため簡易統合）。',
             ]);
         }
+    }
+
+    /**
+     * 連絡帳の日付と児童名で一致する写真を自動で提案する。
+     *
+     * URL: GET /api/staff/renrakucho/{record}/photos/suggest?student_id=X
+     * 条件:
+     *  - classroom_photos.classroom_id = record.classroom_id
+     *  - classroom_photos.activity_date = record.record_date
+     *  - classroom_photo_student に student_id が含まれる
+     *
+     * スタッフはこの結果を連絡帳送信画面に自動で載せ、不要な写真を
+     * X ボタンで外してから送信する想定。
+     */
+    public function suggestPhotos(Request $request, DailyRecord $record): JsonResponse
+    {
+        $validated = $request->validate([
+            'student_id' => 'required|integer|exists:students,id',
+        ]);
+
+        $photos = \App\Models\ClassroomPhoto::with(['students:id,student_name'])
+            ->where('classroom_id', $record->classroom_id)
+            ->whereDate('activity_date', $record->record_date)
+            ->whereHas('students', fn ($q) => $q->where('students.id', $validated['student_id']))
+            ->orderByDesc('created_at')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $photos,
+        ]);
     }
 
     /**

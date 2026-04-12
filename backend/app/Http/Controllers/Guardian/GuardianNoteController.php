@@ -22,6 +22,7 @@ class GuardianNoteController extends Controller
             ->with([
                 'student:id,student_name',
                 'dailyRecord:id,record_date,activity_name',
+                'photos',
             ]);
 
         if ($request->filled('student_id')) {

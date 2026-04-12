@@ -233,6 +233,15 @@ Route::prefix('staff')
         Route::post('/renrakucho/{record}/save-draft', [App\Http\Controllers\Staff\RenrakuchoController::class, 'saveDraft']);
         Route::post('/renrakucho/{record}/regenerate-integrated', [App\Http\Controllers\Staff\RenrakuchoController::class, 'regenerateIntegrated']);
         Route::get('/renrakucho/{record}/view-integrated', [App\Http\Controllers\Staff\RenrakuchoController::class, 'viewIntegrated']);
+        Route::get('/renrakucho/{record}/photos/suggest', [App\Http\Controllers\Staff\RenrakuchoController::class, 'suggestPhotos']);
+
+        // 事業所写真ライブラリ
+        Route::get('/classroom-photos', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'index']);
+        Route::get('/classroom-photos/storage-usage', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'storageUsage']);
+        Route::post('/classroom-photos', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'store']);
+        Route::get('/classroom-photos/{photo}', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'show']);
+        Route::put('/classroom-photos/{photo}', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'update']);
+        Route::delete('/classroom-photos/{photo}', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'destroy']);
 
         // ヒヤリハット記録
         Route::get('/hiyari-hatto', [App\Http\Controllers\Staff\HiyariHattoController::class, 'index']);
