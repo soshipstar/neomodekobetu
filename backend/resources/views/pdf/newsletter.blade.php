@@ -208,16 +208,22 @@
     @php
         $classroomName = $classroom->classroom_name ?? '施設';
 
-        // マークダウン画像を <img> タグに変換
+        // マークダウン画像を <img> タグに変換してからテキストをエスケープ
         $renderContent = function ($text) {
             if (!$text) return '';
+            // 先に画像マークダウンを抽出してプレースホルダーに置換
+            $images = [];
+            $text = preg_replace_callback('/!\[([^\]]*)\]\(([^)]+)\)/', function ($m) use (&$images) {
+                $key = '{{IMG_' . count($images) . '}}';
+                $images[$key] = '<img src="' . htmlspecialchars($m[2], ENT_QUOTES) . '" alt="' . htmlspecialchars($m[1], ENT_QUOTES) . '" style="max-width:100%;height:auto;margin:4px 0;border-radius:4px;">';
+                return $key;
+            }, $text);
+            // テキスト部分をエスケープ
             $escaped = e($text);
-            // ![alt](url) → <img>
-            $escaped = preg_replace(
-                '/!\[([^\]]*)\]\(([^)]+)\)/',
-                '<img src="$2" alt="$1" style="max-width:100%;height:auto;margin:4px 0;border-radius:4px;">',
-                $escaped
-            );
+            // プレースホルダーを <img> タグに戻す
+            foreach ($images as $key => $img) {
+                $escaped = str_replace(e($key), $img, $escaped);
+            }
             return nl2br($escaped);
         };
 

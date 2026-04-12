@@ -42,12 +42,16 @@
     $classroomName = $classroom->classroom_name ?? '施設';
     $renderContent = function ($text) {
         if (!$text) return '';
+        $images = [];
+        $text = preg_replace_callback('/!\[([^\]]*)\]\(([^)]+)\)/', function ($m) use (&$images) {
+            $key = '{{IMG_' . count($images) . '}}';
+            $images[$key] = '<img src="' . htmlspecialchars($m[2], ENT_QUOTES) . '" alt="' . htmlspecialchars($m[1], ENT_QUOTES) . '" style="max-width:200px;height:auto;">';
+            return $key;
+        }, $text);
         $escaped = e($text);
-        $escaped = preg_replace(
-            '/!\[([^\]]*)\]\(([^)]+)\)/',
-            '<img src="$2" alt="$1" style="max-width:200px;height:auto;">',
-            $escaped
-        );
+        foreach ($images as $key => $img) {
+            $escaped = str_replace(e($key), $img, $escaped);
+        }
         return nl2br($escaped);
     };
 @endphp

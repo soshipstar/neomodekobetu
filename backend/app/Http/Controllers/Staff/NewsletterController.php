@@ -193,8 +193,9 @@ class NewsletterController extends Controller
         ];
 
         $result = [];
+        $usedPhotoIds = [];
         foreach ($sections as $section) {
-            $result[$section] = $this->generateSection($section, $newsletter, $context, $settings);
+            $result[$section] = $this->generateSection($section, $newsletter, $context, $settings, $usedPhotoIds);
         }
 
         // DB にも保存
@@ -239,7 +240,7 @@ class NewsletterController extends Controller
     /**
      * 1 セクションを生成
      */
-    private function generateSection(string $section, Newsletter $newsletter, string $context, array $settings): string
+    private function generateSection(string $section, Newsletter $newsletter, string $context, array $settings, array &$usedPhotoIds = []): string
     {
         $classroomId = $newsletter->classroom_id;
         $newsletter->loadMissing('classroom');
@@ -618,7 +619,7 @@ PROMPT;
         // 該当セクションに写真を自動引用（カレンダー・お願い事項を除く）
         $noPhotoSections = ['event_calendar', 'requests'];
         if (!in_array($section, $noPhotoSections)) {
-            $text .= $this->findMatchingPhotos($section, $newsletter);
+            $text .= $this->findMatchingPhotos($section, $newsletter, $usedPhotoIds);
         }
 
         return $text;
@@ -659,9 +660,11 @@ PROMPT;
     }
 
     /**
-     * セクションに該当する写真を検索し、マークダウン画像として返す
+     * セクションに該当する写真を検索し、マークダウン画像として返す。
+     * 同じ写真が複数セクションに重複しないよう $usedPhotoIds で管理。
+     * 1セクションあたり最大3枚。
      */
-    private function findMatchingPhotos(string $section, Newsletter $newsletter): string
+    private function findMatchingPhotos(string $section, Newsletter $newsletter, array &$usedPhotoIds = []): string
     {
         $classroomId = $newsletter->classroom_id;
         if (!$classroomId) return '';
@@ -675,6 +678,11 @@ PROMPT;
             ->whereBetween('activity_date', [$reportStart, $reportEnd])
             ->orderBy('activity_date');
 
+        // 既に使用済みの写真を除外
+        if (!empty($usedPhotoIds)) {
+            $query->whereNotIn('id', $usedPhotoIds);
+        }
+
         // セクション別のフィルタ条件
         switch ($section) {
             case 'elementary_report':
@@ -684,11 +692,9 @@ PROMPT;
                 $query->whereIn('grade_level', ['junior_high', 'high_school']);
                 break;
             case 'weekly_intro':
-                // 曜日別なので全写真を対象（day_of_weekで後続フィルタ可能）
                 break;
             case 'event_details':
             case 'event_results':
-                // イベントタグの写真を優先（タグ名に「イベント」を含む）
                 $query->where(function ($q) {
                     $q->whereHas('activityTag', function ($tq) {
                         $tq->where('tag_name', 'like', '%イベント%');
@@ -696,12 +702,16 @@ PROMPT;
                 });
                 break;
             default:
-                // weekly_reports, greeting, others → 期間内の全写真
                 break;
         }
 
-        $photos = $query->limit(4)->get();
+        $photos = $query->limit(3)->get();
         if ($photos->isEmpty()) return '';
+
+        // 使用済みIDに追加
+        foreach ($photos as $p) {
+            $usedPhotoIds[] = $p->id;
+        }
 
         $lines = [];
         foreach ($photos as $p) {
