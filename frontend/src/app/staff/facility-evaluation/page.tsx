@@ -127,7 +127,8 @@ export default function FacilityEvaluationPage() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => { fetchPeriods(); }, [fetchPeriods]);
 
@@ -439,7 +440,8 @@ function StaffEvaluationForm({ period, onBack }: { period: Period; onBack: () =>
         setLoading(false);
       }
     })();
-  }, [period.id, toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period.id]);
 
   const handleSave = async (submit: boolean) => {
     if (!data) return;
@@ -627,7 +629,8 @@ function ResponseStatusView({ period, isAdmin = false, onBack }: { period: Perio
         setLoading(false);
       }
     })();
-  }, [period.id, toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period.id]);
 
   if (loading) {
     return (
@@ -1008,7 +1011,8 @@ function SummaryView({
     } finally {
       setLoading(false);
     }
-  }, [period.id, toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period.id]);
 
   useEffect(() => { fetchSummary(); }, [fetchSummary]);
 
@@ -1191,7 +1195,8 @@ function SelfEvaluationView({
     } finally {
       setLoading(false);
     }
-  }, [period.id, toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period.id]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 

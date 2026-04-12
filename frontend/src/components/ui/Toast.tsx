@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
@@ -57,13 +57,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     [removeToast]
   );
 
-  const contextValue: ToastContextType = {
+  const contextValue: ToastContextType = useMemo(() => ({
     toast: addToast,
-    success: (msg) => addToast(msg, 'success'),
-    error: (msg) => addToast(msg, 'error'),
-    info: (msg) => addToast(msg, 'info'),
-    warning: (msg) => addToast(msg, 'warning'),
-  };
+    success: (msg: string) => addToast(msg, 'success'),
+    error: (msg: string) => addToast(msg, 'error'),
+    info: (msg: string) => addToast(msg, 'info'),
+    warning: (msg: string) => addToast(msg, 'warning'),
+  }), [addToast]);
 
   return (
     <ToastContext.Provider value={contextValue}>
