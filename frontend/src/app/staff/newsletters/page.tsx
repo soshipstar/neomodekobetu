@@ -408,6 +408,29 @@ export default function NewslettersPage() {
                 onChange={(e) => updateField(key, e.target.value)}
                 className={inputCls} rows={4}
               />
+              {/* 挿入された写真のプレビュー */}
+              {(() => {
+                const text = (form[key as keyof NewsletterForm] as string) || '';
+                const images = [...text.matchAll(/!\[([^\]]*)\]\(([^)]+)\)/g)];
+                if (images.length === 0) return null;
+                return (
+                  <div className="mt-1.5 flex flex-wrap gap-2">
+                    {images.map(([, alt, url], i) => (
+                      <div key={i} className="relative group">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={url} alt={alt} className="h-16 w-16 rounded border border-[var(--neutral-stroke-2)] object-cover" />
+                        <span className="absolute -top-1 -right-1 hidden group-hover:flex items-center justify-center w-4 h-4 rounded-full bg-[var(--status-danger-fg)] text-white text-[8px] cursor-pointer"
+                          onClick={() => {
+                            const current = (form[key as keyof NewsletterForm] as string) || '';
+                            updateField(key, current.replace(`![${alt}](${url})`, '').replace(/\n{3,}/g, '\n\n').trim());
+                          }}>
+                          &times;
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           ))}
 

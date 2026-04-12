@@ -43,7 +43,7 @@ async function main() {
   });
 
   const page = await browser.newPage();
-  await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
+  await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
   const pdfBuffer = await page.pdf({
     format,
