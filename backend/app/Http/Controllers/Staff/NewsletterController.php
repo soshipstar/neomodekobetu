@@ -306,7 +306,7 @@ PROMPT;
                 $text = $this->callAi($prompt); break;
 
             // -----------------------------------------------------------------
-            // イベントカレンダー（AI不要、予定期間のイベントを一覧化）
+            // イベントカレンダー（AI不要、カレンダー表＋イベント一覧）
             // -----------------------------------------------------------------
             case 'event_calendar':
                 $events = $classroomId
@@ -316,17 +316,8 @@ PROMPT;
                         ->get(['event_date', 'event_name'])
                     : collect();
 
-                if ($events->isEmpty()) {
-                    $text = "予定イベントはありません。"; break;
-                }
-
-                $daysOfWeek = ['日', '月', '火', '水', '木', '金', '土'];
-                $calendar = '';
-                foreach ($events as $event) {
-                    $d = $event->event_date;
-                    $calendar .= "{$d->format('j')}日({$daysOfWeek[$d->dayOfWeek]}) {$event->event_name}\n";
-                }
-                $text = $calendar; break;
+                $text = $this->buildCalendarTable($year, $month, $events);
+                break;
 
             // -----------------------------------------------------------------
             // 行事の詳細（予定期間のイベント詳細を生成）
@@ -623,6 +614,121 @@ PROMPT;
         }
 
         return $text;
+    }
+
+    /**
+     * カレンダー表を生成（旧アプリ準拠のテキスト形式）
+     */
+    private function buildCalendarTable(int $year, int $month, $events): string
+    {
+        $daysOfWeek = ['日', '月', '火', '水', '木', '金', '土'];
+
+        // イベントを日付でインデックス化
+        $eventsByDay = [];
+        foreach ($events as $event) {
+            $day = (int) $event->event_date->format('j');
+            $eventsByDay[$day][] = $event->event_name;
+        }
+
+        // 月の情報
+        $firstDay = Carbon::create($year, $month, 1);
+        $daysInMonth = $firstDay->daysInMonth;
+        $startWeekday = $firstDay->dayOfWeek; // 0=Sun
+
+        // 祝日（簡易版）
+        $holidays = $this->getJapaneseHolidays($year, $month);
+
+        // テキスト形式のカレンダー表を生成
+        $table = "【{$year}年{$month}月のカレンダー】\n\n";
+        $table .= "┌────┬────┬────┬────┬────┬────┬────┐\n";
+        $table .= "│ 日 │ 月 │ 火 │ 水 │ 木 │ 金 │ 土 │\n";
+        $table .= "├────┼────┼────┼────┼────┼────┼────┤\n";
+
+        $currentDay = 1;
+        $weekRow = '';
+
+        // 最初の週の空白セル
+        for ($i = 0; $i < $startWeekday; $i++) {
+            $weekRow .= '│    ';
+        }
+
+        while ($currentDay <= $daysInMonth) {
+            $weekday = ($startWeekday + $currentDay - 1) % 7;
+            $dayStr = str_pad((string) $currentDay, 2, ' ', STR_PAD_LEFT);
+
+            $mark = '';
+            if (isset($eventsByDay[$currentDay])) {
+                $mark = '●';
+            } elseif ($weekday === 0) {
+                $mark = '★';
+            } elseif ($weekday === 6) {
+                $mark = '☆';
+            } elseif (isset($holidays[$currentDay])) {
+                $mark = '◎';
+            }
+
+            $weekRow .= '│' . $dayStr . $mark . ' ';
+
+            if ($weekday === 6) {
+                $table .= $weekRow . "│\n";
+                if ($currentDay < $daysInMonth) {
+                    $table .= "├────┼────┼────┼────┼────┼────┼────┤\n";
+                }
+                $weekRow = '';
+            }
+
+            $currentDay++;
+        }
+
+        // 最後の週の残りを埋める
+        if ($weekRow !== '') {
+            $remaining = 7 - (($startWeekday + $daysInMonth) % 7);
+            if ($remaining < 7) {
+                for ($i = 0; $i < $remaining; $i++) {
+                    $weekRow .= '│    ';
+                }
+            }
+            $table .= $weekRow . "│\n";
+        }
+
+        $table .= "└────┴────┴────┴────┴────┴────┴────┘\n\n";
+        $table .= "【凡例】●:イベント ★:日曜 ☆:土曜 ◎:祝日\n\n";
+
+        // イベント・祝日一覧
+        $table .= "【今月の予定】\n";
+
+        foreach ($holidays as $day => $name) {
+            $wd = $daysOfWeek[Carbon::create($year, $month, $day)->dayOfWeek];
+            $table .= "{$day}日({$wd}) {$name}【祝日】\n";
+        }
+
+        foreach ($events as $event) {
+            $d = $event->event_date;
+            $table .= "{$d->format('j')}日({$daysOfWeek[$d->dayOfWeek]}) {$event->event_name}\n";
+        }
+
+        return $table;
+    }
+
+    /**
+     * 日本の祝日を取得（簡易版）
+     */
+    private function getJapaneseHolidays(int $year, int $month): array
+    {
+        $fixedHolidays = [
+            1  => [1 => '元日', 13 => '成人の日'],
+            2  => [11 => '建国記念の日', 23 => '天皇誕生日'],
+            3  => [20 => '春分の日'],
+            4  => [29 => '昭和の日'],
+            5  => [3 => '憲法記念日', 4 => 'みどりの日', 5 => 'こどもの日'],
+            7  => [21 => '海の日'],
+            8  => [11 => '山の日'],
+            9  => [15 => '敬老の日', 23 => '秋分の日'],
+            10 => [13 => 'スポーツの日'],
+            11 => [3 => '文化の日', 23 => '勤労感謝の日'],
+        ];
+
+        return $fixedHolidays[$month] ?? [];
     }
 
     /**
