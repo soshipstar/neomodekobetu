@@ -427,12 +427,34 @@ export default function NewslettersPage() {
 
           {/* Actions */}
           <div className="sticky bottom-0 flex items-center justify-between border-t border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] pt-3">
-            <div>
+            <div className="flex items-center gap-2">
               {editingId && (
-                <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="send" size={16} />}
-                  onClick={() => { if (confirm('配信しますか？')) publishMutation.mutate(editingId); }}>
-                  配信する
-                </Button>
+                <>
+                  <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="send" size={16} />}
+                    onClick={() => { if (confirm('配信しますか？')) publishMutation.mutate(editingId); }}>
+                    配信する
+                  </Button>
+                  <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="picture_as_pdf" size={16} />}
+                    onClick={async () => {
+                      try {
+                        const res = await api.get(`/api/staff/newsletters/${editingId}/pdf`, { responseType: 'blob' });
+                        const url = URL.createObjectURL(res.data);
+                        const a = document.createElement('a'); a.href = url; a.download = `${form.title}.pdf`; a.click(); URL.revokeObjectURL(url);
+                      } catch { toast.error('PDF生成に失敗しました'); }
+                    }}>
+                    PDF
+                  </Button>
+                  <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="description" size={16} />}
+                    onClick={async () => {
+                      try {
+                        const res = await api.get(`/api/staff/newsletters/${editingId}/word`, { responseType: 'blob' });
+                        const url = URL.createObjectURL(res.data);
+                        const a = document.createElement('a'); a.href = url; a.download = `${form.title}.doc`; a.click(); URL.revokeObjectURL(url);
+                      } catch { toast.error('Word出力に失敗しました'); }
+                    }}>
+                    Word
+                  </Button>
+                </>
               )}
             </div>
             <div className="flex gap-2">

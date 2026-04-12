@@ -259,6 +259,7 @@ Route::prefix('staff')
         Route::post('/newsletters/{newsletter}/generate-all', [App\Http\Controllers\Staff\NewsletterController::class, 'generateAll']);
         Route::post('/newsletters/{newsletter}/publish', [App\Http\Controllers\Staff\NewsletterController::class, 'publish']);
         Route::get('/newsletters/{newsletter}/pdf', [App\Http\Controllers\Staff\NewsletterController::class, 'pdf']);
+        Route::get('/newsletters/{newsletter}/word', [App\Http\Controllers\Staff\NewsletterController::class, 'word']);
         Route::post('/newsletters/pdf-preview', [App\Http\Controllers\Staff\NewsletterController::class, 'pdfPreview']);
 
         // --- 面談 ---

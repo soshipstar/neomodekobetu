@@ -691,6 +691,26 @@ PROMPT;
     }
 
     /**
+     * お便り Word (.doc) をダウンロード
+     */
+    public function word(Request $request, Newsletter $newsletter)
+    {
+        $newsletter->load(['classroom', 'creator:id,full_name']);
+
+        $html = view('word.newsletter', [
+            'newsletter' => $newsletter,
+            'classroom'  => $newsletter->classroom,
+        ])->render();
+
+        $filename = $newsletter->year . '年' . $newsletter->month . '月_' . ($newsletter->classroom?->classroom_name ?? '施設') . '通信.doc';
+
+        return response($html)
+            ->header('Content-Type', 'application/msword; charset=UTF-8')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->header('Cache-Control', 'max-age=0');
+    }
+
+    /**
      * お便り PDF プレビューデータを返す（POST）
      */
     public function pdfPreview(Request $request): JsonResponse

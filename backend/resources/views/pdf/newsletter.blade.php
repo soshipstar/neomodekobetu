@@ -208,6 +208,19 @@
     @php
         $classroomName = $classroom->classroom_name ?? '施設';
 
+        // マークダウン画像を <img> タグに変換
+        $renderContent = function ($text) {
+            if (!$text) return '';
+            $escaped = e($text);
+            // ![alt](url) → <img>
+            $escaped = preg_replace(
+                '/!\[([^\]]*)\]\(([^)]+)\)/',
+                '<img src="$2" alt="$1" style="max-width:100%;height:auto;margin:4px 0;border-radius:4px;">',
+                $escaped
+            );
+            return nl2br($escaped);
+        };
+
         // セクションデータを構築
         $sections = [];
         if (!empty($newsletter->greeting)) {
@@ -220,7 +233,10 @@
             $sections[] = ['type' => 'normal', 'title' => 'イベント詳細', 'content' => $newsletter->event_details];
         }
         if (!empty($newsletter->weekly_reports)) {
-            $sections[] = ['type' => 'normal', 'title' => '活動紹介まとめ', 'content' => $newsletter->weekly_reports];
+            $sections[] = ['type' => 'normal', 'title' => '活動の様子', 'content' => $newsletter->weekly_reports];
+        }
+        if (!empty($newsletter->weekly_intro)) {
+            $sections[] = ['type' => 'normal', 'title' => '週間活動紹介', 'content' => $newsletter->weekly_intro];
         }
         if (!empty($newsletter->event_results)) {
             $sections[] = ['type' => 'normal', 'title' => 'イベント結果報告', 'content' => $newsletter->event_results];
@@ -257,7 +273,7 @@
         @foreach ($sections as $section)
             @if ($section['type'] === 'greeting')
                 <div class="greeting-box">
-                    <div class="greeting-text">{!! nl2br(e($section['content'])) !!}</div>
+                    <div class="greeting-text">{!! $renderContent($section['content']) !!}</div>
                 </div>
             @endif
         @endforeach
@@ -268,19 +284,19 @@
                 <div class="section">
                     <div class="section-header">{{ $section['title'] }}</div>
                     <div class="calendar-box">
-                        <div class="calendar-content">{!! nl2br(e($section['content'])) !!}</div>
+                        <div class="calendar-content">{!! $renderContent($section['content']) !!}</div>
                     </div>
                 </div>
             @elseif ($section['type'] === 'normal')
                 <div class="section">
                     <div class="section-header">{{ $section['title'] }}</div>
-                    <div class="section-content">{!! nl2br(e($section['content'])) !!}</div>
+                    <div class="section-content">{!! $renderContent($section['content']) !!}</div>
                 </div>
             @elseif ($section['type'] === 'notice')
                 <div class="section">
                     <div class="section-header">{{ $section['title'] }}</div>
                     <div class="notice-box">
-                        <div class="notice-content">{!! nl2br(e($section['content'])) !!}</div>
+                        <div class="notice-content">{!! $renderContent($section['content']) !!}</div>
                     </div>
                 </div>
             @endif
@@ -294,7 +310,7 @@
                     <td>
                         <div class="grade-section">
                             <div class="grade-header">小学生の活動</div>
-                            <div class="grade-content">{!! nl2br(e($newsletter->elementary_report)) !!}</div>
+                            <div class="grade-content">{!! $renderContent($newsletter->elementary_report) !!}</div>
                         </div>
                     </td>
                     @endif
@@ -302,7 +318,7 @@
                     <td>
                         <div class="grade-section">
                             <div class="grade-header">中高生の活動</div>
-                            <div class="grade-content">{!! nl2br(e($newsletter->junior_report)) !!}</div>
+                            <div class="grade-content">{!! $renderContent($newsletter->junior_report) !!}</div>
                         </div>
                     </td>
                     @endif
