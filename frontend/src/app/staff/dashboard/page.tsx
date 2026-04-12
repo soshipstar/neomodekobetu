@@ -792,62 +792,60 @@ export default function StaffDashboardPage() {
                             return (
                               <li
                                 key={s.id}
-                                className={`rounded-md px-2.5 py-1.5 text-sm ${
+                                className={`flex items-center justify-between rounded-md px-2.5 py-1.5 text-sm ${
                                   s.is_absent
                                     ? 'bg-[var(--status-danger-bg)] text-[var(--status-danger-fg)] line-through'
                                     : 'bg-[var(--neutral-background-3)] text-[var(--neutral-foreground-2)]'
                                 }`}
                               >
-                                <div className="flex items-center justify-between">
-                                  <Link
-                                    href={`/staff/students/${s.id}`}
-                                    className="hover:underline truncate mr-2"
-                                  >
-                                    {s.name}
-                                  </Link>
-                                  <div className="flex items-center gap-1 shrink-0">
-                                    {s.type !== 'regular' && (
-                                      <Badge variant={typeBadgeVariant(s.type)} className="text-[10px] px-1.5 py-0">
-                                        {typeLabel(s.type)}
-                                      </Badge>
-                                    )}
-                                    {s.is_absent && (
-                                      <Badge variant="danger" className="text-[10px] px-1.5 py-0">欠席</Badge>
-                                    )}
-                                  </div>
+                                <Link
+                                  href={`/staff/students/${s.id}`}
+                                  className="hover:underline truncate mr-2"
+                                >
+                                  {s.name}
+                                </Link>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  {s.type !== 'regular' && (
+                                    <Badge variant={typeBadgeVariant(s.type)} className="text-[10px] px-1.5 py-0">
+                                      {typeLabel(s.type)}
+                                    </Badge>
+                                  )}
+                                  {s.is_absent && (
+                                    <Badge variant="danger" className="text-[10px] px-1.5 py-0">欠席</Badge>
+                                  )}
+                                  {!s.is_absent && s.chat_room_id && (
+                                    <>
+                                      {studentNotified === 'arrival' ? (
+                                        <span className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium text-[var(--status-success-fg)] bg-[var(--status-success-bg)]">
+                                          <MaterialIcon name="check" size={10} />到着済
+                                        </span>
+                                      ) : (
+                                        <button
+                                          onClick={() => handleQuickNotify(s.id, s.chat_room_id!, 'arrival')}
+                                          disabled={arrivalSending}
+                                          className="flex items-center gap-0.5 rounded border border-[var(--brand-80)]/30 bg-[var(--brand-10)] px-1 py-0.5 text-[10px] font-medium text-[var(--brand-100)] hover:bg-[var(--brand-20)] transition-colors disabled:opacity-50"
+                                        >
+                                          <MaterialIcon name="check_circle" size={11} />
+                                          {arrivalSending ? '...' : '到着'}
+                                        </button>
+                                      )}
+                                      {studentNotified === 'departure' ? (
+                                        <span className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium text-[var(--status-success-fg)] bg-[var(--status-success-bg)]">
+                                          <MaterialIcon name="check" size={10} />帰宅済
+                                        </span>
+                                      ) : (
+                                        <button
+                                          onClick={() => handleQuickNotify(s.id, s.chat_room_id!, 'departure')}
+                                          disabled={departSending}
+                                          className="flex items-center gap-0.5 rounded border border-[var(--brand-80)]/30 bg-[var(--brand-10)] px-1 py-0.5 text-[10px] font-medium text-[var(--brand-100)] hover:bg-[var(--brand-20)] transition-colors disabled:opacity-50"
+                                        >
+                                          <MaterialIcon name="directions_bus" size={11} />
+                                          {departSending ? '...' : '帰宅'}
+                                        </button>
+                                      )}
+                                    </>
+                                  )}
                                 </div>
-                                {!s.is_absent && s.chat_room_id && (
-                                  <div className="mt-1 flex items-center gap-1">
-                                    {studentNotified === 'arrival' ? (
-                                      <span className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium text-[var(--status-success-fg)] bg-[var(--status-success-bg)]">
-                                        <MaterialIcon name="check" size={12} />到着 連絡済み
-                                      </span>
-                                    ) : (
-                                      <button
-                                        onClick={() => handleQuickNotify(s.id, s.chat_room_id!, 'arrival')}
-                                        disabled={arrivalSending}
-                                        className="flex items-center gap-0.5 rounded border border-[var(--brand-80)]/30 bg-[var(--brand-10)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--brand-100)] hover:bg-[var(--brand-20)] transition-colors disabled:opacity-50"
-                                      >
-                                        <MaterialIcon name="check_circle" size={12} />
-                                        {arrivalSending ? '送信中...' : '到着'}
-                                      </button>
-                                    )}
-                                    {studentNotified === 'departure' ? (
-                                      <span className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium text-[var(--status-success-fg)] bg-[var(--status-success-bg)]">
-                                        <MaterialIcon name="check" size={12} />帰宅 連絡済み
-                                      </span>
-                                    ) : (
-                                      <button
-                                        onClick={() => handleQuickNotify(s.id, s.chat_room_id!, 'departure')}
-                                        disabled={departSending}
-                                        className="flex items-center gap-0.5 rounded border border-[var(--brand-80)]/30 bg-[var(--brand-10)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--brand-100)] hover:bg-[var(--brand-20)] transition-colors disabled:opacity-50"
-                                      >
-                                        <MaterialIcon name="directions_bus" size={12} />
-                                        {departSending ? '送信中...' : '帰宅'}
-                                      </button>
-                                    )}
-                                  </div>
-                                )}
                               </li>
                             );
                           })}
