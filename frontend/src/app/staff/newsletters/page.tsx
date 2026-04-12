@@ -138,7 +138,9 @@ export default function NewslettersPage() {
     queryFn: async () => {
       const res = await api.get('/api/staff/newsletters');
       const p = res.data?.data;
-      return Array.isArray(p) ? p as Newsletter[] : [];
+      // paginated response: { data: [...], current_page, ... }
+      const items = Array.isArray(p) ? p : (Array.isArray(p?.data) ? p.data : []);
+      return items as Newsletter[];
     },
   });
 
