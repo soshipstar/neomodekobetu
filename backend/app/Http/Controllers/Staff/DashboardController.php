@@ -496,6 +496,16 @@ class DashboardController extends Controller
             Log::warning('Error fetching daily_records: ' . $e->getMessage());
         }
 
+        // --- Attach chat_room_id to each student for quick-broadcast ---
+        if (!empty($results)) {
+            $chatRooms = ChatRoom::whereIn('student_id', array_keys($results))
+                ->pluck('id', 'student_id');
+            foreach ($results as $studentId => &$entry) {
+                $entry['chat_room_id'] = $chatRooms[$studentId] ?? null;
+            }
+            unset($entry);
+        }
+
         return response()->json([
             'success' => true,
             'data'    => [

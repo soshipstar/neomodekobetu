@@ -84,6 +84,21 @@ export default function StaffChatPage() {
   const [quickRoomIds, setQuickRoomIds] = useState<Set<number>>(new Set());
   const [quickSending, setQuickSending] = useState(false);
 
+  // 本日の参加予定者を取得 (student_id のセット)
+  const [todayStudentIds, setTodayStudentIds] = useState<Set<number>>(new Set());
+  useEffect(() => {
+    (async () => {
+      try {
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const res = await api.get('/api/staff/dashboard/attendance', { params: { date: todayStr } });
+        const payload = res.data?.data ?? res.data;
+        const students = Array.isArray(payload?.students) ? payload.students : (Array.isArray(payload) ? payload : []);
+        const ids = new Set<number>(students.filter((s: { is_absent?: boolean }) => !s.is_absent).map((s: { id: number }) => s.id));
+        setTodayStudentIds(ids);
+      } catch { /* ignore */ }
+    })();
+  }, []);
+
   useEffect(() => {
     fetchRooms();
   }, [fetchRooms]);
@@ -540,6 +555,7 @@ export default function StaffChatPage() {
         selectNone={clearQuickRooms}
         onSubmit={handleQuickBroadcastSubmit}
         isSending={quickSending}
+        todayStudentIds={todayStudentIds}
       />
     </div>
   );
@@ -774,7 +790,7 @@ function BroadcastModal({
 // ---------------------------------------------------------------------------
 
 function QuickNotifyModal({
-  action, onClose, rooms, selectedRoomIds, toggleRoom, selectAll, selectNone, onSubmit, isSending,
+  action, onClose, rooms, selectedRoomIds, toggleRoom, selectAll, selectNone, onSubmit, isSending, todayStudentIds,
 }: {
   action: 'departure' | 'arrival' | null;
   onClose: () => void;
@@ -785,6 +801,7 @@ function QuickNotifyModal({
   selectNone: () => void;
   onSubmit: () => void;
   isSending: boolean;
+  todayStudentIds?: Set<number>;
 }) {
   const label = action === 'departure' ? 'これから帰ります' : '到着しました';
   const iconName = action === 'departure' ? 'directions_bus' : 'check_circle';
@@ -792,6 +809,38 @@ function QuickNotifyModal({
     action === 'departure'
       ? '【これから帰ります】\n\nお迎え準備をお願いいたします。'
       : '【到着しました】\n\nご対応ありがとうございました。';
+
+  // 本日の参加予定者を上に、その他を下に分割
+  const todayRooms = todayStudentIds && todayStudentIds.size > 0
+    ? rooms.filter((r) => todayStudentIds.has(r.student_id))
+    : [];
+  const otherRooms = todayStudentIds && todayStudentIds.size > 0
+    ? rooms.filter((r) => !todayStudentIds.has(r.student_id))
+    : rooms;
+
+  const selectTodayOnly = () => {
+    const ids = todayRooms.map((r) => r.id);
+    // Use the parent's selectAll mechanism by setting exactly todayRooms
+    selectNone();
+    ids.forEach((id) => toggleRoom(id));
+  };
+
+  const renderRoomRow = (room: ChatRoom) => (
+    <label key={room.id} className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-[var(--neutral-background-3)] cursor-pointer">
+      <input
+        type="checkbox"
+        checked={selectedRoomIds.has(room.id)}
+        onChange={() => toggleRoom(room.id)}
+        className="rounded border-[var(--neutral-stroke-2)]"
+      />
+      <span className="text-[var(--neutral-foreground-1)]">
+        {room.student?.student_name || `ID: ${room.student_id}`}
+      </span>
+      {room.guardian?.full_name && (
+        <span className="text-xs text-[var(--neutral-foreground-4)]">({room.guardian.full_name})</span>
+      )}
+    </label>
+  );
 
   return (
     <Modal isOpen={action !== null} onClose={onClose} title={`${label} を送信`} size="md">
@@ -808,30 +857,45 @@ function QuickNotifyModal({
           <div className="mb-1 flex items-center justify-between">
             <label className="text-sm font-medium text-[var(--neutral-foreground-2)]">送信先を選択</label>
             <div className="flex gap-2">
+              {todayRooms.length > 0 && (
+                <button onClick={selectTodayOnly} className="text-xs text-[var(--status-success-fg)] hover:underline">本日の予定者</button>
+              )}
               <button onClick={selectAll} className="text-xs text-[var(--brand-80)] hover:underline">全選択</button>
               <button onClick={selectNone} className="text-xs text-[var(--neutral-foreground-4)] hover:underline">全解除</button>
             </div>
           </div>
-          <div className="max-h-[250px] overflow-y-auto rounded-lg border border-[var(--neutral-stroke-2)] p-2">
+          <div className="max-h-[350px] overflow-y-auto rounded-lg border border-[var(--neutral-stroke-2)] p-2">
             {rooms.length === 0 ? (
               <p className="p-2 text-center text-xs text-[var(--neutral-foreground-4)]">保護者チャットがありません</p>
             ) : (
-              rooms.map((room) => (
-                <label key={room.id} className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-[var(--neutral-background-3)] cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={selectedRoomIds.has(room.id)}
-                    onChange={() => toggleRoom(room.id)}
-                    className="rounded border-[var(--neutral-stroke-2)]"
-                  />
-                  <span className="text-[var(--neutral-foreground-1)]">
-                    {room.student?.student_name || `ID: ${room.student_id}`}
-                  </span>
-                  {room.guardian?.full_name && (
-                    <span className="text-xs text-[var(--neutral-foreground-4)]">({room.guardian.full_name})</span>
-                  )}
-                </label>
-              ))
+              <>
+                {todayRooms.length > 0 && (
+                  <>
+                    <div className="flex items-center gap-1.5 px-2 py-1">
+                      <MaterialIcon name="today" size={14} className="text-[var(--status-success-fg)]" />
+                      <span className="text-[10px] font-semibold text-[var(--status-success-fg)] uppercase tracking-wider">
+                        本日の参加予定者（{todayRooms.length}名）
+                      </span>
+                    </div>
+                    {todayRooms.map(renderRoomRow)}
+                    {otherRooms.length > 0 && (
+                      <div className="my-1.5 border-t border-[var(--neutral-stroke-3)]" />
+                    )}
+                  </>
+                )}
+                {otherRooms.length > 0 && (
+                  <>
+                    {todayRooms.length > 0 && (
+                      <div className="flex items-center gap-1.5 px-2 py-1">
+                        <span className="text-[10px] font-semibold text-[var(--neutral-foreground-4)] uppercase tracking-wider">
+                          その他（{otherRooms.length}名）
+                        </span>
+                      </div>
+                    )}
+                    {otherRooms.map(renderRoomRow)}
+                  </>
+                )}
+              </>
             )}
           </div>
           <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">

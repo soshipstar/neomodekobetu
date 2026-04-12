@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { useToast } from '@/components/ui/Toast';
 import Link from 'next/link';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
@@ -56,6 +57,7 @@ interface AttendanceStudent {
   grade_group: '未就学' | '小学生' | '中学生' | '高校生';
   type: 'regular' | 'makeup' | 'additional';
   is_absent: boolean;
+  chat_room_id: number | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -195,6 +197,7 @@ function typeBadgeVariant(type: AttendanceStudent['type']) {
 
 export default function StaffDashboardPage() {
   const today = new Date();
+  const toast = useToast();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1); // 1-based
   const [selectedDate, setSelectedDate] = useState(
@@ -208,6 +211,32 @@ export default function StaffDashboardPage() {
   const [loadingSummary, setLoadingSummary] = useState(true);
   const [loadingCalendar, setLoadingCalendar] = useState(true);
   const [loadingAttendance, setLoadingAttendance] = useState(true);
+
+  // 到着・帰宅の連絡済み状態 (student_id -> 'departure' | 'arrival')
+  const [notified, setNotified] = useState<Record<number, 'departure' | 'arrival'>>({});
+  const [sendingNotify, setSendingNotify] = useState<Record<string, string>>({});
+
+  const handleQuickNotify = useCallback(async (studentId: number, chatRoomId: number, action: 'departure' | 'arrival') => {
+    const key = `${studentId}-${action}`;
+    setSendingNotify((prev) => ({ ...prev, [key]: action }));
+    try {
+      await api.post('/api/staff/chat/quick-broadcast', {
+        action,
+        room_ids: [chatRoomId],
+      });
+      setNotified((prev) => ({ ...prev, [studentId]: action }));
+      const label = action === 'departure' ? 'これから帰ります' : '到着しました';
+      toast.success(`${label} を送信しました`);
+    } catch {
+      toast.error('送信に失敗しました');
+    } finally {
+      setSendingNotify((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
+  }, [toast]);
 
   // Fetch summary once on mount
   useEffect(() => {
@@ -756,33 +785,72 @@ export default function StaffDashboardPage() {
                           <span className="text-xs text-[var(--neutral-foreground-4)]">{students.length}名</span>
                         </div>
                         <ul className="space-y-1">
-                          {students.map((s) => (
-                            <li
-                              key={s.id}
-                              className={`flex items-center justify-between rounded-md px-2.5 py-1.5 text-sm ${
-                                s.is_absent
-                                  ? 'bg-[var(--status-danger-bg)] text-[var(--status-danger-fg)] line-through'
-                                  : 'bg-[var(--neutral-background-3)] text-[var(--neutral-foreground-2)]'
-                              }`}
-                            >
-                              <Link
-                                href={`/staff/students/${s.id}`}
-                                className="hover:underline truncate mr-2"
+                          {students.map((s) => {
+                            const studentNotified = notified[s.id];
+                            const departSending = !!sendingNotify[`${s.id}-departure`];
+                            const arrivalSending = !!sendingNotify[`${s.id}-arrival`];
+                            return (
+                              <li
+                                key={s.id}
+                                className={`rounded-md px-2.5 py-1.5 text-sm ${
+                                  s.is_absent
+                                    ? 'bg-[var(--status-danger-bg)] text-[var(--status-danger-fg)] line-through'
+                                    : 'bg-[var(--neutral-background-3)] text-[var(--neutral-foreground-2)]'
+                                }`}
                               >
-                                {s.name}
-                              </Link>
-                              <div className="flex items-center gap-1 shrink-0">
-                                {s.type !== 'regular' && (
-                                  <Badge variant={typeBadgeVariant(s.type)} className="text-[10px] px-1.5 py-0">
-                                    {typeLabel(s.type)}
-                                  </Badge>
+                                <div className="flex items-center justify-between">
+                                  <Link
+                                    href={`/staff/students/${s.id}`}
+                                    className="hover:underline truncate mr-2"
+                                  >
+                                    {s.name}
+                                  </Link>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    {s.type !== 'regular' && (
+                                      <Badge variant={typeBadgeVariant(s.type)} className="text-[10px] px-1.5 py-0">
+                                        {typeLabel(s.type)}
+                                      </Badge>
+                                    )}
+                                    {s.is_absent && (
+                                      <Badge variant="danger" className="text-[10px] px-1.5 py-0">欠席</Badge>
+                                    )}
+                                  </div>
+                                </div>
+                                {!s.is_absent && s.chat_room_id && (
+                                  <div className="mt-1 flex items-center gap-1">
+                                    {studentNotified === 'arrival' ? (
+                                      <span className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium text-[var(--status-success-fg)] bg-[var(--status-success-bg)]">
+                                        <MaterialIcon name="check" size={12} />到着 連絡済み
+                                      </span>
+                                    ) : (
+                                      <button
+                                        onClick={() => handleQuickNotify(s.id, s.chat_room_id!, 'arrival')}
+                                        disabled={arrivalSending}
+                                        className="flex items-center gap-0.5 rounded border border-[var(--brand-80)]/30 bg-[var(--brand-10)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--brand-100)] hover:bg-[var(--brand-20)] transition-colors disabled:opacity-50"
+                                      >
+                                        <MaterialIcon name="check_circle" size={12} />
+                                        {arrivalSending ? '送信中...' : '到着'}
+                                      </button>
+                                    )}
+                                    {studentNotified === 'departure' ? (
+                                      <span className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium text-[var(--status-success-fg)] bg-[var(--status-success-bg)]">
+                                        <MaterialIcon name="check" size={12} />帰宅 連絡済み
+                                      </span>
+                                    ) : (
+                                      <button
+                                        onClick={() => handleQuickNotify(s.id, s.chat_room_id!, 'departure')}
+                                        disabled={departSending}
+                                        className="flex items-center gap-0.5 rounded border border-[var(--brand-80)]/30 bg-[var(--brand-10)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--brand-100)] hover:bg-[var(--brand-20)] transition-colors disabled:opacity-50"
+                                      >
+                                        <MaterialIcon name="directions_bus" size={12} />
+                                        {departSending ? '送信中...' : '帰宅'}
+                                      </button>
+                                    )}
+                                  </div>
                                 )}
-                                {s.is_absent && (
-                                  <Badge variant="danger" className="text-[10px] px-1.5 py-0">欠席</Badge>
-                                )}
-                              </div>
-                            </li>
-                          ))}
+                              </li>
+                            );
+                          })}
                         </ul>
                       </div>
                     );
