@@ -82,14 +82,18 @@ function nl(text: string | null | undefined): string {
 
 /** 年月からデフォルト日付範囲を算出 */
 function defaultDates(year: number, month: number) {
-  const start = `${year}-${String(month).padStart(2, '0')}-01`;
-  const end = new Date(year, month, 0); // last day of month
-  const endStr = `${year}-${String(month).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
+  const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  // 報告期間: 当月1日〜末日
+  const reportStart = new Date(year, month - 1, 1);
+  const reportEnd = new Date(year, month, 0);
+  // 予定期間: 報告期間の翌日から1ヶ月
+  const scheduleStart = new Date(year, month, 1); // 翌月1日
+  const scheduleEnd = new Date(year, month + 1, 0); // 翌月末日
   return {
-    report_start_date: start,
-    report_end_date: endStr,
-    schedule_start_date: start,
-    schedule_end_date: endStr,
+    report_start_date: fmt(reportStart),
+    report_end_date: fmt(reportEnd),
+    schedule_start_date: fmt(scheduleStart),
+    schedule_end_date: fmt(scheduleEnd),
   };
 }
 
