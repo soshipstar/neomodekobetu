@@ -28,6 +28,11 @@ class StaffManagementController extends Controller
             ->where('is_master', false)
             ->with(['classroom', 'classrooms']);
 
+        // 通常管理者には企業管理者を表示しない
+        if (!$isMaster && !$isCompanyAdmin) {
+            $query->where('is_company_admin', false);
+        }
+
         // 教室フィルタ: classroom_user ピボットも含めて検索
         $filterClassroomId = $request->filled('classroom_id') ? (int) $request->classroom_id : null;
 
