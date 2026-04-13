@@ -253,8 +253,8 @@ export default function AdminAccountsPage() {
       key: 'is_master',
       label: '権限',
       render: (a) => (
-        <Badge variant={a.is_master ? 'danger' : 'default'}>
-          {a.is_master ? 'マスター管理者' : '通常管理者'}
+        <Badge variant={a.is_master ? 'danger' : a.is_company_admin ? 'warning' : 'default'}>
+          {a.is_master ? 'マスター管理者' : a.is_company_admin ? '企業管理者' : '通常管理者'}
         </Badge>
       ),
     },
