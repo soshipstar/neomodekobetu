@@ -60,7 +60,7 @@ export default function StaffManagementPage() {
   const { user: authUser } = useAuthStore();
   const isCompanyAdmin = authUser?.user_type === 'admin' && !!authUser?.is_company_admin;
   const isMaster = authUser?.user_type === 'admin' && !!authUser?.is_master;
-  const canSelectType = isCompanyAdmin || isMaster;
+  const canSelectType = isCompanyAdmin;
   const queryClient = useQueryClient();
   const toast = useToast();
   const [search, setSearch] = useState('');

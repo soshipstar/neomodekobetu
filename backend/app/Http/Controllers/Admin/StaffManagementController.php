@@ -120,14 +120,16 @@ class StaffManagementController extends Controller
             ]);
         }
 
-        // 企業管理者のみ通常管理者を作成可能。通常管理者はスタッフのみ。
+        // 企業管理者のみ通常管理者を作成可能＋他教室を指定可能
         $requestedType = $validated['user_type'] ?? 'staff';
-        if ($requestedType === 'admin' && !$authUser->is_master && !$authUser->is_company_admin) {
-            $requestedType = 'staff'; // 権限不足の場合はスタッフに強制
+        if (!$authUser->is_company_admin) {
+            $requestedType = 'staff'; // 企業管理者以外はスタッフのみ
+            // 通常管理者は自教室のみ（他教室の指定を無視）
+            $classroomId = $authUser->classroom_id ?? $classroomId;
         }
 
         // 企業管理者: 選択教室が自企業内かチェック
-        if ($authUser->is_company_admin && !$authUser->is_master) {
+        if ($authUser->is_company_admin) {
             $myCompanyId = $authUser->classroom?->company_id;
             if ($myCompanyId && $classroom->company_id !== $myCompanyId) {
                 throw ValidationException::withMessages([
