@@ -25,6 +25,7 @@ interface StaffMember {
   is_active: boolean;
   created_at: string;
   classroom?: { id: number; classroom_name: string } | null;
+  classrooms?: { id: number; classroom_name: string }[];
 }
 
 interface Classroom {
@@ -214,7 +215,12 @@ export default function StaffManagementPage() {
     {
       key: 'classroom',
       label: '所属教室',
-      render: (s) => s.classroom?.classroom_name || '-',
+      render: (s) => {
+        const all = s.classrooms && s.classrooms.length > 0
+          ? s.classrooms.map((c) => c.classroom_name)
+          : s.classroom ? [s.classroom.classroom_name] : [];
+        return all.length > 0 ? all.join('、') : '-';
+      },
     },
     { key: 'email', label: 'メールアドレス', render: (s) => s.email || '-' },
     {

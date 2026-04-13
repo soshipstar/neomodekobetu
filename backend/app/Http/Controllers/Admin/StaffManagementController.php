@@ -23,26 +23,43 @@ class StaffManagementController extends Controller
 
         $isCompanyAdmin = $user->user_type === 'admin' && $user->is_company_admin;
 
+        // classroom_user ピボット経由の全所属教室もロード
         $query = User::whereIn('user_type', ['staff', 'admin'])
             ->where('is_master', false)
-            ->with('classroom');
+            ->with(['classroom', 'classrooms']);
 
-        // マスター管理者: 全スタッフ、企業管理者: 自企業の全教室、通常管理者: 自教室のみ
+        // 教室フィルタ: classroom_user ピボットも含めて検索
+        $filterClassroomId = $request->filled('classroom_id') ? (int) $request->classroom_id : null;
+
         if ($isMaster) {
-            if ($request->filled('classroom_id')) {
-                $query->where('classroom_id', $request->classroom_id);
+            if ($filterClassroomId) {
+                $query->where(function ($q) use ($filterClassroomId) {
+                    $q->where('classroom_id', $filterClassroomId)
+                      ->orWhereHas('classrooms', fn ($cq) => $cq->where('classrooms.id', $filterClassroomId));
+                });
             }
         } elseif ($isCompanyAdmin) {
             $companyId = $user->classroom?->company_id;
             if ($companyId) {
-                $companyClassroomIds = Classroom::where('company_id', $companyId)->pluck('id');
-                $query->whereIn('classroom_id', $companyClassroomIds);
-            }
-            if ($request->filled('classroom_id')) {
-                $query->where('classroom_id', $request->classroom_id);
+                $companyClassroomIds = Classroom::where('company_id', $companyId)->pluck('id')->toArray();
+                // 主教室 OR ピボットのいずれかが自企業内
+                $query->where(function ($q) use ($companyClassroomIds) {
+                    $q->whereIn('classroom_id', $companyClassroomIds)
+                      ->orWhereHas('classrooms', fn ($cq) => $cq->whereIn('classrooms.id', $companyClassroomIds));
+                });
+                if ($filterClassroomId) {
+                    $query->where(function ($q) use ($filterClassroomId) {
+                        $q->where('classroom_id', $filterClassroomId)
+                          ->orWhereHas('classrooms', fn ($cq) => $cq->where('classrooms.id', $filterClassroomId));
+                    });
+                }
             }
         } elseif ($user->classroom_id) {
-            $query->where('classroom_id', $user->classroom_id);
+            $myId = $user->classroom_id;
+            $query->where(function ($q) use ($myId) {
+                $q->where('classroom_id', $myId)
+                  ->orWhereHas('classrooms', fn ($cq) => $cq->where('classrooms.id', $myId));
+            });
         }
 
         if ($request->filled('is_active')) {

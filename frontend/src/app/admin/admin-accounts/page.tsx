@@ -12,7 +12,7 @@ import { SkeletonTable } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useDebounce } from '@/hooks/useDebounce';
 import { usePagination } from '@/hooks/usePagination';
-import { useAdminManagerGuard } from '@/hooks/useMasterGuard';
+import { useMasterGuard } from '@/hooks/useMasterGuard';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { UserClassroomModal } from '@/components/admin/UserClassroomModal';
 
@@ -67,7 +67,7 @@ const emptyFormData: AdminFormData = {
 };
 
 export default function AdminAccountsPage() {
-  const { isMaster, isCompanyAdmin, isReady } = useAdminManagerGuard();
+  const { isMaster, isReady } = useMasterGuard();
   const queryClient = useQueryClient();
   const toast = useToast();
   const [search, setSearch] = useState('');
@@ -315,7 +315,7 @@ export default function AdminAccountsPage() {
     },
   ];
 
-  if (!isReady || (!isMaster && !isCompanyAdmin)) return null;
+  if (!isReady || !isMaster) return null;
 
   return (
     <div className="space-y-6">
