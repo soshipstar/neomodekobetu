@@ -20,8 +20,10 @@ interface StaffMember {
   username: string;
   full_name: string;
   email: string | null;
+  user_type: string;
   is_active: boolean;
   created_at: string;
+  classroom?: { id: number; classroom_name: string } | null;
 }
 
 interface StaffFormData {
@@ -160,6 +162,20 @@ export default function StaffManagementPage() {
       render: (s) => <span className="font-medium">{s.full_name}</span>,
     },
     { key: 'username', label: 'ユーザー名' },
+    {
+      key: 'user_type',
+      label: '種別',
+      render: (s) => (
+        <Badge variant={s.user_type === 'admin' ? 'info' : 'default'}>
+          {s.user_type === 'admin' ? '管理者' : 'スタッフ'}
+        </Badge>
+      ),
+    },
+    {
+      key: 'classroom',
+      label: '所属教室',
+      render: (s) => s.classroom?.classroom_name || '-',
+    },
     { key: 'email', label: 'メールアドレス', render: (s) => s.email || '-' },
     {
       key: 'is_active',
