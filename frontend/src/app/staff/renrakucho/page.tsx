@@ -362,10 +362,15 @@ export default function RenrakuchoPage() {
 
       const notes: Record<number, string> = {};
       const sentIds = new Set<number>();
-      existingNotes.forEach((n) => {
+      const existingPhotos: Record<number, Array<{ id: number; url: string; file_size: number; activity_description: string | null }>> = {};
+      existingNotes.forEach((n: IntegratedNoteView & { photos?: Array<{ id: number; url: string; file_size: number; activity_description: string | null }> }) => {
         notes[n.student_id] = n.integrated_content;
         if (n.is_sent) {
           sentIds.add(n.student_id);
+        }
+        // 既に添付されている写真をロード
+        if (n.photos && n.photos.length > 0) {
+          existingPhotos[n.student_id] = n.photos;
         }
       });
 
@@ -390,6 +395,20 @@ export default function RenrakuchoPage() {
 
       setSendNotes(notes);
       setSentStudentIds(sentIds);
+
+      // 未送信の生徒分の写真提案を自動取得（送信済みは既存写真のまま）
+      const allStudentIds = Object.keys(notes).map(Number);
+      const photoMap: Record<number, Array<{ id: number; url: string; file_size: number; activity_description: string | null }>> = { ...existingPhotos };
+      await Promise.all(
+        allStudentIds.filter((sid) => !sentIds.has(sid) && !existingPhotos[sid]).map(async (sid) => {
+          try {
+            const sr = await api.get(`/api/staff/renrakucho/${activityId}/photos/suggest`, { params: { student_id: sid } });
+            const suggested = sr.data?.data || [];
+            if (suggested.length > 0) photoMap[sid] = suggested;
+          } catch { /* 写真なしでもOK */ }
+        }),
+      );
+      setSendPhotos(photoMap);
     } catch {
       // Fallback: just load student records
       try {
