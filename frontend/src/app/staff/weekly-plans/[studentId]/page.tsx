@@ -56,6 +56,7 @@ interface WeeklyPlanData {
   comments?: Array<{
     id: number;
     comment: string;
+    commenter_type?: string;
     created_at: string;
     user?: { id: number; full_name: string };
   }>;
@@ -1191,14 +1192,18 @@ export default function WeeklyPlanStudentDetailPage() {
 
               {plan?.comments && plan.comments.length > 0 ? (
                 <div className="space-y-3 mb-4">
-                  {plan.comments.map((c) => (
+                  {plan.comments.map((c) => {
+                    const borderColor = c.commenter_type === 'guardian' ? 'border-orange-400' : c.commenter_type === 'student' ? 'border-purple-400' : 'border-green-500';
+                    const typeLabel = c.commenter_type === 'guardian' ? '保護者' : c.commenter_type === 'student' ? '本人' : c.commenter_type === 'admin' ? '管理者' : 'スタッフ';
+                    return (
                     <div
                       key={c.id}
-                      className="rounded-lg border-l-4 border-green-500 bg-[var(--neutral-background-3)] p-3"
+                      className={`rounded-lg border-l-4 ${borderColor} bg-[var(--neutral-background-3)] p-3`}
                     >
                       <div className="mb-1 flex items-center justify-between">
                         <span className="text-sm font-semibold text-[var(--brand-60)]">
                           {c.user?.full_name ?? '不明'}
+                          <span className="ml-2 text-xs font-normal text-[var(--neutral-foreground-3)]">({typeLabel})</span>
                         </span>
                         <span className="text-xs text-[var(--neutral-foreground-4)]">
                           {c.created_at &&
@@ -1209,7 +1214,8 @@ export default function WeeklyPlanStudentDetailPage() {
                         {c.comment}
                       </p>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="mb-4 text-sm text-[var(--neutral-foreground-4)]">

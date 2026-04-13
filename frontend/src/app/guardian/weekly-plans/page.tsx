@@ -36,6 +36,7 @@ interface WeeklyPlanComment {
   id: number;
   plan_id: number;
   user_id: number;
+  commenter_type?: string;
   comment: string;
   created_at: string;
   user?: { id: number; full_name: string };
@@ -280,11 +281,15 @@ export default function GuardianWeeklyPlansPage() {
                 <p className="py-4 text-center text-sm text-[var(--neutral-foreground-4)]">まだコメントはありません</p>
               ) : (
                 <div className="mb-4 space-y-3">
-                  {comments.map((c) => (
-                    <div key={c.id} className="rounded-lg border-l-4 border-[var(--brand-90)] bg-[var(--neutral-background-3)] p-3">
+                  {comments.map((c) => {
+                    const borderColor = c.commenter_type === 'guardian' ? 'border-orange-400' : c.commenter_type === 'student' ? 'border-purple-400' : 'border-green-500';
+                    const typeLabel = c.commenter_type === 'guardian' ? '保護者' : c.commenter_type === 'student' ? '本人' : 'スタッフ';
+                    return (
+                    <div key={c.id} className={`rounded-lg border-l-4 ${borderColor} bg-[var(--neutral-background-3)] p-3`}>
                       <div className="mb-1 flex items-center justify-between">
                         <span className="text-sm font-semibold text-[var(--brand-70)]">
                           {c.user?.full_name ?? '不明'}
+                          <span className="ml-2 text-xs font-normal text-[var(--neutral-foreground-3)]">({typeLabel})</span>
                         </span>
                         <span className="text-xs text-[var(--neutral-foreground-4)]">
                           {format(new Date(c.created_at), 'yyyy/M/d HH:mm', { locale: ja })}
@@ -292,7 +297,8 @@ export default function GuardianWeeklyPlansPage() {
                       </div>
                       <p className="whitespace-pre-wrap text-sm text-[var(--neutral-foreground-2)]">{nl(c.comment)}</p>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 

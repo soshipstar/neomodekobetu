@@ -12,6 +12,7 @@ class WeeklyPlanComment extends Model
     protected $fillable = [
         'plan_id',
         'user_id',
+        'commenter_type',
         'comment',
     ];
 

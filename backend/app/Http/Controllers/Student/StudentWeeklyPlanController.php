@@ -85,9 +85,10 @@ class StudentWeeklyPlanController extends Controller
         }
 
         $plan = WeeklyPlan::create(array_merge($validated, [
-            'student_id'   => $student->id,
-            'classroom_id' => $student->classroom_id,
-            'created_by'   => $request->user()->id,
+            'student_id'     => $student->id,
+            'classroom_id'   => $student->classroom_id,
+            'created_by'     => $request->user()->id,
+            'created_by_type' => 'student',
         ]));
 
         return response()->json([

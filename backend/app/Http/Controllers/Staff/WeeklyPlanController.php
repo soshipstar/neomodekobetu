@@ -92,8 +92,9 @@ class WeeklyPlanController extends Controller
         ]);
 
         $plan = WeeklyPlan::create(array_merge($validated, [
-            'classroom_id' => $request->user()->classroom_id,
-            'created_by'   => $request->user()->id,
+            'classroom_id'   => $request->user()->classroom_id,
+            'created_by'     => $request->user()->id,
+            'created_by_type' => $request->user()->user_type === 'admin' ? 'admin' : 'staff',
         ]));
 
         return response()->json([
@@ -135,12 +136,22 @@ class WeeklyPlanController extends Controller
         // コメントは別途保存
         if (! empty($validated['comment'])) {
             WeeklyPlanComment::create([
-                'plan_id'  => $plan->id,
-                'user_id'  => $request->user()->id,
-                'comment'  => $validated['comment'],
+                'plan_id'        => $plan->id,
+                'user_id'        => $request->user()->id,
+                'commenter_type' => $request->user()->user_type === 'admin' ? 'admin' : 'staff',
+                'comment'        => $validated['comment'],
             ]);
         }
         unset($validated['comment']);
+
+        // 達成度が設定されていれば評価者を記録
+        $hasAchievement = collect(['weekly_goal_achievement', 'shared_goal_achievement', 'must_do_achievement', 'should_do_achievement', 'want_to_do_achievement'])
+            ->contains(fn ($key) => array_key_exists($key, $validated) && $validated[$key] !== null);
+        if ($hasAchievement && !$plan->evaluated_at) {
+            $validated['evaluated_at'] = now();
+            $validated['evaluated_by_type'] = $request->user()->user_type === 'admin' ? 'admin' : 'staff';
+            $validated['evaluated_by_id'] = $request->user()->id;
+        }
 
         $plan->update($validated);
 

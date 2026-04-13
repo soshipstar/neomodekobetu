@@ -34,6 +34,9 @@ class WeeklyPlan extends Model
         'plan_data',
         'status',
         'created_by',
+        'created_by_type',
+        'evaluated_by_type',
+        'evaluated_by_id',
     ];
 
     protected function casts(): array

@@ -74,9 +74,10 @@ class GuardianWeeklyPlanController extends Controller
         ]);
 
         $comment = WeeklyPlanComment::create([
-            'plan_id' => $plan->id,
-            'user_id' => $user->id,
-            'comment' => $validated['comment'],
+            'plan_id'        => $plan->id,
+            'user_id'        => $user->id,
+            'commenter_type' => 'guardian',
+            'comment'        => $validated['comment'],
         ]);
 
         $comment->load('user:id,full_name');
