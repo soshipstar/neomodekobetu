@@ -219,7 +219,17 @@ export default function StaffManagementPage() {
         const all = s.classrooms && s.classrooms.length > 0
           ? s.classrooms.map((c) => c.classroom_name)
           : s.classroom ? [s.classroom.classroom_name] : [];
-        return all.length > 0 ? all.join('、') : '-';
+        if (all.length === 0) return '-';
+        if (all.length <= 2) return all.join('、');
+        return (
+          <span className="group relative cursor-default">
+            <span>{all[0]}、{all[1]}</span>
+            <Badge variant="default" className="ml-1 text-[10px] px-1 py-0">+{all.length - 2}</Badge>
+            <span className="invisible group-hover:visible absolute left-0 top-full z-50 mt-1 w-max max-w-[200px] rounded bg-[var(--neutral-foreground-1)] px-2 py-1.5 text-xs text-white shadow-lg">
+              {all.join('、')}
+            </span>
+          </span>
+        );
       },
     },
     { key: 'email', label: 'メールアドレス', render: (s) => s.email || '-' },
