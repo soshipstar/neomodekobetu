@@ -22,6 +22,8 @@ interface StaffMember {
   full_name: string;
   email: string | null;
   user_type: string;
+  is_master: boolean;
+  is_company_admin: boolean;
   is_active: boolean;
   created_at: string;
   classroom?: { id: number; classroom_name: string } | null;
@@ -206,11 +208,11 @@ export default function StaffManagementPage() {
     {
       key: 'user_type',
       label: '種別',
-      render: (s) => (
-        <Badge variant={s.user_type === 'admin' ? 'info' : 'default'}>
-          {s.user_type === 'admin' ? '管理者' : 'スタッフ'}
-        </Badge>
-      ),
+      render: (s) => {
+        if (s.is_company_admin) return <Badge variant="warning">企業管理者</Badge>;
+        if (s.user_type === 'admin') return <Badge variant="info">通常管理者</Badge>;
+        return <Badge variant="default">スタッフ</Badge>;
+      },
     },
     {
       key: 'classroom',
