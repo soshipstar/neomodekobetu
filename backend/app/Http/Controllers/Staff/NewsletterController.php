@@ -861,12 +861,39 @@ PROMPT;
     public function pdf(Request $request, Newsletter $newsletter)
     {
         $newsletter->load(['classroom', 'creator:id,full_name']);
+        $classroomId = $newsletter->classroom_id;
+
+        // カレンダー用: 予定期間のイベント・休日を取得
+        $calendarEvents = [];
+        $calendarHolidays = [];
+        if ($newsletter->schedule_start_date && $newsletter->schedule_end_date) {
+            $events = \App\Models\Event::where('classroom_id', $classroomId)
+                ->whereBetween('event_date', [$newsletter->schedule_start_date, $newsletter->schedule_end_date])
+                ->orderBy('event_date')
+                ->get(['event_date', 'event_name']);
+            foreach ($events as $e) {
+                $dateStr = $e->event_date instanceof \DateTimeInterface ? $e->event_date->format('Y-m-d') : (string) $e->event_date;
+                $calendarEvents[$dateStr][] = ['name' => $e->event_name];
+            }
+
+            $holidays = \App\Models\Holiday::where(function ($q) use ($classroomId) {
+                $q->where('classroom_id', $classroomId)->orWhereNull('classroom_id');
+            })
+                ->whereBetween('holiday_date', [$newsletter->schedule_start_date, $newsletter->schedule_end_date])
+                ->get(['holiday_date', 'holiday_name']);
+            foreach ($holidays as $h) {
+                $dateStr = $h->holiday_date instanceof \DateTimeInterface ? $h->holiday_date->format('Y-m-d') : (string) $h->holiday_date;
+                $calendarHolidays[$dateStr] = $h->holiday_name;
+            }
+        }
 
         $filename = 'newsletter_' . $newsletter->year . '_' . $newsletter->month . '_' . ($newsletter->title ?? $newsletter->id) . '.pdf';
 
         return PuppeteerPdfService::download('pdf.newsletter', [
-            'newsletter' => $newsletter,
-            'classroom'  => $newsletter->classroom,
+            'newsletter'       => $newsletter,
+            'classroom'        => $newsletter->classroom,
+            'calendarEvents'   => $calendarEvents,
+            'calendarHolidays' => $calendarHolidays,
         ], $filename);
     }
 

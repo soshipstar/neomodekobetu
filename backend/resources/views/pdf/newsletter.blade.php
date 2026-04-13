@@ -95,7 +95,7 @@
             color: #374151;
         }
 
-        /* カレンダーセクション */
+        /* カレンダーセクション（テキスト版フォールバック） */
         .calendar-box {
             background: #fafafa;
             border: 1px solid #e5e7eb;
@@ -106,6 +106,86 @@
             font-size: 9pt;
             line-height: 1.6;
             color: #374151;
+        }
+
+        /* カレンダーグリッド（表形式） */
+        .calendar-grid-container {
+            background: #fafafa;
+            border: 1px solid #e5e7eb;
+            padding: 10px;
+        }
+
+        .calendar-month-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 11px;
+            margin-bottom: 6px;
+            color: #374151;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+        }
+
+        .calendar-day-header {
+            text-align: center;
+            padding: 4px 2px;
+            font-weight: bold;
+            font-size: 8px;
+            color: #6b7280;
+            background: #f3f4f6;
+        }
+
+        .calendar-day-header.sunday { color: #ef4444; }
+        .calendar-day-header.saturday { color: #3b82f6; }
+
+        .calendar-day {
+            min-height: 40px;
+            border: 1px solid #e5e7eb;
+            border-radius: 2px;
+            padding: 2px;
+            background: white;
+            overflow: hidden;
+        }
+
+        .calendar-day.empty {
+            background: #f9fafb;
+            border-color: #f3f4f6;
+        }
+
+        .calendar-day.holiday {
+            background: #fef2f2;
+        }
+
+        .calendar-day-num {
+            font-size: 10px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 1px;
+        }
+
+        .calendar-day-num.sunday { color: #ef4444; }
+        .calendar-day-num.saturday { color: #3b82f6; }
+
+        .calendar-event {
+            font-size: 7px;
+            line-height: 1.3;
+            color: #6366f1;
+            padding: 1px 2px;
+            margin-bottom: 1px;
+            background: #eef2ff;
+            border-radius: 2px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .calendar-holiday-name {
+            font-size: 6px;
+            color: #dc2626;
+            line-height: 1.2;
         }
 
         /* お知らせセクション */
@@ -289,9 +369,68 @@
             @if ($section['type'] === 'calendar')
                 <div class="section">
                     <div class="section-header">{{ $section['title'] }}</div>
-                    <div class="calendar-box">
-                        <div class="calendar-content">{!! $renderContent($section['content']) !!}</div>
-                    </div>
+                    @if (!empty($newsletter->schedule_start_date) && !empty($newsletter->schedule_end_date))
+                        {{-- カレンダー表形式 --}}
+                        <div class="calendar-grid-container">
+                            @php
+                                $startDate = new DateTime($newsletter->schedule_start_date);
+                                $endDate = new DateTime($newsletter->schedule_end_date);
+                                $currentMonth = clone $startDate;
+                                $currentMonth->modify('first day of this month');
+                            @endphp
+                            @while ($currentMonth <= $endDate)
+                                @php
+                                    $calYear = (int)$currentMonth->format('Y');
+                                    $calMonth = (int)$currentMonth->format('n');
+                                    $daysInMonth = (int)$currentMonth->format('t');
+                                    $firstDayOfWeek = (int)$currentMonth->format('w');
+                                @endphp
+                                <div style="margin-bottom: 10px;">
+                                    <div class="calendar-month-title">{{ $calYear }}年{{ $calMonth }}月</div>
+                                    <div class="calendar-grid">
+                                        @foreach (['日', '月', '火', '水', '木', '金', '土'] as $idx => $dayName)
+                                            <div class="calendar-day-header {{ $idx === 0 ? 'sunday' : ($idx === 6 ? 'saturday' : '') }}">{{ $dayName }}</div>
+                                        @endforeach
+
+                                        @for ($i = 0; $i < $firstDayOfWeek; $i++)
+                                            <div class="calendar-day empty"></div>
+                                        @endfor
+
+                                        @for ($day = 1; $day <= $daysInMonth; $day++)
+                                            @php
+                                                $dateStr = sprintf('%04d-%02d-%02d', $calYear, $calMonth, $day);
+                                                $dayOfWeek = ($firstDayOfWeek + $day - 1) % 7;
+                                                $isHoliday = isset($calendarHolidays[$dateStr]);
+                                            @endphp
+                                            <div class="calendar-day{{ $isHoliday ? ' holiday' : '' }}">
+                                                <div class="calendar-day-num {{ $dayOfWeek === 0 ? 'sunday' : ($dayOfWeek === 6 ? 'saturday' : '') }}">{{ $day }}</div>
+                                                @if ($isHoliday)
+                                                    <div class="calendar-holiday-name">{{ $calendarHolidays[$dateStr] }}</div>
+                                                @endif
+                                                @if (isset($calendarEvents[$dateStr]))
+                                                    @foreach ($calendarEvents[$dateStr] as $event)
+                                                        <div class="calendar-event">{{ $event['name'] }}</div>
+                                                    @endforeach
+                                                @endif
+                                            </div>
+                                        @endfor
+                                    </div>
+                                </div>
+                                @php $currentMonth->modify('first day of next month'); @endphp
+                            @endwhile
+                        </div>
+                        {{-- テキスト版も併記 --}}
+                        @if (!empty($section['content']))
+                            <div class="calendar-box" style="margin-top: 8px;">
+                                <div class="calendar-content">{!! $renderContent($section['content']) !!}</div>
+                            </div>
+                        @endif
+                    @else
+                        {{-- 予定期間未設定の場合はテキストのみ --}}
+                        <div class="calendar-box">
+                            <div class="calendar-content">{!! $renderContent($section['content']) !!}</div>
+                        </div>
+                    @endif
                 </div>
             @elseif ($section['type'] === 'normal')
                 <div class="section">
