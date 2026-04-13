@@ -21,15 +21,28 @@ class StaffManagementController extends Controller
         $user = $request->user();
         $isMaster = $user->user_type === 'admin' && $user->is_master;
 
+        $isCompanyAdmin = $user->user_type === 'admin' && $user->is_company_admin;
+
         $query = User::whereIn('user_type', ['staff', 'admin'])
             ->where('is_master', false)
             ->with('classroom');
 
-        // 通常管理者は自教室のみ
-        if (!$isMaster && $user->classroom_id) {
+        // マスター管理者: 全スタッフ、企業管理者: 自企業の全教室、通常管理者: 自教室のみ
+        if ($isMaster) {
+            if ($request->filled('classroom_id')) {
+                $query->where('classroom_id', $request->classroom_id);
+            }
+        } elseif ($isCompanyAdmin) {
+            $companyId = $user->classroom?->company_id;
+            if ($companyId) {
+                $companyClassroomIds = Classroom::where('company_id', $companyId)->pluck('id');
+                $query->whereIn('classroom_id', $companyClassroomIds);
+            }
+            if ($request->filled('classroom_id')) {
+                $query->where('classroom_id', $request->classroom_id);
+            }
+        } elseif ($user->classroom_id) {
             $query->where('classroom_id', $user->classroom_id);
-        } elseif ($request->filled('classroom_id')) {
-            $query->where('classroom_id', $request->classroom_id);
         }
 
         if ($request->filled('is_active')) {
