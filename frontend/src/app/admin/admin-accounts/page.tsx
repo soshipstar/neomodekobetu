@@ -12,7 +12,7 @@ import { SkeletonTable } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useDebounce } from '@/hooks/useDebounce';
 import { usePagination } from '@/hooks/usePagination';
-import { useMasterGuard } from '@/hooks/useMasterGuard';
+import { useAdminManagerGuard } from '@/hooks/useMasterGuard';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { UserClassroomModal } from '@/components/admin/UserClassroomModal';
 
@@ -67,7 +67,7 @@ const emptyFormData: AdminFormData = {
 };
 
 export default function AdminAccountsPage() {
-  const { isMaster, isReady } = useMasterGuard();
+  const { isMaster, isCompanyAdmin, isReady } = useAdminManagerGuard();
   const queryClient = useQueryClient();
   const toast = useToast();
   const [search, setSearch] = useState('');
@@ -315,7 +315,7 @@ export default function AdminAccountsPage() {
     },
   ];
 
-  if (!isReady || !isMaster) return null;
+  if (!isReady || (!isMaster && !isCompanyAdmin)) return null;
 
   return (
     <div className="space-y-6">
@@ -409,8 +409,8 @@ export default function AdminAccountsPage() {
               className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
             >
               <option value="normal">通常管理者（自教室のみ）</option>
-              <option value="company">企業管理者（自企業の全教室）</option>
-              <option value="master">マスター管理者（全企業統括）</option>
+              {isMaster && <option value="company">企業管理者（自企業の全教室）</option>}
+              {isMaster && <option value="master">マスター管理者（全企業統括）</option>}
             </select>
           </div>
           <div className="w-full">

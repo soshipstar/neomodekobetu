@@ -14,38 +14,51 @@ use Illuminate\Validation\ValidationException;
 class AdminAccountController extends Controller
 {
     /**
-     * マスター管理者のみアクセス可能にする共通チェック
+     * マスター管理者 または 企業管理者 のみアクセス可能にする共通チェック。
+     * 企業管理者の場合は自企業の通常管理者のみ操作可能。
      */
-    private function requireMaster(Request $request): ?JsonResponse
+    private function requireAdminManager(Request $request): ?JsonResponse
     {
         $user = $request->user();
-        if (!$user || $user->user_type !== 'admin' || !$user->is_master) {
-            return response()->json([
-                'success' => false,
-                'message' => 'マスター管理者権限が必要です。',
-            ], 403);
+        if (!$user || $user->user_type !== 'admin') {
+            return response()->json(['success' => false, 'message' => '管理者権限が必要です。'], 403);
+        }
+        if (!$user->is_master && !$user->is_company_admin) {
+            return response()->json(['success' => false, 'message' => 'マスター管理者または企業管理者権限が必要です。'], 403);
         }
         return null;
     }
 
     /**
+     * 企業管理者が操作対象ユーザーにアクセスできるかチェック。
+     * マスター管理者なら常にtrue。企業管理者は自企業内の通常管理者のみ。
+     */
+    private function canManageUser(Request $request, User $target): bool
+    {
+        $me = $request->user();
+        if ($me->is_master) return true;
+
+        // 企業管理者: 対象がマスターまたは企業管理者なら操作不可
+        if ($target->is_master || $target->is_company_admin) return false;
+
+        // 対象の教室が自企業内かチェック
+        $myCompanyId = $me->classroom?->company_id;
+        $targetCompanyId = $target->classroom?->company_id;
+        return $myCompanyId && $myCompanyId === $targetCompanyId;
+    }
+
+    /**
      * フロントエンド向けに classroom / company の情報をフラットな属性として付与する。
-     * users.company_id カラムは削除済みのため、classroom 経由で導出する。
      */
     private function appendFlatClassroomAndCompany(User $user): void
     {
         $user->classroom_name = $user->classroom?->classroom_name;
         $user->company_name   = $user->classroom?->company?->name;
-        // API 契約維持のため company_id を動的属性として公開（永続化はされない）
         $user->setAttribute('company_id', $user->classroom?->company_id);
     }
 
     /**
      * 権限に応じて classroom_id の必須条件と所属企業の整合性を検証する。
-     *
-     * - マスター管理者 (is_master=true): classroom 不要
-     * - それ以外 (通常管理者 / 企業管理者): classroom 必須 + その classroom に
-     *   company_id が必ず設定されていること。企業未所属の教室は拒否。
      */
     private function assertClassroomByRole(array $validated): void
     {
@@ -76,13 +89,58 @@ class AdminAccountController extends Controller
     }
 
     /**
-     * 管理者アカウント一覧を取得（マスター管理者専用）
+     * 企業管理者が選択した教室が自企業内かチェック
+     */
+    private function assertCompanyScope(Request $request, array $validated): void
+    {
+        $me = $request->user();
+        if ($me->is_master) return;
+
+        // 企業管理者はマスター/企業管理者を作成不可
+        if (!empty($validated['is_master'])) {
+            throw ValidationException::withMessages([
+                'is_master' => ['企業管理者はマスター管理者を作成できません。'],
+            ]);
+        }
+        if (!empty($validated['is_company_admin'])) {
+            throw ValidationException::withMessages([
+                'is_company_admin' => ['企業管理者は他の企業管理者を作成できません。'],
+            ]);
+        }
+
+        // 教室が自企業内か確認
+        $classroomId = $validated['classroom_id'] ?? null;
+        if ($classroomId) {
+            $classroom = Classroom::find($classroomId);
+            $myCompanyId = $me->classroom?->company_id;
+            if (!$classroom || $classroom->company_id !== $myCompanyId) {
+                throw ValidationException::withMessages([
+                    'classroom_id' => ['自企業内の教室のみ選択できます。'],
+                ]);
+            }
+        }
+    }
+
+    /**
+     * 管理者アカウント一覧を取得
      */
     public function index(Request $request): JsonResponse
     {
-        if ($deny = $this->requireMaster($request)) return $deny;
+        if ($deny = $this->requireAdminManager($request)) return $deny;
 
+        $me = $request->user();
         $query = User::where('user_type', 'admin')->with(['classroom.company']);
+
+        // 企業管理者は自企業の通常管理者のみ表示
+        if (!$me->is_master) {
+            $myCompanyId = $me->classroom?->company_id;
+            $companyClassroomIds = $myCompanyId
+                ? Classroom::where('company_id', $myCompanyId)->pluck('id')->toArray()
+                : [];
+            $query->where('is_master', false)
+                  ->where('is_company_admin', false)
+                  ->whereIn('classroom_id', $companyClassroomIds);
+        }
 
         if ($request->filled('is_active')) {
             $query->where('is_active', $request->boolean('is_active'));
@@ -99,9 +157,6 @@ class AdminAccountController extends Controller
 
         $users = $query->orderByDesc('is_master')->orderBy('created_at', 'desc')->paginate($request->integer('per_page', 50));
 
-        // フロントエンドはフラットな classroom_name / company_name / company_id を
-        // 参照するため、ネストしたリレーションから取り出して属性として付与する。
-        // users.company_id カラムは正規化のため削除済み → classroom 経由で導出
         $users->getCollection()->each(function (User $u) {
             $this->appendFlatClassroomAndCompany($u);
         });
@@ -113,14 +168,18 @@ class AdminAccountController extends Controller
     }
 
     /**
-     * 管理者アカウント詳細を取得（マスター管理者専用）
+     * 管理者アカウント詳細を取得
      */
     public function show(Request $request, User $user): JsonResponse
     {
-        if ($deny = $this->requireMaster($request)) return $deny;
+        if ($deny = $this->requireAdminManager($request)) return $deny;
 
         if ($user->user_type !== 'admin') {
             return response()->json(['success' => false, 'message' => '管理者アカウントではありません。'], 404);
+        }
+
+        if (!$this->canManageUser($request, $user)) {
+            return response()->json(['success' => false, 'message' => 'このアカウントを管理する権限がありません。'], 403);
         }
 
         $user->load(['classroom.company']);
@@ -133,11 +192,11 @@ class AdminAccountController extends Controller
     }
 
     /**
-     * 管理者アカウントを新規作成（マスター管理者専用）
+     * 管理者アカウントを新規作成
      */
     public function store(Request $request): JsonResponse
     {
-        if ($deny = $this->requireMaster($request)) return $deny;
+        if ($deny = $this->requireAdminManager($request)) return $deny;
 
         $validated = $request->validate([
             'classroom_id'     => 'nullable|exists:classrooms,id',
@@ -149,9 +208,9 @@ class AdminAccountController extends Controller
             'is_company_admin' => 'boolean',
             'is_active'        => 'boolean',
         ]);
-        // 所属企業は classroom 経由で一意に決まるため company_id は受け付けない
-        // 権限別の classroom 必須チェック + 教室の企業所属確認
+
         $this->assertClassroomByRole($validated);
+        $this->assertCompanyScope($request, $validated);
 
         $validated['password'] = Hash::make($validated['password']);
         $validated['user_type'] = 'admin';
@@ -168,14 +227,18 @@ class AdminAccountController extends Controller
     }
 
     /**
-     * 管理者アカウントを更新（マスター管理者専用）
+     * 管理者アカウントを更新
      */
     public function update(Request $request, User $user): JsonResponse
     {
-        if ($deny = $this->requireMaster($request)) return $deny;
+        if ($deny = $this->requireAdminManager($request)) return $deny;
 
         if ($user->user_type !== 'admin') {
             return response()->json(['success' => false, 'message' => '管理者アカウントではありません。'], 404);
+        }
+
+        if (!$this->canManageUser($request, $user)) {
+            return response()->json(['success' => false, 'message' => 'このアカウントを管理する権限がありません。'], 403);
         }
 
         $validated = $request->validate([
@@ -188,9 +251,7 @@ class AdminAccountController extends Controller
             'is_company_admin' => 'boolean',
             'is_active'        => 'boolean',
         ]);
-        // company_id は受け付けない（classroom 経由で導出）
-        // 更新時も権限別の classroom 必須チェックを適用。
-        // classroom_id が request に含まれないときは既存値と権限で判定する。
+
         $roleCheckInput = array_merge(
             [
                 'classroom_id' => $user->classroom_id,
@@ -200,6 +261,7 @@ class AdminAccountController extends Controller
             $validated
         );
         $this->assertClassroomByRole($roleCheckInput);
+        $this->assertCompanyScope($request, $roleCheckInput);
 
         if (!empty($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
@@ -219,23 +281,22 @@ class AdminAccountController extends Controller
     }
 
     /**
-     * 管理者アカウントを削除（マスター管理者専用）
-     * 自分自身は削除できない
+     * 管理者アカウントを削除（無効化）
      */
     public function destroy(Request $request, User $user): JsonResponse
     {
-        if ($deny = $this->requireMaster($request)) return $deny;
+        if ($deny = $this->requireAdminManager($request)) return $deny;
 
         if ($user->user_type !== 'admin') {
             return response()->json(['success' => false, 'message' => '管理者アカウントではありません。'], 404);
         }
 
-        // 自分自身は削除できない
+        if (!$this->canManageUser($request, $user)) {
+            return response()->json(['success' => false, 'message' => 'このアカウントを管理する権限がありません。'], 403);
+        }
+
         if ($user->id === $request->user()->id) {
-            return response()->json([
-                'success' => false,
-                'message' => '自分自身のアカウントは削除できません。',
-            ], 422);
+            return response()->json(['success' => false, 'message' => '自分自身のアカウントは削除できません。'], 422);
         }
 
         $user->update(['is_active' => false]);
@@ -247,23 +308,22 @@ class AdminAccountController extends Controller
     }
 
     /**
-     * 管理者をスタッフに降格（マスター管理者専用）
-     * 自分自身は変換できない。is_masterを0にリセット。
+     * 管理者をスタッフに降格
      */
     public function convertToStaff(Request $request, User $user): JsonResponse
     {
-        if ($deny = $this->requireMaster($request)) return $deny;
+        if ($deny = $this->requireAdminManager($request)) return $deny;
 
         if ($user->user_type !== 'admin') {
             return response()->json(['success' => false, 'message' => '管理者アカウントではありません。'], 422);
         }
 
-        // 自分自身は変換できない
+        if (!$this->canManageUser($request, $user)) {
+            return response()->json(['success' => false, 'message' => 'このアカウントを管理する権限がありません。'], 403);
+        }
+
         if ($user->id === $request->user()->id) {
-            return response()->json([
-                'success' => false,
-                'message' => '自分自身のアカウントは切り替えできません。',
-            ], 422);
+            return response()->json(['success' => false, 'message' => '自分自身のアカウントは切り替えできません。'], 422);
         }
 
         $user->update([

@@ -8,6 +8,7 @@ export interface User {
   email: string | null;
   user_type: UserType;
   is_master: boolean;
+  is_company_admin: boolean;
   is_active: boolean;
   last_login_at: string | null;
   created_at: string;

@@ -23,3 +23,25 @@ export function useMasterGuard(): { isMaster: boolean; isReady: boolean } {
 
   return { isMaster, isReady };
 }
+
+/**
+ * マスター管理者 または 企業管理者のガード
+ * どちらでもない管理者はダッシュボードにリダイレクト
+ */
+export function useAdminManagerGuard(): { isMaster: boolean; isCompanyAdmin: boolean; isReady: boolean } {
+  const router = useRouter();
+  const { user, isAuthenticated, isLoading } = useAuthStore();
+
+  const isMaster = !!user && user.user_type === 'admin' && !!user.is_master;
+  const isCompanyAdmin = !!user && user.user_type === 'admin' && !!user.is_company_admin;
+  const canAccess = isMaster || isCompanyAdmin;
+  const isReady = !isLoading && isAuthenticated && !!user;
+
+  useEffect(() => {
+    if (isReady && !canAccess) {
+      router.replace('/admin/dashboard');
+    }
+  }, [isReady, canAccess, router]);
+
+  return { isMaster, isCompanyAdmin, isReady };
+}
