@@ -504,6 +504,25 @@ class DashboardController extends Controller
                 $entry['chat_room_id'] = $chatRooms[$studentId] ?? null;
             }
             unset($entry);
+
+            // --- 今日すでに送信済みの到着/帰宅通知を取得 ---
+            $roomIds = $chatRooms->values()->filter()->toArray();
+            if (!empty($roomIds)) {
+                $quickMessages = ChatMessage::whereIn('room_id', $roomIds)
+                    ->whereIn('message_type', ['quick_arrival', 'quick_departure'])
+                    ->whereDate('created_at', $date)
+                    ->select('room_id', 'message_type')
+                    ->orderByDesc('created_at')
+                    ->get();
+
+                $roomToStudent = $chatRooms->flip(); // room_id => student_id
+                foreach ($quickMessages as $msg) {
+                    $sid = $roomToStudent[$msg->room_id] ?? null;
+                    if ($sid && isset($results[$sid]) && !isset($results[$sid]['notified'])) {
+                        $results[$sid]['notified'] = $msg->message_type === 'quick_arrival' ? 'arrival' : 'departure';
+                    }
+                }
+            }
         }
 
         return response()->json([

@@ -58,6 +58,7 @@ interface AttendanceStudent {
   type: 'regular' | 'makeup' | 'additional';
   is_absent: boolean;
   chat_room_id: number | null;
+  notified?: 'arrival' | 'departure';
 }
 
 // ---------------------------------------------------------------------------
@@ -257,14 +258,29 @@ export default function StaffDashboardPage() {
   }, [year, month]);
 
   // Fetch activities + attendance when selectedDate changes
-  useEffect(() => {
-    setLoadingAttendance(true);
-    fetchAttendance(selectedDate).then((d) => {
-      setActivities(d.activities);
-      setAttendance(d.students);
-      setLoadingAttendance(false);
+  const refreshAttendance = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoadingAttendance(true);
+    const d = await fetchAttendance(selectedDate);
+    setActivities(d.activities);
+    setAttendance(d.students);
+    // APIから既送信の到着/帰宅状態を反映（サーバー側が正とする）
+    const serverNotified: Record<number, 'departure' | 'arrival'> = {};
+    d.students.forEach((s: AttendanceStudent) => {
+      if (s.notified) serverNotified[s.id] = s.notified;
     });
+    setNotified(serverNotified);
+    if (showLoading) setLoadingAttendance(false);
   }, [selectedDate]);
+
+  useEffect(() => {
+    refreshAttendance(true);
+  }, [refreshAttendance]);
+
+  // 15秒ごとにポーリングして他スタッフの送信を反映
+  useEffect(() => {
+    const interval = setInterval(() => refreshAttendance(false), 15000);
+    return () => clearInterval(interval);
+  }, [refreshAttendance]);
 
   // Month navigation
   const goToPrevMonth = useCallback(() => {
