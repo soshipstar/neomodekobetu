@@ -170,6 +170,7 @@ class HiyariHattoController extends Controller
             'prevention_measures' => 'nullable|string',
             'environment_improvements' => 'nullable|string',
             'staff_sharing_notes' => 'nullable|string',
+            'confirmed_by_id' => 'nullable|exists:users,id',
             'source_daily_record_id' => 'nullable|exists:daily_records,id',
             'source_type' => 'nullable|string|in:manual,integrated_note_ai',
             'status' => ['nullable', Rule::in(['draft', 'submitted', 'confirmed'])],

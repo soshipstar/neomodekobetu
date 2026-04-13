@@ -243,6 +243,11 @@ export default function HiyariHattoListPage() {
 // 新規作成モーダル
 // ---------------------------------------------------------------------------
 
+interface StaffOption {
+  id: number;
+  full_name: string;
+}
+
 function HiyariHattoCreateModal({
   classroomId,
   students,
@@ -255,9 +260,13 @@ function HiyariHattoCreateModal({
   onCreated: () => void;
 }) {
   const { toast } = useToast();
+  const { user } = useAuthStore();
   const [saving, setSaving] = useState(false);
+  const [staffList, setStaffList] = useState<StaffOption[]>([]);
   const [form, setForm] = useState({
     student_id: '',
+    reporter_name: user?.full_name ?? '',
+    confirmed_by_id: '',
     occurred_at: new Date().toISOString().slice(0, 16),
     location: '',
     activity_before: '',
@@ -278,6 +287,13 @@ function HiyariHattoCreateModal({
     staff_sharing_notes: '',
   });
 
+  useEffect(() => {
+    api.get('/api/staff/chat/staff-list').then((res) => {
+      const list = res.data?.data ?? [];
+      setStaffList(Array.isArray(list) ? list : []);
+    }).catch(() => {});
+  }, []);
+
   const handleSubmit = async () => {
     if (!form.situation.trim()) {
       toast('発生状況は必須です', 'error');
@@ -288,6 +304,7 @@ function HiyariHattoCreateModal({
       await api.post('/api/staff/hiyari-hatto', {
         classroom_id: classroomId,
         student_id: form.student_id || null,
+        confirmed_by_id: form.confirmed_by_id || null,
         occurred_at: form.occurred_at,
         location: form.location || null,
         activity_before: form.activity_before || null,
@@ -324,6 +341,21 @@ function HiyariHattoCreateModal({
   return (
     <Modal isOpen={true} onClose={onClose} title="ヒヤリハット 新規作成" size="lg">
       <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+        {/* 作成者・確認者 */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg border border-[var(--brand-80)]/20 bg-[var(--brand-10)] p-3">
+          <div>
+            <label className={labelCls}>作成者氏名 *</label>
+            <input type="text" value={form.reporter_name} onChange={(e) => setForm({ ...form, reporter_name: e.target.value })} className={inputCls} placeholder="記入者の氏名" />
+          </div>
+          <div>
+            <label className={labelCls}>内容確認者</label>
+            <select value={form.confirmed_by_id} onChange={(e) => setForm({ ...form, confirmed_by_id: e.target.value })} className={inputCls}>
+              <option value="">未確認</option>
+              {staffList.map((s) => <option key={s.id} value={s.id}>{s.full_name}</option>)}
+            </select>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className={labelCls}>対象児童</label>
