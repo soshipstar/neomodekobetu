@@ -78,6 +78,7 @@ class StaffManagementController extends Controller
             'password'     => 'required|string|min:6',
             'full_name'    => 'required|string|max:255',
             'email'        => 'nullable|email|max:255',
+            'user_type'    => 'nullable|string|in:staff,admin',
             'is_active'    => 'boolean',
         ]);
 
@@ -102,13 +103,29 @@ class StaffManagementController extends Controller
             ]);
         }
 
+        // 企業管理者のみ通常管理者を作成可能。通常管理者はスタッフのみ。
+        $requestedType = $validated['user_type'] ?? 'staff';
+        if ($requestedType === 'admin' && !$authUser->is_master && !$authUser->is_company_admin) {
+            $requestedType = 'staff'; // 権限不足の場合はスタッフに強制
+        }
+
+        // 企業管理者: 選択教室が自企業内かチェック
+        if ($authUser->is_company_admin && !$authUser->is_master) {
+            $myCompanyId = $authUser->classroom?->company_id;
+            if ($myCompanyId && $classroom->company_id !== $myCompanyId) {
+                throw ValidationException::withMessages([
+                    'classroom_id' => ['自企業内の教室のみ選択できます。'],
+                ]);
+            }
+        }
+
         $user = User::create([
             'classroom_id'     => $classroomId,
             'username'         => $validated['username'],
             'password'         => Hash::make($validated['password']),
             'full_name'        => $validated['full_name'],
             'email'            => $validated['email'] ?? null,
-            'user_type'        => 'staff',
+            'user_type'        => $requestedType,
             'is_master'        => false,
             'is_company_admin' => false,
             'is_active'        => $validated['is_active'] ?? true,
