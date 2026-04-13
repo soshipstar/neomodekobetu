@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import api from '@/lib/api';
@@ -166,6 +166,9 @@ export default function StudentsPage() {
   const [statusFilter, setStatusFilter] = useState('active');
   const debouncedSearch = useDebounce(search, 300);
 
+  const [sortKey, setSortKey] = useState<string>('id');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
   const [createModal, setCreateModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
@@ -253,6 +256,44 @@ export default function StudentsPage() {
     onError: () => toast.error('退所処理に失敗しました'),
   });
 
+  const toggleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  };
+
+  const sortedStudents = useMemo(() => {
+    const list = [...students];
+    const dir = sortDir === 'asc' ? 1 : -1;
+    list.sort((a, b) => {
+      let va: string | number | null = null;
+      let vb: string | number | null = null;
+      switch (sortKey) {
+        case 'id': va = a.id; vb = b.id; break;
+        case 'student_name': va = a.student_name; vb = b.student_name; break;
+        case 'birth_date': va = a.birth_date; vb = b.birth_date; break;
+        case 'age': {
+          const now = Date.now();
+          va = a.birth_date ? now - new Date(a.birth_date).getTime() : 0;
+          vb = b.birth_date ? now - new Date(b.birth_date).getTime() : 0;
+          break;
+        }
+        case 'grade_level': va = a.grade_level; vb = b.grade_level; break;
+        case 'guardian': va = a.guardian?.full_name ?? ''; vb = b.guardian?.full_name ?? ''; break;
+        case 'status': va = a.status; vb = b.status; break;
+        case 'created_at': va = a.created_at; vb = b.created_at; break;
+      }
+      if (va === null || va === undefined) va = '';
+      if (vb === null || vb === undefined) vb = '';
+      if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir;
+      return String(va).localeCompare(String(vb), 'ja') * dir;
+    });
+    return list;
+  }, [students, sortKey, sortDir]);
+
   const openEdit = (student: Student) => {
     setEditingStudent(student);
     const toDateStr = (d: string | null) => d ? d.slice(0, 10) : '';
@@ -338,19 +379,33 @@ export default function StudentsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)]">
-                <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">ID</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">生徒名</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">生年月日</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">年齢</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">学年</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">保護者</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">状態</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">登録日</th>
+                {([
+                  ['id', 'ID'],
+                  ['student_name', '生徒名'],
+                  ['birth_date', '生年月日'],
+                  ['age', '年齢'],
+                  ['grade_level', '学年'],
+                  ['guardian', '保護者'],
+                  ['status', '状態'],
+                  ['created_at', '登録日'],
+                ] as const).map(([key, label]) => (
+                  <th key={key}
+                    onClick={() => toggleSort(key)}
+                    className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)] cursor-pointer select-none hover:text-[var(--neutral-foreground-1)] transition-colors"
+                  >
+                    <span className="inline-flex items-center gap-0.5">
+                      {label}
+                      {sortKey === key && (
+                        <MaterialIcon name={sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'} size={12} />
+                      )}
+                    </span>
+                  </th>
+                ))}
                 <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">操作</th>
               </tr>
             </thead>
             <tbody>
-              {students.map((student) => {
+              {sortedStudents.map((student) => {
                 const age = student.birth_date
                   ? Math.floor((Date.now() - new Date(student.birth_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
                   : null;
