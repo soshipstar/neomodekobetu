@@ -328,6 +328,44 @@ function PhotoUploadModal({
     }).catch(() => {});
   }, []);
 
+  /**
+   * 画像を canvas 経由で JPEG に変換＋リサイズする。
+   * - HEIC 等の非対応形式もブラウザが描画できれば JPEG 化される
+   * - 最大幅 2048px にリサイズしてモバイル回線でも送信可能にする
+   * - JPEG 含む全形式を対象にする（Android の大きな JPEG 対策）
+   */
+  const compressImage = (src: File, maxWidth = 2048, quality = 0.85): Promise<File> =>
+    new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(src);
+      const img = new Image();
+      img.onload = () => {
+        let w = img.naturalWidth;
+        let h = img.naturalHeight;
+        if (w > maxWidth) {
+          h = Math.round(h * (maxWidth / w));
+          w = maxWidth;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { reject(new Error('Canvas not supported')); return; }
+        ctx.drawImage(img, 0, 0, w, h);
+        canvas.toBlob(
+          (blob) => {
+            URL.revokeObjectURL(url);
+            if (!blob) { reject(new Error('Blob conversion failed')); return; }
+            const name = src.name.replace(/\.[^.]+$/, '') + '.jpg';
+            resolve(new File([blob], name, { type: 'image/jpeg' }));
+          },
+          'image/jpeg',
+          quality,
+        );
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('画像を読み込めませんでした')); };
+      img.src = url;
+    });
+
   const handleSubmit = async () => {
     if (!file) {
       toast('写真を選択してください', 'error');
@@ -335,8 +373,10 @@ function PhotoUploadModal({
     }
     setSaving(true);
     try {
+      // 全画像をリサイズ + JPEG 変換（HEIC 対応 + Android 大容量写真対策）
+      const jpeg = await compressImage(file);
       const formData = new FormData();
-      formData.append('photo', file);
+      formData.append('photo', jpeg);
       formData.append('classroom_id', String(classroomId));
       formData.append('activity_description', activityDescription);
       formData.append('activity_date', activityDate);

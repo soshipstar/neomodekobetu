@@ -88,7 +88,7 @@ class ClassroomPhotoController extends Controller
         $user = $request->user();
 
         $validated = $request->validate([
-            'photo' => 'required|file|mimes:jpg,jpeg,png,webp,gif|max:10240', // 10MB (アップロード前)
+            'photo' => 'required|file|mimes:jpg,jpeg,png,webp,gif,heic,heif|max:25600', // 25MB (フロント側で圧縮済み、フォールバック)
             'classroom_id' => 'required|integer|exists:classrooms,id',
             'activity_description' => 'nullable|string|max:2000',
             'activity_date' => 'nullable|date',

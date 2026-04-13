@@ -18,6 +18,12 @@ function nl(text: string | null | undefined): string {
   return text.replace(/\\r\\n|\\n|\\r/g, '\n').replace(/\r\n|\r/g, '\n');
 }
 
+interface NotePhoto {
+  id: number;
+  url: string;
+  activity_description: string | null;
+}
+
 interface IntegratedNote {
   id: number;
   student_id: number;
@@ -35,6 +41,7 @@ interface IntegratedNote {
     record_date: string;
     activity_name: string | null;
   } | null;
+  photos?: NotePhoto[];
 }
 
 export default function GuardianNotesPage() {
@@ -133,6 +140,26 @@ export default function GuardianNotesPage() {
             <div className="rounded-lg bg-[var(--neutral-background-3)] p-4 mb-4">
               <p className="text-sm text-[var(--neutral-foreground-2)] whitespace-pre-wrap">{nl(note.integrated_content)}</p>
             </div>
+
+            {/* Photos */}
+            {note.photos && note.photos.length > 0 && (
+              <div className="mb-4 px-1">
+                <p className="text-xs font-medium text-[var(--neutral-foreground-3)] mb-2">
+                  <MaterialIcon name="photo_library" size={14} className="inline-block align-text-bottom mr-1" />
+                  写真 ({note.photos.length}枚)
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {note.photos.map((photo) => (
+                    <a key={photo.id} href={photo.url} target="_blank" rel="noopener noreferrer"
+                      className="block overflow-hidden rounded-lg border border-[var(--neutral-stroke-2)]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={photo.url} alt={photo.activity_description ?? '活動写真'}
+                        className="w-full aspect-square object-cover hover:scale-105 transition-transform" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Confirm button */}
             {!note.guardian_confirmed && (

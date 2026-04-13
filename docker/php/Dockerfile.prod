@@ -41,6 +41,13 @@ RUN { \
       echo "opcache.interned_strings_buffer=16"; \
     } > /usr/local/etc/php/conf.d/opcache-prod.ini
 
+# アップロード制限（デフォルト2MBではスマホ写真が拒否される）
+RUN { \
+      echo "upload_max_filesize=30M"; \
+      echo "post_max_size=32M"; \
+      echo "memory_limit=256M"; \
+    } > /usr/local/etc/php/conf.d/uploads.ini
+
 # Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 

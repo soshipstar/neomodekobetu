@@ -3,11 +3,13 @@
 namespace Tests\Feature;
 
 use App\Models\Classroom;
+use App\Models\ClassroomPhoto;
 use App\Models\DailyRecord;
 use App\Models\IntegratedNote;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class L003_GuardianNoteConfirmTest extends TestCase
@@ -153,5 +155,39 @@ class L003_GuardianNoteConfirmTest extends TestCase
             ->postJson("/api/guardian/notes/{$note->id}/confirm");
 
         $response->assertStatus(422);
+    }
+
+    public function test_by_date_returns_photos(): void
+    {
+        Storage::fake('public');
+        $data = $this->createTestData();
+
+        $photo = ClassroomPhoto::create([
+            'classroom_id' => $data['classroom']->id,
+            'uploader_id' => $data['staff']->id,
+            'file_path' => 'classroom_photos/test.jpg',
+            'file_size' => 1000,
+            'mime' => 'image/jpeg',
+        ]);
+
+        $note = IntegratedNote::create([
+            'daily_record_id' => $data['dailyRecord']->id,
+            'student_id' => $data['student']->id,
+            'integrated_content' => 'Note with photo',
+            'is_sent' => true,
+            'sent_at' => now(),
+            'guardian_confirmed' => false,
+        ]);
+        $note->photos()->attach($photo->id, ['sort_order' => 0]);
+
+        $date = now()->toDateString();
+        $response = $this->actingAs($data['guardian'], 'sanctum')
+            ->getJson("/api/guardian/notes/{$date}");
+
+        $response->assertStatus(200);
+        $notes = $response->json('data');
+        $this->assertCount(1, $notes);
+        $this->assertCount(1, $notes[0]['photos']);
+        $this->assertEquals($photo->id, $notes[0]['photos'][0]['id']);
     }
 }
