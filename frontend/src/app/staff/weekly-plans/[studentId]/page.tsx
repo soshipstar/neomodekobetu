@@ -283,6 +283,19 @@ export default function WeeklyPlanStudentDetailPage() {
     enabled: !!studentId,
   });
 
+  // Fetch previous week plan for comparison
+  const prevWeekStartStr = format(addWeeks(weekStart, -1), 'yyyy-MM-dd');
+  const { data: prevPlan } = useQuery({
+    queryKey: ['staff', 'weekly-plan-detail', studentId, prevWeekStartStr],
+    queryFn: async () => {
+      const res = await api.get(`/api/staff/weekly-plans/${studentId}`, {
+        params: { week_start_date: prevWeekStartStr },
+      });
+      return (res.data?.data ?? null) as WeeklyPlanData | null;
+    },
+    enabled: !!studentId,
+  });
+
   // Populate form when entering edit mode
   const enterEditMode = useCallback(() => {
     const pc = (plan?.plan_content ?? {}) as Record<string, unknown>;
@@ -402,10 +415,21 @@ export default function WeeklyPlanStudentDetailPage() {
     should_do_comment: '',
     want_to_do_achievement: 0,
     want_to_comment: '',
+    daily_achievement: {} as Record<string, { achievement: number; comment: string }>,
     overall_comment: '',
   });
 
   const enterReviewMode = useCallback(() => {
+    const da = plan?.daily_achievement ?? {};
+    const dayKeyMap: Record<string, string> = { day_0: 'monday', day_1: 'tuesday', day_2: 'wednesday', day_3: 'thursday', day_4: 'friday', day_5: 'saturday', day_6: 'sunday' };
+    const initDaily: Record<string, { achievement: number; comment: string }> = {};
+    Object.entries(dayKeyMap).forEach(([dayKey, dayName]) => {
+      const existing = da[dayName] ?? da[dayKey];
+      initDaily[dayName] = {
+        achievement: existing?.achievement ?? 0,
+        comment: existing?.comment ?? '',
+      };
+    });
     setReviewForm({
       weekly_goal_achievement: plan?.weekly_goal_achievement ?? 0,
       weekly_goal_comment: plan?.weekly_goal_comment ?? '',
@@ -417,6 +441,7 @@ export default function WeeklyPlanStudentDetailPage() {
       should_do_comment: plan?.should_do_comment ?? '',
       want_to_do_achievement: plan?.want_to_do_achievement ?? 0,
       want_to_comment: plan?.want_to_do_comment ?? '',
+      daily_achievement: initDaily,
       overall_comment: plan?.overall_comment ?? '',
     });
     setIsReviewMode(true);
@@ -442,6 +467,7 @@ export default function WeeklyPlanStudentDetailPage() {
         should_do_comment: reviewForm.should_do_comment || null,
         want_to_do_achievement: reviewForm.want_to_do_achievement || null,
         want_to_do_comment: reviewForm.want_to_comment || null,
+        daily_achievement: reviewForm.daily_achievement,
         overall_comment: reviewForm.overall_comment || null,
         evaluated_at: new Date().toISOString(),
       });
@@ -909,6 +935,52 @@ export default function WeeklyPlanStudentDetailPage() {
               </div>
             )}
 
+            {/* 日別達成度 */}
+            {plan?.plan_data && Object.values(plan.plan_data).some((v) => v?.trim()) && (
+              <div className="mb-6">
+                <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--brand-60)]">
+                  <MaterialIcon name="calendar_month" size={16} />
+                  日別の達成度
+                </h3>
+                <p className="mb-2 text-xs text-[var(--neutral-foreground-3)]">1=できなかった ← → 5=よくできた</p>
+                <div className="space-y-3">
+                  {DAYS.map((dayLabel, i) => {
+                    const dayKey = `day_${i}`;
+                    const dayName = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][i];
+                    const content = plan?.plan_data?.[dayKey];
+                    if (!content?.trim()) return null;
+                    const da = reviewForm.daily_achievement[dayName] ?? { achievement: 0, comment: '' };
+                    return (
+                      <div key={dayKey} className="rounded-lg border border-[var(--neutral-stroke-2)] bg-white p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-semibold text-[var(--neutral-foreground-1)]">{dayLabel}</span>
+                          <RatingScale
+                            name={dayName}
+                            value={da.achievement}
+                            onChange={(v) => setReviewForm((f) => ({
+                              ...f,
+                              daily_achievement: { ...f.daily_achievement, [dayName]: { ...f.daily_achievement[dayName], achievement: v } },
+                            }))}
+                          />
+                        </div>
+                        <p className="mb-2 text-xs text-[var(--neutral-foreground-3)] bg-[var(--neutral-background-3)] rounded p-2">{content}</p>
+                        <input
+                          type="text"
+                          className="w-full rounded border border-[var(--neutral-stroke-2)] px-2 py-1 text-sm"
+                          placeholder="コメント（任意）"
+                          value={da.comment}
+                          onChange={(e) => setReviewForm((f) => ({
+                            ...f,
+                            daily_achievement: { ...f.daily_achievement, [dayName]: { ...f.daily_achievement[dayName], comment: e.target.value } },
+                          }))}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* 総合コメント */}
             <div className="mb-6">
               <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--brand-60)]">
@@ -1175,6 +1247,53 @@ export default function WeeklyPlanStudentDetailPage() {
                       <p className="text-sm leading-relaxed whitespace-pre-wrap text-[var(--neutral-foreground-1)]">
                         {nl(plan.overall_comment)}
                       </p>
+                    </div>
+                  )}
+                </div>
+              </CardBody>
+            </Card>
+          )}
+
+          {/* Previous Week Comparison */}
+          {prevPlan && (
+            <Card>
+              <CardBody>
+                <h3 className="mb-4 text-lg font-bold text-[var(--neutral-foreground-1)]">
+                  <MaterialIcon name="compare_arrows" size={20} className="mr-2 inline-block" />
+                  前週の計画・達成度
+                  <span className="ml-2 text-sm font-normal text-[var(--neutral-foreground-3)]">
+                    ({format(new Date(prevPlan.week_start_date), 'M/d', { locale: ja })} 〜)
+                  </span>
+                </h3>
+                <div className="space-y-3">
+                  {[
+                    { label: '今週の目標', goal: prevPlan.weekly_goal, ach: prevPlan.weekly_goal_achievement, cmt: prevPlan.weekly_goal_comment },
+                    { label: 'いっしょに決めた目標', goal: prevPlan.shared_goal, ach: prevPlan.shared_goal_achievement, cmt: prevPlan.shared_goal_comment },
+                    { label: 'やるべきこと', goal: prevPlan.must_do, ach: prevPlan.must_do_achievement, cmt: prevPlan.must_do_comment },
+                    { label: 'やったほうがいいこと', goal: prevPlan.should_do, ach: prevPlan.should_do_achievement, cmt: prevPlan.should_do_comment },
+                    { label: 'やりたいこと', goal: prevPlan.want_to_do, ach: prevPlan.want_to_do_achievement, cmt: prevPlan.want_to_do_comment },
+                  ].map(({ label, goal, ach, cmt }) => {
+                    if (!goal?.trim()) return null;
+                    const a = ach ?? 0;
+                    const colorClass = ACHIEVEMENT_COLORS[a] || 'bg-gray-400';
+                    const achLabel = ACHIEVEMENT_LABELS[a] || '未評価';
+                    return (
+                      <div key={label} className="rounded-lg bg-[var(--neutral-background-3)] p-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-semibold text-[var(--neutral-foreground-2)]">{label}</span>
+                          <span className={`inline-block rounded px-2 py-0.5 text-xs font-bold text-white ${colorClass}`}>{achLabel}</span>
+                        </div>
+                        <p className="text-sm text-[var(--neutral-foreground-3)] whitespace-pre-wrap">{nl(goal)}</p>
+                        {cmt?.trim() && (
+                          <p className="mt-1 text-xs text-[var(--neutral-foreground-4)] italic">{cmt}</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {prevPlan.overall_comment?.trim() && (
+                    <div className="rounded-lg border-l-4 border-green-500 bg-green-50 p-3">
+                      <p className="text-xs font-medium text-green-700 mb-1">前週の総合コメント</p>
+                      <p className="text-sm whitespace-pre-wrap">{nl(prevPlan.overall_comment)}</p>
                     </div>
                   )}
                 </div>
