@@ -481,6 +481,7 @@ Route::prefix('guardian')
         Route::post('/chat/rooms/{room}/quick-action', [App\Http\Controllers\Guardian\ChatController::class, 'sendQuickAction']);
         Route::post('/chat/rooms/{room}/event-registration', [App\Http\Controllers\Guardian\ChatController::class, 'sendEventRegistration']);
         Route::post('/chat/rooms/{room}/meeting-request', [App\Http\Controllers\Guardian\ChatController::class, 'sendMeetingRequest']);
+        Route::delete('/chat/rooms/{room}/messages/{message}', [App\Http\Controllers\Guardian\ChatController::class, 'deleteMessage']);
         Route::post('/chat/rooms/{room}/messages/{message}/archive', [App\Http\Controllers\Guardian\ChatController::class, 'toggleArchive']);
         Route::get('/chat/rooms/{room}/archived', [App\Http\Controllers\Guardian\ChatController::class, 'archivedMessages']);
 

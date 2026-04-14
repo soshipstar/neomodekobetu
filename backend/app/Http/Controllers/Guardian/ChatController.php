@@ -227,8 +227,32 @@ class ChatController extends Controller
     }
 
     /**
-     * 欠席連絡送信 (legacy chat_api.php send_absence_notification と同等)
+     * メッセージ削除（自分が送信したメッセージのみ）
      */
+    public function deleteMessage(Request $request, ChatRoom $room, ChatMessage $message): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($room->guardian_id !== $user->id) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
+        if ($message->room_id !== $room->id) {
+            return response()->json(['success' => false, 'message' => 'メッセージが見つかりません。'], 404);
+        }
+
+        if ($message->sender_id !== $user->id) {
+            return response()->json(['success' => false, 'message' => '削除権限がありません。'], 403);
+        }
+
+        $message->update([
+            'is_deleted' => true,
+            'deleted_at' => now(),
+        ]);
+
+        return response()->json(['success' => true]);
+    }
+
     /**
      * 保護者から施設へのクイック通知
      * 「今出発しました」「帰宅しました」
