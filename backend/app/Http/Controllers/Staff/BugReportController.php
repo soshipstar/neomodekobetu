@@ -160,7 +160,7 @@ class BugReportController extends Controller
         }
 
         $validated = $request->validate([
-            'status' => 'required|string|in:open,in_progress,resolved,closed',
+            'status' => 'required|string|in:open,in_progress,resolved',
         ]);
 
         $oldStatus = $bugReport->status;

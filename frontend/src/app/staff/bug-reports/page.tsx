@@ -34,7 +34,6 @@ const STATUS_MAP: Record<string, { label: string; variant: 'danger' | 'warning' 
   open: { label: '未対応', variant: 'danger' },
   in_progress: { label: '対応中', variant: 'warning' },
   resolved: { label: '解決済み', variant: 'success' },
-  closed: { label: '完了', variant: 'default' },
 };
 
 const PRIORITY_MAP: Record<string, { label: string; color: string }> = {
@@ -54,7 +53,7 @@ export default function BugReportsPage() {
   // State
   const [showNewReport, setShowNewReport] = useState(false);
   const [selectedReport, setSelectedReport] = useState<BugReport | null>(null);
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('open');
   const [replyText, setReplyText] = useState('');
 
   // Form
@@ -166,10 +165,10 @@ export default function BugReportsPage() {
       {/* Filter */}
       <div className="flex gap-2 flex-wrap">
         {[
-          { value: '', label: 'すべて' },
           { value: 'open', label: '未対応' },
           { value: 'in_progress', label: '対応中' },
           { value: 'resolved', label: '解決済み' },
+          { value: '', label: 'すべて' },
         ].map((f) => (
           <button
             key={f.value}
@@ -402,7 +401,7 @@ export default function BugReportsPage() {
                 {isAdmin && (
                   <div className="flex items-center gap-2 border-t border-[var(--neutral-stroke-2)] pt-3">
                     <span className="text-xs text-[var(--neutral-foreground-3)]">ステータス:</span>
-                    {['open', 'in_progress', 'resolved', 'closed'].map((s) => (
+                    {['open', 'in_progress', 'resolved'].map((s) => (
                       <button
                         key={s}
                         onClick={() => statusMutation.mutate(s)}
