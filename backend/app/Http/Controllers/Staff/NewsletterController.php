@@ -845,12 +845,34 @@ PROMPT;
         }
 
         $newsletter->update([
-            'is_published' => true,
+            'status'       => 'published',
+            'published_at' => now(),
         ]);
+
+        // 保護者に通知
+        try {
+            $classroomId = $newsletter->classroom_id;
+            $guardians = \App\Models\User::where('user_type', 'guardian')
+                ->where('classroom_id', $classroomId)
+                ->where('is_active', true)
+                ->get();
+            $notificationService = app(\App\Services\NotificationService::class);
+            foreach ($guardians as $guardian) {
+                $notificationService->notify(
+                    $guardian,
+                    'newsletter',
+                    '施設通信が発行されました',
+                    "{$newsletter->title}",
+                    ['url' => '/guardian/newsletters'],
+                );
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Newsletter publish notification error: ' . $e->getMessage());
+        }
 
         return response()->json([
             'success' => true,
-            'data'    => $newsletter,
+            'data'    => $newsletter->fresh(),
             'message' => '通信を発行しました。',
         ]);
     }
