@@ -551,16 +551,21 @@ class PendingTaskController extends Controller
                 $join->on('kp.id', '=', 'ks.period_id')
                     ->on('ks.student_id', '=', 's.id');
             })
+            ->leftJoin('kakehashi_guardian as kg', function ($join) {
+                $join->on('kp.id', '=', 'kg.period_id')
+                    ->on('kg.student_id', '=', 's.id');
+            })
             ->where('s.is_active', true)
             ->where('kp.is_active', true)
             ->where(function ($q) {
+                // スタッフ未提出 OR (スタッフ提出済みで保護者が未提出)
                 $q->where('ks.is_submitted', false)
                     ->orWhereNull('ks.is_submitted')
                     ->orWhere(function ($q2) {
                         $q2->where('ks.is_submitted', true)
                             ->where(function ($q3) {
-                                $q3->where('ks.guardian_confirmed', false)
-                                    ->orWhereNull('ks.guardian_confirmed');
+                                $q3->where('kg.is_submitted', false)
+                                    ->orWhereNull('kg.is_submitted');
                             });
                     });
             })
@@ -592,7 +597,7 @@ class PendingTaskController extends Controller
             'ks.id as kakehashi_id',
             'ks.is_submitted',
             DB::raw('COALESCE(ks.is_hidden, false) as is_hidden'),
-            DB::raw('COALESCE(ks.guardian_confirmed, false) as guardian_confirmed'),
+            DB::raw('COALESCE(kg.is_submitted, false) as guardian_submitted'),
         ])
             ->orderBy('kp.submission_deadline')
             ->orderBy('s.student_name')
@@ -602,7 +607,7 @@ class PendingTaskController extends Controller
         foreach ($rows as $row) {
             $isNotCreated = empty($row->kakehashi_id);
             $isDraft = !empty($row->kakehashi_id) && !$row->is_submitted;
-            $isNeedsGuardianConfirm = !empty($row->kakehashi_id) && $row->is_submitted && !$row->guardian_confirmed;
+            $isNeedsGuardianConfirm = !empty($row->kakehashi_id) && $row->is_submitted && !$row->guardian_submitted;
             $daysLeft = (int) $row->days_left;
 
             if ($isNeedsGuardianConfirm) {
@@ -628,7 +633,7 @@ class PendingTaskController extends Controller
                 'days_left'           => $daysLeft,
                 'kakehashi_id'        => $row->kakehashi_id,
                 'is_submitted'        => (bool) $row->is_submitted,
-                'guardian_confirmed'  => (bool) $row->guardian_confirmed,
+                'guardian_confirmed'  => (bool) $row->guardian_submitted,
                 'status_code'         => $statusCode,
             ];
         }
