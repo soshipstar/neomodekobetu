@@ -48,7 +48,7 @@ class StaffEventController extends Controller
             'date'               => $e->event_date?->format('Y-m-d'),
             'start_time'         => $e->start_time ? substr($e->start_time, 0, 5) : null,
             'end_time'           => $e->end_time ? substr($e->end_time, 0, 5) : null,
-            'location'           => null,
+            'location'           => $e->location,
             'capacity'           => $e->max_capacity,
             'registration_count' => $e->registrations_count ?? 0,
             'is_published'       => true,
@@ -82,6 +82,7 @@ class StaffEventController extends Controller
             'event_color'       => 'nullable|string|max:20',
             'staff_comment'     => 'nullable|string|max:1000',
             'guardian_message'  => 'nullable|string|max:1000',
+            'location'         => 'nullable|string|max:500',
             'max_capacity'     => 'nullable|integer|min:1',
         ]);
 
@@ -93,12 +94,11 @@ class StaffEventController extends Controller
             'event_date'        => $validated['date'] ?? $validated['event_date'],
             'start_time'        => $validated['start_time'] ?? null,
             'end_time'          => $validated['end_time'] ?? null,
-            // DB 側に NOT NULL 制約（デフォルト値あり）があるので、
-            // リクエストに無ければ DB デフォルトと同じ値にフォールバックする
             'target_audience'   => $validated['target_audience'] ?? 'all',
             'event_color'       => $validated['event_color'] ?? '#28a745',
             'staff_comment'     => $validated['staff_comment'] ?? null,
             'guardian_message'  => $validated['guardian_message'] ?? null,
+            'location'         => $validated['location'] ?? null,
             'max_capacity'     => $validated['max_capacity'] ?? null,
         ]);
 
@@ -133,6 +133,7 @@ class StaffEventController extends Controller
             'event_color'       => 'nullable|string|max:20',
             'staff_comment'     => 'nullable|string|max:1000',
             'guardian_message'  => 'nullable|string|max:1000',
+            'location'         => 'nullable|string|max:500',
             'max_capacity'     => 'nullable|integer|min:1',
         ]);
 
@@ -146,7 +147,7 @@ class StaffEventController extends Controller
         if (isset($validated['date']) || isset($validated['event_date'])) {
             $updateData['event_date'] = $validated['date'] ?? $validated['event_date'];
         }
-        foreach (['start_time', 'end_time', 'target_audience', 'event_color', 'staff_comment', 'guardian_message', 'max_capacity'] as $f) {
+        foreach (['start_time', 'end_time', 'target_audience', 'event_color', 'staff_comment', 'guardian_message', 'location', 'max_capacity'] as $f) {
             if (array_key_exists($f, $validated)) $updateData[$f] = $validated[$f];
         }
 

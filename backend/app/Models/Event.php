@@ -18,6 +18,7 @@ class Event extends Model
         'end_time',
         'event_name',
         'event_description',
+        'location',
         'target_audience',
         'event_color',
         'staff_comment',
