@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
+use App\Models\Classroom;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -48,7 +49,8 @@ class BulkRegisterController extends Controller
 
     /**
      * CSVまたはテキストデータを解析してプレビュー用データを返す
-     * CSV形式: 保護者氏名,生徒氏名,生年月日,保護者メール,支援開始日,学年調整,月,火,水,木,金,土
+     * CSV形式: 教室名,保護者氏名,生徒氏名,生年月日,保護者メール,支援開始日,学年調整,月,火,水,木,金,土
+     * 教室名列が省略された旧形式（12列）も後方互換で受け付ける
      */
     public function parse(Request $request): JsonResponse
     {
@@ -82,6 +84,14 @@ class BulkRegisterController extends Controller
         $parsed = [];
         $dayLabels = ['月', '火', '水', '木', '金', '土'];
 
+        // アクセス可能な教室の名前→IDマッピングを構築
+        $accessibleIds = $user->accessibleClassroomIds();
+        $classroomMap = Classroom::whereIn('id', $accessibleIds)
+            ->pluck('id', 'classroom_name')
+            ->toArray();
+        $defaultClassroomId = $user->classroom_id;
+        $defaultClassroomName = Classroom::find($defaultClassroomId)?->classroom_name ?? '';
+
         foreach ($lines as $i => $line) {
             if (trim($line) === '') continue;
 
@@ -91,18 +101,23 @@ class BulkRegisterController extends Controller
                 $cols = str_getcsv($line, "\t");
             }
 
-            $guardianName    = trim($cols[0] ?? '');
-            $studentName     = trim($cols[1] ?? '');
-            $birthDate       = trim($cols[2] ?? '');
-            $guardianEmail   = trim($cols[3] ?? '');
-            $supportStartDate = trim($cols[4] ?? '');
-            $gradeAdjustment = isset($cols[5]) && $cols[5] !== '' ? (int) $cols[5] : 0;
-            $scheduledMon    = (int) ($cols[6] ?? 0);
-            $scheduledTue    = (int) ($cols[7] ?? 0);
-            $scheduledWed    = (int) ($cols[8] ?? 0);
-            $scheduledThu    = (int) ($cols[9] ?? 0);
-            $scheduledFri    = (int) ($cols[10] ?? 0);
-            $scheduledSat    = (int) ($cols[11] ?? 0);
+            // 13列以上 = 新形式（教室名あり）、12列以下 = 旧形式
+            $hasClassroomCol = count($cols) >= 13;
+            $offset = $hasClassroomCol ? 1 : 0;
+            $classroomName   = $hasClassroomCol ? trim($cols[0] ?? '') : '';
+
+            $guardianName    = trim($cols[$offset + 0] ?? '');
+            $studentName     = trim($cols[$offset + 1] ?? '');
+            $birthDate       = trim($cols[$offset + 2] ?? '');
+            $guardianEmail   = trim($cols[$offset + 3] ?? '');
+            $supportStartDate = trim($cols[$offset + 4] ?? '');
+            $gradeAdjustment = isset($cols[$offset + 5]) && $cols[$offset + 5] !== '' ? (int) $cols[$offset + 5] : 0;
+            $scheduledMon    = (int) ($cols[$offset + 6] ?? 0);
+            $scheduledTue    = (int) ($cols[$offset + 7] ?? 0);
+            $scheduledWed    = (int) ($cols[$offset + 8] ?? 0);
+            $scheduledThu    = (int) ($cols[$offset + 9] ?? 0);
+            $scheduledFri    = (int) ($cols[$offset + 10] ?? 0);
+            $scheduledSat    = (int) ($cols[$offset + 11] ?? 0);
 
             // 通所曜日の表示用テキスト
             $scheduledArr = [$scheduledMon, $scheduledTue, $scheduledWed, $scheduledThu, $scheduledFri, $scheduledSat];
@@ -123,8 +138,23 @@ class BulkRegisterController extends Controller
                 }
             }
 
+            // 教室名の解決
+            $resolvedClassroomId = $defaultClassroomId;
+            $resolvedClassroomName = $defaultClassroomName;
+            if (!empty($classroomName)) {
+                if (isset($classroomMap[$classroomName])) {
+                    $resolvedClassroomId = $classroomMap[$classroomName];
+                    $resolvedClassroomName = $classroomName;
+                } else {
+                    $resolvedClassroomId = null;
+                    $resolvedClassroomName = $classroomName;
+                }
+            }
+
             $row = [
                 'row_number'          => $i + 2,
+                'classroom_name'      => $resolvedClassroomName,
+                'classroom_id'        => $resolvedClassroomId,
                 'guardian_name'       => $guardianName,
                 'student_name'        => $studentName,
                 'birth_date'          => $birthDate,
@@ -164,6 +194,9 @@ class BulkRegisterController extends Controller
             if (! empty($row['guardian_email']) && User::where('email', $row['guardian_email'])->exists()) {
                 $row['errors'][] = 'このメールアドレスは既に登録されています。';
             }
+            if (!empty($classroomName) && $resolvedClassroomId === null) {
+                $row['errors'][] = "教室「{$classroomName}」が見つからないか、アクセス権限がありません。";
+            }
 
             if (! empty($row['errors'])) {
                 $row['status'] = 'error';
@@ -194,6 +227,7 @@ class BulkRegisterController extends Controller
             'rows.*.support_start_date' => 'nullable|date',
             'rows.*.grade_adjustment'   => 'nullable|integer|min:-2|max:2',
             'rows.*.grade_level'        => 'nullable|string',
+            'rows.*.classroom_id'       => 'nullable|integer|exists:classrooms,id',
         ]);
 
         $successCount = 0;
@@ -201,8 +235,9 @@ class BulkRegisterController extends Controller
         $errors = [];
 
         DB::transaction(function () use ($request, $user, &$successCount, &$errorCount, &$errors) {
-            $classroomId = $user->classroom_id;
-            $guardianMap = []; // 保護者氏名 => DB ID
+            $defaultClassroomId = $user->classroom_id;
+            $accessibleIds = $user->accessibleClassroomIds();
+            $guardianMap = []; // "保護者氏名_classroomId" => DB ID
 
             // guardian_XXX形式のユーザー名の最大番号を取得
             $lastGuardian = User::where('username', 'like', 'guardian_%')
@@ -218,7 +253,13 @@ class BulkRegisterController extends Controller
                     $guardianName = $row['guardian_name'];
                     $gradeAdjustment = (int) ($row['grade_adjustment'] ?? 0);
 
-                    // 保護者の処理（同一氏名は同一保護者として紐付け）
+                    // 行ごとの教室IDを決定（CSVで指定されていればそれを使用、なければデフォルト）
+                    $rowClassroomId = $row['classroom_id'] ?? $defaultClassroomId;
+                    if (!in_array((int) $rowClassroomId, $accessibleIds, true)) {
+                        throw new \RuntimeException("教室ID {$rowClassroomId} へのアクセス権限がありません。");
+                    }
+
+                    // 保護者の処理（同一氏名は同一保護者として紐付け＝教室が違っても1アカウント）
                     if (! isset($guardianMap[$guardianName])) {
                         $username = 'guardian_' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
                         $nextNumber++;
@@ -232,7 +273,7 @@ class BulkRegisterController extends Controller
                         $password = $this->generateRandomPassword();
 
                         $guardian = User::create([
-                            'classroom_id'  => $classroomId,
+                            'classroom_id'  => $rowClassroomId,
                             'username'      => $username,
                             'password'      => Hash::make($password),
                             'password_plain' => $password,
@@ -264,9 +305,9 @@ class BulkRegisterController extends Controller
                         }
                     }
 
-                    // 生徒を作成
+                    // 生徒を作成（CSVの教室に所属）
                     Student::create([
-                        'classroom_id'        => $classroomId,
+                        'classroom_id'        => $rowClassroomId,
                         'guardian_id'         => $guardianId,
                         'student_name'        => $row['student_name'],
                         'birth_date'          => $row['birth_date'] ?: null,

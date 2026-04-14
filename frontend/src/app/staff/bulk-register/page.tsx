@@ -31,10 +31,10 @@ interface BulkResult {
   errors: { row: number; message: string }[];
 }
 
-const csvTemplate = `保護者氏名,生徒氏名,生年月日,保護者メールアドレス,支援開始日,学年調整,月,火,水,木,金,土
-山田花子,山田太郎,2015-04-01,hanako@example.com,2025-04-01,0,1,1,1,1,1,0
-山田花子,山田次郎,2017-06-15,,,0,1,0,1,0,1,0
-鈴木美子,鈴木一郎,2016-08-15,yoshiko@example.com,2025-04-01,0,1,1,1,1,1,0`;
+const csvTemplate = `教室名,保護者氏名,生徒氏名,生年月日,保護者メールアドレス,支援開始日,学年調整,月,火,水,木,金,土
+てらこや,山田花子,山田太郎,2015-04-01,hanako@example.com,2025-04-01,0,1,1,1,1,1,0
+てらこやプラス,山田花子,山田次郎,2017-06-15,,,0,1,0,1,0,1,0
+てらこや,鈴木美子,鈴木一郎,2016-08-15,yoshiko@example.com,2025-04-01,0,1,1,1,1,1,0`;
 
 export default function BulkRegisterPage() {
   const toast = useToast();
@@ -102,6 +102,7 @@ export default function BulkRegisterPage() {
 
   const previewColumns: Column<ParsedRow>[] = [
     { key: 'row_number', label: '行' },
+    { key: 'classroom_name', label: '教室' },
     { key: 'guardian_name', label: '保護者氏名' },
     { key: 'student_name', label: '生徒氏名' },
     { key: 'birth_date', label: '生年月日' },
@@ -156,6 +157,7 @@ export default function BulkRegisterPage() {
                           以下の項目をCSV形式で準備してください。同じ保護者氏名の行は、同一保護者として複数の生徒を紐付けます。
                         </p>
                         <ul className="list-disc pl-5 text-xs text-[var(--neutral-foreground-3)] space-y-0.5">
+                          <li><strong>教室名</strong>（省略時はログイン中の教室に登録）</li>
                           <li><strong>保護者氏名</strong>（必須）</li>
                           <li><strong>生徒氏名</strong>（必須）</li>
                           <li><strong>生年月日</strong>（必須、YYYY-MM-DD形式）</li>
@@ -227,6 +229,7 @@ export default function BulkRegisterPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--neutral-stroke-3)]">
+                  <tr><td className="px-3 py-2">教室名</td><td className="px-3 py-2"><Badge variant="warning">任意</Badge></td><td className="px-3 py-2">テキスト（省略時はログイン教室）</td><td className="px-3 py-2">てらこや</td></tr>
                   <tr><td className="px-3 py-2">保護者氏名</td><td className="px-3 py-2"><Badge variant="danger">必須</Badge></td><td className="px-3 py-2">テキスト</td><td className="px-3 py-2">山田花子</td></tr>
                   <tr><td className="px-3 py-2">生徒氏名</td><td className="px-3 py-2"><Badge variant="danger">必須</Badge></td><td className="px-3 py-2">テキスト</td><td className="px-3 py-2">山田太郎</td></tr>
                   <tr><td className="px-3 py-2">生年月日</td><td className="px-3 py-2"><Badge variant="danger">必須</Badge></td><td className="px-3 py-2">YYYY-MM-DD</td><td className="px-3 py-2">2015-04-01</td></tr>
@@ -252,7 +255,8 @@ export default function BulkRegisterPage() {
               <li>ユーザー名は自動生成されます（例：guardian_001）</li>
               <li>パスワードは8文字のランダムな英数字で自動生成されます</li>
               <li>登録完了後、ID・パスワード一覧をPDFでダウンロードできます</li>
-              <li>同じ保護者氏名の行は、1人の保護者に複数の生徒を紐付けます</li>
+              <li>同じ保護者氏名の行は、1人の保護者に複数の生徒を紐付けます（教室が異なっても同一保護者として扱います）</li>
+              <li>教室名を省略した場合、ログイン中の教室に登録されます</li>
               <li>既存のユーザー名と重複しないよう、自動的に番号が振られます</li>
             </ul>
           </Card>
