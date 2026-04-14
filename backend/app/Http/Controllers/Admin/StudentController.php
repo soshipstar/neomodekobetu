@@ -25,10 +25,11 @@ class StudentController extends Controller
 
         $query = Student::with(['classroom', 'guardian']);
 
-        // 非マスター管理者は自教室のみ
-        if (!$isMaster && $user->classroom_id) {
-            $query->where('classroom_id', $user->classroom_id);
-        } elseif ($request->filled('classroom_id')) {
+        // 非マスター管理者はアクセス可能な教室のみ
+        if (!$isMaster) {
+            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
+        }
+        if ($request->filled('classroom_id')) {
             $query->where('classroom_id', $request->classroom_id);
         }
 
@@ -329,8 +330,8 @@ class StudentController extends Controller
         $query = Student::whereIn('status', ['active', 'trial', 'short_term'])
             ->whereNotNull('birth_date');
 
-        if (!$isMaster && $user->classroom_id) {
-            $query->where('classroom_id', $user->classroom_id);
+        if (!$isMaster) {
+            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
         }
 
         $students = $query->orderBy('student_name')->get();
@@ -372,8 +373,8 @@ class StudentController extends Controller
         $query = Student::whereIn('status', ['active', 'trial', 'short_term'])
             ->whereNotNull('birth_date');
 
-        if (!$isMaster && $user->classroom_id) {
-            $query->where('classroom_id', $user->classroom_id);
+        if (!$isMaster) {
+            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
         }
 
         $students = $query->get();

@@ -25,9 +25,10 @@ class WaitingListController extends Controller
         // マスター管理者は全教室の待機者を閲覧可能。
         // それ以外は自教室のみ（リクエスト経由の指定もマスター時のみ反映）
         $isMaster = (bool) ($user->is_master ?? false);
-        if (!$isMaster && $user->classroom_id) {
-            $query->where('classroom_id', $user->classroom_id);
-        } elseif ($isMaster && $request->filled('classroom_id')) {
+        if (!$isMaster) {
+            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
+        }
+        if ($request->filled('classroom_id')) {
             $query->where('classroom_id', $request->classroom_id);
         }
 

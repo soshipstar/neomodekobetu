@@ -21,10 +21,10 @@ class ClassroomSettingController extends Controller
 
         $query = Classroom::where('is_active', true);
 
-        if (!$isMaster && $user->classroom_id) {
-            // 通常管理者は自教室のみ
-            $query->where('id', $user->classroom_id);
-        } elseif ($request->filled('classroom_id')) {
+        if (!$isMaster) {
+            $query->whereIn('id', $user->accessibleClassroomIds());
+        }
+        if ($request->filled('classroom_id')) {
             $query->where('id', $request->classroom_id);
         }
 
