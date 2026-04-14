@@ -231,7 +231,21 @@ class StudentController extends Controller
             $validated['support_start_date'] = $validated['desired_start_date'] ?? now()->toDateString();
         }
 
+        $hadNoSupportDate = empty($student->support_start_date);
         $student->update($validated);
+
+        // support_start_dateが新たに設定された場合、かけはし期間を自動生成
+        if ($hadNoSupportDate && !empty($validated['support_start_date'])) {
+            $periodCount = \App\Models\KakehashiPeriod::where('student_id', $student->id)->count();
+            if ($periodCount === 0) {
+                try {
+                    $kakehashiService = app(\App\Services\KakehashiService::class);
+                    $kakehashiService->generateKakehashiPeriodsForStudent($student->id, $validated['support_start_date']);
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning("かけはし生成エラー（更新時）: " . $e->getMessage());
+                }
+            }
+        }
 
         return response()->json([
             'success' => true,
