@@ -66,12 +66,10 @@ class RenrakuchoController extends Controller
         $query = DailyRecord::with(['staff:id,full_name'])
             ->withCount('studentRecords');
 
-        // 教室フィルタ（主教室 + classroom_user ピボットを横断）
-        if ($user->classroom_id) {
-            $accessible = $user->accessibleClassroomIds();
-            $query->whereHas('staff', function ($q) use ($accessible) {
-                $q->whereIn('classroom_id', $accessible);
-            });
+        // 教室フィルタ（DailyRecord自体のclassroom_idで絞り込む）
+        $accessible = $user->accessibleClassroomIds();
+        if (!empty($accessible)) {
+            $query->whereIn('classroom_id', $accessible);
         }
 
         // 日付フィルタ
