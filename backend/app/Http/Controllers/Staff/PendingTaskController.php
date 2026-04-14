@@ -156,11 +156,23 @@ class PendingTaskController extends Controller
                 continue;
             }
 
+            // 確定済み（is_official=true かつ published）の最新計画を確認
+            $officialPlan = $visiblePlans
+                ->where('is_official', true)
+                ->where('status', 'published')
+                ->sortByDesc('id')
+                ->first();
+
             // 下書きがあるかチェック（非表示を除外）
             $latestSubmittedPlan = $visiblePlans->where('is_draft', false)->sortByDesc('id')->first();
             $latestSubmittedId = $latestSubmittedPlan?->id;
             $latestSubmittedPlanDate = $latestSubmittedPlan?->created_date;
             $draftPlan = $visiblePlans->where('is_draft', true)->first();
+
+            // 確定済みの計画より古い下書きは無視（新しい期間の計画が確定済み）
+            if ($draftPlan && $officialPlan && $draftPlan->id < $officialPlan->id) {
+                $draftPlan = null;
+            }
 
             if ($draftPlan) {
                 $hasNewer = $latestSubmittedId && $draftPlan->id != $latestSubmittedId;
@@ -192,9 +204,9 @@ class PendingTaskController extends Controller
                 continue;
             }
 
-            // 提出済みで保護者確認が必要かチェック
+            // 提出済みで保護者確認が必要かチェック（確定済み is_official=true は除外）
             $needsGuardianConfirm = false;
-            if ($latestSubmittedPlan && !$latestSubmittedPlan->is_hidden && !$latestSubmittedPlan->guardian_confirmed) {
+            if ($latestSubmittedPlan && !$latestSubmittedPlan->is_hidden && !$latestSubmittedPlan->guardian_confirmed && !$latestSubmittedPlan->is_official) {
                 $daysSince = $latestSubmittedPlan->created_date ? (int) abs($today->diffInDays($latestSubmittedPlan->created_date, false)) : null;
                 $submittedCount = $visiblePlans->where('is_draft', false)->count();
                 $nextPeriod = $this->getNextTargetPeriod($supportStartDate, $submittedCount);
@@ -217,16 +229,21 @@ class PendingTaskController extends Controller
             }
 
             // 保護者確認が必要でない場合、期限切れかチェック
-            if (!$needsGuardianConfirm && $latestSubmittedPlan && !$latestSubmittedPlan->is_hidden) {
-                // 最新提出済み計画の期間を逆算し、次の期間を計算
-                $currentPeriod = $this->getPeriodFromPlanDate($supportStartDate, $latestSubmittedPlan->created_date);
+            // 確定済み計画の場合のみ次期間チェックを行う（未確定はチェック不要）
+            $checkPlan = $officialPlan ?? $latestSubmittedPlan;
+            if (!$needsGuardianConfirm && $checkPlan && !$checkPlan->is_hidden) {
+                // 最新確定済み計画の期間を逆算し、次の期間を計算
+                $currentPeriod = $this->getPeriodFromPlanDate($supportStartDate, $checkPlan->created_date);
                 $currentPeriodEnd = $currentPeriod['end'] ? Carbon::parse($currentPeriod['end']) : null;
 
                 $needsNewPlan = false;
 
-                // 方法1: 現在の期間の終了日を過ぎている
+                // 現在の期間の終了日を過ぎていて、次期間開始が1ヶ月以内
                 if ($currentPeriodEnd && $currentPeriodEnd->lt($today)) {
-                    $needsNewPlan = true;
+                    $nextStart = $currentPeriodEnd->copy()->addDay();
+                    if ($nextStart->lte($oneMonthLater)) {
+                        $needsNewPlan = true;
+                    }
                 }
 
                 // 方法2: かけはし期間ベースチェック
