@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Staff;
 use App\Http\Controllers\Controller;
 use App\Models\BugReport;
 use App\Models\BugReportReply;
+use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -114,11 +116,31 @@ class BugReportController extends Controller
             'message' => 'required|string|max:5000',
         ]);
 
+        $user = $request->user();
+
         $reply = BugReportReply::create([
             'bug_report_id' => $bugReport->id,
-            'user_id'       => $request->user()->id,
+            'user_id'       => $user->id,
             'message'       => $validated['message'],
         ]);
+
+        // 返信相手に通知（報告者以外が返信→報告者へ、報告者が返信→管理者へは不要）
+        if ($bugReport->reporter_id !== $user->id) {
+            try {
+                $reporter = User::find($bugReport->reporter_id);
+                if ($reporter) {
+                    app(NotificationService::class)->notify(
+                        $reporter,
+                        'bug_report',
+                        'バグ報告に返信がありました',
+                        $user->full_name . ': ' . mb_substr($validated['message'], 0, 80),
+                        ['url' => '/staff/bug-reports'],
+                    );
+                }
+            } catch (\Throwable $e) {
+                // 通知失敗は無視
+            }
+        }
 
         return response()->json([
             'success' => true,
@@ -141,7 +163,28 @@ class BugReportController extends Controller
             'status' => 'required|string|in:open,in_progress,resolved,closed',
         ]);
 
+        $oldStatus = $bugReport->status;
         $bugReport->update(['status' => $validated['status']]);
+
+        // 報告者に通知（自分自身への変更は通知しない）
+        if ($bugReport->reporter_id !== $user->id) {
+            $statusLabels = ['open' => '未対応', 'in_progress' => '対応中', 'resolved' => '解決済み', 'closed' => '完了'];
+            $newLabel = $statusLabels[$validated['status']] ?? $validated['status'];
+            try {
+                $reporter = User::find($bugReport->reporter_id);
+                if ($reporter) {
+                    app(NotificationService::class)->notify(
+                        $reporter,
+                        'bug_report',
+                        'バグ報告のステータスが変更されました',
+                        "「{$newLabel}」に変更されました: " . mb_substr($bugReport->description, 0, 50),
+                        ['url' => '/staff/bug-reports'],
+                    );
+                }
+            } catch (\Throwable $e) {
+                // 通知失敗は無視
+            }
+        }
 
         return response()->json([
             'success' => true,
