@@ -522,7 +522,7 @@ class ChatController extends Controller
         }
 
         // 管理者は全メッセージ削除可能、スタッフは自分が送信したもののみ
-        $isAdmin = $user->is_master || $user->isCompanyAdmin();
+        $isAdmin = $user->user_type === 'admin';
         if (!$isAdmin) {
             if ($message->sender_type !== 'staff') {
                 return response()->json(['success' => false, 'message' => '削除権限がありません。'], 403);
