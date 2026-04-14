@@ -243,6 +243,13 @@ Route::prefix('staff')
         Route::put('/classroom-photos/{photo}', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'update']);
         Route::delete('/classroom-photos/{photo}', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'destroy']);
 
+        // バグ報告
+        Route::get('/bug-reports', [App\Http\Controllers\Staff\BugReportController::class, 'index']);
+        Route::post('/bug-reports', [App\Http\Controllers\Staff\BugReportController::class, 'store']);
+        Route::get('/bug-reports/{bugReport}', [App\Http\Controllers\Staff\BugReportController::class, 'show']);
+        Route::post('/bug-reports/{bugReport}/reply', [App\Http\Controllers\Staff\BugReportController::class, 'reply']);
+        Route::patch('/bug-reports/{bugReport}/status', [App\Http\Controllers\Staff\BugReportController::class, 'updateStatus']);
+
         // ヒヤリハット記録
         Route::get('/hiyari-hatto', [App\Http\Controllers\Staff\HiyariHattoController::class, 'index']);
         Route::post('/hiyari-hatto', [App\Http\Controllers\Staff\HiyariHattoController::class, 'store']);

@@ -75,6 +75,8 @@ const staffNav: NavItem[] = [
   { type: 'link', label: '利用者一括登録', href: '/staff/bulk-register', icon: 'upload_file' },
   { type: 'link', label: 'マニュアル', href: '/staff/manual', icon: 'help_center' },
   { type: 'link', label: 'プロフィール', href: '/staff/profile', icon: 'account_circle' },
+  { type: 'divider', label: 'サポート' },
+  { type: 'link', label: 'バグ報告', href: '/staff/bug-reports', icon: 'bug_report' },
 ];
 
 const guardianNav: NavItem[] = [
