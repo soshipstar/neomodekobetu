@@ -16,20 +16,32 @@ export function cn(...inputs: ClassValue[]): string {
  * @example formatDate('2026-03-10', 'yyyy/MM/dd') => '2026/03/10'
  */
 export function formatDate(
-  date: string | Date,
+  date: string | Date | null | undefined,
   formatStr: string = 'yyyy年M月d日'
 ): string {
-  const d = typeof date === 'string' ? parseISO(date) : date;
-  return format(d, formatStr, { locale: ja });
+  if (!date) return '';
+  try {
+    const d = typeof date === 'string' ? parseISO(date) : date;
+    if (isNaN(d.getTime())) return '';
+    return format(d, formatStr, { locale: ja });
+  } catch {
+    return String(date);
+  }
 }
 
 /**
  * Format date with time in Japanese style
  * @example formatDateTime('2026-03-10T14:30:00') => '2026年3月10日 14:30'
  */
-export function formatDateTime(date: string | Date): string {
-  const d = typeof date === 'string' ? parseISO(date) : date;
-  return format(d, 'yyyy年M月d日 HH:mm', { locale: ja });
+export function formatDateTime(date: string | Date | null | undefined): string {
+  if (!date) return '';
+  try {
+    const d = typeof date === 'string' ? parseISO(date) : date;
+    if (isNaN(d.getTime())) return '';
+    return format(d, 'yyyy年M月d日 HH:mm', { locale: ja });
+  } catch {
+    return String(date);
+  }
 }
 
 /**
