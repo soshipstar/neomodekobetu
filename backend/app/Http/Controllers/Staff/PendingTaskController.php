@@ -156,35 +156,44 @@ class PendingTaskController extends Controller
                 continue;
             }
 
-            // 確定済み（is_official=true かつ published）の最新計画を確認
-            $officialPlan = $visiblePlans
+            // status ベースで計画を分類（is_draft フラグは信頼できないため不使用）
+            // published + is_official: 完了済み → タスク不要（次期間チェックのみ）
+            // published + !is_official: 確認待ち
+            // submitted: 提出済み → 確認待ち
+            // draft: 下書き → 作業が必要
+
+            $completedPlan = $visiblePlans
                 ->where('is_official', true)
-                ->where('status', 'published')
+                ->whereIn('status', ['published', 'submitted'])
                 ->sortByDesc('id')
                 ->first();
 
-            // 下書きがあるかチェック（非表示を除外）
-            $latestSubmittedPlan = $visiblePlans->where('is_draft', false)->sortByDesc('id')->first();
-            $latestSubmittedId = $latestSubmittedPlan?->id;
-            $latestSubmittedPlanDate = $latestSubmittedPlan?->created_date;
-            $draftPlan = $visiblePlans->where('is_draft', true)->first();
+            $submittedPlan = $visiblePlans
+                ->where('is_official', false)
+                ->whereIn('status', ['submitted', 'published'])
+                ->sortByDesc('id')
+                ->first();
 
-            // 確定済みの計画より古い下書きは無視（新しい期間の計画が確定済み）
-            if ($draftPlan && $officialPlan && $draftPlan->id < $officialPlan->id) {
-                $draftPlan = null;
+            $draftPlan = $visiblePlans
+                ->where('status', 'draft')
+                ->sortByDesc('id')
+                ->first();
+
+            // 完了済み計画より古い下書き・提出済みは無視
+            if ($completedPlan) {
+                if ($draftPlan && $draftPlan->id <= $completedPlan->id) {
+                    $draftPlan = null;
+                }
+                if ($submittedPlan && $submittedPlan->id <= $completedPlan->id) {
+                    $submittedPlan = null;
+                }
             }
 
+            // 下書きがある場合
             if ($draftPlan) {
-                $hasNewer = $latestSubmittedId && $draftPlan->id != $latestSubmittedId;
-
-                // 下書き計画の作成日から正しい期間を逆算
                 $period = $this->getPeriodFromPlanDate($supportStartDate, $draftPlan->created_date);
-
-                // 期間の終了日（=提出期限）からの日数を計算
                 $periodEnd = $period['end'] ? Carbon::parse($period['end']) : null;
                 $daysLeft = $periodEnd ? (int) $today->diffInDays($periodEnd, false) : null;
-
-                // days_since_plan: 期限切れの場合のみ超過日数（正数）を返す。期限内はnull。
                 $daysSincePlan = ($daysLeft !== null && $daysLeft < 0) ? abs($daysLeft) : null;
 
                 $result[] = [
@@ -195,7 +204,7 @@ class PendingTaskController extends Controller
                     'latest_plan_date'    => $draftPlan->created_date?->format('Y-m-d'),
                     'days_since_plan'     => $daysSincePlan,
                     'status_code'         => $daysLeft !== null && $daysLeft < 0 ? 'outdated' : 'draft',
-                    'has_newer'           => $hasNewer,
+                    'has_newer'           => (bool) $completedPlan,
                     'is_hidden'           => false,
                     'target_period_start' => $period['start'],
                     'target_period_end'   => $period['end'],
@@ -204,19 +213,19 @@ class PendingTaskController extends Controller
                 continue;
             }
 
-            // 提出済みで保護者確認が必要かチェック（確定済み is_official=true は除外）
+            // 提出済みで保護者確認が必要かチェック（完了済みでない提出済み計画）
             $needsGuardianConfirm = false;
-            if ($latestSubmittedPlan && !$latestSubmittedPlan->is_hidden && !$latestSubmittedPlan->guardian_confirmed && !$latestSubmittedPlan->is_official) {
-                $daysSince = $latestSubmittedPlan->created_date ? (int) abs($today->diffInDays($latestSubmittedPlan->created_date, false)) : null;
-                $submittedCount = $visiblePlans->where('is_draft', false)->count();
-                $nextPeriod = $this->getNextTargetPeriod($supportStartDate, $submittedCount);
+            if ($submittedPlan && !$submittedPlan->is_hidden) {
+                $daysSince = $submittedPlan->created_date ? (int) abs($today->diffInDays($submittedPlan->created_date, false)) : null;
+                $completedCount = $visiblePlans->where('is_official', true)->count();
+                $nextPeriod = $this->getNextTargetPeriod($supportStartDate, $completedCount);
 
                 $result[] = [
                     'student_id'          => $student->id,
                     'student_name'        => $student->student_name,
                     'support_start_date'  => $supportStartDate?->format('Y-m-d'),
-                    'plan_id'             => $latestSubmittedPlan->id,
-                    'latest_plan_date'    => $latestSubmittedPlan->created_date?->format('Y-m-d'),
+                    'plan_id'             => $submittedPlan->id,
+                    'latest_plan_date'    => $submittedPlan->created_date?->format('Y-m-d'),
                     'days_since_plan'     => $daysSince,
                     'status_code'         => 'needs_confirm',
                     'has_newer'           => false,
@@ -228,12 +237,10 @@ class PendingTaskController extends Controller
                 $needsGuardianConfirm = true;
             }
 
-            // 保護者確認が必要でない場合、期限切れかチェック
-            // 確定済み計画の場合のみ次期間チェックを行う（未確定はチェック不要）
-            $checkPlan = $officialPlan ?? $latestSubmittedPlan;
-            if (!$needsGuardianConfirm && $checkPlan && !$checkPlan->is_hidden) {
-                // 最新確定済み計画の期間を逆算し、次の期間を計算
-                $currentPeriod = $this->getPeriodFromPlanDate($supportStartDate, $checkPlan->created_date);
+            // 完了済み計画があり、次期間が必要かチェック
+            if (!$needsGuardianConfirm && $completedPlan && !$completedPlan->is_hidden) {
+                // 最新完了済み計画の期間を逆算し、次の期間を計算
+                $currentPeriod = $this->getPeriodFromPlanDate($supportStartDate, $completedPlan->created_date);
                 $currentPeriodEnd = $currentPeriod['end'] ? Carbon::parse($currentPeriod['end']) : null;
 
                 $needsNewPlan = false;
@@ -250,7 +257,7 @@ class PendingTaskController extends Controller
                 if (!$needsNewPlan) {
                     $hasNewPeriod = KakehashiPeriod::where('student_id', $student->id)
                         ->where('is_active', true)
-                        ->where('start_date', '>', $latestSubmittedPlan->created_date)
+                        ->where('start_date', '>', $completedPlan->created_date)
                         ->where('submission_deadline', '<=', $oneMonthLater)
                         ->exists();
                     if ($hasNewPeriod) {
@@ -287,7 +294,7 @@ class PendingTaskController extends Controller
                             'is_draft'      => true,
                             'is_official'   => false,
                             'is_hidden'     => false,
-                            'source_monitoring_id' => $student->monitoringRecords()->where('plan_id', $latestSubmittedPlan->id)->value('id'),
+                            'source_monitoring_id' => $student->monitoringRecords()->where('plan_id', $completedPlan->id)->value('id'),
                         ]);
 
                         $defaultDetails = [
