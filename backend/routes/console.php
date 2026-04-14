@@ -40,4 +40,4 @@ Schedule::call(function () {
     if ($deleted > 0) {
         \Illuminate\Support\Facades\Log::info("Deleted {$deleted} resolved error logs older than 3 days");
     }
-})->dailyAt('04:00')->onOneServer();
+})->dailyAt('04:00')->name('cleanup-resolved-error-logs')->onOneServer();

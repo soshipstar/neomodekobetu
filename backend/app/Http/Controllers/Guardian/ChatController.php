@@ -529,6 +529,7 @@ class ChatController extends Controller
 
         $result = DB::transaction(function () use ($request, $room, $user, $studentId, $student) {
             // 面談リクエストを保存
+            $candidateDates = array_filter([$request->date1, $request->date2, $request->date3]);
             $meetingRequestId = DB::table('meeting_requests')->insertGetId([
                 'classroom_id'          => $student->classroom_id,
                 'student_id'            => $studentId,
@@ -536,9 +537,7 @@ class ChatController extends Controller
                 'staff_id'              => null,
                 'purpose'               => $request->purpose,
                 'purpose_detail'        => $request->detail,
-                'guardian_counter_date1' => $request->date1,
-                'guardian_counter_date2' => $request->date2,
-                'guardian_counter_date3' => $request->date3,
+                'candidate_dates'       => json_encode($candidateDates),
                 'status'                => 'guardian_counter',
                 'created_at'            => now(),
                 'updated_at'            => now(),
