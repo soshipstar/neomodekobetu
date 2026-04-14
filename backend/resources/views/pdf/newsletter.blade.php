@@ -419,12 +419,6 @@
                                 @php $currentMonth->modify('first day of next month'); @endphp
                             @endwhile
                         </div>
-                        {{-- テキスト版も併記 --}}
-                        @if (!empty($section['content']))
-                            <div class="calendar-box" style="margin-top: 8px;">
-                                <div class="calendar-content">{!! $renderContent($section['content']) !!}</div>
-                            </div>
-                        @endif
                     @else
                         {{-- 予定期間未設定の場合はテキストのみ --}}
                         <div class="calendar-box">
