@@ -250,6 +250,6 @@ class StaffStudentChatController extends Controller
         $room->loadMissing('student');
 
         return $room->student
-            && in_array($room->student->classroom_id, $user->accessibleClassroomIds(), true);
+            && in_array($room->student->classroom_id, $user->switchableClassroomIds(), true);
     }
 }

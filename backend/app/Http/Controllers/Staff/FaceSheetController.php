@@ -13,7 +13,7 @@ class FaceSheetController extends Controller
     public function show(Request $request, Student $student): JsonResponse
     {
         $user = $request->user();
-        if ($user->classroom_id && !in_array($student->classroom_id, $user->accessibleClassroomIds(), true)) {
+        if ($user->classroom_id && !in_array($student->classroom_id, $user->switchableClassroomIds(), true)) {
             abort(403);
         }
 
@@ -28,7 +28,7 @@ class FaceSheetController extends Controller
     public function store(Request $request, Student $student): JsonResponse
     {
         $user = $request->user();
-        if ($user->classroom_id && !in_array($student->classroom_id, $user->accessibleClassroomIds(), true)) {
+        if ($user->classroom_id && !in_array($student->classroom_id, $user->switchableClassroomIds(), true)) {
             abort(403);
         }
 

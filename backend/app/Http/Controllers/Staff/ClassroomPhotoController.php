@@ -60,7 +60,7 @@ class ClassroomPhotoController extends Controller
     {
         $user = $request->user();
         $classroomId = $request->input('classroom_id', $user->classroom_id);
-        if (!in_array((int) $classroomId, $user->accessibleClassroomIds(), true)) {
+        if (!in_array((int) $classroomId, $user->switchableClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -98,7 +98,7 @@ class ClassroomPhotoController extends Controller
             'student_ids.*' => 'integer|exists:students,id',
         ]);
 
-        if (!in_array((int) $validated['classroom_id'], $user->accessibleClassroomIds(), true)) {
+        if (!in_array((int) $validated['classroom_id'], $user->switchableClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -262,7 +262,7 @@ class ClassroomPhotoController extends Controller
     private function authorizeAccess(Request $request, ClassroomPhoto $photo): void
     {
         $user = $request->user();
-        if (!in_array($photo->classroom_id, $user->accessibleClassroomIds(), true)) {
+        if (!in_array($photo->classroom_id, $user->switchableClassroomIds(), true)) {
             abort(403, 'アクセス権限がありません。');
         }
     }

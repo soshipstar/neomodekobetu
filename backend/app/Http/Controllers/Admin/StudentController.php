@@ -168,7 +168,7 @@ class StudentController extends Controller
         }
 
         // 非マスターは自分がアクセス可能な教室のみ
-        if (!$isMaster && !in_array((int) $validated['classroom_id'], $user->accessibleClassroomIds(), true)) {
+        if (!$isMaster && !in_array((int) $validated['classroom_id'], $user->switchableClassroomIds(), true)) {
             return response()->json([
                 'success' => false,
                 'message' => '指定した教室への権限がありません。',

@@ -17,7 +17,7 @@ class ClassroomPolicy
             return true;
         }
 
-        return in_array($classroom->id, $user->accessibleClassroomIds(), true);
+        return in_array($classroom->id, $user->switchableClassroomIds(), true);
     }
 
     /**
@@ -31,7 +31,7 @@ class ClassroomPolicy
         }
 
         if ($user->isStaff() && $user->isMaster()) {
-            return in_array($classroom->id, $user->accessibleClassroomIds(), true);
+            return in_array($classroom->id, $user->switchableClassroomIds(), true);
         }
 
         return false;

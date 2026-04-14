@@ -449,7 +449,7 @@ class StaffChatController extends Controller
     private function canAccessRoom($user, StaffChatRoom $room): bool
     {
         // 教室スコープチェック（アクセス可能な教室のいずれか）
-        if ($user->classroom_id && !in_array($room->classroom_id, $user->accessibleClassroomIds(), true)) {
+        if ($user->classroom_id && !in_array($room->classroom_id, $user->switchableClassroomIds(), true)) {
             return false;
         }
 

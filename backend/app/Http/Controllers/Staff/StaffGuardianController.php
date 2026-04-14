@@ -97,7 +97,7 @@ class StaffGuardianController extends Controller
             return response()->json(['success' => false, 'message' => '保護者ではありません。'], 422);
         }
 
-        if ($user->classroom_id && !in_array($guardian->classroom_id, $user->accessibleClassroomIds(), true)) {
+        if ($user->classroom_id && !in_array($guardian->classroom_id, $user->switchableClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -162,7 +162,7 @@ class StaffGuardianController extends Controller
             return response()->json(['success' => false, 'message' => '保護者ではありません。'], 422);
         }
 
-        if ($user->classroom_id && !in_array($guardian->classroom_id, $user->accessibleClassroomIds(), true)) {
+        if ($user->classroom_id && !in_array($guardian->classroom_id, $user->switchableClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -214,7 +214,7 @@ class StaffGuardianController extends Controller
             return response()->json(['success' => false, 'message' => '保護者ではありません。'], 422);
         }
 
-        if ($user->classroom_id && !in_array($guardian->classroom_id, $user->accessibleClassroomIds(), true)) {
+        if ($user->classroom_id && !in_array($guardian->classroom_id, $user->switchableClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 

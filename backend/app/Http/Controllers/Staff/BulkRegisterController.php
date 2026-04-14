@@ -85,7 +85,7 @@ class BulkRegisterController extends Controller
         $dayLabels = ['月', '火', '水', '木', '金', '土'];
 
         // アクセス可能な教室の名前→IDマッピングを構築
-        $accessibleIds = $user->accessibleClassroomIds();
+        $accessibleIds = $user->switchableClassroomIds();
         $classroomMap = Classroom::whereIn('id', $accessibleIds)
             ->pluck('id', 'classroom_name')
             ->toArray();
@@ -236,7 +236,7 @@ class BulkRegisterController extends Controller
 
         DB::transaction(function () use ($request, $user, &$successCount, &$errorCount, &$errors) {
             $defaultClassroomId = $user->classroom_id;
-            $accessibleIds = $user->accessibleClassroomIds();
+            $accessibleIds = $user->switchableClassroomIds();
             $guardianMap = []; // "保護者氏名_classroomId" => DB ID
 
             // guardian_XXX形式のユーザー名の最大番号を取得

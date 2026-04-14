@@ -211,7 +211,7 @@ class ChatController extends Controller
             $photo = \App\Models\ClassroomPhoto::find($request->classroom_photo_id);
             if ($photo) {
                 // アクセス可能教室の写真であることを確認
-                if (in_array($photo->classroom_id, $user->accessibleClassroomIds(), true)) {
+                if (in_array($photo->classroom_id, $user->switchableClassroomIds(), true)) {
                     $attachmentPath = $photo->file_path;
                     $attachmentName = basename($photo->file_path);
                     $attachmentSize = $photo->file_size;
@@ -620,6 +620,6 @@ class ChatController extends Controller
         $room->loadMissing('student');
 
         return $room->student
-            && in_array($room->student->classroom_id, $user->accessibleClassroomIds(), true);
+            && in_array($room->student->classroom_id, $user->switchableClassroomIds(), true);
     }
 }

@@ -70,7 +70,7 @@ class AttendanceController extends Controller
         // 教室アクセス権チェック
         if ($user->classroom_id) {
             $absence->load('student');
-            if (!in_array($absence->student->classroom_id, $user->accessibleClassroomIds(), true)) {
+            if (!in_array($absence->student->classroom_id, $user->switchableClassroomIds(), true)) {
                 return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
             }
         }
@@ -144,7 +144,7 @@ class AttendanceController extends Controller
         // 教室アクセス権チェック
         if ($user->classroom_id) {
             $absence->load('student');
-            if (!in_array($absence->student->classroom_id, $user->accessibleClassroomIds(), true)) {
+            if (!in_array($absence->student->classroom_id, $user->switchableClassroomIds(), true)) {
                 return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
             }
         }

@@ -18,7 +18,7 @@ class SupportPlanPolicy
 
         // Staff can view plans in their classroom (primary or pivot-assigned)
         if ($user->isStaff()) {
-            return in_array($plan->classroom_id, $user->accessibleClassroomIds(), true);
+            return in_array($plan->classroom_id, $user->switchableClassroomIds(), true);
         }
 
         // Guardians can view plans for their children
@@ -50,7 +50,7 @@ class SupportPlanPolicy
             return true;
         }
 
-        if ($user->isStaff() && in_array($plan->classroom_id, $user->accessibleClassroomIds(), true)) {
+        if ($user->isStaff() && in_array($plan->classroom_id, $user->switchableClassroomIds(), true)) {
             return in_array($plan->status, ['draft', 'pending_review']);
         }
 
@@ -83,7 +83,7 @@ class SupportPlanPolicy
         }
 
         if ($user->isStaff() && $user->isMaster()) {
-            return in_array($plan->classroom_id, $user->accessibleClassroomIds(), true);
+            return in_array($plan->classroom_id, $user->switchableClassroomIds(), true);
         }
 
         return false;

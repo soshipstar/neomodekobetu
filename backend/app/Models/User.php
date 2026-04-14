@@ -151,24 +151,19 @@ class User extends Authenticatable
      *
      * @return array<int>
      */
+    /**
+     * データ表示用: 現在のアクティブ教室のみを返す。
+     * 企業管理者は教室切り替えで classroom_id を変更してコンテキストを切り替える。
+     *
+     * @return array<int>
+     */
     public function accessibleClassroomIds(): array
     {
         if ($this->is_master === true) {
             return Classroom::query()->pluck('id')->all();
         }
 
-        // 企業管理者: 同じ企業の全教室
-        if ($this->isCompanyAdmin()) {
-            $companyId = $this->company_id;
-            if ($companyId) {
-                return Classroom::where('company_id', $companyId)->pluck('id')->all();
-            }
-        }
-
         if ($this->user_type === 'guardian') {
-            // 保護者は子ども (Student::guardian_id = user.id) の在籍教室の
-            // 和集合がアクセス範囲になる。1 児童 = 1 Student レコード = 1 教室の
-            // 方針なので、子どもたちの classroom_id を全部集めれば十分。
             return Student::where('guardian_id', $this->id)
                 ->whereNotNull('classroom_id')
                 ->pluck('classroom_id')
@@ -178,7 +173,39 @@ class User extends Authenticatable
                 ->all();
         }
 
-        // 通常スタッフ・通常管理者: 自分の所属教室のみ
+        // スタッフ・管理者・企業管理者: 現在のアクティブ教室のみ
+        return $this->classroom_id ? [$this->classroom_id] : [];
+    }
+
+    /**
+     * 認可・教室切替用: ユーザーがアクセス権限を持つ全教室を返す。
+     * 教室切り替えドロップダウンや、個別レコードのアクセス認可に使用。
+     *
+     * @return array<int>
+     */
+    public function switchableClassroomIds(): array
+    {
+        if ($this->is_master === true) {
+            return Classroom::query()->pluck('id')->all();
+        }
+
+        if ($this->isCompanyAdmin()) {
+            $companyId = $this->company_id;
+            if ($companyId) {
+                return Classroom::where('company_id', $companyId)->pluck('id')->all();
+            }
+        }
+
+        if ($this->user_type === 'guardian') {
+            return Student::where('guardian_id', $this->id)
+                ->whereNotNull('classroom_id')
+                ->pluck('classroom_id')
+                ->unique()
+                ->values()
+                ->map(fn ($v) => (int) $v)
+                ->all();
+        }
+
         return $this->classroom_id ? [$this->classroom_id] : [];
     }
 

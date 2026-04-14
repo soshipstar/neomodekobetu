@@ -116,7 +116,7 @@ class StaffEventController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($event->classroom_id, $user->accessibleClassroomIds(), true)) {
+        if ($user->classroom_id && !in_array($event->classroom_id, $user->switchableClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -166,7 +166,7 @@ class StaffEventController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($event->classroom_id, $user->accessibleClassroomIds(), true)) {
+        if ($user->classroom_id && !in_array($event->classroom_id, $user->switchableClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -229,7 +229,7 @@ class StaffEventController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($event->classroom_id, $user->accessibleClassroomIds(), true)) {
+        if ($user->classroom_id && !in_array($event->classroom_id, $user->switchableClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 

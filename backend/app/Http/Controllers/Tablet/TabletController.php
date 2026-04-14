@@ -44,7 +44,7 @@ class TabletController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($student->classroom_id, $user->accessibleClassroomIds(), true)) {
+        if ($user->classroom_id && !in_array($student->classroom_id, $user->switchableClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -86,7 +86,7 @@ class TabletController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($student->classroom_id, $user->accessibleClassroomIds(), true)) {
+        if ($user->classroom_id && !in_array($student->classroom_id, $user->switchableClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -238,7 +238,7 @@ class TabletController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($activity->classroom_id, $user->accessibleClassroomIds(), true)) {
+        if ($user->classroom_id && !in_array($activity->classroom_id, $user->switchableClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -353,7 +353,7 @@ class TabletController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($activity->classroom_id, $user->accessibleClassroomIds(), true)) {
+        if ($user->classroom_id && !in_array($activity->classroom_id, $user->switchableClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -396,7 +396,7 @@ class TabletController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($activity->classroom_id, $user->accessibleClassroomIds(), true)) {
+        if ($user->classroom_id && !in_array($activity->classroom_id, $user->switchableClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -432,7 +432,7 @@ class TabletController extends Controller
 
         // 権限チェック
         $record = DailyRecord::findOrFail($validated['daily_record_id']);
-        if ($user->classroom_id && !in_array($record->classroom_id, $user->accessibleClassroomIds(), true)) {
+        if ($user->classroom_id && !in_array($record->classroom_id, $user->switchableClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -479,7 +479,7 @@ class TabletController extends Controller
         ]);
 
         $record = DailyRecord::findOrFail($validated['daily_record_id']);
-        if ($user->classroom_id && !in_array($record->classroom_id, $user->accessibleClassroomIds(), true)) {
+        if ($user->classroom_id && !in_array($record->classroom_id, $user->switchableClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -519,7 +519,7 @@ class TabletController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($activity->classroom_id, $user->accessibleClassroomIds(), true)) {
+        if ($user->classroom_id && !in_array($activity->classroom_id, $user->switchableClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -556,7 +556,7 @@ class TabletController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($activity->classroom_id, $user->accessibleClassroomIds(), true)) {
+        if ($user->classroom_id && !in_array($activity->classroom_id, $user->switchableClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 

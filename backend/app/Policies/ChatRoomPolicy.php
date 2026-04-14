@@ -22,7 +22,7 @@ class ChatRoomPolicy
             $room->loadMissing('student');
 
             return $room->student
-                && in_array($room->student->classroom_id, $user->accessibleClassroomIds(), true);
+                && in_array($room->student->classroom_id, $user->switchableClassroomIds(), true);
         }
 
         // Guardians can only view their own rooms

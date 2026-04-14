@@ -27,7 +27,7 @@ class StudentPolicy
 
         // Staff can view students in their classroom
         if ($user->isStaff()) {
-            return in_array($student->classroom_id, $user->accessibleClassroomIds(), true);
+            return in_array($student->classroom_id, $user->switchableClassroomIds(), true);
         }
 
         // Guardians can only view their own children
@@ -58,7 +58,7 @@ class StudentPolicy
         }
 
         if ($user->isStaff()) {
-            return in_array($student->classroom_id, $user->accessibleClassroomIds(), true);
+            return in_array($student->classroom_id, $user->switchableClassroomIds(), true);
         }
 
         return false;
@@ -75,7 +75,7 @@ class StudentPolicy
         }
 
         if ($user->isStaff() && $user->isMaster()) {
-            return in_array($student->classroom_id, $user->accessibleClassroomIds(), true);
+            return in_array($student->classroom_id, $user->switchableClassroomIds(), true);
         }
 
         return false;

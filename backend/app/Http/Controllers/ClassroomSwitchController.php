@@ -20,8 +20,8 @@ class ClassroomSwitchController extends Controller
     {
         $user = $request->user();
 
-        // 全ユーザー種別を accessibleClassroomIds() で統一
-        $ids = $user->accessibleClassroomIds();
+        // 切替可能な全教室を取得
+        $ids = $user->switchableClassroomIds();
         $classrooms = \App\Models\Classroom::query()
             ->whereIn('id', $ids)
             ->select('id', 'classroom_name', 'address', 'phone')
@@ -50,7 +50,7 @@ class ClassroomSwitchController extends Controller
         $classroomId = $validated['classroom_id'];
 
         // このユーザーがその教室にアクセスできるか確認
-        $accessible = $user->accessibleClassroomIds();
+        $accessible = $user->switchableClassroomIds();
         if (!in_array($classroomId, $accessible)) {
             return response()->json([
                 'success' => false,

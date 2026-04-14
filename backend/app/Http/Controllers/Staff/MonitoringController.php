@@ -645,7 +645,7 @@ class MonitoringController extends Controller
 
     private function authorizeClassroom($user, Student $student): void
     {
-        if ($user->classroom_id && !in_array($student->classroom_id, $user->accessibleClassroomIds(), true)) {
+        if ($user->classroom_id && !in_array($student->classroom_id, $user->switchableClassroomIds(), true)) {
             abort(403, 'この生徒へのアクセス権限がありません。');
         }
     }

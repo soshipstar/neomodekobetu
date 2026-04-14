@@ -119,7 +119,7 @@ class AdditionalUsageController extends Controller
         ]);
 
         $student = Student::findOrFail($validated['student_id']);
-        if ($user->classroom_id && !in_array($student->classroom_id, $user->accessibleClassroomIds(), true)) {
+        if ($user->classroom_id && !in_array($student->classroom_id, $user->switchableClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -205,7 +205,7 @@ class AdditionalUsageController extends Controller
         ]);
 
         $student = Student::findOrFail($request->student_id);
-        if ($user->classroom_id && !in_array($student->classroom_id, $user->accessibleClassroomIds(), true)) {
+        if ($user->classroom_id && !in_array($student->classroom_id, $user->switchableClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -269,7 +269,7 @@ class AdditionalUsageController extends Controller
 
         if ($user->classroom_id) {
             $student = $usage->student;
-            if ($student && !in_array($student->classroom_id, $user->accessibleClassroomIds(), true)) {
+            if ($student && !in_array($student->classroom_id, $user->switchableClassroomIds(), true)) {
                 return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
             }
         }

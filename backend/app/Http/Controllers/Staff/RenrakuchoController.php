@@ -175,7 +175,7 @@ class RenrakuchoController extends Controller
         $user = $request->user();
         if ($user->classroom_id) {
             $staffClassroom = $record->staff->classroom_id ?? null;
-            if (!in_array($staffClassroom, $user->accessibleClassroomIds(), true)) {
+            if (!in_array($staffClassroom, $user->switchableClassroomIds(), true)) {
                 return response()->json(['success' => false, 'message' => 'この活動を更新する権限がありません。'], 403);
             }
         }
@@ -289,7 +289,7 @@ class RenrakuchoController extends Controller
         $user = $request->user();
         if ($user->classroom_id) {
             $staffClassroom = $record->staff->classroom_id ?? null;
-            if (!in_array($staffClassroom, $user->accessibleClassroomIds(), true)) {
+            if (!in_array($staffClassroom, $user->switchableClassroomIds(), true)) {
                 return response()->json(['success' => false, 'message' => 'この記録を削除する権限がありません。'], 403);
             }
         }
@@ -319,7 +319,7 @@ class RenrakuchoController extends Controller
         $user = $request->user();
         if ($user->classroom_id) {
             $staffClassroom = $record->staff->classroom_id ?? null;
-            if (!in_array($staffClassroom, $user->accessibleClassroomIds(), true)) {
+            if (!in_array($staffClassroom, $user->switchableClassroomIds(), true)) {
                 return response()->json(['success' => false, 'message' => 'この活動を削除する権限がありません。'], 403);
             }
         }
@@ -345,7 +345,7 @@ class RenrakuchoController extends Controller
         $user = $request->user();
         if ($user->classroom_id) {
             $staffClassroom = $record->staff->classroom_id ?? null;
-            if (!in_array($staffClassroom, $user->accessibleClassroomIds(), true)) {
+            if (!in_array($staffClassroom, $user->switchableClassroomIds(), true)) {
                 return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
             }
         }
@@ -400,7 +400,7 @@ class RenrakuchoController extends Controller
         $user = $request->user();
         if ($user->classroom_id) {
             $staffClassroom = $record->staff->classroom_id ?? null;
-            if (!in_array($staffClassroom, $user->accessibleClassroomIds(), true)) {
+            if (!in_array($staffClassroom, $user->switchableClassroomIds(), true)) {
                 return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
             }
         }
@@ -425,7 +425,7 @@ class RenrakuchoController extends Controller
         $user = $request->user();
         if ($user->classroom_id) {
             $staffClassroom = $record->staff->classroom_id ?? null;
-            if (!in_array($staffClassroom, $user->accessibleClassroomIds(), true)) {
+            if (!in_array($staffClassroom, $user->switchableClassroomIds(), true)) {
                 return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
             }
         }
@@ -470,7 +470,7 @@ class RenrakuchoController extends Controller
         $user = $request->user();
         if ($user->classroom_id) {
             $staffClassroom = $record->staff->classroom_id ?? null;
-            if (!in_array($staffClassroom, $user->accessibleClassroomIds(), true)) {
+            if (!in_array($staffClassroom, $user->switchableClassroomIds(), true)) {
                 return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
             }
         }

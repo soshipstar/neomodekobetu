@@ -48,7 +48,7 @@ class CheckClassroomAccess
         }
 
         // ユーザーの所属教室（主教室 + classroom_user ピボット）に含まれるか確認
-        if (!in_array((int) $classroomId, $user->accessibleClassroomIds(), true)) {
+        if (!in_array((int) $classroomId, $user->switchableClassroomIds(), true)) {
             return response()->json([
                 'message' => 'この教室のリソースにアクセスする権限がありません。',
             ], 403);

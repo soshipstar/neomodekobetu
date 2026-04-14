@@ -57,7 +57,7 @@ class HiyariHattoController extends Controller
         $validated = $request->validate($this->rules(true));
 
         // 権限: アクセス可能な classroom のみ
-        if (!in_array((int) $validated['classroom_id'], $user->accessibleClassroomIds(), true)) {
+        if (!in_array((int) $validated['classroom_id'], $user->switchableClassroomIds(), true)) {
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
@@ -138,7 +138,7 @@ class HiyariHattoController extends Controller
     private function authorizeAccess(Request $request, HiyariHattoRecord $record): void
     {
         $user = $request->user();
-        if (!in_array($record->classroom_id, $user->accessibleClassroomIds(), true)) {
+        if (!in_array($record->classroom_id, $user->switchableClassroomIds(), true)) {
             abort(403, 'アクセス権限がありません。');
         }
     }
