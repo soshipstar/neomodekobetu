@@ -162,6 +162,40 @@ export default function BugReportsPage() {
         </Button>
       </div>
 
+      {/* 報告のコツ */}
+      <Card>
+        <CardBody>
+          <details className="group">
+            <summary className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-[var(--neutral-foreground-2)]">
+              <MaterialIcon name="help_outline" size={18} />
+              バグ報告のコツ
+              <MaterialIcon name="expand_more" size={16} className="ml-auto transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="mt-3 space-y-2 text-sm text-[var(--neutral-foreground-3)] border-t border-[var(--neutral-stroke-3)] pt-3">
+              <div className="flex items-start gap-2">
+                <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-purple-100 text-xs font-bold text-purple-700">1</span>
+                <p>バグが起きたページの<strong>URL</strong>をコピーしてから、このページに来てください（アドレスバーを選択して Ctrl+C）</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-purple-100 text-xs font-bold text-purple-700">2</span>
+                <p>「新しい報告」をクリックし、<strong>エラー内容</strong>の欄にバグの概要を記入してください（何をしたら何が起きたか）</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-purple-100 text-xs font-bold text-purple-700">3</span>
+                <div>
+                  <p><strong>F12</strong>キーを押すと開発者ツールが開きます。赤いエラーメッセージが表示されていたら：</p>
+                  <p className="ml-4 mt-1">右クリック → 「コンソールをコピー」→ コンソールログ欄に貼り付け</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-purple-100 text-xs font-bold text-purple-700">4</span>
+                <p>よくわからなければ、<strong>画面のスクリーンショット</strong>を撮って添付するだけでもOKです</p>
+              </div>
+            </div>
+          </details>
+        </CardBody>
+      </Card>
+
       {/* Filter */}
       <div className="flex gap-2 flex-wrap">
         {[
