@@ -51,19 +51,32 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 });
 
 // Response interceptor: handle 401 (redirect to login)
+// 一時的なサーバーエラー(503等)やレート制限(429)ではログアウトしない
+let consecutive401Count = 0;
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    consecutive401Count = 0; // 成功したらカウントリセット
+    return response;
+  },
   async (error: AxiosError) => {
-    if (error.response?.status === 401) {
-      removeToken();
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('login_type');
-        localStorage.removeItem('student_info');
-        if (!window.location.pathname.includes('/auth/login')) {
-          window.location.href = '/auth/login';
+    const status = error.response?.status;
+    if (status === 401) {
+      consecutive401Count++;
+      // 連続2回以上の401で初めてログアウト（一時的な503→401を除外）
+      if (consecutive401Count >= 2) {
+        removeToken();
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('login_type');
+          localStorage.removeItem('student_info');
+          if (!window.location.pathname.includes('/auth/login')) {
+            window.location.href = '/auth/login';
+          }
         }
       }
+    } else if (status !== 429 && status !== 503) {
+      consecutive401Count = 0;
     }
+    // 429, 503 は consecutive401Count をリセットしない（誤ログアウト防止）
     return Promise.reject(error);
   }
 );
