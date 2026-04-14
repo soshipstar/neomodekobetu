@@ -104,9 +104,9 @@ class PendingTaskController extends Controller
                     $nextPeriod = $this->getNextTargetPeriod($supportStartDate, 0);
                     $deadlineDate = $nextPeriod['start'] ?? now()->format('Y-m-d');
 
-                    // 同じ期間の計画が既にあれば自動生成しない
+                    // 同じ期間内の計画が既にあれば自動生成しない
                     $existsForPeriod = IndividualSupportPlan::where('student_id', $student->id)
-                        ->where('created_date', $deadlineDate)
+                        ->where('is_hidden', false)
                         ->exists();
                     if ($existsForPeriod) {
                         continue;
@@ -278,9 +278,18 @@ class PendingTaskController extends Controller
                     $daysLeft = $nextPeriodEnd ? (int) $today->diffInDays($nextPeriodEnd, false) : null;
                     $deadlineDate = $nextPeriodStart?->format('Y-m-d') ?? now()->format('Y-m-d');
 
-                    // 同じ日付の計画が既にあるかチェック
+                    // 同じ期間内の計画が既にあるかチェック（日付ずれの重複防止）
                     $existsForPeriod = IndividualSupportPlan::where('student_id', $student->id)
-                        ->where('created_date', $deadlineDate)
+                        ->where('is_hidden', false)
+                        ->where(function ($q) use ($deadlineDate, $nextPeriodStart, $nextPeriodEnd) {
+                            $q->where('created_date', $deadlineDate);
+                            if ($nextPeriodStart && $nextPeriodEnd) {
+                                $q->orWhereBetween('created_date', [
+                                    $nextPeriodStart->copy()->subDay()->format('Y-m-d'),
+                                    $nextPeriodEnd->format('Y-m-d'),
+                                ]);
+                            }
+                        })
                         ->exists();
 
                     if (!$existsForPeriod) {
