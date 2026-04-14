@@ -521,14 +521,15 @@ class ChatController extends Controller
             return response()->json(['success' => false, 'message' => 'メッセージが見つかりません。'], 404);
         }
 
-        // スタッフが送信したメッセージのみ削除可能
-        if ($message->sender_type !== 'staff') {
-            return response()->json(['success' => false, 'message' => '削除権限がありません。'], 403);
-        }
-
-        // 自分が送信したメッセージかチェック
-        if ($message->sender_id !== $user->id) {
-            return response()->json(['success' => false, 'message' => '削除権限がありません。'], 403);
+        // 管理者は全メッセージ削除可能、スタッフは自分が送信したもののみ
+        $isAdmin = $user->is_master || $user->isCompanyAdmin();
+        if (!$isAdmin) {
+            if ($message->sender_type !== 'staff') {
+                return response()->json(['success' => false, 'message' => '削除権限がありません。'], 403);
+            }
+            if ($message->sender_id !== $user->id) {
+                return response()->json(['success' => false, 'message' => '削除権限がありません。'], 403);
+            }
         }
 
         $message->update([
