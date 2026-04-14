@@ -250,7 +250,7 @@ export default function GuardianSupportPlanPage() {
                         <SignaturePad
                           readOnly
                           initialValue={ext.guardian_signature_image || ext.guardian_signature || ''}
-                          label={`保護者署名${ext.guardian_signature_date ? ` - ${ext.guardian_signature_date}` : ''}`}
+                          label={`保護者署名${ext.guardian_signature_date ? ` - ${formatDate(ext.guardian_signature_date)}` : ''}`}
                           width={200}
                           height={80}
                         />
@@ -263,7 +263,7 @@ export default function GuardianSupportPlanPage() {
                     <div className="mt-3 flex items-center gap-2 rounded-lg bg-green-50 p-3">
                       <MaterialIcon name="check_circle" size={16} className="text-green-600" />
                       <span className="text-sm text-green-700">
-                        {ext.guardian_signature_date} に署名済み
+                        {formatDate(ext.guardian_signature_date)} に署名済み
                       </span>
                     </div>
                   )}
