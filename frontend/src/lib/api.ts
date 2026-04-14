@@ -73,10 +73,11 @@ api.interceptors.response.use(
           }
         }
       }
-    } else if (status !== 429 && status !== 503) {
+    } else if (status && status < 500 && status !== 429) {
+      // 4xx以下(429除く)のみカウントリセット
+      // 5xx, 502, 503, 504等のサーバーエラーやネットワークエラーはカウントに影響しない（誤ログアウト防止）
       consecutive401Count = 0;
     }
-    // 429, 503 は consecutive401Count をリセットしない（誤ログアウト防止）
     return Promise.reject(error);
   }
 );
