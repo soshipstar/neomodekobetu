@@ -288,19 +288,36 @@
     @php
         $classroomName = $classroom->classroom_name ?? '施設';
 
+        // 画像URLをbase64データURIに変換（Puppeteer PDF生成時のネットワーク問題を回避）
+        $toDataUri = function ($url) {
+            // すでにdata URIの場合はそのまま
+            if (str_starts_with($url, 'data:')) return $url;
+            // 相対URLまたは絶対URLからローカルファイルパスを解決
+            $path = null;
+            if (str_contains($url, '/storage/')) {
+                $rel = substr($url, strpos($url, '/storage/') + 9);
+                $candidate = storage_path('app/public/' . $rel);
+                if (is_file($candidate)) $path = $candidate;
+            }
+            if ($path && is_file($path)) {
+                $mime = mime_content_type($path) ?: 'image/jpeg';
+                $data = base64_encode(file_get_contents($path));
+                return "data:{$mime};base64,{$data}";
+            }
+            return $url;
+        };
+
         // マークダウン画像を <img> タグに変換してからテキストをエスケープ
-        $renderContent = function ($text) {
+        $renderContent = function ($text) use ($toDataUri) {
             if (!$text) return '';
-            // 先に画像マークダウンを抽出してプレースホルダーに置換
             $images = [];
-            $text = preg_replace_callback('/!\[([^\]]*)\]\(([^)]+)\)/', function ($m) use (&$images) {
+            $text = preg_replace_callback('/!\[([^\]]*)\]\(([^)]+)\)/', function ($m) use (&$images, $toDataUri) {
                 $key = '{{IMG_' . count($images) . '}}';
-                $images[$key] = '<img src="' . htmlspecialchars($m[2], ENT_QUOTES) . '" alt="' . htmlspecialchars($m[1], ENT_QUOTES) . '" style="max-width:100%;height:auto;margin:4px 0;border-radius:4px;">';
+                $src = $toDataUri($m[2]);
+                $images[$key] = '<img src="' . htmlspecialchars($src, ENT_QUOTES) . '" alt="' . htmlspecialchars($m[1], ENT_QUOTES) . '" style="max-width:100%;height:auto;margin:4px 0;border-radius:4px;">';
                 return $key;
             }, $text);
-            // テキスト部分をエスケープ
             $escaped = e($text);
-            // プレースホルダーを <img> タグに戻す
             foreach ($images as $key => $img) {
                 $escaped = str_replace(e($key), $img, $escaped);
             }
