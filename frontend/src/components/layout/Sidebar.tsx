@@ -124,6 +124,7 @@ const adminNav: NavItem[] = [
   { type: 'link', label: '事業所評価', href: '/admin/facility-evaluation', icon: 'analytics', visibility: 'non_master' },
   { type: 'divider', label: 'システム' },
   { type: 'link', label: 'エラーログ', href: '/admin/error-logs', icon: 'warning', visibility: 'master_only' },
+  { type: 'link', label: 'バグ報告', href: '/staff/bug-reports', icon: 'bug_report' },
 ];
 
 function getNavItems(userType: UserType): NavItem[] {
