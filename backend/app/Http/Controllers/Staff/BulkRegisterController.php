@@ -306,7 +306,7 @@ class BulkRegisterController extends Controller
                     }
 
                     // 生徒を作成（CSVの教室に所属）
-                    Student::create([
+                    $student = Student::create([
                         'classroom_id'        => $rowClassroomId,
                         'guardian_id'         => $guardianId,
                         'student_name'        => $row['student_name'],
@@ -323,6 +323,16 @@ class BulkRegisterController extends Controller
                         'scheduled_saturday'  => ! empty($row['scheduled_saturday']),
                         'scheduled_sunday'    => false,
                     ]);
+
+                    // かけはし期間の自動生成（支援開始日が設定されている場合）
+                    if (! empty($row['support_start_date'])) {
+                        try {
+                            $kakehashiService = app(\App\Services\KakehashiService::class);
+                            $kakehashiService->generateKakehashiPeriodsForStudent($student->id, $row['support_start_date']);
+                        } catch (\Exception $e) {
+                            \Illuminate\Support\Facades\Log::warning("一括登録: かけはし生成エラー（{$row['student_name']}）: " . $e->getMessage());
+                        }
+                    }
 
                     $successCount++;
                 } catch (\Exception $e) {
