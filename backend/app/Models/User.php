@@ -157,6 +157,14 @@ class User extends Authenticatable
             return Classroom::query()->pluck('id')->all();
         }
 
+        // 企業管理者: 同じ企業の全教室
+        if ($this->isCompanyAdmin()) {
+            $companyId = $this->company_id;
+            if ($companyId) {
+                return Classroom::where('company_id', $companyId)->pluck('id')->all();
+            }
+        }
+
         if ($this->user_type === 'guardian') {
             // 保護者は子ども (Student::guardian_id = user.id) の在籍教室の
             // 和集合がアクセス範囲になる。1 児童 = 1 Student レコード = 1 教室の
@@ -170,12 +178,8 @@ class User extends Authenticatable
                 ->all();
         }
 
-        $ids = $this->classrooms()->pluck('classrooms.id')->toArray();
-        // classroom_userになくてもusers.classroom_idがあれば含める（後方互換）
-        if ($this->classroom_id && !in_array($this->classroom_id, $ids)) {
-            $ids[] = $this->classroom_id;
-        }
-        return $ids;
+        // 通常スタッフ・通常管理者: 自分の所属教室のみ
+        return $this->classroom_id ? [$this->classroom_id] : [];
     }
 
     /**
