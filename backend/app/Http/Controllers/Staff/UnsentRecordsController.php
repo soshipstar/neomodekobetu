@@ -330,14 +330,18 @@ class UnsentRecordsController extends Controller
             $dailyRecordId = $validated['daily_record_id'] ?? null;
 
             if (!$dailyRecordId) {
-                // 新規活動を作成
-                $dailyRecord = DailyRecord::create([
-                    'record_date' => $validated['record_date'],
-                    'staff_id' => $user->id,
-                    'classroom_id' => $user->classroom_id,
-                    'activity_name' => $validated['activity_name'] ?? '日常活動',
-                    'common_activity' => $validated['common_activity'] ?? '',
-                ]);
+                // 既存の活動があればそれを使い、なければ新規作成
+                $dailyRecord = DailyRecord::firstOrCreate(
+                    [
+                        'record_date' => $validated['record_date'],
+                        'classroom_id' => $user->classroom_id,
+                    ],
+                    [
+                        'staff_id' => $user->id,
+                        'activity_name' => $validated['activity_name'] ?? '日常活動',
+                        'common_activity' => $validated['common_activity'] ?? '',
+                    ]
+                );
                 $dailyRecordId = $dailyRecord->id;
             }
 
