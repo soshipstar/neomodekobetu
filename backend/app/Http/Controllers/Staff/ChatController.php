@@ -521,9 +521,14 @@ class ChatController extends Controller
             return response()->json(['success' => false, 'message' => 'メッセージが見つかりません。'], 404);
         }
 
-        // 自分が送信したメッセージのみ削除可能
+        // 自分のメッセージ、または管理者は所属教室の全スタッフメッセージを削除可能
         if ($message->sender_id !== $user->id) {
-            return response()->json(['success' => false, 'message' => '削除権限がありません。'], 403);
+            $isAdmin = $user->user_type === 'admin';
+            $roomClassroom = $room->student?->classroom_id;
+            $canDelete = $isAdmin && $roomClassroom && in_array($roomClassroom, $user->switchableClassroomIds(), true);
+            if (!$canDelete) {
+                return response()->json(['success' => false, 'message' => '削除権限がありません。'], 403);
+            }
         }
 
         $message->update([
