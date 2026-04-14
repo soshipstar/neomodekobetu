@@ -47,8 +47,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'external_api_key' => \App\Http\Middleware\VerifyExternalApiKey::class,
         ]);
 
-        // API レート制限
-        $middleware->throttleApi('60,1');
+        // API レート制限（ダッシュボードのポーリング等を考慮して余裕を持たせる）
+        $middleware->throttleApi('180,1');
 
         // 信頼されたプロキシ (Docker/Nginx経由)
         $middleware->trustProxies(at: '*');

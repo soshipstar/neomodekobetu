@@ -276,9 +276,9 @@ export default function StaffDashboardPage() {
     refreshAttendance(true);
   }, [refreshAttendance]);
 
-  // 15秒ごとにポーリングして他スタッフの送信を反映
+  // 30秒ごとにポーリングして他スタッフの送信を反映
   useEffect(() => {
-    const interval = setInterval(() => refreshAttendance(false), 15000);
+    const interval = setInterval(() => refreshAttendance(false), 30000);
     return () => clearInterval(interval);
   }, [refreshAttendance]);
 
