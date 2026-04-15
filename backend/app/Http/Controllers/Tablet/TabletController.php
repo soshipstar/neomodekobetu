@@ -371,13 +371,23 @@ class TabletController extends Controller
             ]);
 
             if (isset($validated['student_ids'])) {
-                // 既存の生徒記録を削除して再作成（旧アプリと同じ動作）
-                $activity->studentRecords()->delete();
-                foreach ($validated['student_ids'] as $studentId) {
-                    StudentRecord::create([
-                        'daily_record_id' => $activity->id,
-                        'student_id'      => $studentId,
-                    ]);
+                // 差分更新: 既存の連絡帳記録（notes/5領域）を消さないため、
+                // 参加者リストから外れた生徒のみ削除し、新規追加のみ作成する。
+                $newIds = array_map('intval', $validated['student_ids']);
+                $existingIds = $activity->studentRecords()->pluck('student_id')->map(fn ($v) => (int) $v)->all();
+
+                $toDelete = array_values(array_diff($existingIds, $newIds));
+                $toAdd    = array_values(array_diff($newIds, $existingIds));
+
+                if (!empty($toDelete)) {
+                    $activity->studentRecords()->whereIn('student_id', $toDelete)->delete();
+                }
+
+                foreach ($toAdd as $studentId) {
+                    StudentRecord::updateOrCreate(
+                        ['daily_record_id' => $activity->id, 'student_id' => $studentId],
+                        []
+                    );
                 }
             }
         });
@@ -467,7 +477,7 @@ class TabletController extends Controller
 
         $validated = $request->validate([
             'daily_record_id'       => 'required|exists:daily_records,id',
-            'common_activity'       => 'required|string|max:2000',
+            'common_activity'       => 'nullable|string|max:2000',
             'students'              => 'required|array|min:1',
             'students.*.student_id' => 'required|exists:students,id',
             'students.*.notes'      => 'nullable|string|max:5000',
@@ -485,7 +495,7 @@ class TabletController extends Controller
 
         DB::transaction(function () use ($record, $validated) {
             $record->update([
-                'common_activity' => $validated['common_activity'],
+                'common_activity' => $validated['common_activity'] ?? $record->common_activity,
             ]);
 
             foreach ($validated['students'] as $s) {
