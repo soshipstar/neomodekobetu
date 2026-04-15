@@ -224,7 +224,7 @@ class ChatController extends Controller
             $msg = ChatMessage::create([
                 'room_id'         => $room->id,
                 'sender_id'       => $user->id,
-                'sender_type'     => $user->user_type,
+                'sender_type'     => 'staff',
                 'message'         => $request->message ?? '',
                 'message_type'    => 'normal',
                 'attachment_path' => $attachmentPath,

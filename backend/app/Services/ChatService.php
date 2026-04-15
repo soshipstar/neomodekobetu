@@ -67,7 +67,7 @@ class ChatService
             $data = [
                 'room_id' => $room->id,
                 'sender_id' => $sender->id,
-                'sender_type' => $sender->user_type,
+                'sender_type' => in_array($sender->user_type, ['staff', 'admin'], true) ? 'staff' : $sender->user_type,
                 'message' => $message,
                 'message_type' => 'text',
             ];
