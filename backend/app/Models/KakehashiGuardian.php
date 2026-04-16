@@ -35,7 +35,7 @@ class KakehashiGuardian extends Model
     {
         return [
             'is_submitted' => 'boolean',
-            'submitted_at' => 'datetime',
+            'submitted_at' => 'datetime:Y-m-d H:i:s',
             'is_hidden' => 'boolean',
         ];
     }

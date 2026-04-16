@@ -24,7 +24,7 @@ class StudentChatMessage extends Model
         return [
             'is_deleted' => 'boolean',
             'is_archived' => 'boolean',
-            'created_at' => 'datetime',
+            'created_at' => 'datetime:Y-m-d H:i:s',
         ];
     }
 

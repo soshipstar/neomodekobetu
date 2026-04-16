@@ -23,8 +23,8 @@ class ChatRoom extends Model
     protected function casts(): array
     {
         return [
-            'last_message_at' => 'datetime',
-            'created_at' => 'datetime',
+            'last_message_at' => 'datetime:Y-m-d H:i:s',
+            'created_at' => 'datetime:Y-m-d H:i:s',
         ];
     }
 

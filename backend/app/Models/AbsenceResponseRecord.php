@@ -28,9 +28,9 @@ class AbsenceResponseRecord extends Model
         return [
             'absence_date' => 'date:Y-m-d',
             'is_sent' => 'boolean',
-            'sent_at' => 'datetime',
+            'sent_at' => 'datetime:Y-m-d H:i:s',
             'guardian_confirmed' => 'boolean',
-            'guardian_confirmed_at' => 'datetime',
+            'guardian_confirmed_at' => 'datetime:Y-m-d H:i:s',
         ];
     }
 

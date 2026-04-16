@@ -119,7 +119,7 @@ class HiyariHattoController extends Controller
     /**
      * PDF 生成 (puppeteer で HTML を PDF 化)
      */
-    public function pdf(Request $request, HiyariHattoRecord $hiyariHatto): Response
+    public function pdf(Request $request, HiyariHattoRecord $hiyariHatto): \Symfony\Component\HttpFoundation\Response
     {
         $this->authorizeAccess($request, $hiyariHatto);
         $hiyariHatto->load(['student:id,student_name,grade_level', 'reporter:id,full_name', 'confirmedBy:id,full_name', 'classroom:id,classroom_name']);

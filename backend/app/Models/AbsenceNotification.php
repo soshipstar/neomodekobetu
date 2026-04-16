@@ -26,7 +26,7 @@ class AbsenceNotification extends Model
         return [
             'absence_date' => 'date:Y-m-d',
             'makeup_request_date' => 'date:Y-m-d',
-            'makeup_approved_at' => 'datetime',
+            'makeup_approved_at' => 'datetime:Y-m-d H:i:s',
         ];
     }
 

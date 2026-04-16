@@ -28,7 +28,7 @@ class SubmissionRequest extends Model
         return [
             'due_date' => 'date:Y-m-d',
             'is_completed' => 'boolean',
-            'completed_at' => 'datetime',
+            'completed_at' => 'datetime:Y-m-d H:i:s',
             'attachment_size' => 'integer',
         ];
     }

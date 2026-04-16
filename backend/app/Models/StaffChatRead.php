@@ -23,7 +23,7 @@ class StaffChatRead extends Model
     {
         return [
             'last_read_message_id' => 'integer',
-            'read_at'              => 'datetime',
+            'read_at'              => 'datetime:Y-m-d H:i:s',
         ];
     }
 

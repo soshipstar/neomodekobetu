@@ -29,7 +29,7 @@ class KakehashiPeriod extends Model
             'submission_deadline' => 'date:Y-m-d',
             'is_active' => 'boolean',
             'is_auto_generated' => 'boolean',
-            'created_at' => 'datetime',
+            'created_at' => 'datetime:Y-m-d H:i:s',
         ];
     }
 

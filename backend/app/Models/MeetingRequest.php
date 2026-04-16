@@ -33,10 +33,10 @@ class MeetingRequest extends Model
     {
         return [
             'candidate_dates' => 'array',
-            'confirmed_date' => 'datetime',
-            'confirmed_at' => 'datetime',
+            'confirmed_date' => 'datetime:Y-m-d H:i:s',
+            'confirmed_at' => 'datetime:Y-m-d H:i:s',
             'is_completed' => 'boolean',
-            'completed_at' => 'datetime',
+            'completed_at' => 'datetime:Y-m-d H:i:s',
         ];
     }
 

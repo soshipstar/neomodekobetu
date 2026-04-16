@@ -82,7 +82,7 @@ class Student extends Model
             'desired_friday' => 'boolean',
             'desired_saturday' => 'boolean',
             'desired_sunday' => 'boolean',
-            'last_login_at' => 'datetime',
+            'last_login_at' => 'datetime:Y-m-d H:i:s',
         ];
     }
 

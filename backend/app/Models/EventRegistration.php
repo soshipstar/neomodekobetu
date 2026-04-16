@@ -21,7 +21,7 @@ class EventRegistration extends Model
     protected function casts(): array
     {
         return [
-            'created_at' => 'datetime',
+            'created_at' => 'datetime:Y-m-d H:i:s',
         ];
     }
 

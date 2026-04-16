@@ -676,10 +676,11 @@ function BroadcastModal({
 
   // Initialize: select all rooms when modal opens
   useEffect(() => {
-    if (isOpen && selectedRoomIds.size === 0 && rooms.length > 0) {
+    if (isOpen && rooms.length > 0) {
       setSelectedRoomIds(new Set(rooms.map((r) => r.id)));
     }
-  }, [isOpen, rooms, selectedRoomIds.size, setSelectedRoomIds]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, rooms]);
 
   const toggleRoom = (id: number) => {
     const next = new Set(selectedRoomIds);

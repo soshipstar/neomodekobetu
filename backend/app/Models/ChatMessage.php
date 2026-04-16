@@ -35,7 +35,7 @@ class ChatMessage extends Model
         return [
             'is_deleted' => 'boolean',
             'is_archived' => 'boolean',
-            'deleted_at' => 'datetime',
+            'deleted_at' => 'datetime:Y-m-d H:i:s',
             'attachment_size' => 'integer',
         ];
     }

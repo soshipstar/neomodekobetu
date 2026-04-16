@@ -400,7 +400,7 @@ export default function KobetsuPlanPage() {
     try {
       const endpoint = editingPlanId
         ? `/api/staff/support-plans/${editingPlanId}/generate-ai`
-        : '/api/staff/support-plans/generate-ai';
+        : `/api/staff/students/${selectedStudentId}/support-plans/ai-generate`;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const res = await api.post<{ data: any }>(
         endpoint,

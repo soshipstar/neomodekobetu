@@ -20,7 +20,7 @@ class SchoolHolidayActivity extends Model
     {
         return [
             'activity_date' => 'date:Y-m-d',
-            'created_at' => 'datetime',
+            'created_at' => 'datetime:Y-m-d H:i:s',
         ];
     }
 

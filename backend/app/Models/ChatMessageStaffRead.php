@@ -20,7 +20,7 @@ class ChatMessageStaffRead extends Model
     protected function casts(): array
     {
         return [
-            'read_at' => 'datetime',
+            'read_at' => 'datetime:Y-m-d H:i:s',
         ];
     }
 

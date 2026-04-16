@@ -39,7 +39,7 @@ class Newsletter extends Model
         return [
             'year' => 'integer',
             'month' => 'integer',
-            'published_at' => 'datetime',
+            'published_at' => 'datetime:Y-m-d H:i:s',
             'report_start_date' => 'date:Y-m-d',
             'report_end_date' => 'date:Y-m-d',
             'schedule_start_date' => 'date:Y-m-d',

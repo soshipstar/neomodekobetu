@@ -25,7 +25,7 @@ class NewsletterSetting extends Model
             'display_settings' => 'array',
             'ai_instructions' => 'array',
             'custom_sections' => 'array',
-            'updated_at' => 'datetime',
+            'updated_at' => 'datetime:Y-m-d H:i:s',
         ];
     }
 
