@@ -614,6 +614,11 @@ Route::prefix('tablet')
         Route::post('/renrakucho', [App\Http\Controllers\Tablet\TabletController::class, 'storeRenrakucho']);
         Route::post('/renrakucho/student', [App\Http\Controllers\Tablet\TabletController::class, 'saveStudentRecord']);
         Route::post('/renrakucho/bulk', [App\Http\Controllers\Tablet\TabletController::class, 'saveRenrakucho']);
+        // 写真ライブラリ (既存 ClassroomPhotoController を再利用)
+        Route::get('/photos', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'index']);
+        Route::get('/photos/storage-usage', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'storageUsage']);
+        Route::post('/photos', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'store']);
+        Route::delete('/photos/{photo}', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'destroy']);
     });
 
 // ==========================================================================

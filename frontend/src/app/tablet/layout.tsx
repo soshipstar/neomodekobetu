@@ -26,6 +26,12 @@ export default function TabletLayout({ children }: { children: ReactNode }) {
           >
             トップ
           </Link>
+          <Link
+            href="/tablet/photos"
+            className="rounded-lg bg-[var(--brand-80)] px-6 py-3 text-lg font-bold text-white hover:bg-blue-700"
+          >
+            写真
+          </Link>
           <button
             onClick={logout}
             className="rounded-lg bg-red-500 px-6 py-3 text-lg font-bold text-white hover:bg-red-600"

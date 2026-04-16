@@ -79,6 +79,13 @@ interface UnconfirmedNote {
   daily_record?: { id: number; record_date: string; activity_name: string };
 }
 
+interface IntegratedNotePhoto {
+  id: number;
+  url: string;
+  file_size: number;
+  activity_description: string | null;
+}
+
 interface IntegratedNoteView {
   id: number;
   student_id: number;
@@ -89,6 +96,7 @@ interface IntegratedNoteView {
   guardian_confirmed_at: string | null;
   created_at: string;
   student?: Student & { grade_level?: string };
+  photos?: IntegratedNotePhoto[];
 }
 
 // Domain labels (5 areas)
@@ -1399,6 +1407,27 @@ export default function RenrakuchoPage() {
                     <div className="rounded-md bg-[var(--neutral-background-3)] p-3 text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap leading-relaxed mb-2">
                       {nl(note.integrated_content)}
                     </div>
+
+                    {/* 添付写真 */}
+                    {note.photos && note.photos.length > 0 && (
+                      <div className="mb-2">
+                        <p className="mb-1 text-xs text-[var(--neutral-foreground-3)]">
+                          <MaterialIcon name="photo_library" size={12} className="inline mr-1" />
+                          添付写真 ({note.photos.length}枚)
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {note.photos.map((photo) => (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              key={photo.id}
+                              src={photo.url}
+                              alt={photo.activity_description ?? ''}
+                              className="h-20 w-20 rounded-md object-cover border border-[var(--neutral-stroke-2)]"
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     <div className="text-xs text-[var(--neutral-foreground-3)] border-t border-[var(--neutral-stroke-3)] pt-2">
                       {note.sent_at && (
