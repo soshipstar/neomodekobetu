@@ -19,6 +19,8 @@ interface Photo {
   file_size: number;
   activity_description: string | null;
   activity_date: string | null;
+  grade_level: string | null;
+  activity_tag_id: number | null;
   created_at: string;
   students?: { id: number; student_name: string }[];
   uploader?: { id: number; full_name: string };
@@ -51,6 +53,7 @@ export default function ClassroomPhotosPage() {
   const [students, setStudents] = useState<StudentOption[]>([]);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [detailPhoto, setDetailPhoto] = useState<Photo | null>(null);
+  const [editPhoto, setEditPhoto] = useState<Photo | null>(null);
 
   const classroomId = user?.classroom_id ?? 0;
 
@@ -285,6 +288,13 @@ export default function ClassroomPhotosPage() {
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setDetailPhoto(null)}>閉じる</Button>
               <Button
+                variant="outline"
+                onClick={() => { setEditPhoto(detailPhoto); setDetailPhoto(null); }}
+                leftIcon={<MaterialIcon name="edit" size={16} />}
+              >
+                編集
+              </Button>
+              <Button
                 variant="ghost"
                 onClick={() => { handleDelete(detailPhoto); setDetailPhoto(null); }}
                 leftIcon={<MaterialIcon name="delete" size={16} />}
@@ -295,6 +305,19 @@ export default function ClassroomPhotosPage() {
             </div>
           </div>
         </Modal>
+      )}
+
+      {/* 編集モーダル */}
+      {editPhoto && (
+        <PhotoEditModal
+          photo={editPhoto}
+          students={students}
+          onClose={() => setEditPhoto(null)}
+          onUpdated={(updated) => {
+            setPhotos((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+            setEditPhoto(null);
+          }}
+        />
       )}
     </div>
   );
@@ -503,6 +526,145 @@ function PhotoUploadModal({
             leftIcon={<MaterialIcon name="upload" size={16} />}
           >
             アップロード
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function PhotoEditModal({
+  photo,
+  students,
+  onClose,
+  onUpdated,
+}: {
+  photo: Photo;
+  students: StudentOption[];
+  onClose: () => void;
+  onUpdated: (updated: Photo) => void;
+}) {
+  const { toast } = useToast();
+  const [activityDescription, setActivityDescription] = useState(photo.activity_description ?? '');
+  const [activityDate, setActivityDate] = useState(photo.activity_date ?? '');
+  const [gradeLevel, setGradeLevel] = useState(photo.grade_level ?? '');
+  const [activityTagId, setActivityTagId] = useState(photo.activity_tag_id ? String(photo.activity_tag_id) : '');
+  const [tags, setTags] = useState<{ id: number; tag_name: string }[]>([]);
+  const [selectedStudents, setSelectedStudents] = useState<Set<number>>(
+    new Set(photo.students?.map((s) => s.id) ?? []),
+  );
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    api.get('/api/staff/tag-settings').then((res) => {
+      setTags(Array.isArray(res.data?.data) ? res.data.data : []);
+    }).catch(() => {});
+  }, []);
+
+  const handleSubmit = async () => {
+    setSaving(true);
+    try {
+      const body: Record<string, unknown> = {
+        activity_description: activityDescription || null,
+        activity_date: activityDate || null,
+        grade_level: gradeLevel || null,
+        activity_tag_id: activityTagId ? Number(activityTagId) : null,
+        student_ids: Array.from(selectedStudents),
+      };
+      const res = await api.put(`/api/staff/classroom-photos/${photo.id}`, body);
+      toast(res.data.message || '更新しました', 'success');
+      onUpdated(res.data.data);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || '更新に失敗しました';
+      toast(msg, 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={true} onClose={onClose} title="写真情報を編集" size="md">
+      <div className="space-y-4">
+        {/* プレビュー */}
+        <div className="flex justify-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={photo.url} alt="" className="max-h-48 rounded-lg object-contain" />
+        </div>
+
+        <Input
+          label="活動内容"
+          value={activityDescription}
+          onChange={(e) => setActivityDescription(e.target.value)}
+          placeholder="例: 公園で水遊び"
+        />
+
+        <Input
+          label="活動日"
+          type="date"
+          value={activityDate}
+          onChange={(e) => setActivityDate(e.target.value)}
+        />
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="mb-1 block text-sm font-medium">学年</label>
+            <select value={gradeLevel} onChange={(e) => setGradeLevel(e.target.value)}
+              className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm">
+              <option value="">未指定</option>
+              <option value="preschool">未就学</option>
+              <option value="elementary">小学生</option>
+              <option value="junior_high">中学生</option>
+              <option value="high_school">高校生</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium">活動タグ</label>
+            <select value={activityTagId} onChange={(e) => setActivityTagId(e.target.value)}
+              className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm">
+              <option value="">未指定</option>
+              {tags.map((t) => (
+                <option key={t.id} value={t.id}>{t.tag_name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium">写った児童 (複数選択可)</label>
+          <div className="max-h-[200px] overflow-y-auto rounded border border-[var(--neutral-stroke-2)] p-2">
+            {students.length === 0 ? (
+              <p className="text-xs text-[var(--neutral-foreground-4)]">児童がいません</p>
+            ) : (
+              students.map((s) => (
+                <label key={s.id} className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-[var(--neutral-background-3)] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedStudents.has(s.id)}
+                    onChange={() => {
+                      setSelectedStudents((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(s.id)) next.delete(s.id);
+                        else next.add(s.id);
+                        return next;
+                      });
+                    }}
+                  />
+                  {s.student_name}
+                </label>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="outline" onClick={onClose}>キャンセル</Button>
+          <Button
+            variant="primary"
+            onClick={handleSubmit}
+            isLoading={saving}
+            leftIcon={<MaterialIcon name="save" size={16} />}
+          >
+            保存
           </Button>
         </div>
       </div>
