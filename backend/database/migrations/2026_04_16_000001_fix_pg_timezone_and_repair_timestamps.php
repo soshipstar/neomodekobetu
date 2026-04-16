@@ -23,9 +23,9 @@ return new class extends Migration
         'staff_chat_messages'    => ['created_at', 'updated_at'],
         'notifications'          => ['read_at', 'created_at', 'updated_at'],
         'chat_rooms'             => ['last_message_at', 'updated_at'],
-        'staff_chat_reads'       => ['read_at', 'created_at', 'updated_at'],
-        'chat_message_staff_reads' => ['read_at', 'created_at', 'updated_at'],
-        'chat_room_pins'         => ['pinned_at', 'created_at', 'updated_at'],
+        'staff_chat_reads'       => ['read_at'],
+        'chat_message_staff_reads' => ['read_at'],
+        'chat_room_pins'         => ['pinned_at'],
         'daily_records'          => ['created_at', 'updated_at'],
         'student_records'        => ['created_at', 'updated_at'],
         'hiyari_hatto_records'   => ['occurred_at', 'guardian_notified_at', 'created_at', 'updated_at'],
@@ -62,19 +62,27 @@ return new class extends Migration
 
                 // created_at/updated_at は影響期間以降のレコードのみ修正
                 // それ以外のカラムは、値自体が影響期間内にあるもののみ修正
+                $hasCreatedAt = DB::getSchemaBuilder()->hasColumn($table, 'created_at');
+
                 if (in_array($col, ['created_at', 'updated_at'], true)) {
                     DB::statement("
                         UPDATE \"{$table}\"
                         SET \"{$col}\" = \"{$col}\" - INTERVAL '9 hours'
                         WHERE \"{$col}\" > ?
                     ", [$this->cutoff]);
-                } else {
-                    // 他のタイムスタンプは、そのレコードの created_at が影響期間内かつ値が非null のもの
+                } elseif ($hasCreatedAt) {
                     DB::statement("
                         UPDATE \"{$table}\"
                         SET \"{$col}\" = \"{$col}\" - INTERVAL '9 hours'
                         WHERE \"created_at\" > ?
                         AND \"{$col}\" IS NOT NULL
+                    ", [$this->cutoff]);
+                } else {
+                    // created_at がないテーブルは値自体で判定
+                    DB::statement("
+                        UPDATE \"{$table}\"
+                        SET \"{$col}\" = \"{$col}\" - INTERVAL '9 hours'
+                        WHERE \"{$col}\" > ?
                     ", [$this->cutoff]);
                 }
             }
@@ -93,18 +101,26 @@ return new class extends Migration
                 if (!DB::getSchemaBuilder()->hasColumn($table, $col)) {
                     continue;
                 }
+                $hasCreatedAt = DB::getSchemaBuilder()->hasColumn($table, 'created_at');
+
                 if (in_array($col, ['created_at', 'updated_at'], true)) {
                     DB::statement("
                         UPDATE \"{$table}\"
                         SET \"{$col}\" = \"{$col}\" + INTERVAL '9 hours'
                         WHERE \"{$col}\" > ? - INTERVAL '9 hours'
                     ", [$this->cutoff]);
-                } else {
+                } elseif ($hasCreatedAt) {
                     DB::statement("
                         UPDATE \"{$table}\"
                         SET \"{$col}\" = \"{$col}\" + INTERVAL '9 hours'
                         WHERE \"created_at\" > ? - INTERVAL '9 hours'
                         AND \"{$col}\" IS NOT NULL
+                    ", [$this->cutoff]);
+                } else {
+                    DB::statement("
+                        UPDATE \"{$table}\"
+                        SET \"{$col}\" = \"{$col}\" + INTERVAL '9 hours'
+                        WHERE \"{$col}\" > ? - INTERVAL '9 hours'
                     ", [$this->cutoff]);
                 }
             }
