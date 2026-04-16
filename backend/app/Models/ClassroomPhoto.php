@@ -41,7 +41,7 @@ class ClassroomPhoto extends Model
     protected function casts(): array
     {
         return [
-            'activity_date' => 'date',
+            'activity_date' => 'date:Y-m-d',
         ];
     }
 
