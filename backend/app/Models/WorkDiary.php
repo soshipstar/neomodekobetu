@@ -23,7 +23,7 @@ class WorkDiary extends Model
     protected function casts(): array
     {
         return [
-            'diary_date' => 'date',
+            'diary_date' => 'date:Y-m-d',
         ];
     }
 

@@ -29,7 +29,7 @@ class SupportPlanDetail extends Model
     {
         return [
             'sort_order' => 'integer',
-            'achievement_date' => 'date',
+            'achievement_date' => 'date:Y-m-d',
             'priority' => 'integer',
         ];
     }

@@ -40,10 +40,10 @@ class Newsletter extends Model
             'year' => 'integer',
             'month' => 'integer',
             'published_at' => 'datetime',
-            'report_start_date' => 'date',
-            'report_end_date' => 'date',
-            'schedule_start_date' => 'date',
-            'schedule_end_date' => 'date',
+            'report_start_date' => 'date:Y-m-d',
+            'report_end_date' => 'date:Y-m-d',
+            'schedule_start_date' => 'date:Y-m-d',
+            'schedule_end_date' => 'date:Y-m-d',
         ];
     }
 

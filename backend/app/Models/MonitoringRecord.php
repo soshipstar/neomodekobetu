@@ -38,14 +38,14 @@ class MonitoringRecord extends Model
     protected function casts(): array
     {
         return [
-            'monitoring_date' => 'date',
+            'monitoring_date' => 'date:Y-m-d',
             'is_official' => 'boolean',
             'guardian_confirmed' => 'boolean',
             'guardian_confirmed_at' => 'datetime',
             'is_draft' => 'boolean',
             'is_hidden' => 'boolean',
-            'guardian_signature_date' => 'date',
-            'staff_signature_date' => 'date',
+            'guardian_signature_date' => 'date:Y-m-d',
+            'staff_signature_date' => 'date:Y-m-d',
         ];
     }
 

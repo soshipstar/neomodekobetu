@@ -23,7 +23,7 @@ class DailyRecord extends Model
     protected function casts(): array
     {
         return [
-            'record_date' => 'date',
+            'record_date' => 'date:Y-m-d',
         ];
     }
 

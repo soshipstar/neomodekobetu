@@ -53,16 +53,16 @@ class IndividualSupportPlan extends Model
     protected function casts(): array
     {
         return [
-            'created_date' => 'date',
-            'consent_date' => 'date',
+            'created_date' => 'date:Y-m-d',
+            'consent_date' => 'date:Y-m-d',
             'is_draft' => 'boolean',
             'is_official' => 'boolean',
-            'staff_signature_date' => 'date',
-            'guardian_signature_date' => 'date',
+            'staff_signature_date' => 'date:Y-m-d',
+            'guardian_signature_date' => 'date:Y-m-d',
             'guardian_reviewed_at' => 'datetime',
             'guardian_review_comment_at' => 'datetime',
-            'long_term_goal_date' => 'date',
-            'short_term_goal_date' => 'date',
+            'long_term_goal_date' => 'date:Y-m-d',
+            'short_term_goal_date' => 'date:Y-m-d',
             'is_hidden' => 'boolean',
             'guardian_confirmed' => 'boolean',
             'guardian_confirmed_at' => 'datetime',

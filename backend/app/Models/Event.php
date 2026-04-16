@@ -30,7 +30,7 @@ class Event extends Model
     protected function casts(): array
     {
         return [
-            'event_date' => 'date',
+            'event_date' => 'date:Y-m-d',
         ];
     }
 

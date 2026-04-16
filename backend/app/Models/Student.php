@@ -61,10 +61,10 @@ class Student extends Model
     protected function casts(): array
     {
         return [
-            'birth_date' => 'date',
-            'support_start_date' => 'date',
-            'kakehashi_initial_date' => 'date',
-            'withdrawal_date' => 'date',
+            'birth_date' => 'date:Y-m-d',
+            'support_start_date' => 'date:Y-m-d',
+            'kakehashi_initial_date' => 'date:Y-m-d',
+            'withdrawal_date' => 'date:Y-m-d',
             'is_active' => 'boolean',
             'hide_initial_monitoring' => 'boolean',
             'scheduled_monday' => 'boolean',
@@ -74,7 +74,7 @@ class Student extends Model
             'scheduled_friday' => 'boolean',
             'scheduled_saturday' => 'boolean',
             'scheduled_sunday' => 'boolean',
-            'desired_start_date' => 'date',
+            'desired_start_date' => 'date:Y-m-d',
             'desired_monday' => 'boolean',
             'desired_tuesday' => 'boolean',
             'desired_wednesday' => 'boolean',

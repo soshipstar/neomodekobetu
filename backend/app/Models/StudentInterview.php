@@ -27,7 +27,7 @@ class StudentInterview extends Model
     protected function casts(): array
     {
         return [
-            'interview_date' => 'date',
+            'interview_date' => 'date:Y-m-d',
             'check_school' => 'boolean',
             'check_home' => 'boolean',
             'check_troubles' => 'boolean',

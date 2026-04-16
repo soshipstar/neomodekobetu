@@ -26,7 +26,7 @@ class AbsenceResponseRecord extends Model
     protected function casts(): array
     {
         return [
-            'absence_date' => 'date',
+            'absence_date' => 'date:Y-m-d',
             'is_sent' => 'boolean',
             'sent_at' => 'datetime',
             'guardian_confirmed' => 'boolean',

@@ -19,7 +19,7 @@ class SchoolHolidayActivity extends Model
     protected function casts(): array
     {
         return [
-            'activity_date' => 'date',
+            'activity_date' => 'date:Y-m-d',
             'created_at' => 'datetime',
         ];
     }

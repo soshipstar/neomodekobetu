@@ -19,7 +19,7 @@ class AdditionalUsage extends Model
     protected function casts(): array
     {
         return [
-            'usage_date' => 'date',
+            'usage_date' => 'date:Y-m-d',
         ];
     }
 

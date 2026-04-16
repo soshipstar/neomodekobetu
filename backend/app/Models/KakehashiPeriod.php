@@ -24,9 +24,9 @@ class KakehashiPeriod extends Model
     protected function casts(): array
     {
         return [
-            'start_date' => 'date',
-            'end_date' => 'date',
-            'submission_deadline' => 'date',
+            'start_date' => 'date:Y-m-d',
+            'end_date' => 'date:Y-m-d',
+            'submission_deadline' => 'date:Y-m-d',
             'is_active' => 'boolean',
             'is_auto_generated' => 'boolean',
             'created_at' => 'datetime',

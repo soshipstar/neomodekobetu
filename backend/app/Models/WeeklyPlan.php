@@ -42,7 +42,7 @@ class WeeklyPlan extends Model
     protected function casts(): array
     {
         return [
-            'week_start_date'  => 'date',
+            'week_start_date'  => 'date:Y-m-d',
             'plan_content'     => 'array',
             'plan_data'        => 'array',
             'daily_achievement' => 'array',

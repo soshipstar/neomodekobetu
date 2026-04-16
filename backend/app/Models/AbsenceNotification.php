@@ -24,8 +24,8 @@ class AbsenceNotification extends Model
     protected function casts(): array
     {
         return [
-            'absence_date' => 'date',
-            'makeup_request_date' => 'date',
+            'absence_date' => 'date:Y-m-d',
+            'makeup_request_date' => 'date:Y-m-d',
             'makeup_approved_at' => 'datetime',
         ];
     }
