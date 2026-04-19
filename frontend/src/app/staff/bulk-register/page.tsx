@@ -32,9 +32,9 @@ interface BulkResult {
 }
 
 const csvTemplate = `教室名,保護者氏名,生徒氏名,生年月日,保護者メールアドレス,支援開始日,学年調整,月,火,水,木,金,土
-てらこや,山田花子,山田太郎,2015-04-01,hanako@example.com,2025-04-01,0,1,1,1,1,1,0
-てらこやプラス,山田花子,山田次郎,2017-06-15,,,0,1,0,1,0,1,0
-てらこや,鈴木美子,鈴木一郎,2016-08-15,yoshiko@example.com,2025-04-01,0,1,1,1,1,1,0`;
+かけはし,山田花子,山田太郎,2015-04-01,hanako@example.com,2025-04-01,0,1,1,1,1,1,0
+かけはしシンプル,山田花子,山田次郎,2017-06-15,,,0,1,0,1,0,1,0
+かけはし,鈴木美子,鈴木一郎,2016-08-15,yoshiko@example.com,2025-04-01,0,1,1,1,1,1,0`;
 
 export default function BulkRegisterPage() {
   const toast = useToast();
@@ -229,7 +229,7 @@ export default function BulkRegisterPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--neutral-stroke-3)]">
-                  <tr><td className="px-3 py-2">教室名</td><td className="px-3 py-2"><Badge variant="warning">任意</Badge></td><td className="px-3 py-2">テキスト（省略時はログイン教室）</td><td className="px-3 py-2">てらこや</td></tr>
+                  <tr><td className="px-3 py-2">教室名</td><td className="px-3 py-2"><Badge variant="warning">任意</Badge></td><td className="px-3 py-2">テキスト（省略時はログイン教室）</td><td className="px-3 py-2">かけはし</td></tr>
                   <tr><td className="px-3 py-2">保護者氏名</td><td className="px-3 py-2"><Badge variant="danger">必須</Badge></td><td className="px-3 py-2">テキスト</td><td className="px-3 py-2">山田花子</td></tr>
                   <tr><td className="px-3 py-2">生徒氏名</td><td className="px-3 py-2"><Badge variant="danger">必須</Badge></td><td className="px-3 py-2">テキスト</td><td className="px-3 py-2">山田太郎</td></tr>
                   <tr><td className="px-3 py-2">生年月日</td><td className="px-3 py-2"><Badge variant="danger">必須</Badge></td><td className="px-3 py-2">YYYY-MM-DD</td><td className="px-3 py-2">2015-04-01</td></tr>
