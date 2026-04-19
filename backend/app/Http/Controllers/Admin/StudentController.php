@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ChatRoom;
 use App\Models\Classroom;
 use App\Models\Student;
 use App\Services\StudentHelperService;
@@ -77,6 +78,13 @@ class StudentController extends Controller
         $validated['status'] = $validated['status'] ?? 'active';
 
         $student = Student::create($validated);
+
+        if (! empty($validated['guardian_id'])) {
+            ChatRoom::firstOrCreate([
+                'student_id'  => $student->id,
+                'guardian_id' => $validated['guardian_id'],
+            ]);
+        }
 
         return response()->json([
             'success' => true,

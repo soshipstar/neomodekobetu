@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
+use App\Models\ChatRoom;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\KakehashiService;
@@ -138,6 +139,13 @@ class StudentController extends Controller
             'password_hash'   => $password ? Hash::make($password) : null,
             'password_plain'  => $password,
         ]));
+
+        if (! empty($validated['guardian_id'])) {
+            ChatRoom::firstOrCreate([
+                'student_id'  => $student->id,
+                'guardian_id' => $validated['guardian_id'],
+            ]);
+        }
 
         // かけはし期間の自動生成（待機児童以外、かつ「現在の期間から作成する」の場合のみ）
         $supportPlanStartType = $validated['support_plan_start_type'] ?? 'current';

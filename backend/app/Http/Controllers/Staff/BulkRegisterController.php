@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
+use App\Models\ChatRoom;
 use App\Models\Classroom;
 use App\Models\Student;
 use App\Models\User;
@@ -322,6 +323,11 @@ class BulkRegisterController extends Controller
                         'scheduled_friday'    => ! empty($row['scheduled_friday']),
                         'scheduled_saturday'  => ! empty($row['scheduled_saturday']),
                         'scheduled_sunday'    => false,
+                    ]);
+
+                    ChatRoom::firstOrCreate([
+                        'student_id'  => $student->id,
+                        'guardian_id' => $guardianId,
                     ]);
 
                     // かけはし期間の自動生成（支援開始日が設定されている場合）
