@@ -14,10 +14,10 @@ export function useAuth(requiredUserType?: UserType | UserType[]) {
     useAuthStore();
 
   useEffect(() => {
-    if (!isAuthenticated && !isLoading) {
+    if (!isAuthenticated) {
       fetchUser();
     }
-  }, [isAuthenticated, isLoading, fetchUser]);
+  }, [isAuthenticated, fetchUser]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
