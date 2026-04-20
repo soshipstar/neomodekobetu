@@ -62,6 +62,10 @@ return Application::configure(basePath: dirname(__DIR__))
                 if ($e instanceof \Illuminate\Validation\ValidationException) return;
                 if ($e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) return;
 
+                // tinker (php artisan tinker) からの例外は DB に残さない — 手動実行のノイズ源
+                if (str_starts_with(get_class($e), 'Psy\\')) return;
+                if (app()->runningInConsole() && in_array('tinker', $_SERVER['argv'] ?? [], true)) return;
+
                 $request = request();
                 \App\Models\ErrorLog::create([
                     'level'           => 'error',
