@@ -13,6 +13,12 @@ use Illuminate\Support\Facades\Route;
 */
 
 // ==========================================================================
+// Client Error Logger (Public, throttled) — フロントの未捕捉例外を記録
+// ==========================================================================
+Route::post('/client-errors', [App\Http\Controllers\ClientErrorController::class, 'store'])
+    ->middleware('throttle:60,1');
+
+// ==========================================================================
 // 4.1 認証 API (Public)
 // ==========================================================================
 Route::prefix('auth')->group(function () {
