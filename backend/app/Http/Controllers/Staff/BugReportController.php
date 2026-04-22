@@ -150,12 +150,17 @@ class BugReportController extends Controller
     }
 
     /**
-     * ステータス変更（管理者のみ）
+     * ステータス変更
+     * - 管理者 (master / company_admin): 全ステータスに変更可
+     * - 報告者本人: in_progress（対応済み確認依頼中）→ resolved への変更のみ可
      */
     public function updateStatus(Request $request, BugReport $bugReport): JsonResponse
     {
         $user = $request->user();
-        if (!$user->is_master && !$user->isCompanyAdmin()) {
+        $isAdmin = $user->is_master || $user->isCompanyAdmin();
+        $isReporter = $bugReport->reporter_id === $user->id;
+
+        if (!$isAdmin && !$isReporter) {
             return response()->json(['success' => false, 'message' => '権限がありません。'], 403);
         }
 
@@ -163,12 +168,22 @@ class BugReportController extends Controller
             'status' => 'required|string|in:open,in_progress,resolved',
         ]);
 
+        // 報告者本人は in_progress → resolved の確認完了操作のみ許可
+        if (!$isAdmin) {
+            if ($bugReport->status !== 'in_progress' || $validated['status'] !== 'resolved') {
+                return response()->json([
+                    'success' => false,
+                    'message' => '報告者は対応済み確認依頼中の報告を解決済みにする操作のみ行えます。',
+                ], 403);
+            }
+        }
+
         $oldStatus = $bugReport->status;
         $bugReport->update(['status' => $validated['status']]);
 
         // 報告者に通知（自分自身への変更は通知しない）
         if ($bugReport->reporter_id !== $user->id) {
-            $statusLabels = ['open' => '未対応', 'in_progress' => '対応中', 'resolved' => '解決済み', 'closed' => '完了'];
+            $statusLabels = ['open' => '未対応', 'in_progress' => '対応済み確認依頼中', 'resolved' => '解決済み', 'closed' => '完了'];
             $newLabel = $statusLabels[$validated['status']] ?? $validated['status'];
             try {
                 $reporter = User::find($bugReport->reporter_id);

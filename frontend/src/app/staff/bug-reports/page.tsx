@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import api from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -32,7 +33,7 @@ interface BugReport {
 
 const STATUS_MAP: Record<string, { label: string; variant: 'danger' | 'warning' | 'success' | 'default' }> = {
   open: { label: '未対応', variant: 'danger' },
-  in_progress: { label: '対応中', variant: 'warning' },
+  in_progress: { label: '対応済み確認依頼中', variant: 'warning' },
   resolved: { label: '解決済み', variant: 'success' },
 };
 
@@ -42,6 +43,22 @@ const PRIORITY_MAP: Record<string, { label: string; color: string }> = {
   high: { label: '高', color: 'text-orange-600' },
   critical: { label: '緊急', color: 'text-red-600 font-bold' },
 };
+
+// onErrorで「送信に失敗しました」だけだと DNS / ネットワーク / 5xx / バリデーション
+// の区別が付かず、バグ報告自体が失敗した場合の自己解決余地がゼロになる。
+function describeSubmitError(err: unknown, action: string): string {
+  const axiosErr = err as AxiosError<{ message?: string; errors?: Record<string, string[]> }>;
+  if (!axiosErr?.response) {
+    return `${action}に失敗しました。ネットワーク接続を確認して再試行してください。`;
+  }
+  const status = axiosErr.response.status;
+  const serverMsg = axiosErr.response.data?.message;
+  if (serverMsg) return `${action}に失敗しました: ${serverMsg}`;
+  if (status === 413) return `${action}に失敗しました。添付ファイルが大きすぎます（5MB以下にしてください）。`;
+  if (status === 422) return `${action}に失敗しました。入力内容をご確認ください。`;
+  if (status >= 500) return `${action}に失敗しました。サーバーエラーが発生しました (HTTP ${status})`;
+  return `${action}に失敗しました (HTTP ${status})`;
+}
 
 export default function BugReportsPage() {
   const { user } = useAuthStore();
@@ -105,7 +122,7 @@ export default function BugReportsPage() {
       setScreenshot(null);
       queryClient.invalidateQueries({ queryKey: ['bug-reports'] });
     },
-    onError: () => toast.error('送信に失敗しました'),
+    onError: (err: unknown) => toast.error(describeSubmitError(err, '送信')),
   });
 
   // Reply
@@ -118,7 +135,7 @@ export default function BugReportsPage() {
       queryClient.invalidateQueries({ queryKey: ['bug-report-detail', selectedReport?.id] });
       queryClient.invalidateQueries({ queryKey: ['bug-reports'] });
     },
-    onError: () => toast.error('返信に失敗しました'),
+    onError: (err: unknown) => toast.error(describeSubmitError(err, '返信')),
   });
 
   // Status change
@@ -200,7 +217,7 @@ export default function BugReportsPage() {
       <div className="flex gap-2 flex-wrap">
         {[
           { value: 'open', label: '未対応' },
-          { value: 'in_progress', label: '対応中' },
+          { value: 'in_progress', label: '対応済み確認依頼中' },
           { value: 'resolved', label: '解決済み' },
           { value: '', label: 'すべて' },
         ].map((f) => (
@@ -433,7 +450,7 @@ export default function BugReportsPage() {
 
                 {/* Admin: Status Change */}
                 {isAdmin && (
-                  <div className="flex items-center gap-2 border-t border-[var(--neutral-stroke-2)] pt-3">
+                  <div className="flex items-center gap-2 border-t border-[var(--neutral-stroke-2)] pt-3 flex-wrap">
                     <span className="text-xs text-[var(--neutral-foreground-3)]">ステータス:</span>
                     {['open', 'in_progress', 'resolved'].map((s) => (
                       <button
@@ -449,6 +466,24 @@ export default function BugReportsPage() {
                         {STATUS_MAP[s]?.label || s}
                       </button>
                     ))}
+                  </div>
+                )}
+
+                {/* Reporter: 対応済み確認依頼中の自分の報告を解決済みにできる */}
+                {!isAdmin && detail.reporter?.id === user?.id && detail.status === 'in_progress' && (
+                  <div className="border-t border-[var(--neutral-stroke-2)] pt-3">
+                    <p className="text-xs text-[var(--neutral-foreground-3)] mb-2">
+                      修正が反映されていることを確認したら、下のボタンで解決済みに変更できます。
+                    </p>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => statusMutation.mutate('resolved')}
+                      isLoading={statusMutation.isPending}
+                      leftIcon={<MaterialIcon name="check_circle" size={16} />}
+                    >
+                      解決済みにする
+                    </Button>
                   </div>
                 )}
 
