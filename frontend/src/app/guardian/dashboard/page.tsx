@@ -661,7 +661,7 @@ export default function GuardianDashboardPage() {
                   borderColor="border-l-amber-500"
                   bgColor="bg-amber-50"
                   textColor="text-amber-700"
-                  link="/guardian/notes"
+                  link="/guardian/communication-logs"
                   linkText="連絡帳を確認する"
                 >
                   <p>

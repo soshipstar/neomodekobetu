@@ -48,8 +48,8 @@ export default function LoginPage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <Input
-          label="ユーザー名"
-          placeholder="ユーザー名を入力"
+          label="ログインID"
+          placeholder="ログインIDを入力"
           autoComplete="username"
           error={errors.username?.message}
           {...register('username')}
@@ -75,7 +75,7 @@ export default function LoginPage() {
       </form>
 
       <p className="mt-6 text-center text-xs text-[var(--neutral-foreground-4)]">
-        ユーザー名・パスワードが不明な場合は管理者にお問い合わせください
+        ログインID・パスワードが不明な場合は管理者にお問い合わせください
       </p>
     </div>
   );

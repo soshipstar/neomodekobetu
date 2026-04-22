@@ -282,7 +282,7 @@ export default function CommunicationLogsPage() {
                         </div>
                         <div className="h-5 overflow-hidden rounded-full bg-[var(--neutral-background-5)]">
                           <div
-                            className="flex h-full items-center justify-end rounded-full bg-[var(--brand-160)]0 px-2 text-[10px] font-bold text-white transition-all"
+                            className="flex h-full items-center justify-end rounded-full bg-[var(--brand-80)] px-2 text-[10px] font-bold text-white transition-all"
                             style={{ width: `${Math.max(pct, 2)}%` }}
                           >
                             {pct > 20 && `${count}件`}
@@ -311,7 +311,7 @@ export default function CommunicationLogsPage() {
               <strong>検索結果:</strong> {stats?.total_count ?? 0}件の連絡帳が見つかりました
             </div>
           ) : (
-            <div className="mb-4 rounded-lg bg-[var(--brand-160)]0 p-3 text-sm text-white">
+            <div className="mb-4 rounded-lg bg-[var(--brand-80)] p-3 text-sm text-white">
               <strong>直近1か月分を表示中</strong>
               <br />
               <span className="text-xs opacity-90">
