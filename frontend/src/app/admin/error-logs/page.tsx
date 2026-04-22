@@ -194,8 +194,20 @@ export default function ErrorLogsPage() {
         <Card>
           <CardBody>
             <div className="py-12 text-center text-[var(--neutral-foreground-4)]">
-              <MaterialIcon name="error" size={48} className="mx-auto mb-3" />
-              <p>エラーログはありません</p>
+              {resolvedFilter === 'unresolved' && (summary?.total ?? 0) > 0 ? (
+                <>
+                  <MaterialIcon name="check_circle" size={48} className="mx-auto mb-3 text-green-500" />
+                  <p className="text-[var(--neutral-foreground-2)] font-medium">未対処のエラーはありません</p>
+                  <p className="text-xs mt-1">
+                    対処済み{summary?.total ?? 0}件のログがあります（フィルタで「対処済み」または「全て」に切り替えると表示）
+                  </p>
+                </>
+              ) : (
+                <>
+                  <MaterialIcon name="error" size={48} className="mx-auto mb-3" />
+                  <p>エラーログはありません</p>
+                </>
+              )}
             </div>
           </CardBody>
         </Card>
