@@ -58,6 +58,7 @@ export default function GuardiansPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingGuardian, setEditingGuardian] = useState<Guardian | null>(null);
   const [form, setForm] = useState<GuardianForm>({ full_name: '', email: '', username: '', password: '' });
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const debouncedSearch = useDebounce(search, 300);
 
   // Fetch guardians
@@ -141,14 +142,26 @@ export default function GuardiansPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">保護者管理</h1>
           <p className="text-sm text-[var(--neutral-foreground-4)]">保護者の登録・編集</p>
         </div>
-        <Button leftIcon={<MaterialIcon name="add" size={16} />} onClick={openCreate}>
-          保護者を追加
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          {selectedIds.size > 0 && (
+            <Link
+              href={`/staff/guardians/manual-bulk?ids=${Array.from(selectedIds).join(',')}`}
+              target="_blank"
+            >
+              <Button variant="outline" leftIcon={<MaterialIcon name="print" size={16} />}>
+                選択中{selectedIds.size}件を一括印刷
+              </Button>
+            </Link>
+          )}
+          <Button leftIcon={<MaterialIcon name="add" size={16} />} onClick={openCreate}>
+            保護者を追加
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
@@ -167,6 +180,17 @@ export default function GuardiansPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)]">
+                <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">
+                  <input
+                    type="checkbox"
+                    aria-label="すべて選択"
+                    checked={guardians.length > 0 && guardians.every((g) => selectedIds.has(g.id))}
+                    onChange={(e) => {
+                      if (e.target.checked) setSelectedIds(new Set(guardians.map((g) => g.id)));
+                      else setSelectedIds(new Set());
+                    }}
+                  />
+                </th>
                 <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">ID</th>
                 <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">氏名</th>
                 <th className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)]">ユーザー名</th>
@@ -180,6 +204,18 @@ export default function GuardiansPage() {
             <tbody>
               {guardians.map((g) => (
                 <tr key={g.id} className="border-b border-[var(--neutral-stroke-3)] hover:bg-[var(--neutral-background-3)] transition-colors">
+                  <td className="px-3 py-2">
+                    <input
+                      type="checkbox"
+                      aria-label={`${g.full_name} を選択`}
+                      checked={selectedIds.has(g.id)}
+                      onChange={(e) => {
+                        const next = new Set(selectedIds);
+                        if (e.target.checked) next.add(g.id); else next.delete(g.id);
+                        setSelectedIds(next);
+                      }}
+                    />
+                  </td>
                   <td className="px-3 py-2 text-[var(--neutral-foreground-4)]">{g.id}</td>
                   <td className="px-3 py-2 font-medium text-[var(--neutral-foreground-1)]">{g.full_name}</td>
                   <td className="px-3 py-2 text-[var(--neutral-foreground-2)]">{g.username || '-'}</td>
