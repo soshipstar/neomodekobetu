@@ -63,9 +63,7 @@ export default function ErrorLogsPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [selectedLog, setSelectedLog] = useState<ErrorLogEntry | null>(null);
-  // 既定はすべて表示。過去に一括 resolved された場合でも一覧で存在を確認できるように。
-  // 未対処/対処済みはフィルタで明示的に切り替える。
-  const [resolvedFilter, setResolvedFilter] = useState('');
+  const [resolvedFilter, setResolvedFilter] = useState('unresolved');
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(search, 300);
 
