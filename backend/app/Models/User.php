@@ -206,7 +206,13 @@ class User extends Authenticatable
                 ->all();
         }
 
-        return $this->classroom_id ? [$this->classroom_id] : [];
+        // スタッフ: classroom_user ピボット + users.classroom_id の和集合
+        // 後方互換: ピボット未登録の既存ユーザーは classroom_id だけで切替可能（単一所属）
+        // 同一企業境界は管理UI (UserClassroomController::sync) で強制済みのため、ここでは再検証しない
+        $pivotIds = $this->classrooms()->pluck('classrooms.id')->map(fn ($v) => (int) $v)->all();
+        $ids = $this->classroom_id ? array_merge($pivotIds, [(int) $this->classroom_id]) : $pivotIds;
+
+        return array_values(array_unique($ids));
     }
 
     /**
