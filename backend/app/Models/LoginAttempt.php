@@ -21,7 +21,7 @@ class LoginAttempt extends Model
     {
         return [
             'success' => 'boolean',
-            'attempted_at' => 'datetime:Y-m-d H:i:s',
+            'attempted_at' => 'datetime',
         ];
     }
 }

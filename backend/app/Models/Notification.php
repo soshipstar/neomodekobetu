@@ -23,8 +23,8 @@ class Notification extends Model
         return [
             'data' => 'array',
             'is_read' => 'boolean',
-            'read_at' => 'datetime:Y-m-d H:i:s',
-            'created_at' => 'datetime:Y-m-d H:i:s',
+            'read_at' => 'datetime',
+            'created_at' => 'datetime',
         ];
     }
 

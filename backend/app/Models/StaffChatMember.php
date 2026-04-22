@@ -21,7 +21,7 @@ class StaffChatMember extends Model
     protected function casts(): array
     {
         return [
-            'joined_at' => 'datetime:Y-m-d H:i:s',
+            'joined_at' => 'datetime',
         ];
     }
 

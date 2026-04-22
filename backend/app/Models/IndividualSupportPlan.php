@@ -59,14 +59,14 @@ class IndividualSupportPlan extends Model
             'is_official' => 'boolean',
             'staff_signature_date' => 'date:Y-m-d',
             'guardian_signature_date' => 'date:Y-m-d',
-            'guardian_reviewed_at' => 'datetime:Y-m-d H:i:s',
-            'guardian_review_comment_at' => 'datetime:Y-m-d H:i:s',
+            'guardian_reviewed_at' => 'datetime',
+            'guardian_review_comment_at' => 'datetime',
             'long_term_goal_date' => 'date:Y-m-d',
             'short_term_goal_date' => 'date:Y-m-d',
             'is_hidden' => 'boolean',
             'guardian_confirmed' => 'boolean',
-            'guardian_confirmed_at' => 'datetime:Y-m-d H:i:s',
-            'basis_generated_at' => 'datetime:Y-m-d H:i:s',
+            'guardian_confirmed_at' => 'datetime',
+            'basis_generated_at' => 'datetime',
         ];
     }
 

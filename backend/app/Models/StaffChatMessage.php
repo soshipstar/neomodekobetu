@@ -30,7 +30,7 @@ class StaffChatMessage extends Model
             'is_deleted'      => 'boolean',
             'is_archived'     => 'boolean',
             'attachment_size' => 'integer',
-            'created_at'      => 'datetime:Y-m-d H:i:s',
+            'created_at'      => 'datetime',
         ];
     }
 

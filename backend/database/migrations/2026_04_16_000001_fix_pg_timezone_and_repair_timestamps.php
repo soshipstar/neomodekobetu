@@ -107,20 +107,20 @@ return new class extends Migration
                     DB::statement("
                         UPDATE \"{$table}\"
                         SET \"{$col}\" = \"{$col}\" + INTERVAL '9 hours'
-                        WHERE \"{$col}\" > ? - INTERVAL '9 hours'
+                        WHERE \"{$col}\" > ?::timestamptz - INTERVAL '9 hours'
                     ", [$this->cutoff]);
                 } elseif ($hasCreatedAt) {
                     DB::statement("
                         UPDATE \"{$table}\"
                         SET \"{$col}\" = \"{$col}\" + INTERVAL '9 hours'
-                        WHERE \"created_at\" > ? - INTERVAL '9 hours'
+                        WHERE \"created_at\" > ?::timestamptz - INTERVAL '9 hours'
                         AND \"{$col}\" IS NOT NULL
                     ", [$this->cutoff]);
                 } else {
                     DB::statement("
                         UPDATE \"{$table}\"
                         SET \"{$col}\" = \"{$col}\" + INTERVAL '9 hours'
-                        WHERE \"{$col}\" > ? - INTERVAL '9 hours'
+                        WHERE \"{$col}\" > ?::timestamptz - INTERVAL '9 hours'
                     ", [$this->cutoff]);
                 }
             }

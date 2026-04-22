@@ -27,7 +27,7 @@ class Announcement extends Model
     {
         return [
             'is_published' => 'boolean',
-            'published_at' => 'datetime:Y-m-d H:i:s',
+            'published_at' => 'datetime',
         ];
     }
 

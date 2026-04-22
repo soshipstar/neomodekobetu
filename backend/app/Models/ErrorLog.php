@@ -31,7 +31,7 @@ class ErrorLog extends Model
         return [
             'trace'        => 'array',
             'request_data' => 'array',
-            'created_at'   => 'datetime:Y-m-d H:i:s',
+            'created_at'   => 'datetime',
             'is_resolved'  => 'boolean',
         ];
     }

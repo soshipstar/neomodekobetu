@@ -25,7 +25,7 @@ class AuditLog extends Model
         return [
             'old_values' => 'array',
             'new_values' => 'array',
-            'created_at' => 'datetime:Y-m-d H:i:s',
+            'created_at' => 'datetime',
         ];
     }
 

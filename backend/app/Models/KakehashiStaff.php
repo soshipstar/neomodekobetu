@@ -33,9 +33,9 @@ class KakehashiStaff extends Model
     {
         return [
             'is_submitted' => 'boolean',
-            'submitted_at' => 'datetime:Y-m-d H:i:s',
+            'submitted_at' => 'datetime',
             'guardian_confirmed' => 'boolean',
-            'guardian_confirmed_at' => 'datetime:Y-m-d H:i:s',
+            'guardian_confirmed_at' => 'datetime',
             'is_hidden' => 'boolean',
         ];
     }

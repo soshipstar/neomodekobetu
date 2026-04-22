@@ -46,7 +46,7 @@ class WeeklyPlan extends Model
             'plan_content'     => 'array',
             'plan_data'        => 'array',
             'daily_achievement' => 'array',
-            'evaluated_at'     => 'datetime:Y-m-d H:i:s',
+            'evaluated_at'     => 'datetime',
         ];
     }
 

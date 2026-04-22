@@ -43,8 +43,8 @@ class HiyariHattoRecord extends Model
     protected function casts(): array
     {
         return [
-            'occurred_at' => 'datetime:Y-m-d H:i:s',
-            'guardian_notified_at' => 'datetime:Y-m-d H:i:s',
+            'occurred_at' => 'datetime',
+            'guardian_notified_at' => 'datetime',
             'guardian_notified' => 'boolean',
             'medical_treatment' => 'boolean',
         ];

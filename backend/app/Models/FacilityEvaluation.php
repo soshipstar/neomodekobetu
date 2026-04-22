@@ -24,7 +24,7 @@ class FacilityEvaluation extends Model
         return [
             'evaluation_year' => 'integer',
             'responses' => 'array',
-            'submitted_at' => 'datetime:Y-m-d H:i:s',
+            'submitted_at' => 'datetime',
         ];
     }
 

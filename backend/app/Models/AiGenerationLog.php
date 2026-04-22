@@ -28,7 +28,7 @@ class AiGenerationLog extends Model
             'input_data' => 'array',
             'output_data' => 'array',
             'duration_ms' => 'integer',
-            'created_at' => 'datetime:Y-m-d H:i:s',
+            'created_at' => 'datetime',
         ];
     }
 

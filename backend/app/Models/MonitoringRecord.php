@@ -41,7 +41,7 @@ class MonitoringRecord extends Model
             'monitoring_date' => 'date:Y-m-d',
             'is_official' => 'boolean',
             'guardian_confirmed' => 'boolean',
-            'guardian_confirmed_at' => 'datetime:Y-m-d H:i:s',
+            'guardian_confirmed_at' => 'datetime',
             'is_draft' => 'boolean',
             'is_hidden' => 'boolean',
             'guardian_signature_date' => 'date:Y-m-d',

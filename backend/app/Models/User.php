@@ -44,8 +44,8 @@ class User extends Authenticatable
             'is_company_admin' => 'boolean',
             'is_active' => 'boolean',
             'notification_preferences' => 'array',
-            'email_verified_at' => 'datetime:Y-m-d H:i:s',
-            'last_login_at' => 'datetime:Y-m-d H:i:s',
+            'email_verified_at' => 'datetime',
+            'last_login_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
