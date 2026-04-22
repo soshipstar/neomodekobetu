@@ -21,10 +21,13 @@ class StudentChatMessage extends Model
 
     protected function casts(): array
     {
+        // created_at は TZ 付き ISO 8601 (Laravel デフォルト) で出力する。
+        // "Y-m-d H:i:s" 固定だと UTC の wall clock が TZ マーカー無しで出力され、
+        // チャット時刻が日本時間から 9 時間ズレて表示される。
         return [
             'is_deleted' => 'boolean',
             'is_archived' => 'boolean',
-            'created_at' => 'datetime:Y-m-d H:i:s',
+            'created_at' => 'datetime',
         ];
     }
 

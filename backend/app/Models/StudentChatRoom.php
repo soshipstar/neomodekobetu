@@ -17,9 +17,10 @@ class StudentChatRoom extends Model
 
     protected function casts(): array
     {
+        // TZ マーカー付き ISO 8601 (Laravel デフォルト) で出力する。
         return [
-            'last_message_at' => 'datetime:Y-m-d H:i:s',
-            'created_at' => 'datetime:Y-m-d H:i:s',
+            'last_message_at' => 'datetime',
+            'created_at' => 'datetime',
         ];
     }
 

@@ -31,12 +31,15 @@ class MeetingRequest extends Model
 
     protected function casts(): array
     {
+        // datetime は Laravel デフォルト (ISO 8601 with Z) で serialize する。
+        // "Y-m-d H:i:s" を指定すると TZ マーカー無しの UTC 文字列が出力され、
+        // フロントの parseISO / new Date が local 時刻として再解釈して 9 時間ズレる。
         return [
             'candidate_dates' => 'array',
-            'confirmed_date' => 'datetime:Y-m-d H:i:s',
-            'confirmed_at' => 'datetime:Y-m-d H:i:s',
+            'confirmed_date' => 'datetime',
+            'confirmed_at' => 'datetime',
             'is_completed' => 'boolean',
-            'completed_at' => 'datetime:Y-m-d H:i:s',
+            'completed_at' => 'datetime',
         ];
     }
 
