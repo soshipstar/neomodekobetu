@@ -88,13 +88,26 @@ class ChatController extends Controller
                 ->values();
         }
 
-        // 送信者名を付加 + 既読フラグ
-        $messages->each(function ($msg) {
-            if ($msg->sender_type === 'staff' || $msg->sender_type === 'guardian') {
-                $msg->sender_name = \App\Models\User::where('id', $msg->sender_id)->value('full_name');
-            } elseif ($msg->sender_type === 'student') {
-                $msg->sender_name = \App\Models\Student::where('id', $msg->sender_id)->value('student_name');
+        // 送信者情報をオブジェクトとして付加 + 既読フラグ
+        // フロントは {id, full_name} を message.sender として参照するため、
+        // sender_name 文字列だけを渡しても「誰が送ったか」が表示されない。
+        $userCache = [];
+        $messages->each(function ($msg) use (&$userCache) {
+            $cacheKey = $msg->sender_id . '_' . $msg->sender_type;
+            if (!isset($userCache[$cacheKey])) {
+                if ($msg->sender_type === 'student') {
+                    $student = \App\Models\Student::where('id', $msg->sender_id)->first(['id', 'student_name']);
+                    $userCache[$cacheKey] = $student
+                        ? ['id' => $student->id, 'full_name' => $student->student_name]
+                        : null;
+                } else {
+                    $u = \App\Models\User::where('id', $msg->sender_id)->first(['id', 'full_name']);
+                    $userCache[$cacheKey] = $u
+                        ? ['id' => $u->id, 'full_name' => $u->full_name]
+                        : null;
+                }
             }
+            $msg->sender = $userCache[$cacheKey];
 
             // 既読フラグ: 保護者送信メッセージがスタッフに読まれたか
             $msg->is_read_by_staff = $msg->staffReads->isNotEmpty();
@@ -628,12 +641,23 @@ class ChatController extends Controller
             ->orderBy('id', 'asc')
             ->get();
 
-        $messages->each(function ($msg) {
-            if ($msg->sender_type === 'staff' || $msg->sender_type === 'guardian') {
-                $msg->sender_name = User::where('id', $msg->sender_id)->value('full_name');
-            } elseif ($msg->sender_type === 'student') {
-                $msg->sender_name = \App\Models\Student::where('id', $msg->sender_id)->value('student_name');
+        $userCache = [];
+        $messages->each(function ($msg) use (&$userCache) {
+            $cacheKey = $msg->sender_id . '_' . $msg->sender_type;
+            if (!isset($userCache[$cacheKey])) {
+                if ($msg->sender_type === 'student') {
+                    $student = \App\Models\Student::where('id', $msg->sender_id)->first(['id', 'student_name']);
+                    $userCache[$cacheKey] = $student
+                        ? ['id' => $student->id, 'full_name' => $student->student_name]
+                        : null;
+                } else {
+                    $u = User::where('id', $msg->sender_id)->first(['id', 'full_name']);
+                    $userCache[$cacheKey] = $u
+                        ? ['id' => $u->id, 'full_name' => $u->full_name]
+                        : null;
+                }
             }
+            $msg->sender = $userCache[$cacheKey];
             $msg->is_read_by_staff = $msg->staffReads->isNotEmpty();
             $msg->is_read_by_recipient = ($msg->sender_type === 'guardian') ? $msg->is_read_by_staff : (bool) $msg->is_read;
             unset($msg->staffReads);
