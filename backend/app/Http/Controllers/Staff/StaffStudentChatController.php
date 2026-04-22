@@ -24,7 +24,7 @@ class StaffStudentChatController extends Controller
         $classroomId = $user->classroom_id;
         $accessibleIds = $user->accessibleClassroomIds();
 
-        $query = StudentChatRoom::with('student:id,student_name,classroom_id,is_active,status');
+        $query = StudentChatRoom::with('student:id,student_name,classroom_id,is_active,status,grade_level');
 
         if ($classroomId) {
             $query->whereHas('student', function ($q) use ($accessibleIds) {
@@ -51,6 +51,7 @@ class StaffStudentChatController extends Controller
                 'id'              => $room->id,
                 'student_id'      => $room->student_id,
                 'student_name'    => $room->student?->student_name ?? '不明',
+                'grade_level'     => $room->student?->grade_level,
                 'last_message'    => $lastMessage ? $lastMessage->message : null,
                 'last_message_at' => $room->last_message_at,
                 'unread_count'    => $unreadCount,

@@ -23,10 +23,28 @@ interface StudentChatRoom {
   id: number;
   student_id: number;
   student_name: string;
+  grade_level: string | null;
   last_message: string | null;
   last_message_at: string | null;
   unread_count: number;
   is_active: boolean;
+}
+
+// Grade group ordering for sidebar accordions (保護者チャットと揃える)
+const GRADE_GROUPS = [
+  { key: 'preschool', label: '未就学児' },
+  { key: 'elementary', label: '小学生' },
+  { key: 'junior_high', label: '中学生' },
+  { key: 'high_school', label: '高校生' },
+];
+
+function gradeGroupKey(gradeLevel?: string | null): string {
+  if (!gradeLevel) return 'elementary';
+  if (gradeLevel.startsWith('preschool')) return 'preschool';
+  if (gradeLevel.startsWith('elementary')) return 'elementary';
+  if (gradeLevel.startsWith('junior_high')) return 'junior_high';
+  if (gradeLevel.startsWith('high_school')) return 'high_school';
+  return 'elementary';
 }
 
 interface StudentChatMessage {
@@ -49,6 +67,16 @@ export default function StudentChatsPage() {
   const debouncedSearch = useDebounce(search, 300);
   const [activeRoomId, setActiveRoomId] = useState<number | null>(null);
   const [showChat, setShowChat] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
+  const toggleGroup = useCallback((key: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
 
   // Broadcast modal
   const [broadcastModal, setBroadcastModal] = useState(false);
@@ -75,6 +103,17 @@ export default function StudentChatsPage() {
     const q = debouncedSearch.toLowerCase();
     return rooms.filter((r) => r.student_name?.toLowerCase().includes(q));
   }, [rooms, debouncedSearch]);
+
+  // Group rooms by grade level
+  const gradeGroupedRooms = useMemo(() => {
+    const grouped: Record<string, StudentChatRoom[]> = {};
+    GRADE_GROUPS.forEach((g) => { grouped[g.key] = []; });
+    filteredRooms.forEach((room) => {
+      const gk = gradeGroupKey(room.grade_level);
+      if (grouped[gk]) grouped[gk].push(room);
+    });
+    return grouped;
+  }, [filteredRooms]);
 
   // Fetch messages for active room
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery({
@@ -202,59 +241,88 @@ export default function StudentChatsPage() {
                 チャットルームがありません
               </div>
             ) : (
-              filteredRooms.map((room) => (
-                <button
-                  key={room.id}
-                  onClick={() => handleSelectRoom(room)}
-                  className={cn(
-                    'flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors',
-                    activeRoomId === room.id
-                      ? 'bg-[var(--brand-160)] border-l-2 border-[var(--brand-80)]'
-                      : 'hover:bg-[var(--neutral-background-3)]'
-                  )}
-                >
-                  {/* Avatar */}
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand-140)] text-xs font-semibold text-[var(--brand-80)]">
-                    {room.student_name?.charAt(0) || '?'}
-                  </div>
+              GRADE_GROUPS.map((group) => {
+                const groupRooms = gradeGroupedRooms[group.key] || [];
+                if (groupRooms.length === 0) return null;
+                const isExpanded = expandedGroups.has(group.key);
+                const unreadInGroup = groupRooms.reduce(
+                  (sum, r) => sum + (r.unread_count || 0), 0
+                );
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1">
-                      <span className={cn(
-                        'text-xs truncate',
-                        room.unread_count > 0
-                          ? 'font-bold text-[var(--neutral-foreground-1)]'
-                          : 'font-medium text-[var(--neutral-foreground-1)]'
-                      )}>
-                        {room.student_name}
-                      </span>
-                      {!room.is_active && (
-                        <Badge variant="default" className="text-[9px] px-1 py-0">無効</Badge>
+                return (
+                  <div key={group.key} className="border-b border-[var(--neutral-stroke-3)]">
+                    <button
+                      onClick={() => toggleGroup(group.key)}
+                      className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-[var(--neutral-background-3)] transition-colors"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <MaterialIcon
+                          name={isExpanded ? 'expand_more' : 'chevron_right'}
+                          size={14}
+                          className="text-[var(--neutral-foreground-3)]"
+                        />
+                        <span className="text-xs font-semibold text-[var(--neutral-foreground-2)]">
+                          {group.label}
+                        </span>
+                        <span className="text-[10px] text-[var(--neutral-foreground-4)]">
+                          ({groupRooms.length})
+                        </span>
+                      </div>
+                      {unreadInGroup > 0 && (
+                        <Badge variant="danger">{unreadInGroup}</Badge>
                       )}
-                    </div>
-                    {room.last_message && (
-                      <p className="text-[10px] text-[var(--neutral-foreground-4)] truncate">
-                        {truncate(room.last_message, 25)}
-                      </p>
-                    )}
+                    </button>
+                    {isExpanded && groupRooms.map((room) => (
+                      <button
+                        key={room.id}
+                        onClick={() => handleSelectRoom(room)}
+                        className={cn(
+                          'flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors',
+                          activeRoomId === room.id
+                            ? 'bg-[var(--brand-160)] border-l-2 border-[var(--brand-80)]'
+                            : 'hover:bg-[var(--neutral-background-3)]'
+                        )}
+                      >
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand-140)] text-xs font-semibold text-[var(--brand-80)]">
+                          {room.student_name?.charAt(0) || '?'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1">
+                            <span className={cn(
+                              'text-xs truncate',
+                              room.unread_count > 0
+                                ? 'font-bold text-[var(--neutral-foreground-1)]'
+                                : 'font-medium text-[var(--neutral-foreground-1)]'
+                            )}>
+                              {room.student_name}
+                            </span>
+                            {!room.is_active && (
+                              <Badge variant="default" className="text-[9px] px-1 py-0">無効</Badge>
+                            )}
+                          </div>
+                          {room.last_message && (
+                            <p className="text-[10px] text-[var(--neutral-foreground-4)] truncate">
+                              {truncate(room.last_message, 25)}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex flex-col items-end gap-0.5 shrink-0">
+                          {room.last_message_at && (
+                            <span className="text-[9px] text-[var(--neutral-foreground-4)]">
+                              {formatRelativeTime(room.last_message_at)}
+                            </span>
+                          )}
+                          {room.unread_count > 0 && (
+                            <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[var(--status-danger-fg)] px-1 text-[9px] font-bold text-white">
+                              {room.unread_count > 99 ? '99+' : room.unread_count}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    ))}
                   </div>
-
-                  {/* Unread + time */}
-                  <div className="flex flex-col items-end gap-0.5 shrink-0">
-                    {room.last_message_at && (
-                      <span className="text-[9px] text-[var(--neutral-foreground-4)]">
-                        {formatRelativeTime(room.last_message_at)}
-                      </span>
-                    )}
-                    {room.unread_count > 0 && (
-                      <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[var(--status-danger-fg)] px-1 text-[9px] font-bold text-white">
-                        {room.unread_count > 99 ? '99+' : room.unread_count}
-                      </span>
-                    )}
-                  </div>
-                </button>
-              ))
+                );
+              })
             )}
           </div>
         </div>
