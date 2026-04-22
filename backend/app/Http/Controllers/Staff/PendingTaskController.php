@@ -193,6 +193,19 @@ class PendingTaskController extends Controller
             if ($draftPlan) {
                 $period = $this->getPeriodFromPlanDate($supportStartDate, $draftPlan->created_date);
                 $periodEnd = $period['end'] ? Carbon::parse($period['end']) : null;
+
+                // 下書きの created_date が supportStartDate で auto-generated されたケースでは、
+                // 逆算した期間が「初回期間」になってしまい「初回個別支援計画を基準にした日数」が
+                // 表示されてしまう。期間終了が既に過去（＝期限切れ）の場合は、今日が属する
+                // 期間で再計算することで「現在期限切れとなっているもの基準の日数」に揃える。
+                if ($periodEnd && $periodEnd->lt($today) && $supportStartDate) {
+                    $currentPeriod = $this->getPeriodFromPlanDate($supportStartDate, $today);
+                    if ($currentPeriod['end']) {
+                        $period = $currentPeriod;
+                        $periodEnd = Carbon::parse($currentPeriod['end']);
+                    }
+                }
+
                 $daysLeft = $periodEnd ? (int) $today->diffInDays($periodEnd, false) : null;
                 $daysSincePlan = ($daysLeft !== null && $daysLeft < 0) ? abs($daysLeft) : null;
 

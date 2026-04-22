@@ -704,6 +704,9 @@ class RenrakuchoController extends Controller
                 throw new \Exception('AI応答が空です');
             }
 
+            // プロンプトで与えた 5 領域ラベル（【健康・生活】等）が AI 出力に残ることがあるため除去
+            $content = $this->stripDomainLabels($content);
+
             // Save draft integrated note
             IntegratedNote::updateOrCreate(
                 ['daily_record_id' => $record->id, 'student_id' => $validated['student_id']],
@@ -725,8 +728,8 @@ class RenrakuchoController extends Controller
         } catch (\Exception $e) {
             \Log::error("Generate integrated note error: " . $e->getMessage());
 
-            // Fallback: simply combine domain observations
-            $integrated = "本日は「{$activityName}」の活動を行いました。\n\n" . implode("\n", $domains);
+            // Fallback: simply combine domain observations (ラベル除去)
+            $integrated = "本日は「{$activityName}」の活動を行いました。\n\n" . $this->stripDomainLabels(implode("\n", $domains));
             if ($notes) {
                 $integrated .= "\n\n{$notes}";
             }
@@ -745,6 +748,18 @@ class RenrakuchoController extends Controller
                 'message' => '観察記録をまとめました（AI接続エラーのため簡易統合）。',
             ]);
         }
+    }
+
+    /**
+     * 統合文に残ってしまった 5 領域ラベル（【健康・生活】等）を除去する。
+     * 5 領域以外の正当な【】（例:【気になった点】など）は温存するため、
+     * 固定ラベル名のホワイトリスト一致のみ除去。
+     */
+    private function stripDomainLabels(string $text): string
+    {
+        $labels = ['健康・生活', '運動・感覚', '認知・行動', '言語・コミュニケーション', '人間関係・社会性'];
+        $pattern = '/【(' . implode('|', array_map('preg_quote', $labels)) . ')】/u';
+        return preg_replace($pattern, '', $text);
     }
 
     /**
