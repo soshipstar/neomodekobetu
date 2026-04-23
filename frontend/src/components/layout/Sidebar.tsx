@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/stores/uiStore';
 import { useAuthStore } from '@/stores/authStore';
+import { useAuth } from '@/hooks/useAuth';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import type { UserType } from '@/types/user';
@@ -144,6 +145,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const { sidebarOpen, setSidebarOpen, toggleSidebar } = useUiStore();
   const { user } = useAuthStore();
+  const { logout } = useAuth();
   const isDesktop = useIsDesktop();
 
   if (!user) return null;
@@ -176,6 +178,7 @@ export function Sidebar() {
             user={user}
             isAdminOnStaffView={isAdminOnStaffPage}
             onClose={() => setSidebarOpen(false)}
+            onLogout={logout}
           />
         </aside>
       </>
@@ -197,6 +200,7 @@ export function Sidebar() {
         isAdminOnStaffView={isAdminOnStaffPage}
         collapsed={!sidebarOpen}
         onToggle={toggleSidebar}
+        onLogout={logout}
       />
     </aside>
   );
@@ -210,6 +214,7 @@ interface SidebarContentProps {
   collapsed?: boolean;
   onClose?: () => void;
   onToggle?: () => void;
+  onLogout?: () => void | Promise<void>;
 }
 
 function SidebarContent({
@@ -220,6 +225,7 @@ function SidebarContent({
   collapsed = false,
   onClose,
   onToggle,
+  onLogout,
 }: SidebarContentProps) {
   const userTypeLabel: Record<string, string> = {
     admin: '管理者',
@@ -351,6 +357,27 @@ function SidebarContent({
             <MaterialIcon name="swap_horiz" size={20} className="shrink-0" />
             {!collapsed && <span>{isAdminOnStaffView ? '管理者画面へ移動' : 'スタッフ画面へ移動'}</span>}
           </Link>
+        </div>
+      )}
+
+      {/* Logout */}
+      {onLogout && (
+        <div className="border-t border-[var(--neutral-stroke-2)] p-3">
+          <button
+            type="button"
+            onClick={async () => {
+              onClose?.();
+              await onLogout();
+            }}
+            className={cn(
+              'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-[var(--neutral-foreground-2)] hover:bg-[var(--status-danger-bg)] hover:text-[var(--status-danger-fg)] transition-colors',
+              collapsed && 'justify-center px-2'
+            )}
+            title={collapsed ? 'ログアウト' : undefined}
+          >
+            <MaterialIcon name="logout" size={20} className="shrink-0" />
+            {!collapsed && <span>ログアウト</span>}
+          </button>
         </div>
       )}
 
