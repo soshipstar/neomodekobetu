@@ -241,7 +241,7 @@ class WebPushService
         $localPrivRaw = str_pad($localDetails['ec']['d'], 32, chr(0), STR_PAD_LEFT);
 
         // ECDH shared secret
-        $sharedSecret = $this->computeEcdh($localPrivRaw, $userPublicKey);
+        $sharedSecret = $this->computeEcdh($localPrivRaw, $localPubRaw, $userPublicKey);
         if (! $sharedSecret) {
             return null;
         }
@@ -305,7 +305,7 @@ class WebPushService
     // ECDH Key Exchange
     // ========================================================================
 
-    private function computeEcdh(string $privKeyRaw, string $peerPubKeyRaw): ?string
+    private function computeEcdh(string $privKeyRaw, string $localPubKeyRaw, string $peerPubKeyRaw): ?string
     {
         if (! function_exists('openssl_pkey_derive')) {
             Log::error('Web Push: openssl_pkey_derive not available');
@@ -313,7 +313,9 @@ class WebPushService
             return null;
         }
 
-        $localPem = $this->createEcPemFromRaw($privKeyRaw, chr(4) . str_repeat(chr(1), 64));
+        // OpenSSL が EC 秘密鍵 PEM を読み込む際、内蔵の公開鍵が曲線上の有効点か
+        // どうかを検証するため、encryptPayload() で導出した本物の公開鍵を渡す。
+        $localPem = $this->createEcPemFromRaw($privKeyRaw, $localPubKeyRaw);
         $peerPem = $this->createEcPublicPem($peerPubKeyRaw);
 
         $localKeyRes = openssl_pkey_get_private($localPem);
