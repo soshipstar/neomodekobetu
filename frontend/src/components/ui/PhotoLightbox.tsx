@@ -68,9 +68,12 @@ export function PhotoLightbox({ url, alt, filename, onClose }: PhotoLightboxProp
       className="fixed inset-0 z-[100] flex flex-col bg-black/90"
       onClick={onClose}
     >
-      {/* Top bar */}
+      {/* Top bar — iPhone のノッチ/ダイナミックアイランドに被らないよう safe-area + 余白を確保 */}
       <div
-        className="flex items-center justify-between gap-2 p-3 text-white"
+        className="flex items-center justify-between gap-2 px-4 pb-3 text-white"
+        style={{
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <button
