@@ -11,6 +11,7 @@ import { useToast } from '@/components/ui/Toast';
 import { format, addDays, subDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { PhotoLightbox } from '@/components/ui/PhotoLightbox';
 
 /** Normalize escaped newlines from API */
 function nl(text: string | null | undefined): string {
@@ -48,6 +49,7 @@ export default function GuardianNotesPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [lightboxPhoto, setLightboxPhoto] = useState<NotePhoto | null>(null);
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
 
   const { data: notes = [], isLoading } = useQuery({
@@ -150,12 +152,16 @@ export default function GuardianNotesPage() {
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {note.photos.map((photo) => (
-                    <a key={photo.id} href={photo.url} target="_blank" rel="noopener noreferrer"
-                      className="block overflow-hidden rounded-lg border border-[var(--neutral-stroke-2)]">
+                    <button
+                      type="button"
+                      key={photo.id}
+                      onClick={() => setLightboxPhoto(photo)}
+                      className="block overflow-hidden rounded-lg border border-[var(--neutral-stroke-2)]"
+                    >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={photo.url} alt={photo.activity_description ?? '活動写真'}
                         className="w-full aspect-square object-cover hover:scale-105 transition-transform" />
-                    </a>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -180,6 +186,14 @@ export default function GuardianNotesPage() {
             )}
           </Card>
         ))
+      )}
+
+      {lightboxPhoto && (
+        <PhotoLightbox
+          url={lightboxPhoto.url}
+          alt={lightboxPhoto.activity_description ?? '活動写真'}
+          onClose={() => setLightboxPhoto(null)}
+        />
       )}
     </div>
   );
