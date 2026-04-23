@@ -69,7 +69,7 @@ export function NotificationToggleCard() {
             {!supported && (
               <p className="mt-3 rounded border border-[var(--status-warning-fg)]/20 bg-[var(--status-warning-bg)] p-2 text-xs text-[var(--status-warning-fg)]">
                 このブラウザは Web Push 通知に対応していません。
-                Chrome / Edge / Safari (iOS 16.4+) などの最新ブラウザでお試しください。
+                Chrome / Edge / Safari (iOS 16.4 以降) などの最新ブラウザでお試しください。
               </p>
             )}
 
@@ -84,7 +84,7 @@ export function NotificationToggleCard() {
                   <li>再度このページで「通知を有効にする」ボタンを押す</li>
                 </ol>
                 <p className="mt-2 text-[var(--neutral-foreground-3)]">
-                  ※ iOS 16.4 以降が必要です。
+                  ※ iOS 16.4 以降で対応しています(iOS 26 などの最新バージョンも可)。
                 </p>
               </div>
             )}
