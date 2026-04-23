@@ -135,7 +135,7 @@ class StaffStudentChatController extends Controller
             return $msg;
         });
 
-        // 生徒の保護者に通知を送信
+        // 生徒本人と保護者に通知を送信
         try {
             $notificationService = app(NotificationService::class);
             $senderName = $user->full_name ?? 'スタッフ';
@@ -143,7 +143,26 @@ class StaffStudentChatController extends Controller
             $frontendUrl = rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/');
 
             $room->loadMissing('student');
-            $guardian = $room->student?->guardian;
+            $student = $room->student;
+
+            // 生徒本人 (users.username='student_{studentId}')
+            if ($student) {
+                $studentUser = User::where('username', 'student_' . $student->id)
+                    ->where('is_active', true)
+                    ->first();
+                if ($studentUser) {
+                    $notificationService->notify(
+                        $studentUser,
+                        'chat_message',
+                        '新着メッセージ',
+                        "{$senderName}: {$messagePreview}",
+                        ['url' => "{$frontendUrl}/student/chat"]
+                    );
+                }
+            }
+
+            // 保護者
+            $guardian = $student?->guardian;
             if ($guardian && $guardian->is_active) {
                 $notificationService->notify(
                     $guardian,
