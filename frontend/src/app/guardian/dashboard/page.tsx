@@ -11,6 +11,7 @@ import { useToast } from '@/components/ui/Toast';
 import { formatDate } from '@/lib/utils';
 import Link from 'next/link';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { PhotoLightbox } from '@/components/ui/PhotoLightbox';
 
 // ---- Type definitions matching the legacy PHP dashboard ----
 
@@ -47,6 +48,12 @@ interface SubmissionItem {
   days_left: number;
 }
 
+interface NotePhoto {
+  id: number;
+  url: string;
+  activity_description: string | null;
+}
+
 interface NoteItem {
   id: number;
   integrated_content: string;
@@ -55,6 +62,7 @@ interface NoteItem {
   guardian_confirmed_at: string | null;
   activity_name: string;
   record_date: string;
+  photos?: NotePhoto[];
 }
 
 interface MeetingRequest {
@@ -229,6 +237,7 @@ export default function GuardianDashboardPage() {
   const [eventModal, setEventModal] = useState<EventInfo | null>(null);
   const [meetingModal, setMeetingModal] = useState<CalendarMeetingInfo | null>(null);
   const [noteModal, setNoteModal] = useState<(NoteItem & { student_name: string }) | null>(null);
+  const [lightboxPhoto, setLightboxPhoto] = useState<NotePhoto | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['guardian', 'dashboard', calYear, calMonth],
@@ -1065,6 +1074,24 @@ export default function GuardianDashboardPage() {
                           <p className="mb-2 line-clamp-2 whitespace-pre-wrap text-xs text-[var(--neutral-foreground-3)]">
                             {nl(note.integrated_content)}
                           </p>
+                          {note.photos && note.photos.length > 0 && (
+                            <div className="mb-2 flex items-center gap-1.5">
+                              {note.photos.slice(0, 3).map((photo) => (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img
+                                  key={photo.id}
+                                  src={photo.url}
+                                  alt={photo.activity_description ?? '活動写真'}
+                                  className="h-12 w-12 rounded-md border border-[var(--neutral-stroke-2)] object-cover"
+                                />
+                              ))}
+                              {note.photos.length > 3 && (
+                                <span className="ml-1 text-xs text-[var(--neutral-foreground-3)]">
+                                  +{note.photos.length - 3}枚
+                                </span>
+                              )}
+                            </div>
+                          )}
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
                               {note.guardian_confirmed ? (
@@ -1253,6 +1280,32 @@ export default function GuardianDashboardPage() {
             </p>
           </div>
 
+          {noteModal.photos && noteModal.photos.length > 0 && (
+            <div className="mb-4">
+              <p className="mb-2 text-xs font-medium text-[var(--neutral-foreground-3)]">
+                <MaterialIcon name="photo_library" size={14} className="inline-block align-text-bottom mr-1" />
+                写真 ({noteModal.photos.length}枚)
+              </p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {noteModal.photos.map((photo) => (
+                  <button
+                    type="button"
+                    key={photo.id}
+                    onClick={() => setLightboxPhoto(photo)}
+                    className="block overflow-hidden rounded-lg border border-[var(--neutral-stroke-2)]"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={photo.url}
+                      alt={photo.activity_description ?? '活動写真'}
+                      className="aspect-square w-full object-cover transition-transform hover:scale-105"
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {!noteModal.guardian_confirmed ? (
             <div className="flex justify-end border-t border-[var(--neutral-stroke-3)] pt-4">
               <Button
@@ -1271,6 +1324,14 @@ export default function GuardianDashboardPage() {
             )
           )}
         </ModalOverlay>
+      )}
+
+      {lightboxPhoto && (
+        <PhotoLightbox
+          url={lightboxPhoto.url}
+          alt={lightboxPhoto.activity_description ?? '活動写真'}
+          onClose={() => setLightboxPhoto(null)}
+        />
       )}
     </div>
   );

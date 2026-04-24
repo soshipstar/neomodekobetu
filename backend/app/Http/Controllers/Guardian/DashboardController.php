@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Guardian;
 use App\Http\Controllers\Controller;
 use App\Models\ChatRoom;
 use App\Models\IndividualSupportPlan;
+use App\Models\IntegratedNote;
 use App\Models\KakehashiPeriod;
 use App\Models\KakehashiStaff;
 use App\Models\MeetingRequest;
@@ -174,24 +175,16 @@ class DashboardController extends Controller
         $notesData = [];
         if (!empty($studentIds)) {
             try {
-                $notes = DB::table('integrated_notes')
-                    ->join('daily_records', 'integrated_notes.daily_record_id', '=', 'daily_records.id')
-                    ->whereIn('integrated_notes.student_id', $studentIds)
-                    ->where('integrated_notes.is_sent', true)
-                    ->where('integrated_notes.guardian_confirmed', false)
-                    ->select([
-                        'integrated_notes.id',
-                        'integrated_notes.student_id',
-                        'integrated_notes.integrated_content',
-                        'integrated_notes.sent_at',
-                        'integrated_notes.guardian_confirmed',
-                        'integrated_notes.guardian_confirmed_at',
-                        'daily_records.activity_name',
-                        'daily_records.record_date',
+                $notes = IntegratedNote::whereIn('student_id', $studentIds)
+                    ->where('is_sent', true)
+                    ->where('guardian_confirmed', false)
+                    ->with([
+                        'dailyRecord:id,record_date,activity_name',
+                        'photos',
                     ])
-                    ->orderByDesc('daily_records.record_date')
-                    ->orderByDesc('integrated_notes.sent_at')
-                    ->get();
+                    ->get()
+                    ->sortByDesc(fn ($n) => ($n->dailyRecord?->record_date ?? '') . ' ' . ($n->sent_at ?? ''))
+                    ->values();
 
                 foreach ($notes as $note) {
                     $sid = $note->student_id;
@@ -205,8 +198,13 @@ class DashboardController extends Controller
                             'sent_at' => $note->sent_at,
                             'guardian_confirmed' => (bool) $note->guardian_confirmed,
                             'guardian_confirmed_at' => $note->guardian_confirmed_at,
-                            'activity_name' => $note->activity_name,
-                            'record_date' => $note->record_date,
+                            'activity_name' => $note->dailyRecord?->activity_name,
+                            'record_date' => $note->dailyRecord?->record_date,
+                            'photos' => $note->photos->map(fn ($p) => [
+                                'id' => $p->id,
+                                'url' => $p->url,
+                                'activity_description' => $p->activity_description,
+                            ])->values()->all(),
                         ];
                     }
                 }
