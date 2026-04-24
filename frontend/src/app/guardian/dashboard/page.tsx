@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 import { SkeletonCard } from '@/components/ui/Skeleton';
+import { useToast } from '@/components/ui/Toast';
 import { formatDate } from '@/lib/utils';
 import Link from 'next/link';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
@@ -217,6 +219,8 @@ const emptyCalendar: CalendarData = {
 
 // ---- Main component ----
 export default function GuardianDashboardPage() {
+  const queryClient = useQueryClient();
+  const toast = useToast();
   const now = new Date();
   const [calYear, setCalYear] = useState(now.getFullYear());
   const [calMonth, setCalMonth] = useState(now.getMonth() + 1);
@@ -224,6 +228,7 @@ export default function GuardianDashboardPage() {
   // Modal states
   const [eventModal, setEventModal] = useState<EventInfo | null>(null);
   const [meetingModal, setMeetingModal] = useState<CalendarMeetingInfo | null>(null);
+  const [noteModal, setNoteModal] = useState<(NoteItem & { student_name: string }) | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['guardian', 'dashboard', calYear, calMonth],
@@ -233,6 +238,21 @@ export default function GuardianDashboardPage() {
       );
       return response.data.data;
     },
+  });
+
+  const confirmMutation = useMutation({
+    mutationFn: (noteId: number) => api.post(`/api/guardian/notes/${noteId}/confirm`),
+    onSuccess: (_res, noteId) => {
+      queryClient.invalidateQueries({ queryKey: ['guardian', 'dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['guardian', 'notes'] });
+      setNoteModal((prev) =>
+        prev && prev.id === noteId
+          ? { ...prev, guardian_confirmed: true, guardian_confirmed_at: new Date().toISOString() }
+          : prev
+      );
+      toast.success('確認しました');
+    },
+    onError: () => toast.error('確認に失敗しました'),
   });
 
   const goToPrevMonth = useCallback(() => {
@@ -1027,9 +1047,11 @@ export default function GuardianDashboardPage() {
                   ) : (
                     <div className="space-y-3">
                       {childNotes.map((note) => (
-                        <div
+                        <button
                           key={note.id}
-                          className="rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] p-3"
+                          type="button"
+                          onClick={() => setNoteModal({ ...note, student_name: child.student_name })}
+                          className="w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] p-3 text-left transition-shadow hover:shadow-md hover:bg-[var(--neutral-background-4)]"
                         >
                           <div className="mb-1 flex items-center justify-between">
                             <span className="text-sm font-medium text-[var(--neutral-foreground-1)]">
@@ -1040,22 +1062,27 @@ export default function GuardianDashboardPage() {
                               {note.sent_at && `（送信: ${note.sent_at.slice(11, 16)}）`}
                             </span>
                           </div>
-                          <p className="mb-2 whitespace-pre-wrap text-xs text-[var(--neutral-foreground-3)]">
+                          <p className="mb-2 line-clamp-2 whitespace-pre-wrap text-xs text-[var(--neutral-foreground-3)]">
                             {nl(note.integrated_content)}
                           </p>
-                          <div className="flex items-center gap-2">
-                            {note.guardian_confirmed ? (
-                              <Badge variant="success">確認済み</Badge>
-                            ) : (
-                              <Badge variant="warning">未確認</Badge>
-                            )}
-                            {note.guardian_confirmed && note.guardian_confirmed_at && (
-                              <span className="text-xs text-[var(--neutral-foreground-4)]">
-                                確認日時: {formatDate(note.guardian_confirmed_at, 'yyyy年M月d日 HH:mm')}
-                              </span>
-                            )}
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              {note.guardian_confirmed ? (
+                                <Badge variant="success">確認済み</Badge>
+                              ) : (
+                                <Badge variant="warning">未確認</Badge>
+                              )}
+                              {note.guardian_confirmed && note.guardian_confirmed_at && (
+                                <span className="text-xs text-[var(--neutral-foreground-4)]">
+                                  確認日時: {formatDate(note.guardian_confirmed_at, 'yyyy年M月d日 HH:mm')}
+                                </span>
+                              )}
+                            </div>
+                            <span className="inline-flex items-center gap-0.5 text-xs font-medium text-[var(--brand-80)]">
+                              詳細 <MaterialIcon name="chevron_right" size={14} />
+                            </span>
                           </div>
-                        </div>
+                        </button>
                       ))}
                     </div>
                   )}
@@ -1192,6 +1219,57 @@ export default function GuardianDashboardPage() {
               </ul>
             )}
           </div>
+        </ModalOverlay>
+      )}
+
+      {/* Note Modal */}
+      {noteModal && (
+        <ModalOverlay onClose={() => setNoteModal(null)}>
+          <h2 className="mb-1 text-lg font-semibold text-[var(--neutral-foreground-1)]">
+            {noteModal.student_name}さんの連絡帳
+          </h2>
+          <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-[var(--neutral-foreground-4)]">
+            <span>
+              {formatDate(noteModal.record_date, 'yyyy年M月d日')}
+              {noteModal.sent_at && `（送信: ${noteModal.sent_at.slice(11, 16)}）`}
+            </span>
+            {noteModal.guardian_confirmed ? (
+              <Badge variant="success" dot>確認済み</Badge>
+            ) : (
+              <Badge variant="warning" dot>未確認</Badge>
+            )}
+          </div>
+
+          {noteModal.activity_name && (
+            <div className="mb-3">
+              <span className="text-xs font-medium text-[var(--neutral-foreground-3)]">活動名: </span>
+              <span className="text-sm text-[var(--neutral-foreground-2)]">{noteModal.activity_name}</span>
+            </div>
+          )}
+
+          <div className="mb-4 rounded-lg bg-[var(--neutral-background-3)] p-4">
+            <p className="whitespace-pre-wrap text-sm text-[var(--neutral-foreground-2)]">
+              {nl(noteModal.integrated_content)}
+            </p>
+          </div>
+
+          {!noteModal.guardian_confirmed ? (
+            <div className="flex justify-end border-t border-[var(--neutral-stroke-3)] pt-4">
+              <Button
+                onClick={() => confirmMutation.mutate(noteModal.id)}
+                isLoading={confirmMutation.isPending}
+                leftIcon={<MaterialIcon name="check_circle" size={16} />}
+              >
+                確認しました
+              </Button>
+            </div>
+          ) : (
+            noteModal.guardian_confirmed_at && (
+              <div className="border-t border-[var(--neutral-stroke-3)] pt-2 text-right text-xs text-[var(--neutral-foreground-4)]">
+                {formatDate(noteModal.guardian_confirmed_at, 'yyyy年M月d日 HH:mm')} に確認
+              </div>
+            )
+          )}
         </ModalOverlay>
       )}
     </div>
