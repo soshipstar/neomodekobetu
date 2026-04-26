@@ -35,6 +35,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // Model Observers の登録
         \App\Models\ChatMessage::observe(\App\Observers\ChatMessageObserver::class);
         \App\Models\IndividualSupportPlan::observe(\App\Observers\SupportPlanObserver::class);
+
+        // Cashier の Billable model を Company に変更（顧客 = 企業単位の課金）
+        \Laravel\Cashier\Cashier::useCustomerModel(\App\Models\Company::class);
     })
     ->withMiddleware(function (Middleware $middleware) {
         // Bearer トークン認証を使用するため、statefulApi() は不要

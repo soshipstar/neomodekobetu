@@ -6,15 +6,16 @@
     "license": "proprietary",
     "require": {
         "php": "^8.4",
-        "laravel/framework": "^12.0",
-        "laravel/sanctum": "^4.0",
-        "laravel/reverb": "^1.0",
-        "laravel/tinker": "^2.10",
-        "pgvector/pgvector": "^0.2",
-        "openai-php/client": "^0.10",
         "barryvdh/laravel-dompdf": "^3.0",
-        "spatie/laravel-permission": "^6.0",
-        "guzzlehttp/guzzle": "^7.9"
+        "guzzlehttp/guzzle": "^7.9",
+        "laravel/cashier": "*",
+        "laravel/framework": "^12.0",
+        "laravel/reverb": "^1.0",
+        "laravel/sanctum": "^4.0",
+        "laravel/tinker": "^2.10",
+        "openai-php/client": "^0.10",
+        "pgvector/pgvector": "^0.2",
+        "spatie/laravel-permission": "^6.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24",

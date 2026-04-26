@@ -6,9 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Laravel\Cashier\Billable;
 
 class Company extends Model
 {
+    use Billable;
     use HasFactory;
 
     protected $fillable = [
@@ -16,12 +18,30 @@ class Company extends Model
         'code',
         'description',
         'is_active',
+        'subscription_status',
+        'current_price_id',
+        'custom_amount',
+        'is_custom_pricing',
+        'current_period_end',
+        'cancel_at_period_end',
+        'contract_started_at',
+        'contract_notes',
+        'contract_document_path',
+        'display_settings',
+        'feature_flags',
     ];
 
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
+            'is_custom_pricing' => 'boolean',
+            'cancel_at_period_end' => 'boolean',
+            'trial_ends_at' => 'datetime',
+            'current_period_end' => 'datetime',
+            'contract_started_at' => 'datetime',
+            'display_settings' => 'array',
+            'feature_flags' => 'array',
         ];
     }
 
@@ -40,5 +60,11 @@ class Company extends Model
     public function users(): HasManyThrough
     {
         return $this->hasManyThrough(User::class, Classroom::class);
+    }
+
+    /** @return HasMany<Invoice> */
+    public function invoiceRecords(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
     }
 }
