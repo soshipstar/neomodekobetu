@@ -18,6 +18,12 @@ class Company extends Model
         'code',
         'description',
         'is_active',
+        // Cashier Billable 標準カラム（テスト/シーダーから手動設定するため fillable）
+        'stripe_id',
+        'pm_type',
+        'pm_last_four',
+        'trial_ends_at',
+        // 自前の課金管理カラム
         'subscription_status',
         'current_price_id',
         'custom_amount',

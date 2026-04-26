@@ -138,7 +138,34 @@ Route::prefix('admin')
         // --- 一括登録（管理者用プロキシ） (#12-13) ---
         Route::post('/bulk-register/parse', [App\Http\Controllers\Staff\BulkRegisterController::class, 'parse']);
         Route::post('/bulk-register/execute', [App\Http\Controllers\Staff\BulkRegisterController::class, 'execute']);
+
+        // --- 課金（企業管理者：自社の契約・請求） ---
+        Route::prefix('billing')->group(function () {
+            Route::get('/subscription', [App\Http\Controllers\Admin\BillingController::class, 'subscription']);
+            Route::get('/invoices', [App\Http\Controllers\Admin\BillingController::class, 'invoices']);
+            Route::get('/invoices/{invoice}/pdf', [App\Http\Controllers\Admin\BillingController::class, 'invoicePdf']);
+            Route::post('/portal', [App\Http\Controllers\Admin\BillingController::class, 'portal']);
+            Route::post('/cancel', [App\Http\Controllers\Admin\BillingController::class, 'cancel']);
+            Route::post('/resume', [App\Http\Controllers\Admin\BillingController::class, 'resume']);
+        });
+
+        // --- 課金（マスター管理者：全企業の管理） ---
+        Route::prefix('master/billing')->group(function () {
+            Route::get('/overview', [App\Http\Controllers\Admin\BillingMasterController::class, 'overview']);
+            Route::get('/companies/{company}', [App\Http\Controllers\Admin\BillingMasterController::class, 'show']);
+            Route::put('/companies/{company}/price', [App\Http\Controllers\Admin\BillingMasterController::class, 'updatePrice']);
+            Route::post('/companies/{company}/subscribe', [App\Http\Controllers\Admin\BillingMasterController::class, 'subscribe']);
+            Route::post('/companies/{company}/cancel', [App\Http\Controllers\Admin\BillingMasterController::class, 'cancel']);
+            Route::post('/companies/{company}/spot-invoice', [App\Http\Controllers\Admin\BillingMasterController::class, 'spotInvoice']);
+            Route::put('/companies/{company}/display-settings', [App\Http\Controllers\Admin\BillingMasterController::class, 'updateDisplaySettings']);
+            Route::put('/companies/{company}/feature-flags', [App\Http\Controllers\Admin\BillingMasterController::class, 'updateFeatureFlags']);
+        });
     });
+
+// --- Stripe Webhook（認証不要・シグネチャ検証で正当性を担保） ---
+Route::post('/webhooks/stripe', [App\Http\Controllers\StripeWebhookController::class, 'handle'])
+    ->withoutMiddleware(['throttle:api'])
+    ->name('webhooks.stripe');
 
 // ==========================================================================
 // 4.3 スタッフ API (auth:sanctum + user_type:staff,admin)
