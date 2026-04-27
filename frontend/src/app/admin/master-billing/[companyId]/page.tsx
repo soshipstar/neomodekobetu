@@ -12,6 +12,8 @@ import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
+interface AgentLite { id: number; name: string; default_commission_rate: string | number }
+
 interface CompanyDetail {
   id: number;
   name: string;
@@ -22,6 +24,9 @@ interface CompanyDetail {
   custom_amount: number | null;
   is_custom_pricing: boolean;
   tax_inclusive: boolean;
+  agent_id: number | null;
+  commission_rate_override: string | number | null;
+  agent_assigned_at: string | null;
   current_period_end: string | null;
   cancel_at_period_end: boolean;
   trial_ends_at: string | null;
@@ -106,6 +111,11 @@ export default function MasterBillingDetailPage() {
   const [spotDescription, setSpotDescription] = useState<string>('');
   const TAX_RATE = 0.10;
   const [flagsText, setFlagsText] = useState<string>('{}');
+  const [agents, setAgents] = useState<AgentLite[]>([]);
+  const [salesChannelAgentId, setSalesChannelAgentId] = useState<string>('');
+  const [salesChannelOverride, setSalesChannelOverride] = useState<string>('');
+  const [savingSalesChannel, setSavingSalesChannel] = useState(false);
+
   const [trialDays, setTrialDays] = useState<string>('');
   const [billingDay, setBillingDay] = useState<string>('');
   const [savingSubscribe, setSavingSubscribe] = useState(false);
@@ -215,8 +225,12 @@ export default function MasterBillingDetailPage() {
       setFlagsText(JSON.stringify(d?.company?.feature_flags ?? {}, null, 2));
       setNewAmount(d?.company?.custom_amount ? String(d.company.custom_amount) : '');
       setNewTaxMode(d?.company?.tax_inclusive === false ? 'exclusive' : 'inclusive');
+      setSalesChannelAgentId(d?.company?.agent_id ? String(d.company.agent_id) : '');
+      setSalesChannelOverride(d?.company?.commission_rate_override !== null && d?.company?.commission_rate_override !== undefined
+        ? String(d.company.commission_rate_override) : '');
       fetchCustomerInfo();
       fetchTerms();
+      fetchAgents();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || '詳細の取得に失敗しました';
       toast.error(msg);
@@ -365,6 +379,37 @@ export default function MasterBillingDetailPage() {
   // 請求先情報の編集はマスター管理者では行わない（企業管理者が /admin/billing で編集する）。
   // ここでは閲覧のみ。
 
+  const fetchAgents = useCallback(async () => {
+    try {
+      const res = await api.get('/api/admin/master/agents');
+      setAgents((res.data?.data ?? []).map((a: AgentLite) => ({
+        id: a.id, name: a.name, default_commission_rate: a.default_commission_rate,
+      })));
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const submitSalesChannel = async () => {
+    setSavingSalesChannel(true);
+    try {
+      const body: { agent_id: number | null; commission_rate_override: number | null } = {
+        agent_id: salesChannelAgentId ? parseInt(salesChannelAgentId, 10) : null,
+        commission_rate_override: salesChannelOverride
+          ? parseFloat(salesChannelOverride)
+          : null,
+      };
+      await api.put(`/api/admin/master/billing/companies/${companyId}/sales-channel`, body);
+      toast.success('販売チャネルを更新しました');
+      fetchDetail();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || '更新に失敗しました';
+      toast.error(msg);
+    } finally {
+      setSavingSalesChannel(false);
+    }
+  };
+
   const submitSubscribe = async () => {
     if (!company?.current_price_id) {
       toast.error('先にカスタム価格を設定してください');
@@ -482,6 +527,61 @@ export default function MasterBillingDetailPage() {
               <Badge variant="warning">解約予約中</Badge>
             </div>
           )}
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardBody>
+          <h2 className="text-base font-semibold text-[var(--neutral-foreground-1)]">販売チャネル</h2>
+          <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
+            この企業の販売チャネルを「直販」または「代理店経由」に設定します。
+            代理店経由にすると、設定日以降の Invoice.paid から手数料が発生します。
+          </p>
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label className="block text-xs text-[var(--neutral-foreground-3)]">販売チャネル</label>
+              <select
+                value={salesChannelAgentId}
+                onChange={(e) => setSalesChannelAgentId(e.target.value)}
+                className="mt-1 w-full rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm"
+              >
+                <option value="">直販（代理店なし）</option>
+                {agents.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}（既定 {(parseFloat(String(a.default_commission_rate)) * 100).toFixed(1)}%）
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-[var(--neutral-foreground-3)]">手数料率の上書き（任意・0〜1）</label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                max="1"
+                value={salesChannelOverride}
+                onChange={(e) => setSalesChannelOverride(e.target.value)}
+                placeholder="例: 0.25"
+                disabled={!salesChannelAgentId}
+              />
+              <p className="mt-1 text-[10px] text-[var(--neutral-foreground-4)]">
+                未入力なら代理店の既定手数料率を使用 / 入力時は{' '}
+                {salesChannelOverride ? `${(parseFloat(salesChannelOverride) * 100).toFixed(1)}%` : '—'}
+              </p>
+            </div>
+          </div>
+          {company.agent_assigned_at && (
+            <p className="mt-2 text-xs text-[var(--neutral-foreground-3)]">
+              現在の代理店紐付け開始日: {new Date(company.agent_assigned_at).toLocaleDateString('ja-JP')}
+              （この日以降の Invoice.paid のみ手数料計算対象）
+            </p>
+          )}
+          <div className="mt-3">
+            <Button onClick={submitSalesChannel} disabled={savingSalesChannel}>
+              販売チャネルを保存
+            </Button>
+          </div>
         </CardBody>
       </Card>
 

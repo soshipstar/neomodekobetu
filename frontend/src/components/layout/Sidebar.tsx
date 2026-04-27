@@ -125,6 +125,8 @@ const adminNav: NavItem[] = [
   { type: 'link', label: '事業所評価', href: '/admin/facility-evaluation', icon: 'analytics', visibility: 'non_master' },
   { type: 'link', label: '請求・契約', href: '/admin/billing', icon: 'receipt_long', visibility: 'company_admin_or_master' },
   { type: 'link', label: '企業課金管理', href: '/admin/master-billing', icon: 'payments', visibility: 'master_only' },
+  { type: 'link', label: '代理店管理', href: '/admin/agents', icon: 'handshake', visibility: 'master_only' },
+  { type: 'link', label: '代理店手数料', href: '/admin/agent-payouts', icon: 'account_balance', visibility: 'master_only' },
   { type: 'divider', label: 'システム' },
   { type: 'link', label: 'エラーログ', href: '/admin/error-logs', icon: 'warning', visibility: 'master_only' },
   { type: 'link', label: 'バグ報告', href: '/staff/bug-reports', icon: 'bug_report' },
