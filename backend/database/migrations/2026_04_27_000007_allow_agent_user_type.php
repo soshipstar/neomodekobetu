@@ -13,18 +13,22 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // 既存制約を一旦外す
         DB::statement('ALTER TABLE users DROP CONSTRAINT IF EXISTS users_user_type_check');
+        // 既存環境（特に本番）には 'tablet_user' を含む古い user_type のレコードが残っている
+        // 可能性があるため、許可リストには 'tablet_user' も含めて互換性を保つ。
         DB::statement(<<<'SQL'
             ALTER TABLE users
             ADD CONSTRAINT users_user_type_check
-            CHECK ((user_type)::text = ANY (ARRAY[
-                'admin'::varchar,
-                'staff'::varchar,
-                'guardian'::varchar,
-                'tablet'::varchar,
-                'student'::varchar,
-                'agent'::varchar
-            ]::text[]))
+            CHECK (user_type IN (
+                'admin',
+                'staff',
+                'guardian',
+                'tablet',
+                'tablet_user',
+                'student',
+                'agent'
+            ))
         SQL);
     }
 
@@ -34,13 +38,14 @@ return new class extends Migration
         DB::statement(<<<'SQL'
             ALTER TABLE users
             ADD CONSTRAINT users_user_type_check
-            CHECK ((user_type)::text = ANY (ARRAY[
-                'admin'::varchar,
-                'staff'::varchar,
-                'guardian'::varchar,
-                'tablet'::varchar,
-                'student'::varchar
-            ]::text[]))
+            CHECK (user_type IN (
+                'admin',
+                'staff',
+                'guardian',
+                'tablet',
+                'tablet_user',
+                'student'
+            ))
         SQL);
     }
 };

@@ -1,6 +1,6 @@
 import api, { setToken, removeToken } from './api';
 
-export type UserType = 'admin' | 'staff' | 'guardian' | 'student' | 'tablet';
+export type UserType = 'admin' | 'staff' | 'guardian' | 'student' | 'tablet' | 'agent';
 
 export interface User {
   id: number;
