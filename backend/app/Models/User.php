@@ -29,6 +29,8 @@ class User extends Authenticatable
         'notification_preferences',
         'email_verified_at',
         'last_login_at',
+        // 代理店スタッフ用（user_type='agent' の時に所属代理店を示す）
+        'agent_id',
     ];
 
     protected $hidden = [
@@ -128,6 +130,23 @@ class User extends Authenticatable
     public function classroom(): BelongsTo
     {
         return $this->belongsTo(Classroom::class);
+    }
+
+    /**
+     * 代理店ユーザーの所属代理店（user_type='agent' の場合のみ非NULL）
+     * @return BelongsTo<Agent, self>
+     */
+    public function agent(): BelongsTo
+    {
+        return $this->belongsTo(Agent::class);
+    }
+
+    /**
+     * 代理店ユーザーかどうか
+     */
+    public function isAgentUser(): bool
+    {
+        return $this->user_type === 'agent';
     }
 
     /**

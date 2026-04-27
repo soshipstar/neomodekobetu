@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Laravel\Cashier\Billable;
@@ -37,6 +38,10 @@ class Company extends Model
         'display_settings',
         'feature_flags',
         'individual_terms',
+        // 販売チャネル: 代理店経由の場合のみ agent_id をセット。直販なら NULL
+        'agent_id',
+        'commission_rate_override',
+        'agent_assigned_at',
     ];
 
     protected function casts(): array
@@ -52,6 +57,8 @@ class Company extends Model
             'display_settings' => 'array',
             'feature_flags' => 'array',
             'individual_terms' => 'array',
+            'commission_rate_override' => 'decimal:4',
+            'agent_assigned_at' => 'datetime',
         ];
     }
 
@@ -76,5 +83,35 @@ class Company extends Model
     public function invoiceRecords(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    /** @return BelongsTo<Agent, Company> 代理店経由の場合の代理店。直販なら null */
+    public function agent(): BelongsTo
+    {
+        return $this->belongsTo(Agent::class);
+    }
+
+    /**
+     * 販売チャネル判定。
+     */
+    public function isDirectSales(): bool
+    {
+        return $this->agent_id === null;
+    }
+
+    /**
+     * この企業に適用される手数料率。
+     * commission_rate_override があればそれ、なければ agent.default_commission_rate。
+     * 直販（agent_id=null）は 0 を返す。
+     */
+    public function effectiveCommissionRate(): float
+    {
+        if ($this->agent_id === null) {
+            return 0.0;
+        }
+        if ($this->commission_rate_override !== null) {
+            return (float) $this->commission_rate_override;
+        }
+        return (float) ($this->agent?->default_commission_rate ?? 0);
     }
 }
