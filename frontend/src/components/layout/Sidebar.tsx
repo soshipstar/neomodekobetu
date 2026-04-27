@@ -16,7 +16,7 @@ interface NavLink {
   href: string;
   icon: string; // Material Symbols icon name
   badge?: number;
-  visibility?: 'all' | 'master_only' | 'non_master';
+  visibility?: 'all' | 'master_only' | 'non_master' | 'company_admin_or_master';
 }
 
 interface NavDivider {
@@ -123,6 +123,8 @@ const adminNav: NavItem[] = [
   { type: 'link', label: '管理者アカウント', href: '/admin/admin-accounts', icon: 'shield_person', visibility: 'master_only' },
   { type: 'link', label: 'スタッフアカウント', href: '/admin/staff-accounts', icon: 'badge', visibility: 'master_only' },
   { type: 'link', label: '事業所評価', href: '/admin/facility-evaluation', icon: 'analytics', visibility: 'non_master' },
+  { type: 'link', label: '請求・契約', href: '/admin/billing', icon: 'receipt_long', visibility: 'company_admin_or_master' },
+  { type: 'link', label: '企業課金管理', href: '/admin/master-billing', icon: 'payments', visibility: 'master_only' },
   { type: 'divider', label: 'システム' },
   { type: 'link', label: 'エラーログ', href: '/admin/error-logs', icon: 'warning', visibility: 'master_only' },
   { type: 'link', label: 'バグ報告', href: '/staff/bug-reports', icon: 'bug_report' },
@@ -295,8 +297,10 @@ function SidebarContent({
             if (item.type === 'divider') return true;
             const vis = item.visibility ?? 'all';
             const isMaster = user.user_type === 'admin' && !!user.is_master;
+            const isCompanyAdmin = user.user_type === 'admin' && !!user.is_company_admin;
             if (vis === 'master_only' && !isMaster) return false;
             if (vis === 'non_master' && isMaster) return false;
+            if (vis === 'company_admin_or_master' && !isMaster && !isCompanyAdmin) return false;
             return true;
           }).map((item, index) => {
             if (item.type === 'divider') {

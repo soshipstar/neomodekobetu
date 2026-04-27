@@ -59,7 +59,10 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              if ('serviceWorker' in navigator) {
+              // ServiceWorker は HTTPS 必須かつ本番のみ有効化する。
+              // 開発時は dev server の HMR と SW のキャッシュが競合し、
+              // 古いキャッシュが残ったまま新しいビルドが反映されない問題が出るため除外。
+              if ('serviceWorker' in navigator && location.protocol === 'https:') {
                 window.addEventListener('load', function() {
                   navigator.serviceWorker.register('/sw.js')
                     .then(function(registration) {
@@ -69,6 +72,14 @@ export default function RootLayout({
                       console.log('ServiceWorker registration failed:', error);
                     });
                 });
+              } else if ('serviceWorker' in navigator) {
+                // 開発時は既存登録を解除しキャッシュを削除（リロード後に有効）
+                navigator.serviceWorker.getRegistrations().then(function(regs) {
+                  regs.forEach(function(r) { r.unregister(); });
+                });
+                if (window.caches) {
+                  caches.keys().then(function(keys) { keys.forEach(function(k) { caches.delete(k); }); });
+                }
               }
             `,
           }}

@@ -82,3 +82,9 @@ migrate_support_plans.py
 migration_output.sql
 post_migration_fixes.sql
 .claude/worktrees/
+
+# ============================================
+# 開発環境ローカル専用（worktree用 / 本番には反映しない）
+# ============================================
+docker-compose.override.yml
+docker/nginx/default.worktree.conf
