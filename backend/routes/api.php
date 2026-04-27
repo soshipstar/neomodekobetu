@@ -177,6 +177,10 @@ Route::prefix('admin')
             Route::get('/{agent}', [App\Http\Controllers\Admin\AgentController::class, 'show']);
             Route::put('/{agent}', [App\Http\Controllers\Admin\AgentController::class, 'update']);
             Route::delete('/{agent}', [App\Http\Controllers\Admin\AgentController::class, 'destroy']);
+            // 代理店契約書PDF
+            Route::post('/{agent}/contract-document', [App\Http\Controllers\Admin\AgentController::class, 'uploadContractDocument']);
+            Route::delete('/{agent}/contract-document', [App\Http\Controllers\Admin\AgentController::class, 'deleteContractDocument']);
+            Route::get('/{agent}/contract-document', [App\Http\Controllers\Admin\AgentController::class, 'downloadContractDocument']);
         });
 
         // --- 代理店スタッフ アカウント管理（マスター管理者のみ） ---
@@ -210,6 +214,7 @@ Route::prefix('agent')
         Route::get('/companies', [App\Http\Controllers\Agent\AgentDashboardController::class, 'companies']);
         Route::get('/payouts', [App\Http\Controllers\Agent\AgentDashboardController::class, 'payouts']);
         Route::get('/profile', [App\Http\Controllers\Agent\AgentDashboardController::class, 'profile']);
+        Route::get('/contract-document', [App\Http\Controllers\Agent\AgentDashboardController::class, 'downloadContract']);
     });
 
 // --- Stripe Webhook（認証不要・シグネチャ検証で正当性を担保） ---

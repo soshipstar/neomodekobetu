@@ -9,6 +9,8 @@ use App\Models\MasterAdminAuditLog;
 use App\Policies\AgentPolicy;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * マスター管理者向け 代理店マスタ管理API。
@@ -137,6 +139,90 @@ class AgentController extends Controller
             ],
             'message' => '販売チャネルを更新しました。',
         ]);
+    }
+
+    /**
+     * 代理店契約書PDFをアップロードする（マスター管理者のみ）。
+     * 既存ファイルがあれば置換する。
+     */
+    public function uploadContractDocument(Request $request, Agent $agent): JsonResponse
+    {
+        if ($deny = $this->requireMaster($request)) return $deny;
+
+        $request->validate([
+            'file' => 'required|file|mimes:pdf|max:10240', // 10MB
+        ]);
+
+        $oldPath = $agent->contract_document_path;
+        // 保存パス: agent-contracts/{agent_id}/{uuid}.pdf
+        $path = $request->file('file')->store(
+            'agent-contracts/'.$agent->id,
+            'local'
+        );
+
+        $agent->update(['contract_document_path' => $path]);
+
+        // 旧ファイル削除（置換後）
+        if ($oldPath && $oldPath !== $path) {
+            Storage::disk('local')->delete($oldPath);
+        }
+
+        $this->log($request, null, 'upload_agent_contract', ['old_path' => $oldPath], [
+            'agent_id' => $agent->id,
+            'new_path' => $path,
+            'size' => $request->file('file')->getSize(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => ['contract_document_path' => $path],
+            'message' => '代理店契約書をアップロードしました。',
+        ]);
+    }
+
+    /**
+     * 代理店契約書PDFを削除する（マスター管理者のみ）。
+     */
+    public function deleteContractDocument(Request $request, Agent $agent): JsonResponse
+    {
+        if ($deny = $this->requireMaster($request)) return $deny;
+
+        $oldPath = $agent->contract_document_path;
+        if (!$oldPath) {
+            return response()->json(['success' => false, 'message' => '契約書が登録されていません。'], 422);
+        }
+
+        Storage::disk('local')->delete($oldPath);
+        $agent->update(['contract_document_path' => null]);
+
+        $this->log($request, null, 'delete_agent_contract', ['old_path' => $oldPath], ['agent_id' => $agent->id]);
+
+        return response()->json(['success' => true, 'message' => '代理店契約書を削除しました。']);
+    }
+
+    /**
+     * 代理店契約書PDFをダウンロード（マスター管理者は全て、代理店ユーザーは自分のみ）。
+     */
+    public function downloadContractDocument(Request $request, Agent $agent): StreamedResponse|JsonResponse
+    {
+        $user = $request->user();
+        if (!$user || !$this->policy->view($user, $agent)) {
+            return response()->json(['success' => false, 'message' => '閲覧権限がありません。'], 403);
+        }
+        if (!$agent->contract_document_path) {
+            return response()->json(['success' => false, 'message' => '契約書が登録されていません。'], 404);
+        }
+        if (!Storage::disk('local')->exists($agent->contract_document_path)) {
+            return response()->json(['success' => false, 'message' => 'ファイルが見つかりません。'], 404);
+        }
+
+        $downloadName = sprintf('agent-contract_%s.pdf', preg_replace('/[^A-Za-z0-9_\-]/u', '_', $agent->name ?? 'agent'));
+
+        return Storage::disk('local')->download(
+            $agent->contract_document_path,
+            $downloadName,
+            ['Content-Type' => 'application/pdf']
+        );
     }
 
     private function requireMaster(Request $request): ?JsonResponse

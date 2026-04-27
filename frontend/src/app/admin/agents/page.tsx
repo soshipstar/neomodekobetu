@@ -66,6 +66,8 @@ export default function AgentsPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<AgentForm>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [contractPath, setContractPath] = useState<string | null>(null);
+  const [uploadingContract, setUploadingContract] = useState(false);
 
   const fetchAgents = useCallback(async () => {
     try {
@@ -86,6 +88,7 @@ export default function AgentsPage() {
   const openCreate = () => {
     setEditingId(null);
     setForm(EMPTY_FORM);
+    setContractPath(null);
     setModalOpen(true);
   };
 
@@ -94,6 +97,7 @@ export default function AgentsPage() {
       const res = await api.get(`/api/admin/master/agents/${id}`);
       const a = res.data?.data;
       setEditingId(id);
+      setContractPath(a.contract_document_path ?? null);
       setForm({
         name: a.name ?? '',
         code: a.code ?? '',
@@ -140,6 +144,60 @@ export default function AgentsPage() {
       toast.error(msg);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleUploadContract = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingId) return;
+    if (file.type !== 'application/pdf') {
+      toast.error('PDFファイルを選択してください');
+      return;
+    }
+    setUploadingContract(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await api.post(`/api/admin/master/agents/${editingId}/contract-document`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setContractPath(res.data?.data?.contract_document_path ?? null);
+      toast.success('契約書をアップロードしました');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'アップロードに失敗しました';
+      toast.error(msg);
+    } finally {
+      setUploadingContract(false);
+      // input をリセットして同じファイルでも再選択可能に
+      e.target.value = '';
+    }
+  };
+
+  const handleDeleteContract = async () => {
+    if (!editingId || !contractPath) return;
+    if (!confirm('登録されている契約書を削除しますか？')) return;
+    try {
+      await api.delete(`/api/admin/master/agents/${editingId}/contract-document`);
+      setContractPath(null);
+      toast.success('契約書を削除しました');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || '削除に失敗しました';
+      toast.error(msg);
+    }
+  };
+
+  const handleDownloadContract = async () => {
+    if (!editingId) return;
+    try {
+      const res = await api.get(`/api/admin/master/agents/${editingId}/contract-document`, { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener');
+      // 解放はopen後のため少し遅延
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'ダウンロードに失敗しました';
+      toast.error(msg);
     }
   };
 
@@ -319,6 +377,43 @@ export default function AgentsPage() {
               <span className="text-sm text-[var(--neutral-foreground-1)]">有効</span>
             </label>
           </div>
+
+          {editingId && (
+            <div className="sm:col-span-2 mt-2 border-t border-[var(--neutral-stroke-3)] pt-3">
+              <p className="text-xs font-semibold text-[var(--neutral-foreground-2)]">代理店契約書（PDF）</p>
+              <p className="mt-1 text-[10px] text-[var(--neutral-foreground-4)]">
+                PDF以外は受け付けません。アップロードすると既存ファイルは置き換えられます。代理店ユーザーは「代理店情報」画面からダウンロードできます。
+              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                {contractPath ? (
+                  <>
+                    <Badge variant="success">登録済み</Badge>
+                    <Button variant="ghost" onClick={handleDownloadContract}>
+                      <MaterialIcon name="download" size={18} />
+                      <span className="ml-1">ダウンロード</span>
+                    </Button>
+                    <Button variant="ghost" onClick={handleDeleteContract} className="text-[var(--status-danger-fg)]">
+                      <MaterialIcon name="delete" size={18} />
+                      <span className="ml-1">削除</span>
+                    </Button>
+                  </>
+                ) : (
+                  <Badge variant="default">未登録</Badge>
+                )}
+                <label className="inline-flex items-center gap-1 cursor-pointer rounded-md border border-[var(--neutral-stroke-1)] px-3 py-1 text-sm text-[var(--neutral-foreground-1)] hover:bg-[var(--neutral-background-3)]">
+                  <MaterialIcon name="upload_file" size={18} />
+                  <span>{uploadingContract ? 'アップロード中…' : (contractPath ? '差し替え' : 'PDFをアップロード')}</span>
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    onChange={handleUploadContract}
+                    disabled={uploadingContract}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            </div>
+          )}
         </div>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="ghost" onClick={() => setModalOpen(false)}>キャンセル</Button>

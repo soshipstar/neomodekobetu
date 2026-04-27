@@ -152,6 +152,30 @@ class AgentDashboardController extends Controller
     }
 
     /**
+     * 自代理店契約書PDFをダウンロード（代理店ユーザーは自分のみ、マスターは ?agent_id= で他社）。
+     * 中身はそのままバイナリ配信、ファイル名はASCIIサニタイズ済みなので文字化けしない。
+     */
+    public function downloadContract(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse|JsonResponse
+    {
+        $agent = $this->resolveAgent($request);
+        if ($agent instanceof JsonResponse) return $agent;
+
+        if (!$agent->contract_document_path) {
+            return response()->json(['success' => false, 'message' => '契約書が登録されていません。'], 404);
+        }
+        if (!\Illuminate\Support\Facades\Storage::disk('local')->exists($agent->contract_document_path)) {
+            return response()->json(['success' => false, 'message' => 'ファイルが見つかりません。'], 404);
+        }
+
+        $downloadName = sprintf('agent-contract_%s.pdf', preg_replace('/[^A-Za-z0-9_\-]/u', '_', $agent->name ?? 'agent'));
+        return \Illuminate\Support\Facades\Storage::disk('local')->download(
+            $agent->contract_document_path,
+            $downloadName,
+            ['Content-Type' => 'application/pdf']
+        );
+    }
+
+    /**
      * 自代理店プロフィール（連絡先・契約条件など）。
      */
     public function profile(Request $request): JsonResponse

@@ -83,7 +83,18 @@ export default function AgentProfilePage() {
               KIDURI と貴代理店との間で締結された契約書です。
             </p>
             <div className="mt-3">
-              <Button onClick={() => window.open(profile.contract_document_path!, '_blank', 'noopener')}>
+              <Button onClick={async () => {
+                try {
+                  const res = await api.get('/api/agent/contract-document', { responseType: 'blob' });
+                  const blob = new Blob([res.data], { type: 'application/pdf' });
+                  const url = window.URL.createObjectURL(blob);
+                  window.open(url, '_blank', 'noopener');
+                  setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+                } catch (err: unknown) {
+                  const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || '契約書を開けませんでした';
+                  toast.error(msg);
+                }
+              }}>
                 <MaterialIcon name="description" size={18} />
                 <span className="ml-1">契約書PDFを開く</span>
               </Button>
