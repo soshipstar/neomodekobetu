@@ -166,7 +166,40 @@ Route::prefix('admin')
             Route::put('/companies/{company}/customer-info', [App\Http\Controllers\Admin\BillingMasterController::class, 'updateCustomerInfo']);
             Route::get('/companies/{company}/individual-terms', [App\Http\Controllers\Admin\BillingMasterController::class, 'individualTerms']);
             Route::put('/companies/{company}/individual-terms', [App\Http\Controllers\Admin\BillingMasterController::class, 'updateIndividualTerms']);
+            // 販売チャネル更新（直販 ⇄ 代理店）
+            Route::put('/companies/{company}/sales-channel', [App\Http\Controllers\Admin\AgentController::class, 'assignChannel']);
         });
+
+        // --- 代理店マスタ管理（マスター管理者のみ） ---
+        Route::prefix('master/agents')->group(function () {
+            Route::get('/', [App\Http\Controllers\Admin\AgentController::class, 'index']);
+            Route::post('/', [App\Http\Controllers\Admin\AgentController::class, 'store']);
+            Route::get('/{agent}', [App\Http\Controllers\Admin\AgentController::class, 'show']);
+            Route::put('/{agent}', [App\Http\Controllers\Admin\AgentController::class, 'update']);
+            Route::delete('/{agent}', [App\Http\Controllers\Admin\AgentController::class, 'destroy']);
+        });
+
+        // --- 代理店手数料 集計と支払い管理（マスター管理者のみ） ---
+        Route::prefix('master/agent-payouts')->group(function () {
+            Route::get('/', [App\Http\Controllers\Admin\AgentPayoutController::class, 'index']);
+            Route::post('/calculate', [App\Http\Controllers\Admin\AgentPayoutController::class, 'calculate']);
+            Route::post('/{payout}/finalize', [App\Http\Controllers\Admin\AgentPayoutController::class, 'finalize']);
+            Route::post('/{payout}/mark-paid', [App\Http\Controllers\Admin\AgentPayoutController::class, 'markPaid']);
+            Route::post('/{payout}/cancel', [App\Http\Controllers\Admin\AgentPayoutController::class, 'cancel']);
+        });
+    });
+
+// ==========================================================================
+// 代理店ロール API (auth:sanctum + user_type:agent)
+// 代理店ユーザーは「代理店報酬機能のみ」アクセス可。kiduri本体機能には触れない。
+// ==========================================================================
+Route::prefix('agent')
+    ->middleware(['auth:sanctum', 'user_type:agent'])
+    ->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\Agent\AgentDashboardController::class, 'dashboard']);
+        Route::get('/companies', [App\Http\Controllers\Agent\AgentDashboardController::class, 'companies']);
+        Route::get('/payouts', [App\Http\Controllers\Agent\AgentDashboardController::class, 'payouts']);
+        Route::get('/profile', [App\Http\Controllers\Agent\AgentDashboardController::class, 'profile']);
     });
 
 // --- Stripe Webhook（認証不要・シグネチャ検証で正当性を担保） ---
