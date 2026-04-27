@@ -119,8 +119,13 @@ class BillingController extends Controller
             return response()->json(['success' => false, 'message' => '支払い方法の編集は許可されていません。'], 403);
         }
 
+        // Stripe Customer がまだ無ければここで作成する。
+        // Customer は契約開始(Subscription)時にも作成されるが、企業管理者が
+        // 先にカード登録だけしたいケース（契約前にカードを準備する）にも対応。
         if (!$company->stripe_id) {
-            return response()->json(['success' => false, 'message' => '契約が未設定です。'], 422);
+            $company->createAsStripeCustomer([
+                'name' => $company->name,
+            ]);
         }
 
         $returnUrl = $request->input('return_url') ?? config('app.url').'/admin/billing';
@@ -182,6 +187,30 @@ class BillingController extends Controller
     }
 
     /**
+     * 個別条件書を閲覧する（企業管理者は自社のみ）。
+     * マスターが管理画面で更新したJSONをそのまま返す。
+     */
+    public function individualTerms(Request $request): JsonResponse
+    {
+        $company = $this->resolveOwnCompany($request);
+        if ($company instanceof JsonResponse) return $company;
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'company' => [
+                    'id' => $company->id,
+                    'name' => $company->name,
+                    'custom_amount' => $company->custom_amount,
+                    'current_period_end' => $company->current_period_end,
+                    'contract_started_at' => $company->contract_started_at,
+                ],
+                'individual_terms' => $company->individual_terms,
+            ],
+        ]);
+    }
+
+    /**
      * 自企業の解決と権限チェック。マスター管理者は ?company_id= で他社を指定可。
      */
     private function resolveOwnCompany(Request $request): Company|JsonResponse
@@ -224,13 +253,21 @@ class BillingController extends Controller
     {
         $sub = $company->subscription();
 
+        $rate = (float) config('billing.tax_rate', 0.10);
+        $inputAmount = $company->is_custom_pricing ? $company->custom_amount : null;
+        $taxInclusive = (bool) $company->tax_inclusive;
+        $totalAmount = $inputAmount === null
+            ? null
+            : ($taxInclusive ? $inputAmount : (int) round($inputAmount * (1 + $rate)));
+
         return [
             'company_id' => $company->id,
             'status' => $company->subscription_status,
             'is_custom_pricing' => (bool) $company->is_custom_pricing,
-            'amount' => $company->is_custom_pricing
-                ? $company->custom_amount
-                : null, // 標準プランは Stripe Price 経由（フロントがprice_idで照会）
+            'tax_inclusive' => $taxInclusive,
+            'amount' => $inputAmount,
+            'amount_total' => $totalAmount,
+            'tax_rate' => $rate,
             'current_price_id' => $company->current_price_id,
             'current_period_end' => $company->current_period_end,
             'trial_ends_at' => $company->trial_ends_at,

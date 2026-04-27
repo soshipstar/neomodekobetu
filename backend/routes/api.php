@@ -147,6 +147,7 @@ Route::prefix('admin')
             Route::post('/portal', [App\Http\Controllers\Admin\BillingController::class, 'portal']);
             Route::post('/cancel', [App\Http\Controllers\Admin\BillingController::class, 'cancel']);
             Route::post('/resume', [App\Http\Controllers\Admin\BillingController::class, 'resume']);
+            Route::get('/individual-terms', [App\Http\Controllers\Admin\BillingController::class, 'individualTerms']);
         });
 
         // --- 課金（マスター管理者：全企業の管理） ---
@@ -159,6 +160,10 @@ Route::prefix('admin')
             Route::post('/companies/{company}/spot-invoice', [App\Http\Controllers\Admin\BillingMasterController::class, 'spotInvoice']);
             Route::put('/companies/{company}/display-settings', [App\Http\Controllers\Admin\BillingMasterController::class, 'updateDisplaySettings']);
             Route::put('/companies/{company}/feature-flags', [App\Http\Controllers\Admin\BillingMasterController::class, 'updateFeatureFlags']);
+            Route::get('/companies/{company}/customer-info', [App\Http\Controllers\Admin\BillingMasterController::class, 'customerInfo']);
+            Route::put('/companies/{company}/customer-info', [App\Http\Controllers\Admin\BillingMasterController::class, 'updateCustomerInfo']);
+            Route::get('/companies/{company}/individual-terms', [App\Http\Controllers\Admin\BillingMasterController::class, 'individualTerms']);
+            Route::put('/companies/{company}/individual-terms', [App\Http\Controllers\Admin\BillingMasterController::class, 'updateIndividualTerms']);
         });
     });
 
