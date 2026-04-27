@@ -135,6 +135,7 @@ const adminNav: NavItem[] = [
   { type: 'link', label: '代理店管理', href: '/admin/agents', icon: 'handshake', visibility: 'master_only' },
   { type: 'link', label: '代理店アカウント', href: '/admin/agent-accounts', icon: 'badge', visibility: 'master_only' },
   { type: 'link', label: '代理店手数料', href: '/admin/agent-payouts', icon: 'account_balance', visibility: 'master_only' },
+  { type: 'link', label: '操作履歴(マスター)', href: '/admin/master-audit-logs', icon: 'history', visibility: 'master_only' },
   { type: 'divider', label: 'システム' },
   { type: 'link', label: 'エラーログ', href: '/admin/error-logs', icon: 'warning', visibility: 'master_only' },
   { type: 'link', label: 'バグ報告', href: '/staff/bug-reports', icon: 'bug_report' },

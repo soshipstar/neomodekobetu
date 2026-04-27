@@ -192,6 +192,12 @@ Route::prefix('admin')
             Route::delete('/{user}', [App\Http\Controllers\Admin\AgentAccountController::class, 'destroy']);
         });
 
+        // --- マスター管理者の操作履歴 (master_admin_audit_logs) ---
+        Route::prefix('master/audit-logs')->group(function () {
+            Route::get('/', [App\Http\Controllers\Admin\MasterAuditLogController::class, 'index']);
+            Route::get('/{log}', [App\Http\Controllers\Admin\MasterAuditLogController::class, 'show']);
+        });
+
         // --- 代理店手数料 集計と支払い管理（マスター管理者のみ） ---
         Route::prefix('master/agent-payouts')->group(function () {
             Route::get('/', [App\Http\Controllers\Admin\AgentPayoutController::class, 'index']);
