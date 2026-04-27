@@ -28,6 +28,7 @@ class Company extends Model
         'current_price_id',
         'custom_amount',
         'is_custom_pricing',
+        'tax_inclusive',
         'current_period_end',
         'cancel_at_period_end',
         'contract_started_at',
@@ -35,6 +36,7 @@ class Company extends Model
         'contract_document_path',
         'display_settings',
         'feature_flags',
+        'individual_terms',
     ];
 
     protected function casts(): array
@@ -42,12 +44,14 @@ class Company extends Model
         return [
             'is_active' => 'boolean',
             'is_custom_pricing' => 'boolean',
+            'tax_inclusive' => 'boolean',
             'cancel_at_period_end' => 'boolean',
             'trial_ends_at' => 'datetime',
             'current_period_end' => 'datetime',
             'contract_started_at' => 'datetime',
             'display_settings' => 'array',
             'feature_flags' => 'array',
+            'individual_terms' => 'array',
         ];
     }
 
