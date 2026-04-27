@@ -1,4 +1,4 @@
-export type UserType = 'admin' | 'staff' | 'guardian' | 'student' | 'tablet';
+export type UserType = 'admin' | 'staff' | 'guardian' | 'student' | 'tablet' | 'agent';
 
 export interface User {
   id: number;
@@ -9,6 +9,7 @@ export interface User {
   user_type: UserType;
   is_master: boolean;
   is_company_admin: boolean;
+  agent_id: number | null;
   is_active: boolean;
   last_login_at: string | null;
   created_at: string;

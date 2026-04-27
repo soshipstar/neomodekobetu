@@ -106,6 +106,8 @@ export function getDashboardPath(userType: UserType): string {
       return '/student/dashboard';
     case 'tablet':
       return '/tablet';
+    case 'agent':
+      return '/agent/dashboard';
     default:
       return '/auth/login';
   }

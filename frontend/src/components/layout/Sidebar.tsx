@@ -108,6 +108,13 @@ const studentNav: NavItem[] = [
   { type: 'link', label: 'パスワード変更', href: '/student/profile', icon: 'lock' },
 ];
 
+const agentNav: NavItem[] = [
+  { type: 'link', label: 'ダッシュボード', href: '/agent/dashboard', icon: 'dashboard' },
+  { type: 'link', label: '紹介企業', href: '/agent/companies', icon: 'business' },
+  { type: 'link', label: '手数料・支払い履歴', href: '/agent/payouts', icon: 'account_balance' },
+  { type: 'link', label: '代理店情報', href: '/agent/profile', icon: 'storefront' },
+];
+
 const adminNav: NavItem[] = [
   { type: 'link', label: 'ダッシュボード', href: '/admin/dashboard', icon: 'dashboard' },
   { type: 'link', label: '生徒情報', href: '/admin/students', icon: 'school', visibility: 'non_master' },
@@ -140,6 +147,8 @@ function getNavItems(userType: UserType): NavItem[] {
       return guardianNav;
     case 'admin':
       return adminNav;
+    case 'agent':
+      return agentNav;
     default:
       return studentNav;
   }

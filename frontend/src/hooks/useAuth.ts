@@ -40,7 +40,11 @@ export function useAuth(requiredUserType?: UserType | UserType[]) {
     await login({ username, password });
     const loggedUser = useAuthStore.getState().user;
     if (loggedUser) {
-      const prefix = loggedUser.user_type === 'guardian' ? '/guardian' : loggedUser.user_type === 'admin' ? '/admin' : loggedUser.user_type === 'student' ? '/student' : '/staff';
+      const prefix = loggedUser.user_type === 'guardian' ? '/guardian'
+        : loggedUser.user_type === 'admin' ? '/admin'
+        : loggedUser.user_type === 'student' ? '/student'
+        : loggedUser.user_type === 'agent' ? '/agent'
+        : '/staff';
       router.push(`${prefix}/dashboard`);
     }
   };
