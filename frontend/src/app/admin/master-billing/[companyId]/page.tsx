@@ -120,7 +120,7 @@ export default function MasterBillingDetailPage() {
     phone: '',
     address: { line1: '', line2: '', city: '', state: '', postal_code: '', country: 'JP' },
   });
-  const [savingCustomer, setSavingCustomer] = useState(false);
+  // 請求先情報は閲覧のみ（編集UI削除済み）
   const [terms, setTerms] = useState<{
     monthly_fee: string;
     initial_setup_fee: string;
@@ -362,26 +362,8 @@ export default function MasterBillingDetailPage() {
     }
   };
 
-  const submitCustomerInfo = async () => {
-    setSavingCustomer(true);
-    try {
-      const body = {
-        name: customerInfo.name,
-        email: customerInfo.email || undefined,
-        phone: customerInfo.phone || undefined,
-        address: customerInfo.address,
-      };
-      await api.put(`/api/admin/master/billing/companies/${companyId}/customer-info`, body);
-      toast.success('請求先情報を更新しました');
-      fetchCustomerInfo();
-      fetchDetail();
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || '更新に失敗しました';
-      toast.error(msg);
-    } finally {
-      setSavingCustomer(false);
-    }
-  };
+  // 請求先情報の編集はマスター管理者では行わない（企業管理者が /admin/billing で編集する）。
+  // ここでは閲覧のみ。
 
   const submitSubscribe = async () => {
     if (!company?.current_price_id) {
@@ -457,7 +439,7 @@ export default function MasterBillingDetailPage() {
           <MaterialIcon name="chevron_left" size={18} />
           一覧に戻る
         </Link>
-        <SkeletonList count={5} />
+        <SkeletonList items={5} />
       </div>
     );
   }
@@ -505,100 +487,44 @@ export default function MasterBillingDetailPage() {
 
       <Card>
         <CardBody>
-          <h2 className="text-base font-semibold text-[var(--neutral-foreground-1)]">請求先情報（請求書に表示される顧客情報）</h2>
+          <h2 className="text-base font-semibold text-[var(--neutral-foreground-1)]">請求先情報（閲覧のみ）</h2>
           <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
-            Stripe Customer の名称・住所・連絡先を更新します。請求書PDFの「Bill To」欄に反映されます。
+            請求書PDFの「Bill To」欄に表示される顧客情報。<strong>編集は企業管理者が /admin/billing で行います</strong>。
           </p>
-          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <label className="block text-xs text-[var(--neutral-foreground-3)]">企業名（請求書表示）</label>
-              <Input
-                type="text"
-                value={customerInfo.name}
-                onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
-                placeholder="例: 株式会社XXX"
-              />
+          <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2 text-sm">
+            <div className="flex">
+              <dt className="w-28 text-[var(--neutral-foreground-3)]">企業名</dt>
+              <dd className="flex-1 text-[var(--neutral-foreground-1)]">{customerInfo.name || '—'}</dd>
             </div>
-            <div>
-              <label className="block text-xs text-[var(--neutral-foreground-3)]">メール（領収書送付先）</label>
-              <Input
-                type="email"
-                value={customerInfo.email}
-                onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
-                placeholder="billing@example.com"
-              />
+            <div className="flex">
+              <dt className="w-28 text-[var(--neutral-foreground-3)]">メール</dt>
+              <dd className="flex-1 text-[var(--neutral-foreground-1)] break-all">{customerInfo.email || '—'}</dd>
             </div>
-            <div>
-              <label className="block text-xs text-[var(--neutral-foreground-3)]">電話番号</label>
-              <Input
-                type="tel"
-                value={customerInfo.phone}
-                onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
-                placeholder="03-0000-0000"
-              />
+            <div className="flex">
+              <dt className="w-28 text-[var(--neutral-foreground-3)]">電話番号</dt>
+              <dd className="flex-1 text-[var(--neutral-foreground-1)]">{customerInfo.phone || '—'}</dd>
             </div>
-            <div>
-              <label className="block text-xs text-[var(--neutral-foreground-3)]">国コード</label>
-              <Input
-                type="text"
-                value={customerInfo.address.country}
-                onChange={(e) => setCustomerInfo({ ...customerInfo, address: { ...customerInfo.address, country: e.target.value.toUpperCase() } })}
-                maxLength={2}
-                placeholder="JP"
-                className="w-20"
-              />
+            <div className="flex">
+              <dt className="w-28 text-[var(--neutral-foreground-3)]">郵便番号</dt>
+              <dd className="flex-1 text-[var(--neutral-foreground-1)]">{customerInfo.address.postal_code || '—'}</dd>
             </div>
-            <div>
-              <label className="block text-xs text-[var(--neutral-foreground-3)]">郵便番号</label>
-              <Input
-                type="text"
-                value={customerInfo.address.postal_code}
-                onChange={(e) => setCustomerInfo({ ...customerInfo, address: { ...customerInfo.address, postal_code: e.target.value } })}
-                placeholder="100-0001"
-              />
+            <div className="flex">
+              <dt className="w-28 text-[var(--neutral-foreground-3)]">都道府県</dt>
+              <dd className="flex-1 text-[var(--neutral-foreground-1)]">{customerInfo.address.state || '—'}</dd>
             </div>
-            <div>
-              <label className="block text-xs text-[var(--neutral-foreground-3)]">都道府県（state）</label>
-              <Input
-                type="text"
-                value={customerInfo.address.state}
-                onChange={(e) => setCustomerInfo({ ...customerInfo, address: { ...customerInfo.address, state: e.target.value } })}
-                placeholder="東京都"
-              />
+            <div className="flex">
+              <dt className="w-28 text-[var(--neutral-foreground-3)]">市区町村</dt>
+              <dd className="flex-1 text-[var(--neutral-foreground-1)]">{customerInfo.address.city || '—'}</dd>
             </div>
-            <div>
-              <label className="block text-xs text-[var(--neutral-foreground-3)]">市区町村（city）</label>
-              <Input
-                type="text"
-                value={customerInfo.address.city}
-                onChange={(e) => setCustomerInfo({ ...customerInfo, address: { ...customerInfo.address, city: e.target.value } })}
-                placeholder="千代田区"
-              />
+            <div className="flex sm:col-span-2">
+              <dt className="w-28 text-[var(--neutral-foreground-3)]">住所1</dt>
+              <dd className="flex-1 text-[var(--neutral-foreground-1)]">{customerInfo.address.line1 || '—'}</dd>
             </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs text-[var(--neutral-foreground-3)]">住所1（line1）</label>
-              <Input
-                type="text"
-                value={customerInfo.address.line1}
-                onChange={(e) => setCustomerInfo({ ...customerInfo, address: { ...customerInfo.address, line1: e.target.value } })}
-                placeholder="千代田1-1-1"
-              />
+            <div className="flex sm:col-span-2">
+              <dt className="w-28 text-[var(--neutral-foreground-3)]">住所2</dt>
+              <dd className="flex-1 text-[var(--neutral-foreground-1)]">{customerInfo.address.line2 || '—'}</dd>
             </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs text-[var(--neutral-foreground-3)]">住所2（line2・建物名など）</label>
-              <Input
-                type="text"
-                value={customerInfo.address.line2}
-                onChange={(e) => setCustomerInfo({ ...customerInfo, address: { ...customerInfo.address, line2: e.target.value } })}
-                placeholder="○○ビル 5F"
-              />
-            </div>
-          </div>
-          <div className="mt-3">
-            <Button onClick={submitCustomerInfo} disabled={savingCustomer}>
-              請求先情報を保存
-            </Button>
-          </div>
+          </dl>
         </CardBody>
       </Card>
 

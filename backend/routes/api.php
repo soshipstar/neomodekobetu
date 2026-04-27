@@ -148,6 +148,8 @@ Route::prefix('admin')
             Route::post('/cancel', [App\Http\Controllers\Admin\BillingController::class, 'cancel']);
             Route::post('/resume', [App\Http\Controllers\Admin\BillingController::class, 'resume']);
             Route::get('/individual-terms', [App\Http\Controllers\Admin\BillingController::class, 'individualTerms']);
+            Route::get('/customer-info', [App\Http\Controllers\Admin\BillingController::class, 'customerInfo']);
+            Route::put('/customer-info', [App\Http\Controllers\Admin\BillingController::class, 'updateCustomerInfo']);
         });
 
         // --- 課金（マスター管理者：全企業の管理） ---

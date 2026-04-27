@@ -82,7 +82,7 @@ export default function BillingContractPage() {
     return (
       <div className="space-y-4">
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">契約書</h1>
-        <SkeletonList count={3} />
+        <SkeletonList items={3} />
       </div>
     );
   }

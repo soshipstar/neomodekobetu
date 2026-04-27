@@ -187,6 +187,97 @@ class BillingController extends Controller
     }
 
     /**
+     * Stripe Customer の請求先情報を取得する（企業管理者は自社のみ）。
+     * 編集画面の初期値として使う。
+     */
+    public function customerInfo(Request $request): JsonResponse
+    {
+        $company = $this->resolveOwnCompany($request);
+        if ($company instanceof JsonResponse) return $company;
+
+        if (!$company->stripe_id) {
+            return response()->json([
+                'success' => true,
+                'data' => ['name' => $company->name, 'email' => null, 'phone' => null, 'address' => null],
+            ]);
+        }
+
+        $stripe = new \Stripe\StripeClient(config('cashier.secret'));
+        $customer = $stripe->customers->retrieve($company->stripe_id);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'name' => $customer->name,
+                'email' => $customer->email,
+                'phone' => $customer->phone,
+                'address' => $customer->address ? $customer->address->toArray() : null,
+            ],
+        ]);
+    }
+
+    /**
+     * Stripe Customer の請求先情報を企業管理者が更新する。
+     * 自社のCustomerに対してのみ。Customer未作成なら作成しつつセット。
+     */
+    public function updateCustomerInfo(Request $request): JsonResponse
+    {
+        $company = $this->resolveOwnCompany($request);
+        if ($company instanceof JsonResponse) return $company;
+
+        $validated = $request->validate([
+            'name' => 'nullable|string|max:200',
+            'email' => 'nullable|email|max:200',
+            'phone' => 'nullable|string|max:50',
+            'address' => 'nullable|array',
+            'address.line1' => 'nullable|string|max:200',
+            'address.line2' => 'nullable|string|max:200',
+            'address.city' => 'nullable|string|max:100',
+            'address.state' => 'nullable|string|max:100',
+            'address.postal_code' => 'nullable|string|max:20',
+            'address.country' => 'nullable|string|size:2',
+        ]);
+
+        $payload = array_filter([
+            'name' => $validated['name'] ?? null,
+            'email' => $validated['email'] ?? null,
+            'phone' => $validated['phone'] ?? null,
+        ], fn ($v) => $v !== null && $v !== '');
+
+        if (!empty($validated['address'])) {
+            $address = array_filter($validated['address'], fn ($v) => $v !== null && $v !== '');
+            if (!empty($address)) {
+                $address['country'] = $address['country'] ?? 'JP';
+                $payload['address'] = $address;
+            }
+        }
+
+        if (empty($payload)) {
+            return response()->json(['success' => false, 'message' => '更新する項目がありません。'], 422);
+        }
+
+        if (!$company->stripe_id) {
+            $company->createAsStripeCustomer($payload);
+        } else {
+            $company->updateStripeCustomer($payload);
+        }
+
+        $stripe = new \Stripe\StripeClient(config('cashier.secret'));
+        $customer = $stripe->customers->retrieve($company->stripe_id);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'name' => $customer->name,
+                'email' => $customer->email,
+                'phone' => $customer->phone,
+                'address' => $customer->address,
+            ],
+            'message' => '請求先情報を更新しました。',
+        ]);
+    }
+
+    /**
      * 個別条件書を閲覧する（企業管理者は自社のみ）。
      * マスターが管理画面で更新したJSONをそのまま返す。
      */

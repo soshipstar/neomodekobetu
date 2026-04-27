@@ -94,7 +94,7 @@ export default function BillingTermsPage() {
     return (
       <div className="space-y-4">
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">個別条件書</h1>
-        <SkeletonList count={2} />
+        <SkeletonList items={2} />
       </div>
     );
   }

@@ -211,7 +211,7 @@ export function Sidebar() {
 interface SidebarContentProps {
   navItems: NavItem[];
   pathname: string;
-  user: { full_name: string; user_type: string; is_master?: boolean; classroom?: { classroom_name: string; logo_path: string | null } | null };
+  user: { full_name: string; user_type: string; is_master?: boolean; is_company_admin?: boolean; classroom?: { classroom_name: string; logo_path: string | null } | null };
   isAdminOnStaffView?: boolean;
   collapsed?: boolean;
   onClose?: () => void;

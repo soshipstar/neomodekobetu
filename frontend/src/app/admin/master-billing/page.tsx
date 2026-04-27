@@ -167,7 +167,7 @@ export default function MasterBillingPage() {
       </div>
 
       {loading ? (
-        <SkeletonList count={5} />
+        <SkeletonList items={5} />
       ) : filtered.length === 0 ? (
         <Card>
           <CardBody>

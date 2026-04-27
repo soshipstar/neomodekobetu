@@ -7,6 +7,7 @@ import api from '@/lib/api';
 import { useAuthStore } from '@/stores/authStore';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
@@ -87,12 +88,48 @@ export default function BillingPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
+  // 請求先情報（企業管理者が自社で記載する）
+  const [customerInfo, setCustomerInfo] = useState<{
+    name: string;
+    email: string;
+    phone: string;
+    address: { line1: string; line2: string; city: string; state: string; postal_code: string; country: string };
+  }>({
+    name: '',
+    email: '',
+    phone: '',
+    address: { line1: '', line2: '', city: '', state: '', postal_code: '', country: 'JP' },
+  });
+  const [savingCustomer, setSavingCustomer] = useState(false);
+
   // マスター管理者は自社を持たないので、企業課金管理画面へ自動誘導する。
   useEffect(() => {
     if (user?.user_type === 'admin' && user.is_master) {
       router.replace('/admin/master-billing');
     }
   }, [user, router]);
+
+  const fetchCustomerInfo = useCallback(async () => {
+    try {
+      const res = await api.get('/api/admin/billing/customer-info');
+      const d = res.data?.data;
+      setCustomerInfo({
+        name: d?.name ?? '',
+        email: d?.email ?? '',
+        phone: d?.phone ?? '',
+        address: {
+          line1: d?.address?.line1 ?? '',
+          line2: d?.address?.line2 ?? '',
+          city: d?.address?.city ?? '',
+          state: d?.address?.state ?? '',
+          postal_code: d?.address?.postal_code ?? '',
+          country: d?.address?.country ?? 'JP',
+        },
+      });
+    } catch {
+      // 取得失敗時は空のまま
+    }
+  }, []);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -104,13 +141,33 @@ export default function BillingPage() {
       setSubscription(subRes.data.data);
       setInvoices(invRes.data.data || []);
       setHiddenByMaster(invRes.data.meta?.hidden_by_master === true);
+      fetchCustomerInfo();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || '請求情報の取得に失敗しました';
       toast.error(msg);
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, fetchCustomerInfo]);
+
+  const submitCustomerInfo = async () => {
+    setSavingCustomer(true);
+    try {
+      await api.put('/api/admin/billing/customer-info', {
+        name: customerInfo.name,
+        email: customerInfo.email || undefined,
+        phone: customerInfo.phone || undefined,
+        address: customerInfo.address,
+      });
+      toast.success('請求先情報を保存しました');
+      fetchCustomerInfo();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || '保存に失敗しました';
+      toast.error(msg);
+    } finally {
+      setSavingCustomer(false);
+    }
+  };
 
   useEffect(() => {
     fetchAll();
@@ -181,7 +238,7 @@ export default function BillingPage() {
     return (
       <div className="space-y-4">
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">請求・契約</h1>
-        <SkeletonList count={3} />
+        <SkeletonList items={3} />
       </div>
     );
   }
@@ -348,6 +405,94 @@ export default function BillingPage() {
           </CardBody>
         </Card>
       )}
+
+      <Card>
+        <CardBody>
+          <h2 className="text-base font-semibold text-[var(--neutral-foreground-1)]">請求先情報</h2>
+          <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
+            請求書PDFや領収書の「Bill To」欄に表示される自社の情報です。正確に入力してください。
+          </p>
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label className="block text-xs text-[var(--neutral-foreground-3)]">企業名</label>
+              <Input
+                type="text"
+                value={customerInfo.name}
+                onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
+                placeholder="例: 株式会社XXX"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-[var(--neutral-foreground-3)]">メール（領収書送付先）</label>
+              <Input
+                type="email"
+                value={customerInfo.email}
+                onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
+                placeholder="billing@example.com"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-[var(--neutral-foreground-3)]">電話番号</label>
+              <Input
+                type="tel"
+                value={customerInfo.phone}
+                onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
+                placeholder="03-0000-0000"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-[var(--neutral-foreground-3)]">郵便番号</label>
+              <Input
+                type="text"
+                value={customerInfo.address.postal_code}
+                onChange={(e) => setCustomerInfo({ ...customerInfo, address: { ...customerInfo.address, postal_code: e.target.value } })}
+                placeholder="100-0001"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-[var(--neutral-foreground-3)]">都道府県</label>
+              <Input
+                type="text"
+                value={customerInfo.address.state}
+                onChange={(e) => setCustomerInfo({ ...customerInfo, address: { ...customerInfo.address, state: e.target.value } })}
+                placeholder="東京都"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-[var(--neutral-foreground-3)]">市区町村</label>
+              <Input
+                type="text"
+                value={customerInfo.address.city}
+                onChange={(e) => setCustomerInfo({ ...customerInfo, address: { ...customerInfo.address, city: e.target.value } })}
+                placeholder="千代田区"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs text-[var(--neutral-foreground-3)]">住所1</label>
+              <Input
+                type="text"
+                value={customerInfo.address.line1}
+                onChange={(e) => setCustomerInfo({ ...customerInfo, address: { ...customerInfo.address, line1: e.target.value } })}
+                placeholder="千代田1-1-1"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs text-[var(--neutral-foreground-3)]">住所2（建物名など）</label>
+              <Input
+                type="text"
+                value={customerInfo.address.line2}
+                onChange={(e) => setCustomerInfo({ ...customerInfo, address: { ...customerInfo.address, line2: e.target.value } })}
+                placeholder="○○ビル 5F"
+              />
+            </div>
+          </div>
+          <div className="mt-3">
+            <Button onClick={submitCustomerInfo} disabled={savingCustomer}>
+              請求先情報を保存
+            </Button>
+          </div>
+        </CardBody>
+      </Card>
 
       <Card>
         <CardBody>
