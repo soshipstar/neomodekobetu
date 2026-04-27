@@ -179,6 +179,15 @@ Route::prefix('admin')
             Route::delete('/{agent}', [App\Http\Controllers\Admin\AgentController::class, 'destroy']);
         });
 
+        // --- 代理店スタッフ アカウント管理（マスター管理者のみ） ---
+        Route::prefix('master/agent-accounts')->group(function () {
+            Route::get('/', [App\Http\Controllers\Admin\AgentAccountController::class, 'index']);
+            Route::post('/', [App\Http\Controllers\Admin\AgentAccountController::class, 'store']);
+            Route::get('/{user}', [App\Http\Controllers\Admin\AgentAccountController::class, 'show']);
+            Route::put('/{user}', [App\Http\Controllers\Admin\AgentAccountController::class, 'update']);
+            Route::delete('/{user}', [App\Http\Controllers\Admin\AgentAccountController::class, 'destroy']);
+        });
+
         // --- 代理店手数料 集計と支払い管理（マスター管理者のみ） ---
         Route::prefix('master/agent-payouts')->group(function () {
             Route::get('/', [App\Http\Controllers\Admin\AgentPayoutController::class, 'index']);
