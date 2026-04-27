@@ -162,6 +162,31 @@ export default function AgentPayoutsPage() {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (filter !== 'all') params.set('status', filter);
+      if (agentFilter) params.set('agent_id', agentFilter);
+      const res = await api.get(`/api/admin/master/agent-payouts/export.csv?${params.toString()}`, {
+        responseType: 'blob',
+      });
+      const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const ts = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      a.download = `agent-payouts_${ts}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('CSVをダウンロードしました');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'CSVダウンロードに失敗しました';
+      toast.error(msg);
+    }
+  };
+
   const handleCancel = async (id: number) => {
     if (!confirm('この集計を取消します（draft または finalized のみ可）。よろしいですか？')) return;
     try {
@@ -187,12 +212,18 @@ export default function AgentPayoutsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">代理店手数料</h1>
-        <p className="mt-1 text-sm text-[var(--neutral-foreground-3)]">
-          月次の代理店手数料を集計・確定し、銀行振込後に「支払い済み」マークを付けます。
-          手数料は <strong>(売上 − Stripe手数料) × 手数料率</strong> で計算されます。
-        </p>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">代理店手数料</h1>
+          <p className="mt-1 text-sm text-[var(--neutral-foreground-3)]">
+            月次の代理店手数料を集計・確定し、銀行振込後に「支払い済み」マークを付けます。
+            手数料は <strong>(売上 − Stripe手数料) × 手数料率</strong> で計算されます。
+          </p>
+        </div>
+        <Button variant="ghost" onClick={handleExport} disabled={loading || payouts.length === 0}>
+          <MaterialIcon name="download" size={18} />
+          <span className="ml-1">CSVダウンロード</span>
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">

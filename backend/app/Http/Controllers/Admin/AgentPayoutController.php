@@ -158,6 +158,91 @@ class AgentPayoutController extends Controller
         return response()->json(['success' => true, 'data' => $payout, 'message' => '集計を取消しました。']);
     }
 
+    /**
+     * 手数料一覧を CSV でダウンロード（経理取込み用）。
+     * フィルタ: ?status= / ?agent_id= / ?period=YYYY-MM
+     * UTF-8 BOM付きで Excel での文字化けを防ぐ。
+     */
+    public function export(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        if ($deny = $this->requireMaster($request)) {
+            // CSV エンドポイントだが権限エラー時も JSON を返さず適切なステータスで戻す
+            return response()->stream(
+                function () { echo '権限がありません'; },
+                403,
+                ['Content-Type' => 'text/plain; charset=UTF-8']
+            );
+        }
+
+        $query = AgentPayout::query()->with('agent:id,name,code');
+
+        if ($status = $request->input('status')) {
+            $query->where('status', $status);
+        }
+        if ($agentId = $request->integer('agent_id')) {
+            $query->where('agent_id', $agentId);
+        }
+        if ($period = $request->input('period')) {
+            try {
+                $start = CarbonImmutable::createFromFormat('Y-m', $period)->startOfMonth()->toDateString();
+                $query->where('period_start', $start);
+            } catch (\Throwable) {
+                // ignore
+            }
+        }
+
+        $payouts = $query->orderByDesc('period_start')->orderBy('agent_id')->get();
+
+        $filename = 'agent-payouts_'.now()->format('Ymd_His').'.csv';
+
+        return response()->streamDownload(function () use ($payouts) {
+            $out = fopen('php://output', 'w');
+            // UTF-8 BOM (Excelで日本語が文字化けしないよう)
+            fwrite($out, "\xEF\xBB\xBF");
+
+            fputcsv($out, [
+                '代理店ID', '代理店名', '代理店コード',
+                '対象期間開始', '対象期間終了', '支払期日',
+                '売上総額', 'Stripe手数料', '利益',
+                '手数料率', '手数料額',
+                '状態', '支払日', '振込番号', 'メモ',
+                '集計確定日(updated_at)',
+            ]);
+
+            $statusLabel = [
+                AgentPayout::STATUS_DRAFT => '集計中(draft)',
+                AgentPayout::STATUS_FINALIZED => '確定(未払)',
+                AgentPayout::STATUS_PAID => '支払済',
+                AgentPayout::STATUS_CANCELED => '取消',
+            ];
+
+            foreach ($payouts as $p) {
+                fputcsv($out, [
+                    $p->agent_id,
+                    $p->agent?->name ?? '',
+                    $p->agent?->code ?? '',
+                    $p->period_start?->format('Y-m-d') ?? '',
+                    $p->period_end?->format('Y-m-d') ?? '',
+                    $p->due_date?->format('Y-m-d') ?? '',
+                    $p->gross_revenue,
+                    $p->stripe_fees,
+                    $p->net_profit,
+                    number_format((float) $p->commission_rate, 4, '.', ''),
+                    $p->commission_amount,
+                    $statusLabel[$p->status] ?? $p->status,
+                    $p->paid_at?->format('Y-m-d') ?? '',
+                    $p->transaction_ref ?? '',
+                    $p->notes ?? '',
+                    $p->updated_at?->format('Y-m-d H:i:s') ?? '',
+                ]);
+            }
+
+            fclose($out);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
     private function requireMaster(Request $request): ?JsonResponse
     {
         $user = $request->user();

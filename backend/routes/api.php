@@ -191,6 +191,7 @@ Route::prefix('admin')
         // --- 代理店手数料 集計と支払い管理（マスター管理者のみ） ---
         Route::prefix('master/agent-payouts')->group(function () {
             Route::get('/', [App\Http\Controllers\Admin\AgentPayoutController::class, 'index']);
+            Route::get('/export.csv', [App\Http\Controllers\Admin\AgentPayoutController::class, 'export']);
             Route::post('/calculate', [App\Http\Controllers\Admin\AgentPayoutController::class, 'calculate']);
             Route::post('/{payout}/finalize', [App\Http\Controllers\Admin\AgentPayoutController::class, 'finalize']);
             Route::post('/{payout}/mark-paid', [App\Http\Controllers\Admin\AgentPayoutController::class, 'markPaid']);
