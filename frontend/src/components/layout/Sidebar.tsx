@@ -111,6 +111,7 @@ const studentNav: NavItem[] = [
 const agentNav: NavItem[] = [
   { type: 'link', label: 'ダッシュボード', href: '/agent/dashboard', icon: 'dashboard' },
   { type: 'link', label: '紹介企業', href: '/agent/companies', icon: 'business' },
+  { type: 'link', label: '個別契約書', href: '/agent/individual-contracts', icon: 'description' },
   { type: 'link', label: '手数料・支払い履歴', href: '/agent/payouts', icon: 'account_balance' },
   { type: 'link', label: '代理店情報', href: '/agent/profile', icon: 'storefront' },
 ];
@@ -135,6 +136,7 @@ const adminNav: NavItem[] = [
   { type: 'link', label: '代理店管理', href: '/admin/agents', icon: 'handshake', visibility: 'master_only' },
   { type: 'link', label: '代理店アカウント', href: '/admin/agent-accounts', icon: 'badge', visibility: 'master_only' },
   { type: 'link', label: '代理店手数料', href: '/admin/agent-payouts', icon: 'account_balance', visibility: 'master_only' },
+  { type: 'link', label: '個別契約書', href: '/admin/individual-contracts', icon: 'description', visibility: 'master_only' },
   { type: 'link', label: '操作履歴(マスター)', href: '/admin/master-audit-logs', icon: 'history', visibility: 'master_only' },
   { type: 'divider', label: 'システム' },
   { type: 'link', label: 'エラーログ', href: '/admin/error-logs', icon: 'warning', visibility: 'master_only' },
