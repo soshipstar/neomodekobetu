@@ -32,6 +32,26 @@ export default function RouteError({
       } catch {
         // ignore
       }
+
+      // ChunkLoadError: デプロイで chunk 名が変わり古いタブが404を引く典型。
+      // 無限ループ防止に sessionStorage で 1 回だけリロード。
+      const isChunkErr =
+        error?.name === 'ChunkLoadError'
+        || /Loading chunk \S+ failed/i.test(error?.message ?? '')
+        || /Failed to load chunk /i.test(error?.message ?? '');
+      if (isChunkErr) {
+        try {
+          const key = '__kiduri_chunk_reload__';
+          const last = Number(window.sessionStorage.getItem(key) ?? '0');
+          // 10分以内に既にリロード済みならループ防止で素通し
+          if (Date.now() - last > 10 * 60 * 1000) {
+            window.sessionStorage.setItem(key, String(Date.now()));
+            window.location.reload();
+          }
+        } catch {
+          // sessionStorage 不可環境では素通し
+        }
+      }
     }
   }, [error]);
 
