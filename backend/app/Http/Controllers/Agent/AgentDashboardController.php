@@ -176,6 +176,73 @@ class AgentDashboardController extends Controller
     }
 
     /**
+     * 自代理店契約書PDFをアップロード/差し替え (代理店ユーザー本人のみ)。
+     * Admin\AgentController::uploadContractDocument と同じ保存規約 (agent-contracts/{agent_id}/...)。
+     * マスター管理者は従来通り /admin/agents 経由で全代理店の契約書を管理可能。
+     */
+    public function uploadContract(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user || $user->user_type !== 'agent') {
+            return response()->json(['success' => false, 'message' => '代理店アカウントが必要です。'], 403);
+        }
+        if (! $user->agent_id) {
+            return response()->json(['success' => false, 'message' => '所属代理店が設定されていません。'], 422);
+        }
+        $agent = Agent::find($user->agent_id);
+        if (! $agent) {
+            return response()->json(['success' => false, 'message' => '所属代理店が見つかりません。'], 404);
+        }
+
+        $request->validate([
+            'file' => 'required|file|mimes:pdf|max:10240', // 10MB
+        ]);
+
+        $oldPath = $agent->contract_document_path;
+        $path = $request->file('file')->store('agent-contracts/' . $agent->id, 'local');
+
+        $agent->update(['contract_document_path' => $path]);
+
+        if ($oldPath && $oldPath !== $path) {
+            \Illuminate\Support\Facades\Storage::disk('local')->delete($oldPath);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => ['contract_document_path' => $path],
+            'message' => '代理店契約書をアップロードしました。',
+        ]);
+    }
+
+    /**
+     * 自代理店契約書PDFを削除 (代理店ユーザー本人のみ)。
+     */
+    public function deleteContract(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user || $user->user_type !== 'agent') {
+            return response()->json(['success' => false, 'message' => '代理店アカウントが必要です。'], 403);
+        }
+        if (! $user->agent_id) {
+            return response()->json(['success' => false, 'message' => '所属代理店が設定されていません。'], 422);
+        }
+        $agent = Agent::find($user->agent_id);
+        if (! $agent) {
+            return response()->json(['success' => false, 'message' => '所属代理店が見つかりません。'], 404);
+        }
+
+        $oldPath = $agent->contract_document_path;
+        if (! $oldPath) {
+            return response()->json(['success' => false, 'message' => '契約書が登録されていません。'], 422);
+        }
+
+        \Illuminate\Support\Facades\Storage::disk('local')->delete($oldPath);
+        $agent->update(['contract_document_path' => null]);
+
+        return response()->json(['success' => true, 'message' => '代理店契約書を削除しました。']);
+    }
+
+    /**
      * 自代理店プロフィール（連絡先・契約条件など）。
      */
     public function profile(Request $request): JsonResponse

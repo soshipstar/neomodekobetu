@@ -222,6 +222,8 @@ Route::prefix('agent')
         Route::get('/profile', [App\Http\Controllers\Agent\AgentDashboardController::class, 'profile']);
         Route::put('/profile', [App\Http\Controllers\Agent\AgentDashboardController::class, 'updateProfile']);
         Route::get('/contract-document', [App\Http\Controllers\Agent\AgentDashboardController::class, 'downloadContract']);
+        Route::post('/contract-document', [App\Http\Controllers\Agent\AgentDashboardController::class, 'uploadContract']);
+        Route::delete('/contract-document', [App\Http\Controllers\Agent\AgentDashboardController::class, 'deleteContract']);
     });
 
 // --- Stripe Webhook（認証不要・シグネチャ検証で正当性を担保） ---
