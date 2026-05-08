@@ -154,11 +154,32 @@ export default function KakehashiStaffPage() {
     }
   }, [searchParams]);
 
-  // Auto-expand period when navigated from URL
+  // Auto-expand period when navigated from URL.
+  // URL直接遷移で編集モードに入る際に既存entryをformへ流し込まないと、
+  // 入力済みの内容が全て空欄表示される（#29 バグ報告）。
   useEffect(() => {
     if (autoOpenRef.current && selectedPeriodId && periods.length > 0) {
-      setEditingPeriodId(selectedPeriodId);
+      const target = periods.find((p) => p.id === selectedPeriodId);
+      const entry = target?.staff_entries?.[0] ?? null;
       setExpandedPeriods(new Set([selectedPeriodId]));
+      if (entry) {
+        setEditingPeriodId(selectedPeriodId);
+        setForm({
+          student_wish: nl(entry.student_wish),
+          short_term_goal: nl(entry.short_term_goal),
+          long_term_goal: nl(entry.long_term_goal),
+          health_life: nl(entry.health_life),
+          motor_sensory: nl(entry.motor_sensory),
+          cognitive_behavior: nl(entry.cognitive_behavior),
+          language_communication: nl(entry.language_communication),
+          social_relations: nl(entry.social_relations),
+          other_challenges: nl(entry.other_challenges),
+        });
+      } else {
+        // entry がまだ無い（未入力）ときは閲覧モードで開くに留める
+        setEditingPeriodId(null);
+        setForm(emptyForm);
+      }
     }
   }, [selectedPeriodId, periods]);
 
