@@ -220,6 +220,7 @@ Route::prefix('agent')
         Route::get('/companies', [App\Http\Controllers\Agent\AgentDashboardController::class, 'companies']);
         Route::get('/payouts', [App\Http\Controllers\Agent\AgentDashboardController::class, 'payouts']);
         Route::get('/profile', [App\Http\Controllers\Agent\AgentDashboardController::class, 'profile']);
+        Route::put('/profile', [App\Http\Controllers\Agent\AgentDashboardController::class, 'updateProfile']);
         Route::get('/contract-document', [App\Http\Controllers\Agent\AgentDashboardController::class, 'downloadContract']);
     });
 

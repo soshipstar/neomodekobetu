@@ -194,6 +194,57 @@ class AgentDashboardController extends Controller
     }
 
     /**
+     * 自代理店プロフィールの更新。
+     *
+     * 代理店ユーザーが自身で編集できるのは「身元情報」系のみ:
+     *   name / contact_name / contact_email / contact_phone / address
+     *
+     * 編集不可 (代理店から自由に変えると利益相反・法務・運用に影響):
+     *   - code            : 重要識別子。マスター管理者のみ
+     *   - default_commission_rate / contract_terms : 契約条件・運用裁定
+     *   - is_active       : 利用可否はマスター管理者のみ
+     *   - contract_document_path : 契約書PDFはマスター管理
+     *
+     * いずれもマスター管理者は /admin/agents 経由で従来通り全項目を変更可。
+     */
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user || $user->user_type !== 'agent') {
+            return response()->json(['success' => false, 'message' => '代理店アカウントが必要です。'], 403);
+        }
+        if (! $user->agent_id) {
+            return response()->json(['success' => false, 'message' => '所属代理店が設定されていません。'], 422);
+        }
+
+        $agent = Agent::find($user->agent_id);
+        if (! $agent) {
+            return response()->json(['success' => false, 'message' => '所属代理店が見つかりません。'], 404);
+        }
+
+        $validated = $request->validate([
+            'name'          => 'sometimes|required|string|max:100',
+            'contact_name'  => 'sometimes|nullable|string|max:100',
+            'contact_email' => 'sometimes|nullable|email|max:255',
+            'contact_phone' => 'sometimes|nullable|string|max:30',
+            'address'       => 'sometimes|nullable|string|max:500',
+        ]);
+
+        $agent->fill($validated);
+        $agent->save();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $agent->only([
+                'id', 'name', 'code', 'contact_name', 'contact_email', 'contact_phone',
+                'address', 'default_commission_rate', 'contract_terms',
+                'contract_document_path', 'is_active',
+            ]),
+            'message' => '代理店情報を更新しました。',
+        ]);
+    }
+
+    /**
      * リクエストユーザーから対象の Agent を解決する。
      * - agent ユーザー: 自分の agent
      * - master ユーザー: ?agent_id= で任意の agent
