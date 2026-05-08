@@ -163,4 +163,42 @@ class AttendanceController extends Controller
             'message' => 'メモを保存しました。',
         ]);
     }
+
+    /**
+     * 欠席連絡にスタッフからのアドバイスを記入する (LR-007)。
+     * 保護者から体温・症状などの体調情報が来た際の助言用。
+     * advice_by / advice_at は呼び出し時のスタッフ・時刻を自動記録。
+     */
+    public function updateAdvice(Request $request, AbsenceNotification $absence): JsonResponse
+    {
+        $user = $request->user();
+
+        // 教室アクセス権チェック (他の updateMakeupNote/approveMakeup と同パターン)
+        if ($user->classroom_id) {
+            $absence->load('student');
+            if (! $absence->student
+                || ! in_array($absence->student->classroom_id, $user->switchableClassroomIds(), true)) {
+                return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+            }
+        }
+
+        $validated = $request->validate([
+            'advice' => 'nullable|string|max:2000',
+        ]);
+
+        $advice = $validated['advice'] ?? null;
+        $isCleared = $advice === null || trim($advice) === '';
+
+        $absence->update([
+            'advice'    => $isCleared ? null : $advice,
+            'advice_by' => $isCleared ? null : $user->id,
+            'advice_at' => $isCleared ? null : now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $absence->fresh('adviceAuthor'),
+            'message' => $isCleared ? 'アドバイスをクリアしました。' : 'アドバイスを保存しました。',
+        ]);
+    }
 }

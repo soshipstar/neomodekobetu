@@ -372,6 +372,7 @@ Route::prefix('staff')
         Route::get('/attendance', [App\Http\Controllers\Staff\AttendanceController::class, 'index']);
         Route::put('/absence/{absence}/makeup', [App\Http\Controllers\Staff\AttendanceController::class, 'approveMakeup']);
         Route::put('/absence/{absence}/note', [App\Http\Controllers\Staff\AttendanceController::class, 'updateMakeupNote']);
+        Route::put('/absence/{absence}/advice', [App\Http\Controllers\Staff\AttendanceController::class, 'updateAdvice']);
 
         // --- 未送信日誌・欠席時対応 ---
         Route::get('/unsent-records', [App\Http\Controllers\Staff\UnsentRecordsController::class, 'index']);

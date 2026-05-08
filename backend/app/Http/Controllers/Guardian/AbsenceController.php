@@ -36,11 +36,21 @@ class AbsenceController extends Controller
         $user = $request->user();
 
         $validated = $request->validate([
-            'student_id'          => 'required|exists:students,id',
-            'absence_date'        => 'required|date|after_or_equal:today',
-            'reason'              => 'required|string|max:1000',
-            'makeup_request'      => 'boolean',
-            'makeup_request_date' => 'required_if:makeup_request,true|nullable|date|after:absence_date',
+            'student_id'             => 'required|exists:students,id',
+            'absence_date'           => 'required|date|after_or_equal:today',
+            'reason'                 => 'required|string|max:1000',
+            'makeup_request'         => 'boolean',
+            'makeup_request_date'    => 'required_if:makeup_request,true|nullable|date|after:absence_date',
+            // 体調情報 (任意・LR-007)
+            'body_temperature'       => 'nullable|numeric|between:30,45',
+            'hospital_visit'         => 'sometimes|boolean',
+            'symptom_abdominal_pain' => 'sometimes|boolean',
+            'symptom_headache'       => 'sometimes|boolean',
+            'symptom_sore_throat'    => 'sometimes|boolean',
+            'symptom_cough'          => 'sometimes|boolean',
+            'symptom_sneeze'         => 'sometimes|boolean',
+            'symptom_runny_nose'     => 'sometimes|boolean',
+            'other_concerns'         => 'nullable|string|max:2000',
         ]);
 
         // 保護者の子どもか確認
@@ -62,11 +72,21 @@ class AbsenceController extends Controller
         }
 
         $absence = AbsenceNotification::create([
-            'student_id'          => $validated['student_id'],
-            'absence_date'        => $validated['absence_date'],
-            'reason'              => $validated['reason'],
-            'makeup_request_date' => $validated['makeup_request_date'] ?? null,
-            'makeup_status'       => ! empty($validated['makeup_request']) ? 'pending' : 'none',
+            'student_id'             => $validated['student_id'],
+            'absence_date'           => $validated['absence_date'],
+            'reason'                 => $validated['reason'],
+            'makeup_request_date'    => $validated['makeup_request_date'] ?? null,
+            'makeup_status'          => ! empty($validated['makeup_request']) ? 'pending' : 'none',
+            // 体調情報 (LR-007)
+            'body_temperature'       => $validated['body_temperature'] ?? null,
+            'hospital_visit'         => $validated['hospital_visit'] ?? false,
+            'symptom_abdominal_pain' => $validated['symptom_abdominal_pain'] ?? false,
+            'symptom_headache'       => $validated['symptom_headache'] ?? false,
+            'symptom_sore_throat'    => $validated['symptom_sore_throat'] ?? false,
+            'symptom_cough'          => $validated['symptom_cough'] ?? false,
+            'symptom_sneeze'         => $validated['symptom_sneeze'] ?? false,
+            'symptom_runny_nose'     => $validated['symptom_runny_nose'] ?? false,
+            'other_concerns'         => $validated['other_concerns'] ?? null,
         ]);
 
         return response()->json([
