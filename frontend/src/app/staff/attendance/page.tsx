@@ -30,6 +30,19 @@ interface MakeupRequest {
   makeup_note: string | null;
   approver?: { id: number; full_name: string } | null;
   created_at: string;
+  // 体調情報 (LR-007)
+  body_temperature: string | number | null;
+  hospital_visit: boolean;
+  symptom_abdominal_pain: boolean;
+  symptom_headache: boolean;
+  symptom_sore_throat: boolean;
+  symptom_cough: boolean;
+  symptom_sneeze: boolean;
+  symptom_runny_nose: boolean;
+  other_concerns: string | null;
+  advice: string | null;
+  advice_at: string | null;
+  advice_author?: { id: number; full_name: string } | null;
 }
 
 const STATUS_CONFIG = {
@@ -37,6 +50,15 @@ const STATUS_CONFIG = {
   approved: { label: '承認済み', variant: 'success' as const, icon: "check" },
   rejected: { label: '却下', variant: 'danger' as const, icon: "close" },
 };
+
+const ATTENDANCE_SYMPTOM_FIELDS: Array<{ key: 'symptom_abdominal_pain' | 'symptom_headache' | 'symptom_sore_throat' | 'symptom_cough' | 'symptom_sneeze' | 'symptom_runny_nose'; label: string }> = [
+  { key: 'symptom_abdominal_pain', label: '腹痛' },
+  { key: 'symptom_headache',       label: '頭痛' },
+  { key: 'symptom_sore_throat',    label: '咽頭痛' },
+  { key: 'symptom_cough',          label: '咳' },
+  { key: 'symptom_sneeze',         label: 'くしゃみ' },
+  { key: 'symptom_runny_nose',     label: '鼻水' },
+];
 
 function nl(text: string | null | undefined): string {
   if (!text) return '';
@@ -78,6 +100,18 @@ export default function AttendancePage() {
     },
     onError: () => toast.error('処理に失敗しました'),
   });
+
+  // Advice save mutation (LR-007)
+  const adviceMutation = useMutation({
+    mutationFn: ({ id, advice }: { id: number; advice: string }) =>
+      api.put(`/api/staff/absence/${id}/advice`, { advice }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['staff', 'attendance'] });
+      toast.success('アドバイスを保存しました');
+    },
+    onError: () => toast.error('アドバイスの保存に失敗しました'),
+  });
+  const [adviceDrafts, setAdviceDrafts] = useState<Record<number, string>>({});
 
   const filteredRequests = requests.filter((r) => {
     if (statusFilter === 'all') return r.makeup_status !== 'none';
@@ -205,6 +239,70 @@ export default function AttendancePage() {
                       <span className="text-[var(--neutral-foreground-3)]">欠席理由:</span> {nl(req.reason)}
                     </p>
                   )}
+
+                  {/* 体調情報 (LR-007) */}
+                  {(() => {
+                    const symptoms = ATTENDANCE_SYMPTOM_FIELDS.filter((s) => req[s.key]).map((s) => s.label);
+                    const hasHealth = req.body_temperature != null || req.hospital_visit
+                      || symptoms.length > 0 || req.other_concerns;
+                    if (!hasHealth) return null;
+                    return (
+                      <div className="rounded-lg bg-[var(--neutral-background-2)] border border-[var(--neutral-stroke-2)] p-3 text-sm space-y-1 mb-3">
+                        <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--neutral-foreground-3)] uppercase">
+                          <MaterialIcon name="medical_information" size={14} />
+                          保護者からの体調連絡
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[var(--neutral-foreground-1)]">
+                          {req.body_temperature != null && (
+                            <span><MaterialIcon name="thermostat" size={14} className="inline mr-0.5 text-[var(--status-warning-fg)]" />{Number(req.body_temperature).toFixed(1)}℃</span>
+                          )}
+                          {req.hospital_visit && (
+                            <span className="text-[var(--status-warning-fg)] font-semibold"><MaterialIcon name="local_hospital" size={14} className="inline mr-0.5" />通院</span>
+                          )}
+                          {symptoms.length > 0 && <span>症状: {symptoms.join('・')}</span>}
+                        </div>
+                        {req.other_concerns && (
+                          <p className="text-xs text-[var(--neutral-foreground-2)]">困っていること: {nl(req.other_concerns)}</p>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* スタッフからのアドバイス入力 (LR-007) */}
+                  <div className="rounded-lg border border-[var(--brand-130)] bg-[var(--brand-160)] p-3 text-sm space-y-2 mb-3">
+                    <div className="flex items-center justify-between text-xs font-semibold text-[var(--brand-60)] uppercase">
+                      <span className="flex items-center gap-1.5">
+                        <MaterialIcon name="support_agent" size={14} />
+                        スタッフからのアドバイス
+                      </span>
+                      {req.advice_at && req.advice_author && (
+                        <span className="font-normal text-[var(--neutral-foreground-3)] normal-case">
+                          {req.advice_author.full_name} / {format(new Date(req.advice_at), 'M月d日 HH:mm')}
+                        </span>
+                      )}
+                    </div>
+                    <textarea
+                      className="block w-full rounded-md border border-[var(--neutral-stroke-2)] bg-white px-2 py-1.5 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+                      rows={2}
+                      placeholder="保護者へのアドバイスを記入..."
+                      value={adviceDrafts[req.id] ?? req.advice ?? ''}
+                      onChange={(e) => setAdviceDrafts((prev) => ({ ...prev, [req.id]: e.target.value }))}
+                    />
+                    <div className="flex justify-end">
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        leftIcon={<MaterialIcon name="save" size={14} />}
+                        isLoading={adviceMutation.isPending}
+                        onClick={() => {
+                          const advice = adviceDrafts[req.id] ?? req.advice ?? '';
+                          adviceMutation.mutate({ id: req.id, advice });
+                        }}
+                      >
+                        {req.advice ? '更新' : '保存'}
+                      </Button>
+                    </div>
+                  </div>
 
                   {/* Approved/Rejected info */}
                   {req.makeup_status === 'approved' && (

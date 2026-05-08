@@ -18,7 +18,10 @@ class AbsenceController extends Controller
         $studentIds = $user->students()->pluck('id');
 
         $absences = AbsenceNotification::whereIn('student_id', $studentIds)
-            ->with('student:id,student_name')
+            ->with([
+                'student:id,student_name',
+                'adviceAuthor:id,full_name',
+            ])
             ->orderByDesc('absence_date')
             ->paginate($request->integer('per_page', 20));
 

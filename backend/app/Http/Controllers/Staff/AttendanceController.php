@@ -23,6 +23,8 @@ class AttendanceController extends Controller
         $query = AbsenceNotification::with([
             'student:id,student_name,classroom_id',
             'student.guardian:id,full_name',
+            'approver:id,full_name',
+            'adviceAuthor:id,full_name',
         ]);
 
         // 教室フィルタ（主教室 + classroom_user ピボット）

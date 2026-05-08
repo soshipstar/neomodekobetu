@@ -21,6 +21,16 @@ const absenceFormSchema = z.object({
   reason: z.string().min(1, '理由を入力してください'),
   makeup_request: z.boolean().optional(),
   makeup_request_date: z.string().optional(),
+  // 体調情報 (任意)
+  body_temperature: z.union([z.string(), z.number()]).optional(),
+  hospital_visit: z.boolean().optional(),
+  symptom_abdominal_pain: z.boolean().optional(),
+  symptom_headache: z.boolean().optional(),
+  symptom_sore_throat: z.boolean().optional(),
+  symptom_cough: z.boolean().optional(),
+  symptom_sneeze: z.boolean().optional(),
+  symptom_runny_nose: z.boolean().optional(),
+  other_concerns: z.string().optional(),
 });
 
 type AbsenceFormValues = z.infer<typeof absenceFormSchema>;
@@ -33,11 +43,32 @@ interface AbsenceRecord {
   makeup_request_date: string | null;
   makeup_status: 'pending' | 'approved' | 'rejected' | null;
   created_at: string;
+  body_temperature: string | number | null;
+  hospital_visit: boolean;
+  symptom_abdominal_pain: boolean;
+  symptom_headache: boolean;
+  symptom_sore_throat: boolean;
+  symptom_cough: boolean;
+  symptom_sneeze: boolean;
+  symptom_runny_nose: boolean;
+  other_concerns: string | null;
+  advice: string | null;
+  advice_at: string | null;
+  advice_author?: { id: number; full_name: string } | null;
   student: {
     id: number;
     student_name: string;
   };
 }
+
+const SYMPTOM_FIELDS: Array<{ key: 'symptom_abdominal_pain' | 'symptom_headache' | 'symptom_sore_throat' | 'symptom_cough' | 'symptom_sneeze' | 'symptom_runny_nose'; label: string }> = [
+  { key: 'symptom_abdominal_pain', label: '腹痛' },
+  { key: 'symptom_headache',       label: '頭痛' },
+  { key: 'symptom_sore_throat',    label: '咽頭痛' },
+  { key: 'symptom_cough',          label: '咳' },
+  { key: 'symptom_sneeze',         label: 'くしゃみ' },
+  { key: 'symptom_runny_nose',     label: '鼻水' },
+];
 
 interface ChildOption {
   id: number;
@@ -86,12 +117,23 @@ export default function AbsenceNotificationPage() {
 
   const mutation = useMutation({
     mutationFn: async (data: AbsenceFormValues) => {
+      const tempStr = typeof data.body_temperature === 'string' ? data.body_temperature.trim() : data.body_temperature;
+      const tempNum = tempStr === '' || tempStr == null ? null : Number(tempStr);
       await api.post('/api/guardian/absences', {
         student_id: data.student_id,
         absence_date: data.absence_date,
         reason: data.reason,
         makeup_request: data.makeup_request ?? false,
         makeup_request_date: data.makeup_request ? data.makeup_request_date : null,
+        body_temperature: Number.isFinite(tempNum as number) ? tempNum : null,
+        hospital_visit: !!data.hospital_visit,
+        symptom_abdominal_pain: !!data.symptom_abdominal_pain,
+        symptom_headache: !!data.symptom_headache,
+        symptom_sore_throat: !!data.symptom_sore_throat,
+        symptom_cough: !!data.symptom_cough,
+        symptom_sneeze: !!data.symptom_sneeze,
+        symptom_runny_nose: !!data.symptom_runny_nose,
+        other_concerns: data.other_concerns?.trim() || null,
       });
     },
     onSuccess: () => {
@@ -146,6 +188,60 @@ export default function AbsenceNotificationPage() {
               {errors.reason && <p className="mt-1 text-sm text-red-600">{errors.reason.message}</p>}
             </div>
 
+            {/* 体調情報 (任意) */}
+            <div className="rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-2)] p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <MaterialIcon name="thermostat" size={18} className="text-[var(--brand-80)]" />
+                <span className="text-sm font-semibold text-[var(--neutral-foreground-2)]">体調 (任意)</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  label="体温 (℃)"
+                  type="number"
+                  step="0.1"
+                  min={30}
+                  max={45}
+                  placeholder="例: 36.5"
+                  {...register('body_temperature')}
+                />
+                <label className="flex items-center gap-2 self-end pb-2">
+                  <input
+                    type="checkbox"
+                    {...register('hospital_visit')}
+                    className="rounded border-[var(--neutral-stroke-1)]"
+                  />
+                  <span className="text-sm text-[var(--neutral-foreground-2)]">通院した / する予定</span>
+                </label>
+              </div>
+
+              <div>
+                <p className="mb-1 text-xs font-medium text-[var(--neutral-foreground-3)]">症状 (該当するもの)</p>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {SYMPTOM_FIELDS.map((s) => (
+                    <label key={s.key} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        {...register(s.key)}
+                        className="rounded border-[var(--neutral-stroke-1)]"
+                      />
+                      <span className="text-sm text-[var(--neutral-foreground-2)]">{s.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-3)]">その他困っていること</label>
+                <textarea
+                  {...register('other_concerns')}
+                  className="block w-full rounded-lg border border-[var(--neutral-stroke-1)] px-3 py-2 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-80)]/20"
+                  rows={2}
+                  placeholder="夜中ぐずっていた、食欲がない など"
+                />
+              </div>
+            </div>
+
             {/* Makeup request toggle */}
             <div className="rounded-lg border border-[var(--neutral-stroke-2)] p-4">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -189,29 +285,70 @@ export default function AbsenceNotificationPage() {
             <SkeletonList items={3} />
           ) : absences.length > 0 ? (
             <div className="space-y-2">
-              {absences.map((absence) => (
-                <div key={absence.id} className="flex items-center justify-between rounded-lg border border-[var(--neutral-stroke-3)] p-3">
-                  <div>
-                    <p className="text-sm font-medium text-[var(--neutral-foreground-1)]">
-                      {absence.student?.student_name} - {formatDate(absence.absence_date)}
-                    </p>
-                    <p className="text-xs text-[var(--neutral-foreground-3)]">{absence.reason}</p>
-                    {absence.makeup_request_date && (
-                      <p className="mt-1 flex items-center gap-1 text-xs text-[var(--brand-80)]">
-                        <MaterialIcon name="calendar_month" size={12} />
-                        振替希望: {formatDate(absence.makeup_request_date)}
-                      </p>
+              {absences.map((absence) => {
+                const symptoms = SYMPTOM_FIELDS.filter((s) => absence[s.key]).map((s) => s.label);
+                const hasHealthInfo = absence.body_temperature != null || absence.hospital_visit
+                  || symptoms.length > 0 || absence.other_concerns;
+                return (
+                  <div key={absence.id} className="rounded-lg border border-[var(--neutral-stroke-3)] p-3 space-y-2">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-[var(--neutral-foreground-1)]">
+                          {absence.student?.student_name} - {formatDate(absence.absence_date)}
+                        </p>
+                        <p className="text-xs text-[var(--neutral-foreground-3)]">{absence.reason}</p>
+                        {absence.makeup_request_date && (
+                          <p className="mt-1 flex items-center gap-1 text-xs text-[var(--brand-80)]">
+                            <MaterialIcon name="calendar_month" size={12} />
+                            振替希望: {formatDate(absence.makeup_request_date)}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        {absence.makeup_status && makeupStatusLabels[absence.makeup_status] && (
+                          <Badge variant={makeupStatusLabels[absence.makeup_status].variant} dot>
+                            {makeupStatusLabels[absence.makeup_status].label}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    {hasHealthInfo && (
+                      <div className="rounded-md bg-[var(--neutral-background-2)] p-2 text-xs text-[var(--neutral-foreground-2)] space-y-1">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                          {absence.body_temperature != null && (
+                            <span><MaterialIcon name="thermostat" size={12} className="inline mr-0.5" />{Number(absence.body_temperature).toFixed(1)}℃</span>
+                          )}
+                          {absence.hospital_visit && (
+                            <span className="text-[var(--status-warning-fg)]"><MaterialIcon name="local_hospital" size={12} className="inline mr-0.5" />通院</span>
+                          )}
+                          {symptoms.length > 0 && (
+                            <span>症状: {symptoms.join('・')}</span>
+                          )}
+                        </div>
+                        {absence.other_concerns && (
+                          <p className="text-[var(--neutral-foreground-3)]">困っていること: {absence.other_concerns}</p>
+                        )}
+                      </div>
+                    )}
+
+                    {absence.advice && (
+                      <div className="rounded-md bg-[var(--brand-160)] border border-[var(--brand-130)] p-2 text-xs space-y-1">
+                        <div className="flex items-center gap-1 text-[var(--brand-60)] font-semibold">
+                          <MaterialIcon name="support_agent" size={12} />
+                          スタッフからのアドバイス
+                          {absence.advice_author?.full_name && (
+                            <span className="ml-1 font-normal text-[var(--neutral-foreground-3)]">
+                              ({absence.advice_author.full_name})
+                            </span>
+                          )}
+                        </div>
+                        <p className="whitespace-pre-wrap text-[var(--neutral-foreground-1)]">{absence.advice}</p>
+                      </div>
                     )}
                   </div>
-                  <div className="flex flex-col items-end gap-1">
-                    {absence.makeup_status && makeupStatusLabels[absence.makeup_status] && (
-                      <Badge variant={makeupStatusLabels[absence.makeup_status].variant} dot>
-                        {makeupStatusLabels[absence.makeup_status].label}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="py-4 text-center text-sm text-[var(--neutral-foreground-3)]">送信履歴はありません</p>
