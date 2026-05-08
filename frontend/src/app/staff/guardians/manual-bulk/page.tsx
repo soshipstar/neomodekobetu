@@ -155,8 +155,19 @@ export default function GuardianManualBulkPage() {
           body { margin: 0; padding: 0; font-size: 11pt; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
           .print\\:hidden { display: none !important; }
           @page { size: A4 portrait; margin: 15mm; }
-          .guardian-sheet { page-break-after: always; }
-          .guardian-sheet:last-child { page-break-after: auto; }
+          /* 親コンテナの min-height: 100vh が印刷時の改ページを阻害するのを防ぐ */
+          .guardian-sheet-container { min-height: 0 !important; height: auto !important; }
+          /* page-break-* (CSS2) と break-* (CSS3) を併記してブラウザ互換性を最大化 */
+          .guardian-sheet {
+            page-break-after: always;
+            break-after: page;
+            page-break-inside: avoid;
+            break-inside: avoid;
+          }
+          .guardian-sheet:last-child {
+            page-break-after: auto;
+            break-after: auto;
+          }
         }
         @media screen {
           .guardian-sheet {
@@ -170,7 +181,7 @@ export default function GuardianManualBulkPage() {
         }
       `}</style>
 
-      <div className="bg-[var(--neutral-background-2)] print:bg-white min-h-screen">
+      <div className="guardian-sheet-container bg-[var(--neutral-background-2)] print:bg-white min-h-screen">
         {guardians.map((g) => (
           <GuardianManualSheet key={g.id} guardian={g} loginUrl={loginUrl} today={today} />
         ))}
