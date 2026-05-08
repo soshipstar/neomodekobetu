@@ -107,8 +107,19 @@ export default function HiyariHattoDetailPage() {
     }
   };
 
-  const handlePrint = () => {
-    window.open(`/api/staff/hiyari-hatto/${id}/pdf`, '_blank');
+  const handlePrint = async () => {
+    // window.open だと axios の Authorization ヘッダが飛ばず 401 になるため、
+    // blob として取得してから別タブで開く
+    try {
+      const res = await api.get(`/api/staff/hiyari-hatto/${id}/pdf`, { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      // 他タブがblobをロードしきるまで少し待ってから開放
+      setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
+    } catch {
+      toast('PDF生成に失敗しました', 'error');
+    }
   };
 
   if (loading) {
