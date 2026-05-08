@@ -22,7 +22,9 @@ export function NotificationBell() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const recentNotifications = Array.isArray(notifications) ? notifications.slice(0, 10) : [];
+  const recentNotifications = Array.isArray(notifications)
+    ? notifications.filter((n) => n && typeof n.id === 'number').slice(0, 10)
+    : [];
 
   return (
     <div className="relative" ref={dropdownRef}>

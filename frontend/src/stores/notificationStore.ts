@@ -73,6 +73,7 @@ export const useNotificationStore = create<NotificationState>((set) => ({
   },
 
   addNotification: (notification: Notification) => {
+    if (!notification || typeof notification.id !== 'number') return;
     set((state) => ({
       notifications: [notification, ...state.notifications],
       unreadCount: state.unreadCount + 1,
