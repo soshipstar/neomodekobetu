@@ -16,6 +16,22 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths,
 import { ja } from 'date-fns/locale';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
+/**
+ * 任意の日時値をフォーマットする防御的ヘルパー。
+ * null / undefined / 空文字 / 不正な日時文字列の場合は fallback を返し、
+ * date-fns の format() が "Invalid time value" RangeError でクラッシュするのを防ぐ。
+ */
+function safeFormatDate(input: string | null | undefined, fmt: string, fallback = '-'): string {
+  if (input == null || input === '') return fallback;
+  const d = new Date(input);
+  if (Number.isNaN(d.getTime())) return fallback;
+  try {
+    return format(d, fmt, { locale: ja });
+  } catch {
+    return fallback;
+  }
+}
+
 interface Event {
   id: number;
   title: string;
@@ -35,7 +51,8 @@ interface Registration {
   student_id: number;
   student_name: string;
   guardian_name: string;
-  registered_at: string;
+  // 旧コードは registered_at を参照していたが、API レスポンスは created_at を返す。
+  created_at: string;
   status: 'registered' | 'cancelled';
 }
 
@@ -125,7 +142,7 @@ export default function EventsPage() {
 
   const columns: Column<Event>[] = [
     { key: 'title', label: 'イベント名', render: (e) => <span className="font-medium text-[var(--neutral-foreground-1)]">{e.title}</span> },
-    { key: 'date', label: '日付', render: (e) => format(new Date(e.date), 'yyyy/MM/dd(E)', { locale: ja }) },
+    { key: 'date', label: '日付', render: (e) => safeFormatDate(e.date, 'yyyy/MM/dd(E)') },
     { key: 'time', label: '時間', render: (e) => e.start_time ? `${e.start_time}${e.end_time ? ` - ${e.end_time}` : ''}` : '-' },
     { key: 'location', label: '場所', render: (e) => e.location || '-' },
     {
@@ -256,7 +273,7 @@ export default function EventsPage() {
                   <Badge variant={reg.status === 'registered' ? 'success' : 'danger'}>
                     {reg.status === 'registered' ? '参加' : 'キャンセル'}
                   </Badge>
-                  <span className="text-xs text-[var(--neutral-foreground-4)]">{format(new Date(reg.registered_at), 'M/d HH:mm')}</span>
+                  <span className="text-xs text-[var(--neutral-foreground-4)]">{safeFormatDate(reg.created_at, 'M/d HH:mm')}</span>
                 </div>
               </div>
             ))}
