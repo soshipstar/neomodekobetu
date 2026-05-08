@@ -73,8 +73,11 @@ export const useNotificationStore = create<NotificationState>((set) => ({
   },
 
   addNotification: (notification: Notification) => {
+    // 防御: undefined / null / id 欠落の通知は state に入れない
+    // (websocket payload の形式不一致が紛れ込んだ際の連鎖クラッシュを防止)
+    if (!notification || typeof notification.id !== 'number') return;
     set((state) => ({
-      notifications: [notification, ...state.notifications],
+      notifications: [notification, ...state.notifications.filter(Boolean)],
       unreadCount: state.unreadCount + 1,
     }));
   },

@@ -22,7 +22,10 @@ export function NotificationBell() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const recentNotifications = Array.isArray(notifications) ? notifications.slice(0, 10) : [];
+  // 防御: 配列内に undefined/null が混じった場合に map 内で TypeError になるのを防ぐ
+  const recentNotifications = Array.isArray(notifications)
+    ? notifications.filter((n): n is NonNullable<typeof n> => !!n && typeof n.id === 'number').slice(0, 10)
+    : [];
 
   return (
     <div className="relative" ref={dropdownRef}>
