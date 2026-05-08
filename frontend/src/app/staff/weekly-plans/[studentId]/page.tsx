@@ -78,6 +78,28 @@ interface FormState {
   plan_data: Record<string, string>;
 }
 
+interface SupportPlanDetail {
+  id?: number;
+  category: string | null;
+  sub_category: string | null;
+  support_goal: string | null;
+  goal?: string | null;
+}
+
+interface SupportPlanData {
+  id: number;
+  created_date: string;
+  long_term_goal: string | null;
+  short_term_goal: string | null;
+  details: SupportPlanDetail[];
+}
+
+interface SupportPlanGoalOption {
+  key: string;
+  label: string;
+  text: string;
+}
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -295,6 +317,38 @@ export default function WeeklyPlanStudentDetailPage() {
     },
     enabled: !!studentId,
   });
+
+  // Fetch latest individual support plan to populate the goal-picker dropdown.
+  // 「いっしょに決めた目標」は個別支援計画の長期/短期目標または各五領域の支援目標
+  // を1週間に書き下ろした内容なので、採用元を選択できるようドロップダウンを提供する。
+  const { data: latestSupportPlan } = useQuery({
+    queryKey: ['staff', 'support-plans', studentId, 'latest'],
+    queryFn: async () => {
+      const res = await api.get<{ data: SupportPlanData[] }>(`/api/staff/students/${studentId}/support-plans`);
+      const list = res.data?.data ?? [];
+      // index() は created_date 降順で返すので先頭が最新
+      return list.length > 0 ? list[0] : null;
+    },
+    enabled: !!studentId,
+  });
+
+  const supportPlanGoalOptions: SupportPlanGoalOption[] = useMemo(() => {
+    if (!latestSupportPlan) return [];
+    const opts: SupportPlanGoalOption[] = [];
+    if (latestSupportPlan.long_term_goal?.trim()) {
+      opts.push({ key: 'long_term', label: '長期目標', text: latestSupportPlan.long_term_goal.trim() });
+    }
+    if (latestSupportPlan.short_term_goal?.trim()) {
+      opts.push({ key: 'short_term', label: '短期目標', text: latestSupportPlan.short_term_goal.trim() });
+    }
+    (latestSupportPlan.details ?? []).forEach((d, i) => {
+      const text = (d.support_goal ?? d.goal ?? '').trim();
+      if (!text) return;
+      const label = (d.sub_category ?? d.category ?? `項目${i + 1}`).trim();
+      opts.push({ key: `detail_${d.id ?? i}`, label, text });
+    });
+    return opts;
+  }, [latestSupportPlan]);
 
   // Populate form when entering edit mode
   const enterEditMode = useCallback(() => {
@@ -684,6 +738,34 @@ export default function WeeklyPlanStudentDetailPage() {
                 <MaterialIcon name="handshake" size={16} />
                 いっしょに決めた目標 <span className="text-red-500">*</span>
               </label>
+
+              {supportPlanGoalOptions.length > 0 && (
+                <div className="mb-2">
+                  <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">
+                    個別支援計画から目標を採用 (任意)
+                  </label>
+                  <select
+                    className="w-full rounded-lg border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-2)] p-2 text-xs text-[var(--neutral-foreground-2)] focus:border-[var(--brand-90)] focus:ring-1 focus:ring-[var(--brand-80)]"
+                    value=""
+                    onChange={(e) => {
+                      const text = e.target.value;
+                      if (text) {
+                        setForm((f) => ({ ...f, shared_goal: text }));
+                      }
+                      // reset selection so the same option can be picked again later
+                      e.currentTarget.selectedIndex = 0;
+                    }}
+                  >
+                    <option value="">— 選択して目標欄に反映 —</option>
+                    {supportPlanGoalOptions.map((g) => (
+                      <option key={g.key} value={g.text}>
+                        [{g.label}] {g.text.length > 50 ? g.text.slice(0, 50) + '…' : g.text}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <textarea
                 className={`w-full min-h-[60px] rounded-lg border p-3 text-sm focus:ring-1 resize-y ${!form.shared_goal.trim() ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-[var(--neutral-stroke-1)] focus:border-[var(--brand-90)] focus:ring-[var(--brand-80)]'}`}
                 placeholder="生徒と一緒に決めた目標を記入してください"
