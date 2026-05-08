@@ -207,6 +207,15 @@ Route::prefix('admin')
             Route::post('/{payout}/mark-paid', [App\Http\Controllers\Admin\AgentPayoutController::class, 'markPaid']);
             Route::post('/{payout}/cancel', [App\Http\Controllers\Admin\AgentPayoutController::class, 'cancel']);
         });
+
+        // --- 個別契約書 (3者間) マスター管理者向け閲覧/編集 ---
+        Route::prefix('master/individual-contracts')->group(function () {
+            Route::get('/', [App\Http\Controllers\Admin\IndividualContractController::class, 'index']);
+            Route::get('/{contract}', [App\Http\Controllers\Admin\IndividualContractController::class, 'show']);
+            Route::put('/{contract}', [App\Http\Controllers\Admin\IndividualContractController::class, 'update']);
+            Route::delete('/{contract}', [App\Http\Controllers\Admin\IndividualContractController::class, 'destroy']);
+            Route::get('/{contract}/document', [App\Http\Controllers\Admin\IndividualContractController::class, 'downloadDocument']);
+        });
     });
 
 // ==========================================================================
@@ -224,6 +233,16 @@ Route::prefix('agent')
         Route::get('/contract-document', [App\Http\Controllers\Agent\AgentDashboardController::class, 'downloadContract']);
         Route::post('/contract-document', [App\Http\Controllers\Agent\AgentDashboardController::class, 'uploadContract']);
         Route::delete('/contract-document', [App\Http\Controllers\Agent\AgentDashboardController::class, 'deleteContract']);
+
+        // --- 個別契約書 (3者間) ---
+        Route::get('/individual-contracts', [App\Http\Controllers\Agent\IndividualContractController::class, 'index']);
+        Route::post('/individual-contracts', [App\Http\Controllers\Agent\IndividualContractController::class, 'store']);
+        Route::get('/individual-contracts/{contract}', [App\Http\Controllers\Agent\IndividualContractController::class, 'show']);
+        Route::put('/individual-contracts/{contract}', [App\Http\Controllers\Agent\IndividualContractController::class, 'update']);
+        Route::delete('/individual-contracts/{contract}', [App\Http\Controllers\Agent\IndividualContractController::class, 'destroy']);
+        Route::post('/individual-contracts/{contract}/document', [App\Http\Controllers\Agent\IndividualContractController::class, 'uploadDocument']);
+        Route::delete('/individual-contracts/{contract}/document', [App\Http\Controllers\Agent\IndividualContractController::class, 'deleteDocument']);
+        Route::get('/individual-contracts/{contract}/document', [App\Http\Controllers\Agent\IndividualContractController::class, 'downloadDocument']);
     });
 
 // --- Stripe Webhook（認証不要・シグネチャ検証で正当性を担保） ---
