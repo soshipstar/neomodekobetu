@@ -41,7 +41,7 @@ class ExternalSsoController extends Controller
             }
 
             // kiduriのユーザーを検索（配布済みIDで）
-            $user = User::where('login_id', $appUsername)
+            $user = User::where('username', $appUsername)
                 ->orWhere('email', $appUsername)
                 ->first();
 
