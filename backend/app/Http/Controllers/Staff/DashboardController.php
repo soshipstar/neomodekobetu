@@ -309,12 +309,16 @@ class DashboardController extends Controller
             ->whereBetween('confirmed_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
             ->with(['student:id,student_name', 'guardian:id,full_name'])
             ->get()
-            ->map(fn ($m) => [
-                'date'          => Carbon::parse($m->confirmed_date)->toDateString(),
-                'student_name'  => $m->student->student_name ?? '',
-                'guardian_name' => $m->guardian->full_name ?? '',
-                'purpose'       => $m->purpose ?? '',
-            ])
+            ->map(function ($m) {
+                $confirmed = Carbon::parse($m->confirmed_date);
+                return [
+                    'date'          => $confirmed->toDateString(),
+                    'time'          => $confirmed->format('H:i'),
+                    'student_name'  => $m->student->student_name ?? '',
+                    'guardian_name' => $m->guardian->full_name ?? '',
+                    'purpose'       => $m->purpose ?? '',
+                ];
+            })
             ->values()
             ->toArray();
 

@@ -28,6 +28,7 @@ interface DashboardSummary {
 
 interface MeetingInfo {
   date: string;
+  time?: string;
   student_name: string;
   guardian_name: string;
   purpose: string;
@@ -623,9 +624,16 @@ export default function StaffDashboardPage() {
                       <div key={i} className="flex items-center gap-3 rounded-lg border border-[var(--neutral-stroke-2)] p-3">
                         <span className="h-3 w-3 shrink-0 rounded-full bg-[var(--status-warning-fg)]" />
                         <div>
-                          <span className="font-medium text-[var(--neutral-foreground-1)]">
-                            {mi.student_name}（保護者: {mi.guardian_name || '未定'}）
-                          </span>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {mi.time && (
+                              <span className="font-mono text-sm font-semibold text-[var(--status-warning-fg)]">
+                                {mi.time}
+                              </span>
+                            )}
+                            <span className="font-medium text-[var(--neutral-foreground-1)]">
+                              {mi.student_name}（保護者: {mi.guardian_name || '未定'}）
+                            </span>
+                          </div>
                           {mi.purpose && (
                             <p className="text-xs text-[var(--neutral-foreground-3)] mt-0.5">{nl(mi.purpose)}</p>
                           )}
