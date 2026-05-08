@@ -6,10 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\AbsenceNotification;
 use App\Models\ChatMessage;
 use App\Models\ChatRoom;
+use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AttendanceController extends Controller
 {
@@ -190,6 +193,7 @@ class AttendanceController extends Controller
 
         $advice = $validated['advice'] ?? null;
         $isCleared = $advice === null || trim($advice) === '';
+        $previousAdvice = $absence->advice;
 
         $absence->update([
             'advice'    => $isCleared ? null : $advice,
@@ -197,10 +201,50 @@ class AttendanceController extends Controller
             'advice_at' => $isCleared ? null : now(),
         ]);
 
+        // 新規アドバイス保存・更新時のみ保護者通知 (クリア時は通知しない)
+        if (! $isCleared && $previousAdvice !== $advice) {
+            $this->notifyGuardianOfAdvice($absence, $advice);
+        }
+
         return response()->json([
             'success' => true,
             'data'    => $absence->fresh('adviceAuthor'),
             'message' => $isCleared ? 'アドバイスをクリアしました。' : 'アドバイスを保存しました。',
         ]);
+    }
+
+    /**
+     * 欠席連絡へスタッフがアドバイスを記入したとき、対象生徒の保護者に通知する。
+     * 例外は握り潰す (advice 保存自体は成功しているため、通知失敗で 500 にしない)。
+     */
+    private function notifyGuardianOfAdvice(AbsenceNotification $absence, string $advice): void
+    {
+        try {
+            $absence->loadMissing('student');
+            $guardianId = $absence->student?->guardian_id;
+            if (! $guardianId) {
+                return;
+            }
+
+            $guardian = User::where('id', $guardianId)->where('is_active', true)->first();
+            if (! $guardian) {
+                return;
+            }
+
+            $service = app(NotificationService::class);
+            $dateStr = Carbon::parse($absence->absence_date)->format('n月j日');
+            $frontendUrl = rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/');
+            $preview = mb_strimwidth($advice, 0, 80, '...', 'UTF-8');
+
+            $service->notify(
+                $guardian,
+                'absence',
+                "{$dateStr}の欠席連絡にアドバイスが届きました",
+                $preview,
+                ['url' => "{$frontendUrl}/guardian/absence"],
+            );
+        } catch (\Throwable $e) {
+            Log::warning('absence advice notify failed: ' . $e->getMessage());
+        }
     }
 }
