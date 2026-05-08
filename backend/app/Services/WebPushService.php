@@ -235,13 +235,26 @@ class WebPushService
         }
 
         $localDetails = openssl_pkey_get_details($localKey);
+        // P-256 の x/y/d は理論上32バイトだが、openssl が最上位バイトを
+        // 落として返すことがある（ビッグエンディアン整数のため）。
+        // 長さ32未満なら0パディング、逆に何らかの理由で33バイト（符号ビット付加）が
+        // 返ってきた場合は先頭バイトを捨てて 32 バイトに正規化する。
         $localPubRaw = chr(4)
-            . str_pad($localDetails['ec']['x'], 32, chr(0), STR_PAD_LEFT)
-            . str_pad($localDetails['ec']['y'], 32, chr(0), STR_PAD_LEFT);
-        $localPrivRaw = str_pad($localDetails['ec']['d'], 32, chr(0), STR_PAD_LEFT);
+            . $this->normalizeScalar($localDetails['ec']['x'], 32)
+            . $this->normalizeScalar($localDetails['ec']['y'], 32);
+        $localPrivRaw = $this->normalizeScalar($localDetails['ec']['d'], 32);
+
+        // 自前の PEM 再構築はエッジケースで失敗するため、openssl_pkey_export で
+        // 生成鍵の PEM を直接取り出しておき、ECDH 計算時にはそれを使う。
+        $localPem = null;
+        if (! openssl_pkey_export($localKey, $localPem)) {
+            Log::error('Web Push: openssl_pkey_export failed');
+
+            return null;
+        }
 
         // ECDH shared secret
-        $sharedSecret = $this->computeEcdh($localPrivRaw, $localPubRaw, $userPublicKey);
+        $sharedSecret = $this->computeEcdh($localPem, $userPublicKey);
         if (! $sharedSecret) {
             return null;
         }
@@ -305,7 +318,7 @@ class WebPushService
     // ECDH Key Exchange
     // ========================================================================
 
-    private function computeEcdh(string $privKeyRaw, string $localPubKeyRaw, string $peerPubKeyRaw): ?string
+    private function computeEcdh(string $localPem, string $peerPubKeyRaw): ?string
     {
         if (! function_exists('openssl_pkey_derive')) {
             Log::error('Web Push: openssl_pkey_derive not available');
@@ -313,16 +326,17 @@ class WebPushService
             return null;
         }
 
-        // OpenSSL が EC 秘密鍵 PEM を読み込む際、内蔵の公開鍵が曲線上の有効点か
-        // どうかを検証するため、encryptPayload() で導出した本物の公開鍵を渡す。
-        $localPem = $this->createEcPemFromRaw($privKeyRaw, $localPubKeyRaw);
         $peerPem = $this->createEcPublicPem($peerPubKeyRaw);
 
         $localKeyRes = openssl_pkey_get_private($localPem);
         $peerKeyRes = openssl_pkey_get_public($peerPem);
 
         if (! $localKeyRes || ! $peerKeyRes) {
-            Log::error('Web Push ECDH: Failed to load keys');
+            Log::error('Web Push ECDH: Failed to load keys', [
+                'local_loaded' => (bool) $localKeyRes,
+                'peer_loaded' => (bool) $peerKeyRes,
+                'peer_len' => strlen($peerPubKeyRaw),
+            ]);
 
             return null;
         }
@@ -335,6 +349,24 @@ class WebPushService
         }
 
         return $shared;
+    }
+
+    /**
+     * P-256 スカラー/座標を指定長にビッグエンディアンで正規化する。
+     * openssl_pkey_get_details が返す bn 値は最上位バイトが 0 のとき短くなったり、
+     * 稀に符号バイト付きの 33 バイトが返ったりするため、余剰バイトを落として
+     * 不足分を左0パディングする。
+     */
+    private function normalizeScalar(string $raw, int $length): string
+    {
+        if (strlen($raw) === $length) {
+            return $raw;
+        }
+        if (strlen($raw) > $length) {
+            return substr($raw, -$length);
+        }
+
+        return str_pad($raw, $length, chr(0), STR_PAD_LEFT);
     }
 
     // ========================================================================
