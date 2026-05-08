@@ -81,6 +81,57 @@ export default function RootLayout({
                   caches.keys().then(function(keys) { keys.forEach(function(k) { caches.delete(k); }); });
                 }
               }
+
+              // 日付入力 (date / datetime-local / month) で年フィールドが
+              // 6桁まで入力できるブラウザ挙動を抑止する。
+              // 1) 全ての該当 input に max/min 属性を強制適用 (HTML5 validation で
+              //    赤枠フィードバック + フォーム送信ブロック)
+              // 2) input イベントを監視し、年が 5桁以上になったら 4桁に切り詰める
+              //    (React の controlled input 対応のため native setter で値を反映)
+              (function() {
+                var DATE_TYPES = ['date', 'datetime-local', 'month'];
+                function applyLimit(el) {
+                  if (!el || el.tagName !== 'INPUT') return;
+                  if (DATE_TYPES.indexOf(el.type) === -1) return;
+                  if (!el.max) el.max = '9999-12-31';
+                  if (!el.min) el.min = '1000-01-01';
+                }
+                function clampYear(el) {
+                  if (!el.value) return;
+                  var m = el.value.match(/^(\\d+)(.*)$/);
+                  if (!m || m[1].length <= 4) return;
+                  var clamped = m[1].slice(0, 4) + m[2];
+                  // React の controlled input にも反映するため native setter で値を上書き
+                  var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+                  setter.call(el, clamped);
+                  el.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+                function init() {
+                  document.querySelectorAll('input').forEach(applyLimit);
+                  if (window.MutationObserver) {
+                    new MutationObserver(function(mutations) {
+                      mutations.forEach(function(mu) {
+                        mu.addedNodes.forEach(function(n) {
+                          if (n.nodeType !== 1) return;
+                          if (n.tagName === 'INPUT') applyLimit(n);
+                          else if (n.querySelectorAll) n.querySelectorAll('input').forEach(applyLimit);
+                        });
+                      });
+                    }).observe(document.body, { childList: true, subtree: true });
+                  }
+                  document.addEventListener('input', function(e) {
+                    var t = e.target;
+                    if (t && t.tagName === 'INPUT' && DATE_TYPES.indexOf(t.type) !== -1) {
+                      clampYear(t);
+                    }
+                  }, true);
+                }
+                if (document.readyState === 'loading') {
+                  document.addEventListener('DOMContentLoaded', init);
+                } else {
+                  init();
+                }
+              })();
             `,
           }}
         />
