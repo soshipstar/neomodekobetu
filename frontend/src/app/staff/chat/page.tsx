@@ -808,7 +808,7 @@ function QuickNotifyModal({
   const iconName = action === 'departure' ? 'directions_bus' : 'check_circle';
   const bodyPreview =
     action === 'departure'
-      ? '【これから帰ります】\n\nお迎え準備をお願いいたします。'
+      ? '【これから帰ります】\n\nこれより帰路につきます。無事の帰宅をご確認ください。'
       : '【到着しました】\n\nご対応ありがとうございました。';
 
   // 本日の参加予定者を上に、その他を下に分割
