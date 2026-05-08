@@ -130,34 +130,54 @@ class RenrakuchoController extends Controller
             'students.*.domain2_content'           => 'nullable|string',
         ]);
 
-        $record = DB::transaction(function () use ($request, $validated) {
-            $record = DailyRecord::create([
-                'record_date'     => $validated['record_date'],
-                'staff_id'        => $request->user()->id,
-                'classroom_id'    => $request->user()->classroom_id,
-                'activity_name'   => $validated['activity_name'],
-                'common_activity' => $validated['common_activity'],
-                'support_plan_id' => $validated['support_plan_id'] ?? null,
-            ]);
-
-            foreach ($validated['students'] as $studentData) {
-                // Map legacy fields if present
-                $studentData = $this->mapLegacyDomainFields($studentData);
-
-                StudentRecord::create([
-                    'daily_record_id'          => $record->id,
-                    'student_id'               => $studentData['id'],
-                    'health_life'              => $studentData['health_life'] ?? null,
-                    'motor_sensory'            => $studentData['motor_sensory'] ?? null,
-                    'cognitive_behavior'       => $studentData['cognitive_behavior'] ?? null,
-                    'language_communication'   => $studentData['language_communication'] ?? null,
-                    'social_relations'         => $studentData['social_relations'] ?? null,
-                    'notes'                    => $studentData['notes'] ?? null,
+        try {
+            $record = DB::transaction(function () use ($request, $validated) {
+                $record = DailyRecord::create([
+                    'record_date'     => $validated['record_date'],
+                    'staff_id'        => $request->user()->id,
+                    'classroom_id'    => $request->user()->classroom_id,
+                    'activity_name'   => $validated['activity_name'],
+                    'common_activity' => $validated['common_activity'],
+                    'support_plan_id' => $validated['support_plan_id'] ?? null,
                 ]);
+
+                foreach ($validated['students'] as $studentData) {
+                    // Map legacy fields if present
+                    $studentData = $this->mapLegacyDomainFields($studentData);
+
+                    StudentRecord::create([
+                        'daily_record_id'          => $record->id,
+                        'student_id'               => $studentData['id'],
+                        'health_life'              => $studentData['health_life'] ?? null,
+                        'motor_sensory'            => $studentData['motor_sensory'] ?? null,
+                        'cognitive_behavior'       => $studentData['cognitive_behavior'] ?? null,
+                        'language_communication'   => $studentData['language_communication'] ?? null,
+                        'social_relations'         => $studentData['social_relations'] ?? null,
+                        'notes'                    => $studentData['notes'] ?? null,
+                    ]);
+                }
+
+                return $record;
+            });
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            // 二重送信耐性: (record_date, staff_id, activity_name) のユニーク制約違反は
+            // 「保存」ボタンの連打や再送信によるもの。既存レコードを冪等的に返す。
+            $existing = DailyRecord::where('record_date', $validated['record_date'])
+                ->where('staff_id', $request->user()->id)
+                ->where('activity_name', $validated['activity_name'])
+                ->first();
+
+            if ($existing) {
+                return response()->json([
+                    'success'    => true,
+                    'data'       => $existing->load('studentRecords'),
+                    'message'    => '既に同じ活動が保存されています。',
+                    'duplicated' => true,
+                ], 200);
             }
 
-            return $record;
-        });
+            throw $e;
+        }
 
         return response()->json([
             'success' => true,
