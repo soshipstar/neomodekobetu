@@ -454,15 +454,14 @@ class SupportPlanController extends Controller
             $content = $response->choices[0]->message->content;
             $result = json_decode($content, true);
 
-            // ログ保存
+            // ログ保存（fillable と一致させる）
             try {
                 \App\Models\AiGenerationLog::create([
-                    'user_id'       => $request->user()->id,
-                    'model'         => 'gpt-5.4-mini-2026-03-17',
-                    'prompt_type'   => 'support_plan',
-                    'input_tokens'  => $response->usage->promptTokens ?? null,
-                    'output_tokens' => $response->usage->completionTokens ?? null,
-                    'student_id'    => $student->id,
+                    'user_id'           => $request->user()->id,
+                    'generation_type'   => 'support_plan_edit',
+                    'model'             => 'gpt-5.4-mini-2026-03-17',
+                    'prompt_tokens'     => $response->usage->promptTokens ?? null,
+                    'completion_tokens' => $response->usage->completionTokens ?? null,
                 ]);
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::warning('AI log failed: ' . $e->getMessage());
@@ -721,41 +720,90 @@ class SupportPlanController extends Controller
             })->implode("\n");
 
         try {
-            $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
+            $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
+            if (empty($apiKey)) {
+                return response()->json(['success' => false, 'message' => 'OpenAI APIキーが設定されていません。'], 422);
+            }
+
+            $client = \OpenAI::client($apiKey);
+            $response = $client->chat()->create([
                 'model'    => 'gpt-5.4-mini-2026-03-17',
                 'messages' => [
                     [
                         'role'    => 'system',
-                        'content' => 'あなたは児童発達支援施設の児童発達支援管理責任者です。個別支援計画書の作成を支援します。',
+                        'content' => 'あなたは児童発達支援施設の児童発達支援管理責任者です。個別支援計画書の作成を支援します。具体的で実践可能な支援内容を詳細に記述してください。',
                     ],
                     [
                         'role'    => 'user',
-                        'content' => "以下の情報をもとに、個別支援計画書の支援目標と支援内容を提案してください。\n\n"
+                        'content' => "以下の情報をもとに新規の個別支援計画書をJSON形式で作成してください。\n\n"
                             . "【児童名】{$student->student_name}\n"
-                            . "【面接記録】\n{$interviewText}\n\n"
-                            . "【連絡帳記録（5領域）】\n{$recordsText}\n\n"
-                            . "5領域（健康・生活、運動・感覚、認知・行動、言語・コミュニケーション、人間関係・社会性）ごとに"
-                            . "支援目標と支援内容を提案してください。\n"
-                            . "JSON形式で出力してください: [{\"domain\": \"...\", \"current_status\": \"...\", \"goal\": \"...\", \"support_content\": \"...\"}]",
+                            . "【面談記録（直近5件）】\n" . ($interviewText ?: '（記録なし）') . "\n\n"
+                            . "【連絡帳記録（直近20件・5領域）】\n" . ($recordsText ?: '（記録なし）') . "\n\n"
+                            . "【出力形式】以下の JSON オブジェクト形式で出力してください:\n"
+                            . "{\n"
+                            . "  \"life_intention\": \"利用児及び家族の生活に対する意向（100-200文字程度）\",\n"
+                            . "  \"overall_policy\": \"総合的な支援の方針（150-250文字程度）\",\n"
+                            . "  \"long_term_goal\": \"長期目標（観察可能な行動として100-150文字。期間表現は使わない）\",\n"
+                            . "  \"short_term_goal\": \"短期目標（観察可能な行動として100-150文字。期間表現は使わない）\",\n"
+                            . "  \"details\": [\n"
+                            . "    {\"category\": \"本人支援\", \"sub_category\": \"生活習慣（健康・生活）\", \"support_goal\": \"...\", \"support_content\": \"...\", \"staff_organization\": \"保育士\\n児童指導員\", \"notes\": \"...\"},\n"
+                            . "    {\"category\": \"本人支援\", \"sub_category\": \"コミュニケーション（言語・コミュニケーション）\", \"support_goal\": \"...\", \"support_content\": \"...\", \"staff_organization\": \"保育士\\n児童指導員\", \"notes\": \"...\"},\n"
+                            . "    {\"category\": \"本人支援\", \"sub_category\": \"社会性（人間関係・社会性）\", \"support_goal\": \"...\", \"support_content\": \"...\", \"staff_organization\": \"保育士\\n児童指導員\", \"notes\": \"...\"},\n"
+                            . "    {\"category\": \"本人支援\", \"sub_category\": \"運動・感覚（運動・感覚）\", \"support_goal\": \"...\", \"support_content\": \"...\", \"staff_organization\": \"保育士\\n児童指導員\", \"notes\": \"...\"},\n"
+                            . "    {\"category\": \"本人支援\", \"sub_category\": \"学習（認知・行動）\", \"support_goal\": \"...\", \"support_content\": \"...\", \"staff_organization\": \"保育士\\n児童指導員\", \"notes\": \"...\"},\n"
+                            . "    {\"category\": \"家族支援\", \"sub_category\": \"保護者支援\", \"support_goal\": \"...\", \"support_content\": \"...\", \"staff_organization\": \"児童発達支援管理責任者\\n保育士\", \"notes\": \"...\"},\n"
+                            . "    {\"category\": \"地域支援\", \"sub_category\": \"関係機関連携\", \"support_goal\": \"...\", \"support_content\": \"...\", \"staff_organization\": \"児童発達支援管理責任者\", \"notes\": \"...\"}\n"
+                            . "  ]\n"
+                            . "}\n\n"
+                            . "【注意事項】\n"
+                            . "- 必ず有効な JSON オブジェクトで出力してください（配列ではなくオブジェクト）\n"
+                            . "- 各 support_content は施設内で実施可能な具体的な手順・頻度・環境設定を含め150文字以上で記述\n"
+                            . "- 長期目標・短期目標・支援目標には「○ヶ月後」「いつまでに」など期間表現は使わない",
                     ],
                 ],
-                'temperature'           => 0.5,
-                'max_completion_tokens' => 2000,
+                'response_format'       => ['type' => 'json_object'],
+                'temperature'           => 0.7,
+                'max_completion_tokens' => 4000,
             ]);
 
-            $content = $response->choices[0]->message->content;
+            $content = $response->choices[0]->message->content ?? '';
+            $result = json_decode($content, true);
 
-            if (preg_match('/```(?:json)?\s*([\s\S]*?)\s*```/', $content, $matches)) {
-                $content = trim($matches[1]);
+            // フロント側は object (life_intention/details 等) を期待。
+            // 配列が返ってきた / decode 失敗 / 想定キー欠損なら 502 で明示的に失敗扱いにする。
+            if (!is_array($result) || array_is_list($result) || !array_key_exists('details', $result)) {
+                Log::error('generateAiForStudent: unexpected response shape', [
+                    'student_id' => $student->id,
+                    'content_excerpt' => mb_substr($content, 0, 200),
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'AI応答の形式が想定と異なります。もう一度お試しください。',
+                ], 502);
             }
 
-            $suggestions = json_decode($content, true);
+            // ログ保存
+            try {
+                \App\Models\AiGenerationLog::create([
+                    'user_id'           => $request->user()->id,
+                    'generation_type'   => 'support_plan_new',
+                    'model'             => 'gpt-5.4-mini-2026-03-17',
+                    'prompt_tokens'     => $response->usage->promptTokens ?? null,
+                    'completion_tokens' => $response->usage->completionTokens ?? null,
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('AI log failed: ' . $e->getMessage());
+            }
 
             return response()->json([
                 'success' => true,
-                'data'    => $suggestions ?? $content,
+                'data'    => $result,
             ]);
         } catch (\Exception $e) {
+            Log::error('generateAiForStudent error', [
+                'student_id' => $student->id,
+                'message'    => $e->getMessage(),
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'AI生成中にエラーが発生しました: ' . $e->getMessage(),
