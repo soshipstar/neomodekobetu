@@ -354,7 +354,7 @@ class ChatController extends Controller
             'departure' => [
                 'type' => 'quick_departure',
                 'title' => 'これから帰ります',
-                'body' => "【これから帰ります】\n\nお迎え準備をお願いいたします。",
+                'body' => "【これから帰ります】\n\nこれより帰路につきます。無事の帰宅をご確認ください。",
             ],
             'arrival' => [
                 'type' => 'quick_arrival',
