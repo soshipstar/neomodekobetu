@@ -192,6 +192,71 @@
         <div class="overall-content">{!! nl2br(e($record->overall_comment ?: '（未記入）')) !!}</div>
     </div>
 
+    {{-- 強み（才能）チェック推移 --}}
+    @php
+        $strengthsSummary = $record->strengths_summary;
+        $strengthsTrends = is_array($strengthsSummary) ? ($strengthsSummary['trends'] ?? []) : [];
+    @endphp
+    @if (!empty($strengthsTrends))
+    <div class="section">
+        <div class="section-title">
+            強み（才能）チェック推移
+            <span style="font-weight: normal; font-size: 9pt;">
+                ({{ $strengthsSummary['from'] ?? '' }} 〜 {{ $strengthsSummary['to'] ?? '' }} / {{ $strengthsSummary['record_count'] ?? 0 }}件)
+            </span>
+        </div>
+        @php
+            $monthKeys = collect($strengthsTrends)->flatMap(fn ($t) => array_keys($t['monthly_averages'] ?? []))->unique()->sort()->values()->all();
+        @endphp
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 18%;">項目</th>
+                    <th style="width: 12%;">領域</th>
+                    <th style="width: 10%;">平均</th>
+                    <th style="width: 12%;">推移</th>
+                    @foreach ($monthKeys as $m)
+                        <th style="text-align: right;">{{ $m }}</th>
+                    @endforeach
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($strengthsTrends as $t)
+                    @php
+                        $arrow = ($t['trend'] ?? 'stable') === 'up' ? '↑' : (($t['trend'] ?? '') === 'down' ? '↓' : '→');
+                        $sign  = ($t['change'] ?? 0) >= 0 ? '+' : '';
+                    @endphp
+                    <tr>
+                        <td style="font-weight: bold;">{{ $t['label'] ?? '' }}</td>
+                        <td>{{ $t['domain'] ?? '-' }}</td>
+                        <td style="text-align: right;">{{ $t['overall_average'] ?? '-' }}</td>
+                        <td style="text-align: right;">{{ $arrow }} {{ $sign }}{{ $t['change'] ?? 0 }}</td>
+                        @foreach ($monthKeys as $m)
+                            <td style="text-align: right;">{{ $t['monthly_averages'][$m] ?? '-' }}</td>
+                        @endforeach
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+        @php
+            $growing = collect($strengthsTrends)->where('trend', 'up')->sortByDesc('change')->values();
+            $declining = collect($strengthsTrends)->where('trend', 'down')->sortBy('change')->values();
+        @endphp
+        @if ($growing->isNotEmpty())
+            <div style="margin-top: 4px; font-size: 9pt;">
+                <strong>★成長:</strong>
+                {{ $growing->map(fn ($t) => "{$t['label']}(+{$t['change']})")->implode('、') }}
+            </div>
+        @endif
+        @if ($declining->isNotEmpty())
+            <div style="margin-top: 2px; font-size: 9pt;">
+                <strong>※低下:</strong>
+                {{ $declining->map(fn ($t) => "{$t['label']}({$t['change']})")->implode('、') }}
+            </div>
+        @endif
+    </div>
+    @endif
+
     {{-- モニタリング明細 --}}
     @if ($details && $details->count() > 0)
     <div class="section">

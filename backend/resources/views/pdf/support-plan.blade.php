@@ -267,7 +267,17 @@
                     @if ($cat)<div style="font-weight: bold;">{{ $cat }}</div>@endif
                     {{ $detail->sub_category ?? $detail->domain ?? '' }}
                 </td>
-                <td>{!! nl2br(e($detail->support_goal ?? $detail->goal ?? '')) !!}</td>
+                <td>
+                    {!! nl2br(e($detail->support_goal ?? $detail->goal ?? '')) !!}
+                    @if (!empty($detail->target_strength))
+                        <div style="margin-top: 2px; font-size: 6.5pt; color: #555;">
+                            指標: {{ $detail->target_strength }}
+                            @if ($detail->target_strength_baseline !== null && $detail->target_strength_target !== null)
+                                <span>({{ $detail->target_strength_baseline }} → {{ $detail->target_strength_target }})</span>
+                            @endif
+                        </div>
+                    @endif
+                </td>
                 <td>{!! nl2br(e($detail->support_content ?? '')) !!}</td>
                 <td style="text-align: center; font-size: 6.5pt;">
                     @if ($detail->achievement_date)
