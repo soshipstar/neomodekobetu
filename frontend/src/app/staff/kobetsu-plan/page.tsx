@@ -59,7 +59,25 @@ interface SupportPlanDetail {
   notes: string;
   priority: number;
   sort_order: number;
+  // 強み(才能)チェックを目標指標とする (任意)
+  target_strength?: string | null;
+  target_strength_baseline?: number | null;
+  target_strength_target?: number | null;
 }
+
+// 連絡帳の強み(才能)チェック 10 項目 (バックエンド StudentRecord::STRENGTH_KEYS と同じ)
+const STRENGTH_KEYS = [
+  '集中力',
+  '持続力',
+  '丁寧さ',
+  '発想力',
+  '観察力',
+  '思いやり',
+  '情報処理の速さ',
+  '手先の器用さ',
+  '自分で選ぶ力',
+  'コミュニケーションの工夫',
+] as const;
 
 interface PlanFullData {
   id: number;
@@ -499,7 +517,11 @@ export default function KobetsuPlanPage() {
     }
   };
 
-  const updateDetail = (index: number, field: keyof SupportPlanDetail, value: string | number) => {
+  const updateDetail = (
+    index: number,
+    field: keyof SupportPlanDetail,
+    value: string | number | null,
+  ) => {
     setForm((prev) => ({
       ...prev,
       details: prev.details.map((d, i) =>
@@ -991,6 +1013,75 @@ export default function KobetsuPlanPage() {
                             value={form.details[editingDetailIdx].priority}
                             onChange={(e) => updateDetail(editingDetailIdx, 'priority', parseInt(e.target.value, 10) || 0)}
                           />
+                        </div>
+                      </div>
+
+                      {/* 強み(才能)チェックを目標指標として紐付ける (任意) */}
+                      <div className="rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] p-3">
+                        <p className="mb-2 text-xs font-semibold text-[var(--neutral-foreground-2)]">
+                          強み（才能）チェック指標 <span className="font-normal text-[var(--neutral-foreground-3)]">(任意)</span>
+                        </p>
+                        <p className="mb-2 text-xs text-[var(--neutral-foreground-3)]">
+                          連絡帳の強みチェックを数値指標として紐付けると、モニタリングで進捗を確認できます。
+                        </p>
+                        <div className="grid gap-3 sm:grid-cols-3">
+                          <div>
+                            <label className={labelClass}>項目</label>
+                            <select
+                              className={selectClass}
+                              value={form.details[editingDetailIdx].target_strength ?? ''}
+                              onChange={(e) =>
+                                updateDetail(
+                                  editingDetailIdx,
+                                  'target_strength' as keyof SupportPlanDetail,
+                                  e.target.value || null,
+                                )
+                              }
+                            >
+                              <option value="">使用しない</option>
+                              {STRENGTH_KEYS.map((k) => (
+                                <option key={k} value={k}>
+                                  {k}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className={labelClass}>現在値 (0-10)</label>
+                            <input
+                              type="number"
+                              min={0}
+                              max={10}
+                              className={textareaClass}
+                              value={form.details[editingDetailIdx].target_strength_baseline ?? ''}
+                              onChange={(e) =>
+                                updateDetail(
+                                  editingDetailIdx,
+                                  'target_strength_baseline' as keyof SupportPlanDetail,
+                                  e.target.value === '' ? null : parseInt(e.target.value, 10),
+                                )
+                              }
+                              disabled={!form.details[editingDetailIdx].target_strength}
+                            />
+                          </div>
+                          <div>
+                            <label className={labelClass}>目標値 (0-10)</label>
+                            <input
+                              type="number"
+                              min={0}
+                              max={10}
+                              className={textareaClass}
+                              value={form.details[editingDetailIdx].target_strength_target ?? ''}
+                              onChange={(e) =>
+                                updateDetail(
+                                  editingDetailIdx,
+                                  'target_strength_target' as keyof SupportPlanDetail,
+                                  e.target.value === '' ? null : parseInt(e.target.value, 10),
+                                )
+                              }
+                              disabled={!form.details[editingDetailIdx].target_strength}
+                            />
+                          </div>
                         </div>
                       </div>
 

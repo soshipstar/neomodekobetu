@@ -6,10 +6,30 @@ export interface MonitoringRecord {
   overall_comment: string | null;
   short_term_goal_achievement: string | null;
   long_term_goal_achievement: string | null;
+  strengths_summary: StrengthsSummary | null;
   created_by: number;
   created_at: string;
   updated_at: string;
   details?: MonitoringDetail[];
+}
+
+/** 連絡帳の強み(才能)チェックを期間集計したサマリー (Backend: StrengthsAggregator) */
+export interface StrengthsSummary {
+  from: string;
+  to: string;
+  record_count: number;
+  trends: StrengthsTrend[];
+}
+
+export interface StrengthsTrend {
+  label: string;
+  domain: string | null;
+  daily_averages: Record<string, number>;
+  weekly_averages: Record<string, number>;
+  monthly_averages: Record<string, number>;
+  overall_average: number;
+  trend: 'up' | 'down' | 'stable';
+  change: number;
 }
 
 export interface MonitoringDetail {

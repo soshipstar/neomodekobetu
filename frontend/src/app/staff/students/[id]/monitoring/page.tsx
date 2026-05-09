@@ -12,6 +12,7 @@ import { formatDate } from '@/lib/utils';
 import type { MonitoringRecord } from '@/types/monitoring';
 import { ACHIEVEMENT_LABELS } from '@/types/monitoring';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { StrengthsSummaryView } from '@/components/support-plan/StrengthsSummaryView';
 
 export default function MonitoringPage() {
   const params = useParams();
@@ -129,6 +130,11 @@ export default function MonitoringPage() {
                       <p className="mb-3 text-sm text-[var(--neutral-foreground-2)] whitespace-pre-wrap">
                         {record.overall_comment}
                       </p>
+                    )}
+                    {record.strengths_summary && (
+                      <div className="mb-3">
+                        <StrengthsSummaryView summary={record.strengths_summary} />
+                      </div>
                     )}
                     {record.details && record.details.length > 0 && (
                       <div className="space-y-2">
