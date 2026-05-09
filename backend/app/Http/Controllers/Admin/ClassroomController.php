@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Classroom;
+use App\Services\ServiceTypeRegistry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class ClassroomController extends Controller
 {
@@ -81,6 +83,7 @@ class ClassroomController extends Controller
 
         $validated = $request->validate([
             'classroom_name' => 'required|string|max:255',
+            'service_type'   => ['nullable', Rule::in(ServiceTypeRegistry::ALL)],
             'address'        => 'nullable|string|max:500',
             'phone'          => 'nullable|string|max:20',
             'logo'           => 'nullable|image|mimes:png,jpg,jpeg|max:2048',
@@ -93,6 +96,11 @@ class ClassroomController extends Controller
             $validated['logo_path'] = $path;
         }
         unset($validated['logo']);
+
+        // 未指定時は放デイ既定 (DB 既定値と整合)
+        if (empty($validated['service_type'])) {
+            $validated['service_type'] = ServiceTypeRegistry::AFTER_SCHOOL;
+        }
 
         $classroom = Classroom::create($validated);
 
@@ -128,12 +136,19 @@ class ClassroomController extends Controller
 
         $validated = $request->validate([
             'classroom_name' => 'sometimes|required|string|max:255',
+            'service_type'   => ['sometimes', 'nullable', Rule::in(ServiceTypeRegistry::ALL)],
             'address'        => 'nullable|string|max:500',
             'phone'          => 'nullable|string|max:20',
             'logo'           => 'nullable|image|mimes:png,jpg,jpeg|max:2048',
             'settings'       => 'nullable|array',
             'is_active'      => 'boolean',
         ]);
+
+        // 既存レコードへの service_type 変更は破壊的 (集計・領域・強みキーが変わる)。
+        // 完全には禁止しないが、null を渡された場合は既存値を維持する。
+        if (array_key_exists('service_type', $validated) && empty($validated['service_type'])) {
+            unset($validated['service_type']);
+        }
 
         if ($request->hasFile('logo')) {
             // 古いロゴを削除
