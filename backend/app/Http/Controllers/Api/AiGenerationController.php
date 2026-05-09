@@ -4,17 +4,35 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AiGenerationLog;
+use App\Models\Classroom;
 use App\Models\IndividualSupportPlan;
 use App\Models\MonitoringRecord;
 use App\Models\Newsletter;
 use App\Models\Student;
 use App\Models\StudentRecord;
+use App\Services\ServiceTypeRegistry;
 use App\Services\StrengthsAggregator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+
 class AiGenerationController extends Controller
 {
+    /**
+     * 生徒の所属事業所から service_type を解決する。
+     * 解決できない場合は after_school にフォールバック。
+     */
+    private function resolveServiceType(?int $classroomId): string
+    {
+        if (!$classroomId) {
+            return ServiceTypeRegistry::AFTER_SCHOOL;
+        }
+        $type = Classroom::query()->where('id', $classroomId)->value('service_type');
+        return ServiceTypeRegistry::isValid((string) $type)
+            ? (string) $type
+            : ServiceTypeRegistry::AFTER_SCHOOL;
+    }
+
     /**
      * 個別支援計画書の内容をAI生成
      */
@@ -82,30 +100,41 @@ class AiGenerationController extends Controller
         );
         $strengthsText = $strengthsAggregator->formatAsText($strengthsSummary);
 
+        // サービス種別ごとの語彙・視点でプロンプトを組み立てる
+        $serviceType = $this->resolveServiceType($student->classroom_id);
+        $terms       = ServiceTypeRegistry::terms($serviceType);
+        $facility    = ServiceTypeRegistry::label($serviceType);
+        $strengthExample = ServiceTypeRegistry::strengthKeys($serviceType)[0] ?? '集中力';
+
+        $systemPrompt = "あなたは{$facility}の{$terms['service_manager']}です。"
+            . "個別支援計画書の作成を支援します。JSON形式のみで回答してください。\n\n"
+            . "# 評価の視点\n"
+            . ServiceTypeRegistry::aiServiceFocus($serviceType);
+
         try {
             $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
                 'model'    => 'gpt-5.4-mini-2026-03-17',
                 'messages' => [
                     [
                         'role'    => 'system',
-                        'content' => 'あなたは児童発達支援施設の児童発達支援管理責任者です。個別支援計画書の作成を支援します。JSON配列で回答してください。',
+                        'content' => $systemPrompt,
                     ],
                     [
                         'role'    => 'user',
                         'content' => "以下の情報をもとに、個別支援計画書の内容を生成してください。\n\n"
-                            . "【児童名】{$student->student_name}\n\n"
+                            . "【{$terms['client']}名】{$student->student_name}\n\n"
                             . "【面接記録】\n{$interviewText}\n\n"
-                            . "【連絡帳記録】\n{$recordsText}\n\n"
+                            . "【{$terms['diary']}記録】\n{$recordsText}\n\n"
                             . "{$strengthsText}\n\n"
                             . "【過去の支援計画書】\n{$pastPlanText}\n\n"
                             . ($validated['context'] ? "【追加情報】\n{$validated['context']}\n\n" : '')
-                            . "以下を含むJSONを出力してください。details の各要素には任意で target_strength（強み項目名 / 連絡帳の強みチェック10項目から選択）と target_strength_baseline (現在値 0-10) / target_strength_target (目標値 0-10) を含めることができます:\n"
+                            . "以下を含むJSONを出力してください。details の各要素には任意で target_strength（強み項目名 / {$terms['diary']}の強みチェック10項目から選択）と target_strength_baseline (現在値 0-10) / target_strength_target (目標値 0-10) を含めることができます:\n"
                             . "{\n"
                             . "  \"life_intention\": \"本人の生活に対する意向\",\n"
                             . "  \"overall_policy\": \"総合的な援助の方針\",\n"
                             . "  \"long_term_goal\": \"長期目標\",\n"
                             . "  \"short_term_goal\": \"短期目標\",\n"
-                            . "  \"details\": [{\"category\": \"分野\", \"sub_category\": \"サブ分野\", \"support_goal\": \"目標\", \"support_content\": \"支援内容\", \"target_strength\": \"集中力\", \"target_strength_baseline\": 5, \"target_strength_target\": 7}]\n"
+                            . "  \"details\": [{\"category\": \"分野\", \"sub_category\": \"サブ分野\", \"support_goal\": \"目標\", \"support_content\": \"支援内容\", \"target_strength\": \"{$strengthExample}\", \"target_strength_baseline\": 5, \"target_strength_target\": 7}]\n"
                             . "}",
                     ],
                 ],
@@ -207,17 +236,27 @@ class AiGenerationController extends Controller
         );
         $strengthsText = $strengthsAggregator->formatAsText($strengthsSummary);
 
+        // サービス種別ごとの語彙・視点でプロンプトを組み立てる
+        $serviceType = $this->resolveServiceType($student->classroom_id);
+        $terms       = ServiceTypeRegistry::terms($serviceType);
+        $facility    = ServiceTypeRegistry::label($serviceType);
+
+        $systemPrompt = "あなたは{$facility}の{$terms['service_manager']}です。"
+            . "モニタリング評価を生成します。JSON形式のみで回答してください。\n\n"
+            . "# 評価の視点\n"
+            . ServiceTypeRegistry::aiServiceFocus($serviceType);
+
         try {
             $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
                 'model'    => 'gpt-5.4-mini-2026-03-17',
                 'messages' => [
                     [
                         'role'    => 'system',
-                        'content' => 'あなたは児童発達支援施設の児童発達支援管理責任者です。モニタリング評価を生成します。JSON形式のみで回答してください。',
+                        'content' => $systemPrompt,
                     ],
                     [
                         'role'    => 'user',
-                        'content' => "【児童名】{$student->student_name}\n\n"
+                        'content' => "【{$terms['client']}名】{$student->student_name}\n\n"
                             . "【計画の目標・支援内容】\n{$detailsText}\n\n"
                             . "【過去6ヶ月の記録】\n{$recordsText}\n\n"
                             . "{$strengthsText}\n\n"
@@ -281,13 +320,19 @@ class AiGenerationController extends Controller
 
         $label = $sectionLabels[$validated['section']] ?? $validated['section'];
 
+        // ニュースレターは事業所単位で発行されるため、ログイン中のスタッフの
+        // 事業所サービス種別から「施設の役割」と「読み手 (保護者/家族)」を切替える。
+        $serviceType = $this->resolveServiceType($request->user()?->classroom_id);
+        $terms       = ServiceTypeRegistry::terms($serviceType);
+
         try {
             $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
                 'model'    => 'gpt-5.4-mini-2026-03-17',
                 'messages' => [
                     [
                         'role'    => 'system',
-                        'content' => '児童発達支援施設のスタッフとして、保護者向けのお便りの文章を作成します。温かみがあり丁寧な表現を心がけてください。',
+                        'content' => "{$terms['facility_role']}のスタッフとして、{$terms['guardian']}向けのお便りの文章を作成します。"
+                            . "温かみがあり丁寧な表現を心がけてください。",
                     ],
                     [
                         'role'    => 'user',
