@@ -15,6 +15,31 @@ use Illuminate\Support\Facades\DB;
 class TabletController extends Controller
 {
     /**
+     * 強み(才能)チェック payload を STRENGTH_KEYS に限定し、0-10 にクランプする。
+     * 全項目が未指定なら null を返してカラムを空にする。
+     */
+    private function sanitizeStrengths(?array $strengths): ?array
+    {
+        if (empty($strengths)) {
+            return null;
+        }
+
+        $sanitized = [];
+        foreach (StudentRecord::STRENGTH_KEYS as $key) {
+            if (!array_key_exists($key, $strengths)) {
+                continue;
+            }
+            $value = $strengths[$key];
+            if ($value === null || $value === '') {
+                continue;
+            }
+            $sanitized[$key] = max(0, min(10, (int) $value));
+        }
+
+        return $sanitized === [] ? null : $sanitized;
+    }
+
+    /**
      * 教室に所属する生徒一覧を取得
      */
     public function students(Request $request): JsonResponse
@@ -438,6 +463,8 @@ class TabletController extends Controller
             'cognitive_behavior'    => 'nullable|string|max:5000',
             'language_communication' => 'nullable|string|max:5000',
             'social_relations'      => 'nullable|string|max:5000',
+            'strengths'             => 'nullable|array',
+            'strengths.*'           => 'nullable|integer|min:0|max:10',
         ]);
 
         // 権限チェック
@@ -458,6 +485,7 @@ class TabletController extends Controller
                 'cognitive_behavior'     => $validated['cognitive_behavior'] ?? null,
                 'language_communication' => $validated['language_communication'] ?? null,
                 'social_relations'       => $validated['social_relations'] ?? null,
+                'strengths'              => $this->sanitizeStrengths($validated['strengths'] ?? null),
             ]
         );
 
@@ -486,6 +514,8 @@ class TabletController extends Controller
             'students.*.cognitive_behavior' => 'nullable|string|max:5000',
             'students.*.language_communication' => 'nullable|string|max:5000',
             'students.*.social_relations' => 'nullable|string|max:5000',
+            'students.*.strengths'              => 'nullable|array',
+            'students.*.strengths.*'            => 'nullable|integer|min:0|max:10',
         ]);
 
         $record = DailyRecord::findOrFail($validated['daily_record_id']);
@@ -511,6 +541,7 @@ class TabletController extends Controller
                         'cognitive_behavior'     => $s['cognitive_behavior'] ?? null,
                         'language_communication' => $s['language_communication'] ?? null,
                         'social_relations'       => $s['social_relations'] ?? null,
+                        'strengths'              => $this->sanitizeStrengths($s['strengths'] ?? null),
                     ]
                 );
             }

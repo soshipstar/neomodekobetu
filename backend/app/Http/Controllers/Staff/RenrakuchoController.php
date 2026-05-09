@@ -57,6 +57,31 @@ class RenrakuchoController extends Controller
     }
 
     /**
+     * 強み(才能)チェック payload を STRENGTH_KEYS に限定し、0-10 にクランプする。
+     * 全項目が未指定なら null を返してカラムを空にする。
+     */
+    private function sanitizeStrengths(?array $strengths): ?array
+    {
+        if (empty($strengths)) {
+            return null;
+        }
+
+        $sanitized = [];
+        foreach (StudentRecord::STRENGTH_KEYS as $key) {
+            if (!array_key_exists($key, $strengths)) {
+                continue;
+            }
+            $value = $strengths[$key];
+            if ($value === null || $value === '') {
+                continue;
+            }
+            $sanitized[$key] = max(0, min(10, (int) $value));
+        }
+
+        return $sanitized === [] ? null : $sanitized;
+    }
+
+    /**
      * 連絡帳（日常活動記録）一覧を取得
      */
     public function index(Request $request): JsonResponse
@@ -128,6 +153,9 @@ class RenrakuchoController extends Controller
             'students.*.domain1_content'           => 'nullable|string',
             'students.*.domain2'                   => 'nullable|string',
             'students.*.domain2_content'           => 'nullable|string',
+            // 強み(才能)チェック
+            'students.*.strengths'                 => 'nullable|array',
+            'students.*.strengths.*'               => 'nullable|integer|min:0|max:10',
         ]);
 
         try {
@@ -154,6 +182,7 @@ class RenrakuchoController extends Controller
                         'language_communication'   => $studentData['language_communication'] ?? null,
                         'social_relations'         => $studentData['social_relations'] ?? null,
                         'notes'                    => $studentData['notes'] ?? null,
+                        'strengths'                => $this->sanitizeStrengths($studentData['strengths'] ?? null),
                     ]);
                 }
 
@@ -217,6 +246,9 @@ class RenrakuchoController extends Controller
             'students.*.domain1_content'           => 'nullable|string',
             'students.*.domain2'                   => 'nullable|string',
             'students.*.domain2_content'           => 'nullable|string',
+            // 強み(才能)チェック
+            'students.*.strengths'                 => 'nullable|array',
+            'students.*.strengths.*'               => 'nullable|integer|min:0|max:10',
         ]);
 
         DB::transaction(function () use ($record, $validated) {
@@ -238,6 +270,7 @@ class RenrakuchoController extends Controller
                         'language_communication'   => $studentData['language_communication'] ?? null,
                         'social_relations'         => $studentData['social_relations'] ?? null,
                         'notes'                    => $studentData['notes'] ?? null,
+                        'strengths'                => $this->sanitizeStrengths($studentData['strengths'] ?? null),
                     ]);
                 }
             }
@@ -278,6 +311,8 @@ class RenrakuchoController extends Controller
             'language_communication'   => 'nullable|string',
             'social_relations'         => 'nullable|string',
             'notes'                    => 'nullable|string',
+            'strengths'                => 'nullable|array',
+            'strengths.*'              => 'nullable|integer|min:0|max:10',
         ]);
 
         $studentRecord = StudentRecord::updateOrCreate(
@@ -292,6 +327,7 @@ class RenrakuchoController extends Controller
                 'language_communication'   => $validated['language_communication'] ?? null,
                 'social_relations'         => $validated['social_relations'] ?? null,
                 'notes'                    => $validated['notes'] ?? null,
+                'strengths'                => $this->sanitizeStrengths($validated['strengths'] ?? null),
             ]
         );
 
