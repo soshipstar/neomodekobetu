@@ -163,6 +163,8 @@ export type UserFormData = z.input<typeof userSchema>;
 
 export const classroomSchema = z.object({
   classroom_name: z.string().min(1, '事業所名を入力してください').max(100),
+  service_type: z.enum(['after_school', 'employment_a', 'employment_b', 'transition'])
+    .default('after_school'),
   address: z.string().optional(),
   phone: z.string().optional(),
 });

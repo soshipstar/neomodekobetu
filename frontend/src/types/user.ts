@@ -50,6 +50,7 @@ export interface Student {
 export interface Classroom {
   id: number;
   classroom_name: string;
+  service_type: string; // ServiceType (lib/serviceType.ts)。後方互換のため string 受け
   company_id: number | null;
   company_name: string | null;
   address: string | null;

@@ -16,6 +16,7 @@ import { useToast } from '@/components/ui/Toast';
 import type { Classroom } from '@/types/user';
 import { useMasterGuard } from '@/hooks/useMasterGuard';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { SERVICE_TYPE_OPTIONS, serviceTypeShort } from '@/lib/serviceType';
 
 export default function ClassroomsPage() {
   const { isMaster, isReady } = useMasterGuard();
@@ -42,8 +43,12 @@ export default function ClassroomsPage() {
 
   useEffect(() => {
     if (editingClassroom) {
+      const st = editingClassroom.service_type;
       editForm.reset({
         classroom_name: editingClassroom.classroom_name,
+        service_type: (st === 'after_school' || st === 'employment_a' || st === 'employment_b' || st === 'transition')
+          ? st
+          : 'after_school',
         address: editingClassroom.address || '',
         phone: editingClassroom.phone || '',
       });
@@ -100,6 +105,11 @@ export default function ClassroomsPage() {
       ),
     },
     { key: 'company_name', label: '所属企業', render: (c) => c.company_name || '-' },
+    {
+      key: 'service_type',
+      label: 'サービス種別',
+      render: (c) => <Badge variant="info">{serviceTypeShort(c.service_type)}</Badge>,
+    },
     { key: 'address', label: '住所', render: (c) => c.address || '-' },
     { key: 'phone', label: '電話番号', render: (c) => c.phone || '-' },
     {
@@ -159,6 +169,21 @@ export default function ClassroomsPage() {
       <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="事業所を作成">
         <form onSubmit={createForm.handleSubmit((data) => createMutation.mutate(data))} className="space-y-4">
           <Input label="事業所名" error={createForm.formState.errors.classroom_name?.message} {...createForm.register('classroom_name')} />
+          <div>
+            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">サービス種別</label>
+            <select
+              className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+              defaultValue="after_school"
+              {...createForm.register('service_type')}
+            >
+              {SERVICE_TYPE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
+              一度設定したサービス種別の変更は強み・領域・集計に影響します。
+            </p>
+          </div>
           <Input label="住所" {...createForm.register('address')} />
           <Input label="電話番号" {...createForm.register('phone')} />
           <div className="flex justify-end gap-2">
@@ -177,6 +202,20 @@ export default function ClassroomsPage() {
           className="space-y-4"
         >
           <Input label="事業所名" error={editForm.formState.errors.classroom_name?.message} {...editForm.register('classroom_name')} />
+          <div>
+            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">サービス種別</label>
+            <select
+              className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+              {...editForm.register('service_type')}
+            >
+              {SERVICE_TYPE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
+              既存事業所のサービス種別を変更すると、過去データの集計表示が変わります。慎重に変更してください。
+            </p>
+          </div>
           <Input label="住所" {...editForm.register('address')} />
           <Input label="電話番号" {...editForm.register('phone')} />
           <div className="flex justify-end gap-2">
