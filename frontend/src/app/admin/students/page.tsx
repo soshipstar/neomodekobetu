@@ -14,6 +14,7 @@ import { SkeletonTable } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import type { Student } from '@/types/user';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { StudentCopyModal } from '@/components/admin/StudentCopyModal';
 import { StudentLinkedSyncModal } from '@/components/admin/StudentLinkedSyncModal';
 
@@ -42,6 +43,7 @@ interface GradeChange {
 }
 
 export default function AdminStudentsPage() {
+  const { terms, serviceType } = useWorkspace();
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
   const [showPromotion, setShowPromotion] = useState(false);
@@ -88,7 +90,7 @@ export default function AdminStudentsPage() {
   const columns: Column<Student>[] = [
     {
       key: 'student_name',
-      label: '生徒名',
+      label: `${terms.client}名`,
       sortable: true,
       render: (s) => (
         <div className="flex items-center gap-2">
@@ -103,13 +105,16 @@ export default function AdminStudentsPage() {
       ),
     },
     { key: 'classroom', label: '事業所', render: (s) => s.classroom?.classroom_name || '-' },
-    { key: 'grade_level', label: '学年', render: (s) => gradeLabels[s.grade_level || ''] || s.grade_level || '-' },
+    // 学年区分は放デイのみ意味を持つ
+    ...(serviceType === 'after_school'
+      ? [{ key: 'grade_level', label: '学年', render: (s: Student) => gradeLabels[s.grade_level || ''] || s.grade_level || '-' } satisfies Column<Student>]
+      : []),
     {
       key: 'status',
       label: 'ステータス',
       render: (s) => <Badge variant={statusVariants[s.status] || 'default'}>{statusLabels[s.status]}</Badge>,
     },
-    { key: 'guardian', label: '保護者', render: (s) => s.guardian?.full_name || '-' },
+    { key: 'guardian', label: terms.guardian, render: (s) => s.guardian?.full_name || '-' },
     {
       key: 'actions',
       label: '操作',
@@ -120,9 +125,9 @@ export default function AdminStudentsPage() {
             size="sm"
             onClick={() => setCopySource(s)}
             leftIcon={<MaterialIcon name="content_copy" size={14} />}
-            title="同一企業内の別教室にこの児童を複製します"
+            title={`同一企業内の別事業所にこの${terms.client}を複製します`}
           >
-            別教室に複製
+            別事業所に複製
           </Button>
           {s.person_id && (
             <Button
@@ -130,7 +135,7 @@ export default function AdminStudentsPage() {
               size="sm"
               onClick={() => setLinkedTarget(s)}
               leftIcon={<MaterialIcon name="sync" size={14} />}
-              title="リンク先のレコードにこの児童の情報を同期します"
+              title={`リンク先のレコードにこの${terms.client}の情報を同期します`}
             >
               同期
             </Button>
@@ -143,15 +148,18 @@ export default function AdminStudentsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">生徒管理 (管理者)</h1>
-        <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="school" size={16} />} onClick={handleOpenPromotion}>
-          学年更新
-        </Button>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">{terms.client_plural}管理 (管理者)</h1>
+        {/* 学年更新は放デイのみ意味を持つ機能 */}
+        {serviceType === 'after_school' && (
+          <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="school" size={16} />} onClick={handleOpenPromotion}>
+            学年更新
+          </Button>
+        )}
       </div>
 
       <div className="relative">
         <MaterialIcon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
-        <Input placeholder="生徒名で検索..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+        <Input placeholder={`${terms.client}名で検索...`} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
       </div>
 
       {isLoading ? (
@@ -164,7 +172,7 @@ export default function AdminStudentsPage() {
           currentPage={meta?.current_page}
           totalPages={meta?.last_page}
           onPageChange={goToPage}
-          emptyMessage="生徒が見つかりません"
+          emptyMessage={`${terms.client_plural}が見つかりません`}
         />
       )}
 
@@ -172,7 +180,7 @@ export default function AdminStudentsPage() {
       <Modal isOpen={showPromotion} onClose={() => { setShowPromotion(false); setPreview(null); }} title="学年更新" size="lg">
         <div className="space-y-4">
           <p className="text-sm text-[var(--neutral-foreground-3)]">
-            生年月日をもとに全在籍生徒の学年を再計算します。変更がある生徒のみ表示されます。
+            生年月日をもとに全在籍{terms.client_plural}の学年を再計算します。変更がある{terms.client_plural}のみ表示されます。
           </p>
 
           {previewLoading ? (
@@ -183,7 +191,7 @@ export default function AdminStudentsPage() {
                 <table className="w-full text-sm">
                   <thead className="sticky top-0 bg-[var(--neutral-background-3)]">
                     <tr>
-                      <th className="px-3 py-2 text-left font-medium text-[var(--neutral-foreground-2)]">生徒名</th>
+                      <th className="px-3 py-2 text-left font-medium text-[var(--neutral-foreground-2)]">{terms.client}名</th>
                       <th className="px-3 py-2 text-left font-medium text-[var(--neutral-foreground-2)]">現在の学年</th>
                       <th className="px-3 py-2 text-center text-[var(--neutral-foreground-4)]"></th>
                       <th className="px-3 py-2 text-left font-medium text-[var(--neutral-foreground-2)]">更新後の学年</th>
@@ -214,7 +222,7 @@ export default function AdminStudentsPage() {
           ) : preview ? (
             <div className="py-8 text-center">
               <MaterialIcon name="check_circle" size={40} className="mx-auto mb-3 text-[var(--status-success-fg)]" />
-              <p className="text-sm font-medium text-[var(--neutral-foreground-3)]">全生徒の学年は最新です。更新の必要はありません。</p>
+              <p className="text-sm font-medium text-[var(--neutral-foreground-3)]">全{terms.client_plural}の学年は最新です。更新の必要はありません。</p>
               <div className="mt-4 flex justify-end">
                 <Button variant="outline" onClick={() => { setShowPromotion(false); setPreview(null); }}>閉じる</Button>
               </div>

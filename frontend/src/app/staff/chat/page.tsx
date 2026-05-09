@@ -5,6 +5,7 @@ import { useChat } from '@/hooks/useChat';
 import { useAuthStore } from '@/stores/authStore';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { ChatMessageList } from '@/components/chat/ChatMessageList';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { Input } from '@/components/ui/Input';
@@ -38,6 +39,7 @@ function gradeGroupKey(gradeLevel?: string): string {
 export default function StaffChatPage() {
   const { user } = useAuthStore();
   const isDesktop = useIsDesktop();
+  const { terms } = useWorkspace();
   const {
     rooms,
     activeRoom,
@@ -237,7 +239,7 @@ export default function StaffChatPage() {
     setQuickRoomIds(new Set());
   }, []);
 
-  // クイック通知送信 (選択した保護者に)
+  // クイック通知送信 (選択した相手に)
   const handleQuickBroadcastSubmit = useCallback(async () => {
     if (!quickModal) return;
     if (quickRoomIds.size === 0) {
@@ -319,12 +321,12 @@ export default function StaffChatPage() {
                 一斉送信
               </button>
             </div>
-            {/* クイック通知 (選択した保護者に送信) */}
+            {/* クイック通知 (選択した相手に送信) */}
             <div className="flex gap-1.5">
               <button
                 onClick={() => openQuickModal('departure')}
                 className="flex-1 flex items-center justify-center gap-1 rounded-md border border-[var(--brand-80)]/40 bg-[var(--brand-10)] px-2 py-1.5 text-[10px] font-medium text-[var(--brand-100)] hover:bg-[var(--brand-20)] transition-colors"
-                title="選択した保護者に「これから帰ります」を送信"
+                title={`選択した${terms.guardian}に「これから帰ります」を送信`}
               >
                 <MaterialIcon name="directions_bus" size={14} />
                 これから帰ります
@@ -332,7 +334,7 @@ export default function StaffChatPage() {
               <button
                 onClick={() => openQuickModal('arrival')}
                 className="flex-1 flex items-center justify-center gap-1 rounded-md border border-[var(--brand-80)]/40 bg-[var(--brand-10)] px-2 py-1.5 text-[10px] font-medium text-[var(--brand-100)] hover:bg-[var(--brand-20)] transition-colors"
-                title="選択した保護者に「到着しました」を送信"
+                title={`選択した${terms.guardian}に「到着しました」を送信`}
               >
                 <MaterialIcon name="check_circle" size={14} />
                 到着しました
@@ -341,7 +343,7 @@ export default function StaffChatPage() {
             <div className="relative">
               <MaterialIcon name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
               <Input
-                placeholder="生徒名・保護者名で検索..."
+                placeholder={`${terms.client}名・${terms.guardian}名で検索...`}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="h-8 pl-8 text-xs"
@@ -456,7 +458,7 @@ export default function StaffChatPage() {
                     </h2>
                     {activeRoom.guardian && (
                       <p className="text-xs text-[var(--neutral-foreground-3)]">
-                        保護者: {activeRoom.guardian.full_name}
+                        {terms.guardian}: {activeRoom.guardian.full_name}
                       </p>
                     )}
                   </div>
@@ -673,6 +675,7 @@ function BroadcastModal({
   onSubmit: () => void; isSending: boolean;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { terms } = useWorkspace();
 
   // Initialize: select all rooms when modal opens
   useEffect(() => {
@@ -705,7 +708,7 @@ function BroadcastModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="保護者に一斉送信" size="md">
+    <Modal isOpen={isOpen} onClose={onClose} title={`${terms.guardian}に一斉送信`} size="md">
       <div className="space-y-4">
         {/* Recipient selection */}
         <div>
@@ -867,7 +870,7 @@ function QuickNotifyModal({
           </div>
           <div className="max-h-[350px] overflow-y-auto rounded-lg border border-[var(--neutral-stroke-2)] p-2">
             {rooms.length === 0 ? (
-              <p className="p-2 text-center text-xs text-[var(--neutral-foreground-4)]">保護者チャットがありません</p>
+              <p className="p-2 text-center text-xs text-[var(--neutral-foreground-4)]">{terms.guardian}チャットがありません</p>
             ) : (
               <>
                 {todayRooms.length > 0 && (

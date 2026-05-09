@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import Link from 'next/link';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -200,6 +201,7 @@ function typeBadgeVariant(type: AttendanceStudent['type']) {
 export default function StaffDashboardPage() {
   const today = new Date();
   const toast = useToast();
+  const { terms } = useWorkspace();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1); // 1-based
   const [selectedDate, setSelectedDate] = useState(
@@ -591,7 +593,7 @@ export default function StaffDashboardPage() {
                         )}
                         {ev.guardian_message && (
                           <div className="rounded-lg bg-[var(--brand-160)] border border-[var(--brand-130)] p-3 mb-2">
-                            <p className="text-[10px] font-semibold text-[var(--brand-80)] mb-1">保護者向けメッセージ</p>
+                            <p className="text-[10px] font-semibold text-[var(--brand-80)] mb-1">{terms.guardian}向けメッセージ</p>
                             <p className="text-sm text-blue-900 whitespace-pre-wrap">{nl(ev.guardian_message)}</p>
                           </div>
                         )}
@@ -631,7 +633,7 @@ export default function StaffDashboardPage() {
                               </span>
                             )}
                             <span className="font-medium text-[var(--neutral-foreground-1)]">
-                              {mi.student_name}（保護者: {mi.guardian_name || '未定'}）
+                              {mi.student_name}（{terms.guardian}: {mi.guardian_name || '未定'}）
                             </span>
                           </div>
                           {mi.purpose && (
@@ -955,7 +957,7 @@ function NotificationGrid({ summary }: { summary: DashboardSummary }) {
       href: '/staff/pending-tasks',
       detail:
         summary.assessment_deadlines.guardian_pending > 0 || summary.assessment_deadlines.staff_pending > 0
-          ? `保護者: ${summary.assessment_deadlines.guardian_pending}件 / 職員: ${summary.assessment_deadlines.staff_pending}件`
+          ? `${terms.guardian}: ${summary.assessment_deadlines.guardian_pending}件 / 職員: ${summary.assessment_deadlines.staff_pending}件`
           : undefined,
     },
     {
