@@ -56,6 +56,7 @@ interface StudentRecord {
   language_communication: string | null;
   social_relations: string | null;
   notes: string | null;
+  strengths: Record<string, number> | null;
 }
 
 interface HiyariHattoCandidate {
@@ -110,6 +111,20 @@ const DOMAIN_LABELS: Record<string, string> = {
 
 const DOMAIN_KEYS = Object.keys(DOMAIN_LABELS) as Array<keyof typeof DOMAIN_LABELS>;
 
+// 強み(才能)チェック 10 項目 (バックエンド StudentRecord::STRENGTH_KEYS と同じ順序)
+const STRENGTH_KEYS = [
+  '集中力',
+  '持続力',
+  '丁寧さ',
+  '発想力',
+  '観察力',
+  '思いやり',
+  '情報処理の速さ',
+  '手先の器用さ',
+  '自分で選ぶ力',
+  'コミュニケーションの工夫',
+] as const;
+
 /** Normalize escaped newlines from API */
 function nl(text: string | null | undefined): string {
   if (!text) return '';
@@ -157,6 +172,8 @@ export default function RenrakuchoPage() {
   const [isLoadingRecords, setIsLoadingRecords] = useState(false);
   const [editingStudentId, setEditingStudentId] = useState<number | null>(null);
   const [studentFormData, setStudentFormData] = useState<Record<string, string>>({});
+  // 強み(才能)チェック スコア (0-10)
+  const [studentStrengths, setStudentStrengths] = useState<Record<string, number>>({});
   const [isSavingStudent, setIsSavingStudent] = useState(false);
 
   // --- Add student to activity ---
@@ -256,6 +273,7 @@ export default function RenrakuchoPage() {
     setEditingActivity(activity);
     setEditingStudentId(null);
     setStudentFormData({});
+    setStudentStrengths({});
     setShowAddStudent(false);
     setIsLoadingRecords(true);
     try {
@@ -285,6 +303,7 @@ export default function RenrakuchoPage() {
       social_relations: nl(rec.social_relations),
       notes: nl(rec.notes),
     });
+    setStudentStrengths(rec.strengths ?? {});
   };
 
   const handleAddStudent = (student: Student) => {
@@ -300,6 +319,7 @@ export default function RenrakuchoPage() {
       language_communication: null,
       social_relations: null,
       notes: null,
+      strengths: null,
     };
     setStudentRecords((prev) => [...prev, newRec]);
     setShowAddStudent(false);
@@ -313,6 +333,7 @@ export default function RenrakuchoPage() {
       social_relations: '',
       notes: '',
     });
+    setStudentStrengths({});
   };
 
   const handleSaveStudentRecord = async () => {
@@ -322,6 +343,7 @@ export default function RenrakuchoPage() {
       await api.post(`/api/staff/renrakucho/${editingActivity.id}/student-records`, {
         student_id: editingStudentId,
         ...studentFormData,
+        strengths: studentStrengths,
       });
       toast.success('保存しました');
       const res = await api.get(`/api/staff/renrakucho/${editingActivity.id}/student-records`);
@@ -345,6 +367,7 @@ export default function RenrakuchoPage() {
       if (editingStudentId === studentId) {
         setEditingStudentId(null);
         setStudentFormData({});
+        setStudentStrengths({});
       }
       fetchActivities(true);
     } catch {
@@ -1096,6 +1119,39 @@ export default function RenrakuchoPage() {
                           />
                         </div>
                       ))}
+
+                      {/* 強み（才能）チェック */}
+                      <div className="rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] p-3">
+                        <p className="mb-2 text-xs font-semibold text-[var(--neutral-foreground-2)]">
+                          強み（才能）チェック
+                        </p>
+                        <div className="space-y-2">
+                          {STRENGTH_KEYS.map((key) => {
+                            const score = studentStrengths[key] ?? 0;
+                            return (
+                              <div key={key} className="flex items-center gap-3">
+                                <span className="w-32 shrink-0 text-xs text-[var(--neutral-foreground-2)]">
+                                  {key}
+                                </span>
+                                <input
+                                  type="range"
+                                  min={0}
+                                  max={10}
+                                  value={score}
+                                  onChange={(e) => {
+                                    const v = parseInt(e.target.value, 10);
+                                    setStudentStrengths((prev) => ({ ...prev, [key]: v }));
+                                  }}
+                                  className="flex-1"
+                                />
+                                <span className="w-7 text-center text-xs font-bold text-[var(--neutral-foreground-1)]">
+                                  {score}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
 
                       {/* Notes */}
                       <div>
