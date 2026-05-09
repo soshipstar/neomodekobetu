@@ -257,6 +257,83 @@
     </div>
     @endif
 
+    {{-- 就労 A/B 用メトリクス (employment_metrics) --}}
+    @php
+        $employment = is_array($strengthsSummary) ? ($strengthsSummary['employment_metrics'] ?? null) : null;
+    @endphp
+    @if (!empty($employment))
+    <div class="section">
+        <div class="section-title">
+            就労メトリクス
+            <span style="font-weight: normal; font-size: 9pt;">
+                ({{ $strengthsSummary['from'] ?? '' }} 〜 {{ $strengthsSummary['to'] ?? '' }})
+            </span>
+        </div>
+        <table>
+            <tr>
+                <td class="label-cell">工賃対象時間 合計</td>
+                <td class="content-cell">{{ $employment['total_wage_eligible_hours'] ?? 0 }}時間</td>
+                <td class="label-cell">1日平均</td>
+                <td class="content-cell">{{ $employment['average_wage_eligible_hours'] ?? 0 }}時間</td>
+            </tr>
+            <tr>
+                <td class="label-cell">出勤率</td>
+                <td class="content-cell">{{ $employment['attendance_rate'] ?? 0 }}%</td>
+                <td class="label-cell">平均出退勤</td>
+                <td class="content-cell">
+                    {{ $employment['average_clock_in'] ?? '-' }} 〜 {{ $employment['average_clock_out'] ?? '-' }}
+                </td>
+            </tr>
+        </table>
+        @php
+            $works = $employment['work_content_categories'] ?? [];
+            arsort($works);
+            $topWorks = array_slice($works, 0, 5, true);
+        @endphp
+        @if (!empty($topWorks))
+            <div style="margin-top: 4px; font-size: 9pt;">
+                <strong>主な作業内容:</strong>
+                @foreach ($topWorks as $cat => $cnt)
+                    {{ $cat }}({{ $cnt }}回){{ !$loop->last ? '、' : '' }}
+                @endforeach
+            </div>
+        @endif
+    </div>
+    @endif
+
+    {{-- 就労移行 用メトリクス (transition_metrics) --}}
+    @php
+        $transition = is_array($strengthsSummary) ? ($strengthsSummary['transition_metrics'] ?? null) : null;
+    @endphp
+    @if (!empty($transition))
+    <div class="section">
+        <div class="section-title">
+            就労移行メトリクス
+            <span style="font-weight: normal; font-size: 9pt;">
+                ({{ $strengthsSummary['from'] ?? '' }} 〜 {{ $strengthsSummary['to'] ?? '' }})
+            </span>
+        </div>
+        @if (!empty($transition['practice_contents']))
+            <div style="font-size: 10pt; margin-bottom: 4px;">
+                <strong>実習内容:</strong>
+                {{ implode('、', array_slice($transition['practice_contents'], 0, 10)) }}
+            </div>
+        @endif
+        @if (!empty($transition['job_search_records']))
+            <div style="font-size: 10pt; margin-bottom: 4px;">
+                <strong>就職活動記録:</strong>
+                {{ implode('、', array_slice($transition['job_search_records'], 0, 10)) }}
+            </div>
+        @endif
+        @if ($transition['average_business_manner_score'] !== null)
+            <div style="font-size: 10pt;">
+                <strong>ビジネスマナー評価平均:</strong>
+                {{ $transition['average_business_manner_score'] }}/5
+            </div>
+        @endif
+    </div>
+    @endif
+
     {{-- モニタリング明細 --}}
     @if ($details && $details->count() > 0)
     <div class="section">
