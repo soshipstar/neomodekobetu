@@ -14,7 +14,7 @@
                     <tr>
                         <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 32px 30px; text-align: center;">
                             <h1 style="margin: 0; font-size: 22px; font-weight: 600; color: #ffffff; letter-spacing: 0.5px;">
-                                {{ $facilityName ?? 'きづり' }}
+                                {{ $facilityName ?? 'ケアブリッジ' }}
                             </h1>
                             <p style="margin: 8px 0 0 0; font-size: 14px; color: rgba(255, 255, 255, 0.85);">
                                 新着メッセージのお知らせ
@@ -68,7 +68,7 @@
                     <tr>
                         <td style="background-color: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #e9ecef;">
                             <p style="margin: 0 0 4px 0; font-size: 13px; color: #666666;">
-                                &copy; {{ date('Y') }} {{ $facilityName ?? 'きづり' }} - 個別支援連絡帳システム
+                                &copy; {{ date('Y') }} {{ $facilityName ?? 'ケアブリッジ' }} - 個別支援連絡帳システム
                             </p>
                             <p style="margin: 0; font-size: 12px; color: #999999;">
                                 このメールに直接返信することはできません

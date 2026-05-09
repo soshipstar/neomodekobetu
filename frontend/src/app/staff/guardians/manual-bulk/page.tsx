@@ -22,7 +22,7 @@ function GuardianManualSheet({ guardian, loginUrl, today }: { guardian: Guardian
     <div className="guardian-sheet">
       <div style={{ textAlign: 'center', borderBottom: '3px solid #2563eb', paddingBottom: '16px', marginBottom: '24px' }}>
         <h1 style={{ fontSize: '22pt', fontWeight: 'bold', color: '#1e3a5f', margin: 0 }}>
-          きづり 保護者向けご利用ガイド
+          ケアブリッジ 保護者向けご利用ガイド
         </h1>
         <p style={{ fontSize: '10pt', color: '#666', marginTop: '4px' }}>個別支援連絡帳システム</p>
       </div>

@@ -109,7 +109,7 @@ class SupportPlanService
 
             $this->notificationService->sendEmailNotification(
                 $guardian,
-                '【きづり】支援計画の確認依頼',
+                '【ケアブリッジ】支援計画の確認依頼',
                 "{$plan->student_name}さんの個別支援計画書が作成されました。ログインして内容をご確認ください。"
             );
         }

@@ -14,8 +14,8 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        $classroom1 = Classroom::where('classroom_name', 'きづり教室 本校')->first();
-        $classroom2 = Classroom::where('classroom_name', 'きづり教室 第2校')->first();
+        $classroom1 = Classroom::where('classroom_name', 'ケアブリッジ教室 本校')->first();
+        $classroom2 = Classroom::where('classroom_name', 'ケアブリッジ教室 第2校')->first();
 
         if (! $classroom1 || ! $classroom2) {
             $this->command->warn('Classrooms not found. Run ClassroomSeeder first.');

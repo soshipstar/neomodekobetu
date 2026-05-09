@@ -23,8 +23,8 @@ class DemoDataSeeder extends Seeder
      */
     public function run(): void
     {
-        $classroom1 = Classroom::where('classroom_name', 'きづり教室 本校')->first();
-        $classroom2 = Classroom::where('classroom_name', 'きづり教室 第2校')->first();
+        $classroom1 = Classroom::where('classroom_name', 'ケアブリッジ教室 本校')->first();
+        $classroom2 = Classroom::where('classroom_name', 'ケアブリッジ教室 第2校')->first();
 
         $guardian1 = User::where('username', 'guardian1')->first();
         $guardian2 = User::where('username', 'guardian2')->first();

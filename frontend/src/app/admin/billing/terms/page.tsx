@@ -115,7 +115,7 @@ export default function BillingTermsPage() {
       <div>
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">個別条件書</h1>
         <p className="text-sm text-[var(--neutral-foreground-3)]">
-          きづり 利用契約書の各条において「個別条件書に定める」と引用される具体条件を本書面に記載します。
+          ケアブリッジ 利用契約書の各条において「個別条件書に定める」と引用される具体条件を本書面に記載します。
         </p>
         {company && (
           <p className="mt-1 text-sm text-[var(--neutral-foreground-2)]">
@@ -175,7 +175,7 @@ export default function BillingTermsPage() {
       )}
 
       <p className="text-xs text-[var(--neutral-foreground-3)] print:mt-4">
-        本書は「きづり 利用契約書」の付随書面です。本書記載の条件は契約書本文に優先して適用されます。
+        本書は「ケアブリッジ 利用契約書」の付随書面です。本書記載の条件は契約書本文に優先して適用されます。
       </p>
 
       <style jsx global>{`

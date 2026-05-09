@@ -54,7 +54,7 @@ class ChatMessageObserver
 
             $frontendUrl = rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/');
             $senderName = $this->resolveSenderName($message);
-            $facilityName = $room->student->classroom?->classroom_name ?? config('app.name', 'きづり');
+            $facilityName = $room->student->classroom?->classroom_name ?? config('app.name', 'ケアブリッジ');
             $messagePreview = $message->message ?: '(添付ファイル)';
 
             if ($message->sender_type === 'guardian') {

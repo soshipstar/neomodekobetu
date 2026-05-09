@@ -19,11 +19,11 @@ const sections: ManualSection[] = [
   {
     id: 'about',
     icon: <MaterialIcon name="menu_book" size={20} />,
-    title: '「きづり（軌綴）」とは',
+    title: '「ケアブリッジ」とは',
     content: (
       <div className="space-y-3">
         <p>
-          「きづり（軌綴）」は、放課後等デイサービスの個別支援に特化した統合管理システムです。
+          「ケアブリッジ」は、放課後等デイサービスの個別支援に特化した統合管理システムです。
           日々の活動記録、個別支援計画、保護者連絡、職員間コミュニケーションを一元管理し、
           子どもたち一人ひとりの成長の軌跡を綴ります。
         </p>

@@ -175,9 +175,9 @@ export default function BillingContractPage() {
       <Card>
         <CardBody>
           <article className="prose prose-sm max-w-none text-[var(--neutral-foreground-1)]">
-            <h2 className="text-base font-semibold">きづり 利用契約書（標準条項）</h2>
+            <h2 className="text-base font-semibold">ケアブリッジ 利用契約書（標準条項）</h2>
             <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
-              対象サービス: 記録・支援業務支援システム「きづり」
+              対象サービス: 記録・支援業務支援システム「ケアブリッジ」
             </p>
             <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
               ※ 金額・支払条件・期日等の個別条件は、本書冒頭「契約内容サマリ」および別途交付する見積書／請求書に記載のとおりとします。
@@ -186,7 +186,7 @@ export default function BillingContractPage() {
             <h3 className="mt-4 font-semibold">前文</h3>
             <p className="mt-1">
               甲（株式会社ソーシップ）は、放課後等デイサービス事業者向けに、支援記録、顧客情報管理その他関連業務を支援する
-              システム「きづり」（以下「本サービス」という。）を提供する。乙（契約者）は、本サービスの導入および利用を希望し、
+              システム「ケアブリッジ」（以下「本サービス」という。）を提供する。乙（契約者）は、本サービスの導入および利用を希望し、
               甲乙は以下のとおり本サービスの利用契約（以下「本契約」という。）を締結する。
             </p>
 

@@ -144,7 +144,7 @@ class NotificationService
         string $chatUrl,
         string $facilityName = '',
     ): void {
-        $displayName = $facilityName ?: config('app.name', 'きづり');
+        $displayName = $facilityName ?: config('app.name', 'ケアブリッジ');
         $subject = "【{$displayName}】チャットに新しいメッセージがあります";
 
         $this->sendEmailNotification($recipient, $subject, 'chat-notification', [
@@ -152,7 +152,7 @@ class NotificationService
             'senderName' => $senderName,
             'messagePreview' => $messagePreview,
             'chatUrl' => $chatUrl,
-            'facilityName' => $facilityName ?: config('app.name', 'きづり'),
+            'facilityName' => $facilityName ?: config('app.name', 'ケアブリッジ'),
         ]);
     }
 
@@ -183,7 +183,7 @@ class NotificationService
             'planPeriod' => $planPeriod,
             'actionType' => $actionType,
             'planUrl' => $planUrl,
-            'facilityName' => $facilityName ?: config('app.name', 'きづり'),
+            'facilityName' => $facilityName ?: config('app.name', 'ケアブリッジ'),
         ]);
     }
 
@@ -206,7 +206,7 @@ class NotificationService
             'deadline' => $deadline,
             'daysRemaining' => $daysRemaining,
             'assessmentUrl' => $assessmentUrl,
-            'facilityName' => $facilityName ?: config('app.name', 'きづり'),
+            'facilityName' => $facilityName ?: config('app.name', 'ケアブリッジ'),
         ]);
     }
 
@@ -229,7 +229,7 @@ class NotificationService
             'body' => $body,
             'actionUrl' => $actionUrl,
             'actionLabel' => $actionLabel,
-            'facilityName' => $facilityName ?: config('app.name', 'きづり'),
+            'facilityName' => $facilityName ?: config('app.name', 'ケアブリッジ'),
         ]);
     }
 
