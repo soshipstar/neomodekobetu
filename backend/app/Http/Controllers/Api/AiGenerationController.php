@@ -9,8 +9,10 @@ use App\Models\MonitoringRecord;
 use App\Models\Newsletter;
 use App\Models\Student;
 use App\Models\StudentRecord;
+use App\Services\StrengthsAggregator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 class AiGenerationController extends Controller
 {
     /**
@@ -71,6 +73,15 @@ class AiGenerationController extends Controller
             return "[{$p->created_date}]\n{$details}";
         })->implode("\n\n");
 
+        // 直近 6 ヶ月の強み(才能)チェック集計
+        $strengthsAggregator = app(StrengthsAggregator::class);
+        $strengthsSummary = $strengthsAggregator->aggregateForStudent(
+            $student->id,
+            Carbon::today()->subMonths(6),
+            Carbon::today(),
+        );
+        $strengthsText = $strengthsAggregator->formatAsText($strengthsSummary);
+
         try {
             $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
                 'model'    => 'gpt-5.4-mini-2026-03-17',
@@ -85,15 +96,16 @@ class AiGenerationController extends Controller
                             . "【児童名】{$student->student_name}\n\n"
                             . "【面接記録】\n{$interviewText}\n\n"
                             . "【連絡帳記録】\n{$recordsText}\n\n"
+                            . "{$strengthsText}\n\n"
                             . "【過去の支援計画書】\n{$pastPlanText}\n\n"
                             . ($validated['context'] ? "【追加情報】\n{$validated['context']}\n\n" : '')
-                            . "以下を含むJSONを出力してください:\n"
+                            . "以下を含むJSONを出力してください。details の各要素には任意で target_strength（強み項目名 / 連絡帳の強みチェック10項目から選択）と target_strength_baseline (現在値 0-10) / target_strength_target (目標値 0-10) を含めることができます:\n"
                             . "{\n"
                             . "  \"life_intention\": \"本人の生活に対する意向\",\n"
                             . "  \"overall_policy\": \"総合的な援助の方針\",\n"
                             . "  \"long_term_goal\": \"長期目標\",\n"
                             . "  \"short_term_goal\": \"短期目標\",\n"
-                            . "  \"details\": [{\"category\": \"分野\", \"sub_category\": \"サブ分野\", \"support_goal\": \"目標\", \"support_content\": \"支援内容\"}]\n"
+                            . "  \"details\": [{\"category\": \"分野\", \"sub_category\": \"サブ分野\", \"support_goal\": \"目標\", \"support_content\": \"支援内容\", \"target_strength\": \"集中力\", \"target_strength_baseline\": 5, \"target_strength_target\": 7}]\n"
                             . "}",
                     ],
                 ],
@@ -177,7 +189,23 @@ class AiGenerationController extends Controller
             $details = $details->where('id', $validated['detail_id']);
         }
 
-        $detailsText = $details->map(fn ($d) => "- [{$d->category}/{$d->sub_category}] 目標: {$d->support_goal} / 内容: {$d->support_content}")->implode("\n");
+        $detailsText = $details->map(function ($d) {
+            $line = "- [{$d->category}/{$d->sub_category}] 目標: {$d->support_goal} / 内容: {$d->support_content}";
+            if (!empty($d->target_strength)) {
+                $line .= " / 指標: {$d->target_strength} (現在 {$d->target_strength_baseline}→目標 {$d->target_strength_target})";
+            }
+            return $line;
+        })->implode("\n");
+
+        // 計画作成日 (なければ 6 ヶ月前) 〜 今日 の強み(才能)チェック集計
+        $strengthsAggregator = app(StrengthsAggregator::class);
+        $strengthsFrom = $plan->created_date ? Carbon::parse($plan->created_date) : Carbon::today()->subMonths(6);
+        $strengthsSummary = $strengthsAggregator->aggregateForStudent(
+            $student->id,
+            $strengthsFrom,
+            Carbon::today(),
+        );
+        $strengthsText = $strengthsAggregator->formatAsText($strengthsSummary);
 
         try {
             $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
@@ -192,7 +220,8 @@ class AiGenerationController extends Controller
                         'content' => "【児童名】{$student->student_name}\n\n"
                             . "【計画の目標・支援内容】\n{$detailsText}\n\n"
                             . "【過去6ヶ月の記録】\n{$recordsText}\n\n"
-                            . "各目標に対して評価してください。出力形式:\n"
+                            . "{$strengthsText}\n\n"
+                            . "各目標に対して評価してください。指標 (target_strength) が設定されている目標は、強みチェックの推移を踏まえて達成状況を判断してください。出力形式:\n"
                             . "{\"evaluations\": {\"<detail_id>\": {\"achievement_status\": \"達成/進行中/未着手/継続中/見直し必要\", \"monitoring_comment\": \"150〜200字の評価\"}, ...}}",
                     ],
                 ],

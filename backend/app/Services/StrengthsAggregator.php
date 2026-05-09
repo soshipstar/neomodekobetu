@@ -226,4 +226,65 @@ class StrengthsAggregator
             default => $date->format('Y-m'),
         };
     }
+
+    /**
+     * 集計結果を AI プロンプト/PDF 用の人間可読テキストへ整形する。
+     * syuro26 の formatAfterSchoolMetrics の「強み（才能）チェック推移」ブロック相当。
+     *
+     * @param  array<string, mixed>  $summary  aggregateForStudent() の戻り値
+     */
+    public function formatAsText(array $summary): string
+    {
+        $trends = $summary['trends'] ?? [];
+        if (empty($trends)) {
+            return '【強み（才能）チェック】対象期間に記録なし';
+        }
+
+        $lines = [];
+        $period = ($summary['from'] ?? '') . ' 〜 ' . ($summary['to'] ?? '');
+        $count  = $summary['record_count'] ?? 0;
+        $lines[] = "【強み（才能）チェック推移】(期間: {$period} / {$count}件)";
+
+        foreach ($trends as $t) {
+            $arrow = match ($t['trend'] ?? 'stable') {
+                'up'   => '↑',
+                'down' => '↓',
+                default => '→',
+            };
+            $sign = ($t['change'] ?? 0) >= 0 ? '+' : '';
+            $monthly = $t['monthly_averages'] ?? [];
+            ksort($monthly);
+            $monthlyDetail = [];
+            foreach ($monthly as $m => $v) {
+                $monthlyDetail[] = "{$m}:{$v}";
+            }
+            $domainTag = !empty($t['domain']) ? "【{$t['domain']}】" : '';
+            $lines[] = sprintf(
+                '- %s%s: 平均%s/10 %s%s%s（%s）',
+                $t['label'] ?? '?',
+                $domainTag,
+                $t['overall_average'] ?? 0,
+                $arrow,
+                $sign,
+                $t['change'] ?? 0,
+                implode(' → ', $monthlyDetail),
+            );
+        }
+
+        $growing = array_filter($trends, fn ($t) => ($t['trend'] ?? '') === 'up');
+        $declining = array_filter($trends, fn ($t) => ($t['trend'] ?? '') === 'down');
+
+        if ($growing !== []) {
+            usort($growing, fn ($a, $b) => ($b['change'] ?? 0) <=> ($a['change'] ?? 0));
+            $items = array_map(fn ($t) => "{$t['label']}(+{$t['change']})", $growing);
+            $lines[] = '- ★成長が顕著: ' . implode('、', $items);
+        }
+        if ($declining !== []) {
+            usort($declining, fn ($a, $b) => ($a['change'] ?? 0) <=> ($b['change'] ?? 0));
+            $items = array_map(fn ($t) => "{$t['label']}({$t['change']})", $declining);
+            $lines[] = '- ※低下傾向: ' . implode('、', $items);
+        }
+
+        return implode("\n", $lines);
+    }
 }
