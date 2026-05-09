@@ -24,7 +24,7 @@ class ClassroomSwitchController extends Controller
         $ids = $user->switchableClassroomIds();
         $classrooms = \App\Models\Classroom::query()
             ->whereIn('id', $ids)
-            ->select('id', 'classroom_name', 'address', 'phone')
+            ->select('id', 'classroom_name', 'service_type', 'address', 'phone')
             ->orderBy('classroom_name')
             ->get();
 

@@ -4,21 +4,25 @@ import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { useUiStore } from '@/stores/uiStore';
 import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { NotificationBell } from './NotificationBell';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { getInitials } from '@/lib/utils';
 import api from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
+import { serviceTypeShort } from '@/lib/serviceType';
 
 interface ClassroomOption {
   id: number;
   classroom_name: string;
+  service_type: string;
 }
 
 export function Header() {
   const { user, fetchUser } = useAuthStore();
   const { toggleSidebar } = useUiStore();
   const { logout } = useAuth();
+  const workspace = useWorkspace();
   const toast = useToast();
   const [classrooms, setClassrooms] = useState<ClassroomOption[]>([]);
   const [switching, setSwitching] = useState(false);
@@ -73,7 +77,9 @@ export function Header() {
             title="教室を切り替え"
           >
             {classrooms.map((c) => (
-              <option key={c.id} value={c.id}>{c.classroom_name}</option>
+              <option key={c.id} value={c.id}>
+                {c.classroom_name} [{serviceTypeShort(c.service_type)}]
+              </option>
             ))}
           </select>
         ) : user.classroom ? (
@@ -81,6 +87,14 @@ export function Header() {
             {user.classroom.classroom_name}
           </span>
         ) : null}
+        {workspace.isReady && (
+          <span
+            className="hidden rounded bg-[var(--brand-160)] px-2 py-0.5 text-xs font-semibold text-[var(--brand-50)] sm:inline-flex"
+            title={`現在のサービス種別: ${workspace.terms.facility_role}`}
+          >
+            {serviceTypeShort(workspace.serviceType)}
+          </span>
+        )}
       </div>
 
       {/* Right side */}
