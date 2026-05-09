@@ -46,7 +46,10 @@ export default function TabletPhotosPage() {
   const [activityDate, setActivityDate] = useState(new Date().toISOString().slice(0, 10));
   const [selectedStudents, setSelectedStudents] = useState<Set<number>>(new Set());
   const [uploading, setUploading] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  // capture="environment" 付きの input → ブラウザ/OS が直接カメラを起動
+  const cameraRef = useRef<HTMLInputElement>(null);
+  // capture 属性なし → 写真ライブラリ/ファイル選択を開く
+  const libraryRef = useRef<HTMLInputElement>(null);
 
   // 詳細表示
   const [detailPhoto, setDetailPhoto] = useState<Photo | null>(null);
@@ -224,18 +227,39 @@ export default function TabletPhotosPage() {
                 </button>
               </div>
             ) : (
-              <button
-                onClick={() => fileRef.current?.click()}
-                className="flex w-full items-center justify-center gap-3 rounded-lg border-2 border-dashed border-gray-300 py-12 text-xl text-gray-500 hover:bg-gray-50"
-              >
-                📷 タップして写真を選択
-              </button>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {/* カメラ撮影 (capture="environment" でその場でカメラ起動) */}
+                <button
+                  onClick={() => cameraRef.current?.click()}
+                  className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-blue-300 bg-blue-50 py-10 text-xl font-bold text-blue-700 hover:bg-blue-100"
+                >
+                  <span className="text-4xl">📷</span>
+                  撮影してアップロード
+                </button>
+                {/* 既存写真をライブラリから選択 (capture なし) */}
+                <button
+                  onClick={() => libraryRef.current?.click()}
+                  className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-green-300 bg-green-50 py-10 text-xl font-bold text-green-700 hover:bg-green-100"
+                >
+                  <span className="text-4xl">🖼️</span>
+                  写真を選択してアップロード
+                </button>
+              </div>
             )}
+            {/* カメラ専用 input */}
             <input
-              ref={fileRef}
+              ref={cameraRef}
               type="file"
               accept="image/*"
               capture="environment"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            {/* ライブラリ選択用 input (capture 属性なし) */}
+            <input
+              ref={libraryRef}
+              type="file"
+              accept="image/*"
               className="hidden"
               onChange={handleFileChange}
             />
