@@ -16,6 +16,7 @@ class Classroom extends Model
     protected $fillable = [
         'classroom_name',
         'company_id',
+        'service_type',
         'address',
         'phone',
         'logo_path',
