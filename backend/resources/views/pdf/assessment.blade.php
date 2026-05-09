@@ -168,18 +168,23 @@
     </style>
 </head>
 <body>
+    @php
+        // サービス種別ごとに呼称 (生徒/利用者、保護者/家族) を切替
+        $serviceType = $classroom->service_type ?? 'after_school';
+        $terms = \App\Services\ServiceTypeRegistry::terms($serviceType);
+    @endphp
     <div class="header">
         <h1>アセスメント</h1>
-        <div class="header-subtitle">個別支援計画用 スタッフ・保護者 統合記録</div>
+        <div class="header-subtitle">個別支援計画用 スタッフ・{{ $terms['guardian'] }} 統合記録</div>
     </div>
 
     {{-- メタ情報 --}}
     <div class="meta-row">
         <div class="meta-cell">
-            <span class="meta-label">児童氏名：</span>{{ $student->student_name ?? '' }}
+            <span class="meta-label">{{ $terms['client'] }}氏名：</span>{{ $student->student_name ?? '' }}
         </div>
         <div class="meta-cell">
-            <span class="meta-label">教室：</span>{{ $classroom->classroom_name ?? '' }}
+            <span class="meta-label">事業所：</span>{{ $classroom->classroom_name ?? '' }}
         </div>
     </div>
     <div class="meta-row">
@@ -210,7 +215,7 @@
             @endif
         </div>
         <div class="meta-cell">
-            <span class="meta-label">保護者：</span>
+            <span class="meta-label">{{ $terms['guardian'] }}：</span>
             @if ($guardianEntry && $guardianEntry->is_submitted)
                 <span class="status-submitted">提出済み</span>
             @else
@@ -224,7 +229,7 @@
         <div class="section-title">本人の願い</div>
         <table class="compare-table">
             <tr>
-                <th class="guardian-header">保護者</th>
+                <th class="guardian-header">{{ $terms['guardian'] }}</th>
                 <th class="staff-header">スタッフ</th>
             </tr>
             <tr>
@@ -239,7 +244,7 @@
         <div class="section-title">短期目標（6か月）</div>
         <table class="compare-table">
             <tr>
-                <th class="guardian-header">保護者</th>
+                <th class="guardian-header">{{ $terms['guardian'] }}</th>
                 <th class="staff-header">スタッフ</th>
             </tr>
             <tr>
@@ -254,7 +259,7 @@
         <div class="section-title">長期目標（1年以上）</div>
         <table class="compare-table">
             <tr>
-                <th class="guardian-header">保護者</th>
+                <th class="guardian-header">{{ $terms['guardian'] }}</th>
                 <th class="staff-header">スタッフ</th>
             </tr>
             <tr>
@@ -270,7 +275,7 @@
         <table class="domain-table">
             <tr>
                 <th></th>
-                <td class="col-header col-header-guardian">保護者</td>
+                <td class="col-header col-header-guardian">{{ $terms['guardian'] }}</td>
                 <td class="col-header col-header-staff">スタッフ</td>
             </tr>
             <tr>
