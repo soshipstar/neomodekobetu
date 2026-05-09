@@ -14,6 +14,7 @@ import { SkeletonTable } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { format } from 'date-fns';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 interface SubmissionRequest {
   id: number;
@@ -40,6 +41,7 @@ interface StudentSubmission {
 export default function SubmissionsPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { terms } = useWorkspace();
   const [createModal, setCreateModal] = useState(false);
   const [detailModal, setDetailModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<SubmissionRequest | null>(null);
@@ -165,7 +167,7 @@ export default function SubmissionsPage() {
   ];
 
   const submissionColumns: Column<StudentSubmission>[] = [
-    { key: 'student_name', label: '生徒名' },
+    { key: 'student_name', label: `${terms.client}名` },
     {
       key: 'status',
       label: 'ステータス',

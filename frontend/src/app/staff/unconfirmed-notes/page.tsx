@@ -10,6 +10,7 @@ import { SkeletonList } from '@/components/ui/Skeleton';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -49,6 +50,7 @@ function nl(text: string | null | undefined): string {
 // ---------------------------------------------------------------------------
 
 export default function UnconfirmedNotesPage() {
+  const { terms } = useWorkspace();
   const [notes, setNotes] = useState<UnconfirmedNote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortField, setSortField] = useState<SortField>('sent_at');
@@ -157,7 +159,7 @@ export default function UnconfirmedNotesPage() {
             未確認連絡帳
           </h1>
           <p className="text-sm text-[var(--neutral-foreground-3)]">
-            保護者に送信済みで未確認の連絡帳一覧
+            {terms.guardian}に送信済みで未確認の{terms.diary}一覧
           </p>
         </div>
         <Button
@@ -245,7 +247,7 @@ export default function UnconfirmedNotesPage() {
                 : 'hover:bg-[var(--neutral-background-3)]'
             }`}
           >
-            生徒名 <SortIcon field="student_name" />
+            {terms.client}名 <SortIcon field="student_name" />
           </button>
         </div>
       )}
@@ -305,7 +307,7 @@ export default function UnconfirmedNotesPage() {
                     )}
                     {note.student?.guardian && (
                       <span>
-                        保護者: {note.student.guardian.full_name}
+                        {terms.guardian}: {note.student.guardian.full_name}
                       </span>
                     )}
                   </div>
@@ -327,7 +329,7 @@ export default function UnconfirmedNotesPage() {
                 未確認の連絡帳はありません
               </p>
               <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
-                全ての送信済み連絡帳が保護者に確認されています
+                全ての送信済み{terms.diary}が{terms.guardian}に確認されています
               </p>
             </div>
           </CardBody>

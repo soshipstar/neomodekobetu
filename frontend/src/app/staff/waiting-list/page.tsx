@@ -11,6 +11,7 @@ import { useToast } from '@/components/ui/Toast';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 // ---------------------------------------------------------------------------
 // Types & Constants
@@ -99,6 +100,7 @@ interface Summary {
 export default function WaitingListPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { terms } = useWorkspace();
   const [selectedDay, setSelectedDay] = useState<string>('monday');
   const [showCapacitySettings, setShowCapacitySettings] = useState(false);
   const [capacityForm, setCapacityForm] = useState<Record<number, { max_capacity: number; is_open: boolean }>>({});
@@ -207,7 +209,7 @@ export default function WaitingListPage() {
         </div>
         <Link href="/staff/students">
           <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="person_add" size={16} />}>
-            生徒管理で新規登録
+            {terms.client_plural}管理で新規登録
           </Button>
         </Link>
       </div>
@@ -479,7 +481,7 @@ export default function WaitingListPage() {
             <div className="py-12 text-center text-[var(--neutral-foreground-4)]">
               <MaterialIcon name="person_add" size={48} className="mx-auto mb-3" />
               <p className="text-sm">現在、待機児童はいません。</p>
-              <p className="mt-1 text-xs">生徒管理ページで状態を「待機」にすると、ここに表示されます</p>
+              <p className="mt-1 text-xs">{terms.client_plural}管理ページで状態を「待機」にすると、ここに表示されます</p>
             </div>
           ) : (
             <>

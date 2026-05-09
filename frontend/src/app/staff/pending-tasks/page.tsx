@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/Badge';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 // --- Types ---
 interface PlanTask {
@@ -142,6 +143,7 @@ type SortType = 'deadline_asc' | 'deadline_desc' | 'name_asc';
 export default function PendingTasksPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { terms } = useWorkspace();
   const [nameFilter, setNameFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('');
   const [sortType, setSortType] = useState<SortType>('deadline_asc');
@@ -206,14 +208,14 @@ export default function PendingTasksPage() {
         <CardBody>
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-[var(--neutral-foreground-3)]">生徒名で検索</label>
+              <label className="text-xs font-semibold text-[var(--neutral-foreground-3)]">{terms.client}名で検索</label>
               <div className="relative">
                 <MaterialIcon name="search" size={16} className="absolute left-2.5 top-2 text-[var(--neutral-foreground-4)]" />
                 <input
                   type="text"
                   value={nameFilter}
                   onChange={e => setNameFilter(e.target.value)}
-                  placeholder="生徒名を入力..."
+                  placeholder={`${terms.client}名を入力...`}
                   className="rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-1.5 pl-8 text-sm text-[var(--neutral-foreground-1)] outline-none focus:border-[var(--brand-80)] focus:ring-2 focus:ring-[var(--brand-160)]"
                 />
               </div>
@@ -228,7 +230,7 @@ export default function PendingTasksPage() {
                 <option value="">全て</option>
                 <option value="plan">個別支援計画書</option>
                 <option value="monitoring">モニタリング</option>
-                <option value="guardian_assessment">アセスメント（保護者）</option>
+                <option value="guardian_assessment">アセスメント（{terms.guardian}）</option>
                 <option value="staff_assessment">アセスメント（職員）</option>
               </select>
             </div>
@@ -241,7 +243,7 @@ export default function PendingTasksPage() {
               >
                 <option value="deadline_asc">期限が近い順</option>
                 <option value="deadline_desc">期限が遠い順</option>
-                <option value="name_asc">生徒名順</option>
+                <option value="name_asc">{terms.client}名順</option>
               </select>
             </div>
           </div>
@@ -270,7 +272,7 @@ export default function PendingTasksPage() {
               variant={data?.summary.monitoring ? 'warning' : 'success'}
             />
             <SummaryCard
-              title="保護者アセスメント"
+              title={`${terms.guardian}アセスメント`}
               count={data?.summary.guardian_assessment ?? 0}
               variant={data?.summary.guardian_assessment ? 'warning' : 'success'}
             />
@@ -295,7 +297,7 @@ export default function PendingTasksPage() {
               title="個別支援計画書"
               icon={<MaterialIcon name="description" size={20} />}
               count={filteredData.plans.length}
-              emptyMessage="すべての生徒の個別支援計画書が最新です"
+              emptyMessage={`すべての${terms.client_plural}の個別支援計画書が最新です`}
               badgeText={filteredData.plans.length > 0 ? `${filteredData.plans.length}件の対応が必要です` : 'すべて最新です'}
               badgeSuccess={filteredData.plans.length === 0}
             >
@@ -304,7 +306,7 @@ export default function PendingTasksPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)]">
-                        <th className="px-4 py-3 text-left font-semibold text-[var(--neutral-foreground-2)]">生徒名</th>
+                        <th className="px-4 py-3 text-left font-semibold text-[var(--neutral-foreground-2)]">{terms.client}名</th>
                         <th className="px-4 py-3 text-left font-semibold text-[var(--neutral-foreground-2)]">対象期間</th>
                         <th className="px-4 py-3 text-left font-semibold text-[var(--neutral-foreground-2)]">最新計画日</th>
                         <th className="px-4 py-3 text-left font-semibold text-[var(--neutral-foreground-2)]">状態</th>
@@ -366,7 +368,7 @@ export default function PendingTasksPage() {
               title="モニタリング"
               icon={<MaterialIcon name="trending_up" size={20} />}
               count={filteredData.monitoring.length}
-              emptyMessage="すべての生徒のモニタリングが最新です"
+              emptyMessage={`すべての${terms.client_plural}のモニタリングが最新です`}
               badgeText={filteredData.monitoring.length > 0 ? `${filteredData.monitoring.length}件の対応が必要です` : 'すべて最新です'}
               badgeSuccess={filteredData.monitoring.length === 0}
             >
@@ -375,7 +377,7 @@ export default function PendingTasksPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)]">
-                        <th className="px-4 py-3 text-left font-semibold text-[var(--neutral-foreground-2)]">生徒名</th>
+                        <th className="px-4 py-3 text-left font-semibold text-[var(--neutral-foreground-2)]">{terms.client}名</th>
                         <th className="px-4 py-3 text-left font-semibold text-[var(--neutral-foreground-2)]">支援開始日</th>
                         <th className="px-4 py-3 text-left font-semibold text-[var(--neutral-foreground-2)]">モニタリング期限</th>
                         <th className="px-4 py-3 text-left font-semibold text-[var(--neutral-foreground-2)]">状態</th>
@@ -447,10 +449,10 @@ export default function PendingTasksPage() {
           {/* Guardian Assessment Section */}
           {(categoryFilter === '' || categoryFilter === 'guardian_assessment') && (
             <TaskSection
-              title="保護者アセスメント"
+              title={`${terms.guardian}アセスメント`}
               icon={<MaterialIcon name="handshake" size={20} />}
               count={filteredData.guardian_assessment.length}
-              emptyMessage="すべての保護者アセスメントが提出済みです"
+              emptyMessage={`すべての${terms.guardian}アセスメントが提出済みです`}
               badgeText={filteredData.guardian_assessment.length > 0 ? `${filteredData.guardian_assessment.length}件の未提出があります` : 'すべて提出済みです'}
               badgeSuccess={filteredData.guardian_assessment.length === 0}
             >
@@ -459,7 +461,7 @@ export default function PendingTasksPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)]">
-                        <th className="px-4 py-3 text-left font-semibold text-[var(--neutral-foreground-2)]">生徒名</th>
+                        <th className="px-4 py-3 text-left font-semibold text-[var(--neutral-foreground-2)]">{terms.client}名</th>
                         <th className="px-4 py-3 text-left font-semibold text-[var(--neutral-foreground-2)]">期間名</th>
                         <th className="px-4 py-3 text-left font-semibold text-[var(--neutral-foreground-2)]">対象期間</th>
                         <th className="px-4 py-3 text-left font-semibold text-[var(--neutral-foreground-2)]">提出期限</th>
@@ -526,7 +528,7 @@ export default function PendingTasksPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)]">
-                        <th className="px-4 py-3 text-left font-semibold text-[var(--neutral-foreground-2)]">生徒名</th>
+                        <th className="px-4 py-3 text-left font-semibold text-[var(--neutral-foreground-2)]">{terms.client}名</th>
                         <th className="px-4 py-3 text-left font-semibold text-[var(--neutral-foreground-2)]">期間名</th>
                         <th className="px-4 py-3 text-left font-semibold text-[var(--neutral-foreground-2)]">対象期間</th>
                         <th className="px-4 py-3 text-left font-semibold text-[var(--neutral-foreground-2)]">提出期限</th>

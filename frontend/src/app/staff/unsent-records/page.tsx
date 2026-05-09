@@ -10,6 +10,7 @@ import { useToast } from '@/components/ui/Toast';
 import { format, subDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -43,6 +44,7 @@ type ModalType = 'create_record' | 'mark_absent' | 'absence_response' | null;
 
 export default function UnsentRecordsPage() {
   const toast = useToast();
+  const { terms } = useWorkspace();
   const [records, setRecords] = useState<UnsentRecord[]>([]);
   const [summary, setSummary] = useState<Summary>({ total: 0, no_record: 0, absent: 0, absence_response_pending: 0 });
   const [isLoading, setIsLoading] = useState(true);
@@ -108,7 +110,7 @@ export default function UnsentRecordsPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">未送信日誌一覧</h1>
-          <p className="text-sm text-[var(--neutral-foreground-3)]">参加予定で日誌未作成の生徒と欠席者の一覧</p>
+          <p className="text-sm text-[var(--neutral-foreground-3)]">参加予定で日誌未作成の{terms.client_plural}と欠席者の一覧</p>
         </div>
         <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="refresh" size={16} />} onClick={fetchData} isLoading={isLoading}>更新</Button>
       </div>
@@ -303,7 +305,7 @@ function CreateRecordModal({ record, activities, onClose, onSaved }: { record: U
           )}
           <div>
             <label className="block text-sm font-medium text-[var(--neutral-foreground-2)] mb-1">その時の様子</label>
-            <textarea className="w-full rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm" rows={4} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="この生徒の様子を記入..." />
+            <textarea className="w-full rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm" rows={4} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={`この${terms.client}の様子を記入...`} />
           </div>
         </div>
         <div className="flex items-center justify-end gap-2 border-t border-[var(--neutral-stroke-2)] px-5 py-4">
@@ -407,7 +409,7 @@ function AbsenceResponseModal({ record, onClose, onSaved }: { record: UnsentReco
           </div>
           <div>
             <label className="block text-sm font-medium text-[var(--neutral-foreground-2)] mb-1">対応内容 <span className="text-[var(--status-danger-fg)]">*</span></label>
-            <textarea className="w-full rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm" rows={4} value={responseContent} onChange={(e) => setResponseContent(e.target.value)} placeholder="電話にて保護者に状況確認を行い..." />
+            <textarea className="w-full rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm" rows={4} value={responseContent} onChange={(e) => setResponseContent(e.target.value)} placeholder={`電話にて${terms.guardian}に状況確認を行い...`} />
           </div>
           <div>
             <label className="block text-sm font-medium text-[var(--neutral-foreground-2)] mb-1">連絡方法</label>
@@ -418,7 +420,7 @@ function AbsenceResponseModal({ record, onClose, onSaved }: { record: UnsentReco
           </div>
           <div>
             <label className="block text-sm font-medium text-[var(--neutral-foreground-2)] mb-1">連絡内容</label>
-            <textarea className="w-full rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm" rows={3} value={contactContent} onChange={(e) => setContactContent(e.target.value)} placeholder="保護者との連絡内容..." />
+            <textarea className="w-full rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm" rows={3} value={contactContent} onChange={(e) => setContactContent(e.target.value)} placeholder={`${terms.guardian}との連絡内容...`} />
           </div>
         </div>
         <div className="flex items-center justify-end gap-2 border-t border-[var(--neutral-stroke-2)] px-5 py-4">

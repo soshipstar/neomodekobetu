@@ -14,6 +14,7 @@ import { SkeletonTable } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { format, isPast, differenceInDays } from 'date-fns';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -67,6 +68,7 @@ const emptyForm: SubmissionForm = {
 export default function SubmissionManagementPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { terms } = useWorkspace();
 
   const [createModal, setCreateModal] = useState(false);
   const [completeModal, setCompleteModal] = useState(false);
@@ -161,7 +163,7 @@ export default function SubmissionManagementPage() {
   const columns: Column<SubmissionRequest>[] = [
     {
       key: 'student_name',
-      label: '生徒名',
+      label: `${terms.client}名`,
       render: (req) => (
         <div>
           <p className="font-medium text-[var(--neutral-foreground-1)]">{req.student_name}</p>
@@ -387,14 +389,14 @@ export default function SubmissionManagementPage() {
       <Modal isOpen={createModal} onClose={() => setCreateModal(false)} title="提出依頼を作成" size="lg">
         <form onSubmit={(e) => { e.preventDefault(); createMutation.mutate(form); }} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">生徒</label>
+            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">{terms.client}</label>
             <select
               className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
               value={form.student_id}
               onChange={(e) => setForm({ ...form, student_id: e.target.value ? Number(e.target.value) : '' })}
               required
             >
-              <option value="">生徒を選択</option>
+              <option value="">{terms.client}を選択</option>
               {students.map((s) => (
                 <option key={s.id} value={s.id}>{s.student_name}</option>
               ))}

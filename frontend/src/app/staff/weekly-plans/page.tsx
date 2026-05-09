@@ -11,6 +11,7 @@ import { format, addWeeks, startOfWeek, addDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import Link from 'next/link';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -38,6 +39,7 @@ function getWeekStart(date: Date): Date {
 // ---------------------------------------------------------------------------
 
 export default function WeeklyPlansPage() {
+  const { terms } = useWorkspace();
   const [weekOffset, setWeekOffset] = useState(0);
 
   const weekStart = useMemo(() => addWeeks(getWeekStart(new Date()), weekOffset), [weekOffset]);
@@ -85,8 +87,8 @@ export default function WeeklyPlansPage() {
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">生徒週間計画表</h1>
-        <p className="text-sm text-[var(--neutral-foreground-3)]">各生徒の週間計画を確認</p>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">{terms.client_plural}週間計画表</h1>
+        <p className="text-sm text-[var(--neutral-foreground-3)]">各{terms.client}の週間計画を確認</p>
       </div>
 
       {/* Week Navigation */}
@@ -134,7 +136,7 @@ export default function WeeklyPlansPage() {
           <CardBody>
             <div className="py-12 text-center text-[var(--neutral-foreground-4)]">
               <MaterialIcon name="person" size={48} className="mx-auto mb-3" />
-              <p>生徒が登録されていません</p>
+              <p>{terms.client_plural}が登録されていません</p>
             </div>
           </CardBody>
         </Card>

@@ -14,6 +14,7 @@ import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { cn, formatRelativeTime, truncate, nl } from '@/lib/utils';
 import { formatFileSize } from '@/lib/utils';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -62,6 +63,7 @@ export default function StudentChatsPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const isDesktop = useIsDesktop();
+  const { terms } = useWorkspace();
 
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
@@ -207,7 +209,7 @@ export default function StudentChatsPage() {
           {/* Header */}
           <div className="border-b border-[var(--neutral-stroke-2)] px-3 py-2.5 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-[var(--neutral-foreground-2)]">生徒チャット</span>
+              <span className="text-xs font-semibold text-[var(--neutral-foreground-2)]">{terms.client}チャット</span>
               <button
                 onClick={() => setBroadcastModal(true)}
                 className="flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-3)] transition-colors"
@@ -220,7 +222,7 @@ export default function StudentChatsPage() {
             <div className="relative">
               <MaterialIcon name="search" size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
               <Input
-                placeholder="生徒名で検索..."
+                placeholder={`${terms.client}名で検索...`}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="h-8 pl-8 text-xs"
@@ -351,7 +353,7 @@ export default function StudentChatsPage() {
                     <h2 className="text-sm font-semibold text-[var(--neutral-foreground-1)]">
                       {activeRoom.student_name}
                     </h2>
-                    <p className="text-xs text-[var(--neutral-foreground-3)]">生徒チャット</p>
+                    <p className="text-xs text-[var(--neutral-foreground-3)]">{terms.client}チャット</p>
                   </div>
                   {!activeRoom.is_active && <Badge variant="danger">無効</Badge>}
                 </div>
@@ -494,7 +496,7 @@ export default function StudentChatsPage() {
       )}
 
       {/* Broadcast Modal */}
-      <Modal isOpen={broadcastModal} onClose={() => setBroadcastModal(false)} title="全生徒に一斉送信" size="md">
+      <Modal isOpen={broadcastModal} onClose={() => setBroadcastModal(false)} title={`全${terms.client_plural}に一斉送信`} size="md">
         <div className="space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">メッセージ</label>
@@ -503,12 +505,12 @@ export default function StudentChatsPage() {
               onChange={(e) => setBroadcastMessage(e.target.value)}
               className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
               rows={5}
-              placeholder="全生徒に送信するメッセージを入力..."
+              placeholder={`全${terms.client_plural}に送信するメッセージを入力...`}
               required
             />
           </div>
           <p className="text-sm text-[var(--neutral-foreground-3)]">
-            {rooms.filter((r) => r.is_active).length}名の生徒全員にメッセージが送信されます。
+            {rooms.filter((r) => r.is_active).length}名の{terms.client_plural}全員にメッセージが送信されます。
           </p>
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setBroadcastModal(false)}>キャンセル</Button>
