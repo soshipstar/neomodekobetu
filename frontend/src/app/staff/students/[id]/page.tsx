@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Tabs, type TabItem } from '@/components/ui/Tabs';
 import { SkeletonCard } from '@/components/ui/Skeleton';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { useToast } from '@/components/ui/Toast';
 import { formatDate } from '@/lib/utils';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
@@ -129,13 +130,19 @@ export default function StudentDetailPage() {
 function StudentInfo({ studentId, student }: { studentId: number; student: Student }) {
   const toast = useToast();
   const queryClient = useQueryClient();
+  const { serviceType, terms } = useWorkspace();
   const [editing, setEditing] = useState(false);
   const toDateStr = (d: string | null | undefined) => d ? d.slice(0, 10) : '';
+  const isEmployment = serviceType === 'employment_a' || serviceType === 'employment_b';
+  const isTransition = serviceType === 'transition';
   const [form, setForm] = useState({
     student_name: student.student_name || '',
     birth_date: toDateStr(student.birth_date),
     status: student.status || 'active',
     support_start_date: toDateStr((student as any).support_start_date),
+    contract_start_date: toDateStr(student.contract_start_date),
+    contract_end_date: toDateStr(student.contract_end_date),
+    usage_limit_date: toDateStr(student.usage_limit_date),
     notes: (student as any).notes || '',
   });
 
@@ -163,7 +170,7 @@ function StudentInfo({ studentId, student }: { studentId: number; student: Stude
         <CardBody>
           <dl className="grid gap-4 sm:grid-cols-2">
             <div>
-              <dt className="text-xs font-medium text-[var(--neutral-foreground-3)]">生徒名</dt>
+              <dt className="text-xs font-medium text-[var(--neutral-foreground-3)]">{terms.client}名</dt>
               <dd className="mt-1 text-sm text-[var(--neutral-foreground-1)]">{student.student_name}</dd>
             </div>
             <div>
@@ -172,12 +179,15 @@ function StudentInfo({ studentId, student }: { studentId: number; student: Stude
                 {student.birth_date ? formatDate(student.birth_date) : '-'}
               </dd>
             </div>
+            {/* 学年区分は放デイのみ意味を持つ */}
+            {serviceType === 'after_school' && (
+              <div>
+                <dt className="text-xs font-medium text-[var(--neutral-foreground-3)]">学年区分</dt>
+                <dd className="mt-1 text-sm text-[var(--neutral-foreground-1)]">{gradeLabels[student.grade_level]}</dd>
+              </div>
+            )}
             <div>
-              <dt className="text-xs font-medium text-[var(--neutral-foreground-3)]">学年区分</dt>
-              <dd className="mt-1 text-sm text-[var(--neutral-foreground-1)]">{gradeLabels[student.grade_level]}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium text-[var(--neutral-foreground-3)]">保護者</dt>
+              <dt className="text-xs font-medium text-[var(--neutral-foreground-3)]">{terms.guardian}</dt>
               <dd className="mt-1 text-sm text-[var(--neutral-foreground-1)]">{student.guardian?.full_name || '-'}</dd>
             </div>
             <div>
@@ -190,6 +200,33 @@ function StudentInfo({ studentId, student }: { studentId: number; student: Stude
                 {(student as any).support_start_date ? formatDate((student as any).support_start_date) : '-'}
               </dd>
             </div>
+            {/* 就労 A/B: 契約期間 */}
+            {isEmployment && (
+              <>
+                <div>
+                  <dt className="text-xs font-medium text-[var(--neutral-foreground-3)]">契約開始日</dt>
+                  <dd className="mt-1 text-sm text-[var(--neutral-foreground-1)]">
+                    {student.contract_start_date ? formatDate(student.contract_start_date) : '-'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium text-[var(--neutral-foreground-3)]">契約終了日</dt>
+                  <dd className="mt-1 text-sm text-[var(--neutral-foreground-1)]">
+                    {student.contract_end_date ? formatDate(student.contract_end_date) : '-'}
+                  </dd>
+                </div>
+              </>
+            )}
+            {/* 就労移行: 利用期限 (開始から2年) */}
+            {isTransition && (
+              <div>
+                <dt className="text-xs font-medium text-[var(--neutral-foreground-3)]">利用期限</dt>
+                <dd className="mt-1 text-sm text-[var(--neutral-foreground-1)]">
+                  {student.usage_limit_date ? formatDate(student.usage_limit_date) : '未設定'}
+                  <span className="ml-2 text-xs text-[var(--neutral-foreground-3)]">(就労移行は開始から2年)</span>
+                </dd>
+              </div>
+            )}
             {(student as any).notes && (
               <div className="sm:col-span-2">
                 <dt className="text-xs font-medium text-[var(--neutral-foreground-3)]">備考</dt>
@@ -225,6 +262,37 @@ function StudentInfo({ studentId, student }: { studentId: number; student: Stude
             </select>
           </div>
           <Input label="支援開始日" type="date" value={form.support_start_date} onChange={(e) => setForm({ ...form, support_start_date: e.target.value })} />
+          {/* 就労 A/B: 契約期間 */}
+          {isEmployment && (
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                label="契約開始日"
+                type="date"
+                value={form.contract_start_date}
+                onChange={(e) => setForm({ ...form, contract_start_date: e.target.value })}
+              />
+              <Input
+                label="契約終了日"
+                type="date"
+                value={form.contract_end_date}
+                onChange={(e) => setForm({ ...form, contract_end_date: e.target.value })}
+              />
+            </div>
+          )}
+          {/* 就労移行: 利用期限 */}
+          {isTransition && (
+            <div>
+              <Input
+                label="利用期限"
+                type="date"
+                value={form.usage_limit_date}
+                onChange={(e) => setForm({ ...form, usage_limit_date: e.target.value })}
+              />
+              <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
+                就労移行支援は支援開始日から2年が標準的な利用期限です。
+              </p>
+            </div>
+          )}
           <div>
             <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">備考</label>
             <textarea

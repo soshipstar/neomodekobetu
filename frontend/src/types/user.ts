@@ -40,6 +40,10 @@ export interface Student {
   desired_start_date: string | null;
   desired_weekly_count: number | null;
   waiting_notes: string | null;
+  // Phase L-1: サービス種別固有 (契約期間 / 利用期限)
+  contract_start_date: string | null;
+  contract_end_date: string | null;
+  usage_limit_date: string | null;
   last_login_at: string | null;
   created_at: string;
   updated_at: string;
