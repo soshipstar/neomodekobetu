@@ -141,11 +141,16 @@
     </style>
 </head>
 <body>
+    @php
+        // 事業所のサービス種別に応じて呼称 (生徒/利用者、保護者/家族、児発管/サ管) を切替える
+        $serviceType = $classroom->service_type ?? 'after_school';
+        $terms = \App\Services\ServiceTypeRegistry::terms($serviceType);
+    @endphp
     <div class="header">
         <h1>モニタリング記録</h1>
         <div class="header-meta">
-            <span>児童氏名: {{ $student->student_name ?? '' }}</span>
-            <span>教室: {{ $classroom->classroom_name ?? '' }}</span>
+            <span>{{ $terms['client'] }}氏名: {{ $student->student_name ?? '' }}</span>
+            <span>事業所: {{ $classroom->classroom_name ?? '' }}</span>
             <span>実施日: {{ $record->monitoring_date ? $record->monitoring_date->format('Y年m月d日') : '' }}</span>
         </div>
     </div>
@@ -392,7 +397,7 @@
     <table class="signature-table">
         <tr>
             <td>
-                <strong>児童発達支援管理責任者：</strong>
+                <strong>{{ $terms['service_manager'] }}：</strong>
                 @if ($record->staff_signature && str_starts_with($record->staff_signature, 'data:image'))
                     <img src="{{ $record->staff_signature }}" alt="職員署名" style="max-height: 35px; max-width: 100px; vertical-align: middle;" />
                     @if ($record->staff_signer_name)

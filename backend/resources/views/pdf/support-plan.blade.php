@@ -196,6 +196,12 @@
     </style>
 </head>
 <body>
+    @php
+        // 事業所のサービス種別に応じて呼称を切替
+        $serviceType = ($classroom->service_type ?? null) ?? ($student->classroom->service_type ?? 'after_school');
+        $terms = \App\Services\ServiceTypeRegistry::terms($serviceType);
+        $isAfterSchool = $serviceType === 'after_school';
+    @endphp
     <div class="header">
         <h1>個別支援計画書</h1>
     </div>
@@ -203,7 +209,7 @@
     {{-- メタ情報 --}}
     <div class="meta">
         <div>
-            <span class="meta-label">児童氏名：</span>
+            <span class="meta-label">{{ $terms['client'] }}氏名：</span>
             {{ $student->student_name ?? $plan->student_name }}
         </div>
         <div>
@@ -215,7 +221,7 @@
     {{-- 意向と方針（2列） --}}
     <div class="two-col">
         <div>
-            <div class="section-head">利用児及び家族の生活に対する意向</div>
+            <div class="section-head">{{ $isAfterSchool ? '利用児及び家族の生活に対する意向' : '本人及び家族の生活に対する意向' }}</div>
             <div class="section-body">{{ $plan->life_intention }}</div>
         </div>
         <div>
@@ -304,7 +310,7 @@
     <div class="signature-row">
         <div class="sig-center">
             <div class="sig-item">
-                <div class="sig-label">児童発達支援管理責任者</div>
+                <div class="sig-label">{{ $terms['service_manager'] }}</div>
                 <div class="sig-content">
                 @php $staffSig = $plan->staff_signature_image ?: $plan->staff_signature; @endphp
                 @if ($staffSig && str_starts_with($staffSig, 'data:image'))
