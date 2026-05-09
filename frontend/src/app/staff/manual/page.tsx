@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useWorkspace } from '@/hooks/useWorkspace';
+import { serviceTypeLabel } from '@/lib/serviceType';
 
 // ---------------------------------------------------------------------------
 // Manual sections
@@ -403,6 +405,7 @@ const sections: ManualSection[] = [
 ];
 
 export default function ManualPage() {
+  const { serviceType, terms } = useWorkspace();
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(['about']));
 
   const toggleSection = (id: string) => {
@@ -427,6 +430,22 @@ export default function ManualPage() {
 
   return (
     <div className="space-y-6">
+      {/* 放デイ以外のサービス種別の事業所では、本マニュアルが
+          放課後等デイサービス向けに作成されている旨を明示する。 */}
+      {serviceType !== 'after_school' && (
+        <div className="rounded-md border border-[var(--status-warning-fg)] bg-[var(--status-warning-bg)] p-3 text-sm">
+          <p className="font-semibold text-[var(--neutral-foreground-1)]">
+            <MaterialIcon name="info" size={16} className="mr-1 inline align-text-bottom" />
+            このマニュアルは放課後等デイサービス向けに作成されています。
+          </p>
+          <p className="mt-1 text-xs text-[var(--neutral-foreground-2)]">
+            お使いの事業所は<strong>{serviceTypeLabel(serviceType)}</strong>のため、
+            画面上では「{terms.client}」「{terms.guardian}」「{terms.diary}」「{terms.service_manager}」など
+            の呼称が異なって表示されます。マニュアル内で「生徒」「保護者」「連絡帳」「児童発達支援管理責任者」と
+            記載されている箇所は、それぞれ読み替えてください。
+          </p>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">スタッフマニュアル</h1>
         <div className="flex gap-2">

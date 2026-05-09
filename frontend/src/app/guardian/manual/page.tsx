@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useWorkspace } from '@/hooks/useWorkspace';
+import { serviceTypeLabel } from '@/lib/serviceType';
 
 interface ManualSection {
   id: string;
@@ -286,6 +288,7 @@ const sections: ManualSection[] = [
 ];
 
 export default function GuardianManualPage() {
+  const { serviceType, terms } = useWorkspace();
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['dashboard']));
 
   const toggleSection = (id: string) => {
@@ -310,6 +313,22 @@ export default function GuardianManualPage() {
 
   return (
     <div className="space-y-6">
+      {/* 放デイ以外のサービス種別 (就労 A/B / 就労移行) では、本ガイドの
+          表記が画面の表示と一部異なる旨を明示する。 */}
+      {serviceType !== 'after_school' && (
+        <div className="rounded-md border border-[var(--status-warning-fg)] bg-[var(--status-warning-bg)] p-3 text-sm">
+          <p className="font-semibold text-[var(--neutral-foreground-1)]">
+            <MaterialIcon name="info" size={16} className="mr-1 inline align-text-bottom" />
+            このガイドは放課後等デイサービス向けに作成されています。
+          </p>
+          <p className="mt-1 text-xs text-[var(--neutral-foreground-2)]">
+            お使いの事業所は<strong>{serviceTypeLabel(serviceType)}</strong>のため、
+            画面上では「{terms.client}」「{terms.guardian}」「{terms.diary}」など
+            の呼称が異なって表示されます。本ガイド内で「生徒」「保護者」「連絡帳」と
+            記載されている箇所は、それぞれ読み替えてください。
+          </p>
+        </div>
+      )}
       {/* Page Header */}
       <div>
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">ご利用ガイド</h1>
