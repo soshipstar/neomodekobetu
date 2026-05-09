@@ -7,6 +7,7 @@ import api from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 import { useVoiceInput } from '../useVoiceInput';
 import Link from 'next/link';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 interface Participant {
   id: number;
@@ -36,6 +37,7 @@ function TabletIntegratePage() {
   const searchParams = useSearchParams();
   const toast = useToast();
   const { activeField, startVoiceInput } = useVoiceInput();
+  const { terms } = useWorkspace();
 
   const activityId = searchParams.get('id');
   const recordDate = searchParams.get('date') || '';
@@ -111,7 +113,7 @@ function TabletIntegratePage() {
         </Link>
       </div>
 
-      {/* 各生徒のカード */}
+      {/* 各{terms.client}のカード */}
       {data.participants.map((participant) => (
         <div key={participant.id} className="rounded-xl bg-white p-6 shadow-md space-y-4">
           <h2 className="text-2xl font-bold">{participant.student_name}</h2>
@@ -135,7 +137,7 @@ function TabletIntegratePage() {
                 }
                 className="w-full rounded-lg border-2 border-[var(--neutral-stroke-1)] p-4 text-xl focus:border-[var(--brand-80)] focus:outline-none"
                 rows={5}
-                placeholder="保護者に送る内容を入力してください"
+                placeholder={`${terms.guardian}に送る内容を入力してください`}
               />
               <button
                 type="button"

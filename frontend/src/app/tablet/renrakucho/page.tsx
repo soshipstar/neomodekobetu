@@ -7,6 +7,7 @@ import api from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 import { useVoiceInput } from '../useVoiceInput';
 import Link from 'next/link';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 /**
  * 5領域の定義（旧アプリと同じ）
@@ -98,6 +99,7 @@ function TabletRenrakuchoPage() {
   const searchParams = useSearchParams();
   const toast = useToast();
   const { activeField, startVoiceInput } = useVoiceInput();
+  const { terms } = useWorkspace();
 
   const activityId = searchParams.get('activity_id');
 
@@ -125,7 +127,7 @@ function TabletRenrakuchoPage() {
       const domainData = recordToDomainForm(sr);
       return {
         student_id: sr.student_id,
-        student_name: sr.student?.student_name || `生徒${sr.student_id}`,
+        student_name: sr.student?.student_name || `${terms.client}${sr.student_id}`,
         ...domainData,
       };
     });
@@ -240,7 +242,7 @@ function TabletRenrakuchoPage() {
         </div>
       </div>
 
-      {/* 生徒タブ */}
+      {/* {terms.client}タブ */}
       <div className="flex flex-wrap gap-2">
         {studentForms.map((form, idx) => (
           <button
@@ -257,7 +259,7 @@ function TabletRenrakuchoPage() {
         ))}
       </div>
 
-      {/* 現在の生徒のフォーム */}
+      {/* 現在の{terms.client}のフォーム */}
       {currentForm && (
         <div className="rounded-xl bg-white p-6 shadow-md space-y-6">
           <h2 className="text-2xl font-bold border-b-2 border-blue-500 pb-3">
@@ -395,7 +397,7 @@ function TabletRenrakuchoPage() {
               onClick={() => setCurrentStudentIndex((i) => i - 1)}
               className="rounded-lg bg-[var(--neutral-background-5)] px-8 py-3 text-xl font-bold text-[var(--neutral-foreground-2)] hover:bg-gray-300 disabled:opacity-30"
             >
-              ← 前の生徒
+              ← 前の{terms.client}
             </button>
             <button
               type="button"
@@ -403,7 +405,7 @@ function TabletRenrakuchoPage() {
               onClick={() => setCurrentStudentIndex((i) => i + 1)}
               className="rounded-lg bg-[var(--neutral-background-5)] px-8 py-3 text-xl font-bold text-[var(--neutral-foreground-2)] hover:bg-gray-300 disabled:opacity-30"
             >
-              次の生徒 →
+              次の{terms.client} →
             </button>
           </div>
         </div>
