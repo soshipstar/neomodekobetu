@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { useDebounce } from '@/hooks/useDebounce';
 import { format } from 'date-fns';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
@@ -162,6 +163,7 @@ const DESIRED_DAYS = [
 export default function StudentsPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { terms, serviceType } = useWorkspace();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('active');
   const debouncedSearch = useDebounce(search, 300);
@@ -237,7 +239,7 @@ export default function StudentsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'students'] });
-      toast.success('生徒情報を更新しました');
+      toast.success(`${terms.client}情報を更新しました`);
       setEditModal(false);
       setEditingStudent(null);
     },
@@ -344,11 +346,11 @@ export default function StudentsPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">生徒管理</h1>
-          <p className="text-sm text-[var(--neutral-foreground-3)]">生徒の登録・編集</p>
+          <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">{terms.client_plural}管理</h1>
+          <p className="text-sm text-[var(--neutral-foreground-3)]">{terms.client}の登録・編集</p>
         </div>
         <Button leftIcon={<MaterialIcon name="add" size={16} />} onClick={() => { setForm(emptyForm); setCreateModal(true); }}>
-          新規生徒登録
+          新規{terms.client}登録
         </Button>
       </div>
 
@@ -356,7 +358,7 @@ export default function StudentsPage() {
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
           <MaterialIcon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
-          <Input placeholder="生徒名で検索..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+          <Input placeholder={`${terms.client}名で検索...`} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
         </div>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
           className="rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm">
@@ -373,22 +375,23 @@ export default function StudentsPage() {
       {isLoading ? (
         <div className="space-y-2">{[...Array(6)].map((_, i) => <Skeleton key={i} className="h-16 rounded-lg" />)}</div>
       ) : students.length === 0 ? (
-        <Card><CardBody><p className="py-8 text-center text-sm text-[var(--neutral-foreground-4)]">生徒が見つかりません</p></CardBody></Card>
+        <Card><CardBody><p className="py-8 text-center text-sm text-[var(--neutral-foreground-4)]">{terms.client_plural}が見つかりません</p></CardBody></Card>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-[var(--neutral-stroke-2)]">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)]">
-                {([
+                {(([
                   ['id', 'ID'],
-                  ['student_name', '生徒名'],
+                  ['student_name', `${terms.client}名`],
                   ['birth_date', '生年月日'],
                   ['age', '年齢'],
-                  ['grade_level', '学年'],
-                  ['guardian', '保護者'],
+                  // 学年区分は放デイのみ意味を持つ
+                  ...(serviceType === 'after_school' ? [['grade_level', '学年']] : []),
+                  ['guardian', terms.guardian],
                   ['status', '状態'],
                   ['created_at', '登録日'],
-                ] as const).map(([key, label]) => (
+                ]) as Array<readonly [string, string]>).map(([key, label]) => (
                   <th key={key}
                     onClick={() => toggleSort(key)}
                     className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)] cursor-pointer select-none hover:text-[var(--neutral-foreground-1)] transition-colors"
@@ -490,11 +493,12 @@ function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel
   onDelete?: () => void;
   studentId?: number;
 }) {
+  const { terms } = useWorkspace();
   const inputCls = 'block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]';
 
   const handlePrintLogin = () => {
     if (!form.username) {
-      alert('生徒用ログイン情報が設定されていません。\n\nまず、ユーザー名とパスワードを設定して保存してください。');
+      alert(`${terms.client}用ログイン情報が設定されていません。\n\nまず、ユーザー名とパスワードを設定して保存してください。`);
       return;
     }
     if (studentId) {
@@ -505,9 +509,9 @@ function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel
 
   return (
     <div className="space-y-4">
-      {/* 生徒名 */}
+      {/* 利用者名 (種別により呼称が変わる) */}
       <div>
-        <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">生徒名 <span className="text-[var(--status-danger-fg)]">*</span></label>
+        <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">{terms.client}名 <span className="text-[var(--status-danger-fg)]">*</span></label>
         <input value={form.student_name} onChange={(e) => updateField('student_name', e.target.value)}
           className={inputCls} placeholder="例: 山田 太郎" required />
       </div>
