@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ChatRoom;
 use App\Models\Student;
 use App\Models\User;
-use App\Services\KakehashiService;
+use App\Services\AssessmentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -147,18 +147,18 @@ class StudentController extends Controller
             ]);
         }
 
-        // かけはし期間の自動生成（待機児童以外、かつ「現在の期間から作成する」の場合のみ）
+        // アセスメント期間の自動生成（待機児童以外、かつ「現在の期間から作成する」の場合のみ）
         $supportPlanStartType = $validated['support_plan_start_type'] ?? 'current';
         if ($status !== 'waiting' && !empty($validated['support_start_date']) && $supportPlanStartType === 'current') {
             try {
-                $kakehashiService = app(KakehashiService::class);
-                $generatedPeriods = $kakehashiService->generateKakehashiPeriodsForStudent($student->id, $validated['support_start_date']);
-                Log::info("Generated " . count($generatedPeriods) . " kakehashi periods for student {$student->id}");
+                $assessmentService = app(AssessmentService::class);
+                $generatedPeriods = $assessmentService->generateAssessmentPeriodsForStudent($student->id, $validated['support_start_date']);
+                Log::info("Generated " . count($generatedPeriods) . " assessment periods for student {$student->id}");
             } catch (\Exception $e) {
-                Log::error("かけはし期間生成エラー: " . $e->getMessage());
+                Log::error("アセスメント期間生成エラー: " . $e->getMessage());
             }
         } elseif ($status !== 'waiting' && $supportPlanStartType === 'next') {
-            Log::info("Student {$student->id} has support_plan_start_type='next'. Skipping initial kakehashi generation.");
+            Log::info("Student {$student->id} has support_plan_start_type='next'. Skipping initial assessment generation.");
         }
 
         return response()->json([
@@ -242,15 +242,15 @@ class StudentController extends Controller
         $hadNoSupportDate = empty($student->support_start_date);
         $student->update($validated);
 
-        // support_start_dateが新たに設定された場合、かけはし期間を自動生成
+        // support_start_dateが新たに設定された場合、アセスメント期間を自動生成
         if ($hadNoSupportDate && !empty($validated['support_start_date'])) {
-            $periodCount = \App\Models\KakehashiPeriod::where('student_id', $student->id)->count();
+            $periodCount = \App\Models\AssessmentPeriod::where('student_id', $student->id)->count();
             if ($periodCount === 0) {
                 try {
-                    $kakehashiService = app(\App\Services\KakehashiService::class);
-                    $kakehashiService->generateKakehashiPeriodsForStudent($student->id, $validated['support_start_date']);
+                    $assessmentService = app(\App\Services\AssessmentService::class);
+                    $assessmentService->generateAssessmentPeriodsForStudent($student->id, $validated['support_start_date']);
                 } catch (\Exception $e) {
-                    \Illuminate\Support\Facades\Log::warning("かけはし生成エラー（更新時）: " . $e->getMessage());
+                    \Illuminate\Support\Facades\Log::warning("アセスメント生成エラー（更新時）: " . $e->getMessage());
                 }
             }
         }

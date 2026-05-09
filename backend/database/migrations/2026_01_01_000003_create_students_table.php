@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('guardian_id')->nullable()->constrained('users')->nullOnDelete();
             $table->date('birth_date')->nullable();
             $table->date('support_start_date')->nullable();
-            $table->date('kakehashi_initial_date')->nullable();
+            $table->date('assessment_initial_date')->nullable();
             $table->text('notes')->nullable();
             $table->boolean('is_active')->default(true);
             $table->string('status', 20)->default('active')->comment('trial, active, short_term, withdrawn');

@@ -138,7 +138,7 @@ export default function AgentProfilePage() {
             <div>
               <h2 className="text-base font-semibold text-[var(--neutral-foreground-1)]">代理店情報</h2>
               <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
-                代理店名・連絡先情報はご自身で編集できます。手数料率や契約条件などの運用項目は KIDURI 運営側で管理します。
+                代理店名・連絡先情報はご自身で編集できます。手数料率や契約条件などの運用項目は CARE-BRIDGE 運営側で管理します。
               </p>
             </div>
             {!editMode && (
@@ -202,7 +202,7 @@ export default function AgentProfilePage() {
         <CardBody>
           <h2 className="text-base font-semibold text-[var(--neutral-foreground-1)]">運用情報（閲覧のみ）</h2>
           <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
-            手数料率や契約条件は KIDURI 運営側で管理しています。変更が必要な場合は運営までご連絡ください。
+            手数料率や契約条件は CARE-BRIDGE 運営側で管理しています。変更が必要な場合は運営までご連絡ください。
           </p>
           <dl className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 text-sm">
             <div className="flex"><dt className="w-32 text-[var(--neutral-foreground-3)]">既定手数料率</dt><dd className="flex-1 font-semibold text-[var(--brand-80)]">{(parseFloat(String(profile.default_commission_rate)) * 100).toFixed(1)}%</dd></div>
@@ -301,7 +301,7 @@ function ContractDocumentSection({ profile, onChanged }: { profile: Profile; onC
       <CardBody>
         <h2 className="text-base font-semibold text-[var(--neutral-foreground-1)]">代理店契約書</h2>
         <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
-          KIDURI (株式会社ソーシップ) と貴代理店との間で締結された契約書 PDF をアップロードできます。
+          CARE-BRIDGE (株式会社ソーシップ) と貴代理店との間で締結された契約書 PDF をアップロードできます。
           差し替え時は新しいファイルを指定してください。
         </p>
         <div className="mt-3 flex flex-wrap gap-2">

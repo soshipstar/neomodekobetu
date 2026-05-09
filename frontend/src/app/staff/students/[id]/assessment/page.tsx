@@ -15,7 +15,7 @@ import Link from 'next/link';
 // Types (matching actual API response)
 // ---------------------------------------------------------------------------
 
-interface KakehashiStaffEntry {
+interface AssessmentStaffEntry {
   id: number;
   period_id: number;
   student_id: number;
@@ -36,7 +36,7 @@ interface KakehashiStaffEntry {
   is_hidden: boolean;
 }
 
-interface KakehashiGuardianEntry {
+interface AssessmentGuardianEntry {
   id: number;
   period_id: number;
   student_id: number;
@@ -60,7 +60,7 @@ interface KakehashiGuardianEntry {
   guardian?: { id: number; full_name: string } | null;
 }
 
-interface KakehashiPeriod {
+interface AssessmentPeriod {
   id: number;
   student_id: number;
   period_name: string | null;
@@ -68,8 +68,8 @@ interface KakehashiPeriod {
   end_date: string;
   submission_deadline: string | null;
   is_active: boolean;
-  staff_entries: KakehashiStaffEntry[];
-  guardian_entries: KakehashiGuardianEntry[];
+  staff_entries: AssessmentStaffEntry[];
+  guardian_entries: AssessmentGuardianEntry[];
 }
 
 // ---------------------------------------------------------------------------
@@ -81,7 +81,7 @@ function truncate(text: string | null, maxLen: number): string {
   return text.length > maxLen ? text.slice(0, maxLen) + '...' : text;
 }
 
-function hasContent(entry: KakehashiStaffEntry): boolean {
+function hasContent(entry: AssessmentStaffEntry): boolean {
   return !!(
     entry.student_wish ||
     entry.short_term_goal ||
@@ -95,7 +95,7 @@ function hasContent(entry: KakehashiStaffEntry): boolean {
   );
 }
 
-function hasGuardianContent(entry: KakehashiGuardianEntry): boolean {
+function hasGuardianContent(entry: AssessmentGuardianEntry): boolean {
   return !!(
     entry.student_wish ||
     entry.home_challenges ||
@@ -117,15 +117,15 @@ function hasGuardianContent(entry: KakehashiGuardianEntry): boolean {
 // Component
 // ---------------------------------------------------------------------------
 
-export default function KakehashiPage() {
+export default function AssessmentPage() {
   const params = useParams();
   const studentId = Number(params.id);
 
   const { data: periods, isLoading } = useQuery({
-    queryKey: ['staff', 'student', studentId, 'kakehashi'],
+    queryKey: ['staff', 'student', studentId, 'assessment'],
     queryFn: async () => {
-      const response = await api.get<{ data: KakehashiPeriod[] }>(
-        `/api/staff/students/${studentId}/kakehashi`
+      const response = await api.get<{ data: AssessmentPeriod[] }>(
+        `/api/staff/students/${studentId}/assessment`
       );
       return response.data.data;
     },
@@ -139,7 +139,7 @@ export default function KakehashiPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">かけはし</h1>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">アセスメント</h1>
       </div>
 
       {periods && periods.length > 0 ? (
@@ -161,7 +161,7 @@ export default function KakehashiPage() {
                       {period.is_active && <Badge variant="success">有効</Badge>}
                     </div>
                     <div className="flex items-center gap-2">
-                      <Link href={`/staff/kakehashi-staff`}>
+                      <Link href={`/staff/assessment-staff`}>
                         <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="edit" size={14} />}>
                           編集
                         </Button>
@@ -310,7 +310,7 @@ export default function KakehashiPage() {
         <Card>
           <CardBody>
             <p className="py-8 text-center text-sm text-[var(--neutral-foreground-3)]">
-              かけはし記録がありません
+              アセスメント記録がありません
             </p>
           </CardBody>
         </Card>

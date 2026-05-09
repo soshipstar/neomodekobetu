@@ -297,7 +297,7 @@ export default function BugReportsPage() {
             label="発生したページのURL"
             value={form.page_url}
             onChange={(e) => setForm({ ...form, page_url: e.target.value })}
-            placeholder="https://kiduri.xyz/staff/..."
+            placeholder="https://example.com/staff/..."
           />
 
           <div>

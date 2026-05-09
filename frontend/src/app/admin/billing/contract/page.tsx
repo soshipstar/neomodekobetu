@@ -111,7 +111,7 @@ export default function BillingContractPage() {
 
       <div>
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">利用契約書</h1>
-        <p className="text-sm text-[var(--neutral-foreground-3)]">KIDURI 個別支援連絡帳システム ご利用契約</p>
+        <p className="text-sm text-[var(--neutral-foreground-3)]">CARE-BRIDGE 個別支援連絡帳システム ご利用契約</p>
       </div>
 
       <Card>

@@ -57,9 +57,9 @@ TABLE_MAP = {
     'individual_support_plan_details': 'support_plan_details',
     'individual_support_plans': 'individual_support_plans',
     'integrated_notes': 'integrated_notes',
-    'kakehashi_guardian': 'kakehashi_guardian',
-    'kakehashi_periods': 'kakehashi_periods',
-    'kakehashi_staff': 'kakehashi_staff',
+    'assessment_guardian': 'assessment_guardian',
+    'assessment_periods': 'assessment_periods',
+    'assessment_staff': 'assessment_staff',
     'meeting_requests': 'meeting_requests',
     'monitoring_details': 'monitoring_details',
     'monitoring_records': 'monitoring_records',
@@ -124,8 +124,8 @@ STRIP_COLUMNS = {
     'students': ['hide_initial_monitoring_by', 'hide_initial_monitoring_at', 'last_login'],
     'monitoring_records': ['hidden_by', 'hidden_at', 'guardian_signature_image', 'guardian_signature_date', 'staff_signature_image', 'staff_signature_date'],
     'individual_support_plans': ['hidden_by', 'hidden_at', 'source_period_id', 'target_period_start', 'target_period_end', 'plan_number'],
-    'kakehashi_guardian': ['hidden_by', 'hidden_at'],
-    'kakehashi_staff': ['hidden_by', 'hidden_at'],
+    'assessment_guardian': ['hidden_by', 'hidden_at'],
+    'assessment_staff': ['hidden_by', 'hidden_at'],
     'classrooms': ['service_type', 'target_grades'],
     'event_registrations': ['registered_at', 'notes'],
     'facility_evaluation_periods': ['guardian_eval_start_date', 'guardian_eval_end_date', 'staff_eval_start_date', 'staff_eval_end_date', 'self_eval_created_date', 'publish_date'],
@@ -159,9 +159,9 @@ BOOLEAN_COLUMNS = {
     'monitoring_records': ['is_draft', 'guardian_confirmed', 'is_hidden', 'is_official'],
     'monitoring_details': [],
     'meeting_requests': ['is_completed'],
-    'kakehashi_periods': ['is_active', 'is_auto_generated'],
-    'kakehashi_guardian': ['is_submitted', 'is_hidden'],
-    'kakehashi_staff': ['is_submitted', 'is_hidden', 'guardian_confirmed'],
+    'assessment_periods': ['is_active', 'is_auto_generated'],
+    'assessment_guardian': ['is_submitted', 'is_hidden'],
+    'assessment_staff': ['is_submitted', 'is_hidden', 'guardian_confirmed'],
     'integrated_notes': ['is_sent', 'guardian_confirmed'],
     'newsletters': [],
     'newsletter_settings': [],  # show_* columns already in STRIP_COLUMNS
@@ -177,14 +177,14 @@ BOOLEAN_COLUMNS = {
 
 # Column name mapping: MySQL column -> PG column (per table)
 RENAME_COLUMNS = {
-    'kakehashi_staff': {
+    'assessment_staff': {
         'domain_health_life': 'health_life',
         'domain_motor_sensory': 'motor_sensory',
         'domain_cognitive_behavior': 'cognitive_behavior',
         'domain_language_communication': 'language_communication',
         'domain_social_relations': 'social_relations',
     },
-    # kakehashi_guardian uses domain_* names in both MySQL and PG
+    # assessment_guardian uses domain_* names in both MySQL and PG
     'individual_support_plans': {
         'long_term_goal_text': 'long_term_goal',
         'short_term_goal_text': 'short_term_goal',
@@ -516,9 +516,9 @@ TABLES_VIA_STUDENT = {
     'additional_usages',      # student_id -> created_by(user)
     'chat_rooms',             # student_id
     'integrated_notes',       # student_id
-    'kakehashi_periods',      # student_id
-    'kakehashi_guardian',     # student_id
-    'kakehashi_staff',        # student_id
+    'assessment_periods',      # student_id
+    'assessment_guardian',     # student_id
+    'assessment_staff',        # student_id
     'student_chat_rooms',     # student_id
     'student_submissions',    # student_id
     'student_records',        # via daily_record_id -> daily_records

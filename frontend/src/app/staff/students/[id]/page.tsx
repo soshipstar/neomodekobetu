@@ -89,7 +89,7 @@ export default function StudentDetailPage() {
   const actionLinks = [
     { href: `/staff/students/${studentId}/support-plan`, label: '個別支援計画', icon: 'description' },
     { href: `/staff/students/${studentId}/monitoring`, label: 'モニタリング', icon: 'monitoring' },
-    { href: `/staff/students/${studentId}/kakehashi`, label: 'かけはし', icon: 'handshake' },
+    { href: `/staff/students/${studentId}/assessment`, label: 'アセスメント', icon: 'handshake' },
   ];
 
   return (
@@ -317,7 +317,7 @@ function StudentSchedule({ studentId, student }: { studentId: number; student: S
 }
 
 // ---------------------------------------------------------------------------
-// フェイスシート（横浜市青葉区かけはし準拠）
+// フェイスシート（横浜市青葉区アセスメント準拠）
 // ---------------------------------------------------------------------------
 
 // ADL選択肢ヘルパー
@@ -734,7 +734,7 @@ function FaceSheetPrintView({ studentName, form, onClose }: { studentName: strin
         <div style={{ fontFamily: "'MS Gothic', 'Noto Sans JP', sans-serif", color: '#222', lineHeight: 1.3, fontSize: '8pt' }}>
           <div style={{ textAlign: 'center', borderBottom: '2px solid #1a1a1a', paddingBottom: '4px', marginBottom: '8px' }}>
             <h1 style={{ fontSize: '14pt', fontWeight: 700, margin: 0, letterSpacing: '2pt' }}>フェイスシート</h1>
-            <div style={{ fontSize: '8pt', color: '#777' }}>放課後等デイサービス（横浜市青葉区 かけはし準拠）</div>
+            <div style={{ fontSize: '8pt', color: '#777' }}>放課後等デイサービス（横浜市青葉区 アセスメント準拠）</div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '9pt' }}>
             <div><strong>児童氏名：</strong>{studentName}</div>

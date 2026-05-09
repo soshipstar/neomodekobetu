@@ -282,7 +282,7 @@ class StudentController extends Controller
      * 同期しない（各教室で独立管理する）:
      * - classroom_id, username, password, status, is_active
      * - scheduled_* (教室ごとのスケジュール)
-     * - support_start_date, kakehashi_initial_date, support_plan_start_type
+     * - support_start_date, assessment_initial_date, support_plan_start_type
      * - withdrawal_*, last_login_at, desired_*
      */
     public function syncLinked(Request $request, Student $student): JsonResponse

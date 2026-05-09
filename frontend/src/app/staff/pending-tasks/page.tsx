@@ -42,7 +42,7 @@ interface MonitoringTask {
   days_left: number;
 }
 
-interface KakehashiTask {
+interface AssessmentTask {
   student_id: number;
   student_name: string;
   period_id: number;
@@ -51,7 +51,7 @@ interface KakehashiTask {
   start_date: string;
   end_date: string;
   days_left: number;
-  kakehashi_id: number | null;
+  assessment_id: number | null;
   status_code: 'overdue' | 'urgent' | 'warning' | 'draft' | 'needs_confirm';
   is_submitted?: boolean;
   guardian_confirmed?: boolean;
@@ -60,8 +60,8 @@ interface KakehashiTask {
 interface PendingTasksData {
   plans: PlanTask[];
   monitoring: MonitoringTask[];
-  guardian_kakehashi: KakehashiTask[];
-  staff_kakehashi: KakehashiTask[];
+  guardian_assessment: AssessmentTask[];
+  staff_assessment: AssessmentTask[];
 }
 
 interface ApiResponse {
@@ -70,8 +70,8 @@ interface ApiResponse {
   summary: {
     plans: number;
     monitoring: number;
-    guardian_kakehashi: number;
-    staff_kakehashi: number;
+    guardian_assessment: number;
+    staff_assessment: number;
   };
   total_count: number;
 }
@@ -136,7 +136,7 @@ function getStatusBadge(statusCode: string, daysLeft?: number, daysSincePlan?: n
   }
 }
 
-type CategoryFilter = '' | 'plan' | 'monitoring' | 'guardian_kakehashi' | 'staff_kakehashi';
+type CategoryFilter = '' | 'plan' | 'monitoring' | 'guardian_assessment' | 'staff_assessment';
 type SortType = 'deadline_asc' | 'deadline_desc' | 'name_asc';
 
 export default function PendingTasksPage() {
@@ -179,13 +179,13 @@ export default function PendingTasksPage() {
     return {
       plans: categoryFilter === '' || categoryFilter === 'plan' ? filterByName(d.plans) : [],
       monitoring: categoryFilter === '' || categoryFilter === 'monitoring' ? filterByName(d.monitoring) : [],
-      guardian_kakehashi: categoryFilter === '' || categoryFilter === 'guardian_kakehashi' ? filterByName(d.guardian_kakehashi) : [],
-      staff_kakehashi: categoryFilter === '' || categoryFilter === 'staff_kakehashi' ? filterByName(d.staff_kakehashi) : [],
+      guardian_assessment: categoryFilter === '' || categoryFilter === 'guardian_assessment' ? filterByName(d.guardian_assessment) : [],
+      staff_assessment: categoryFilter === '' || categoryFilter === 'staff_assessment' ? filterByName(d.staff_assessment) : [],
     };
   }, [data, nameFilter, categoryFilter]);
 
   const totalFiltered = filteredData
-    ? filteredData.plans.length + filteredData.monitoring.length + filteredData.guardian_kakehashi.length + filteredData.staff_kakehashi.length
+    ? filteredData.plans.length + filteredData.monitoring.length + filteredData.guardian_assessment.length + filteredData.staff_assessment.length
     : 0;
 
   const totalCount = data?.total_count ?? 0;
@@ -197,7 +197,7 @@ export default function PendingTasksPage() {
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">未作成タスク一覧</h1>
-          <p className="text-sm text-[var(--neutral-foreground-3)]">個別支援計画書・モニタリング・かけはしの未作成タスク</p>
+          <p className="text-sm text-[var(--neutral-foreground-3)]">個別支援計画書・モニタリング・アセスメントの未作成タスク</p>
         </div>
       </div>
 
@@ -228,8 +228,8 @@ export default function PendingTasksPage() {
                 <option value="">全て</option>
                 <option value="plan">個別支援計画書</option>
                 <option value="monitoring">モニタリング</option>
-                <option value="guardian_kakehashi">かけはし（保護者）</option>
-                <option value="staff_kakehashi">かけはし（職員）</option>
+                <option value="guardian_assessment">アセスメント（保護者）</option>
+                <option value="staff_assessment">アセスメント（職員）</option>
               </select>
             </div>
             <div className="flex flex-col gap-1">
@@ -270,14 +270,14 @@ export default function PendingTasksPage() {
               variant={data?.summary.monitoring ? 'warning' : 'success'}
             />
             <SummaryCard
-              title="保護者かけはし"
-              count={data?.summary.guardian_kakehashi ?? 0}
-              variant={data?.summary.guardian_kakehashi ? 'warning' : 'success'}
+              title="保護者アセスメント"
+              count={data?.summary.guardian_assessment ?? 0}
+              variant={data?.summary.guardian_assessment ? 'warning' : 'success'}
             />
             <SummaryCard
-              title="スタッフかけはし"
-              count={data?.summary.staff_kakehashi ?? 0}
-              variant={data?.summary.staff_kakehashi ? 'warning' : 'success'}
+              title="スタッフアセスメント"
+              count={data?.summary.staff_assessment ?? 0}
+              variant={data?.summary.staff_assessment ? 'warning' : 'success'}
             />
           </div>
 
@@ -444,17 +444,17 @@ export default function PendingTasksPage() {
             </TaskSection>
           )}
 
-          {/* Guardian Kakehashi Section */}
-          {(categoryFilter === '' || categoryFilter === 'guardian_kakehashi') && (
+          {/* Guardian Assessment Section */}
+          {(categoryFilter === '' || categoryFilter === 'guardian_assessment') && (
             <TaskSection
-              title="保護者かけはし"
+              title="保護者アセスメント"
               icon={<MaterialIcon name="handshake" size={20} />}
-              count={filteredData.guardian_kakehashi.length}
-              emptyMessage="すべての保護者かけはしが提出済みです"
-              badgeText={filteredData.guardian_kakehashi.length > 0 ? `${filteredData.guardian_kakehashi.length}件の未提出があります` : 'すべて提出済みです'}
-              badgeSuccess={filteredData.guardian_kakehashi.length === 0}
+              count={filteredData.guardian_assessment.length}
+              emptyMessage="すべての保護者アセスメントが提出済みです"
+              badgeText={filteredData.guardian_assessment.length > 0 ? `${filteredData.guardian_assessment.length}件の未提出があります` : 'すべて提出済みです'}
+              badgeSuccess={filteredData.guardian_assessment.length === 0}
             >
-              {filteredData.guardian_kakehashi.length > 0 && (
+              {filteredData.guardian_assessment.length > 0 && (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
@@ -468,7 +468,7 @@ export default function PendingTasksPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {sortItems(filteredData.guardian_kakehashi, sortType, k => k.submission_deadline ? new Date(k.submission_deadline).getTime() : Infinity).map((kak) => {
+                      {sortItems(filteredData.guardian_assessment, sortType, k => k.submission_deadline ? new Date(k.submission_deadline).getTime() : Infinity).map((kak) => {
                         const status = getStatusBadge(kak.status_code, kak.days_left);
                         return (
                           <tr key={`gk-${kak.student_id}-${kak.period_id}`} className="border-b border-[var(--neutral-stroke-2)] hover:bg-[var(--neutral-background-2)]">
@@ -482,7 +482,7 @@ export default function PendingTasksPage() {
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2">
                                 <Link
-                                  href={`/staff/kakehashi-guardian?student_id=${kak.student_id}&period_id=${kak.period_id}`}
+                                  href={`/staff/assessment-guardian?student_id=${kak.student_id}&period_id=${kak.period_id}`}
                                   className="rounded-md bg-[var(--neutral-background-3)] px-3 py-1.5 text-xs font-medium text-[var(--neutral-foreground-1)] hover:bg-[var(--neutral-background-4)]"
                                 >
                                   確認・催促
@@ -491,8 +491,8 @@ export default function PendingTasksPage() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => {
-                                    if (confirm('このかけはしを非表示にしますか？')) {
-                                      hideMutation.mutate({ type: 'guardian_kakehashi', period_id: kak.period_id, student_id: kak.student_id, action: 'hide' });
+                                    if (confirm('このアセスメントを非表示にしますか？')) {
+                                      hideMutation.mutate({ type: 'guardian_assessment', period_id: kak.period_id, student_id: kak.student_id, action: 'hide' });
                                     }
                                   }}
                                   disabled={hideMutation.isPending}
@@ -511,17 +511,17 @@ export default function PendingTasksPage() {
             </TaskSection>
           )}
 
-          {/* Staff Kakehashi Section */}
-          {(categoryFilter === '' || categoryFilter === 'staff_kakehashi') && (
+          {/* Staff Assessment Section */}
+          {(categoryFilter === '' || categoryFilter === 'staff_assessment') && (
             <TaskSection
-              title="スタッフかけはし"
+              title="スタッフアセスメント"
               icon={<MaterialIcon name="handshake" size={20} />}
-              count={filteredData.staff_kakehashi.length}
-              emptyMessage="すべてのスタッフかけはしが作成済みです"
-              badgeText={filteredData.staff_kakehashi.length > 0 ? `${filteredData.staff_kakehashi.length}件の未作成があります` : 'すべて作成済みです'}
-              badgeSuccess={filteredData.staff_kakehashi.length === 0}
+              count={filteredData.staff_assessment.length}
+              emptyMessage="すべてのスタッフアセスメントが作成済みです"
+              badgeText={filteredData.staff_assessment.length > 0 ? `${filteredData.staff_assessment.length}件の未作成があります` : 'すべて作成済みです'}
+              badgeSuccess={filteredData.staff_assessment.length === 0}
             >
-              {filteredData.staff_kakehashi.length > 0 && (
+              {filteredData.staff_assessment.length > 0 && (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
@@ -535,8 +535,8 @@ export default function PendingTasksPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {sortItems(filteredData.staff_kakehashi, sortType, k => k.submission_deadline ? new Date(k.submission_deadline).getTime() : Infinity).map((kak) => {
-                        const statusDisplay = getStaffKakehashiStatusDisplay(kak);
+                      {sortItems(filteredData.staff_assessment, sortType, k => k.submission_deadline ? new Date(k.submission_deadline).getTime() : Infinity).map((kak) => {
+                        const statusDisplay = getStaffAssessmentStatusDisplay(kak);
                         return (
                           <tr key={`sk-${kak.student_id}-${kak.period_id}`} className="border-b border-[var(--neutral-stroke-2)] hover:bg-[var(--neutral-background-2)]">
                             <td className="px-4 py-3 font-medium text-[var(--neutral-foreground-1)]">{kak.student_name}</td>
@@ -552,7 +552,7 @@ export default function PendingTasksPage() {
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2">
                                 <Link
-                                  href={`/staff/kakehashi-staff?student_id=${kak.student_id}&period_id=${kak.period_id}`}
+                                  href={`/staff/assessment-staff?student_id=${kak.student_id}&period_id=${kak.period_id}`}
                                   className="rounded-md bg-[var(--neutral-background-3)] px-3 py-1.5 text-xs font-medium text-[var(--neutral-foreground-1)] hover:bg-[var(--neutral-background-4)]"
                                 >
                                   {kak.status_code === 'needs_confirm' ? '確認依頼' : kak.status_code === 'draft' ? '編集する' : '作成する'}
@@ -561,8 +561,8 @@ export default function PendingTasksPage() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => {
-                                    if (confirm('このかけはしを非表示にしますか？')) {
-                                      hideMutation.mutate({ type: 'staff_kakehashi', period_id: kak.period_id, student_id: kak.student_id, action: 'hide' });
+                                    if (confirm('このアセスメントを非表示にしますか？')) {
+                                      hideMutation.mutate({ type: 'staff_assessment', period_id: kak.period_id, student_id: kak.student_id, action: 'hide' });
                                     }
                                   }}
                                   disabled={hideMutation.isPending}
@@ -731,7 +731,7 @@ function getMonitoringStatusDisplay(mon: MonitoringTask): { mainLabel: string; m
   return { mainLabel: '対応が必要', mainVariant: 'warning' };
 }
 
-function getStaffKakehashiStatusDisplay(kak: KakehashiTask): { mainLabel: string; mainVariant: StatusVariant; deadlineLabel?: string; deadlineVariant?: StatusVariant } {
+function getStaffAssessmentStatusDisplay(kak: AssessmentTask): { mainLabel: string; mainVariant: StatusVariant; deadlineLabel?: string; deadlineVariant?: StatusVariant } {
   const daysLeft = kak.days_left;
 
   // Deadline sub-badge for draft/needs_confirm

@@ -1,8 +1,8 @@
 {
-    "name": "kiduri/kiduri2026-backend",
+    "name": "care-bridge/care-bridge2026-backend",
     "type": "project",
-    "description": "KIDURI 2026 - 個別支援連絡帳システム v2.0 Backend API",
-    "keywords": ["laravel", "kiduri", "support-plan"],
+    "description": "CARE-BRIDGE 2026 - 個別支援連絡帳システム v2.0 Backend API",
+    "keywords": ["laravel", "care-bridge", "support-plan"],
     "license": "proprietary",
     "require": {
         "php": "^8.4",

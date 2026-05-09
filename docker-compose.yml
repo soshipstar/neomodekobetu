@@ -28,24 +28,24 @@ services:
     volumes:
       - ./backend:/var/www/html
     environment:
-      - APP_NAME=Kiduri
+      - APP_NAME=Care-bridge
       - APP_ENV=local
       - APP_DEBUG=true
       - APP_URL=http://localhost
       - DB_CONNECTION=pgsql
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_DATABASE=kiduri
-      - DB_USERNAME=kiduri
-      - DB_PASSWORD=kiduri_secret
+      - DB_DATABASE=care-bridge
+      - DB_USERNAME=care-bridge
+      - DB_PASSWORD=care-bridge_secret
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - CACHE_STORE=redis
       - SESSION_DRIVER=redis
       - QUEUE_CONNECTION=redis
-      - REVERB_APP_ID=kiduri
-      - REVERB_APP_KEY=kiduri-key
-      - REVERB_APP_SECRET=kiduri-secret
+      - REVERB_APP_ID=care-bridge
+      - REVERB_APP_KEY=care-bridge-key
+      - REVERB_APP_SECRET=care-bridge-secret
       - REVERB_HOST=0.0.0.0
       - REVERB_PORT=8080
     depends_on:
@@ -69,13 +69,13 @@ services:
       - DB_CONNECTION=pgsql
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_DATABASE=kiduri
-      - DB_USERNAME=kiduri
-      - DB_PASSWORD=kiduri_secret
+      - DB_DATABASE=care-bridge
+      - DB_USERNAME=care-bridge
+      - DB_PASSWORD=care-bridge_secret
       - REDIS_HOST=redis
-      - REVERB_APP_ID=kiduri
-      - REVERB_APP_KEY=kiduri-key
-      - REVERB_APP_SECRET=kiduri-secret
+      - REVERB_APP_ID=care-bridge
+      - REVERB_APP_KEY=care-bridge-key
+      - REVERB_APP_SECRET=care-bridge-secret
       - REVERB_HOST=0.0.0.0
       - REVERB_PORT=8080
     depends_on:
@@ -97,9 +97,9 @@ services:
       - DB_CONNECTION=pgsql
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_DATABASE=kiduri
-      - DB_USERNAME=kiduri
-      - DB_PASSWORD=kiduri_secret
+      - DB_DATABASE=care-bridge
+      - DB_USERNAME=care-bridge
+      - DB_PASSWORD=care-bridge_secret
       - REDIS_HOST=redis
       - QUEUE_CONNECTION=redis
     depends_on:
@@ -121,9 +121,9 @@ services:
       - DB_CONNECTION=pgsql
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_DATABASE=kiduri
-      - DB_USERNAME=kiduri
-      - DB_PASSWORD=kiduri_secret
+      - DB_DATABASE=care-bridge
+      - DB_USERNAME=care-bridge
+      - DB_PASSWORD=care-bridge_secret
       - REDIS_HOST=redis
     depends_on:
       postgres:
@@ -140,11 +140,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/01_init.sql
     environment:
-      - POSTGRES_DB=kiduri
-      - POSTGRES_USER=kiduri
-      - POSTGRES_PASSWORD=kiduri_secret
+      - POSTGRES_DB=care-bridge
+      - POSTGRES_USER=care-bridge
+      - POSTGRES_PASSWORD=care-bridge_secret
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U kiduri"]
+      test: ["CMD-SHELL", "pg_isready -U care-bridge"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -172,7 +172,7 @@ services:
     volumes:
       - ./analytics:/app
     environment:
-      - DATABASE_URL=postgresql://kiduri:kiduri_secret@postgres:5432/kiduri
+      - DATABASE_URL=postgresql://care-bridge:care-bridge_secret@postgres:5432/care-bridge
     depends_on:
       postgres:
         condition: service_healthy

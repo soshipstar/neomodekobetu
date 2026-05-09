@@ -27,7 +27,7 @@ class WebPushService
         // 落ちないようにする）
         $this->publicKey = config('services.webpush.public_key') ?: null;
         $this->privateKey = config('services.webpush.private_key') ?: null;
-        $this->subject = config('services.webpush.subject', 'mailto:admin@kiduri.xyz');
+        $this->subject = config('services.webpush.subject', 'mailto:admin@example.com');
     }
 
     /**

@@ -9,7 +9,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-[var(--brand-80)] shadow-[var(--shadow-4)]">
             <span className="text-xl font-bold text-white">K</span>
           </div>
-          <h1 className="text-xl font-semibold text-[var(--neutral-foreground-1)]">KIDURI</h1>
+          <h1 className="text-xl font-semibold text-[var(--neutral-foreground-1)]">CARE-BRIDGE</h1>
           <p className="text-sm text-[var(--neutral-foreground-3)]">個別支援連絡帳システム</p>
         </div>
         {/* Content card */}

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Schema;
  * 企業ごとの契約・請求情報と、マスター管理者による表示制御を持たせる。
  *
  * - subscription_status: Stripe の Subscription ステータスを冗長保存（一覧表示の高速化用キャッシュ）
- * - current_price_id   : 現在の Stripe Price ID（KIDURI / KIDURI LITE / カスタム）
+ * - current_price_id   : 現在の Stripe Price ID（Standard / Lite / カスタム）
  * - custom_amount      : カスタム価格の月額（円）。標準プランの場合は NULL
  * - is_custom_pricing  : カスタム価格を使っているか
  * - current_period_end : 次回請求日のキャッシュ

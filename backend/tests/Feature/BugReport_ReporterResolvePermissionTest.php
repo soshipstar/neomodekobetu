@@ -54,7 +54,7 @@ class BugReport_ReporterResolvePermissionTest extends TestCase
         $reporter = $this->makeStaff($c);
         $report = BugReport::create([
             'reporter_id' => $reporter->id,
-            'page_url' => 'https://kiduri.xyz/x',
+            'page_url' => 'https://example.com/x',
             'description' => 'bug',
             'status' => 'in_progress',
             'priority' => 'normal',
@@ -74,7 +74,7 @@ class BugReport_ReporterResolvePermissionTest extends TestCase
         $reporter = $this->makeStaff($c);
         $report = BugReport::create([
             'reporter_id' => $reporter->id,
-            'page_url' => 'https://kiduri.xyz/x',
+            'page_url' => 'https://example.com/x',
             'description' => 'bug',
             'status' => 'open',
             'priority' => 'normal',
@@ -93,7 +93,7 @@ class BugReport_ReporterResolvePermissionTest extends TestCase
         $reporter = $this->makeStaff($c);
         $report = BugReport::create([
             'reporter_id' => $reporter->id,
-            'page_url' => 'https://kiduri.xyz/x',
+            'page_url' => 'https://example.com/x',
             'description' => 'bug',
             'status' => 'in_progress',
             'priority' => 'normal',
@@ -113,7 +113,7 @@ class BugReport_ReporterResolvePermissionTest extends TestCase
         $other = $this->makeStaff($c);
         $report = BugReport::create([
             'reporter_id' => $reporter->id,
-            'page_url' => 'https://kiduri.xyz/x',
+            'page_url' => 'https://example.com/x',
             'description' => 'bug',
             'status' => 'in_progress',
             'priority' => 'normal',
@@ -132,7 +132,7 @@ class BugReport_ReporterResolvePermissionTest extends TestCase
         $master = $this->makeMaster();
         $report = BugReport::create([
             'reporter_id' => $reporter->id,
-            'page_url' => 'https://kiduri.xyz/x',
+            'page_url' => 'https://example.com/x',
             'description' => 'bug',
             'status' => 'open',
             'priority' => 'normal',

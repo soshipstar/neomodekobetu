@@ -276,9 +276,9 @@ class SupportPlanController extends Controller
         $student = $plan->student;
 
         // ===================================================================
-        // 1. かけはしデータ（保護者・職員）を取得 ← 旧システム準拠
+        // 1. アセスメントデータ（保護者・職員）を取得 ← 旧システム準拠
         // ===================================================================
-        $latestPeriod = \App\Models\KakehashiPeriod::where('student_id', $student->id)
+        $latestPeriod = \App\Models\AssessmentPeriod::where('student_id', $student->id)
             ->with(['staffEntries', 'guardianEntries'])
             ->orderByDesc('start_date')
             ->first();
@@ -289,7 +289,7 @@ class SupportPlanController extends Controller
         if ($latestPeriod) {
             $ge = $latestPeriod->guardianEntries->first();
             if ($ge && $ge->is_submitted) {
-                $guardianText = "【保護者かけはし】\n"
+                $guardianText = "【保護者アセスメント】\n"
                     . "・本人の願い: {$ge->student_wish}\n"
                     . "・家庭での願い: {$ge->home_challenges}\n"
                     . "・【重要】短期目標: {$ge->short_term_goal}\n"
@@ -304,7 +304,7 @@ class SupportPlanController extends Controller
 
             $se = $latestPeriod->staffEntries->first();
             if ($se && $se->is_submitted) {
-                $staffText = "【スタッフかけはし】\n"
+                $staffText = "【スタッフアセスメント】\n"
                     . "・本人の願い: {$se->student_wish}\n"
                     . "・【重要】短期目標: {$se->short_term_goal}\n"
                     . "・【重要】長期目標: {$se->long_term_goal}\n"
@@ -413,8 +413,8 @@ class SupportPlanController extends Controller
                             . "【連絡帳記録（直近{$records->count()}件）】\n"
                             . ($recordsText ?: '（記録なし）') . "\n\n"
                             . "【重要な指示】\n"
-                            . "- 【最重要】個別支援計画の短期目標・長期目標は、保護者かけはしとスタッフかけはしの短期目標・長期目標の文言を最大限考慮し、それらとの整合性・連続性を保ちながら作成してください\n"
-                            . "- かけはしで設定された目標を土台として、施設での具体的な支援場面に落とし込んだ目標を記述してください\n"
+                            . "- 【最重要】個別支援計画の短期目標・長期目標は、保護者アセスメントとスタッフアセスメントの短期目標・長期目標の文言を最大限考慮し、それらとの整合性・連続性を保ちながら作成してください\n"
+                            . "- アセスメントで設定された目標を土台として、施設での具体的な支援場面に落とし込んだ目標を記述してください\n"
                             . "- 各項目について、具体的かつ詳細に記述してください\n"
                             . "- 支援目標は、観察可能で測定可能な行動として明確に記述してください\n"
                             . "- 支援内容は、具体的な支援方法、頻度、場面、使用する教材・環境設定などを詳しく記載してください\n"
@@ -424,8 +424,8 @@ class SupportPlanController extends Controller
                             . "{\n"
                             . "  \"life_intention\": \"利用児及び家族の生活に対する意向（保護者と本人の願いを踏まえた詳細な記述。100-200文字程度）\",\n"
                             . "  \"overall_policy\": \"総合的な支援の方針（本人・家族の意向を受けて、どのような方針で支援するか。強み・課題・環境を踏まえた総合的な方針を150-250文字程度で記述）\",\n"
-                            . "  \"long_term_goal\": \"【最重要】長期目標の内容（上記の保護者かけはしとスタッフかけはしの長期目標の文言を最大限考慮し、それらの目標と整合性を保ちながら、施設での支援を通じて到達してほしい具体的な姿を記述。観察可能な行動として100-150文字程度で記述。期間を含めた表現は使用しないこと）\",\n"
-                            . "  \"short_term_goal\": \"【最重要】短期目標の内容（上記の保護者かけはしとスタッフかけはしの短期目標の文言を最大限考慮し、それらの目標と整合性を保ちながら、施設での支援を通じて到達してほしい具体的な姿を記述。観察可能な行動として100-150文字程度で記述。期間を含めた表現は使用しないこと）\",\n"
+                            . "  \"long_term_goal\": \"【最重要】長期目標の内容（上記の保護者アセスメントとスタッフアセスメントの長期目標の文言を最大限考慮し、それらの目標と整合性を保ちながら、施設での支援を通じて到達してほしい具体的な姿を記述。観察可能な行動として100-150文字程度で記述。期間を含めた表現は使用しないこと）\",\n"
+                            . "  \"short_term_goal\": \"【最重要】短期目標の内容（上記の保護者アセスメントとスタッフアセスメントの短期目標の文言を最大限考慮し、それらの目標と整合性を保ちながら、施設での支援を通じて到達してほしい具体的な姿を記述。観察可能な行動として100-150文字程度で記述。期間を含めた表現は使用しないこと）\",\n"
                             . "  \"details\": [\n"
                             . "    {\"category\": \"本人支援\", \"sub_category\": \"生活習慣（健康・生活）\", \"support_goal\": \"...\", \"support_content\": \"...\", \"staff_organization\": \"保育士\\n児童指導員\", \"notes\": \"...\"},\n"
                             . "    {\"category\": \"本人支援\", \"sub_category\": \"コミュニケーション（言語・コミュニケーション）\", \"support_goal\": \"...\", \"support_content\": \"...\", \"staff_organization\": \"保育士\\n児童指導員\", \"notes\": \"...\"},\n"
@@ -438,8 +438,8 @@ class SupportPlanController extends Controller
                             . "}\n\n"
                             . "【注意事項】\n"
                             . "- 必ず有効なJSON形式で出力してください\n"
-                            . "- 【最重要】個別支援計画の長期目標・短期目標は、保護者かけはしとスタッフかけはしで既に設定された長期目標・短期目標の内容を最大限尊重し、それらの表現や意図を引き継ぎながら、施設での具体的な支援場面に適した形で記述してください\n"
-                            . "- かけはしの目標で使われているキーワードや表現をできるだけ活かしてください\n"
+                            . "- 【最重要】個別支援計画の長期目標・短期目標は、保護者アセスメントとスタッフアセスメントで既に設定された長期目標・短期目標の内容を最大限尊重し、それらの表現や意図を引き継ぎながら、施設での具体的な支援場面に適した形で記述してください\n"
+                            . "- アセスメントの目標で使われているキーワードや表現をできるだけ活かしてください\n"
                             . "- 【重要】五領域については、必ず施設内で実施できる支援内容を記述してください。家庭での取り組みは含めないでください\n"
                             . "- 支援内容は具体的な手順、頻度、使用する道具・環境、段階的なアプローチを含めてください\n"
                             . "- 抽象的な表現ではなく、実際に現場で実践できる具体的な内容を記述してください\n"
@@ -471,7 +471,7 @@ class SupportPlanController extends Controller
                 'success'      => true,
                 'data'         => $result ?? [],
                 'sources'      => [
-                    'kakehashi'  => !empty($guardianText) || !empty($staffText),
+                    'assessment'  => !empty($guardianText) || !empty($staffText),
                     'monitoring' => !empty($monitoringText),
                     'records'    => $records->count(),
                     'prev_plan'  => !empty($prevPlanText),
@@ -891,7 +891,7 @@ class SupportPlanController extends Controller
     }
 
     /**
-     * 計画の根拠データ（かけはし・モニタリング・目標比較）を返す
+     * 計画の根拠データ（アセスメント・モニタリング・目標比較）を返す
      */
     public function basis(Request $request, IndividualSupportPlan $plan): JsonResponse
     {
@@ -902,9 +902,9 @@ class SupportPlanController extends Controller
         $planDate = $plan->created_date;
 
         // -----------------------------------------------------------------
-        // 1. かけはし期間（submission_deadline <= plan.created_date で最も近いもの）
+        // 1. アセスメント期間（submission_deadline <= plan.created_date で最も近いもの）
         // -----------------------------------------------------------------
-        $kakehashiPeriod = \App\Models\KakehashiPeriod::where('student_id', $studentId)
+        $assessmentPeriod = \App\Models\AssessmentPeriod::where('student_id', $studentId)
             ->when($planDate, function ($q) use ($planDate) {
                 $q->where('submission_deadline', '<=', $planDate);
             })
@@ -912,13 +912,13 @@ class SupportPlanController extends Controller
             ->orderByDesc('submission_deadline')
             ->first();
 
-        $guardianKakehashi = null;
-        $staffKakehashi = null;
+        $guardianAssessment = null;
+        $staffAssessment = null;
 
-        if ($kakehashiPeriod) {
-            $ge = $kakehashiPeriod->guardianEntries->first();
+        if ($assessmentPeriod) {
+            $ge = $assessmentPeriod->guardianEntries->first();
             if ($ge) {
-                $guardianKakehashi = [
+                $guardianAssessment = [
                     'student_wish'                => $ge->student_wish,
                     'home_challenges'             => $ge->home_challenges,
                     'short_term_goal'             => $ge->short_term_goal,
@@ -934,9 +934,9 @@ class SupportPlanController extends Controller
                 ];
             }
 
-            $se = $kakehashiPeriod->staffEntries->first();
+            $se = $assessmentPeriod->staffEntries->first();
             if ($se) {
-                $staffKakehashi = [
+                $staffAssessment = [
                     'student_wish'             => $se->student_wish,
                     'short_term_goal'          => $se->short_term_goal,
                     'long_term_goal'           => $se->long_term_goal,
@@ -966,12 +966,12 @@ class SupportPlanController extends Controller
         // -----------------------------------------------------------------
         $goalComparison = [
             'guardian' => [
-                'short_term_goal' => $guardianKakehashi['short_term_goal'] ?? null,
-                'long_term_goal'  => $guardianKakehashi['long_term_goal'] ?? null,
+                'short_term_goal' => $guardianAssessment['short_term_goal'] ?? null,
+                'long_term_goal'  => $guardianAssessment['long_term_goal'] ?? null,
             ],
             'staff' => [
-                'short_term_goal' => $staffKakehashi['short_term_goal'] ?? null,
-                'long_term_goal'  => $staffKakehashi['long_term_goal'] ?? null,
+                'short_term_goal' => $staffAssessment['short_term_goal'] ?? null,
+                'long_term_goal'  => $staffAssessment['long_term_goal'] ?? null,
             ],
             'plan' => [
                 'short_term_goal' => $plan->short_term_goal,
@@ -996,15 +996,15 @@ class SupportPlanController extends Controller
                         'student_name' => $plan->student->student_name,
                     ] : null,
                 ],
-                'kakehashi_period'    => $kakehashiPeriod ? [
-                    'id'                  => $kakehashiPeriod->id,
-                    'period_name'         => $kakehashiPeriod->period_name,
-                    'start_date'          => $kakehashiPeriod->start_date?->toDateString(),
-                    'end_date'            => $kakehashiPeriod->end_date?->toDateString(),
-                    'submission_deadline' => $kakehashiPeriod->submission_deadline?->toDateString(),
+                'assessment_period'    => $assessmentPeriod ? [
+                    'id'                  => $assessmentPeriod->id,
+                    'period_name'         => $assessmentPeriod->period_name,
+                    'start_date'          => $assessmentPeriod->start_date?->toDateString(),
+                    'end_date'            => $assessmentPeriod->end_date?->toDateString(),
+                    'submission_deadline' => $assessmentPeriod->submission_deadline?->toDateString(),
                 ] : null,
-                'guardian_kakehashi'  => $guardianKakehashi,
-                'staff_kakehashi'     => $staffKakehashi,
+                'guardian_assessment'  => $guardianAssessment,
+                'staff_assessment'     => $staffAssessment,
                 'latest_monitoring'   => $latestMonitoring ? [
                     'monitoring_date'  => $latestMonitoring->monitoring_date,
                     'overall_comment'  => $latestMonitoring->overall_comment,
@@ -1032,26 +1032,26 @@ class SupportPlanController extends Controller
         $studentName = $plan->student_name ?: $plan->student->student_name;
         $planDate = $plan->created_date;
 
-        // かけはし期間（submission_deadline <= plan.created_date で最も近いもの）
-        $kakehashiPeriod = \App\Models\KakehashiPeriod::where('student_id', $studentId)
+        // アセスメント期間（submission_deadline <= plan.created_date で最も近いもの）
+        $assessmentPeriod = \App\Models\AssessmentPeriod::where('student_id', $studentId)
             ->when($planDate, fn ($q) => $q->where('submission_deadline', '<=', $planDate))
             ->orderByDesc('submission_deadline')
             ->first();
 
-        // 保護者かけはしデータ
-        $guardianKakehashi = null;
-        if ($kakehashiPeriod) {
-            $guardianKakehashi = \App\Models\KakehashiGuardian::where('student_id', $studentId)
-                ->where('period_id', $kakehashiPeriod->id)
+        // 保護者アセスメントデータ
+        $guardianAssessment = null;
+        if ($assessmentPeriod) {
+            $guardianAssessment = \App\Models\AssessmentGuardian::where('student_id', $studentId)
+                ->where('period_id', $assessmentPeriod->id)
                 ->orderByDesc('submitted_at')
                 ->first();
         }
 
-        // スタッフかけはしデータ
-        $staffKakehashi = null;
-        if ($kakehashiPeriod) {
-            $staffKakehashi = \App\Models\KakehashiStaff::where('student_id', $studentId)
-                ->where('period_id', $kakehashiPeriod->id)
+        // スタッフアセスメントデータ
+        $staffAssessment = null;
+        if ($assessmentPeriod) {
+            $staffAssessment = \App\Models\AssessmentStaff::where('student_id', $studentId)
+                ->where('period_id', $assessmentPeriod->id)
                 ->orderByDesc('submitted_at')
                 ->first();
         }
@@ -1070,7 +1070,7 @@ class SupportPlanController extends Controller
 
         $prompt .= "【重要な指示】\n";
         $prompt .= "- 保護者に分かりやすい丁寧な言葉で説明してください\n";
-        $prompt .= "- 保護者・スタッフからのかけはしの内容を踏まえた説明をしてください\n";
+        $prompt .= "- 保護者・スタッフからのアセスメントの内容を踏まえた説明をしてください\n";
         $prompt .= "- 計画の目標がどのように本人・家族の願いを反映しているか説明してください\n";
         $prompt .= "- お子様の強みや成長の可能性についても触れてください\n";
         $prompt .= "- 600〜1000文字程度でまとめてください\n\n";
@@ -1084,29 +1084,29 @@ class SupportPlanController extends Controller
         $prompt .= "長期目標: " . ($plan->long_term_goal ?? '（未記入）') . "\n";
         $prompt .= "短期目標: " . ($plan->short_term_goal ?? '（未記入）') . "\n\n";
 
-        if ($guardianKakehashi) {
-            $prompt .= "【保護者からのかけはし（提出日: " . ($guardianKakehashi->submitted_at ?? '不明') . "）】\n";
-            $prompt .= "本人の願い: " . ($guardianKakehashi->student_wish ?? '') . "\n";
-            $prompt .= "家庭での願い: " . ($guardianKakehashi->home_challenges ?? '') . "\n";
-            $prompt .= "短期目標: " . ($guardianKakehashi->short_term_goal ?? '') . "\n";
-            $prompt .= "長期目標: " . ($guardianKakehashi->long_term_goal ?? '') . "\n";
-            $prompt .= "健康・生活: " . ($guardianKakehashi->domain_health_life ?? '') . "\n";
-            $prompt .= "運動・感覚: " . ($guardianKakehashi->domain_motor_sensory ?? '') . "\n";
-            $prompt .= "認知・行動: " . ($guardianKakehashi->domain_cognitive_behavior ?? '') . "\n";
-            $prompt .= "言語・コミュニケーション: " . ($guardianKakehashi->domain_language_communication ?? '') . "\n";
-            $prompt .= "人間関係・社会性: " . ($guardianKakehashi->domain_social_relations ?? '') . "\n\n";
+        if ($guardianAssessment) {
+            $prompt .= "【保護者からのアセスメント（提出日: " . ($guardianAssessment->submitted_at ?? '不明') . "）】\n";
+            $prompt .= "本人の願い: " . ($guardianAssessment->student_wish ?? '') . "\n";
+            $prompt .= "家庭での願い: " . ($guardianAssessment->home_challenges ?? '') . "\n";
+            $prompt .= "短期目標: " . ($guardianAssessment->short_term_goal ?? '') . "\n";
+            $prompt .= "長期目標: " . ($guardianAssessment->long_term_goal ?? '') . "\n";
+            $prompt .= "健康・生活: " . ($guardianAssessment->domain_health_life ?? '') . "\n";
+            $prompt .= "運動・感覚: " . ($guardianAssessment->domain_motor_sensory ?? '') . "\n";
+            $prompt .= "認知・行動: " . ($guardianAssessment->domain_cognitive_behavior ?? '') . "\n";
+            $prompt .= "言語・コミュニケーション: " . ($guardianAssessment->domain_language_communication ?? '') . "\n";
+            $prompt .= "人間関係・社会性: " . ($guardianAssessment->domain_social_relations ?? '') . "\n\n";
         }
 
-        if ($staffKakehashi) {
-            $prompt .= "【スタッフからのかけはし（提出日: " . ($staffKakehashi->submitted_at ?? '不明') . "）】\n";
-            $prompt .= "本人の願い: " . ($staffKakehashi->student_wish ?? '') . "\n";
-            $prompt .= "短期目標: " . ($staffKakehashi->short_term_goal ?? '') . "\n";
-            $prompt .= "長期目標: " . ($staffKakehashi->long_term_goal ?? '') . "\n";
-            $prompt .= "健康・生活: " . ($staffKakehashi->health_life ?? '') . "\n";
-            $prompt .= "運動・感覚: " . ($staffKakehashi->motor_sensory ?? '') . "\n";
-            $prompt .= "認知・行動: " . ($staffKakehashi->cognitive_behavior ?? '') . "\n";
-            $prompt .= "言語・コミュニケーション: " . ($staffKakehashi->language_communication ?? '') . "\n";
-            $prompt .= "人間関係・社会性: " . ($staffKakehashi->social_relations ?? '') . "\n\n";
+        if ($staffAssessment) {
+            $prompt .= "【スタッフからのアセスメント（提出日: " . ($staffAssessment->submitted_at ?? '不明') . "）】\n";
+            $prompt .= "本人の願い: " . ($staffAssessment->student_wish ?? '') . "\n";
+            $prompt .= "短期目標: " . ($staffAssessment->short_term_goal ?? '') . "\n";
+            $prompt .= "長期目標: " . ($staffAssessment->long_term_goal ?? '') . "\n";
+            $prompt .= "健康・生活: " . ($staffAssessment->health_life ?? '') . "\n";
+            $prompt .= "運動・感覚: " . ($staffAssessment->motor_sensory ?? '') . "\n";
+            $prompt .= "認知・行動: " . ($staffAssessment->cognitive_behavior ?? '') . "\n";
+            $prompt .= "言語・コミュニケーション: " . ($staffAssessment->language_communication ?? '') . "\n";
+            $prompt .= "人間関係・社会性: " . ($staffAssessment->social_relations ?? '') . "\n\n";
         }
 
         if ($latestMonitoring) {

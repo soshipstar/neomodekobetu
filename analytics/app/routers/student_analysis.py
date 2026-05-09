@@ -7,7 +7,7 @@ from app.services.trend_analysis import analyze_student_growth
 from app.services.report_generator import generate_student_report
 
 router = APIRouter()
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://kiduri:kiduri_secret@postgres:5432/kiduri")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://care-bridge:care-bridge_secret@postgres:5432/care-bridge")
 engine = create_engine(DATABASE_URL)
 
 DOMAINS = ["health_life", "motor_sensory", "cognitive_behavior", "language_communication", "social_relations"]

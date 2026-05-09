@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Services\KakehashiService;
+use App\Services\AssessmentService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -10,7 +10,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
-class AutoGenerateKakehashiPeriodJob implements ShouldQueue
+class AutoGenerateAssessmentPeriodJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -24,20 +24,20 @@ class AutoGenerateKakehashiPeriodJob implements ShouldQueue
     }
 
     /**
-     * Execute the job: auto-generate Kakehashi periods for the current half-year.
+     * Execute the job: auto-generate Assessment periods for the current half-year.
      */
-    public function handle(KakehashiService $kakehashiService): void
+    public function handle(AssessmentService $assessmentService): void
     {
-        Log::info('Starting auto-generation of Kakehashi periods');
+        Log::info('Starting auto-generation of Assessment periods');
 
-        $kakehashiService->autoGenerateNextKakehashiPeriods();
+        $assessmentService->autoGenerateNextAssessmentPeriods();
 
-        Log::info('Auto-generation of Kakehashi periods complete');
+        Log::info('Auto-generation of Assessment periods complete');
     }
 
     public function failed(\Throwable $exception): void
     {
-        Log::error('AutoGenerateKakehashiPeriodJob failed', [
+        Log::error('AutoGenerateAssessmentPeriodJob failed', [
             'error' => $exception->getMessage(),
         ]);
     }

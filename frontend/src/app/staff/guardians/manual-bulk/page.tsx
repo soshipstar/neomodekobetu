@@ -128,7 +128,7 @@ export default function GuardianManualBulkPage() {
 
   const loginUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/auth/login`
-    : 'https://kiduri.xyz/auth/login';
+    : 'http://localhost:3000/auth/login';
 
   const today = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
 

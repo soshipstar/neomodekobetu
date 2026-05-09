@@ -11,7 +11,7 @@ const notoSansJp = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-  title: 'KIDURI - 個別支援連絡帳システム',
+  title: 'CARE-BRIDGE - 個別支援連絡帳システム',
   description: '放課後等デイサービス向け 個別支援連絡帳システム',
   manifest: '/manifest.json',
   icons: {
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'KIDURI',
+    title: 'CARE-BRIDGE',
   },
   other: {
     'mobile-web-app-capable': 'yes',

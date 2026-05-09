@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import student_analysis, facility_evaluation, attendance_stats, support_plan_analysis
 
 app = FastAPI(
-    title="Kiduri Analytics Engine",
+    title="Care-bridge Analytics Engine",
     description="統計分析・レポート生成エンジン",
     version="1.0.0",
 )
@@ -25,4 +25,4 @@ app.include_router(support_plan_analysis.router, prefix="/api/analytics", tags=[
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "service": "kiduri-analytics"}
+    return {"status": "ok", "service": "care-bridge-analytics"}

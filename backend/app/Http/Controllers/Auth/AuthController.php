@@ -96,7 +96,7 @@ class AuthController extends Controller
 
         // 既存トークンを削除して新規発行
         $user->tokens()->delete();
-        $token = $user->createToken('kiduri-api', [$user->user_type])->plainTextToken;
+        $token = $user->createToken('care-bridge-api', [$user->user_type])->plainTextToken;
 
         return response()->json([
             'success' => true,
@@ -157,7 +157,7 @@ class AuthController extends Controller
         ]);
 
         $studentUser->tokens()->delete();
-        $token = $studentUser->createToken('kiduri-api', ['student'])->plainTextToken;
+        $token = $studentUser->createToken('care-bridge-api', ['student'])->plainTextToken;
 
         return response()->json([
             'success' => true,
@@ -193,7 +193,7 @@ class AuthController extends Controller
         $user = $request->user();
         $user->currentAccessToken()->delete();
 
-        $token = $user->createToken('kiduri-api', [$user->user_type])->plainTextToken;
+        $token = $user->createToken('care-bridge-api', [$user->user_type])->plainTextToken;
 
         return response()->json([
             'success' => true,

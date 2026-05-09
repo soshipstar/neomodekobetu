@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\IndividualSupportPlan;
-use App\Models\KakehashiPeriod;
+use App\Models\AssessmentPeriod;
 use App\Models\MonitoringRecord;
 use App\Models\Newsletter;
 use App\Services\PdfGenerationService;
@@ -23,7 +23,7 @@ class GeneratePdfJob implements ShouldQueue
     public int $backoff = 15;
 
     /**
-     * @param  string  $type  One of: support_plan, monitoring, kakehashi, newsletter
+     * @param  string  $type  One of: support_plan, monitoring, assessment, newsletter
      * @param  int  $recordId  ID of the source record
      */
     public function __construct(
@@ -47,8 +47,8 @@ class GeneratePdfJob implements ShouldQueue
             'monitoring' => $pdfService->generateMonitoringPdf(
                 MonitoringRecord::findOrFail($this->recordId)
             ),
-            'kakehashi' => $pdfService->generateKakehashiPdf(
-                KakehashiPeriod::findOrFail($this->recordId)
+            'assessment' => $pdfService->generateAssessmentPdf(
+                AssessmentPeriod::findOrFail($this->recordId)
             ),
             'newsletter' => $pdfService->generateNewsletterPdf(
                 Newsletter::findOrFail($this->recordId)

@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Route;
 | API Routes
 |--------------------------------------------------------------------------
 |
-| KIDURI 2026 REST API ルート定義
+| CARE-BRIDGE 2026 REST API ルート定義
 | 仕様書 Section 4 に基づくエンドポイント設計
 |
 */
@@ -220,7 +220,7 @@ Route::prefix('admin')
 
 // ==========================================================================
 // 代理店ロール API (auth:sanctum + user_type:agent)
-// 代理店ユーザーは「代理店報酬機能のみ」アクセス可。kiduri本体機能には触れない。
+// 代理店ユーザーは「代理店報酬機能のみ」アクセス可。care-bridge本体機能には触れない。
 // ==========================================================================
 Route::prefix('agent')
     ->middleware(['auth:sanctum', 'user_type:agent'])
@@ -328,13 +328,13 @@ Route::prefix('staff')
         Route::post('/monitoring/{monitoring}/generate-ai', [App\Http\Controllers\Staff\MonitoringController::class, 'generateAi']);
         Route::get('/monitoring/{monitoring}/pdf', [App\Http\Controllers\Staff\MonitoringController::class, 'pdf']);
 
-        // --- かけはし ---
-        Route::get('/students/{student}/kakehashi', [App\Http\Controllers\Staff\KakehashiController::class, 'index']);
-        Route::post('/kakehashi/generate', [App\Http\Controllers\Staff\KakehashiController::class, 'generate']);
-        Route::post('/kakehashi/{period}', [App\Http\Controllers\Staff\KakehashiController::class, 'store']);
-        Route::put('/kakehashi/{period}', [App\Http\Controllers\Staff\KakehashiController::class, 'update']);
-        Route::get('/kakehashi/{period}/pdf', [App\Http\Controllers\Staff\KakehashiController::class, 'pdf']);
-        Route::post('/kakehashi/{period}/toggle-guardian-hidden', [App\Http\Controllers\Staff\KakehashiController::class, 'toggleGuardianHidden']);
+        // --- アセスメント ---
+        Route::get('/students/{student}/assessment', [App\Http\Controllers\Staff\AssessmentController::class, 'index']);
+        Route::post('/assessment/generate', [App\Http\Controllers\Staff\AssessmentController::class, 'generate']);
+        Route::post('/assessment/{period}', [App\Http\Controllers\Staff\AssessmentController::class, 'store']);
+        Route::put('/assessment/{period}', [App\Http\Controllers\Staff\AssessmentController::class, 'update']);
+        Route::get('/assessment/{period}/pdf', [App\Http\Controllers\Staff\AssessmentController::class, 'pdf']);
+        Route::post('/assessment/{period}/toggle-guardian-hidden', [App\Http\Controllers\Staff\AssessmentController::class, 'toggleGuardianHidden']);
 
         // --- 連絡帳 (日常活動記録) ---
         Route::get('/renrakucho', [App\Http\Controllers\Staff\RenrakuchoController::class, 'index']);
@@ -388,7 +388,7 @@ Route::prefix('staff')
         // --- 面談 ---
         Route::apiResource('meetings', App\Http\Controllers\Staff\MeetingController::class)
             ->except(['destroy']);
-        Route::post('/meetings/{meeting}/generate-kakehashi', [App\Http\Controllers\Staff\MeetingController::class, 'generateKakehashi']);
+        Route::post('/meetings/{meeting}/generate-assessment', [App\Http\Controllers\Staff\MeetingController::class, 'generateAssessment']);
 
         // --- 出欠 ---
         Route::get('/attendance', [App\Http\Controllers\Staff\AttendanceController::class, 'index']);
@@ -584,7 +584,7 @@ Route::prefix('guardian')
         Route::get('/children', [App\Http\Controllers\Guardian\DashboardController::class, 'students']); // alias
 
         // --- 生徒ごとのネストルート (#16) ---
-        Route::get('/students/{student}/kakehashi', [App\Http\Controllers\Guardian\KakehashiController::class, 'index']);
+        Route::get('/students/{student}/assessment', [App\Http\Controllers\Guardian\AssessmentController::class, 'index']);
         Route::get('/students/{student}/monitoring', [App\Http\Controllers\Guardian\GuardianMonitoringController::class, 'index']);
         Route::get('/students/{student}/notes', [App\Http\Controllers\Guardian\GuardianNoteController::class, 'index']);
         Route::get('/students/{student}/weekly-plans', [App\Http\Controllers\Guardian\GuardianWeeklyPlanController::class, 'index']);
@@ -611,14 +611,14 @@ Route::prefix('guardian')
         Route::post('/support-plans/{plan}/sign', [App\Http\Controllers\Guardian\SupportPlanController::class, 'sign']);
         Route::post('/support-plans/{plan}/comment', [App\Http\Controllers\Guardian\SupportPlanController::class, 'addComment']);
 
-        // かけはし
-        Route::get('/kakehashi', [App\Http\Controllers\Guardian\KakehashiController::class, 'index']);
-        Route::get('/kakehashi/history', [App\Http\Controllers\Guardian\KakehashiController::class, 'history']); // (#17)
-        Route::get('/kakehashi/history/{period}', [App\Http\Controllers\Guardian\KakehashiController::class, 'historyDetail']); // (#18)
-        Route::post('/kakehashi/confirm-staff', [App\Http\Controllers\Guardian\KakehashiController::class, 'confirmStaff']); // (#19)
-        Route::get('/kakehashi/{period}', [App\Http\Controllers\Guardian\KakehashiController::class, 'show']);
-        Route::post('/kakehashi/{period}', [App\Http\Controllers\Guardian\KakehashiController::class, 'store']);
-        Route::post('/kakehashi/{period}/entry', [App\Http\Controllers\Guardian\KakehashiController::class, 'entry']); // (#20)
+        // アセスメント
+        Route::get('/assessment', [App\Http\Controllers\Guardian\AssessmentController::class, 'index']);
+        Route::get('/assessment/history', [App\Http\Controllers\Guardian\AssessmentController::class, 'history']); // (#17)
+        Route::get('/assessment/history/{period}', [App\Http\Controllers\Guardian\AssessmentController::class, 'historyDetail']); // (#18)
+        Route::post('/assessment/confirm-staff', [App\Http\Controllers\Guardian\AssessmentController::class, 'confirmStaff']); // (#19)
+        Route::get('/assessment/{period}', [App\Http\Controllers\Guardian\AssessmentController::class, 'show']);
+        Route::post('/assessment/{period}', [App\Http\Controllers\Guardian\AssessmentController::class, 'store']);
+        Route::post('/assessment/{period}/entry', [App\Http\Controllers\Guardian\AssessmentController::class, 'entry']); // (#20)
 
         // 欠席連絡
         Route::post('/absence', [App\Http\Controllers\Guardian\AbsenceController::class, 'store']);
@@ -764,9 +764,6 @@ Route::prefix('analytics')
 // ==========================================================================
 // 外部公開 API (APIキー認証)
 // ==========================================================================
-// SSO受入（認証不要）
-Route::get('/sso-login', [App\Http\Controllers\External\ExternalSsoController::class, 'ssoLogin']);
-
 Route::prefix('external')
     ->middleware(['external_api_key'])
     ->group(function () {

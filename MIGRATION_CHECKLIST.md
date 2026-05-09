@@ -9,8 +9,8 @@ Script: `convert_mysql_to_pg.py`
 
 - [ ] **Backup current PG database** (even if empty, confirm migrations table is intact)
   ```bash
-  ssh kiduri
-  docker exec kiduri-postgres pg_dump -U kiduri kiduri > /tmp/pg_backup_$(date +%Y%m%d_%H%M).sql
+  ssh care-bridge
+  docker exec care-bridge-postgres pg_dump -U care-bridge care-bridge > /tmp/pg_backup_$(date +%Y%m%d_%H%M).sql
   ```
 
 - [ ] **Dump latest MySQL data from heteml**
@@ -26,12 +26,12 @@ Script: `convert_mysql_to_pg.py`
 
 - [ ] **Stop application services** (optional but recommended to avoid partial state)
   ```bash
-  docker compose -f docker-compose.prod.yml stop frontend backend
+  docker compose stop frontend backend
   ```
 
 - [ ] **Verify all PG migrations have run**
   ```bash
-  docker exec kiduri-backend php artisan migrate:status
+  docker exec care-bridge-backend php artisan migrate:status
   ```
   Should show all 55 migrations as "Ran". Key migrations to verify:
   - `2026_03_11_100000_add_missing_legacy_columns` (adds domain columns, unique constraints, send_history)
@@ -55,14 +55,14 @@ python convert_mysql_to_pg.py --input /tmp/latest_production_data.sql --output /
 
 ### Apply the converted SQL:
 ```bash
-docker exec -i kiduri-postgres psql -U kiduri kiduri < /tmp/pg_production_data.sql
+docker exec -i care-bridge-postgres psql -U care-bridge care-bridge < /tmp/pg_production_data.sql
 ```
 
 ---
 
 ## Post-Migration Verification Queries
 
-Run inside `docker exec -it kiduri-postgres psql -U kiduri kiduri`:
+Run inside `docker exec -it care-bridge-postgres psql -U care-bridge care-bridge`:
 
 ### Basic Record Counts
 
@@ -78,9 +78,9 @@ UNION ALL SELECT 'individual_support_plans', COUNT(*) FROM individual_support_pl
 UNION ALL SELECT 'support_plan_details', COUNT(*) FROM support_plan_details
 UNION ALL SELECT 'monitoring_records', COUNT(*) FROM monitoring_records
 UNION ALL SELECT 'monitoring_details', COUNT(*) FROM monitoring_details
-UNION ALL SELECT 'kakehashi_periods', COUNT(*) FROM kakehashi_periods
-UNION ALL SELECT 'kakehashi_staff', COUNT(*) FROM kakehashi_staff
-UNION ALL SELECT 'kakehashi_guardian', COUNT(*) FROM kakehashi_guardian
+UNION ALL SELECT 'assessment_periods', COUNT(*) FROM assessment_periods
+UNION ALL SELECT 'assessment_staff', COUNT(*) FROM assessment_staff
+UNION ALL SELECT 'assessment_guardian', COUNT(*) FROM assessment_guardian
 UNION ALL SELECT 'chat_rooms', COUNT(*) FROM chat_rooms
 UNION ALL SELECT 'chat_messages', COUNT(*) FROM chat_messages
 UNION ALL SELECT 'weekly_plans', COUNT(*) FROM weekly_plans
@@ -215,19 +215,19 @@ STRIP takes precedence, so `last_login_at` in PG will always be NULL after migra
 
 - [ ] **Restart application services**
   ```bash
-  docker compose -f docker-compose.prod.yml up -d frontend backend
+  docker compose up -d frontend backend
   ```
 
 - [ ] **Re-create storage symlink** (if containers were recreated)
   ```bash
-  docker exec kiduri-backend php artisan storage:link
+  docker exec care-bridge-backend php artisan storage:link
   ```
 
 - [ ] **Smoke test the application**
   - Login as staff user
   - View student list
   - Open a daily record
-  - Check a kakehashi record
+  - Check a assessment record
   - Verify chat messages display
 
 - [ ] **Compare record counts with legacy MySQL**

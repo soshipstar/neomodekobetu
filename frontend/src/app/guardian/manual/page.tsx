@@ -66,7 +66,7 @@ const sections: ManualSection[] = [
         <ul className="ml-4 list-disc space-y-1.5 text-sm text-[var(--neutral-foreground-2)]">
           <li><strong>未確認の連絡帳</strong> - 確認が必要な活動記録の件数</li>
           <li><strong>未読チャット</strong> - スタッフからの新しいメッセージ</li>
-          <li><strong>かけはし期限</strong> - 提出期限が近いかけはしの通知</li>
+          <li><strong>アセスメント期限</strong> - 提出期限が近いアセスメントの通知</li>
           <li><strong>確認待ち書類</strong> - 支援計画書など確認が必要な書類</li>
         </ul>
         <HighlightBox variant="info">
@@ -120,31 +120,31 @@ const sections: ManualSection[] = [
     ),
   },
   {
-    id: 'kakehashi',
+    id: 'assessment',
     icon: <MaterialIcon name="handshake" size={20} />,
-    title: 'かけはし',
+    title: 'アセスメント',
     content: (
       <div className="space-y-3">
         <p className="text-sm leading-relaxed text-[var(--neutral-foreground-2)]">
-          「かけはし」は、<strong>保護者とスタッフの情報共有</strong>のための大切な書類です。
+          「アセスメント」は、<strong>保護者とスタッフの情報共有</strong>のための大切な書類です。
           お子様の家庭での様子と教室での様子を共有し、一貫した支援を行うために作成します。
         </p>
         <div className="space-y-2">
           <div className="rounded-lg border border-[var(--neutral-stroke-2)] p-3">
-            <h5 className="text-sm font-semibold text-[var(--brand-70)]">保護者かけはし（保護者の皆様が記入）</h5>
+            <h5 className="text-sm font-semibold text-[var(--brand-70)]">保護者アセスメント（保護者の皆様が記入）</h5>
             <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
               家庭でのお子様の様子、最近の変化、気になること、教室への要望などを記入していただきます。
             </p>
           </div>
           <div className="rounded-lg border border-[var(--neutral-stroke-2)] p-3">
-            <h5 className="text-sm font-semibold text-[var(--brand-80)]">スタッフかけはし（スタッフが作成）</h5>
+            <h5 className="text-sm font-semibold text-[var(--brand-80)]">スタッフアセスメント（スタッフが作成）</h5>
             <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
               日々の活動記録をもとに、教室でのお子様の様子、成長したポイント、今後の支援の方向性などをまとめます。
             </p>
           </div>
         </div>
         <HighlightBox variant="info">
-          <strong>かけはしの作成サイクル：</strong>かけはしは<strong>6か月ごと</strong>に作成します。
+          <strong>アセスメントの作成サイクル：</strong>アセスメントは<strong>6か月ごと</strong>に作成します。
           期限が近づくと、システムから入力のお願いが届きますので、ご協力をお願いいたします。
         </HighlightBox>
       </div>
@@ -168,7 +168,7 @@ const sections: ManualSection[] = [
         </ul>
         <HighlightBox variant="warning">
           <strong>根拠に基づいた目標設定：</strong>個別支援計画の目標は、<strong>日々の活動記録</strong>と
-          <strong>かけはし</strong>の内容を分析して設定します。
+          <strong>アセスメント</strong>の内容を分析して設定します。
           「なんとなく」ではなく、実際の様子や変化を根拠として、お子様に合った現実的で達成可能な目標を立てています。
         </HighlightBox>
         <h4 className="text-sm font-semibold text-[var(--neutral-foreground-1)]">モニタリング（経過観察）</h4>
@@ -216,16 +216,16 @@ const sections: ManualSection[] = [
         <div className="space-y-1">
           <FlowStep number={1} title="日々の活動記録" description="スタッフが毎回の活動を記録し、保護者へ送信" />
           <FlowArrow />
-          <FlowStep number={2} title="保護者かけはし作成" description="家庭での様子や要望を記入（6か月ごと）" />
+          <FlowStep number={2} title="保護者アセスメント作成" description="家庭での様子や要望を記入（6か月ごと）" />
           <FlowArrow />
-          <FlowStep number={3} title="スタッフかけはし作成" description="日々の記録をもとに、教室での様子をまとめる" />
+          <FlowStep number={3} title="スタッフアセスメント作成" description="日々の記録をもとに、教室での様子をまとめる" />
           <FlowArrow />
-          <FlowStep number={4} title="個別支援計画書作成" description="かけはしの内容を踏まえて、次の目標を設定" />
+          <FlowStep number={4} title="個別支援計画書作成" description="アセスメントの内容を踏まえて、次の目標を設定" />
           <FlowArrow />
           <FlowStep number={5} title="保護者確認・同意" description="計画内容をご確認いただき、同意をいただく" />
         </div>
         <HighlightBox variant="success">
-          <strong>このサイクルのポイント：</strong>日々の記録 → かけはし → 支援計画 という流れにより、
+          <strong>このサイクルのポイント：</strong>日々の記録 → アセスメント → 支援計画 という流れにより、
           <strong>「今のお子様の姿」に基づいた支援</strong>を行うことができます。
         </HighlightBox>
       </div>
@@ -247,8 +247,8 @@ const sections: ManualSection[] = [
               description: '送信された活動記録をご確認ください。お子様の教室での様子がわかります。気になることがあればお気軽にご連絡ください。',
             },
             {
-              title: 'かけはしへの記入',
-              description: '期限内に保護者かけはしの記入をお願いします。家庭での様子は、支援計画を立てる上で非常に重要な情報です。',
+              title: 'アセスメントへの記入',
+              description: '期限内に保護者アセスメントの記入をお願いします。家庭での様子は、支援計画を立てる上で非常に重要な情報です。',
             },
             {
               title: '個別支援計画書の確認・同意',

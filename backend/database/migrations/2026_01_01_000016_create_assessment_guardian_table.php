@@ -8,9 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('kakehashi_guardian', function (Blueprint $table) {
+        Schema::create('assessment_guardian', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('period_id')->constrained('kakehashi_periods')->cascadeOnDelete();
+            $table->foreignId('period_id')->constrained('assessment_periods')->cascadeOnDelete();
             $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
             $table->foreignId('guardian_id')->nullable()->constrained('users')->nullOnDelete();
             $table->text('home_situation')->nullable()->comment('家庭での状況');
@@ -28,6 +28,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('kakehashi_guardian');
+        Schema::dropIfExists('assessment_guardian');
     }
 };

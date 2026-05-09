@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
 
-class KakehashiPeriod extends Model
+class AssessmentPeriod extends Model
 {
     public $timestamps = false;
 
@@ -43,16 +43,16 @@ class KakehashiPeriod extends Model
         return $this->belongsTo(Student::class);
     }
 
-    /** @return HasMany<KakehashiStaff> */
+    /** @return HasMany<AssessmentStaff> */
     public function staffEntries(): HasMany
     {
-        return $this->hasMany(KakehashiStaff::class, 'period_id');
+        return $this->hasMany(AssessmentStaff::class, 'period_id');
     }
 
-    /** @return HasMany<KakehashiGuardian> */
+    /** @return HasMany<AssessmentGuardian> */
     public function guardianEntries(): HasMany
     {
-        return $this->hasMany(KakehashiGuardian::class, 'period_id');
+        return $this->hasMany(AssessmentGuardian::class, 'period_id');
     }
 
     // =========================================================================

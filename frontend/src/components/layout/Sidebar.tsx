@@ -40,9 +40,9 @@ const staffNav: NavItem[] = [
   { type: 'divider', label: '利用者情報' },
   { type: 'link', label: '生徒情報', href: '/staff/students', icon: 'school' },
   { type: 'link', label: '保護者情報', href: '/staff/guardians', icon: 'family_restroom' },
-  { type: 'divider', label: 'かけはし' },
-  { type: 'link', label: 'かけはし（職員）', href: '/staff/kakehashi-staff', icon: 'handshake' },
-  { type: 'link', label: 'かけはし（保護者）', href: '/staff/kakehashi-guardian', icon: 'menu_book' },
+  { type: 'divider', label: 'アセスメント' },
+  { type: 'link', label: 'アセスメント（職員）', href: '/staff/assessment-staff', icon: 'handshake' },
+  { type: 'link', label: 'アセスメント（保護者）', href: '/staff/assessment-guardian', icon: 'menu_book' },
   { type: 'divider', label: '計画・支援' },
   { type: 'link', label: '支援案', href: '/staff/support-plans', icon: 'description' },
   { type: 'link', label: '週間計画', href: '/staff/weekly-plans', icon: 'checklist' },
@@ -87,8 +87,8 @@ const guardianNav: NavItem[] = [
   { type: 'link', label: 'チャット', href: '/guardian/chat', icon: 'chat' },
   { type: 'link', label: '面談予約', href: '/guardian/meetings', icon: 'event' },
   { type: 'link', label: '週間計画表', href: '/guardian/weekly-plans', icon: 'checklist' },
-  { type: 'link', label: 'かけはし入力', href: '/guardian/kakehashi', icon: 'handshake' },
-  { type: 'link', label: 'かけはし履歴', href: '/guardian/kakehashi-history', icon: 'history' },
+  { type: 'link', label: 'アセスメント入力', href: '/guardian/assessment', icon: 'handshake' },
+  { type: 'link', label: 'アセスメント履歴', href: '/guardian/assessment-history', icon: 'history' },
   { type: 'link', label: 'お知らせ', href: '/guardian/announcements', icon: 'notifications' },
   { type: 'link', label: '施設通信', href: '/guardian/newsletters', icon: 'campaign' },
   { type: 'link', label: '個別支援計画書', href: '/guardian/support-plan', icon: 'description' },
@@ -270,7 +270,7 @@ function SidebarContent({
               </div>
             )}
             <span className="font-bold text-[var(--neutral-foreground-1)]">
-              {user.classroom?.classroom_name || 'KIDURI'}
+              {user.classroom?.classroom_name || 'CARE-BRIDGE'}
             </span>
           </div>
         )}

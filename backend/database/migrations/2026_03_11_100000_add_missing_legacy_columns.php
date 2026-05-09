@@ -10,9 +10,9 @@ return new class extends Migration
     public function up(): void
     {
         // =====================================================================
-        // 1. kakehashi_guardian - Add 11 missing domain/goal columns
+        // 1. assessment_guardian - Add 11 missing domain/goal columns
         // =====================================================================
-        Schema::table('kakehashi_guardian', function (Blueprint $table) {
+        Schema::table('assessment_guardian', function (Blueprint $table) {
             $table->text('student_wish')->nullable();
             $table->text('home_challenges')->nullable();
             $table->text('short_term_goal')->nullable();
@@ -89,9 +89,9 @@ return new class extends Migration
         });
 
         // =====================================================================
-        // 7. kakehashi_staff - Add other_challenges and is_hidden
+        // 7. assessment_staff - Add other_challenges and is_hidden
         // =====================================================================
-        Schema::table('kakehashi_staff', function (Blueprint $table) {
+        Schema::table('assessment_staff', function (Blueprint $table) {
             $table->text('other_challenges')->nullable();
             $table->boolean('is_hidden')->default(false);
         });
@@ -176,11 +176,11 @@ return new class extends Migration
             $table->unique(['student_id']);
         });
 
-        Schema::table('kakehashi_staff', function (Blueprint $table) {
+        Schema::table('assessment_staff', function (Blueprint $table) {
             $table->unique(['period_id', 'student_id']);
         });
 
-        Schema::table('kakehashi_guardian', function (Blueprint $table) {
+        Schema::table('assessment_guardian', function (Blueprint $table) {
             $table->unique(['period_id', 'student_id']);
         });
 
@@ -216,10 +216,10 @@ return new class extends Migration
         Schema::table('daily_records', function (Blueprint $table) {
             $table->dropUnique(['record_date', 'staff_id', 'activity_name']);
         });
-        Schema::table('kakehashi_guardian', function (Blueprint $table) {
+        Schema::table('assessment_guardian', function (Blueprint $table) {
             $table->dropUnique(['period_id', 'student_id']);
         });
-        Schema::table('kakehashi_staff', function (Blueprint $table) {
+        Schema::table('assessment_staff', function (Blueprint $table) {
             $table->dropUnique(['period_id', 'student_id']);
         });
         Schema::table('student_chat_rooms', function (Blueprint $table) {
@@ -271,7 +271,7 @@ return new class extends Migration
             $table->dropColumn(['weekly_intro', 'elementary_report', 'junior_report']);
         });
 
-        Schema::table('kakehashi_staff', function (Blueprint $table) {
+        Schema::table('assessment_staff', function (Blueprint $table) {
             $table->dropColumn(['other_challenges', 'is_hidden']);
         });
 
@@ -296,7 +296,7 @@ return new class extends Migration
             $table->dropColumn(['desired_monday', 'desired_tuesday', 'desired_wednesday', 'desired_thursday', 'desired_friday', 'desired_saturday', 'desired_sunday', 'support_plan_start_type']);
         });
 
-        Schema::table('kakehashi_guardian', function (Blueprint $table) {
+        Schema::table('assessment_guardian', function (Blueprint $table) {
             $table->dropColumn(['student_wish', 'home_challenges', 'short_term_goal', 'long_term_goal', 'domain_health_life', 'domain_motor_sensory', 'domain_cognitive_behavior', 'domain_language_communication', 'domain_social_relations', 'other_challenges', 'is_hidden']);
         });
     }

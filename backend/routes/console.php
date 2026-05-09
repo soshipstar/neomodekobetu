@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Schedule;
-use App\Jobs\AutoGenerateKakehashiPeriodJob;
+use App\Jobs\AutoGenerateAssessmentPeriodJob;
 use App\Jobs\SendDeadlineNotificationsJob;
 
 /*
@@ -14,8 +14,8 @@ use App\Jobs\SendDeadlineNotificationsJob;
 |
 */
 
-// かけはし期間の自動生成 - 毎月1日の午前0時に実行
-Schedule::job(new AutoGenerateKakehashiPeriodJob())
+// アセスメント期間の自動生成 - 毎月1日の午前0時に実行
+Schedule::job(new AutoGenerateAssessmentPeriodJob())
     ->monthlyOn(1, '00:00')
     ->withoutOverlapping()
     ->onOneServer();

@@ -41,7 +41,7 @@ interface GuardianEntry {
   is_hidden: boolean;
 }
 
-interface KakehashiPeriod {
+interface AssessmentPeriod {
   id: number;
   student_id: number;
   period_name: string;
@@ -86,7 +86,7 @@ const emptyForm: FormState = {
 // Main Component
 // ---------------------------------------------------------------------------
 
-export default function GuardianKakehashiPage() {
+export default function GuardianAssessmentPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
@@ -106,10 +106,10 @@ export default function GuardianKakehashiPage() {
 
   // Fetch periods for selected student
   const { data: periods = [], isLoading: loadingPeriods } = useQuery({
-    queryKey: ['guardian', 'kakehashi', activeStudentId],
+    queryKey: ['guardian', 'assessment', activeStudentId],
     queryFn: async () => {
-      const res = await api.get<{ data: KakehashiPeriod[] }>(
-        `/api/guardian/students/${activeStudentId}/kakehashi`
+      const res = await api.get<{ data: AssessmentPeriod[] }>(
+        `/api/guardian/students/${activeStudentId}/assessment`
       );
       return res.data.data;
     },
@@ -150,15 +150,15 @@ export default function GuardianKakehashiPage() {
   // Save/submit mutation
   const saveMutation = useMutation({
     mutationFn: async ({ action }: { action: 'save' | 'submit' }) => {
-      return api.post(`/api/guardian/kakehashi/${selectedPeriodId}`, {
+      return api.post(`/api/guardian/assessment/${selectedPeriodId}`, {
         ...form,
         action,
       });
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['guardian', 'kakehashi'] });
+      queryClient.invalidateQueries({ queryKey: ['guardian', 'assessment'] });
       if (variables.action === 'submit') {
-        toast.success('かけはしを提出しました。');
+        toast.success('アセスメントを提出しました。');
       } else {
         toast.success('下書きを保存しました。');
       }
@@ -185,14 +185,14 @@ export default function GuardianKakehashiPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">かけはし入力</h1>
+          <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">アセスメント入力</h1>
           <p className="mt-1 text-sm text-[var(--neutral-foreground-3)]">
-            かけはしの内容を入力してください
+            アセスメントの内容を入力してください
           </p>
         </div>
-        <Link href="/guardian/kakehashi-history">
+        <Link href="/guardian/assessment-history">
           <Button variant="outline" leftIcon={<MaterialIcon name="history" size={16} />}>
-            かけはし履歴
+            アセスメント履歴
           </Button>
         </Link>
       </div>
@@ -225,13 +225,13 @@ export default function GuardianKakehashiPage() {
         <Card>
           <CardBody>
             <label className="mb-2 block text-sm font-medium text-[var(--neutral-foreground-2)]">
-              かけはし提出期限を選択 <span className="text-[var(--status-danger-fg)]">*</span>
+              アセスメント提出期限を選択 <span className="text-[var(--status-danger-fg)]">*</span>
             </label>
             {loadingPeriods ? (
               <Skeleton className="h-10 w-full rounded-lg" />
             ) : availablePeriods.length === 0 ? (
               <p className="text-sm text-[var(--neutral-foreground-3)]">
-                入力可能なかけはし期間がありません。
+                入力可能なアセスメント期間がありません。
               </p>
             ) : (
               <select

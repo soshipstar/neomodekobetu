@@ -173,7 +173,16 @@
       "WebFetch(domain:hattatsu-hitotsuna.com)",
       "WebFetch(domain:x-ship.jp)",
       "WebFetch(domain:www.shssc.jp)",
-      "WebFetch(domain:www.carejinzaibank.com)"
+      "WebFetch(domain:www.carejinzaibank.com)",
+      "Bash(ls .claude/ && ls \"C:\\\\dev\\\\apps\\\\conoha1\\\\conoha a\\\\carebridge\\\\\" 2>&1 | head)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(sed -i \"s|'https://care-bridge\\\\.xyz/auth/login'|'http://localhost:3000/auth/login'|g\" frontend/src/app/staff/guardians/manual-bulk/page.tsx \"frontend/src/app/staff/guardians/[id]/manual/page.tsx\")",
+      "Bash(sed -i 's|placeholder=\"https://care-bridge\\\\.xyz/staff/\\\\.\\\\.\\\\.\\\\\"|placeholder=\"https://example.com/staff/...\"|g' frontend/src/app/staff/bug-reports/page.tsx)",
+      "Bash(set -e)",
+      "Bash(git mv *)",
+      "Bash(sed -n '1,30p' backend/database/migrations/2026_01_01_000014_create_assessment_periods_table.php)",
+      "Bash(sed -n '1,30p' backend/app/Models/AssessmentPeriod.php)",
+      "Bash(\"C:/xampp/php/php.exe\" -v)"
     ],
     "deny": [],
     "ask": []

@@ -1,4 +1,4 @@
-# KIDURI 2026 - 個別支援連絡帳システム v2.0
+# CARE-BRIDGE 2026 - 個別支援連絡帳システム v2.0
 
 ## 新アーキテクチャ仕様書
 
@@ -29,11 +29,10 @@
 ## 2. プロジェクト構成
 
 ```
-kiduri2026/
+care-bridge2026/
 ├── _legacy_php/                    # 旧PHPアプリ（参照用）
 ├── docker/
 │   ├── docker-compose.yml          # 開発環境
-│   ├── docker-compose.prod.yml     # 本番環境
 │   ├── nginx/
 │   │   └── default.conf            # Nginx設定
 │   ├── php/
@@ -63,7 +62,7 @@ kiduri2026/
 │   │   │   │   │   ├── ChatController.php
 │   │   │   │   │   ├── SupportPlanController.php
 │   │   │   │   │   ├── MonitoringController.php
-│   │   │   │   │   ├── KakehashiController.php
+│   │   │   │   │   ├── AssessmentController.php
 │   │   │   │   │   ├── RenrakuchoController.php
 │   │   │   │   │   ├── NewsletterController.php
 │   │   │   │   │   ├── MeetingController.php
@@ -75,7 +74,7 @@ kiduri2026/
 │   │   │   │   │   ├── DashboardController.php
 │   │   │   │   │   ├── ChatController.php
 │   │   │   │   │   ├── SupportPlanController.php
-│   │   │   │   │   ├── KakehashiController.php
+│   │   │   │   │   ├── AssessmentController.php
 │   │   │   │   │   ├── AbsenceController.php
 │   │   │   │   │   ├── MeetingResponseController.php
 │   │   │   │   │   └── FacilityEvaluationController.php
@@ -110,9 +109,9 @@ kiduri2026/
 │   │   │   ├── ChatMessage.php
 │   │   │   ├── IndividualSupportPlan.php
 │   │   │   ├── MonitoringRecord.php
-│   │   │   ├── KakehashiPeriod.php
-│   │   │   ├── KakehashiStaff.php
-│   │   │   ├── KakehashiGuardian.php
+│   │   │   ├── AssessmentPeriod.php
+│   │   │   ├── AssessmentStaff.php
+│   │   │   ├── AssessmentGuardian.php
 │   │   │   ├── Newsletter.php
 │   │   │   ├── MeetingRequest.php
 │   │   │   ├── AbsenceNotification.php
@@ -131,7 +130,7 @@ kiduri2026/
 │   │   │   ├── NotificationService.php      # 通知管理
 │   │   │   ├── ChatService.php              # チャットロジック
 │   │   │   ├── SupportPlanService.php       # 支援計画ロジック
-│   │   │   ├── KakehashiService.php         # かけはしロジック
+│   │   │   ├── AssessmentService.php         # アセスメントロジック
 │   │   │   ├── AttendanceService.php        # 出欠管理
 │   │   │   └── AnalyticsBridgeService.php   # Python分析連携
 │   │   ├── Events/                          # イベント（WebSocket配信用）
@@ -144,7 +143,7 @@ kiduri2026/
 │   │   │   ├── SendNotificationEmailJob.php
 │   │   │   ├── GeneratePdfJob.php
 │   │   │   ├── GenerateEmbeddingJob.php
-│   │   │   └── AutoGenerateKakehashiPeriodJob.php
+│   │   │   └── AutoGenerateAssessmentPeriodJob.php
 │   │   ├── Policies/                        # 認可ポリシー
 │   │   │   ├── StudentPolicy.php
 │   │   │   ├── ChatRoomPolicy.php
@@ -164,9 +163,9 @@ kiduri2026/
 │   │   │   ├── 0007_create_support_plan_details_table.php
 │   │   │   ├── 0008_create_monitoring_records_table.php
 │   │   │   ├── 0009_create_monitoring_details_table.php
-│   │   │   ├── 0010_create_kakehashi_periods_table.php
-│   │   │   ├── 0011_create_kakehashi_staff_table.php
-│   │   │   ├── 0012_create_kakehashi_guardian_table.php
+│   │   │   ├── 0010_create_assessment_periods_table.php
+│   │   │   ├── 0011_create_assessment_staff_table.php
+│   │   │   ├── 0012_create_assessment_guardian_table.php
 │   │   │   ├── 0013_create_daily_records_table.php
 │   │   │   ├── 0014_create_student_records_table.php
 │   │   │   ├── 0015_create_newsletters_table.php
@@ -225,7 +224,7 @@ kiduri2026/
 │   │   │   │   │       ├── page.tsx         # 生徒詳細
 │   │   │   │   │       ├── support-plan/page.tsx
 │   │   │   │   │       ├── monitoring/page.tsx
-│   │   │   │   │       ├── kakehashi/page.tsx
+│   │   │   │   │       ├── assessment/page.tsx
 │   │   │   │   │       └── interview/page.tsx
 │   │   │   │   ├── renrakucho/
 │   │   │   │   │   ├── page.tsx             # 連絡帳一覧
@@ -245,7 +244,7 @@ kiduri2026/
 │   │   │   │   │   ├── page.tsx
 │   │   │   │   │   └── [roomId]/page.tsx
 │   │   │   │   ├── support-plan/page.tsx
-│   │   │   │   ├── kakehashi/page.tsx
+│   │   │   │   ├── assessment/page.tsx
 │   │   │   │   ├── absence/page.tsx
 │   │   │   │   ├── meetings/page.tsx
 │   │   │   │   ├── evaluation/page.tsx
@@ -328,12 +327,12 @@ kiduri2026/
 │   │   │   ├── chat.ts
 │   │   │   ├── support-plan.ts
 │   │   │   ├── monitoring.ts
-│   │   │   ├── kakehashi.ts
+│   │   │   ├── assessment.ts
 │   │   │   └── api.ts
 │   │   └── styles/
 │   │       ├── globals.css                  # Tailwind CSS
 │   │       └── themes/
-│   │           └── kiduri.ts                # カスタムテーマ
+│   │           └── care-bridge.ts                # カスタムテーマ
 │   ├── public/
 │   │   ├── icons/
 │   │   └── manifest.json                    # PWA対応
@@ -378,8 +377,8 @@ classrooms ─┬── users (staff/admin)
             ├── students ─┬── chat_rooms ── chat_messages
             │             ├── individual_support_plans ── support_plan_details
             │             ├── monitoring_records ── monitoring_details
-            │             ├── kakehashi_periods ─┬── kakehashi_staff
-            │             │                      └── kakehashi_guardian
+            │             ├── assessment_periods ─┬── assessment_staff
+            │             │                      └── assessment_guardian
             │             ├── daily_records ── student_records
             │             ├── absence_notifications
             │             ├── meeting_requests
@@ -617,9 +616,9 @@ CREATE TABLE monitoring_details (
     sort_order INT DEFAULT 0
 );
 
--- ===== かけはし =====
+-- ===== アセスメント =====
 
-CREATE TABLE kakehashi_periods (
+CREATE TABLE assessment_periods (
     id BIGSERIAL PRIMARY KEY,
     student_id BIGINT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
     period_name VARCHAR(100) NOT NULL,
@@ -631,9 +630,9 @@ CREATE TABLE kakehashi_periods (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE kakehashi_staff (
+CREATE TABLE assessment_staff (
     id BIGSERIAL PRIMARY KEY,
-    period_id BIGINT NOT NULL REFERENCES kakehashi_periods(id) ON DELETE CASCADE,
+    period_id BIGINT NOT NULL REFERENCES assessment_periods(id) ON DELETE CASCADE,
     student_id BIGINT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
     staff_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     student_wish TEXT,
@@ -654,9 +653,9 @@ CREATE TABLE kakehashi_staff (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE kakehashi_guardian (
+CREATE TABLE assessment_guardian (
     id BIGSERIAL PRIMARY KEY,
-    period_id BIGINT NOT NULL REFERENCES kakehashi_periods(id) ON DELETE CASCADE,
+    period_id BIGINT NOT NULL REFERENCES assessment_periods(id) ON DELETE CASCADE,
     student_id BIGINT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
     guardian_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     home_situation TEXT,
@@ -933,7 +932,7 @@ CREATE INDEX idx_notifications_user ON notifications(user_id, is_read, created_a
 
 CREATE TABLE vector_embeddings (
     id BIGSERIAL PRIMARY KEY,
-    source_type VARCHAR(50) NOT NULL,      -- support_plan, monitoring, kakehashi, chat, etc.
+    source_type VARCHAR(50) NOT NULL,      -- support_plan, monitoring, assessment, chat, etc.
     source_id BIGINT NOT NULL,
     content_text TEXT NOT NULL,             -- 元テキスト
     embedding vector(1536),                -- OpenAI text-embedding-3-small
@@ -1033,10 +1032,10 @@ CREATE INDEX idx_login_attempts_ip ON login_attempts(ip_address, attempted_at DE
 | **モニタリング** | | |
 | GET/POST | `/api/staff/students/{id}/monitoring` | モニタリング |
 | POST | `/api/staff/monitoring/{id}/generate-ai` | AI生成 |
-| **かけはし** | | |
-| GET | `/api/staff/students/{id}/kakehashi` | かけはし一覧 |
-| POST/PUT | `/api/staff/kakehashi/{periodId}` | スタッフ入力 |
-| GET | `/api/staff/kakehashi/{periodId}/pdf` | PDF出力 |
+| **アセスメント** | | |
+| GET | `/api/staff/students/{id}/assessment` | アセスメント一覧 |
+| POST/PUT | `/api/staff/assessment/{periodId}` | スタッフ入力 |
+| GET | `/api/staff/assessment/{periodId}/pdf` | PDF出力 |
 | **連絡帳** | | |
 | GET | `/api/staff/renrakucho` | 日次活動一覧 |
 | POST | `/api/staff/renrakucho` | 活動記録 |
@@ -1068,7 +1067,7 @@ CREATE INDEX idx_login_attempts_ip ON login_attempts(ip_address, attempted_at DE
 | GET | `/api/guardian/support-plans` | 支援計画閲覧 |
 | POST | `/api/guardian/support-plans/{id}/review` | 計画レビュー |
 | POST | `/api/guardian/support-plans/{id}/sign` | 電子署名 |
-| GET/POST | `/api/guardian/kakehashi/{periodId}` | かけはし入力 |
+| GET/POST | `/api/guardian/assessment/{periodId}` | アセスメント入力 |
 | POST | `/api/guardian/absence` | 欠席連絡 |
 | GET/PUT | `/api/guardian/meetings/{id}` | 面談回答 |
 | POST | `/api/guardian/evaluation` | 施設評価 |
@@ -1254,9 +1253,9 @@ services:
     environment:
       DB_CONNECTION: pgsql
       DB_HOST: postgres
-      DB_DATABASE: kiduri
-      DB_USERNAME: kiduri
-      DB_PASSWORD: kiduri_secret
+      DB_DATABASE: care-bridge
+      DB_USERNAME: care-bridge
+      DB_PASSWORD: care-bridge_secret
       REDIS_HOST: redis
       OPENAI_API_KEY: ${OPENAI_API_KEY}
 
@@ -1288,9 +1287,9 @@ services:
     ports: ["5432:5432"]
     volumes: ["postgres_data:/var/lib/postgresql/data"]
     environment:
-      POSTGRES_DB: kiduri
-      POSTGRES_USER: kiduri
-      POSTGRES_PASSWORD: kiduri_secret
+      POSTGRES_DB: care-bridge
+      POSTGRES_USER: care-bridge
+      POSTGRES_PASSWORD: care-bridge_secret
 
   # --- キャッシュ/セッション ---
   redis:
@@ -1304,7 +1303,7 @@ services:
     ports: ["8001:8001"]
     depends_on: [postgres]
     environment:
-      DATABASE_URL: postgresql://kiduri:kiduri_secret@postgres:5432/kiduri
+      DATABASE_URL: postgresql://care-bridge:care-bridge_secret@postgres:5432/care-bridge
 
   # --- リバースプロキシ ---
   nginx:
@@ -1341,7 +1340,7 @@ volumes:
 ### Phase 3: 支援計画系 (3週間)
 - [ ] 個別支援計画 (CRUD + AI生成)
 - [ ] モニタリング
-- [ ] かけはし
+- [ ] アセスメント
 - [ ] 電子署名
 - [ ] PDF生成
 

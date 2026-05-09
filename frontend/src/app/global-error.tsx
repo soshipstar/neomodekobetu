@@ -41,7 +41,7 @@ export default function GlobalError({
         || /Failed to load chunk /i.test(error?.message ?? '');
       if (isChunkErr) {
         try {
-          const key = '__kiduri_chunk_reload__';
+          const key = '__care-bridge_chunk_reload__';
           const last = Number(window.sessionStorage.getItem(key) ?? '0');
           // 10分以内に既にリロード済みならループ防止で素通し
           if (Date.now() - last > 10 * 60 * 1000) {

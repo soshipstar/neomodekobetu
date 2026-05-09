@@ -35,13 +35,13 @@ interface BasisData {
     basis_generated_at: string | null;
     student?: { id: number; student_name: string };
   };
-  kakehashi_period: {
+  assessment_period: {
     period_name: string;
     start_date: string;
     end_date: string;
     submission_deadline: string;
   } | null;
-  guardian_kakehashi: {
+  guardian_assessment: {
     student_wish: string | null;
     home_challenges: string | null;
     short_term_goal: string | null;
@@ -55,7 +55,7 @@ interface BasisData {
     is_submitted: boolean;
     submitted_at: string | null;
   } | null;
-  staff_kakehashi: {
+  staff_assessment: {
     student_wish: string | null;
     short_term_goal: string | null;
     long_term_goal: string | null;
@@ -133,11 +133,11 @@ export default function PlanBasisPage() {
 
   if (!basis) return <div className="p-8 text-center">データが見つかりません</div>;
 
-  const { plan, kakehashi_period, guardian_kakehashi, staff_kakehashi } = basis;
+  const { plan, assessment_period, guardian_assessment, staff_assessment } = basis;
   // Support both field names from API
   const monitoring = basis.monitoring || basis.latest_monitoring;
 
-  const hasNoData = !kakehashi_period && !guardian_kakehashi && !staff_kakehashi && !monitoring;
+  const hasNoData = !assessment_period && !guardian_assessment && !staff_assessment && !monitoring;
 
   return (
     <div className="space-y-4 print:space-y-3">
@@ -166,8 +166,8 @@ export default function PlanBasisPage() {
         <div className="flex flex-wrap gap-6 text-sm opacity-90">
           <span>{plan.student?.student_name}</span>
           <span>計画作成日: {formatDate(plan.created_date)}</span>
-          {kakehashi_period && (
-            <span>根拠期間: {formatDate(kakehashi_period.submission_deadline)} 期限のかけはし</span>
+          {assessment_period && (
+            <span>根拠期間: {formatDate(assessment_period.submission_deadline)} 期限のアセスメント</span>
           )}
         </div>
       </div>
@@ -175,7 +175,7 @@ export default function PlanBasisPage() {
       {hasNoData ? (
         <div className="rounded-lg bg-[var(--neutral-background-3)] p-8 text-center text-[var(--neutral-foreground-3)]">
           <h3 className="text-lg font-semibold mb-2">根拠データが見つかりません</h3>
-          <p>この計画書に関連するかけはしデータやモニタリングデータが見つかりませんでした。</p>
+          <p>この計画書に関連するアセスメントデータやモニタリングデータが見つかりませんでした。</p>
           <p>計画書が手動で作成された可能性があります。</p>
         </div>
       ) : (
@@ -187,69 +187,69 @@ export default function PlanBasisPage() {
             <CardHeader><CardTitle className="text-base">目標の比較と整合性</CardTitle></CardHeader>
             <CardBody>
               <p className="text-sm text-[var(--neutral-foreground-3)] mb-4">
-                保護者・スタッフのかけはしで設定された目標と、個別支援計画で設定された目標を比較します。
+                保護者・スタッフのアセスメントで設定された目標と、個別支援計画で設定された目標を比較します。
               </p>
               <p className="text-sm font-semibold text-[var(--neutral-foreground-1)] mb-2">【短期目標】</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-                <GoalBox label="保護者の目標" text={guardian_kakehashi?.short_term_goal} color="pink" />
-                <GoalBox label="スタッフの目標" text={staff_kakehashi?.short_term_goal} color="green" />
+                <GoalBox label="保護者の目標" text={guardian_assessment?.short_term_goal} color="pink" />
+                <GoalBox label="スタッフの目標" text={staff_assessment?.short_term_goal} color="green" />
                 <GoalBox label="計画書の目標" text={plan.short_term_goal} color="blue" />
               </div>
               <p className="text-sm font-semibold text-[var(--neutral-foreground-1)] mb-2">【長期目標】</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <GoalBox label="保護者の目標" text={guardian_kakehashi?.long_term_goal} color="pink" />
-                <GoalBox label="スタッフの目標" text={staff_kakehashi?.long_term_goal} color="green" />
+                <GoalBox label="保護者の目標" text={guardian_assessment?.long_term_goal} color="pink" />
+                <GoalBox label="スタッフの目標" text={staff_assessment?.long_term_goal} color="green" />
                 <GoalBox label="計画書の目標" text={plan.long_term_goal} color="blue" />
               </div>
             </CardBody>
           </Card>
 
           {/* ============================================================== */}
-          {/* Section 2: Guardian Kakehashi */}
+          {/* Section 2: Guardian Assessment */}
           {/* ============================================================== */}
-          {guardian_kakehashi && (
+          {guardian_assessment && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">保護者からのかけはし</CardTitle>
+                <CardTitle className="text-base">保護者からのアセスメント</CardTitle>
               </CardHeader>
               <CardBody>
                 <p className="text-sm text-[var(--neutral-foreground-3)] mb-4">
-                  提出日: {guardian_kakehashi.submitted_at ? formatDate(guardian_kakehashi.submitted_at) : '未提出'}
+                  提出日: {guardian_assessment.submitted_at ? formatDate(guardian_assessment.submitted_at) : '未提出'}
                 </p>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <DataItem label="本人の願い" value={guardian_kakehashi.student_wish} />
-                  <DataItem label="家庭での課題・願い" value={guardian_kakehashi.home_challenges} />
-                  <DataItem label="健康・生活" value={guardian_kakehashi.domain_health_life} />
-                  <DataItem label="運動・感覚" value={guardian_kakehashi.domain_motor_sensory} />
-                  <DataItem label="認知・行動" value={guardian_kakehashi.domain_cognitive_behavior} />
-                  <DataItem label="言語・コミュニケーション" value={guardian_kakehashi.domain_language_communication} />
-                  <DataItem label="人間関係・社会性" value={guardian_kakehashi.domain_social_relations} />
-                  <DataItem label="その他" value={guardian_kakehashi.other_challenges} />
+                  <DataItem label="本人の願い" value={guardian_assessment.student_wish} />
+                  <DataItem label="家庭での課題・願い" value={guardian_assessment.home_challenges} />
+                  <DataItem label="健康・生活" value={guardian_assessment.domain_health_life} />
+                  <DataItem label="運動・感覚" value={guardian_assessment.domain_motor_sensory} />
+                  <DataItem label="認知・行動" value={guardian_assessment.domain_cognitive_behavior} />
+                  <DataItem label="言語・コミュニケーション" value={guardian_assessment.domain_language_communication} />
+                  <DataItem label="人間関係・社会性" value={guardian_assessment.domain_social_relations} />
+                  <DataItem label="その他" value={guardian_assessment.other_challenges} />
                 </div>
               </CardBody>
             </Card>
           )}
 
           {/* ============================================================== */}
-          {/* Section 3: Staff Kakehashi */}
+          {/* Section 3: Staff Assessment */}
           {/* ============================================================== */}
-          {staff_kakehashi && (
+          {staff_assessment && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">スタッフからのかけはし</CardTitle>
+                <CardTitle className="text-base">スタッフからのアセスメント</CardTitle>
               </CardHeader>
               <CardBody>
                 <p className="text-sm text-[var(--neutral-foreground-3)] mb-4">
-                  提出日: {staff_kakehashi.submitted_at ? formatDate(staff_kakehashi.submitted_at) : '未提出'}
+                  提出日: {staff_assessment.submitted_at ? formatDate(staff_assessment.submitted_at) : '未提出'}
                 </p>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <DataItem label="本人の願い（スタッフ観察）" value={staff_kakehashi.student_wish} />
-                  <DataItem label="健康・生活" value={staff_kakehashi.health_life} />
-                  <DataItem label="運動・感覚" value={staff_kakehashi.motor_sensory} />
-                  <DataItem label="認知・行動" value={staff_kakehashi.cognitive_behavior} />
-                  <DataItem label="言語・コミュニケーション" value={staff_kakehashi.language_communication} />
-                  <DataItem label="人間関係・社会性" value={staff_kakehashi.social_relations} />
-                  <DataItem label="その他" value={staff_kakehashi.other_challenges} />
+                  <DataItem label="本人の願い（スタッフ観察）" value={staff_assessment.student_wish} />
+                  <DataItem label="健康・生活" value={staff_assessment.health_life} />
+                  <DataItem label="運動・感覚" value={staff_assessment.motor_sensory} />
+                  <DataItem label="認知・行動" value={staff_assessment.cognitive_behavior} />
+                  <DataItem label="言語・コミュニケーション" value={staff_assessment.language_communication} />
+                  <DataItem label="人間関係・社会性" value={staff_assessment.social_relations} />
+                  <DataItem label="その他" value={staff_assessment.other_challenges} />
                 </div>
               </CardBody>
             </Card>

@@ -1,8 +1,8 @@
 /**
- * Service Worker for KIDURI - 個別支援連絡帳システム PWA
+ * Service Worker for CARE-BRIDGE - 個別支援連絡帳システム PWA
  */
 
-const CACHE_VERSION = 'kiduri-cache-v2';
+const CACHE_VERSION = 'care-bridge-cache-v2';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const OFFLINE_URL = '/offline.html';
@@ -227,7 +227,7 @@ self.addEventListener('push', (event) => {
       },
     };
     event.waitUntil(
-      self.registration.showNotification(data.title || 'KIDURI', options)
+      self.registration.showNotification(data.title || 'CARE-BRIDGE', options)
     );
   }
 });

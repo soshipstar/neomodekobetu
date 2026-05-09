@@ -9,7 +9,7 @@ use App\Models\MonitoringRecord;
 use App\Models\Student;
 use App\Models\SupportPlanDetail;
 use App\Models\User;
-use App\Services\KakehashiService;
+use App\Services\AssessmentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
@@ -18,12 +18,12 @@ class L004_MonitoringAutoCopyTest extends TestCase
 {
     use RefreshDatabase;
 
-    private KakehashiService $service;
+    private AssessmentService $service;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new KakehashiService();
+        $this->service = new AssessmentService();
     }
 
     /**

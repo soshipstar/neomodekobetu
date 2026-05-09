@@ -6,7 +6,7 @@ import numpy as np
 from app.models.schemas import SupportPlanEffectivenessRequest, SupportPlanEffectivenessResponse
 
 router = APIRouter()
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://kiduri:kiduri_secret@postgres:5432/kiduri")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://care-bridge:care-bridge_secret@postgres:5432/care-bridge")
 engine = create_engine(DATABASE_URL)
 
 DOMAIN_NAMES = {

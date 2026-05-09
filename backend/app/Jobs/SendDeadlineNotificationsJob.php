@@ -4,7 +4,7 @@ namespace App\Jobs;
 
 use App\Models\AuditLog;
 use App\Models\IndividualSupportPlan;
-use App\Models\KakehashiPeriod;
+use App\Models\AssessmentPeriod;
 use App\Models\MonitoringRecord;
 use App\Models\Notification;
 use App\Models\Student;
@@ -22,8 +22,8 @@ use Illuminate\Support\Facades\Log;
  * 期限通知ジョブ
  *
  * 毎朝9時に実行し、以下の期限通知を送信する:
- * - かけはし（保護者）提出期限リマインダー（7日前・当日）
- * - かけはし（スタッフ）提出期限リマインダー（7日前・当日）
+ * - アセスメント（保護者）提出期限リマインダー（7日前・当日）
+ * - アセスメント（スタッフ）提出期限リマインダー（7日前・当日）
  * - モニタリング作成期限リマインダー（1ヶ月前から当日まで）
  * - 個別支援計画書更新期限リマインダー（1ヶ月前から当日まで）
  */
@@ -37,8 +37,8 @@ class SendDeadlineNotificationsJob implements ShouldQueue
 
     /** @var array<string, int> */
     protected array $results = [
-        'kakehashi_guardian' => 0,
-        'kakehashi_staff' => 0,
+        'assessment_guardian' => 0,
+        'assessment_staff' => 0,
         'monitoring' => 0,
         'plan' => 0,
         'errors' => 0,
@@ -53,8 +53,8 @@ class SendDeadlineNotificationsJob implements ShouldQueue
     {
         Log::info('SendDeadlineNotificationsJob: starting deadline notification check');
 
-        $this->sendKakehashiGuardianReminders();
-        $this->sendKakehashiStaffReminders();
+        $this->sendAssessmentGuardianReminders();
+        $this->sendAssessmentStaffReminders();
         $this->sendMonitoringReminders();
         $this->sendPlanReminders();
 
@@ -70,20 +70,20 @@ class SendDeadlineNotificationsJob implements ShouldQueue
     }
 
     // =========================================================================
-    // Kakehashi Guardian Reminders
+    // Assessment Guardian Reminders
     // =========================================================================
 
     /**
-     * 保護者かけはし期限リマインダー
+     * 保護者アセスメント期限リマインダー
      * 提出期限が本日 または 7日後で未提出の保護者に通知
      */
-    protected function sendKakehashiGuardianReminders(): void
+    protected function sendAssessmentGuardianReminders(): void
     {
         try {
             $today = Carbon::today();
             $sevenDaysLater = $today->copy()->addDays(7);
 
-            $periods = KakehashiPeriod::query()
+            $periods = AssessmentPeriod::query()
                 ->where('is_active', true)
                 ->where(function ($q) use ($today, $sevenDaysLater) {
                     $q->whereDate('submission_deadline', $today)
@@ -115,9 +115,9 @@ class SendDeadlineNotificationsJob implements ShouldQueue
                     continue;
                 }
 
-                $notificationKey = "kakehashi_guardian_{$period->id}_{$guardian->id}";
+                $notificationKey = "assessment_guardian_{$period->id}_{$guardian->id}";
 
-                if ($this->isAlreadySentToday('deadline_reminder', 'kakehashi_guardian', $notificationKey)) {
+                if ($this->isAlreadySentToday('deadline_reminder', 'assessment_guardian', $notificationKey)) {
                     continue;
                 }
 
@@ -129,10 +129,10 @@ class SendDeadlineNotificationsJob implements ShouldQueue
                 $this->createNotification(
                     $guardian,
                     'deadline_reminder',
-                    "【かけはし提出期限】{$student->student_name}",
-                    "{$student->student_name}さんのかけはし（保護者）の提出期限が近づいています。{$urgency}（期限: {$period->submission_deadline->format('Y年n月j日')}）",
+                    "【アセスメント提出期限】{$student->student_name}",
+                    "{$student->student_name}さんのアセスメント（保護者）の提出期限が近づいています。{$urgency}（期限: {$period->submission_deadline->format('Y年n月j日')}）",
                     [
-                        'type' => 'kakehashi_guardian',
+                        'type' => 'assessment_guardian',
                         'period_id' => $period->id,
                         'student_id' => $student->id,
                         'deadline' => $period->submission_deadline->toDateString(),
@@ -142,15 +142,15 @@ class SendDeadlineNotificationsJob implements ShouldQueue
 
                 $this->logNotificationSent(
                     'deadline_reminder',
-                    'kakehashi_guardian',
+                    'assessment_guardian',
                     $notificationKey,
-                    "保護者かけはし期限通知: {$student->student_name} / 期限: {$period->submission_deadline->toDateString()}"
+                    "保護者アセスメント期限通知: {$student->student_name} / 期限: {$period->submission_deadline->toDateString()}"
                 );
 
-                $this->results['kakehashi_guardian']++;
+                $this->results['assessment_guardian']++;
             }
         } catch (\Throwable $e) {
-            Log::error('SendDeadlineNotificationsJob: kakehashi guardian error', [
+            Log::error('SendDeadlineNotificationsJob: assessment guardian error', [
                 'error' => $e->getMessage(),
             ]);
             $this->results['errors']++;
@@ -158,20 +158,20 @@ class SendDeadlineNotificationsJob implements ShouldQueue
     }
 
     // =========================================================================
-    // Kakehashi Staff Reminders
+    // Assessment Staff Reminders
     // =========================================================================
 
     /**
-     * スタッフかけはし期限リマインダー
+     * スタッフアセスメント期限リマインダー
      * 提出期限が本日 または 7日後で未提出のスタッフに通知
      */
-    protected function sendKakehashiStaffReminders(): void
+    protected function sendAssessmentStaffReminders(): void
     {
         try {
             $today = Carbon::today();
             $sevenDaysLater = $today->copy()->addDays(7);
 
-            $periods = KakehashiPeriod::query()
+            $periods = AssessmentPeriod::query()
                 ->where('is_active', true)
                 ->where(function ($q) use ($today, $sevenDaysLater) {
                     $q->whereDate('submission_deadline', $today)
@@ -213,19 +213,19 @@ class SendDeadlineNotificationsJob implements ShouldQueue
                     : "提出期限まであと{$daysLeft}日です";
 
                 foreach ($staffMembers as $staff) {
-                    $notificationKey = "kakehashi_staff_{$period->id}_{$staff->id}";
+                    $notificationKey = "assessment_staff_{$period->id}_{$staff->id}";
 
-                    if ($this->isAlreadySentToday('deadline_reminder', 'kakehashi_staff', $notificationKey)) {
+                    if ($this->isAlreadySentToday('deadline_reminder', 'assessment_staff', $notificationKey)) {
                         continue;
                     }
 
                     $this->createNotification(
                         $staff,
                         'deadline_reminder',
-                        "【かけはし提出期限】{$student->student_name}",
-                        "{$student->student_name}さんのかけはし（スタッフ）の提出期限が近づいています。{$urgency}（期限: {$period->submission_deadline->format('Y年n月j日')}）",
+                        "【アセスメント提出期限】{$student->student_name}",
+                        "{$student->student_name}さんのアセスメント（スタッフ）の提出期限が近づいています。{$urgency}（期限: {$period->submission_deadline->format('Y年n月j日')}）",
                         [
-                            'type' => 'kakehashi_staff',
+                            'type' => 'assessment_staff',
                             'period_id' => $period->id,
                             'student_id' => $student->id,
                             'deadline' => $period->submission_deadline->toDateString(),
@@ -235,16 +235,16 @@ class SendDeadlineNotificationsJob implements ShouldQueue
 
                     $this->logNotificationSent(
                         'deadline_reminder',
-                        'kakehashi_staff',
+                        'assessment_staff',
                         $notificationKey,
-                        "スタッフかけはし期限通知: {$student->student_name} / 期限: {$period->submission_deadline->toDateString()} / 送信先: {$staff->full_name}"
+                        "スタッフアセスメント期限通知: {$student->student_name} / 期限: {$period->submission_deadline->toDateString()} / 送信先: {$staff->full_name}"
                     );
 
-                    $this->results['kakehashi_staff']++;
+                    $this->results['assessment_staff']++;
                 }
             }
         } catch (\Throwable $e) {
-            Log::error('SendDeadlineNotificationsJob: kakehashi staff error', [
+            Log::error('SendDeadlineNotificationsJob: assessment staff error', [
                 'error' => $e->getMessage(),
             ]);
             $this->results['errors']++;
@@ -257,7 +257,7 @@ class SendDeadlineNotificationsJob implements ShouldQueue
 
     /**
      * モニタリング期限リマインダー
-     * かけはし期間の提出期限が1ヶ月以内で、モニタリングが未完了の生徒の教室スタッフに通知
+     * アセスメント期間の提出期限が1ヶ月以内で、モニタリングが未完了の生徒の教室スタッフに通知
      */
     protected function sendMonitoringReminders(): void
     {
@@ -265,8 +265,8 @@ class SendDeadlineNotificationsJob implements ShouldQueue
             $today = Carbon::today();
             $oneMonthLater = $today->copy()->addMonth();
 
-            // Find students with upcoming kakehashi deadlines who need monitoring
-            $periods = KakehashiPeriod::query()
+            // Find students with upcoming assessment deadlines who need monitoring
+            $periods = AssessmentPeriod::query()
                 ->where('is_active', true)
                 ->whereDate('submission_deadline', '>=', $today)
                 ->whereDate('submission_deadline', '<=', $oneMonthLater)
@@ -360,7 +360,7 @@ class SendDeadlineNotificationsJob implements ShouldQueue
 
     /**
      * 個別支援計画書更新期限リマインダー
-     * かけはし期間の提出期限が1ヶ月以内で、新しい計画書が必要な生徒の教室スタッフに通知
+     * アセスメント期間の提出期限が1ヶ月以内で、新しい計画書が必要な生徒の教室スタッフに通知
      */
     protected function sendPlanReminders(): void
     {
@@ -368,7 +368,7 @@ class SendDeadlineNotificationsJob implements ShouldQueue
             $today = Carbon::today();
             $oneMonthLater = $today->copy()->addMonth();
 
-            $periods = KakehashiPeriod::query()
+            $periods = AssessmentPeriod::query()
                 ->where('is_active', true)
                 ->whereDate('submission_deadline', '>=', $today)
                 ->whereDate('submission_deadline', '<=', $oneMonthLater)

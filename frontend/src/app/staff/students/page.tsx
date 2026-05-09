@@ -537,7 +537,7 @@ function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel
         <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">支援開始日 {form.status !== 'waiting' && <span className="text-[var(--status-danger-fg)]">*</span>}</label>
         <input type="date" value={form.support_start_date} onChange={(e) => updateField('support_start_date', e.target.value)}
           className={inputCls} required={form.status !== 'waiting'} />
-        <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">※かけはしの提出期限が自動で設定されます</p>
+        <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">※アセスメントの提出期限が自動で設定されます</p>
       </div>
 
       {/* 個別支援計画の開始タイミング */}
@@ -580,7 +580,7 @@ function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel
           <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">退所日</label>
           <input type="date" value={form.withdrawal_date} onChange={(e) => updateField('withdrawal_date', e.target.value)}
             className={inputCls} />
-          <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">※退所日以降のかけはし・計画書・モニタリング表は作成されません</p>
+          <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">※退所日以降のアセスメント・計画書・モニタリング表は作成されません</p>
         </div>
       )}
 

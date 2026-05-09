@@ -24,7 +24,7 @@ class Student extends Model
         'guardian_id',
         'person_id',
         'support_start_date',
-        'kakehashi_initial_date',
+        'assessment_initial_date',
         'support_plan_start_type',
         'notes',
         'is_active',
@@ -63,7 +63,7 @@ class Student extends Model
         return [
             'birth_date' => 'date:Y-m-d',
             'support_start_date' => 'date:Y-m-d',
-            'kakehashi_initial_date' => 'date:Y-m-d',
+            'assessment_initial_date' => 'date:Y-m-d',
             'withdrawal_date' => 'date:Y-m-d',
             'is_active' => 'boolean',
             'hide_initial_monitoring' => 'boolean',
@@ -125,10 +125,10 @@ class Student extends Model
         return $this->hasMany(MonitoringRecord::class);
     }
 
-    /** @return HasMany<KakehashiPeriod> */
-    public function kakehashiPeriods(): HasMany
+    /** @return HasMany<AssessmentPeriod> */
+    public function assessmentPeriods(): HasMany
     {
-        return $this->hasMany(KakehashiPeriod::class);
+        return $this->hasMany(AssessmentPeriod::class);
     }
 
     /** @return HasMany<AbsenceNotification> */

@@ -15,7 +15,7 @@ class NotificationPreferenceController extends Controller
         'chat' => 'チャット',
         'announcement' => 'お知らせ',
         'meeting' => '面談予約',
-        'kakehashi' => 'かけはし依頼',
+        'assessment' => 'アセスメント依頼',
         'monitoring' => 'モニタリング',
         'support_plan' => '個別支援計画',
         'submission' => '提出物依頼',

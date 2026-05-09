@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\ChatRoom;
 use App\Models\IndividualSupportPlan;
 use App\Models\IntegratedNote;
-use App\Models\KakehashiPeriod;
-use App\Models\KakehashiStaff;
+use App\Models\AssessmentPeriod;
+use App\Models\AssessmentStaff;
 use App\Models\MeetingRequest;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -85,14 +85,14 @@ class DashboardController extends Controller
         ", [$guardianId]);
 
         // ==============================
-        // 未提出かけはし (overdue/urgent/pending)
+        // 未提出アセスメント (overdue/urgent/pending)
         // ==============================
-        $overdueKakehashi = [];
-        $urgentKakehashi = [];
-        $pendingKakehashi = [];
+        $overdueAssessment = [];
+        $urgentAssessment = [];
+        $pendingAssessment = [];
 
         if (!empty($studentIds)) {
-            $kakehashiRows = DB::select("
+            $assessmentRows = DB::select("
                 SELECT
                     kp.id as period_id,
                     kp.period_name,
@@ -102,12 +102,12 @@ class DashboardController extends Controller
                     kp.student_id,
                     s.student_name,
                     (kp.submission_deadline::date - ?::date) as days_left,
-                    kg.id as kakehashi_id,
+                    kg.id as assessment_id,
                     kg.is_submitted,
                     kg.is_hidden
-                FROM kakehashi_periods kp
+                FROM assessment_periods kp
                 INNER JOIN students s ON kp.student_id = s.id
-                LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = kp.student_id
+                LEFT JOIN assessment_guardian kg ON kp.id = kg.period_id AND kg.student_id = kp.student_id
                 WHERE kp.student_id = ANY(?)
                 AND kp.is_active = true
                 AND (kg.is_submitted = false OR kg.is_submitted IS NULL)
@@ -116,7 +116,7 @@ class DashboardController extends Controller
                 ORDER BY kp.submission_deadline ASC
             ", [$today, '{' . implode(',', $studentIds) . '}', $oneMonthLater]);
 
-            foreach ($kakehashiRows as $row) {
+            foreach ($assessmentRows as $row) {
                 $item = [
                     'period_id' => $row->period_id,
                     'period_name' => $row->period_name,
@@ -126,11 +126,11 @@ class DashboardController extends Controller
                     'student_id' => $row->student_id,
                 ];
                 if ($row->days_left < 0) {
-                    $overdueKakehashi[] = $item;
+                    $overdueAssessment[] = $item;
                 } elseif ($row->days_left <= 7) {
-                    $urgentKakehashi[] = $item;
+                    $urgentAssessment[] = $item;
                 } else {
-                    $pendingKakehashi[] = $item;
+                    $pendingAssessment[] = $item;
                 }
             }
         }
@@ -361,31 +361,31 @@ class DashboardController extends Controller
         }
 
         // ==============================
-        // スタッフかけはしの確認待ち
+        // スタッフアセスメントの確認待ち
         // ==============================
-        $pendingStaffKakehashi = [];
+        $pendingStaffAssessment = [];
         if (!empty($studentIds)) {
-            $staffKakehashi = DB::table('kakehashi_staff')
-                ->join('kakehashi_periods', 'kakehashi_staff.period_id', '=', 'kakehashi_periods.id')
-                ->join('students', 'kakehashi_staff.student_id', '=', 'students.id')
-                ->whereIn('kakehashi_staff.student_id', $studentIds)
-                ->where('kakehashi_staff.is_submitted', true)
+            $staffAssessment = DB::table('assessment_staff')
+                ->join('assessment_periods', 'assessment_staff.period_id', '=', 'assessment_periods.id')
+                ->join('students', 'assessment_staff.student_id', '=', 'students.id')
+                ->whereIn('assessment_staff.student_id', $studentIds)
+                ->where('assessment_staff.is_submitted', true)
                 ->where(function ($q) {
-                    $q->where('kakehashi_staff.guardian_confirmed', false)
-                      ->orWhereNull('kakehashi_staff.guardian_confirmed');
+                    $q->where('assessment_staff.guardian_confirmed', false)
+                      ->orWhereNull('assessment_staff.guardian_confirmed');
                 })
                 ->select([
-                    'kakehashi_staff.id',
-                    'kakehashi_staff.submitted_at',
-                    'kakehashi_periods.period_name',
+                    'assessment_staff.id',
+                    'assessment_staff.submitted_at',
+                    'assessment_periods.period_name',
                     'students.student_name',
                     'students.id as student_id',
                 ])
-                ->orderByDesc('kakehashi_staff.submitted_at')
+                ->orderByDesc('assessment_staff.submitted_at')
                 ->get();
 
-            foreach ($staffKakehashi as $sk) {
-                $pendingStaffKakehashi[] = [
+            foreach ($staffAssessment as $sk) {
+                $pendingStaffAssessment[] = [
                     'id' => $sk->id,
                     'student_name' => $sk->student_name,
                     'student_id' => $sk->student_id,
@@ -441,9 +441,9 @@ class DashboardController extends Controller
             'data'    => [
                 'children'                    => $children,
                 'unread_chat_messages'        => $unreadChatMessages,
-                'overdue_kakehashi'           => $overdueKakehashi,
-                'urgent_kakehashi'            => $urgentKakehashi,
-                'pending_kakehashi'           => $pendingKakehashi,
+                'overdue_assessment'           => $overdueAssessment,
+                'urgent_assessment'            => $urgentAssessment,
+                'pending_assessment'           => $pendingAssessment,
                 'overdue_submissions'         => $overdueSubmissions,
                 'urgent_submissions'          => $urgentSubmissions,
                 'pending_submissions'         => $pendingSubmissions,
@@ -454,7 +454,7 @@ class DashboardController extends Controller
                 'signature_pending_plans'     => $signaturePendingPlans,
                 'pending_monitoring_records'  => $pendingMonitoringRecords,
                 'signature_pending_monitoring' => $signaturePendingMonitoring,
-                'pending_staff_kakehashi'     => $pendingStaffKakehashi,
+                'pending_staff_assessment'     => $pendingStaffAssessment,
                 'pending_facility_evaluations' => $pendingFacilityEvaluations,
                 'calendar'                    => $calendar,
             ],

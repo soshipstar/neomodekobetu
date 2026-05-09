@@ -38,7 +38,7 @@ return new class extends Migration
 
         // デフォルト企業を作成し、既存classroomsを紐付ける
         $companyId = DB::table('companies')->insertGetId([
-            'name' => 'Kiduri',
+            'name' => 'Care-bridge',
             'code' => 'default',
             'description' => '既存データ用デフォルト企業',
             'is_active' => true,

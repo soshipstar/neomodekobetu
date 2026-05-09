@@ -1,6 +1,6 @@
 {
-  "name": "KIDURI - 個別支援連絡帳",
-  "short_name": "KIDURI",
+  "name": "CARE-BRIDGE - 個別支援連絡帳",
+  "short_name": "CARE-BRIDGE",
   "description": "放課後等デイサービス向け 個別支援連絡帳システム",
   "start_url": "/",
   "display": "standalone",
@@ -75,10 +75,10 @@
       "icons": [{ "src": "/assets/icons/icon-96x96.svg", "sizes": "96x96" }]
     },
     {
-      "name": "かけはし",
-      "short_name": "かけはし",
-      "description": "かけはしを開く",
-      "url": "/guardian/kakehashi",
+      "name": "アセスメント",
+      "short_name": "アセスメント",
+      "description": "アセスメントを開く",
+      "url": "/guardian/assessment",
       "icons": [{ "src": "/assets/icons/icon-96x96.svg", "sizes": "96x96" }]
     }
   ],
@@ -88,14 +88,14 @@
       "sizes": "512x512",
       "type": "image/svg+xml",
       "form_factor": "narrow",
-      "label": "KIDURI ホーム画面"
+      "label": "CARE-BRIDGE ホーム画面"
     },
     {
       "src": "/assets/icons/icon-512x512.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "form_factor": "wide",
-      "label": "KIDURI ダッシュボード"
+      "label": "CARE-BRIDGE ダッシュボード"
     }
   ],
   "categories": ["education", "productivity"]

@@ -52,9 +52,9 @@ python migrate_mysql_to_pg.py
 | individual_support_plan_details | support_plan_details | テーブル名変更, row_order→sort_order |
 | monitoring_records | monitoring_records | is_draft→is_official, student_name除外 |
 | monitoring_details | monitoring_details | |
-| kakehashi_periods | kakehashi_periods | |
-| kakehashi_staff | kakehashi_staff | |
-| kakehashi_guardian | kakehashi_guardian | |
+| assessment_periods | assessment_periods | |
+| assessment_staff | assessment_staff | |
+| assessment_guardian | assessment_guardian | |
 | daily_records | daily_records | **support_plan_id除外, classroom_id追加** |
 | daily_routines | daily_routines | |
 | student_records | student_records | |
@@ -181,7 +181,7 @@ WHERE newsletters.created_by = u.id
 |---|---|---|
 | users | 117 | admin, staff, guardian, student, tablet |
 | students | 110 | 5教室分 |
-| classrooms | 5 | かけはし, narZE, そらのはしら, かけはしシンプル, スタジオキッズグリーン |
+| classrooms | 5 | アセスメント, narZE, そらのはしら, アセスメントシンプル, スタジオキッズグリーン |
 | chat_rooms | 81 | |
 | chat_messages | 1,495 | |
 | student_chat_rooms | 21 | |
@@ -193,9 +193,9 @@ WHERE newsletters.created_by = u.id
 | support_plan_details | 691 | |
 | monitoring_records | 42 | |
 | monitoring_details | 208 | |
-| kakehashi_periods | 296 | |
-| kakehashi_staff | 258 | |
-| kakehashi_guardian | 260 | |
+| assessment_periods | 296 | |
+| assessment_staff | 258 | |
+| assessment_guardian | 260 | |
 | activity_support_plans | 270 | ※別スクリプトで移行 |
 | weekly_plans | 143 | |
 | newsletters | 7 | |
@@ -235,10 +235,10 @@ python migrate_mysql_to_pg.py
 python migrate_support_plans.py
 
 # 5. 移行後修正SQL実行
-docker compose exec postgres psql -U kiduri -d kiduri -f /path/to/post_migration_fixes.sql
+docker compose exec postgres psql -U care-bridge -d care-bridge -f /path/to/post_migration_fixes.sql
 
 # 6. データ検証
-docker compose exec postgres psql -U kiduri -d kiduri -c "
+docker compose exec postgres psql -U care-bridge -d care-bridge -c "
 SELECT
   (SELECT count(*) FROM users) as users,
   (SELECT count(*) FROM students) as students,
@@ -253,6 +253,6 @@ SELECT
 ## 接続情報
 
 - **PostgreSQL**: host=postgres (Docker内) / localhost:5432 (ホスト)
-- **DB名**: kiduri
-- **ユーザー**: kiduri
-- **パスワード**: kiduri_secret
+- **DB名**: care-bridge
+- **ユーザー**: care-bridge
+- **パスワード**: care-bridge_secret

@@ -59,4 +59,4 @@
 
 ## Notes
 - 旧アプリの場所: C:\dev\apps\soship-apps\neomodekobetu
-- 新アプリの場所: C:\dev\apps\conoha1\kiduri2026
+- 新アプリの場所: C:\dev\apps\conoha1\care-bridge2026

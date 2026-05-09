@@ -45,7 +45,7 @@ export default function GuardianManualPage() {
 
   const loginUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/auth/login`
-    : 'https://kiduri.xyz/auth/login';
+    : 'http://localhost:3000/auth/login';
 
   const today = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
 
@@ -158,7 +158,7 @@ export default function GuardianManualPage() {
             {[
               { title: '📒 連絡帳の確認', desc: 'お子様の日々の活動記録を確認できます' },
               { title: '📊 個別支援計画', desc: 'お子様の支援計画を確認・署名できます' },
-              { title: '🤝 かけはし入力', desc: '家庭でのお子様の様子をお知らせください' },
+              { title: '🤝 アセスメント入力', desc: '家庭でのお子様の様子をお知らせください' },
               { title: '💬 チャット', desc: 'スタッフとメッセージのやり取りができます' },
             ].map((f) => (
               <div key={f.title} style={{ border: '1px solid #ddd', borderRadius: '8px', padding: '12px' }}>
