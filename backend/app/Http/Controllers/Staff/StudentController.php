@@ -110,6 +110,10 @@ class StudentController extends Controller
             'desired_saturday'       => 'nullable|boolean',
             'desired_sunday'         => 'nullable|boolean',
             'waiting_notes'          => 'nullable|string|max:1000',
+            // Phase L-2: サービス種別固有 (契約 / 利用期限)
+            'contract_start_date'    => 'nullable|date',
+            'contract_end_date'      => 'nullable|date|after_or_equal:contract_start_date',
+            'usage_limit_date'       => 'nullable|date',
         ]);
 
         $status = $validated['status'] ?? 'active';
@@ -204,6 +208,10 @@ class StudentController extends Controller
             'desired_saturday'       => 'nullable|boolean',
             'desired_sunday'         => 'nullable|boolean',
             'waiting_notes'          => 'nullable|string|max:1000',
+            // Phase L-2: サービス種別固有 (契約 / 利用期限)
+            'contract_start_date'    => 'nullable|date',
+            'contract_end_date'      => 'nullable|date|after_or_equal:contract_start_date',
+            'usage_limit_date'       => 'nullable|date',
         ]);
 
         // 学年再計算

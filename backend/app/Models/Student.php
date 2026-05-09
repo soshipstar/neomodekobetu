@@ -51,6 +51,10 @@ class Student extends Model
         'desired_friday',
         'desired_saturday',
         'desired_sunday',
+        // Phase L-1: サービス種別固有属性 (契約期間 / 利用期限)
+        'contract_start_date',
+        'contract_end_date',
+        'usage_limit_date',
     ];
 
     protected $hidden = [
@@ -83,6 +87,9 @@ class Student extends Model
             'desired_saturday' => 'boolean',
             'desired_sunday' => 'boolean',
             'last_login_at' => 'datetime',
+            'contract_start_date' => 'date:Y-m-d',
+            'contract_end_date'   => 'date:Y-m-d',
+            'usage_limit_date'    => 'date:Y-m-d',
         ];
     }
 

@@ -71,6 +71,10 @@ class StudentController extends Controller
             'scheduled_friday'     => 'boolean',
             'scheduled_saturday'   => 'boolean',
             'scheduled_sunday'     => 'boolean',
+            // Phase L-2: サービス種別固有 (契約 / 利用期限)
+            'contract_start_date'  => 'nullable|date',
+            'contract_end_date'    => 'nullable|date|after_or_equal:contract_start_date',
+            'usage_limit_date'     => 'nullable|date',
         ]);
 
         $validated['password_hash'] = Hash::make($validated['password']);
@@ -127,6 +131,10 @@ class StudentController extends Controller
             'scheduled_friday'     => 'boolean',
             'scheduled_saturday'   => 'boolean',
             'scheduled_sunday'     => 'boolean',
+            // Phase L-2: サービス種別固有 (契約 / 利用期限)
+            'contract_start_date'  => 'nullable|date',
+            'contract_end_date'    => 'nullable|date|after_or_equal:contract_start_date',
+            'usage_limit_date'     => 'nullable|date',
         ]);
 
         if (! empty($validated['password'])) {
