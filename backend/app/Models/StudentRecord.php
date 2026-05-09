@@ -17,10 +17,12 @@ class StudentRecord extends Model
         'social_relations',
         'notes',
         'strengths',
+        'service_type_data',
     ];
 
     protected $casts = [
-        'strengths' => 'array',
+        'strengths'         => 'array',
+        'service_type_data' => 'array',
     ];
 
     /**

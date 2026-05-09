@@ -105,6 +105,74 @@ class RenrakuchoController extends Controller
     }
 
     /**
+     * service_type_data の payload を、サービス種別ごとに想定するキーだけに
+     * 限定して保存する。空のキーや想定外のキーは捨てる。
+     * 値が全て空なら null を返してカラムを未設定にする。
+     */
+    private function sanitizeServiceTypeData(?array $data, string $serviceType): ?array
+    {
+        if (empty($data)) {
+            return null;
+        }
+
+        $allowed = match ($serviceType) {
+            ServiceTypeRegistry::EMPLOYMENT_A,
+            ServiceTypeRegistry::EMPLOYMENT_B => [
+                // 就労 A/B: 工賃時間 / 出退勤 / 作業内容
+                'wage_eligible_hours' => 'float',
+                'clock_in'            => 'time',
+                'clock_out'           => 'time',
+                'work_content'        => 'string',
+            ],
+            ServiceTypeRegistry::TRANSITION => [
+                // 就労移行: 実習 / 求職 / マナー評価
+                'practice_content'      => 'string',
+                'job_search_record'     => 'string',
+                'business_manner_score' => 'int_1_5',
+            ],
+            default => [],
+        };
+
+        if ($allowed === []) {
+            return null;
+        }
+
+        $sanitized = [];
+        foreach ($allowed as $key => $type) {
+            if (!array_key_exists($key, $data)) continue;
+            $value = $data[$key];
+            if ($value === null || $value === '') continue;
+
+            switch ($type) {
+                case 'float':
+                    if (is_numeric($value)) {
+                        $sanitized[$key] = (float) $value;
+                    }
+                    break;
+                case 'int_1_5':
+                    if (is_numeric($value)) {
+                        $sanitized[$key] = max(1, min(5, (int) $value));
+                    }
+                    break;
+                case 'time':
+                    if (is_string($value) && preg_match('/^\d{1,2}:\d{2}$/', $value)) {
+                        $sanitized[$key] = $value;
+                    }
+                    break;
+                case 'string':
+                default:
+                    if (is_string($value)) {
+                        $trimmed = trim($value);
+                        if ($trimmed !== '') $sanitized[$key] = $trimmed;
+                    }
+                    break;
+            }
+        }
+
+        return $sanitized === [] ? null : $sanitized;
+    }
+
+    /**
      * 連絡帳（日常活動記録）一覧を取得
      */
     public function index(Request $request): JsonResponse
@@ -179,6 +247,8 @@ class RenrakuchoController extends Controller
             // 強み(才能)チェック
             'students.*.strengths'                 => 'nullable|array',
             'students.*.strengths.*'               => 'nullable|integer|min:0|max:10',
+            // サービス種別固有データ (就労 A/B / 移行)
+            'students.*.service_type_data'         => 'nullable|array',
         ]);
 
         try {
@@ -207,6 +277,7 @@ class RenrakuchoController extends Controller
                         'social_relations'         => $studentData['social_relations'] ?? null,
                         'notes'                    => $studentData['notes'] ?? null,
                         'strengths'                => $this->sanitizeStrengths($studentData['strengths'] ?? null, $serviceType),
+                        'service_type_data'        => $this->sanitizeServiceTypeData($studentData['service_type_data'] ?? null, $serviceType),
                     ]);
                 }
 
@@ -273,6 +344,8 @@ class RenrakuchoController extends Controller
             // 強み(才能)チェック
             'students.*.strengths'                 => 'nullable|array',
             'students.*.strengths.*'               => 'nullable|integer|min:0|max:10',
+            // サービス種別固有データ
+            'students.*.service_type_data'         => 'nullable|array',
         ]);
 
         $serviceType = $this->classroomServiceType($record->classroom_id);
@@ -296,6 +369,7 @@ class RenrakuchoController extends Controller
                         'social_relations'         => $studentData['social_relations'] ?? null,
                         'notes'                    => $studentData['notes'] ?? null,
                         'strengths'                => $this->sanitizeStrengths($studentData['strengths'] ?? null, $serviceType),
+                        'service_type_data'        => $this->sanitizeServiceTypeData($studentData['service_type_data'] ?? null, $serviceType),
                     ]);
                 }
             }
@@ -338,6 +412,7 @@ class RenrakuchoController extends Controller
             'notes'                    => 'nullable|string',
             'strengths'                => 'nullable|array',
             'strengths.*'              => 'nullable|integer|min:0|max:10',
+            'service_type_data'        => 'nullable|array',
         ]);
 
         $serviceType = $this->classroomServiceType($record->classroom_id);
@@ -354,6 +429,7 @@ class RenrakuchoController extends Controller
                 'social_relations'         => $validated['social_relations'] ?? null,
                 'notes'                    => $validated['notes'] ?? null,
                 'strengths'                => $this->sanitizeStrengths($validated['strengths'] ?? null, $serviceType),
+                'service_type_data'        => $this->sanitizeServiceTypeData($validated['service_type_data'] ?? null, $serviceType),
             ]
         );
 

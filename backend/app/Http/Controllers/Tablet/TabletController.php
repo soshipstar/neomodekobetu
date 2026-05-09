@@ -59,6 +59,71 @@ class TabletController extends Controller
     }
 
     /**
+     * service_type_data の payload をサービス種別ごとの想定キーだけに限定する。
+     * 詳細は Staff\RenrakuchoController::sanitizeServiceTypeData と同じ。
+     */
+    private function sanitizeServiceTypeData(?array $data, string $serviceType): ?array
+    {
+        if (empty($data)) {
+            return null;
+        }
+
+        $allowed = match ($serviceType) {
+            ServiceTypeRegistry::EMPLOYMENT_A,
+            ServiceTypeRegistry::EMPLOYMENT_B => [
+                'wage_eligible_hours' => 'float',
+                'clock_in'            => 'time',
+                'clock_out'           => 'time',
+                'work_content'        => 'string',
+            ],
+            ServiceTypeRegistry::TRANSITION => [
+                'practice_content'      => 'string',
+                'job_search_record'     => 'string',
+                'business_manner_score' => 'int_1_5',
+            ],
+            default => [],
+        };
+
+        if ($allowed === []) {
+            return null;
+        }
+
+        $sanitized = [];
+        foreach ($allowed as $key => $type) {
+            if (!array_key_exists($key, $data)) continue;
+            $value = $data[$key];
+            if ($value === null || $value === '') continue;
+
+            switch ($type) {
+                case 'float':
+                    if (is_numeric($value)) {
+                        $sanitized[$key] = (float) $value;
+                    }
+                    break;
+                case 'int_1_5':
+                    if (is_numeric($value)) {
+                        $sanitized[$key] = max(1, min(5, (int) $value));
+                    }
+                    break;
+                case 'time':
+                    if (is_string($value) && preg_match('/^\d{1,2}:\d{2}$/', $value)) {
+                        $sanitized[$key] = $value;
+                    }
+                    break;
+                case 'string':
+                default:
+                    if (is_string($value)) {
+                        $trimmed = trim($value);
+                        if ($trimmed !== '') $sanitized[$key] = $trimmed;
+                    }
+                    break;
+            }
+        }
+
+        return $sanitized === [] ? null : $sanitized;
+    }
+
+    /**
      * 教室に所属する生徒一覧を取得
      */
     public function students(Request $request): JsonResponse
@@ -484,6 +549,7 @@ class TabletController extends Controller
             'social_relations'      => 'nullable|string|max:5000',
             'strengths'             => 'nullable|array',
             'strengths.*'           => 'nullable|integer|min:0|max:10',
+            'service_type_data'     => 'nullable|array',
         ]);
 
         // 権限チェック
@@ -506,6 +572,7 @@ class TabletController extends Controller
                 'language_communication' => $validated['language_communication'] ?? null,
                 'social_relations'       => $validated['social_relations'] ?? null,
                 'strengths'              => $this->sanitizeStrengths($validated['strengths'] ?? null, $serviceType),
+                'service_type_data'      => $this->sanitizeServiceTypeData($validated['service_type_data'] ?? null, $serviceType),
             ]
         );
 
@@ -536,6 +603,7 @@ class TabletController extends Controller
             'students.*.social_relations' => 'nullable|string|max:5000',
             'students.*.strengths'              => 'nullable|array',
             'students.*.strengths.*'            => 'nullable|integer|min:0|max:10',
+            'students.*.service_type_data'      => 'nullable|array',
         ]);
 
         $record = DailyRecord::findOrFail($validated['daily_record_id']);
@@ -563,6 +631,7 @@ class TabletController extends Controller
                         'language_communication' => $s['language_communication'] ?? null,
                         'social_relations'       => $s['social_relations'] ?? null,
                         'strengths'              => $this->sanitizeStrengths($s['strengths'] ?? null, $serviceType),
+                        'service_type_data'      => $this->sanitizeServiceTypeData($s['service_type_data'] ?? null, $serviceType),
                     ]
                 );
             }
