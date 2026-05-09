@@ -59,6 +59,26 @@ interface StudentRecord {
   social_relations: string | null;
   notes: string | null;
   strengths: Record<string, number> | null;
+  service_type_data: ServiceTypeData | null;
+}
+
+/**
+ * サービス種別固有データ。バックエンド student_records.service_type_data に対応。
+ * 種別ごとに想定キーが異なる:
+ * - 就労 A/B: wage_eligible_hours / clock_in / clock_out / work_content
+ * - 就労移行: practice_content / job_search_record / business_manner_score
+ * - 放デイ: 未使用
+ */
+interface ServiceTypeData {
+  // 就労 A/B
+  wage_eligible_hours?: number;
+  clock_in?: string;
+  clock_out?: string;
+  work_content?: string;
+  // 就労移行
+  practice_content?: string;
+  job_search_record?: string;
+  business_manner_score?: number;
 }
 
 interface HiyariHattoCandidate {
@@ -167,6 +187,8 @@ export default function RenrakuchoPage() {
   const [studentFormData, setStudentFormData] = useState<Record<string, string>>({});
   // 強み(才能)チェック スコア (0-10)
   const [studentStrengths, setStudentStrengths] = useState<Record<string, number>>({});
+  // サービス種別固有データ (就労: 工賃/出退勤/作業内容、就移: 実習/求職/マナー評価)
+  const [studentServiceTypeData, setStudentServiceTypeData] = useState<ServiceTypeData>({});
   const [isSavingStudent, setIsSavingStudent] = useState(false);
 
   // --- Add student to activity ---
@@ -267,6 +289,7 @@ export default function RenrakuchoPage() {
     setEditingStudentId(null);
     setStudentFormData({});
     setStudentStrengths({});
+    setStudentServiceTypeData({});
     setShowAddStudent(false);
     setIsLoadingRecords(true);
     try {
@@ -297,6 +320,7 @@ export default function RenrakuchoPage() {
       notes: nl(rec.notes),
     });
     setStudentStrengths(rec.strengths ?? {});
+    setStudentServiceTypeData(rec.service_type_data ?? {});
   };
 
   const handleAddStudent = (student: Student) => {
@@ -313,6 +337,7 @@ export default function RenrakuchoPage() {
       social_relations: null,
       notes: null,
       strengths: null,
+      service_type_data: null,
     };
     setStudentRecords((prev) => [...prev, newRec]);
     setShowAddStudent(false);
@@ -327,6 +352,7 @@ export default function RenrakuchoPage() {
       notes: '',
     });
     setStudentStrengths({});
+    setStudentServiceTypeData({});
   };
 
   const handleSaveStudentRecord = async () => {
@@ -337,6 +363,7 @@ export default function RenrakuchoPage() {
         student_id: editingStudentId,
         ...studentFormData,
         strengths: studentStrengths,
+        service_type_data: studentServiceTypeData,
       });
       toast.success('保存しました');
       const res = await api.get(`/api/staff/renrakucho/${editingActivity.id}/student-records`);
@@ -361,6 +388,7 @@ export default function RenrakuchoPage() {
         setEditingStudentId(null);
         setStudentFormData({});
         setStudentStrengths({});
+        setStudentServiceTypeData({});
       }
       fetchActivities(true);
     } catch {
@@ -1145,6 +1173,106 @@ export default function RenrakuchoPage() {
                           })}
                         </div>
                       </div>
+
+                      {/* 就労 A/B 用: 工賃時間 / 出退勤 / 作業内容 */}
+                      {(serviceType === 'employment_a' || serviceType === 'employment_b') && (
+                        <div className="rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] p-3">
+                          <p className="mb-2 text-xs font-semibold text-[var(--neutral-foreground-2)]">
+                            就労記録
+                          </p>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="mb-0.5 block text-xs text-[var(--neutral-foreground-3)]">工賃対象時間</label>
+                              <input
+                                type="number"
+                                step="0.25"
+                                min={0}
+                                max={24}
+                                value={studentServiceTypeData.wage_eligible_hours ?? ''}
+                                onChange={(e) => {
+                                  const v = e.target.value === '' ? undefined : parseFloat(e.target.value);
+                                  setStudentServiceTypeData((prev) => ({ ...prev, wage_eligible_hours: v }));
+                                }}
+                                placeholder="例: 4.5"
+                                className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-2 py-1 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-0.5 block text-xs text-[var(--neutral-foreground-3)]">作業内容</label>
+                              <input
+                                type="text"
+                                value={studentServiceTypeData.work_content ?? ''}
+                                onChange={(e) => setStudentServiceTypeData((prev) => ({ ...prev, work_content: e.target.value || undefined }))}
+                                placeholder="例: 袋詰め、検品"
+                                className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-2 py-1 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-0.5 block text-xs text-[var(--neutral-foreground-3)]">出勤時刻</label>
+                              <input
+                                type="time"
+                                value={studentServiceTypeData.clock_in ?? ''}
+                                onChange={(e) => setStudentServiceTypeData((prev) => ({ ...prev, clock_in: e.target.value || undefined }))}
+                                className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-2 py-1 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-0.5 block text-xs text-[var(--neutral-foreground-3)]">退勤時刻</label>
+                              <input
+                                type="time"
+                                value={studentServiceTypeData.clock_out ?? ''}
+                                onChange={(e) => setStudentServiceTypeData((prev) => ({ ...prev, clock_out: e.target.value || undefined }))}
+                                className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-2 py-1 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 就労移行支援 用: 実習 / 就職活動 / マナー評価 */}
+                      {serviceType === 'transition' && (
+                        <div className="rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] p-3">
+                          <p className="mb-2 text-xs font-semibold text-[var(--neutral-foreground-2)]">
+                            就労移行記録
+                          </p>
+                          <div className="space-y-2">
+                            <div>
+                              <label className="mb-0.5 block text-xs text-[var(--neutral-foreground-3)]">実習内容</label>
+                              <textarea
+                                rows={2}
+                                value={studentServiceTypeData.practice_content ?? ''}
+                                onChange={(e) => setStudentServiceTypeData((prev) => ({ ...prev, practice_content: e.target.value || undefined }))}
+                                placeholder="例: ○○商事 接客実習 / ○○工場 軽作業実習"
+                                className="block w-full resize-none rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-2 py-1 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-0.5 block text-xs text-[var(--neutral-foreground-3)]">就職活動記録</label>
+                              <textarea
+                                rows={2}
+                                value={studentServiceTypeData.job_search_record ?? ''}
+                                onChange={(e) => setStudentServiceTypeData((prev) => ({ ...prev, job_search_record: e.target.value || undefined }))}
+                                placeholder="例: ハローワーク訪問 / 履歴書作成 / 面接練習"
+                                className="block w-full resize-none rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-2 py-1 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+                              />
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="w-32 shrink-0 text-xs text-[var(--neutral-foreground-2)]">ビジネスマナー評価</span>
+                              <input
+                                type="range"
+                                min={1}
+                                max={5}
+                                value={studentServiceTypeData.business_manner_score ?? 3}
+                                onChange={(e) => setStudentServiceTypeData((prev) => ({ ...prev, business_manner_score: parseInt(e.target.value, 10) }))}
+                                className="flex-1"
+                              />
+                              <span className="w-7 text-center text-xs font-bold text-[var(--neutral-foreground-1)]">
+                                {studentServiceTypeData.business_manner_score ?? 3}/5
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Notes */}
                       <div>
