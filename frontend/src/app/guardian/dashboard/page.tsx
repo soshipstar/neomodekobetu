@@ -12,6 +12,7 @@ import { formatDate } from '@/lib/utils';
 import Link from 'next/link';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { PhotoLightbox } from '@/components/ui/PhotoLightbox';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 // ---- Type definitions matching the legacy PHP dashboard ----
 
@@ -229,6 +230,7 @@ const emptyCalendar: CalendarData = {
 export default function GuardianDashboardPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { terms } = useWorkspace();
   const now = new Date();
   const [calYear, setCalYear] = useState(now.getFullYear());
   const [calMonth, setCalMonth] = useState(now.getMonth() + 1);
@@ -681,7 +683,7 @@ export default function GuardianDashboardPage() {
             {Object.entries(notesData).map(([studentIdStr, notes]) => {
               if (notes.length === 0) return null;
               const child = children.find((c) => c.id === Number(studentIdStr));
-              const studentName = child?.student_name ?? '生徒';
+              const studentName = child?.student_name ?? terms.client;
               return (
                 <AlertCard
                   key={studentIdStr}
@@ -1150,7 +1152,7 @@ export default function GuardianDashboardPage() {
           )}
           {eventModal.guardian_message && (
             <div className="mb-3">
-              <h4 className="mb-1 text-sm font-medium text-[var(--neutral-foreground-2)]">保護者・生徒連絡用</h4>
+              <h4 className="mb-1 text-sm font-medium text-[var(--neutral-foreground-2)]">{terms.guardian}・{terms.client}連絡用</h4>
               <p className="whitespace-pre-wrap text-sm text-[var(--neutral-foreground-3)]">
                 {nl(eventModal.guardian_message)}
               </p>
@@ -1169,7 +1171,7 @@ export default function GuardianDashboardPage() {
                       elementary: '小学生',
                       junior_high: '中学生',
                       high_school: '高校生',
-                      guardian: '保護者',
+                      guardian: terms.guardian,
                       other: 'その他',
                     };
                     return labels[a.trim()] ?? a.trim();

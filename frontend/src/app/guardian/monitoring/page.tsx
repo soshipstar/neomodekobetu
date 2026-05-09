@@ -14,6 +14,7 @@ import { formatDate, nl } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 interface MonitoringDetail {
   id: number;
@@ -85,6 +86,7 @@ const achievementBadge = (status: string | null) => {
 export default function GuardianMonitoringPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { terms } = useWorkspace();
   const [selectedStudent, setSelectedStudent] = useState('');
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [confirmModal, setConfirmModal] = useState(false);
@@ -365,7 +367,7 @@ export default function GuardianMonitoringPage() {
                             <SignaturePad
                               readOnly
                               initialValue={record.guardian_signature}
-                              label={`保護者署名${record.guardian_signature_date ? ` - ${formatDate(record.guardian_signature_date)}` : ''}`}
+                              label={`${terms.guardian}署名${record.guardian_signature_date ? ` - ${formatDate(record.guardian_signature_date)}` : ''}`}
                               width={200}
                               height={80}
                             />
@@ -412,7 +414,7 @@ export default function GuardianMonitoringPage() {
 
           <SignaturePad
             ref={guardianSigRef}
-            label="保護者署名"
+            label={`${terms.guardian}署名`}
             width={400}
             height={150}
           />

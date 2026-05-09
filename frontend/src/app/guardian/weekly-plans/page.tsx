@@ -11,6 +11,7 @@ import { useToast } from '@/components/ui/Toast';
 import { format, startOfWeek, addWeeks, subWeeks, addDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 interface WeeklyPlan {
   id: number;
@@ -52,6 +53,7 @@ const DAY_LABELS = ['月曜日', '火曜日', '水曜日', '木曜日', '金曜�
 export default function GuardianWeeklyPlansPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { terms } = useWorkspace();
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [selectedStudent, setSelectedStudent] = useState('');
   const [comment, setComment] = useState('');
@@ -283,7 +285,7 @@ export default function GuardianWeeklyPlansPage() {
                 <div className="mb-4 space-y-3">
                   {comments.map((c) => {
                     const borderColor = c.commenter_type === 'guardian' ? 'border-orange-400' : c.commenter_type === 'student' ? 'border-purple-400' : 'border-green-500';
-                    const typeLabel = c.commenter_type === 'guardian' ? '保護者' : c.commenter_type === 'student' ? '本人' : 'スタッフ';
+                    const typeLabel = c.commenter_type === 'guardian' ? terms.guardian : c.commenter_type === 'student' ? '本人' : 'スタッフ';
                     return (
                     <div key={c.id} className={`rounded-lg border-l-4 ${borderColor} bg-[var(--neutral-background-3)] p-3`}>
                       <div className="mb-1 flex items-center justify-between">

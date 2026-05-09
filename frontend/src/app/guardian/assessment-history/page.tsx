@@ -12,6 +12,7 @@ import { useToast } from '@/components/ui/Toast';
 import { formatDate, formatDateTime, nl } from '@/lib/utils';
 import Link from 'next/link';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 // ---- Types ----
 
@@ -56,6 +57,7 @@ interface AssessmentHistoryItem {
 export default function GuardianAssessmentHistoryPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { terms } = useWorkspace();
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
   const [expandedPeriod, setExpandedPeriod] = useState<number | null>(null);
   const [filterYear, setFilterYear] = useState<number>(new Date().getFullYear());
@@ -289,7 +291,7 @@ export default function GuardianAssessmentHistoryPage() {
                           <div className="mb-3 flex items-center justify-between">
                             <span className="flex items-center gap-1.5 text-sm font-semibold text-[var(--brand-70)]">
                               <MaterialIcon name="person" size={16} />
-                              保護者
+                              {terms.guardian}
                             </span>
                             {item.guardian_submitted ? (
                               <Badge variant="success">提出済み</Badge>
@@ -438,7 +440,7 @@ export default function GuardianAssessmentHistoryPage() {
         <Modal
           isOpen={detailModal.open}
           onClose={() => setDetailModal(null)}
-          title={`${detailModal.type === 'guardian' ? '保護者' : '事業所'}アセスメント`}
+          title={`${detailModal.type === 'guardian' ? terms.guardian : '事業所'}アセスメント`}
           size="lg"
         >
           {isLoadingDetail ? (

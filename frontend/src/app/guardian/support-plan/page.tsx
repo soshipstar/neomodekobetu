@@ -13,6 +13,7 @@ import { SignaturePad, type SignaturePadRef } from '@/components/ui/SignaturePad
 import { formatDate, nl } from '@/lib/utils';
 import { DOMAIN_LABELS, type Domain, type SupportPlan } from '@/types/support-plan';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 interface ExtendedSupportPlan extends SupportPlan {
   guardian_confirmed_at?: string | null;
@@ -31,6 +32,7 @@ const statusLabels: Record<string, string> = {
 export default function GuardianSupportPlanPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { terms } = useWorkspace();
 
   const [confirmModal, setConfirmModal] = useState(false);
   const [confirmingPlan, setConfirmingPlan] = useState<ExtendedSupportPlan | null>(null);
@@ -182,7 +184,7 @@ export default function GuardianSupportPlanPage() {
                   )}
                   {plan.guardian_wish && (
                     <div className="mb-3 rounded-lg bg-[var(--brand-160)] p-3">
-                      <p className="text-xs font-medium text-[var(--brand-70)]">保護者の願い</p>
+                      <p className="text-xs font-medium text-[var(--brand-70)]">{terms.guardian}の願い</p>
                       <p className="text-sm text-blue-900">{plan.guardian_wish}</p>
                     </div>
                   )}
@@ -226,7 +228,7 @@ export default function GuardianSupportPlanPage() {
                   {/* Review comment display */}
                   {ext.guardian_review_comment && (
                     <div className="mt-3 rounded-lg bg-orange-50 p-3">
-                      <p className="text-xs font-medium text-orange-700">保護者コメント</p>
+                      <p className="text-xs font-medium text-orange-700">{terms.guardian}コメント</p>
                       <p className="text-sm text-orange-900 whitespace-pre-wrap">{nl(ext.guardian_review_comment)}</p>
                       {ext.guardian_reviewed_at && (
                         <p className="mt-1 text-xs text-orange-500">{formatDate(ext.guardian_reviewed_at)} に送信</p>
@@ -250,7 +252,7 @@ export default function GuardianSupportPlanPage() {
                         <SignaturePad
                           readOnly
                           initialValue={ext.guardian_signature_image || ext.guardian_signature || ''}
-                          label={`保護者署名${ext.guardian_signature_date ? ` - ${formatDate(ext.guardian_signature_date)}` : ''}`}
+                          label={`${terms.guardian}署名${ext.guardian_signature_date ? ` - ${formatDate(ext.guardian_signature_date)}` : ''}`}
                           width={200}
                           height={80}
                         />
@@ -357,7 +359,7 @@ export default function GuardianSupportPlanPage() {
               {/* Guardian electronic signature (optional) */}
               <SignaturePad
                 ref={guardianSigRef}
-                label="保護者署名（任意）"
+                label={`${terms.guardian}署名（任意）`}
                 width={400}
                 height={150}
               />
