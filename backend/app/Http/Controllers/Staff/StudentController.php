@@ -7,6 +7,7 @@ use App\Models\ChatRoom;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\AssessmentService;
+use App\Services\StrengthsAggregator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -278,6 +279,34 @@ class StudentController extends Controller
         return response()->json([
             'success' => true,
             'message' => '生徒を退所処理しました。',
+        ]);
+    }
+
+    /**
+     * 強み(才能)チェックの集計を返す。
+     * モニタリング表示や個別支援計画の baseline 自動補完で使う。
+     * クエリ: from=YYYY-MM-DD&to=YYYY-MM-DD (省略時は直近 3 ヶ月)
+     */
+    public function strengthsSummary(Request $request, Student $student): JsonResponse
+    {
+        $user = $request->user();
+        if ($user->classroom_id && !in_array($student->classroom_id, $user->switchableClassroomIds(), true)) {
+            return response()->json(['success' => false, 'message' => 'この生徒へのアクセス権限がありません。'], 403);
+        }
+
+        $validated = $request->validate([
+            'from' => 'nullable|date',
+            'to'   => 'nullable|date',
+        ]);
+
+        $to   = isset($validated['to'])   ? Carbon::parse($validated['to'])   : Carbon::today();
+        $from = isset($validated['from']) ? Carbon::parse($validated['from']) : $to->copy()->subMonths(3);
+
+        $summary = app(StrengthsAggregator::class)->aggregateForStudent($student->id, $from, $to);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $summary,
         ]);
     }
 

@@ -289,6 +289,7 @@ Route::prefix('staff')
         Route::get('/students/{student}', [App\Http\Controllers\Staff\StudentController::class, 'show']);
         Route::put('/students/{student}', [App\Http\Controllers\Staff\StudentController::class, 'update']);
         Route::delete('/students/{student}', [App\Http\Controllers\Staff\StudentController::class, 'destroy']);
+        Route::get('/students/{student}/strengths-summary', [App\Http\Controllers\Staff\StudentController::class, 'strengthsSummary']);
 
         // --- アセスメント ---
         Route::get('/students/{student}/assessments', [App\Http\Controllers\Staff\StudentAssessmentController::class, 'index']);

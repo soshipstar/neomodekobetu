@@ -19,6 +19,7 @@ class MonitoringRecord extends Model
         'overall_comment',
         'short_term_goal_achievement',
         'long_term_goal_achievement',
+        'strengths_summary',
         'is_official',
         'guardian_confirmed',
         'guardian_confirmed_at',
@@ -46,6 +47,7 @@ class MonitoringRecord extends Model
             'is_hidden' => 'boolean',
             'guardian_signature_date' => 'date:Y-m-d',
             'staff_signature_date' => 'date:Y-m-d',
+            'strengths_summary' => 'array',
         ];
     }
 

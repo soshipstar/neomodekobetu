@@ -82,6 +82,9 @@ class SupportPlanController extends Controller
             'details.*.staff_organization' => 'nullable|string',
             'details.*.notes'              => 'nullable|string',
             'details.*.priority'           => 'nullable|integer',
+            'details.*.target_strength'           => 'nullable|string|max:100',
+            'details.*.target_strength_baseline'  => 'nullable|integer|min:0|max:10',
+            'details.*.target_strength_target'    => 'nullable|integer|min:0|max:10',
         ]);
 
         // 同じ生徒・同じ作成日の計画が既にある場合はエラー
@@ -151,6 +154,9 @@ class SupportPlanController extends Controller
                         'staff_organization' => $detail['staff_organization'] ?? null,
                         'notes'              => $detail['notes'] ?? null,
                         'priority'           => $detail['priority'] ?? 0,
+                        'target_strength'           => $detail['target_strength'] ?? null,
+                        'target_strength_baseline'  => $detail['target_strength_baseline'] ?? null,
+                        'target_strength_target'    => $detail['target_strength_target'] ?? null,
                     ]);
                 }
             }
@@ -197,6 +203,9 @@ class SupportPlanController extends Controller
             'details.*.staff_organization' => 'nullable|string',
             'details.*.notes'              => 'nullable|string',
             'details.*.priority'           => 'nullable|integer',
+            'details.*.target_strength'           => 'nullable|string|max:100',
+            'details.*.target_strength_baseline'  => 'nullable|integer|min:0|max:10',
+            'details.*.target_strength_target'    => 'nullable|integer|min:0|max:10',
         ]);
 
         // 達成時期のデフォルト値を自動設定
@@ -253,6 +262,9 @@ class SupportPlanController extends Controller
                         'staff_organization' => $detail['staff_organization'] ?? null,
                         'notes'              => $detail['notes'] ?? null,
                         'priority'           => $detail['priority'] ?? 0,
+                        'target_strength'           => $detail['target_strength'] ?? null,
+                        'target_strength_baseline'  => $detail['target_strength_baseline'] ?? null,
+                        'target_strength_target'    => $detail['target_strength_target'] ?? null,
                     ]);
                 }
             }

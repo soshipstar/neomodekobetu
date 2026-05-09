@@ -15,6 +15,9 @@ class SupportPlanDetail extends Model
         'category',
         'current_status',
         'goal',
+        'target_strength',
+        'target_strength_baseline',
+        'target_strength_target',
         'support_content',
         'achievement_status',
         'sort_order',
@@ -31,6 +34,8 @@ class SupportPlanDetail extends Model
             'sort_order' => 'integer',
             'achievement_date' => 'date:Y-m-d',
             'priority' => 'integer',
+            'target_strength_baseline' => 'integer',
+            'target_strength_target'   => 'integer',
         ];
     }
 

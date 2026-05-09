@@ -11,8 +11,10 @@ use App\Models\StudentRecord;
 use App\Models\User;
 use App\Services\NotificationService;
 use App\Services\PuppeteerPdfService;
+use App\Services\StrengthsAggregator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class MonitoringController extends Controller
@@ -124,6 +126,16 @@ class MonitoringController extends Controller
                 $staffSignature = null;
             }
 
+            // 対象期間の強み(才能)チェックを集計してスナップショット化する。
+            // 期間は「計画作成日以降〜モニタリング日」を既定とする。
+            // 同一計画で前回モニタリングがあればその翌日を起点にする。
+            $strengthsSummary = $this->buildStrengthsSummary(
+                $student->id,
+                (int) $validated['plan_id'],
+                $plan,
+                Carbon::parse($validated['monitoring_date']),
+            );
+
             $record = MonitoringRecord::create([
                 'plan_id'                     => $validated['plan_id'],
                 'student_id'                  => $student->id,
@@ -135,6 +147,7 @@ class MonitoringController extends Controller
                 'short_term_goal_comment'     => $validated['short_term_goal_comment'] ?? null,
                 'long_term_goal_achievement'  => $validated['long_term_goal_achievement'] ?? null,
                 'long_term_goal_comment'      => $validated['long_term_goal_comment'] ?? null,
+                'strengths_summary'           => $strengthsSummary,
                 'is_draft'                    => $isDraft,
                 'is_official'                 => ! $isDraft,
                 'staff_signature'             => $staffSignature,
@@ -230,6 +243,20 @@ class MonitoringController extends Controller
             // is_draft -> is_official同期
             if (isset($updateData['is_draft'])) {
                 $updateData['is_official'] = ! $updateData['is_draft'];
+            }
+
+            // monitoring_date が変わった (もしくはまだ未集計) ときは強みサマリーを再集計する。
+            $newDate = $updateData['monitoring_date'] ?? $monitoring->monitoring_date;
+            if ($newDate && (
+                empty($monitoring->strengths_summary)
+                || (isset($updateData['monitoring_date']) && $updateData['monitoring_date'] != $monitoring->monitoring_date)
+            )) {
+                $updateData['strengths_summary'] = $this->buildStrengthsSummary(
+                    $monitoring->student_id,
+                    $monitoring->plan_id,
+                    $monitoring->plan,
+                    Carbon::parse($newDate),
+                );
             }
 
             $monitoring->update($updateData);
@@ -648,5 +675,49 @@ class MonitoringController extends Controller
         if ($user->classroom_id && !in_array($student->classroom_id, $user->switchableClassroomIds(), true)) {
             abort(403, 'この生徒へのアクセス権限がありません。');
         }
+    }
+
+    /**
+     * モニタリング対象期間の強み(才能)チェック集計を返す。
+     * 期間は次の優先順位で決定する:
+     * 1. 同一計画で前回モニタリングが存在 → その翌日 〜 今回モニタリング日
+     * 2. 計画の created_date が存在     → created_date 〜 今回モニタリング日
+     * 3. 上記いずれもなし                → 今回モニタリング日の 3 ヶ月前 〜 今回モニタリング日
+     *
+     * 集計結果が空 (期間内に strengths データなし) の場合は null を返し、
+     * カラムは null のままにする。
+     */
+    private function buildStrengthsSummary(
+        int $studentId,
+        int $planId,
+        ?IndividualSupportPlan $plan,
+        Carbon $monitoringDate,
+    ): ?array {
+        $previousDate = MonitoringRecord::where('plan_id', $planId)
+            ->where('student_id', $studentId)
+            ->whereNotNull('monitoring_date')
+            ->orderByDesc('monitoring_date')
+            ->value('monitoring_date');
+
+        if ($previousDate) {
+            $from = Carbon::parse($previousDate)->copy()->addDay();
+        } elseif ($plan && $plan->created_date) {
+            $from = Carbon::parse($plan->created_date);
+        } else {
+            $from = $monitoringDate->copy()->subMonths(3);
+        }
+
+        // 起点が monitoringDate を超える場合は逆転防止のため monitoringDate の 1 ヶ月前にフォールバック
+        if ($from->gt($monitoringDate)) {
+            $from = $monitoringDate->copy()->subMonth();
+        }
+
+        $summary = app(StrengthsAggregator::class)->aggregateForStudent(
+            $studentId,
+            $from,
+            $monitoringDate,
+        );
+
+        return ($summary['record_count'] ?? 0) > 0 ? $summary : null;
     }
 }
