@@ -16,6 +16,8 @@ import Link from 'next/link';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { HiyariHattoCandidateModal } from '@/components/staff/HiyariHattoCandidateModal';
 import { useAuthStore } from '@/stores/authStore';
+import { useWorkspace } from '@/hooks/useWorkspace';
+import { STRENGTH_KEYS_BY_SERVICE } from '@/lib/serviceType';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -111,19 +113,8 @@ const DOMAIN_LABELS: Record<string, string> = {
 
 const DOMAIN_KEYS = Object.keys(DOMAIN_LABELS) as Array<keyof typeof DOMAIN_LABELS>;
 
-// 強み(才能)チェック 10 項目 (バックエンド StudentRecord::STRENGTH_KEYS と同じ順序)
-const STRENGTH_KEYS = [
-  '集中力',
-  '持続力',
-  '丁寧さ',
-  '発想力',
-  '観察力',
-  '思いやり',
-  '情報処理の速さ',
-  '手先の器用さ',
-  '自分で選ぶ力',
-  'コミュニケーションの工夫',
-] as const;
+// 強み(才能)チェック 10 項目はサービス種別ごとに切替 (Phase H-2)。
+// 旧コードの STRENGTH_KEYS 直参照は STRENGTH_KEYS_BY_SERVICE[serviceType] へ置換。
 
 /** Normalize escaped newlines from API */
 function nl(text: string | null | undefined): string {
@@ -156,6 +147,8 @@ export default function RenrakuchoPage() {
   const searchParams = useSearchParams();
   const initialDate = searchParams.get('date') ? new Date(searchParams.get('date')!) : new Date();
   const { user } = useAuthStore();
+  const { serviceType } = useWorkspace();
+  const strengthKeys = STRENGTH_KEYS_BY_SERVICE[serviceType];
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
   const dateLabelFull = format(selectedDate, 'yyyy年M月d日(E)', { locale: ja });
@@ -1120,13 +1113,13 @@ export default function RenrakuchoPage() {
                         </div>
                       ))}
 
-                      {/* 強み（才能）チェック */}
+                      {/* 強み（才能）チェック (サービス種別ごとに項目が変わる) */}
                       <div className="rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] p-3">
                         <p className="mb-2 text-xs font-semibold text-[var(--neutral-foreground-2)]">
                           強み（才能）チェック
                         </p>
                         <div className="space-y-2">
-                          {STRENGTH_KEYS.map((key) => {
+                          {strengthKeys.map((key) => {
                             const score = studentStrengths[key] ?? 0;
                             return (
                               <div key={key} className="flex items-center gap-3">

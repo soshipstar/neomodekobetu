@@ -7,8 +7,10 @@ import { useUiStore } from '@/stores/uiStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import type { UserType } from '@/types/user';
+import type { ServiceTypeTerms } from '@/lib/serviceType';
 
 interface NavLink {
   type: 'link';
@@ -158,18 +160,51 @@ function getNavItems(userType: UserType): NavItem[] {
   }
 }
 
+/**
+ * サイドバーラベルを現在のサービス種別の呼称で置換する。
+ * 既定は放デイ用ラベルなので、就労 A/B/移行 では「生徒」→「利用者」
+ * 「保護者」→「家族」のように差し替えるだけで他の項目はそのまま使える。
+ */
+function applyTermsToNav(items: NavItem[], terms: ServiceTypeTerms): NavItem[] {
+  // 放デイ用 (terms.client === '生徒') の場合は何も変えない
+  const replacements: Record<string, string> = terms.client === '生徒'
+    ? {}
+    : {
+        '利用者情報': `${terms.client_plural}情報`,
+        '生徒情報':   `${terms.client}情報`,
+        '生徒チャット': `${terms.client}チャット`,
+        '生徒一覧':   `${terms.client_plural}一覧`,
+        '生徒提出物': `${terms.client}提出物`,
+        '生徒面談記録': `${terms.client}面談記録`,
+        '保護者情報': `${terms.guardian}情報`,
+        '保護者チャット': `${terms.guardian}チャット`,
+        '待機児童管理': `${terms.client}受入管理`,
+      };
+
+  if (Object.keys(replacements).length === 0) return items;
+  return items.map((item) => {
+    if (item.type === 'divider') {
+      return { ...item, label: replacements[item.label] ?? item.label };
+    }
+    return { ...item, label: replacements[item.label] ?? item.label };
+  });
+}
+
 export function Sidebar() {
   const pathname = usePathname();
   const { sidebarOpen, setSidebarOpen, toggleSidebar } = useUiStore();
   const { user } = useAuthStore();
   const { logout } = useAuth();
   const isDesktop = useIsDesktop();
+  const { terms } = useWorkspace();
 
   if (!user) return null;
 
   // 通常管理者がスタッフ画面にいる場合、スタッフメニューを表示
   const isAdminOnStaffPage = user.user_type === 'admin' && !user.is_master && pathname.startsWith('/staff');
-  const navItems = isAdminOnStaffPage ? staffNav : getNavItems(user.user_type as UserType);
+  const baseNav = isAdminOnStaffPage ? staffNav : getNavItems(user.user_type as UserType);
+  // サービス種別ごとに「生徒/利用者」「保護者/家族」等の呼称を差し替える
+  const navItems = applyTermsToNav(baseNav, terms);
 
   // Mobile overlay sidebar
   if (!isDesktop) {

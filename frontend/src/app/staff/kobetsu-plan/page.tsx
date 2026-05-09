@@ -14,6 +14,8 @@ import { useToast } from '@/components/ui/Toast';
 import { SignaturePad, type SignaturePadRef } from '@/components/ui/SignaturePad';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import Link from 'next/link';
+import { useWorkspace } from '@/hooks/useWorkspace';
+import type { ServiceType } from '@/lib/serviceType';
 
 // ---------------------------------------------------------------------------
 // Text normalizer
@@ -115,17 +117,47 @@ interface PlanForm {
 // Defaults
 // ---------------------------------------------------------------------------
 
-const DEFAULT_DETAILS: SupportPlanDetail[] = [
-  { category: '本人支援', sub_category: '生活習慣（健康・生活）', support_goal: '', support_content: '', achievement_date: '', staff_organization: '保育士\n児童指導員', notes: '', priority: 1, sort_order: 1 },
-  { category: '本人支援', sub_category: 'コミュニケーション（言語・コミュニケーション）', support_goal: '', support_content: '', achievement_date: '', staff_organization: '保育士\n児童指導員', notes: '', priority: 2, sort_order: 2 },
-  { category: '本人支援', sub_category: '社会性（人間関係・社会性）', support_goal: '', support_content: '', achievement_date: '', staff_organization: '保育士\n児童指導員', notes: '', priority: 3, sort_order: 3 },
-  { category: '本人支援', sub_category: '運動・感覚（運動・感覚）', support_goal: '', support_content: '', achievement_date: '', staff_organization: '保育士\n児童指導員', notes: '', priority: 4, sort_order: 4 },
-  { category: '本人支援', sub_category: '学習（認知・行動）', support_goal: '', support_content: '', achievement_date: '', staff_organization: '保育士\n児童指導員', notes: '', priority: 5, sort_order: 5 },
-  { category: '家族支援', sub_category: '保護者支援', support_goal: '', support_content: '', achievement_date: '', staff_organization: '児童発達支援管理責任者', notes: '', priority: 6, sort_order: 6 },
-  { category: '地域支援', sub_category: '関係機関連携', support_goal: '', support_content: '', achievement_date: '', staff_organization: '児童発達支援管理責任者', notes: '', priority: 7, sort_order: 7 },
-];
+/**
+ * サービス種別ごとの DEFAULT_DETAILS を生成する。
+ * 放デイ: 5領域 (本人支援) + 家族支援 + 地域支援
+ * 就労 A/B: 6領域 (本人支援)
+ * 就労移行: 5領域 (本人支援) + 関係機関連携 (地域支援)
+ */
+function defaultDetailsFor(serviceType: ServiceType): SupportPlanDetail[] {
+  if (serviceType === 'after_school') {
+    return [
+      { category: '本人支援', sub_category: '生活習慣（健康・生活）', support_goal: '', support_content: '', achievement_date: '', staff_organization: '保育士\n児童指導員', notes: '', priority: 1, sort_order: 1 },
+      { category: '本人支援', sub_category: 'コミュニケーション（言語・コミュニケーション）', support_goal: '', support_content: '', achievement_date: '', staff_organization: '保育士\n児童指導員', notes: '', priority: 2, sort_order: 2 },
+      { category: '本人支援', sub_category: '社会性（人間関係・社会性）', support_goal: '', support_content: '', achievement_date: '', staff_organization: '保育士\n児童指導員', notes: '', priority: 3, sort_order: 3 },
+      { category: '本人支援', sub_category: '運動・感覚（運動・感覚）', support_goal: '', support_content: '', achievement_date: '', staff_organization: '保育士\n児童指導員', notes: '', priority: 4, sort_order: 4 },
+      { category: '本人支援', sub_category: '学習（認知・行動）', support_goal: '', support_content: '', achievement_date: '', staff_organization: '保育士\n児童指導員', notes: '', priority: 5, sort_order: 5 },
+      { category: '家族支援', sub_category: '保護者支援', support_goal: '', support_content: '', achievement_date: '', staff_organization: '児童発達支援管理責任者', notes: '', priority: 6, sort_order: 6 },
+      { category: '地域支援', sub_category: '関係機関連携', support_goal: '', support_content: '', achievement_date: '', staff_organization: '児童発達支援管理責任者', notes: '', priority: 7, sort_order: 7 },
+    ];
+  }
+  if (serviceType === 'employment_a' || serviceType === 'employment_b') {
+    const staff = serviceType === 'employment_a' ? '職業指導員\n生活支援員' : '生活支援員\n職業指導員';
+    return [
+      { category: '本人支援', sub_category: '健康・体調管理',         support_goal: '', support_content: '', achievement_date: '', staff_organization: staff, notes: '', priority: 1, sort_order: 1 },
+      { category: '本人支援', sub_category: '日常生活',               support_goal: '', support_content: '', achievement_date: '', staff_organization: staff, notes: '', priority: 2, sort_order: 2 },
+      { category: '本人支援', sub_category: '対人関係・社会性',       support_goal: '', support_content: '', achievement_date: '', staff_organization: staff, notes: '', priority: 3, sort_order: 3 },
+      { category: '本人支援', sub_category: 'コミュニケーション',     support_goal: '', support_content: '', achievement_date: '', staff_organization: staff, notes: '', priority: 4, sort_order: 4 },
+      { category: '本人支援', sub_category: '就労スキル',             support_goal: '', support_content: '', achievement_date: '', staff_organization: staff, notes: '', priority: 5, sort_order: 5 },
+      { category: '本人支援', sub_category: '行動特性',               support_goal: '', support_content: '', achievement_date: '', staff_organization: staff, notes: '', priority: 6, sort_order: 6 },
+    ];
+  }
+  // transition (就労移行支援)
+  return [
+    { category: '本人支援', sub_category: '就職準備',         support_goal: '', support_content: '', achievement_date: '', staff_organization: '就労支援員\nサービス管理責任者', notes: '', priority: 1, sort_order: 1 },
+    { category: '本人支援', sub_category: '作業スキル',       support_goal: '', support_content: '', achievement_date: '', staff_organization: '就労支援員\n職業指導員',         notes: '', priority: 2, sort_order: 2 },
+    { category: '本人支援', sub_category: '対人関係・社会性', support_goal: '', support_content: '', achievement_date: '', staff_organization: '就労支援員\n生活支援員',         notes: '', priority: 3, sort_order: 3 },
+    { category: '本人支援', sub_category: '生活基盤',         support_goal: '', support_content: '', achievement_date: '', staff_organization: '生活支援員',                   notes: '', priority: 4, sort_order: 4 },
+    { category: '本人支援', sub_category: '自己理解',         support_goal: '', support_content: '', achievement_date: '', staff_organization: '就労支援員',                   notes: '', priority: 5, sort_order: 5 },
+    { category: '地域支援', sub_category: '企業実習・関係機関連携', support_goal: '', support_content: '', achievement_date: '', staff_organization: 'サービス管理責任者',      notes: '', priority: 6, sort_order: 6 },
+  ];
+}
 
-const emptyForm = (): PlanForm => ({
+const emptyForm = (serviceType: ServiceType = 'after_school'): PlanForm => ({
   created_date: new Date().toISOString().split('T')[0],
   guardian_wish: '',
   overall_policy: '',
@@ -135,7 +167,7 @@ const emptyForm = (): PlanForm => ({
   short_term_goal_date: '',
   manager_name: '',
   consent_date: '',
-  details: DEFAULT_DETAILS.map((d) => ({ ...d })),
+  details: defaultDetailsFor(serviceType).map((d) => ({ ...d })),
 });
 
 // ---------------------------------------------------------------------------
@@ -185,13 +217,14 @@ export default function KobetsuPlanPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const searchParams = useSearchParams();
+  const { serviceType } = useWorkspace();
 
   // View state: 'list' | 'editor'
   const [view, setView] = useState<'list' | 'editor'>('list');
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
   const [editingPlanId, setEditingPlanId] = useState<number | null>(null);
   const [isReadOnly, setIsReadOnly] = useState(false);
-  const [form, setForm] = useState<PlanForm>(emptyForm());
+  const [form, setForm] = useState<PlanForm>(() => emptyForm(serviceType));
   const [generating, setGenerating] = useState(false);
   const [generatingWish, setGeneratingWish] = useState(false);
 
@@ -305,7 +338,7 @@ export default function KobetsuPlanPage() {
   const openCreate = () => {
     setEditingPlanId(null);
     setIsReadOnly(false);
-    setForm(emptyForm());
+    setForm(emptyForm(serviceType));
     setExistingStaffSig(undefined);
     setExistingGuardianSig(undefined);
     setView('editor');
@@ -336,7 +369,7 @@ export default function KobetsuPlanPage() {
               notes: nl(d.notes),
               achievement_date: dt(d.achievement_date),
             }))
-          : DEFAULT_DETAILS.map((d) => ({ ...d })),
+          : defaultDetailsFor(serviceType).map((d) => ({ ...d })),
       });
       // Load existing signature images
       setExistingStaffSig(p.staff_signature || undefined);
