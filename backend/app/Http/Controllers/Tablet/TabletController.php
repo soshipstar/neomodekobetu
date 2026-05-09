@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Tablet;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivitySupportPlan;
+use App\Models\Classroom;
 use App\Models\DailyRecord;
 use App\Models\IntegratedNote;
 use App\Models\Student;
 use App\Models\StudentRecord;
+use App\Services\ServiceTypeRegistry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,17 +17,20 @@ use Illuminate\Support\Facades\DB;
 class TabletController extends Controller
 {
     /**
-     * 強み(才能)チェック payload を STRENGTH_KEYS に限定し、0-10 にクランプする。
+     * 強み(才能)チェック payload を、対象事業所のサービス種別で定義された
+     * 強みキー一覧に限定し、0-10 にクランプする。
      * 全項目が未指定なら null を返してカラムを空にする。
      */
-    private function sanitizeStrengths(?array $strengths): ?array
+    private function sanitizeStrengths(?array $strengths, ?string $serviceType = null): ?array
     {
         if (empty($strengths)) {
             return null;
         }
 
+        $keys = ServiceTypeRegistry::strengthKeys($serviceType ?? ServiceTypeRegistry::AFTER_SCHOOL);
+
         $sanitized = [];
-        foreach (StudentRecord::STRENGTH_KEYS as $key) {
+        foreach ($keys as $key) {
             if (!array_key_exists($key, $strengths)) {
                 continue;
             }
@@ -37,6 +42,20 @@ class TabletController extends Controller
         }
 
         return $sanitized === [] ? null : $sanitized;
+    }
+
+    /**
+     * 対象事業所のサービス種別を取得する。after_school にフォールバック。
+     */
+    private function classroomServiceType(?int $classroomId): string
+    {
+        if (!$classroomId) {
+            return ServiceTypeRegistry::AFTER_SCHOOL;
+        }
+        $type = Classroom::query()->where('id', $classroomId)->value('service_type');
+        return ServiceTypeRegistry::isValid((string) $type)
+            ? (string) $type
+            : ServiceTypeRegistry::AFTER_SCHOOL;
     }
 
     /**
@@ -473,6 +492,7 @@ class TabletController extends Controller
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
+        $serviceType = $this->classroomServiceType($record->classroom_id);
         $studentRecord = StudentRecord::updateOrCreate(
             [
                 'daily_record_id' => $validated['daily_record_id'],
@@ -485,7 +505,7 @@ class TabletController extends Controller
                 'cognitive_behavior'     => $validated['cognitive_behavior'] ?? null,
                 'language_communication' => $validated['language_communication'] ?? null,
                 'social_relations'       => $validated['social_relations'] ?? null,
-                'strengths'              => $this->sanitizeStrengths($validated['strengths'] ?? null),
+                'strengths'              => $this->sanitizeStrengths($validated['strengths'] ?? null, $serviceType),
             ]
         );
 
@@ -523,7 +543,8 @@ class TabletController extends Controller
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
-        DB::transaction(function () use ($record, $validated) {
+        $serviceType = $this->classroomServiceType($record->classroom_id);
+        DB::transaction(function () use ($record, $validated, $serviceType) {
             $record->update([
                 'common_activity' => $validated['common_activity'] ?? $record->common_activity,
             ]);
@@ -541,7 +562,7 @@ class TabletController extends Controller
                         'cognitive_behavior'     => $s['cognitive_behavior'] ?? null,
                         'language_communication' => $s['language_communication'] ?? null,
                         'social_relations'       => $s['social_relations'] ?? null,
-                        'strengths'              => $this->sanitizeStrengths($s['strengths'] ?? null),
+                        'strengths'              => $this->sanitizeStrengths($s['strengths'] ?? null, $serviceType),
                     ]
                 );
             }

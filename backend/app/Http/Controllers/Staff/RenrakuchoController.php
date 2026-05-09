@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
+use App\Models\Classroom;
 use App\Models\DailyRecord;
 use App\Models\IntegratedNote;
 use App\Models\SendHistory;
+use App\Models\Student;
 use App\Models\StudentRecord;
 use App\Models\User;
 use App\Services\NotificationService;
+use App\Services\ServiceTypeRegistry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -57,17 +60,22 @@ class RenrakuchoController extends Controller
     }
 
     /**
-     * 強み(才能)チェック payload を STRENGTH_KEYS に限定し、0-10 にクランプする。
+     * 強み(才能)チェック payload を、対象事業所のサービス種別で定義された
+     * 強みキー一覧に限定し、0-10 にクランプする。
      * 全項目が未指定なら null を返してカラムを空にする。
+     *
+     * $serviceType が null の場合は after_school にフォールバック (旧呼び出し互換)。
      */
-    private function sanitizeStrengths(?array $strengths): ?array
+    private function sanitizeStrengths(?array $strengths, ?string $serviceType = null): ?array
     {
         if (empty($strengths)) {
             return null;
         }
 
+        $keys = ServiceTypeRegistry::strengthKeys($serviceType ?? ServiceTypeRegistry::AFTER_SCHOOL);
+
         $sanitized = [];
-        foreach (StudentRecord::STRENGTH_KEYS as $key) {
+        foreach ($keys as $key) {
             if (!array_key_exists($key, $strengths)) {
                 continue;
             }
@@ -79,6 +87,21 @@ class RenrakuchoController extends Controller
         }
 
         return $sanitized === [] ? null : $sanitized;
+    }
+
+    /**
+     * 対象事業所のサービス種別を取得する。
+     * 取得できない場合は after_school にフォールバック。
+     */
+    private function classroomServiceType(?int $classroomId): string
+    {
+        if (!$classroomId) {
+            return ServiceTypeRegistry::AFTER_SCHOOL;
+        }
+        $type = Classroom::query()->where('id', $classroomId)->value('service_type');
+        return ServiceTypeRegistry::isValid((string) $type)
+            ? (string) $type
+            : ServiceTypeRegistry::AFTER_SCHOOL;
     }
 
     /**
@@ -159,7 +182,8 @@ class RenrakuchoController extends Controller
         ]);
 
         try {
-            $record = DB::transaction(function () use ($request, $validated) {
+            $serviceType = $this->classroomServiceType($request->user()->classroom_id);
+            $record = DB::transaction(function () use ($request, $validated, $serviceType) {
                 $record = DailyRecord::create([
                     'record_date'     => $validated['record_date'],
                     'staff_id'        => $request->user()->id,
@@ -182,7 +206,7 @@ class RenrakuchoController extends Controller
                         'language_communication'   => $studentData['language_communication'] ?? null,
                         'social_relations'         => $studentData['social_relations'] ?? null,
                         'notes'                    => $studentData['notes'] ?? null,
-                        'strengths'                => $this->sanitizeStrengths($studentData['strengths'] ?? null),
+                        'strengths'                => $this->sanitizeStrengths($studentData['strengths'] ?? null, $serviceType),
                     ]);
                 }
 
@@ -251,7 +275,8 @@ class RenrakuchoController extends Controller
             'students.*.strengths.*'               => 'nullable|integer|min:0|max:10',
         ]);
 
-        DB::transaction(function () use ($record, $validated) {
+        $serviceType = $this->classroomServiceType($record->classroom_id);
+        DB::transaction(function () use ($record, $validated, $serviceType) {
             $record->update(collect($validated)->except('students')->toArray());
 
             if (isset($validated['students'])) {
@@ -270,7 +295,7 @@ class RenrakuchoController extends Controller
                         'language_communication'   => $studentData['language_communication'] ?? null,
                         'social_relations'         => $studentData['social_relations'] ?? null,
                         'notes'                    => $studentData['notes'] ?? null,
-                        'strengths'                => $this->sanitizeStrengths($studentData['strengths'] ?? null),
+                        'strengths'                => $this->sanitizeStrengths($studentData['strengths'] ?? null, $serviceType),
                     ]);
                 }
             }
@@ -315,6 +340,7 @@ class RenrakuchoController extends Controller
             'strengths.*'              => 'nullable|integer|min:0|max:10',
         ]);
 
+        $serviceType = $this->classroomServiceType($record->classroom_id);
         $studentRecord = StudentRecord::updateOrCreate(
             [
                 'daily_record_id' => $record->id,
@@ -327,7 +353,7 @@ class RenrakuchoController extends Controller
                 'language_communication'   => $validated['language_communication'] ?? null,
                 'social_relations'         => $validated['social_relations'] ?? null,
                 'notes'                    => $validated['notes'] ?? null,
-                'strengths'                => $this->sanitizeStrengths($validated['strengths'] ?? null),
+                'strengths'                => $this->sanitizeStrengths($validated['strengths'] ?? null, $serviceType),
             ]
         );
 

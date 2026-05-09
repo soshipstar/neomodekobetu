@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Student;
 use App\Models\StudentRecord;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Carbon;
@@ -12,12 +13,18 @@ use Illuminate\Support\Carbon;
  * 全期間平均・トレンド・変化量を算出する。
  *
  * 旧アプリ syuro26 の aggregatePeriodTrends に相当する処理を PHP で再実装する。
+ *
+ * Phase H-1: 強み項目とドメインマッピングは生徒の所属事業所のサービス種別
+ * (after_school / employment_a / employment_b / transition) で動的に決定する。
+ * 既定はサービス種別が取得できなかった場合の後方互換として after_school。
  */
 class StrengthsAggregator
 {
     /**
-     * 強み項目 → 5 領域 のマッピング。モニタリング表示や PDF 出力でドメイン名を併記する用途。
-     * syuro26 の domainMapping と同じ。
+     * 後方互換用: 旧コードが参照する放デイ向けマッピング。
+     * 新規参照は ServiceTypeRegistry::strengthDomainMapping() を経由すること。
+     *
+     * @deprecated H-1 以降は ServiceTypeRegistry::strengthDomainMapping() を使用
      */
     public const DOMAIN_MAPPING = [
         '集中力'                 => '認知・行動',
@@ -84,19 +91,39 @@ class StrengthsAggregator
             ];
         }
 
+        // 生徒の所属事業所のサービス種別を取得 (label 順序とドメイン併記に使用)
+        $serviceType = $this->resolveServiceType($studentId);
+
         return [
             'from'         => $from?->toDateString() ?? '',
             'to'           => $to?->toDateString() ?? '',
+            'service_type' => $serviceType,
             'record_count' => count($samples),
-            'trends'       => $this->buildTrends($samples),
+            'trends'       => $this->buildTrends($samples, $serviceType),
         ];
+    }
+
+    /**
+     * 生徒の所属事業所からサービス種別を解決する。
+     * 解決できない場合は after_school にフォールバック。
+     */
+    private function resolveServiceType(int $studentId): string
+    {
+        $serviceType = Student::query()
+            ->where('students.id', $studentId)
+            ->join('classrooms', 'classrooms.id', '=', 'students.classroom_id')
+            ->value('classrooms.service_type');
+
+        return ServiceTypeRegistry::isValid((string) $serviceType)
+            ? (string) $serviceType
+            : ServiceTypeRegistry::AFTER_SCHOOL;
     }
 
     /**
      * @param  array<int, array{date: CarbonImmutable, strengths: array<string, int>}>  $samples
      * @return array<int, array<string, mixed>>
      */
-    private function buildTrends(array $samples): array
+    private function buildTrends(array $samples, string $serviceType): array
     {
         if ($samples === []) {
             return [];
@@ -117,7 +144,7 @@ class StrengthsAggregator
             }
         }
 
-        // ラベル一覧 (STRENGTH_KEYS の正規順を優先)
+        // ラベル一覧 (サービス種別ごとの正規順を優先)
         $labelSet = [];
         foreach ($buckets['month'] as $byLabel) {
             foreach (array_keys($byLabel) as $label) {
@@ -129,17 +156,18 @@ class StrengthsAggregator
         }
 
         $orderedLabels = [];
-        foreach (StudentRecord::STRENGTH_KEYS as $key) {
+        foreach (ServiceTypeRegistry::strengthKeys($serviceType) as $key) {
             if (isset($labelSet[$key])) {
                 $orderedLabels[] = $key;
                 unset($labelSet[$key]);
             }
         }
-        // 想定外ラベルは末尾に
+        // 想定外ラベル (種別変更や旧データ) は末尾に
         foreach (array_keys($labelSet) as $extra) {
             $orderedLabels[] = $extra;
         }
 
+        $domainMap = ServiceTypeRegistry::strengthDomainMapping($serviceType);
         $trends = [];
         foreach ($orderedLabels as $label) {
             $daily   = $this->extractAverages($buckets['day'], $label);
@@ -169,7 +197,7 @@ class StrengthsAggregator
 
             $trends[] = [
                 'label'            => $label,
-                'domain'           => self::DOMAIN_MAPPING[$label] ?? null,
+                'domain'           => $domainMap[$label] ?? null,
                 'daily_averages'   => $daily,
                 'weekly_averages'  => $weekly,
                 'monthly_averages' => $monthly,
