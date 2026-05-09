@@ -4,6 +4,7 @@ import { cn, formatRelativeTime, truncate } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
 import type { ChatRoom } from '@/types/chat';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 interface ChatRoomListProps {
   rooms: ChatRoom[];
@@ -13,6 +14,7 @@ interface ChatRoomListProps {
 }
 
 export function ChatRoomList({ rooms, unreadCounts, onSelectRoom, activeRoomId }: ChatRoomListProps) {
+  const { terms } = useWorkspace();
   return (
     <div className="space-y-2">
       {rooms.map((room) => {
@@ -45,7 +47,7 @@ export function ChatRoomList({ rooms, unreadCounts, onSelectRoom, activeRoomId }
               </div>
               {room.guardian && (
                 <p className="text-xs text-[var(--neutral-foreground-3)] truncate">
-                  保護者: {room.guardian.full_name}
+                  {terms.guardian}: {room.guardian.full_name}
                 </p>
               )}
               {room.last_message && (

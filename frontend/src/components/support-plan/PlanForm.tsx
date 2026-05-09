@@ -11,6 +11,8 @@ import { Card, CardBody } from '@/components/ui/Card';
 import { useToast } from '@/components/ui/Toast';
 import type { SupportPlan } from '@/types/support-plan';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useWorkspace } from '@/hooks/useWorkspace';
+import type { ServiceType } from '@/lib/serviceType';
 
 interface PlanFormProps {
   studentId: number;
@@ -19,18 +21,48 @@ interface PlanFormProps {
   onCancel: () => void;
 }
 
-const DEFAULT_DETAILS = [
-  { category: '本人支援', sub_category: '生活習慣（健康・生活）', staff_organization: '保育士\n児童指導員' },
-  { category: '本人支援', sub_category: 'コミュニケーション（言語・コミュニケーション）', staff_organization: '保育士\n児童指導員' },
-  { category: '本人支援', sub_category: '社会性（人間関係・社会性）', staff_organization: '保育士\n児童指導員' },
-  { category: '本人支援', sub_category: '運動・感覚（運動・感覚）', staff_organization: '保育士\n児童指導員' },
-  { category: '本人支援', sub_category: '学習（認知・行動）', staff_organization: '保育士\n児童指導員' },
-  { category: '家族支援', sub_category: '保護者支援', staff_organization: '児童発達支援管理責任者\n保育士' },
-  { category: '地域支援', sub_category: '関係機関連携', staff_organization: '児童発達支援管理責任者' },
-];
+/**
+ * サービス種別ごとの DEFAULT_DETAILS。
+ * staff/kobetsu-plan/page.tsx の defaultDetailsFor と同じ思想。
+ */
+function defaultDetailsFor(serviceType: ServiceType) {
+  if (serviceType === 'after_school') {
+    return [
+      { category: '本人支援', sub_category: '生活習慣（健康・生活）', staff_organization: '保育士\n児童指導員' },
+      { category: '本人支援', sub_category: 'コミュニケーション（言語・コミュニケーション）', staff_organization: '保育士\n児童指導員' },
+      { category: '本人支援', sub_category: '社会性（人間関係・社会性）', staff_organization: '保育士\n児童指導員' },
+      { category: '本人支援', sub_category: '運動・感覚（運動・感覚）', staff_organization: '保育士\n児童指導員' },
+      { category: '本人支援', sub_category: '学習（認知・行動）', staff_organization: '保育士\n児童指導員' },
+      { category: '家族支援', sub_category: '保護者支援', staff_organization: '児童発達支援管理責任者\n保育士' },
+      { category: '地域支援', sub_category: '関係機関連携', staff_organization: '児童発達支援管理責任者' },
+    ];
+  }
+  if (serviceType === 'employment_a' || serviceType === 'employment_b') {
+    const staff = serviceType === 'employment_a' ? '職業指導員\n生活支援員' : '生活支援員\n職業指導員';
+    return [
+      { category: '本人支援', sub_category: '健康・体調管理',         staff_organization: staff },
+      { category: '本人支援', sub_category: '日常生活',               staff_organization: staff },
+      { category: '本人支援', sub_category: '対人関係・社会性',       staff_organization: staff },
+      { category: '本人支援', sub_category: 'コミュニケーション',     staff_organization: staff },
+      { category: '本人支援', sub_category: '就労スキル',             staff_organization: staff },
+      { category: '本人支援', sub_category: '行動特性',               staff_organization: staff },
+    ];
+  }
+  // transition
+  return [
+    { category: '本人支援', sub_category: '就職準備',         staff_organization: '就労支援員\nサービス管理責任者' },
+    { category: '本人支援', sub_category: '作業スキル',       staff_organization: '就労支援員\n職業指導員' },
+    { category: '本人支援', sub_category: '対人関係・社会性', staff_organization: '就労支援員\n生活支援員' },
+    { category: '本人支援', sub_category: '生活基盤',         staff_organization: '生活支援員' },
+    { category: '本人支援', sub_category: '自己理解',         staff_organization: '就労支援員' },
+    { category: '地域支援', sub_category: '企業実習・関係機関連携', staff_organization: 'サービス管理責任者' },
+  ];
+}
 
 export function PlanForm({ studentId, existingPlan, onSuccess, onCancel }: PlanFormProps) {
   const toast = useToast();
+  const { serviceType } = useWorkspace();
+  const defaultDetails = defaultDetailsFor(serviceType);
   const isEditing = !!existingPlan;
 
   const {
@@ -77,7 +109,7 @@ export function PlanForm({ studentId, existingPlan, onSuccess, onCancel }: PlanF
           consent_date: '',
           manager_name: '',
           status: 'draft',
-          details: DEFAULT_DETAILS.map((d) => ({
+          details: defaultDetails.map((d) => ({
             category: d.category,
             sub_category: d.sub_category,
             domain: '',

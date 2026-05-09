@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { useToast } from '@/components/ui/Toast';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 interface LinkedItem {
   id: number;
@@ -33,6 +34,7 @@ const statusLabels: Record<string, string> = {
 
 export function StudentLinkedSyncModal({ student, onClose, onSynced }: Props) {
   const { toast } = useToast();
+  const { terms } = useWorkspace();
   const [linked, setLinked] = useState<LinkedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -52,7 +54,7 @@ export function StudentLinkedSyncModal({ student, onClose, onSynced }: Props) {
 
   const handleSync = async () => {
     if (!window.confirm(
-      `この児童の氏名・生年月日・学年・保護者・メモを、他の ${linked.length} 件のレコードに反映します。よろしいですか？`
+      `この${terms.client}の氏名・生年月日・学年・${terms.guardian}・メモを、他の ${linked.length} 件のレコードに反映します。よろしいですか？`
     )) return;
     setSyncing(true);
     try {
@@ -117,7 +119,7 @@ export function StudentLinkedSyncModal({ student, onClose, onSynced }: Props) {
               </div>
 
               <div className="rounded border border-[var(--status-warning-fg)]/20 bg-[var(--status-warning-bg)] p-2 text-xs text-[var(--status-warning-fg)]">
-                「同期する」を実行すると、このレコードの <strong>氏名・生年月日・学年・学年調整・保護者・メモ</strong> が他のレコードにも反映されます。
+                「同期する」を実行すると、このレコードの <strong>氏名・生年月日・学年・学年調整・{terms.guardian}・メモ</strong> が他のレコードにも反映されます。
                 <br />
                 教室・ユーザー名・スケジュール・支援開始日・ステータスは各教室で個別管理されるため同期されません。
               </div>

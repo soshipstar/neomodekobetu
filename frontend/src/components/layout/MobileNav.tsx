@@ -8,6 +8,7 @@ import { useChatStore } from '@/stores/chatStore';
 import { useUiStore } from '@/stores/uiStore';
 import type { UserType } from '@/types/user';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 interface MobileNavItem {
   label: string;
@@ -16,14 +17,18 @@ interface MobileNavItem {
   badge?: number;
 }
 
-function getMobileNavItems(userType: UserType, chatUnread: number): MobileNavItem[] {
+function getMobileNavItems(
+  userType: UserType,
+  chatUnread: number,
+  terms: { client: string; diary: string }
+): MobileNavItem[] {
   switch (userType) {
     case 'staff':
       return [
         { label: 'ホーム', href: '/staff/dashboard', icon: "dashboard" },
         { label: 'チャット', href: '/staff/chat', icon: "chat", badge: chatUnread },
-        { label: '生徒', href: '/staff/students', icon: "group" },
-        { label: '連絡帳', href: '/staff/renrakucho', icon: "menu_book" },
+        { label: terms.client, href: '/staff/students', icon: "group" },
+        { label: terms.diary, href: '/staff/renrakucho', icon: "menu_book" },
         { label: 'メニュー', href: '#menu', icon: "menu" },
       ];
     case 'guardian':
@@ -56,11 +61,12 @@ export function MobileNav() {
   const { user } = useAuthStore();
   const { unreadCounts } = useChatStore();
   const { toggleSidebar } = useUiStore();
+  const { terms } = useWorkspace();
 
   if (!user) return null;
 
   const totalUnread = Object.values(unreadCounts).reduce((sum, c) => sum + c, 0);
-  const navItems = getMobileNavItems(user.user_type as UserType, totalUnread);
+  const navItems = getMobileNavItems(user.user_type as UserType, totalUnread, terms);
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] lg:hidden">

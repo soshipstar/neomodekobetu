@@ -4,6 +4,7 @@ import { formatDate, nl } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import type { SupportPlan } from '@/types/support-plan';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 interface PlanPreviewProps {
   plan: SupportPlan;
@@ -15,6 +16,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export function PlanPreview({ plan, onRequestSignature }: PlanPreviewProps) {
+  const { terms } = useWorkspace();
   const details = plan.details?.sort((a, b) => a.sort_order - b.sort_order) ?? [];
 
   const staffSig = plan.staff_signature_image || (plan as any).staff_signature || undefined;
@@ -36,7 +38,7 @@ export function PlanPreview({ plan, onRequestSignature }: PlanPreviewProps) {
               <p className="text-sm font-semibold text-amber-800">署名が不足しています</p>
               <ul className="mt-1 text-xs text-amber-700 space-y-0.5">
                 {!hasStaffSig && <li>- 職員署名が未記入です</li>}
-                {!hasGuardianSig && <li>- 保護者署名が未記入です</li>}
+                {!hasGuardianSig && <li>- {terms.guardian}署名が未記入です</li>}
               </ul>
               {onRequestSignature && (
                 <button
@@ -172,7 +174,7 @@ export function PlanPreview({ plan, onRequestSignature }: PlanPreviewProps) {
 
             {/* Staff signature */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontWeight: 'bold', fontSize: '7.5pt', whiteSpace: 'nowrap' }}>児童発達支援管理責任者</span>
+              <span style={{ fontWeight: 'bold', fontSize: '7.5pt', whiteSpace: 'nowrap' }}>{terms.service_manager}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', borderBottom: '1px solid #333', minWidth: '120px', padding: '2px 4px' }}>
                 {isStaffSigImage ? (
                   <>
@@ -189,10 +191,10 @@ export function PlanPreview({ plan, onRequestSignature }: PlanPreviewProps) {
 
             {/* Guardian signature */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontWeight: 'bold', fontSize: '7.5pt', whiteSpace: 'nowrap' }}>保護者署名</span>
+              <span style={{ fontWeight: 'bold', fontSize: '7.5pt', whiteSpace: 'nowrap' }}>{terms.guardian}署名</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', borderBottom: '1px solid #333', minWidth: '120px', padding: '2px 4px' }}>
                 {isGuardianSigImage ? (
-                  <img src={guardianSig} alt="保護者署名" style={{ maxHeight: '35px', maxWidth: '100px' }} />
+                  <img src={guardianSig} alt={`${terms.guardian}署名`} style={{ maxHeight: '35px', maxWidth: '100px' }} />
                 ) : (
                   <span style={{ fontSize: '7.5pt' }}>{guardianSig || ''}</span>
                 )}

@@ -6,6 +6,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { useToast } from '@/components/ui/Toast';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 interface Candidate {
   detected: boolean;
@@ -50,6 +51,7 @@ interface Props {
  */
 export function HiyariHattoCandidateModal({ candidate, classroomId, onClose }: Props) {
   const toast = useToast();
+  const { terms } = useWorkspace();
   const [form, setForm] = useState({
     occurred_at: new Date().toISOString().slice(0, 16),
     location: '',
@@ -225,7 +227,7 @@ export function HiyariHattoCandidateModal({ candidate, classroomId, onClose }: P
               checked={form.guardian_notified}
               onChange={(e) => setForm({ ...form, guardian_notified: e.target.checked })}
             />
-            保護者連絡済み
+            {terms.guardian}連絡済み
           </label>
         </div>
 

@@ -6,6 +6,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 interface ClassroomOption {
   id: number;
@@ -28,6 +29,7 @@ interface Props {
 
 export function StudentCopyModal({ student, onClose, onCopied }: Props) {
   const { toast } = useToast();
+  const { terms } = useWorkspace();
   const [classrooms, setClassrooms] = useState<ClassroomOption[]>([]);
   const [targetClassroomId, setTargetClassroomId] = useState<string>('');
   const [username, setUsername] = useState('');
@@ -80,7 +82,7 @@ export function StudentCopyModal({ student, onClose, onCopied }: Props) {
         username: username.trim(),
         password: password || undefined,
       });
-      toast('児童を別教室に複製しました', 'success');
+      toast(`${terms.client}を別教室に複製しました`, 'success');
       onCopied?.();
       onClose();
     } catch (err: unknown) {
@@ -115,7 +117,7 @@ export function StudentCopyModal({ student, onClose, onCopied }: Props) {
               複製元: {student.classroom?.classroom_name ?? '不明'}
             </p>
             <p className="mt-1 text-[var(--neutral-foreground-3)]">
-              氏名・生年月日・学年・保護者・スケジュールなどが引き継がれます。
+              氏名・生年月日・学年・{terms.guardian}・スケジュールなどが引き継がれます。
               日報・支援計画・出欠記録は複製されません。
             </p>
           </div>
