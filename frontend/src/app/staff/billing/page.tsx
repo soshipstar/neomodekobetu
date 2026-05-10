@@ -83,6 +83,25 @@ export default function BillingPage() {
     }
   };
 
+  const downloadProvisionRecord = async (studentId: number) => {
+    try {
+      const res = await api.get('/api/staff/billing/provision-record', {
+        params: { year_month: yearMonth, student_id: studentId },
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `provision-record-${studentId}-${yearMonth}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      toast.error('PDF のダウンロードに失敗しました');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -164,6 +183,7 @@ export default function BillingPage() {
                     <th className="px-3 py-2 text-right">公費負担</th>
                     <th className="px-3 py-2 text-right">利用者負担</th>
                     <th className="px-3 py-2 text-right">月額上限</th>
+                    <th className="px-3 py-2 text-center">実績記録票</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -181,6 +201,16 @@ export default function BillingPage() {
                       <td className="px-3 py-2 text-right text-xs">
                         {r.monthly_copay_cap > 0 ? fmtYen(r.monthly_copay_cap) : '-'}
                       </td>
+                      <td className="px-3 py-2 text-center">
+                        <button
+                          onClick={() => downloadProvisionRecord(r.student_id)}
+                          className="inline-flex items-center gap-1 rounded border border-[var(--brand-80)] px-2 py-0.5 text-xs text-[var(--brand-70)] hover:bg-[var(--brand-160)]"
+                          title="サービス提供実績記録票 PDF"
+                        >
+                          <MaterialIcon name="picture_as_pdf" size={12} />
+                          PDF
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -192,6 +222,7 @@ export default function BillingPage() {
                     <td className="px-3 py-2 text-right font-mono">{fmtYen(data.summary.total_amount)}</td>
                     <td className="px-3 py-2 text-right font-mono">{fmtYen(data.summary.total_public_share)}</td>
                     <td className="px-3 py-2 text-right font-mono">{fmtYen(data.summary.total_user_copay)}</td>
+                    <td className="px-3 py-2"></td>
                     <td className="px-3 py-2"></td>
                   </tr>
                 </tfoot>

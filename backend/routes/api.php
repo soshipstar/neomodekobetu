@@ -561,6 +561,7 @@ Route::prefix('staff')
         // --- 国保連請求 ---
         Route::get('/billing/summary',   [App\Http\Controllers\Staff\BillingController::class, 'summary']);
         Route::get('/billing/csv',       [App\Http\Controllers\Staff\BillingController::class, 'downloadCsv']);
+        Route::get('/billing/provision-record', [App\Http\Controllers\Staff\BillingController::class, 'provisionRecordPdf']);
 
         // --- 一括登録 ---
         Route::post('/bulk-register/parse', [App\Http\Controllers\Staff\BulkRegisterController::class, 'parse']);
