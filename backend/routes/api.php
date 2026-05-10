@@ -571,6 +571,9 @@ Route::prefix('staff')
         Route::delete('/work-manuals/{manual}',  [App\Http\Controllers\Staff\WorkManualController::class, 'destroy']);
         Route::post  ('/work-manuals/upload',    [App\Http\Controllers\Staff\WorkManualController::class, 'uploadMedia']);
 
+        // --- 運営指標ダッシュボード ---
+        Route::get('/operation-metrics/monthly', [App\Http\Controllers\Staff\OperationMetricsController::class, 'monthly']);
+
         // --- 一括登録 ---
         Route::post('/bulk-register/parse', [App\Http\Controllers\Staff\BulkRegisterController::class, 'parse']);
         Route::post('/bulk-register/execute', [App\Http\Controllers\Staff\BulkRegisterController::class, 'execute']);

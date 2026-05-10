@@ -121,15 +121,26 @@ class EmploymentDemoSeeder extends Seeder
     private function seedServiceType(string $serviceType, array $config, Carbon $startDate, Carbon $today): void
     {
         // 1. 教室
+        $defaultCapacity = match ($serviceType) {
+            ServiceTypeRegistry::EMPLOYMENT_A => 20,
+            ServiceTypeRegistry::EMPLOYMENT_B => 25,
+            ServiceTypeRegistry::TRANSITION   => 10,
+            default                           => 10,
+        };
         $classroom = Classroom::firstOrCreate(
             ['classroom_name' => $config['classroom_name']],
             [
                 'service_type' => $serviceType,
                 'is_active'    => true,
+                'capacity'     => $defaultCapacity,
+                'opening_days_per_month' => 22,
             ]
         );
         if ($classroom->service_type !== $serviceType) {
             $classroom->update(['service_type' => $serviceType]);
+        }
+        if (!$classroom->capacity) {
+            $classroom->update(['capacity' => $defaultCapacity]);
         }
 
         // 2. スタッフ (master)

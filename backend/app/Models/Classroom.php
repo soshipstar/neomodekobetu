@@ -22,6 +22,8 @@ class Classroom extends Model
         'logo_path',
         'settings',
         'is_active',
+        'capacity',
+        'opening_days_per_month',
     ];
 
     protected function casts(): array
