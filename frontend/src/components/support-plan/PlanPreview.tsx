@@ -114,6 +114,49 @@ export function PlanPreview({ plan, onRequestSignature }: PlanPreviewProps) {
           </div>
         </div>
 
+        {/* serviceType 固有事項 (就労 A/B/移行) */}
+        {plan.service_type_data && Object.values(plan.service_type_data).some(Boolean) && (
+          <div style={{ marginBottom: '6px' }}>
+            <div style={{ background: '#4a5568', color: 'white', padding: '3px 8px', fontWeight: 'bold', fontSize: '8pt' }}>
+              ○就労支援 固有事項
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '7pt' }}>
+              <tbody>
+                {plan.service_type_data.wage_goal && (
+                  <tr>
+                    <th style={{ width: '20%', border: '1px solid #555', padding: '3px 6px', background: '#e2e8f0', fontWeight: 'bold', textAlign: 'left', fontSize: '7pt' }}>工賃目標</th>
+                    <td style={{ border: '1px solid #555', padding: '3px 6px', whiteSpace: 'pre-wrap' }}>{nl(plan.service_type_data.wage_goal)}</td>
+                  </tr>
+                )}
+                {plan.service_type_data.employment_target && (
+                  <tr>
+                    <th style={{ border: '1px solid #555', padding: '3px 6px', background: '#e2e8f0', fontWeight: 'bold', textAlign: 'left', fontSize: '7pt' }}>一般就労移行 / 工賃向上目標</th>
+                    <td style={{ border: '1px solid #555', padding: '3px 6px', whiteSpace: 'pre-wrap' }}>{nl(plan.service_type_data.employment_target)}</td>
+                  </tr>
+                )}
+                {plan.service_type_data.job_search_plan && (
+                  <tr>
+                    <th style={{ border: '1px solid #555', padding: '3px 6px', background: '#e2e8f0', fontWeight: 'bold', textAlign: 'left', fontSize: '7pt' }}>求職活動計画</th>
+                    <td style={{ border: '1px solid #555', padding: '3px 6px', whiteSpace: 'pre-wrap' }}>{nl(plan.service_type_data.job_search_plan)}</td>
+                  </tr>
+                )}
+                {plan.service_type_data.practical_training_plan && (
+                  <tr>
+                    <th style={{ border: '1px solid #555', padding: '3px 6px', background: '#e2e8f0', fontWeight: 'bold', textAlign: 'left', fontSize: '7pt' }}>企業実習計画</th>
+                    <td style={{ border: '1px solid #555', padding: '3px 6px', whiteSpace: 'pre-wrap' }}>{nl(plan.service_type_data.practical_training_plan)}</td>
+                  </tr>
+                )}
+                {plan.service_type_data.retention_plan && (
+                  <tr>
+                    <th style={{ border: '1px solid #555', padding: '3px 6px', background: '#e2e8f0', fontWeight: 'bold', textAlign: 'left', fontSize: '7pt' }}>定着支援計画</th>
+                    <td style={{ border: '1px solid #555', padding: '3px 6px', whiteSpace: 'pre-wrap' }}>{nl(plan.service_type_data.retention_plan)}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
         {/* Details table */}
         {details.length > 0 && (
           <div style={{ marginBottom: '6px' }}>

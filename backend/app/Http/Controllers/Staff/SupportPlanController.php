@@ -85,6 +85,12 @@ class SupportPlanController extends Controller
             'details.*.target_strength'           => 'nullable|string|max:100',
             'details.*.target_strength_baseline'  => 'nullable|integer|min:0|max:10',
             'details.*.target_strength_target'    => 'nullable|integer|min:0|max:10',
+            'service_type_data'                         => 'nullable|array',
+            'service_type_data.wage_goal'               => 'nullable|string|max:5000',
+            'service_type_data.employment_target'       => 'nullable|string|max:5000',
+            'service_type_data.retention_plan'          => 'nullable|string|max:5000',
+            'service_type_data.job_search_plan'         => 'nullable|string|max:5000',
+            'service_type_data.practical_training_plan' => 'nullable|string|max:5000',
         ]);
 
         // 同じ生徒・同じ作成日の計画が既にある場合はエラー
@@ -129,6 +135,7 @@ class SupportPlanController extends Controller
                 'status'              => $validated['status'] ?? 'draft',
                 'is_official'         => ($validated['status'] ?? 'draft') === 'official',
                 'created_by'          => $request->user()->id,
+                'service_type_data'   => $this->sanitizePlanServiceTypeData($validated['service_type_data'] ?? null),
             ]);
 
             // 明細を保存
@@ -206,6 +213,12 @@ class SupportPlanController extends Controller
             'details.*.target_strength'           => 'nullable|string|max:100',
             'details.*.target_strength_baseline'  => 'nullable|integer|min:0|max:10',
             'details.*.target_strength_target'    => 'nullable|integer|min:0|max:10',
+            'service_type_data'                         => 'sometimes|nullable|array',
+            'service_type_data.wage_goal'               => 'nullable|string|max:5000',
+            'service_type_data.employment_target'       => 'nullable|string|max:5000',
+            'service_type_data.retention_plan'          => 'nullable|string|max:5000',
+            'service_type_data.job_search_plan'         => 'nullable|string|max:5000',
+            'service_type_data.practical_training_plan' => 'nullable|string|max:5000',
         ]);
 
         // 達成時期のデフォルト値を自動設定
@@ -234,6 +247,11 @@ class SupportPlanController extends Controller
                 $name = $updateData['manager_name'] ?? $updateData['consent_name'] ?? null;
                 $updateData['consent_name'] = $name;
                 $updateData['manager_name'] = $name;
+            }
+
+            // service_type_data の整形 (許可キー以外を捨てる)
+            if (array_key_exists('service_type_data', $updateData)) {
+                $updateData['service_type_data'] = $this->sanitizePlanServiceTypeData($updateData['service_type_data'] ?? null);
             }
 
             $plan->update($updateData);
@@ -1360,6 +1378,28 @@ class SupportPlanController extends Controller
      * - long_term_goal_date: 作成日 + 1年
      * - details.*.achievement_date: 作成日 + 6ヶ月
      */
+    /**
+     * 就労 A/B/移行 固有のフィールドだけ通す。null なら null を返す。
+     *
+     * @param  array<string,mixed>|null  $payload
+     * @return array<string,string>|null
+     */
+    private function sanitizePlanServiceTypeData(?array $payload): ?array
+    {
+        if (! $payload) {
+            return null;
+        }
+        $allowed = ['wage_goal', 'employment_target', 'retention_plan', 'job_search_plan', 'practical_training_plan'];
+        $clean = [];
+        foreach ($allowed as $key) {
+            $value = $payload[$key] ?? null;
+            if (is_string($value) && trim($value) !== '') {
+                $clean[$key] = trim($value);
+            }
+        }
+        return $clean === [] ? null : $clean;
+    }
+
     private function fillDefaultDates(array $data): array
     {
         $createdDate = $data['created_date'] ?? null;

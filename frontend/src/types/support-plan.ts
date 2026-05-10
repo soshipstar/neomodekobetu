@@ -51,6 +51,13 @@ export interface SupportPlan {
   student?: Student;
   creator?: { id: number; full_name: string };
   details?: PlanDetail[];
+  service_type_data?: {
+    wage_goal?: string;
+    employment_target?: string;
+    retention_plan?: string;
+    job_search_plan?: string;
+    practical_training_plan?: string;
+  } | null;
 }
 
 export interface PlanDetail {

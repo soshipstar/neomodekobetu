@@ -64,6 +64,13 @@ export const supportPlanSchema = z.object({
   consent_date: z.string().optional(),
   manager_name: z.string().optional(),
   details: z.array(supportPlanDetailSchema).min(1, '少なくとも1つの支援領域を追加してください'),
+  service_type_data: z.object({
+    wage_goal: z.string().optional(),
+    employment_target: z.string().optional(),
+    retention_plan: z.string().optional(),
+    job_search_plan: z.string().optional(),
+    practical_training_plan: z.string().optional(),
+  }).optional(),
 });
 
 export type SupportPlanFormData = z.input<typeof supportPlanSchema>;

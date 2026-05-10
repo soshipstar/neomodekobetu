@@ -85,6 +85,7 @@ export function PlanForm({ studentId, existingPlan, onSuccess, onCancel }: PlanF
           consent_date: existingPlan.consent_date ?? '',
           manager_name: existingPlan.manager_name ?? '',
           status: (['draft', 'submitted', 'official'].includes(existingPlan.status) ? existingPlan.status : 'draft') as 'draft' | 'submitted' | 'official',
+          service_type_data: existingPlan.service_type_data ?? {},
           details: existingPlan.details?.map((d) => ({
             category: d.category ?? '',
             sub_category: d.sub_category ?? '',
@@ -109,6 +110,7 @@ export function PlanForm({ studentId, existingPlan, onSuccess, onCancel }: PlanF
           consent_date: '',
           manager_name: '',
           status: 'draft',
+          service_type_data: {},
           details: defaultDetails.map((d) => ({
             category: d.category,
             sub_category: d.sub_category,
@@ -221,6 +223,104 @@ export function PlanForm({ studentId, existingPlan, onSuccess, onCancel }: PlanF
           />
         </CardBody>
       </Card>
+
+      {/* 就労系固有: 工賃目標 / 一般就労移行 / 定着支援 */}
+      {(serviceType === 'employment_a' || serviceType === 'employment_b') && (
+        <Card className="border-l-4 border-l-[var(--brand-80)]">
+          <CardBody>
+            <h3 className="mb-3 text-lg font-semibold text-[var(--brand-70)]">就労 {serviceType === 'employment_a' ? 'A型' : 'B型'} 固有事項</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">
+                  工賃目標
+                </label>
+                <textarea
+                  {...register('service_type_data.wage_goal')}
+                  className={textareaClass}
+                  rows={2}
+                  placeholder={serviceType === 'employment_a' ? '例: 月額 80,000 円以上を安定して獲得する' : '例: 月額 16,000 円を達成する'}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">
+                  一般就労への移行目標 / 工賃向上計画
+                </label>
+                <textarea
+                  {...register('service_type_data.employment_target')}
+                  className={textareaClass}
+                  rows={3}
+                  placeholder="例: 1 年以内にステップアップ研修を修了し、一般就労への移行を視野に入れる。"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">
+                  定着支援計画 (継続のための工夫)
+                </label>
+                <textarea
+                  {...register('service_type_data.retention_plan')}
+                  className={textareaClass}
+                  rows={3}
+                  placeholder="例: 体調変化を 3 段階セルフチェックで毎朝記録し、変化があれば即サ管に共有する。"
+                />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      )}
+
+      {serviceType === 'transition' && (
+        <Card className="border-l-4 border-l-[var(--brand-80)]">
+          <CardBody>
+            <h3 className="mb-3 text-lg font-semibold text-[var(--brand-70)]">就労移行 固有事項</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">
+                  目標とする就労形態 / 業界
+                </label>
+                <textarea
+                  {...register('service_type_data.employment_target')}
+                  className={textareaClass}
+                  rows={2}
+                  placeholder="例: 事務職 (一般) または製造職 (特例子会社) を希望。週 30 時間以上の正社員雇用を 1 年以内に達成する。"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">
+                  求職活動計画
+                </label>
+                <textarea
+                  {...register('service_type_data.job_search_plan')}
+                  className={textareaClass}
+                  rows={3}
+                  placeholder="例: 月 2 回ハローワーク訪問、四半期ごとに企業説明会参加、ジョブコーチ面談を月 1 回継続。"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">
+                  企業実習計画
+                </label>
+                <textarea
+                  {...register('service_type_data.practical_training_plan')}
+                  className={textareaClass}
+                  rows={3}
+                  placeholder="例: 6 ヶ月目に短期実習 (5 日)、12 ヶ月目に長期実習 (1 ヶ月) を予定。実習先の選定基準も記載。"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">
+                  就職後の定着支援方針
+                </label>
+                <textarea
+                  {...register('service_type_data.retention_plan')}
+                  className={textareaClass}
+                  rows={2}
+                  placeholder="例: 就職後 6 ヶ月は週 1 回の面談、6 ヶ月以降は月 1 回。職場との連絡窓口を事業所側で確保。"
+                />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      )}
 
       {/* Support Details Table */}
       <div className="space-y-4">
