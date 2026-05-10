@@ -355,6 +355,7 @@ Route::prefix('staff')
         Route::get('/classroom-photos', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'index']);
         Route::get('/classroom-photos/storage-usage', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'storageUsage']);
         Route::post('/classroom-photos', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'store']);
+        Route::post('/classroom-photos/batch', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'storeBatch']);
         Route::get('/classroom-photos/{photo}', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'show']);
         Route::put('/classroom-photos/{photo}', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'update']);
         Route::delete('/classroom-photos/{photo}', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'destroy']);
@@ -735,6 +736,7 @@ Route::prefix('tablet')
         Route::get('/photos', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'index']);
         Route::get('/photos/storage-usage', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'storageUsage']);
         Route::post('/photos', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'store']);
+        Route::post('/photos/batch', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'storeBatch']);
         Route::delete('/photos/{photo}', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'destroy']);
     });
 

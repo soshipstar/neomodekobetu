@@ -171,48 +171,68 @@ export default function TabletPhotosPage() {
       return;
     }
     setUploading(true);
+
+    // 1) 圧縮フェーズ (進捗カウンタは「圧縮中 (i/N)」で表示)
     setUploadProgress({ current: 0, total: pendingFiles.length });
+    const compressed: { file: File; original: File }[] = [];
+    const compressFailures: { file: File; reason: 'heic' | 'other' }[] = [];
 
-    let successCount = 0;
-    const failures: { file: File; reason: 'heic' | 'other' }[] = [];
-
-    // 共通メタは1セットを全件に適用 (児童・活動内容・活動日)
     for (let i = 0; i < pendingFiles.length; i++) {
       const f = pendingFiles[i];
       setUploadProgress({ current: i + 1, total: pendingFiles.length });
       try {
         const jpeg = await compressImage(f);
+        compressed.push({ file: jpeg, original: f });
+      } catch (err) {
+        const reason: 'heic' | 'other' = isHeicFile(f) ? 'heic' : 'other';
+        console.warn('photo compress failed', f.name, err);
+        compressFailures.push({ file: f, reason });
+      }
+    }
+
+    // 2) バッチ送信フェーズ (圧縮済を1リクエストにまとめる)
+    let serverCreated = 0;
+    let serverFailures: { reason: string }[] = [];
+    if (compressed.length > 0) {
+      setUploadProgress({ current: pendingFiles.length, total: pendingFiles.length });
+      try {
         const formData = new FormData();
-        formData.append('photo', jpeg);
+        compressed.forEach((c) => formData.append('photos[]', c.file));
         formData.append('classroom_id', String(classroomId));
         formData.append('activity_description', activityDescription);
         formData.append('activity_date', activityDate);
         Array.from(selectedStudents).forEach((id) => formData.append('student_ids[]', String(id)));
-        await api.post('/api/tablet/photos', formData);
-        successCount++;
-      } catch (err) {
-        // compressImage 失敗 (canvas デコード不可) は HEIC が原因のことが多い
-        const reason: 'heic' | 'other' = isHeicFile(f) ? 'heic' : 'other';
-        console.warn('photo upload failed', f.name, err);
-        failures.push({ file: f, reason });
+
+        const res = await api.post('/api/tablet/photos/batch', formData);
+        serverCreated = Number(res.data?.data?.success_count ?? 0);
+        const fails = Array.isArray(res.data?.data?.failed) ? res.data.data.failed : [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        serverFailures = fails.map((x: any) => ({ reason: String(x?.reason ?? '不明') }));
+      } catch (err: unknown) {
+        // バッチ全体失敗 (容量超過の早期 422 / ネットワーク等)
+        const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+          || 'アップロードに失敗しました';
+        console.warn('batch upload failed', err);
+        serverFailures = compressed.map(() => ({ reason: msg }));
       }
     }
 
     setUploadProgress(null);
     setUploading(false);
 
-    // 結果通知
-    if (failures.length === 0) {
-      toast.success(`${successCount}件の写真をアップロードしました`);
-    } else if (successCount === 0) {
-      const allHeic = failures.every((x) => x.reason === 'heic');
-      toast.error(allHeic ? HEIC_HINT : 'すべての写真のアップロードに失敗しました');
+    // 3) 結果通知 (圧縮失敗とサーバー失敗を統合)
+    const totalFail = compressFailures.length + serverFailures.length;
+    if (totalFail === 0) {
+      toast.success(`${serverCreated}件の写真をアップロードしました`);
+    } else if (serverCreated === 0) {
+      const heicOnly = compressFailures.length > 0 && compressFailures.every((x) => x.reason === 'heic');
+      toast.error(heicOnly ? HEIC_HINT : 'すべての写真のアップロードに失敗しました');
     } else {
-      const heicIncluded = failures.some((x) => x.reason === 'heic');
-      toast.warning(`${successCount}件成功 / ${failures.length}件失敗${heicIncluded ? `\n${HEIC_HINT}` : ''}`);
+      const heicIncluded = compressFailures.some((x) => x.reason === 'heic');
+      toast.warning(`${serverCreated}件成功 / ${totalFail}件失敗${heicIncluded ? `\n${HEIC_HINT}` : ''}`);
     }
 
-    // リセット (失敗分も含めて全クリア。リトライ時は再選択する想定)
+    // 4) リセット (失敗分も含めて全クリア。リトライ時は再選択する想定)
     clearPendingFiles();
     setActivityDescription('');
     setSelectedStudents(new Set());

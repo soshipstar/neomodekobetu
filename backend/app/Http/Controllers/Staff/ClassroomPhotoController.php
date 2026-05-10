@@ -190,6 +190,149 @@ class ClassroomPhotoController extends Controller
     }
 
     /**
+     * 複数写真の一括アップロード (タブレットのギャラリー複数選択フロー用)。
+     *
+     * 1リクエストで複数の写真を受信し、各ファイルに同じ共通メタ
+     * (activity_description, activity_date, student_ids 等) を適用する。
+     * 部分成功を許容し、レスポンスで成功/失敗ファイルを個別に通知する。
+     *
+     * 容量超過時の挙動: 既に保存済の使用量で初期チェックし、各写真の
+     * 圧縮後にも累積で再評価。途中で容量を超えたらそれ以降は失敗扱いにし、
+     * 既に保存したものは残す (保存ロールバックはしない)。
+     */
+    public function storeBatch(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'photos'                => 'required|array|min:1|max:30',
+            'photos.*'              => 'file|mimes:jpg,jpeg,png,webp,gif,heic,heif|max:25600',
+            'classroom_id'          => 'required|integer|exists:classrooms,id',
+            'activity_description'  => 'nullable|string|max:2000',
+            'activity_date'         => 'nullable|date',
+            'grade_level'           => 'nullable|string|in:preschool,elementary,junior_high,high_school',
+            'activity_tag_id'       => 'nullable|integer|exists:classroom_tags,id',
+            'student_ids'           => 'nullable|array',
+            'student_ids.*'         => 'integer|exists:students,id',
+        ]);
+
+        $classroomId = (int) $validated['classroom_id'];
+
+        if (! in_array($classroomId, $user->switchableClassroomIds(), true)) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
+        // 累積使用量 (各成功保存後に増やす)
+        $used = ClassroomPhoto::classroomStorageUsed($classroomId);
+        if ($used >= ClassroomPhoto::STORAGE_LIMIT_BYTES) {
+            return response()->json([
+                'success' => false,
+                'message' => '事業所の写真保存容量 (100MB) を超えています。不要な写真を削除してから再度お試しください。',
+                'data' => [
+                    'used_bytes' => $used,
+                    'limit_bytes' => ClassroomPhoto::STORAGE_LIMIT_BYTES,
+                ],
+            ], 422);
+        }
+
+        // 曜日を共通で先に算出
+        $dayOfWeek = null;
+        if (! empty($validated['activity_date'])) {
+            $dayMapping = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            $dayOfWeek = $dayMapping[\Carbon\Carbon::parse($validated['activity_date'])->dayOfWeek];
+        }
+
+        $compression = app(ImageCompressionService::class);
+        $created = [];
+        $failed = [];
+
+        /** @var \Illuminate\Http\UploadedFile[] $files */
+        $files = $request->file('photos') ?? [];
+        foreach ($files as $idx => $file) {
+            $originalName = $file->getClientOriginalName();
+            try {
+                $tmpDest = tempnam(sys_get_temp_dir(), 'compressed_') . '.jpg';
+                try {
+                    $compressed = $compression->compressToTarget(
+                        $file->getRealPath(),
+                        $tmpDest,
+                        ClassroomPhoto::TARGET_FILE_SIZE,
+                        1600,
+                    );
+                } catch (\Throwable $e) {
+                    @unlink($tmpDest);
+                    $failed[] = [
+                        'index'         => $idx,
+                        'original_name' => $originalName,
+                        'reason'        => '圧縮失敗: ' . $e->getMessage(),
+                    ];
+                    continue;
+                }
+
+                if ($used + $compressed['size'] > ClassroomPhoto::STORAGE_LIMIT_BYTES) {
+                    @unlink($tmpDest);
+                    $failed[] = [
+                        'index'         => $idx,
+                        'original_name' => $originalName,
+                        'reason'        => '容量超過: 保存すると 100MB を超えます',
+                    ];
+                    continue;
+                }
+
+                $uuid = (string) Str::uuid();
+                $relPath = "classroom_photos/{$classroomId}/{$uuid}.jpg";
+                Storage::disk('public')->put($relPath, file_get_contents($tmpDest));
+                @unlink($tmpDest);
+
+                $photo = DB::transaction(function () use ($user, $classroomId, $validated, $compressed, $relPath, $dayOfWeek) {
+                    $p = ClassroomPhoto::create([
+                        'classroom_id'         => $classroomId,
+                        'uploader_id'          => $user->id,
+                        'file_path'            => $relPath,
+                        'file_size'            => $compressed['size'],
+                        'mime'                 => $compressed['mime'],
+                        'width'                => $compressed['width'],
+                        'height'               => $compressed['height'],
+                        'activity_description' => $validated['activity_description'] ?? null,
+                        'activity_date'        => $validated['activity_date'] ?? null,
+                        'day_of_week'          => $dayOfWeek,
+                        'grade_level'          => $validated['grade_level'] ?? null,
+                        'activity_tag_id'      => $validated['activity_tag_id'] ?? null,
+                    ]);
+                    if (! empty($validated['student_ids'])) {
+                        $p->students()->sync($validated['student_ids']);
+                    }
+                    return $p;
+                });
+
+                $used += $compressed['size'];
+                $created[] = $photo->load(['students:id,student_name', 'uploader:id,full_name']);
+            } catch (\Throwable $e) {
+                $failed[] = [
+                    'index'         => $idx,
+                    'original_name' => $originalName,
+                    'reason'        => '保存中に予期せぬエラー: ' . $e->getMessage(),
+                ];
+            }
+        }
+
+        return response()->json([
+            'success' => count($created) > 0,
+            'data'    => [
+                'created'      => $created,
+                'failed'       => $failed,
+                'success_count' => count($created),
+                'fail_count'   => count($failed),
+                'used_bytes'   => $used,
+                'limit_bytes'  => ClassroomPhoto::STORAGE_LIMIT_BYTES,
+            ],
+            'message' => count($failed) === 0
+                ? sprintf('%d件の写真をアップロードしました。', count($created))
+                : sprintf('%d件成功 / %d件失敗', count($created), count($failed)),
+        ], count($created) > 0 ? 200 : 422);
+    }
+
+    /**
      * 写真詳細
      */
     public function show(Request $request, ClassroomPhoto $photo): JsonResponse
