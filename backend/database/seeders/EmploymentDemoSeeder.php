@@ -3,7 +3,11 @@
 namespace Database\Seeders;
 
 use App\Models\Classroom;
+use App\Models\CompanyInternship;
 use App\Models\DailyRecord;
+use App\Models\JobApplication;
+use App\Models\JobPlacement;
+use App\Models\JobPlacementContact;
 use App\Models\Student;
 use App\Models\StudentRecord;
 use App\Models\User;
@@ -203,6 +207,11 @@ class EmploymentDemoSeeder extends Seeder
 
             // 4. 6 ヶ月分の連絡帳記録 (週 3 日 → ~78 件)
             $this->seedRecords($classroom, $student, $staff, $serviceType, $startDate, $today);
+
+            // 5. 就労移行 のみ: 求職活動 / 企業実習 / 就職後定着 のサンプル
+            if ($serviceType === ServiceTypeRegistry::TRANSITION) {
+                $this->seedTransitionSupport($classroom, $student, $staff, $today);
+            }
         }
 
         $this->command->info("[{$serviceType}] {$config['classroom_name']} のデモデータを投入しました。");
@@ -334,6 +343,107 @@ class EmploymentDemoSeeder extends Seeder
             return $transitionNotes[$weekIndex % count($transitionNotes)];
         }
         return $afterSchoolStyle[$weekIndex % count($afterSchoolStyle)];
+    }
+
+    /**
+     * 就労移行支援用: 求職活動・企業実習・就職後定着のサンプルを 1〜2 件ずつ投入する。
+     */
+    private function seedTransitionSupport(Classroom $classroom, Student $student, User $staff, Carbon $today): void
+    {
+        // 1. 求職応募 (2 件)
+        $apps = [
+            [
+                'company_name' => 'XYZ株式会社',
+                'industry' => 'IT・サービス',
+                'job_title' => '事務補助',
+                'employment_type' => 'part_time',
+                'application_date' => $today->copy()->subMonths(2)->toDateString(),
+                'source' => 'hello_work',
+                'status' => 'interviewed',
+                'interview_date' => $today->copy()->subMonths(2)->addDays(10)->toDateString(),
+                'feedback' => '面接で挨拶がしっかりできた。配属候補は事務部。',
+            ],
+            [
+                'company_name' => 'ABC物流',
+                'industry' => '物流',
+                'job_title' => '軽作業',
+                'employment_type' => 'full_time',
+                'application_date' => $today->copy()->subMonths(1)->toDateString(),
+                'source' => 'introduction',
+                'status' => 'offered',
+                'interview_date' => $today->copy()->subMonths(1)->addDays(7)->toDateString(),
+                'result_date' => $today->copy()->subWeeks(2)->toDateString(),
+                'result_notes' => '内定獲得。週 30 時間勤務、配慮事項として体調変化時の早退許可あり。',
+            ],
+        ];
+        foreach ($apps as $a) {
+            JobApplication::firstOrCreate(
+                ['student_id' => $student->id, 'company_name' => $a['company_name']],
+                array_merge($a, ['classroom_id' => $classroom->id, 'created_by' => $staff->id])
+            );
+        }
+
+        // 2. 企業実習 (1 件)
+        CompanyInternship::firstOrCreate(
+            ['student_id' => $student->id, 'company_name' => 'DEF商事'],
+            [
+                'classroom_id' => $classroom->id,
+                'contact_person' => '山本 課長',
+                'contact_phone' => '03-1234-5678',
+                'start_date' => $today->copy()->subMonths(3)->toDateString(),
+                'end_date' => $today->copy()->subMonths(3)->addDays(5)->toDateString(),
+                'total_days' => 5,
+                'internship_type' => 'hands_on',
+                'purpose' => '一般事務職の業務体験を通じて適性を確認する。',
+                'plan_content' => "1日目: 職場見学・OJT\n2-3日目: データ入力作業\n4日目: 電話応対練習\n5日目: 振り返り・面談",
+                'company_evaluation' => '指示理解と業務遂行は問題なし。報連相も期待値以上。',
+                'attitude_score' => 4,
+                'skill_score' => 3,
+                'communication_score' => 4,
+                'staff_evaluation' => '集中力に課題はあるが、休憩を適切に挟めば長時間作業も可能。',
+                'outcome' => 'led_to_employment',
+                'created_by' => $staff->id,
+            ]
+        );
+
+        // 3. 就職後定着 (1 件) — 最初の利用者だけ就職済み
+        if ($student->id % 2 === 0) {
+            $placement = JobPlacement::firstOrCreate(
+                ['student_id' => $student->id, 'company_name' => 'GHI製造'],
+                [
+                    'classroom_id' => $classroom->id,
+                    'job_title' => '組立補助',
+                    'start_date' => $today->copy()->subMonths(4)->toDateString(),
+                    'employment_type' => 'part_time',
+                    'monthly_salary' => 145000,
+                    'weekly_hours' => 30,
+                    'status' => 'active',
+                    'reasonable_accommodations' => "・体調不良時の早退\n・週 1 回の事業所スタッフ訪問の許可\n・指示は文書/写真で",
+                    'next_followup_date' => $today->copy()->addWeeks(2)->toDateString(),
+                    'created_by' => $staff->id,
+                ]
+            );
+
+            // 月次の定着支援連絡 (4 件)
+            for ($i = 4; $i >= 1; $i--) {
+                JobPlacementContact::firstOrCreate(
+                    [
+                        'job_placement_id' => $placement->id,
+                        'contact_date' => $today->copy()->subMonths($i)->toDateString(),
+                    ],
+                    [
+                        'contact_type' => $i % 2 === 0 ? 'visit' : 'phone',
+                        'contact_with' => $i === 1 ? '上司・本人' : '本人',
+                        'content' => "{$i} ヶ月目の定着確認。出勤状況は安定し、業務にも慣れてきた。",
+                        'issues_raised' => $i === 2 ? '同僚との会話に少し疲れを感じることがある。' : null,
+                        'actions_taken' => $i === 2 ? '休憩時の過ごし方をスタッフと整理。気分転換の工夫を提案。' : null,
+                        'satisfaction_score' => 3 + ($i % 2),
+                        'attendance_rate' => 95 - ($i * 2),
+                        'created_by' => $staff->id,
+                    ]
+                );
+            }
+        }
     }
 
     private function dailyActivityName(string $serviceType, int $weekIndex): string

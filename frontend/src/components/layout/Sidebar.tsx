@@ -53,6 +53,7 @@ const staffNav: NavItem[] = [
   { type: 'link', label: '個別支援計画', href: '/staff/kobetsu-plan', icon: 'folder_special' },
   { type: 'link', label: 'モニタリング', href: '/staff/kobetsu-monitoring', icon: 'monitoring' },
   { type: 'link', label: '工賃管理', href: '/staff/wage-management', icon: 'payments', visibility: 'employment_only' },
+  { type: 'link', label: '就労移行支援', href: '/staff/transition-support', icon: 'work_outline', visibility: 'transition_only' },
   { type: 'divider', label: '提出物' },
   { type: 'link', label: '生徒提出物', href: '/staff/submissions', icon: 'assignment_turned_in' },
   { type: 'link', label: '提出物管理', href: '/staff/submission-management', icon: 'folder_open' },

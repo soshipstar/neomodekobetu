@@ -540,6 +540,24 @@ Route::prefix('staff')
         Route::post('/wage-periods/{period}/mark-paid', [App\Http\Controllers\Staff\WageController::class, 'markPaid']);
         Route::put('/wage-records/{record}', [App\Http\Controllers\Staff\WageController::class, 'updateRecord']);
 
+        // --- 就労移行支援フル ---
+        Route::get   ('/job-applications',                [App\Http\Controllers\Staff\TransitionSupportController::class, 'indexApplications']);
+        Route::post  ('/job-applications',                [App\Http\Controllers\Staff\TransitionSupportController::class, 'storeApplication']);
+        Route::put   ('/job-applications/{application}',  [App\Http\Controllers\Staff\TransitionSupportController::class, 'updateApplication']);
+        Route::delete('/job-applications/{application}',  [App\Http\Controllers\Staff\TransitionSupportController::class, 'destroyApplication']);
+
+        Route::get   ('/company-internships',             [App\Http\Controllers\Staff\TransitionSupportController::class, 'indexInternships']);
+        Route::post  ('/company-internships',             [App\Http\Controllers\Staff\TransitionSupportController::class, 'storeInternship']);
+        Route::put   ('/company-internships/{internship}',[App\Http\Controllers\Staff\TransitionSupportController::class, 'updateInternship']);
+        Route::delete('/company-internships/{internship}',[App\Http\Controllers\Staff\TransitionSupportController::class, 'destroyInternship']);
+
+        Route::get   ('/job-placements',                  [App\Http\Controllers\Staff\TransitionSupportController::class, 'indexPlacements']);
+        Route::get   ('/job-placements/{placement}',      [App\Http\Controllers\Staff\TransitionSupportController::class, 'showPlacement']);
+        Route::post  ('/job-placements',                  [App\Http\Controllers\Staff\TransitionSupportController::class, 'storePlacement']);
+        Route::put   ('/job-placements/{placement}',      [App\Http\Controllers\Staff\TransitionSupportController::class, 'updatePlacement']);
+        Route::delete('/job-placements/{placement}',      [App\Http\Controllers\Staff\TransitionSupportController::class, 'destroyPlacement']);
+        Route::post  ('/job-placements/{placement}/contacts', [App\Http\Controllers\Staff\TransitionSupportController::class, 'storeContact']);
+
         // --- 一括登録 ---
         Route::post('/bulk-register/parse', [App\Http\Controllers\Staff\BulkRegisterController::class, 'parse']);
         Route::post('/bulk-register/execute', [App\Http\Controllers\Staff\BulkRegisterController::class, 'execute']);
