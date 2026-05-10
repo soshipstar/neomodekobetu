@@ -40,16 +40,23 @@ export default function TabletPhotosPage() {
 
   // アップロードフォーム
   const [showUpload, setShowUpload] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  // 複数ファイル対応: 選択された各ファイルとそのプレビュー URL を index 同期で保持
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
   const [activityDescription, setActivityDescription] = useState('');
   const [activityDate, setActivityDate] = useState(new Date().toISOString().slice(0, 10));
   const [selectedStudents, setSelectedStudents] = useState<Set<number>>(new Set());
   const [uploading, setUploading] = useState(false);
-  // capture="environment" 付きの input → ブラウザ/OS が直接カメラを起動
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
+  // capture="environment" 付きの input → ブラウザ/OS が直接カメラを起動 (1枚ずつ)
   const cameraRef = useRef<HTMLInputElement>(null);
-  // capture 属性なし → 写真ライブラリ/ファイル選択を開く
+  // capture 属性なし + multiple → 写真ライブラリから複数選択可
   const libraryRef = useRef<HTMLInputElement>(null);
+
+  // HEIC/HEIF 検出 + ユーザーへの案内文
+  const isHeicFile = (f: File): boolean =>
+    /\.(heic|heif)$/i.test(f.name) || f.type === 'image/heic' || f.type === 'image/heif';
+  const HEIC_HINT = 'iPhoneで撮影したHEIC形式の写真が含まれています。一部の端末では読み込めない場合があります。\n対処: iPhoneの「設定」→「カメラ」→「フォーマット」を「互換性優先」に切り替えると JPEG で保存されます。';
 
   // 詳細表示
   const [detailPhoto, setDetailPhoto] = useState<Photo | null>(null);
@@ -93,12 +100,36 @@ export default function TabletPhotosPage() {
   useEffect(() => { fetchUsage(); }, [fetchUsage]);
   useEffect(() => { fetchStudents(); }, [fetchStudents]);
 
-  // ファイル選択時のプレビュー
+  // ファイル選択時 (複数対応): 既存の選択に append
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0] ?? null;
-    setFile(f);
-    if (preview) URL.revokeObjectURL(preview);
-    setPreview(f ? URL.createObjectURL(f) : null);
+    const newFiles = Array.from(e.target.files ?? []);
+    if (newFiles.length === 0) return;
+
+    // HEIC が混じっていれば一度だけ案内 (アップロードは試行する)
+    if (newFiles.some(isHeicFile)) {
+      toast.warning(HEIC_HINT);
+    }
+
+    setPendingFiles((prev) => [...prev, ...newFiles]);
+    setPreviews((prev) => [...prev, ...newFiles.map((f) => URL.createObjectURL(f))]);
+    // 同じファイルを再度選べるように value をリセット
+    e.target.value = '';
+  };
+
+  // プレビューサムネから1件削除
+  const removePendingFile = (index: number) => {
+    setPendingFiles((prev) => prev.filter((_, i) => i !== index));
+    setPreviews((prev) => {
+      const url = prev[index];
+      if (url) URL.revokeObjectURL(url);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const clearPendingFiles = () => {
+    previews.forEach((u) => URL.revokeObjectURL(u));
+    setPendingFiles([]);
+    setPreviews([]);
   };
 
   // フロントエンドでJPEG圧縮+リサイズ
@@ -135,36 +166,59 @@ export default function TabletPhotosPage() {
     });
 
   const handleUpload = async () => {
-    if (!file) {
+    if (pendingFiles.length === 0) {
       toast.error('写真を選択してください');
       return;
     }
     setUploading(true);
-    try {
-      const jpeg = await compressImage(file);
-      const formData = new FormData();
-      formData.append('photo', jpeg);
-      formData.append('classroom_id', String(classroomId));
-      formData.append('activity_description', activityDescription);
-      formData.append('activity_date', activityDate);
-      Array.from(selectedStudents).forEach((id) => formData.append('student_ids[]', String(id)));
-      const res = await api.post('/api/tablet/photos', formData);
-      toast.success(res.data.message || 'アップロードしました');
-      // リセット
-      setFile(null);
-      if (preview) URL.revokeObjectURL(preview);
-      setPreview(null);
-      setActivityDescription('');
-      setSelectedStudents(new Set());
-      setShowUpload(false);
-      fetchPhotos();
-      fetchUsage();
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'アップロードに失敗しました';
-      toast.error(msg);
-    } finally {
-      setUploading(false);
+    setUploadProgress({ current: 0, total: pendingFiles.length });
+
+    let successCount = 0;
+    const failures: { file: File; reason: 'heic' | 'other' }[] = [];
+
+    // 共通メタは1セットを全件に適用 (児童・活動内容・活動日)
+    for (let i = 0; i < pendingFiles.length; i++) {
+      const f = pendingFiles[i];
+      setUploadProgress({ current: i + 1, total: pendingFiles.length });
+      try {
+        const jpeg = await compressImage(f);
+        const formData = new FormData();
+        formData.append('photo', jpeg);
+        formData.append('classroom_id', String(classroomId));
+        formData.append('activity_description', activityDescription);
+        formData.append('activity_date', activityDate);
+        Array.from(selectedStudents).forEach((id) => formData.append('student_ids[]', String(id)));
+        await api.post('/api/tablet/photos', formData);
+        successCount++;
+      } catch (err) {
+        // compressImage 失敗 (canvas デコード不可) は HEIC が原因のことが多い
+        const reason: 'heic' | 'other' = isHeicFile(f) ? 'heic' : 'other';
+        console.warn('photo upload failed', f.name, err);
+        failures.push({ file: f, reason });
+      }
     }
+
+    setUploadProgress(null);
+    setUploading(false);
+
+    // 結果通知
+    if (failures.length === 0) {
+      toast.success(`${successCount}件の写真をアップロードしました`);
+    } else if (successCount === 0) {
+      const allHeic = failures.every((x) => x.reason === 'heic');
+      toast.error(allHeic ? HEIC_HINT : 'すべての写真のアップロードに失敗しました');
+    } else {
+      const heicIncluded = failures.some((x) => x.reason === 'heic');
+      toast.warning(`${successCount}件成功 / ${failures.length}件失敗${heicIncluded ? `\n${HEIC_HINT}` : ''}`);
+    }
+
+    // リセット (失敗分も含めて全クリア。リトライ時は再選択する想定)
+    clearPendingFiles();
+    setActivityDescription('');
+    setSelectedStudents(new Set());
+    setShowUpload(false);
+    fetchPhotos();
+    fetchUsage();
   };
 
   const handleDelete = async (photo: Photo) => {
@@ -215,20 +269,9 @@ export default function TabletPhotosPage() {
 
           {/* ファイル選択 */}
           <div>
-            {preview ? (
-              <div className="relative">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={preview} alt="プレビュー" className="max-h-64 rounded-lg object-contain" />
-                <button
-                  onClick={() => { setFile(null); if (preview) URL.revokeObjectURL(preview); setPreview(null); }}
-                  className="absolute right-2 top-2 rounded-full bg-red-500 p-2 text-white"
-                >
-                  ✕
-                </button>
-              </div>
-            ) : (
+            {pendingFiles.length === 0 ? (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {/* カメラ撮影 (capture="environment" でその場でカメラ起動) */}
+                {/* カメラ撮影 (capture="environment" でその場でカメラ起動・1枚ずつ) */}
                 <button
                   onClick={() => cameraRef.current?.click()}
                   className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-blue-300 bg-blue-50 py-10 text-xl font-bold text-blue-700 hover:bg-blue-100"
@@ -236,17 +279,67 @@ export default function TabletPhotosPage() {
                   <span className="text-4xl">📷</span>
                   撮影してアップロード
                 </button>
-                {/* 既存写真をライブラリから選択 (capture なし) */}
+                {/* 既存写真をライブラリから選択 (multiple で複数選択可) */}
                 <button
                   onClick={() => libraryRef.current?.click()}
                   className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-green-300 bg-green-50 py-10 text-xl font-bold text-green-700 hover:bg-green-100"
                 >
                   <span className="text-4xl">🖼️</span>
-                  写真を選択してアップロード
+                  写真を選択 (複数可)
                 </button>
               </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-lg font-medium">{pendingFiles.length} 枚選択中</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => libraryRef.current?.click()}
+                      className="rounded-lg bg-green-100 px-4 py-2 text-base font-bold text-green-700 hover:bg-green-200"
+                    >
+                      + 追加
+                    </button>
+                    <button
+                      onClick={() => cameraRef.current?.click()}
+                      className="rounded-lg bg-blue-100 px-4 py-2 text-base font-bold text-blue-700 hover:bg-blue-200"
+                    >
+                      📷 撮影追加
+                    </button>
+                    <button
+                      onClick={clearPendingFiles}
+                      className="rounded-lg bg-gray-100 px-4 py-2 text-base font-bold text-gray-700 hover:bg-gray-200"
+                    >
+                      全クリア
+                    </button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
+                  {previews.map((url, idx) => {
+                    const f = pendingFiles[idx];
+                    const heic = f && isHeicFile(f);
+                    return (
+                      <div key={`${url}-${idx}`} className="relative aspect-square overflow-hidden rounded-lg border-2 border-gray-200 bg-gray-100">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={url} alt={f?.name ?? ''} className="h-full w-full object-cover" />
+                        <button
+                          onClick={() => removePendingFile(idx)}
+                          className="absolute right-1 top-1 rounded-full bg-red-500 px-2 py-0.5 text-sm text-white shadow"
+                          aria-label="削除"
+                        >
+                          ✕
+                        </button>
+                        {heic && (
+                          <span className="absolute bottom-1 left-1 rounded bg-yellow-400/90 px-1 py-0.5 text-[10px] font-bold text-yellow-900" title="HEIC形式">
+                            HEIC
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             )}
-            {/* カメラ専用 input */}
+            {/* カメラ専用 input (1枚ずつ) */}
             <input
               ref={cameraRef}
               type="file"
@@ -255,11 +348,12 @@ export default function TabletPhotosPage() {
               className="hidden"
               onChange={handleFileChange}
             />
-            {/* ライブラリ選択用 input (capture 属性なし) */}
+            {/* ライブラリ選択用 input (capture 属性なし、複数選択可) */}
             <input
               ref={libraryRef}
               type="file"
               accept="image/*"
+              multiple
               className="hidden"
               onChange={handleFileChange}
             />
@@ -318,16 +412,19 @@ export default function TabletPhotosPage() {
           <div className="flex gap-4">
             <button
               onClick={() => setShowUpload(false)}
-              className="flex-1 rounded-lg border-2 border-gray-300 px-6 py-3 text-xl font-bold text-gray-700 hover:bg-gray-50"
+              disabled={uploading}
+              className="flex-1 rounded-lg border-2 border-gray-300 px-6 py-3 text-xl font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
             >
               キャンセル
             </button>
             <button
               onClick={handleUpload}
-              disabled={!file || uploading}
+              disabled={pendingFiles.length === 0 || uploading}
               className="flex-1 rounded-lg bg-blue-600 px-6 py-3 text-xl font-bold text-white hover:bg-blue-700 disabled:opacity-50"
             >
-              {uploading ? 'アップロード中...' : 'アップロード'}
+              {uploading
+                ? `アップロード中... ${uploadProgress ? `(${uploadProgress.current}/${uploadProgress.total})` : ''}`
+                : `${pendingFiles.length || ''}枚アップロード`}
             </button>
           </div>
         </div>
