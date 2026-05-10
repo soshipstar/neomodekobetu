@@ -239,6 +239,7 @@ export default function UnsentRecordsPage() {
 
 function CreateRecordModal({ record, activities, onClose, onSaved }: { record: UnsentRecord; activities: Activity[]; onClose: () => void; onSaved: () => void }) {
   const toast = useToast();
+  const { terms } = useWorkspace();
   const [selectedActivity, setSelectedActivity] = useState<number | 'new'>('new');
   const [activityName, setActivityName] = useState('日常活動');
   const [commonActivity, setCommonActivity] = useState('');
@@ -369,6 +370,7 @@ function MarkAbsentModal({ record, onClose, onSaved }: { record: UnsentRecord; o
 
 function AbsenceResponseModal({ record, onClose, onSaved }: { record: UnsentRecord; onClose: () => void; onSaved: () => void }) {
   const toast = useToast();
+  const { terms } = useWorkspace();
   const [responseContent, setResponseContent] = useState(record.absence_response?.response_content || '');
   const [contactMethod, setContactMethod] = useState(record.absence_response?.contact_method || '');
   const [contactContent, setContactContent] = useState(record.absence_response?.contact_content || '');

@@ -35,6 +35,7 @@ export default function ClassroomsPage() {
 
   const createForm = useForm<ClassroomFormData>({
     resolver: zodResolver(classroomSchema),
+    defaultValues: { service_type: 'after_school' },
   });
 
   const editForm = useForm<ClassroomFormData>({

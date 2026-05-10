@@ -894,6 +894,7 @@ export default function StaffDashboardPage() {
 // ---------------------------------------------------------------------------
 
 function NotificationGrid({ summary }: { summary: DashboardSummary }) {
+  const { terms } = useWorkspace();
   const items = [
     {
       borderColor: 'border-l-[var(--status-success-fg)]',

@@ -807,6 +807,7 @@ function QuickNotifyModal({
   isSending: boolean;
   todayStudentIds?: Set<number>;
 }) {
+  const { terms } = useWorkspace();
   const label = action === 'departure' ? 'これから帰ります' : '到着しました';
   const iconName = action === 'departure' ? 'directions_bus' : 'check_circle';
   const bodyPreview =
