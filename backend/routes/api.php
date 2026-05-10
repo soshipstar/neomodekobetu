@@ -563,6 +563,14 @@ Route::prefix('staff')
         Route::get('/billing/csv',       [App\Http\Controllers\Staff\BillingController::class, 'downloadCsv']);
         Route::get('/billing/provision-record', [App\Http\Controllers\Staff\BillingController::class, 'provisionRecordPdf']);
 
+        // --- 作業マニュアル ---
+        Route::get   ('/work-manuals',           [App\Http\Controllers\Staff\WorkManualController::class, 'index']);
+        Route::post  ('/work-manuals',           [App\Http\Controllers\Staff\WorkManualController::class, 'store']);
+        Route::get   ('/work-manuals/{manual}',  [App\Http\Controllers\Staff\WorkManualController::class, 'show']);
+        Route::put   ('/work-manuals/{manual}',  [App\Http\Controllers\Staff\WorkManualController::class, 'update']);
+        Route::delete('/work-manuals/{manual}',  [App\Http\Controllers\Staff\WorkManualController::class, 'destroy']);
+        Route::post  ('/work-manuals/upload',    [App\Http\Controllers\Staff\WorkManualController::class, 'uploadMedia']);
+
         // --- 一括登録 ---
         Route::post('/bulk-register/parse', [App\Http\Controllers\Staff\BulkRegisterController::class, 'parse']);
         Route::post('/bulk-register/execute', [App\Http\Controllers\Staff\BulkRegisterController::class, 'execute']);

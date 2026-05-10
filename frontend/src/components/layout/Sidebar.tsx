@@ -55,6 +55,7 @@ const staffNav: NavItem[] = [
   { type: 'link', label: '工賃管理', href: '/staff/wage-management', icon: 'payments', visibility: 'employment_only' },
   { type: 'link', label: '就労移行支援', href: '/staff/transition-support', icon: 'work_outline', visibility: 'transition_only' },
   { type: 'link', label: '国保連請求', href: '/staff/billing', icon: 'receipt_long' },
+  { type: 'link', label: '作業マニュアル', href: '/staff/work-manuals', icon: 'menu_book', visibility: 'employment_only' },
   { type: 'divider', label: '提出物' },
   { type: 'link', label: '生徒提出物', href: '/staff/submissions', icon: 'assignment_turned_in' },
   { type: 'link', label: '提出物管理', href: '/staff/submission-management', icon: 'folder_open' },
