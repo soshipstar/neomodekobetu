@@ -53,7 +53,7 @@ class L010_StrengthsAggregatorTest extends TestCase
     private function makeStaff(Classroom $classroom): User
     {
         return User::create([
-            'username'     => 'staff_'.$classroom->id,
+            'username'     => 'staff_'.$classroom->id.'_'.uniqid('', true),
             'password'     => bcrypt('password'),
             'full_name'    => 'Staff',
             'user_type'    => 'staff',

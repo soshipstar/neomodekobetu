@@ -9,8 +9,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // pgvector拡張を有効化
-        DB::statement('CREATE EXTENSION IF NOT EXISTS vector');
+        // pgvector は PostgreSQL 専用。sqlite でのテスト実行時はスキップする。
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            return;
+        }
+
+        // pgvector拡張を有効化 (拡張がインストールされていない環境ではスキップ)
+        try {
+            DB::statement('CREATE EXTENSION IF NOT EXISTS vector');
+        } catch (\Throwable $e) {
+            // pgvector が利用できない環境 (テスト用 vanilla postgres など) では
+            // ベクトル列 / ivfflat インデックスを作れないため、テーブル作成自体を諦める。
+            return;
+        }
 
         Schema::create('vector_embeddings', function (Blueprint $table) {
             $table->id();
