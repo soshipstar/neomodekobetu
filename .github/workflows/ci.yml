@@ -1,0 +1,142 @@
+name: CI
+
+# 自動テスト・型チェックを GitHub Actions で実行する。
+# プロジェクトには以前 CI 設定が無く、テスト実行は手動で本番VPSに
+# 一時 Postgres コンテナを立てて行っていた。これをクラウドで自動化する。
+#
+# トリガー:
+# - push   to master            (デプロイ前にテストが回る安全網)
+# - pull_request to master      (マージ前にテスト結果が GitHub UI に出る)
+#
+# ジョブ:
+# 1) backend-test  — Laravel Feature テスト (pgvector service container)
+# 2) frontend-check — Next.js / TypeScript の lint + 型チェック (build)
+#
+# 既存の Feature テストの中には Telescope 関連や WebSocket 系で
+# CI 環境でフレーキーになるものが含まれる可能性があるため、
+# 当初は本セッションで動作確認済の追加テストのみを対象にする。
+# 安定したら filter を広げる。
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+# 同じブランチで連続 push された場合は古い run をキャンセルしてリソース節約
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # =====================================================================
+  # Backend (Laravel 12 / PHP 8.4) - PHPUnit Feature テスト
+  # =====================================================================
+  backend-test:
+    name: Backend tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, pgsql, gd, intl, mbstring, bcmath, exif, fileinfo
+          coverage: none
+          tools: composer:v2
+
+      - name: Cache composer
+        uses: actions/cache@v4
+        with:
+          path: backend/vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install Composer deps
+        working-directory: backend
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Wait for Postgres
+        run: |
+          for i in $(seq 1 30); do
+            if pg_isready -h 127.0.0.1 -p 5432 -U test; then
+              echo "Postgres ready"; exit 0
+            fi
+            sleep 1
+          done
+          echo "Postgres did not become ready"; exit 1
+        env:
+          PGPASSWORD: test
+
+      - name: Run PHPUnit (selected stable suite)
+        working-directory: backend
+        env:
+          APP_ENV: testing
+          APP_KEY: base64:abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNopq=
+          APP_TIMEZONE: Asia/Tokyo
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: '5432'
+          DB_DATABASE: test
+          DB_USERNAME: test
+          DB_PASSWORD: test
+          CACHE_STORE: array
+          SESSION_DRIVER: array
+          QUEUE_CONNECTION: sync
+          BROADCAST_CONNECTION: log
+          MAIL_MAILER: array
+          TELESCOPE_ENABLED: 'false'
+          REVERB_APP_ID: test
+          REVERB_APP_KEY: test
+          REVERB_APP_SECRET: test
+        # 当初は本セッションで安定動作を確認済のテストだけを対象に。
+        # 他の既存テストも順次 CI に取り込む。
+        run: |
+          php artisan test --filter='S001|S002|L005|L007|L008|B120|B121|B122|B130|NT020' --stop-on-failure
+
+  # =====================================================================
+  # Frontend (Next.js 16 / TypeScript) - lint + 型チェック
+  # =====================================================================
+  frontend-check:
+    name: Frontend lint + type check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install npm deps
+        working-directory: frontend
+        run: npm ci --no-audit --no-fund
+
+      - name: ESLint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: TypeScript type check
+        working-directory: frontend
+        run: npx tsc --noEmit
