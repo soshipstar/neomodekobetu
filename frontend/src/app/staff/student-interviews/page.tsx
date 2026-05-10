@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardBody } from '@/components/ui/Card';
@@ -11,6 +11,7 @@ import { Skeleton, SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { format } from 'date-fns';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -81,12 +82,21 @@ function nl(text: string | null | undefined): string {
 export default function StudentInterviewsPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { serviceType, terms } = useWorkspace();
+  const isEmployment = serviceType === 'employment_a' || serviceType === 'employment_b' || serviceType === 'transition';
+  const wishLabel = isEmployment ? `${terms.client}の希望` : `${terms.client}の願い`;
+  const schoolLabel = isEmployment ? '職場・実習先での様子' : '学校での様子';
+  const homeLabel   = isEmployment ? '家庭・家族の様子'   : '家庭での様子';
+  const troublesLabel = '困りごと・悩み';
 
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [createModal, setCreateModal] = useState(false);
   const [form, setForm] = useState<InterviewForm>(emptyForm);
+  // 検索 / フィルタ
+  const [search, setSearch] = useState('');
+  const [filterMode, setFilterMode] = useState<'all' | 'recorded' | 'unrecorded'>('all');
 
   // Fetch all students with interviews
   const { data: students = [], isLoading } = useQuery({
@@ -172,19 +182,76 @@ export default function StudentInterviewsPage() {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  // 検索 + フィルタを適用した利用者リスト
+  const filteredStudents = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return students.filter((s) => {
+      if (q && !s.student_name.toLowerCase().includes(q)) return false;
+      if (filterMode === 'recorded' && s.interview_count === 0) return false;
+      if (filterMode === 'unrecorded' && s.interview_count > 0) return false;
+      return true;
+    });
+  }, [students, search, filterMode]);
+
   // ---- View: Student Grid (no student selected) ----
   if (!selectedStudentId) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">生徒面談記録</h1>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">{terms.client}面談記録</h1>
+
+        {/* 検索 + フィルタ */}
+        <Card>
+          <CardBody>
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="flex-1 min-w-[240px]">
+                <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-3)]">
+                  {terms.client}名で検索
+                </label>
+                <div className="relative">
+                  <MaterialIcon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder={`${terms.client}名を入力...`}
+                    className="block w-full rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] py-2 pl-9 pr-3 text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-3)]">記録の有無</label>
+                <select
+                  value={filterMode}
+                  onChange={(e) => setFilterMode(e.target.value as typeof filterMode)}
+                  className="block rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm"
+                >
+                  <option value="all">すべて表示</option>
+                  <option value="recorded">記録あり</option>
+                  <option value="unrecorded">記録なし</option>
+                </select>
+              </div>
+              <p className="text-xs text-[var(--neutral-foreground-3)]">
+                {filteredStudents.length} / {students.length} 名
+              </p>
+            </div>
+          </CardBody>
+        </Card>
 
         {isLoading ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-24 rounded-lg" />)}
           </div>
+        ) : filteredStudents.length === 0 ? (
+          <Card>
+            <CardBody>
+              <p className="py-8 text-center text-sm text-[var(--neutral-foreground-4)]">
+                該当する{terms.client_plural}が見つかりませんでした。
+              </p>
+            </CardBody>
+          </Card>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {students.map((student) => (
+            {filteredStudents.map((student) => (
               <button
                 key={student.id}
                 onClick={() => setSelectedStudentId(student.id)}
@@ -229,6 +296,7 @@ export default function StudentInterviewsPage() {
           </Button>
           <h1 className="text-xl font-bold text-[var(--neutral-foreground-1)]">
             {selectedStudent?.student_name} の面談記録
+            <span className="ml-2 text-xs text-[var(--neutral-foreground-3)]">({terms.client})</span>
           </h1>
         </div>
         <Button
@@ -340,9 +408,9 @@ export default function StudentInterviewsPage() {
                     <p className="text-sm whitespace-pre-wrap">{nl(selectedInterview.interview_content) || '（未入力）'}</p>
                   </SectionBlock>
 
-                  {/* 児童の願い */}
+                  {/* 本人の願い / 希望 */}
                   {selectedInterview.child_wish && (
-                    <SectionBlock icon={<MaterialIcon name="favorite" size={16} className="h-4 w-4" />} title="児童の願い" color="var(--status-danger-fg)">
+                    <SectionBlock icon={<MaterialIcon name="favorite" size={16} className="h-4 w-4" />} title={wishLabel} color="var(--status-danger-fg)">
                       <p className="text-sm whitespace-pre-wrap">{nl(selectedInterview.child_wish)}</p>
                     </SectionBlock>
                   )}
@@ -350,15 +418,15 @@ export default function StudentInterviewsPage() {
                   {/* チェック項目 */}
                   <div className="grid gap-3 md:grid-cols-3">
                     {selectedInterview.check_school && (
-                      <CheckBlock icon={<MaterialIcon name="school" size={16} />} title="学校での様子"
+                      <CheckBlock icon={<MaterialIcon name={isEmployment ? 'work' : 'school'} size={16} />} title={schoolLabel}
                         color="var(--status-info-fg)" notes={selectedInterview.check_school_notes} />
                     )}
                     {selectedInterview.check_home && (
-                      <CheckBlock icon={<MaterialIcon name="home" size={16} className="h-4 w-4" />} title="家庭での様子"
+                      <CheckBlock icon={<MaterialIcon name="home" size={16} className="h-4 w-4" />} title={homeLabel}
                         color="var(--status-warning-fg)" notes={selectedInterview.check_home_notes} />
                     )}
                     {selectedInterview.check_troubles && (
-                      <CheckBlock icon={<MaterialIcon name="warning" size={16} />} title="困りごと・悩み"
+                      <CheckBlock icon={<MaterialIcon name="warning" size={16} />} title={troublesLabel}
                         color="var(--status-danger-fg)" notes={selectedInterview.check_troubles_notes} />
                     )}
                   </div>
@@ -439,6 +507,11 @@ function InterviewFormComponent({ form, updateField, onSubmit, onCancel, isLoadi
   isLoading: boolean;
   submitLabel: string;
 }) {
+  const { serviceType, terms } = useWorkspace();
+  const isEmployment = serviceType === 'employment_a' || serviceType === 'employment_b' || serviceType === 'transition';
+  const wishLabel   = isEmployment ? `${terms.client}の希望` : `${terms.client}の願い`;
+  const schoolLabel = isEmployment ? '職場・実習先での様子' : '学校での様子';
+  const homeLabel   = isEmployment ? '家庭・家族の様子'   : '家庭での様子';
   const inputCls = 'block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]';
 
   return (
@@ -457,9 +530,9 @@ function InterviewFormComponent({ form, updateField, onSubmit, onCancel, isLoadi
           className={inputCls} rows={5} required />
       </div>
 
-      {/* 児童の願い */}
+      {/* 本人の願い/希望 */}
       <div>
-        <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">児童の願い</label>
+        <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">{wishLabel}</label>
         <textarea value={form.child_wish} onChange={(e) => updateField('child_wish', e.target.value)}
           className={inputCls} rows={3} />
       </div>
@@ -470,13 +543,13 @@ function InterviewFormComponent({ form, updateField, onSubmit, onCancel, isLoadi
       </h4>
 
       <CheckFieldGroup
-        label="学校での様子" checked={form.check_school} notes={form.check_school_notes}
+        label={schoolLabel} checked={form.check_school} notes={form.check_school_notes}
         onCheck={(v) => updateField('check_school', v)}
         onNotes={(v) => updateField('check_school_notes', v)}
-        icon={<MaterialIcon name="school" size={16} className="text-[var(--status-info-fg)]" />}
+        icon={<MaterialIcon name={isEmployment ? 'work' : 'school'} size={16} className="text-[var(--status-info-fg)]" />}
       />
       <CheckFieldGroup
-        label="家庭での様子" checked={form.check_home} notes={form.check_home_notes}
+        label={homeLabel} checked={form.check_home} notes={form.check_home_notes}
         onCheck={(v) => updateField('check_home', v)}
         onNotes={(v) => updateField('check_home_notes', v)}
         icon={<MaterialIcon name="home" size={16} className="h-4 w-4 text-[var(--status-warning-fg)]" />}

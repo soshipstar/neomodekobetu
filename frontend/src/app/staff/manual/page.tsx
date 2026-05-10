@@ -17,7 +17,7 @@ interface ManualSection {
   content: React.ReactNode;
 }
 
-const sections: ManualSection[] = [
+const afterSchoolSections: ManualSection[] = [
   {
     id: 'about',
     icon: <MaterialIcon name="menu_book" size={20} />,
@@ -404,9 +404,378 @@ const sections: ManualSection[] = [
   },
 ];
 
+// ---------------------------------------------------------------------------
+// 就労 A/B 用マニュアル
+// ---------------------------------------------------------------------------
+
+const employmentSections: ManualSection[] = [
+  {
+    id: 'about-employment',
+    icon: <MaterialIcon name="work" size={16} />,
+    title: 'ケアブリッジ (就労支援版) とは',
+    content: (
+      <div className="space-y-3">
+        <p>
+          ケアブリッジは <strong>就労継続支援 A型・B型</strong> 事業所向けの統合管理システムです。
+          利用者の出退勤・工賃計算・個別支援計画・モニタリングをひとつのシステムで完結できます。
+        </p>
+        <ul className="ml-4 list-disc space-y-1 text-sm">
+          <li><strong>工賃管理</strong> — 時給制 / 出来高制を自動計算し、月次工賃台帳を作成</li>
+          <li><strong>個別支援計画</strong> — 6 領域 (健康/日常/対人/コミュニケーション/就労スキル/行動特性) で目標設定</li>
+          <li><strong>連絡帳</strong> — 強み (才能) チェック 10 項目で利用者の成長を可視化</li>
+          <li><strong>請求業務</strong> — 国保連提出データ (CSV / ZIP) を自動生成</li>
+        </ul>
+      </div>
+    ),
+  },
+  {
+    id: 'daily-employment',
+    icon: <MaterialIcon name="today" size={16} />,
+    title: '毎日行うこと',
+    content: (
+      <div className="space-y-3">
+        <p>就労 A型・B型では、毎日の運営で以下を行ってください:</p>
+        <ol className="ml-4 list-decimal space-y-2">
+          <li>
+            <strong>朝の出勤確認</strong> — 利用者の出勤を「連絡帳」または「日々の出退勤」画面で記録します。
+            出勤時刻 / 退勤時刻 / 工賃対象時間 を入力すると、月末の工賃計算に自動反映されます。
+          </li>
+          <li>
+            <strong>作業内容の記録</strong> — その日の作業内容 (袋詰め / 検品 / 清掃 等) と作業時間を連絡帳に記入します。
+            B型では出来高制を選択している場合、作業数の入力も忘れずに。
+          </li>
+          <li>
+            <strong>強み (才能) チェック</strong> — 利用者ごとに 10 項目 (集中力 / 正確性 / 協調性 / 報連相 等) を 1〜10 で評価します。
+            6 ヶ月のモニタリング時に成長傾向が自動集計されます。
+          </li>
+          <li>
+            <strong>ヒヤリハットの記録</strong> — 機器使用や搬送中の事故未遂、利用者間のトラブル等は即座に記録してください。
+          </li>
+        </ol>
+      </div>
+    ),
+  },
+  {
+    id: 'wage-management',
+    icon: <MaterialIcon name="payments" size={16} />,
+    title: '工賃管理 (重要)',
+    content: (
+      <div className="space-y-3">
+        <p>就労 A 型は <strong>最低賃金以上の時給</strong>、B型は <strong>平均工賃 3,000 円以上 / 月</strong> が指定基準です。</p>
+        <h4 className="mt-3 font-semibold">月次の流れ</h4>
+        <ol className="ml-4 list-decimal space-y-2">
+          <li><strong>利用者ごとの設定</strong> — 利用者詳細画面で計算方式 (時給制 / 出来高制) と単価を設定します。A型は雇用契約上の時給を入力。</li>
+          <li><strong>連絡帳に出退勤と工賃対象時間を記入</strong> — 自動的に月次集計に反映されます。</li>
+          <li><strong>工賃管理画面 (/staff/wage-management)</strong> — 対象月を選んで「工賃を計算」を実行すると、利用者別の支給額が表示されます。</li>
+          <li><strong>必要に応じて手動調整</strong> — 賞与 / 控除 / 時間外手当 (A型) を明細単位で追加できます。</li>
+          <li><strong>確定 → 支払い済</strong> — 月末に「確定」、振込実施後に「支払い済」に状態を進めます。確定後は再計算されません。</li>
+        </ol>
+        <p className="mt-3 text-xs text-[var(--neutral-foreground-3)]">
+          ※ A型の最低賃金は都道府県ごとに毎年 10 月改定されます。改定タイミングで利用者の時給を更新してください。
+        </p>
+      </div>
+    ),
+  },
+  {
+    id: 'plan-employment',
+    icon: <MaterialIcon name="folder_special" size={16} />,
+    title: '個別支援計画とモニタリング',
+    content: (
+      <div className="space-y-3">
+        <p>
+          就労継続支援では <strong>6 ヶ月ごとのモニタリング義務</strong> があります。計画書は最低 1 年ごとに見直しが必要です。
+        </p>
+        <h4 className="mt-3 font-semibold">作成の流れ</h4>
+        <ol className="ml-4 list-decimal space-y-2">
+          <li><strong>アセスメント実施</strong> — 利用開始時または計画更新時に、本人の希望・家族の希望をヒアリング</li>
+          <li><strong>個別支援計画の作成</strong> — 6 領域で目標設定。就労固有事項として「工賃目標」「一般就労への移行目標」「定着支援計画」を記入</li>
+          <li><strong>サービス管理責任者の署名</strong> — 確認後に「正式版」として確定</li>
+          <li><strong>本人・家族の同意取得</strong> — 同意日と署名を記録</li>
+          <li><strong>6 ヶ月後にモニタリング</strong> — 「保留タスク」に自動表示されます。連絡帳の強みチェック推移も自動集計</li>
+          <li><strong>必要に応じて計画見直し</strong> — 1 年経過時、または目標達成時、生活状況変化時</li>
+        </ol>
+      </div>
+    ),
+  },
+  {
+    id: 'billing',
+    icon: <MaterialIcon name="receipt_long" size={16} />,
+    title: '国保連請求業務',
+    content: (
+      <div className="space-y-3">
+        <p>月次の国保連請求は「国保連請求」画面 (/staff/billing) から行います。</p>
+        <h4 className="mt-3 font-semibold">提出までの流れ</h4>
+        <ol className="ml-4 list-decimal space-y-2">
+          <li><strong>事業所マスタの確認</strong> — 事業所番号 (10桁) / 都道府県コード (2桁) / 主使用サービスコード (6桁) が設定されているか確認</li>
+          <li><strong>利用者マスタの確認</strong> — 全員に受給者証番号・支給市町村コード・障害支援区分・月額負担上限が登録されているか確認</li>
+          <li><strong>対象月を選択 → 「国保連提出データ (ZIP)」</strong> — 請求書情報 / 明細書情報 / 実績記録票情報の 3 ファイルが Shift-JIS で生成されます</li>
+          <li><strong>国保連オンライン送信ソフトに取り込み</strong> — 通常 10 日前後に提出します</li>
+          <li><strong>不備があれば翌月再提出</strong> — エラー連絡があれば該当利用者の情報を修正してから再生成</li>
+        </ol>
+        <p className="mt-3 text-xs text-[var(--neutral-foreground-3)]">
+          ※ 加算管理 (送迎・食事・福祉専門職員配置加算 等) は現バージョンでは未対応。
+          手動で送信ソフト側で追加するか、加算なしの基本単位で提出してください。
+        </p>
+      </div>
+    ),
+  },
+  {
+    id: 'work-manuals',
+    icon: <MaterialIcon name="menu_book" size={16} />,
+    title: '作業マニュアル機能',
+    content: (
+      <div className="space-y-3">
+        <p>「作業マニュアル」(/staff/work-manuals) は、現場で利用者と一緒に確認できる手順書です。</p>
+        <h4 className="mt-3 font-semibold">活用方法</h4>
+        <ul className="ml-4 list-disc space-y-2">
+          <li><strong>写真・動画つきの手順登録</strong> — ステップごとに画像/動画を添付できます。スマホで撮影してアップロード</li>
+          <li><strong>注意事項とチェックポイント</strong> — 各ステップで「これだけはやらない」「ここを完了確認」を明示</li>
+          <li><strong>利用者個別の手順書</strong> — 合理的配慮として、利用者ごとに専用の手順書を作成できます (student_id 指定)</li>
+          <li><strong>難易度設定</strong> — 初級 / 中級 / 上級 で分類して、利用者のスキルに応じて出題できます</li>
+        </ul>
+      </div>
+    ),
+  },
+  {
+    id: 'operation-metrics',
+    icon: <MaterialIcon name="insights" size={16} />,
+    title: '運営指標ダッシュボード',
+    content: (
+      <div className="space-y-3">
+        <p>「運営指標」(/staff/operation-metrics) で以下を確認できます:</p>
+        <ul className="ml-4 list-disc space-y-2">
+          <li><strong>稼働率</strong> — 1 日平均利用者数 ÷ 定員。70% 以上が目安、90% 超は加算条件</li>
+          <li><strong>開所日数</strong> — 月の営業日数</li>
+          <li><strong>延べ利用日数</strong> — 利用者 × 出勤日の合計</li>
+          <li><strong>月利用日数上限超過</strong> — 受給者証の上限 (通常 23 日) を超えた利用者を警告</li>
+          <li><strong>6 ヶ月稼働率推移</strong> — 経営判断や行政指導前の参考に</li>
+        </ul>
+      </div>
+    ),
+  },
+  {
+    id: 'signature-employment',
+    icon: <MaterialIcon name="draw" size={16} />,
+    title: '電子署名',
+    content: (
+      <div className="space-y-3">
+        <p>個別支援計画書・モニタリング表は <strong>本人 / 家族</strong> の同意署名と、<strong>サービス管理責任者</strong> の確認署名が必要です。</p>
+        <ul className="ml-4 list-disc space-y-2">
+          <li>本人 / 家族署名 — ガーディアン (家族) アカウントから自署可能</li>
+          <li>事業所側署名 — サ管 (サービス管理責任者) アカウントから自署可能</li>
+          <li>PDF 出力時に署名が反映されます。実地指導でも紙印刷で提出できます</li>
+        </ul>
+      </div>
+    ),
+  },
+  {
+    id: 'faq-employment',
+    icon: <MaterialIcon name="help" size={16} />,
+    title: 'よくある質問',
+    content: (
+      <div className="space-y-3">
+        <h4 className="font-semibold">Q. 工賃計算で「未集計」と出る</h4>
+        <p>利用者詳細画面で「計算方式」(時給/出来高/固定) と「時給」または「出来高単価」が設定されているか確認してください。</p>
+        <h4 className="font-semibold">Q. 国保連 CSV ダウンロードボタンが押せない</h4>
+        <p>事業所番号 (10桁) または受給者証番号が未設定の利用者がいる可能性があります。画面上部の警告メッセージを確認してください。</p>
+        <h4 className="font-semibold">Q. A型と B型の違いは何ですか?</h4>
+        <p>A型は <strong>雇用契約あり / 最低賃金保証</strong>、B型は <strong>雇用契約なし / 工賃のみ</strong> です。本システムでは事業所のサービス種別設定で自動的に画面表記が切り替わります。</p>
+        <h4 className="font-semibold">Q. 平均工賃を確認したい</h4>
+        <p>工賃管理画面の月次一覧に「平均工賃」列があります。年間集計は今後のバージョンで対応予定です。</p>
+      </div>
+    ),
+  },
+];
+
+// ---------------------------------------------------------------------------
+// 就労移行支援 用マニュアル
+// ---------------------------------------------------------------------------
+
+const transitionSections: ManualSection[] = [
+  {
+    id: 'about-transition',
+    icon: <MaterialIcon name="trending_up" size={16} />,
+    title: 'ケアブリッジ (就労移行支援版) とは',
+    content: (
+      <div className="space-y-3">
+        <p>
+          ケアブリッジは <strong>就労移行支援事業所</strong> 向けの統合管理システムです。
+          利用者の訓練記録・求職活動・企業実習・就職後の定着支援まで、2 年間 (原則) の利用期間中の全てを管理できます。
+        </p>
+        <ul className="ml-4 list-disc space-y-1 text-sm">
+          <li><strong>個別支援計画</strong> — 5 領域 (就職準備 / 作業スキル / 対人関係 / 生活基盤 / 自己理解) で目標設定</li>
+          <li><strong>連絡帳</strong> — 訓練内容・ビジネスマナー評価・実習記録を 1 日 1 件で記録</li>
+          <li><strong>求職活動管理</strong> — 応募 / 面接 / 内定 / 入社の状況を一元管理</li>
+          <li><strong>企業実習管理</strong> — 実習先・評価 (就労意欲 / 技能 / 対人) を 5 段階で記録</li>
+          <li><strong>就職後の定着支援</strong> — 在籍中 OB/OG の月次連絡・出勤率・本人満足度を追跡</li>
+        </ul>
+      </div>
+    ),
+  },
+  {
+    id: 'daily-transition',
+    icon: <MaterialIcon name="today" size={16} />,
+    title: '毎日行うこと',
+    content: (
+      <div className="space-y-3">
+        <ol className="ml-4 list-decimal space-y-2">
+          <li><strong>朝の SHR (ショートホームルーム)</strong> — 出席・体調確認、本日のスケジュール共有</li>
+          <li><strong>訓練科目の実施</strong> — ビジネスマナー / PC スキル / グループワーク / 個別面談</li>
+          <li><strong>連絡帳記入</strong> — 訓練内容 / ビジネスマナー評価 (1-5) / 求職活動の進捗 を記録</li>
+          <li><strong>強み (才能) チェック</strong> — 自己理解 / ビジネスマナー / 報連相 / 時間管理 等 10 項目を 1〜10 で評価</li>
+          <li><strong>振り返り日報の作成支援</strong> — 利用者本人が記入する日報をスタッフが確認・コメント</li>
+        </ol>
+      </div>
+    ),
+  },
+  {
+    id: 'transition-phases',
+    icon: <MaterialIcon name="route" size={16} />,
+    title: '訓練段階と利用期間',
+    content: (
+      <div className="space-y-3">
+        <p>就労移行支援は <strong>原則 2 年間</strong> の利用が前提です。訓練段階を 3 期に分けて運営します:</p>
+        <ul className="ml-4 list-disc space-y-2">
+          <li><strong>基礎訓練期 (0〜6 ヶ月)</strong> — 生活リズム確立、ビジネスマナー、基礎スキル習得</li>
+          <li><strong>応用訓練期 (7〜12 ヶ月)</strong> — 専門スキル、対人スキル、職場見学・短期実習</li>
+          <li><strong>求職・実習期 (13 ヶ月〜)</strong> — 履歴書作成、企業見学、長期実習、就職活動</li>
+        </ul>
+        <p className="mt-3 text-xs text-[var(--neutral-foreground-3)]">
+          ※ 利用者詳細画面で「利用期限」を必ず設定してください。期限近くになると「保留タスク」に表示されます。
+        </p>
+      </div>
+    ),
+  },
+  {
+    id: 'plan-transition',
+    icon: <MaterialIcon name="folder_special" size={16} />,
+    title: '個別支援計画とモニタリング',
+    content: (
+      <div className="space-y-3">
+        <h4 className="mt-3 font-semibold">就労移行特有の項目</h4>
+        <ul className="ml-4 list-disc space-y-2">
+          <li><strong>目標とする就労形態 / 業界</strong> — 正社員 / パート / 特例子会社 など本人の希望</li>
+          <li><strong>求職活動計画</strong> — 月のハローワーク訪問回数 / 企業見学回数 等</li>
+          <li><strong>企業実習計画</strong> — 短期実習 (5 日) / 長期実習 (1 ヶ月) のタイミング</li>
+          <li><strong>就職後の定着支援方針</strong> — 就職後 6 ヶ月の支援頻度</li>
+        </ul>
+        <p className="mt-3">6 ヶ月ごとのモニタリング義務は就労継続と同じ。連絡帳で記録した強みチェック / 訓練評価 / ビジネスマナースコアの推移を自動集計します。</p>
+      </div>
+    ),
+  },
+  {
+    id: 'job-search',
+    icon: <MaterialIcon name="work_history" size={16} />,
+    title: '求職活動の記録 (就労移行支援画面)',
+    content: (
+      <div className="space-y-3">
+        <p>「就労移行支援」画面 (/staff/transition-support) の「求職活動」タブで管理します。</p>
+        <ul className="ml-4 list-disc space-y-2">
+          <li><strong>応募記録</strong> — 会社名 / 職種 / 雇用形態 / 応募日 / 経路 (ハローワーク / 直接応募 / 紹介 等)</li>
+          <li><strong>状態管理</strong> — 応募済 → 書類選考 → 面接予定 → 面接済 → 内定 / 不採用</li>
+          <li><strong>面接フィードバック</strong> — 面接後の感想・改善点を記録</li>
+          <li><strong>就職実績の集計</strong> — 年次の就職実績は事業所評価の重要指標</li>
+        </ul>
+      </div>
+    ),
+  },
+  {
+    id: 'company-internship',
+    icon: <MaterialIcon name="business_center" size={16} />,
+    title: '企業実習の管理',
+    content: (
+      <div className="space-y-3">
+        <p>「就労移行支援」画面の「企業実習」タブで管理します。</p>
+        <h4 className="mt-3 font-semibold">実習記録の項目</h4>
+        <ul className="ml-4 list-disc space-y-2">
+          <li><strong>実習先企業</strong> — 会社名 / 連絡担当者 / 連絡先</li>
+          <li><strong>期間と日数</strong> — 開始日 / 終了日 / 総実習日数</li>
+          <li><strong>実習種別</strong> — 見学 / 体験 / 採用試行 (トライアル雇用)</li>
+          <li><strong>実習計画</strong> — 日ごとの予定 (1 日目: 職場見学、2 日目: 軽作業、等)</li>
+          <li><strong>企業評価</strong> — 3 軸を 1-5 で記録 ( 就労意欲 / 技能 / 対人 )</li>
+          <li><strong>事業所評価</strong> — スタッフ側の所見、合理的配慮の提案</li>
+          <li><strong>結果</strong> — 就職に結びついた / 訓練継続 / 中止</li>
+        </ul>
+      </div>
+    ),
+  },
+  {
+    id: 'job-placement',
+    icon: <MaterialIcon name="emoji_events" size={16} />,
+    title: '就職後の定着支援',
+    content: (
+      <div className="space-y-3">
+        <p>「就労移行支援」画面の「就職後定着」タブで OB/OG を管理します。</p>
+        <h4 className="mt-3 font-semibold">登録項目</h4>
+        <ul className="ml-4 list-disc space-y-2">
+          <li>就職先 / 職種 / 就職開始日 / 雇用形態 / 月収 / 週労働時間</li>
+          <li><strong>合理的配慮の内容</strong> — 職場で適用されている配慮事項</li>
+          <li><strong>次回フォロー期日</strong> — 通常 1 ヶ月後の訪問・電話日</li>
+        </ul>
+        <h4 className="mt-3 font-semibold">定着支援の記録</h4>
+        <ul className="ml-4 list-disc space-y-2">
+          <li>連絡履歴 (訪問 / 電話 / メール) — 連絡相手 (本人 / 上司 / 家族)</li>
+          <li>本人満足度 1-5 / 出勤率 %</li>
+          <li>課題・対応内容のメモ</li>
+        </ul>
+        <p className="mt-3 text-xs text-[var(--neutral-foreground-3)]">
+          ※ 6 ヶ月以上の定着支援が必要な場合は就労定着支援事業 (別サービス) への引継ぎを検討してください。
+        </p>
+      </div>
+    ),
+  },
+  {
+    id: 'billing-transition',
+    icon: <MaterialIcon name="receipt_long" size={16} />,
+    title: '国保連請求業務',
+    content: (
+      <div className="space-y-3">
+        <p>就労継続と同じく、月次で国保連へ請求します。「国保連請求」画面 (/staff/billing) から CSV を生成。</p>
+        <p>就労移行は <strong>サービスコード 14XXXX</strong> 系を使います。事業所マスタで主使用サービスコードを設定してください。</p>
+        <p className="text-xs text-[var(--neutral-foreground-3)]">
+          ※ 就職実績による <strong>就労移行支援体制加算</strong> など加算が多いサービス種別です。
+          加算の追加は送信ソフト側で行うか、別途設定が必要です。
+        </p>
+      </div>
+    ),
+  },
+  {
+    id: 'faq-transition',
+    icon: <MaterialIcon name="help" size={16} />,
+    title: 'よくある質問',
+    content: (
+      <div className="space-y-3">
+        <h4 className="font-semibold">Q. 利用期限が近い利用者を一覧で確認したい</h4>
+        <p>「保留タスク」(/staff/pending-tasks) で確認できます。期限 30 日以内の利用者がアラート表示されます。</p>
+        <h4 className="font-semibold">Q. 求職活動の月次集計を出したい</h4>
+        <p>現バージョンでは月別集計は未対応。応募一覧から手動でカウントしてください (次回改修予定)。</p>
+        <h4 className="font-semibold">Q. 就職後の定着率を計算したい</h4>
+        <p>「就労移行支援」画面の「就職後定着」タブで「在籍中」「離職」を確認できます。比率は年次レポートで自動算出予定。</p>
+        <h4 className="font-semibold">Q. 利用期限を超えても利用継続するには?</h4>
+        <p>市町村の支給決定で 1 年延長可能 (最大 3 年)。受給者証の有効期限を更新してから利用期限を伸ばしてください。</p>
+      </div>
+    ),
+  },
+];
+
+// ---------------------------------------------------------------------------
+// サービス種別ごとにマニュアルを切り替える
+// ---------------------------------------------------------------------------
+
+function getSectionsByServiceType(serviceType: string): ManualSection[] {
+  if (serviceType === 'employment_a' || serviceType === 'employment_b') {
+    return employmentSections;
+  }
+  if (serviceType === 'transition') {
+    return transitionSections;
+  }
+  return afterSchoolSections;
+}
+
 export default function ManualPage() {
-  const { serviceType, terms } = useWorkspace();
-  const [openSections, setOpenSections] = useState<Set<string>>(new Set(['about']));
+  const { serviceType } = useWorkspace();
+  const sections = getSectionsByServiceType(serviceType);
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set([sections[0]?.id ?? '']));
 
   const toggleSection = (id: string) => {
     setOpenSections((prev) => {
@@ -430,24 +799,13 @@ export default function ManualPage() {
 
   return (
     <div className="space-y-6">
-      {/* 放デイ以外のサービス種別の事業所では、本マニュアルが
-          放課後等デイサービス向けに作成されている旨を明示する。 */}
-      {serviceType !== 'after_school' && (
-        <div className="rounded-md border border-[var(--status-warning-fg)] bg-[var(--status-warning-bg)] p-3 text-sm">
-          <p className="font-semibold text-[var(--neutral-foreground-1)]">
-            <MaterialIcon name="info" size={16} className="mr-1 inline align-text-bottom" />
-            このマニュアルは放課後等デイサービス向けに作成されています。
-          </p>
-          <p className="mt-1 text-xs text-[var(--neutral-foreground-2)]">
-            お使いの事業所は<strong>{serviceTypeLabel(serviceType)}</strong>のため、
-            画面上では「{terms.client}」「{terms.guardian}」「{terms.diary}」「{terms.service_manager}」など
-            の呼称が異なって表示されます。マニュアル内で「生徒」「保護者」「連絡帳」「児童発達支援管理責任者」と
-            記載されている箇所は、それぞれ読み替えてください。
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">スタッフマニュアル</h1>
+          <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
+            <strong>{serviceTypeLabel(serviceType)}</strong> 用のマニュアルを表示しています。
           </p>
         </div>
-      )}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">スタッフマニュアル</h1>
         <div className="flex gap-2">
           <button
             className="text-sm text-[var(--brand-80)] hover:text-[var(--brand-70)]"
