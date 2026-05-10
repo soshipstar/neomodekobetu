@@ -72,6 +72,21 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-composer-
 
+      # Laravel が起動時に書き込み可能であることを要求するディレクトリは
+      # git に追跡されない (空ディレクトリのため)。CI 環境では事前に作成する。
+      - name: Prepare Laravel writable directories
+        working-directory: backend
+        run: |
+          mkdir -p bootstrap/cache \
+                   storage/app/public \
+                   storage/framework/cache/data \
+                   storage/framework/sessions \
+                   storage/framework/testing \
+                   storage/framework/views \
+                   storage/logs
+          chmod -R 777 bootstrap storage
+          touch .env
+
       - name: Install Composer deps
         working-directory: backend
         run: composer install --no-interaction --prefer-dist --no-progress
