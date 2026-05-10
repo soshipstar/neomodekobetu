@@ -382,16 +382,16 @@ export default function StudentsPage() {
             <thead>
               <tr className="border-b border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)]">
                 {(([
-                  ['id', 'ID'],
-                  ['student_name', `${terms.client}名`],
-                  ['birth_date', '生年月日'],
-                  ['age', '年齢'],
+                  ['id', 'ID'] as const,
+                  ['student_name', `${terms.client}名`] as const,
+                  ['birth_date', '生年月日'] as const,
+                  ['age', '年齢'] as const,
                   // 学年区分は放デイのみ意味を持つ
-                  ...(serviceType === 'after_school' ? [['grade_level', '学年']] : []),
-                  ['guardian', terms.guardian],
-                  ['status', '状態'],
-                  ['created_at', '登録日'],
-                ]) as Array<readonly [string, string]>).map(([key, label]) => (
+                  ...(serviceType === 'after_school' ? [['grade_level', '学年'] as const] : []),
+                  ['guardian', terms.guardian] as const,
+                  ['status', '状態'] as const,
+                  ['created_at', '登録日'] as const,
+                ]) satisfies ReadonlyArray<readonly [string, string]>).map(([key, label]) => (
                   <th key={key}
                     onClick={() => toggleSort(key)}
                     className="px-3 py-2 text-left text-xs font-semibold text-[var(--neutral-foreground-3)] cursor-pointer select-none hover:text-[var(--neutral-foreground-1)] transition-colors"
