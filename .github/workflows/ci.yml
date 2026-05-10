@@ -38,6 +38,30 @@ jobs:
     name: Backend tests
     runs-on: ubuntu-latest
 
+    # Job-level env: 全ステップ (composer install / 各 artisan / phpunit) で共通利用。
+    # composer install の post-autoload-dump (artisan package:discover) でも
+    # broadcaster やキャッシュドライバが解決されるため、env を欠くと
+    # Pusher\Pusher::__construct null や cache 接続失敗で composer 自体が落ちる。
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNopq=
+      APP_TIMEZONE: Asia/Tokyo
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_DATABASE: test
+      DB_USERNAME: test
+      DB_PASSWORD: test
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+      BROADCAST_CONNECTION: log
+      MAIL_MAILER: array
+      TELESCOPE_ENABLED: 'false'
+      REVERB_APP_ID: test
+      REVERB_APP_KEY: test
+      REVERB_APP_SECRET: test
+
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -105,25 +129,7 @@ jobs:
 
       - name: Run PHPUnit (selected stable suite)
         working-directory: backend
-        env:
-          APP_ENV: testing
-          APP_KEY: base64:abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNopq=
-          APP_TIMEZONE: Asia/Tokyo
-          DB_CONNECTION: pgsql
-          DB_HOST: 127.0.0.1
-          DB_PORT: '5432'
-          DB_DATABASE: test
-          DB_USERNAME: test
-          DB_PASSWORD: test
-          CACHE_STORE: array
-          SESSION_DRIVER: array
-          QUEUE_CONNECTION: sync
-          BROADCAST_CONNECTION: log
-          MAIL_MAILER: array
-          TELESCOPE_ENABLED: 'false'
-          REVERB_APP_ID: test
-          REVERB_APP_KEY: test
-          REVERB_APP_SECRET: test
+        # env は job レベルで設定済 (上の env: ブロック)
         # 当初は本セッションで安定動作を確認済のテストだけを対象に。
         # 他の既存テストも順次 CI に取り込む。
         run: |
