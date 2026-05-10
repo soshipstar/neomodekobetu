@@ -12,6 +12,8 @@ import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import Link from 'next/link';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useWorkspace } from '@/hooks/useWorkspace';
+import { targetGroupsFor, targetGroupLabel, targetGroupColor } from '@/lib/serviceType';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -75,20 +77,6 @@ const PLAN_TYPE_COLORS: Record<string, string> = {
   normal: 'var(--brand-80)',
   event: '#F97316',
   other: '#6B7280',
-};
-
-const TARGET_GRADES: Record<string, string> = {
-  preschool: '小学生未満',
-  elementary: '小学生',
-  junior_high: '中学生',
-  high_school: '高校生',
-};
-
-const TARGET_GRADE_COLORS: Record<string, string> = {
-  preschool: '#8B5CF6',
-  elementary: '#10B981',
-  junior_high: '#3B82F6',
-  high_school: '#F97316',
 };
 
 const DAYS_OF_WEEK: Record<string, string> = {
@@ -327,8 +315,10 @@ function PlanCard({
   onDelete: (p: SupportPlan) => void;
   onPdfDownload: (p: SupportPlan) => void;
 }) {
+  const { serviceType } = useWorkspace();
   const dateStr = formatDateJP(plan.activity_date);
   const tags = plan.tags ? plan.tags.split(',') : [];
+  const targetGroupKeys = plan.target_grade ? plan.target_grade.split(',') : [];
 
   return (
     <Card>
@@ -358,6 +348,20 @@ function PlanCard({
                 <Badge variant="info">使用回数: {plan.usage_count}回</Badge>
               )}
             </div>
+            {targetGroupKeys.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {targetGroupKeys.map((key) => (
+                  <Badge
+                    key={key}
+                    variant="default"
+                    className="text-[10px]"
+                    style={{ backgroundColor: targetGroupColor(serviceType, key), color: 'white' }}
+                  >
+                    {targetGroupLabel(serviceType, key)}
+                  </Badge>
+                ))}
+              </div>
+            )}
             {tags.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1">
                 {tags.map((tag) => (
@@ -443,6 +447,13 @@ function SupportPlanFormModal({
   onSaved: () => void;
 }) {
   const toast = useToast();
+  const { serviceType } = useWorkspace();
+  const targetGroups = targetGroupsFor(serviceType);
+  const targetGroupFieldLabel = serviceType === 'transition'
+    ? '対象訓練段階'
+    : (serviceType === 'employment_a' || serviceType === 'employment_b')
+      ? '対象年齢層'
+      : '対象学年';
   const isEdit = !!plan;
 
   const [form, setForm] = useState<FormData>(() => ({
@@ -778,17 +789,16 @@ function SupportPlanFormModal({
             <HelpText>通常活動: 日常の活動、イベント: 特別なイベント、その他: 上記以外</HelpText>
           </FieldGroup>
 
-          {/* Target grade */}
-          <FieldGroup label="対象年齢層">
+          {/* Target group: 放デイは学年、就労 A/B は年齢層、就移は訓練段階 */}
+          <FieldGroup label={targetGroupFieldLabel}>
             <div className="flex flex-wrap gap-2">
-              {Object.entries(TARGET_GRADES).map(([value, label]) => {
-                const selected = form.target_grade.includes(value);
-                const color = TARGET_GRADE_COLORS[value];
+              {targetGroups.map(({ key, label, color }) => {
+                const selected = form.target_grade.includes(key);
                 return (
                   <button
-                    key={value}
+                    key={key}
                     type="button"
-                    onClick={() => toggleArrayItem('target_grade', value)}
+                    onClick={() => toggleArrayItem('target_grade', key)}
                     className="rounded-lg border-2 px-4 py-2 text-sm font-semibold transition-colors"
                     style={{
                       borderColor: color,

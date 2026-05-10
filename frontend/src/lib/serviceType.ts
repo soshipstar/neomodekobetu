@@ -158,3 +158,68 @@ export function termsFor(serviceType: ServiceType | string | null | undefined): 
     ? TERMS_BY_SERVICE[serviceType]
     : TERMS_BY_SERVICE.after_school;
 }
+
+/**
+ * 個別支援計画/活動支援案の「対象グループ」キー一覧。
+ * 放デイは学年区分、就労 A/B は年齢層、就移は訓練段階で分ける。
+ *
+ * バックエンドの target_grade カラムは varchar なので、ここで定めた key を
+ * そのまま保存して問題ない (旧データの preschool/elementary/junior_high/high_school
+ * もそのまま読める)。
+ */
+export interface TargetGroupOption {
+  key: string;
+  label: string;
+  color: string;
+}
+
+export const TARGET_GROUPS_BY_SERVICE: Record<ServiceType, readonly TargetGroupOption[]> = {
+  after_school: [
+    { key: 'preschool',   label: '小学生未満', color: '#8B5CF6' },
+    { key: 'elementary',  label: '小学生',     color: '#10B981' },
+    { key: 'junior_high', label: '中学生',     color: '#3B82F6' },
+    { key: 'high_school', label: '高校生',     color: '#F97316' },
+  ],
+  employment_a: [
+    { key: 'young',  label: '若年層 (18〜29歳)', color: '#10B981' },
+    { key: 'middle', label: '中堅層 (30〜49歳)', color: '#3B82F6' },
+    { key: 'senior', label: '熟練層 (50歳以上)', color: '#F97316' },
+  ],
+  employment_b: [
+    { key: 'young',  label: '若年層 (18〜29歳)', color: '#10B981' },
+    { key: 'middle', label: '中堅層 (30〜49歳)', color: '#3B82F6' },
+    { key: 'senior', label: '熟練層 (50歳以上)', color: '#F97316' },
+  ],
+  transition: [
+    { key: 'basic',     label: '基礎訓練期 (0〜6ヶ月)',   color: '#10B981' },
+    { key: 'applied',   label: '応用訓練期 (7〜12ヶ月)',  color: '#3B82F6' },
+    { key: 'placement', label: '求職・実習期 (13ヶ月〜)', color: '#F97316' },
+  ],
+};
+
+export function targetGroupsFor(serviceType: ServiceType | string | null | undefined): readonly TargetGroupOption[] {
+  return isServiceType(serviceType)
+    ? TARGET_GROUPS_BY_SERVICE[serviceType]
+    : TARGET_GROUPS_BY_SERVICE.after_school;
+}
+
+export function targetGroupLabel(serviceType: ServiceType | string | null | undefined, key: string): string {
+  // 旧データ互換: 放デイ用 key (preschool 等) が他種別の plan に残っていても元ラベルで表示する
+  for (const group of TARGET_GROUPS_BY_SERVICE.after_school) {
+    if (group.key === key) {
+      const matched = targetGroupsFor(serviceType).find((g) => g.key === key);
+      if (matched) return matched.label;
+      return group.label;
+    }
+  }
+  const matched = targetGroupsFor(serviceType).find((g) => g.key === key);
+  return matched?.label ?? key;
+}
+
+export function targetGroupColor(serviceType: ServiceType | string | null | undefined, key: string): string {
+  const matched = targetGroupsFor(serviceType).find((g) => g.key === key);
+  if (matched) return matched.color;
+  // フォールバック: 放デイ用 key の色
+  const fallback = TARGET_GROUPS_BY_SERVICE.after_school.find((g) => g.key === key);
+  return fallback?.color ?? '#6B7280';
+}
