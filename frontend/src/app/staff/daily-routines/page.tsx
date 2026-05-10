@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/Button';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useWorkspace } from '@/hooks/useWorkspace';
+import { sampleRoutinesFor, serviceTypeShort } from '@/lib/serviceType';
 
 interface DailyRoutine {
   id: number | null;
@@ -32,6 +34,11 @@ const INITIAL_SLOTS = 5;
 export default function DailyRoutinesPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { serviceType } = useWorkspace();
+  const samples = sampleRoutinesFor(serviceType);
+  const samplePlaceholder = samples[0]
+    ? `例: ${samples[0].name}、${samples[1]?.name ?? ''}`.replace(/、$/, '')
+    : '例: 朝礼、休憩';
   const [slots, setSlots] = useState<RoutineSlot[]>([]);
   const [initialized, setInitialized] = useState(false);
 
@@ -131,13 +138,33 @@ export default function DailyRoutinesPage() {
     ]);
   }, [slots.length, toast]);
 
+  const loadSamples = useCallback(() => {
+    const filledCount = slots.filter((s) => s.name.trim() !== '').length;
+    if (filledCount > 0) {
+      if (!confirm(`既に入力されている ${filledCount} 件の内容が上書きされます。サンプルを読み込みますか？`)) return;
+    }
+    const next: RoutineSlot[] = samples.map((s) => ({
+      id: null,
+      name: s.name,
+      content: s.content,
+      time: s.time,
+      filled: true,
+    }));
+    // 既存スロット数より少ない場合は空スロットで埋める (元の表示数を維持)
+    while (next.length < Math.max(INITIAL_SLOTS, slots.length)) {
+      next.push({ id: null, name: '', content: '', time: '', filled: false });
+    }
+    setSlots(next);
+    toast.success('サンプルを読み込みました。保存ボタンを押すと反映されます。');
+  }, [samples, slots, toast]);
+
   const handleSave = () => {
     saveMutation.mutate(slots);
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">
             毎日の支援設定
@@ -146,6 +173,13 @@ export default function DailyRoutinesPage() {
             ルーティーン活動を登録して支援案作成時に引用できます
           </p>
         </div>
+        <Button
+          variant="outline"
+          onClick={loadSamples}
+          leftIcon={<MaterialIcon name="auto_awesome" size={16} />}
+        >
+          {serviceTypeShort(serviceType)} 用サンプルを読み込む
+        </Button>
       </div>
 
       <Card>
@@ -204,7 +238,7 @@ export default function DailyRoutinesPage() {
                       type="text"
                       value={slot.name}
                       onChange={(e) => updateSlot(index, 'name', e.target.value)}
-                      placeholder="例: おやつの時間、帰りの会"
+                      placeholder={samplePlaceholder}
                       className="w-full rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
                     />
                   </div>
