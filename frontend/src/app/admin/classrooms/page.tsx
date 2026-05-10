@@ -52,6 +52,11 @@ export default function ClassroomsPage() {
           : 'after_school',
         address: editingClassroom.address || '',
         phone: editingClassroom.phone || '',
+        capacity: editingClassroom.capacity != null ? String(editingClassroom.capacity) : '',
+        wam_office_code: editingClassroom.wam_office_code ?? '',
+        prefecture_code: editingClassroom.prefecture_code ?? '',
+        wam_service_code_default: editingClassroom.wam_service_code_default ?? '',
+        wam_unit_price_yen: editingClassroom.wam_unit_price_yen != null ? String(editingClassroom.wam_unit_price_yen) : '10',
       });
     }
   }, [editingClassroom, editForm]);
@@ -219,6 +224,58 @@ export default function ClassroomsPage() {
           </div>
           <Input label="住所" {...editForm.register('address')} />
           <Input label="電話番号" {...editForm.register('phone')} />
+          <Input
+            label="定員 (名)"
+            type="number"
+            error={editForm.formState.errors.capacity?.message}
+            {...editForm.register('capacity')}
+            placeholder="例: 20"
+          />
+
+          {/* === 国保連請求 (WAM-NET) 設定 === */}
+          <div className="rounded border border-[var(--neutral-stroke-2)] p-3">
+            <h4 className="mb-2 text-sm font-semibold text-[var(--brand-70)]">国保連請求 (WAM-NET) 設定</h4>
+            <p className="mb-3 text-xs text-[var(--neutral-foreground-3)]">
+              請求 CSV (Shift-JIS / ZIP) を生成するために必要な事業所属性です。
+              国保連から通知されている事業所番号 (10桁) を正確に入力してください。
+            </p>
+            <div className="space-y-3">
+              <Input
+                label="事業所番号 (10桁)"
+                error={editForm.formState.errors.wam_office_code?.message}
+                {...editForm.register('wam_office_code')}
+                placeholder="例: 1410012345"
+                maxLength={10}
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  label="都道府県コード (2桁)"
+                  error={editForm.formState.errors.prefecture_code?.message}
+                  {...editForm.register('prefecture_code')}
+                  placeholder="例: 14 (神奈川県)"
+                  maxLength={2}
+                />
+                <Input
+                  label="単位単価 (円)"
+                  type="number"
+                  error={editForm.formState.errors.wam_unit_price_yen?.message}
+                  {...editForm.register('wam_unit_price_yen')}
+                  placeholder="例: 10"
+                />
+              </div>
+              <Input
+                label="主使用サービスコード (6桁)"
+                error={editForm.formState.errors.wam_service_code_default?.message}
+                {...editForm.register('wam_service_code_default')}
+                placeholder="例: 151111 (就労継続支援A型サービス費(I)(1))"
+                maxLength={6}
+              />
+              <p className="text-xs text-[var(--neutral-foreground-4)]">
+                ※ 加算なしの基本単位コード。加算込みの利用者個別運用は次の改修で対応予定です。
+              </p>
+            </div>
+          </div>
+
           <div className="flex justify-end gap-2">
             <Button variant="ghost" type="button" onClick={() => setEditingClassroom(null)}>キャンセル</Button>
             <Button type="submit" isLoading={updateMutation.isPending}>更新</Button>

@@ -72,6 +72,12 @@ export interface Classroom {
   id: number;
   classroom_name: string;
   service_type: string; // ServiceType (lib/serviceType.ts)。後方互換のため string 受け
+  capacity?: number | null;
+  opening_days_per_month?: number | null;
+  wam_office_code?: string | null;
+  prefecture_code?: string | null;
+  wam_service_code_default?: string | null;
+  wam_unit_price_yen?: number | null;
   company_id: number | null;
   company_name: string | null;
   address: string | null;

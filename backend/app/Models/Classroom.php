@@ -24,6 +24,11 @@ class Classroom extends Model
         'is_active',
         'capacity',
         'opening_days_per_month',
+        // Phase D-3: WAM-NET 請求
+        'wam_office_code',
+        'prefecture_code',
+        'wam_service_code_default',
+        'wam_unit_price_yen',
     ];
 
     protected function casts(): array

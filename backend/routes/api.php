@@ -562,6 +562,8 @@ Route::prefix('staff')
         Route::get('/billing/summary',   [App\Http\Controllers\Staff\BillingController::class, 'summary']);
         Route::get('/billing/csv',       [App\Http\Controllers\Staff\BillingController::class, 'downloadCsv']);
         Route::get('/billing/provision-record', [App\Http\Controllers\Staff\BillingController::class, 'provisionRecordPdf']);
+        Route::get('/billing/validate',  [App\Http\Controllers\Staff\BillingController::class, 'validateForWamNet']);
+        Route::get('/billing/wam-net-zip', [App\Http\Controllers\Staff\BillingController::class, 'downloadWamNetZip']);
 
         // --- 作業マニュアル ---
         Route::get   ('/work-manuals',           [App\Http\Controllers\Staff\WorkManualController::class, 'index']);

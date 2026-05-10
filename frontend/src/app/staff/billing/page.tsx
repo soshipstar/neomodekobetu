@@ -83,6 +83,50 @@ export default function BillingPage() {
     }
   };
 
+  const downloadWamNetZip = async () => {
+    try {
+      const res = await api.get('/api/staff/billing/wam-net-zip', {
+        params: { year_month: yearMonth },
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/zip' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `wamnet-${yearMonth}.zip`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('国保連提出データ (ZIP) をダウンロードしました');
+    } catch (err: any) {
+      // 422 (バリデーションエラー) は JSON で返るので blob を text 化
+      if (err?.response?.status === 422 && err.response.data instanceof Blob) {
+        const text = await err.response.data.text();
+        try {
+          const json = JSON.parse(text);
+          const errors: string[] = json.errors ?? [];
+          toast.error(errors.join(' / '));
+          setValidationErrors(errors);
+          return;
+        } catch { /* fallthrough */ }
+      }
+      toast.error('提出データの生成に失敗しました');
+    }
+  };
+
+  const { data: validation } = useQuery({
+    queryKey: ['staff', 'billing', 'validate', yearMonth],
+    queryFn: async () => {
+      const res = await api.get<{ data: { errors: string[]; ok: boolean } }>('/api/staff/billing/validate', {
+        params: { year_month: yearMonth },
+      });
+      return res.data.data;
+    },
+  });
+
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const errors = validationErrors.length > 0 ? validationErrors : (validation?.errors ?? []);
+
   const downloadProvisionRecord = async (studentId: number) => {
     try {
       const res = await api.get('/api/staff/billing/provision-record', {
@@ -130,17 +174,46 @@ export default function BillingPage() {
               再集計
             </Button>
             <Button
+              onClick={downloadWamNetZip}
+              disabled={!data || data.rows.length === 0 || errors.length > 0}
+              leftIcon={<MaterialIcon name="cloud_download" size={16} />}
+              variant="primary"
+            >
+              国保連提出データ (ZIP)
+            </Button>
+            <Button
               onClick={downloadCsv}
               disabled={!data || data.rows.length === 0}
               leftIcon={<MaterialIcon name="download" size={16} />}
+              variant="outline"
             >
-              CSV をダウンロード
+              集計 CSV (社内用)
             </Button>
           </div>
-          <p className="mt-3 text-xs text-[var(--neutral-foreground-4)]">
-            ※ 本機能は WAM-NET 標準インターフェースの完全準拠ではありません。実地指導前に各自治体の最新仕様書で
-            カラム数・コードを確認してください。
-          </p>
+
+          {errors.length > 0 && (
+            <div className="mt-3 rounded border border-[var(--status-danger-fg)]/30 bg-[var(--status-danger-bg)] p-3">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[var(--status-danger-fg)]">
+                <MaterialIcon name="error" size={16} />
+                国保連提出データの生成に必要な項目が不足しています
+              </div>
+              <ul className="ml-6 mt-2 list-disc text-xs text-[var(--status-danger-fg)]">
+                {errors.map((e, i) => <li key={i}>{e}</li>)}
+              </ul>
+              <p className="mt-2 text-xs text-[var(--neutral-foreground-3)]">
+                <strong>事業所番号・都道府県コード・主使用サービスコード</strong>は
+                <a href="/admin/classrooms" className="text-[var(--brand-80)] underline">事業所設定</a>から登録してください。
+                <strong>受給者証番号</strong>は各利用者の詳細画面から登録できます。
+              </p>
+            </div>
+          )}
+
+          <div className="mt-3 rounded border border-[var(--brand-80)]/20 bg-[var(--brand-160)] p-3 text-xs text-[var(--neutral-foreground-2)]">
+            <p className="mb-1 font-semibold text-[var(--brand-70)]">📋 ファイル形式について</p>
+            <p>• 「国保連提出データ (ZIP)」は<strong>請求書情報.csv / 明細書情報.csv / 実績記録票情報.csv</strong>の 3 ファイルを Shift-JIS で生成します。</p>
+            <p>• 国保連オンライン送信ソフトに取り込んで提出してください。提出前に対象月の利用者全員の受給者証番号・事業所番号が正しく登録されていることを確認してください。</p>
+            <p>• 報酬改定により仕様が変更される場合があります (年度初め)。最新仕様書は国保連サイトを参照してください。</p>
+          </div>
         </CardBody>
       </Card>
 

@@ -7,6 +7,7 @@ use App\Models\Classroom;
 use App\Models\Student;
 use App\Services\BillingService;
 use App\Services\PuppeteerPdfService;
+use App\Services\WamNetExportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -15,7 +16,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BillingController extends Controller
 {
-    public function __construct(private readonly BillingService $service) {}
+    public function __construct(
+        private readonly BillingService $service,
+        private readonly WamNetExportService $wam,
+    ) {}
 
     /**
      * 月次請求集計プレビュー (UI のテーブル表示用)。
@@ -56,6 +60,43 @@ class BillingController extends Controller
                 'Content-Disposition' => 'attachment; filename="' . $filename . '"',
             ]
         );
+    }
+
+    /**
+     * 提出前バリデーション (事業所番号など必須項目が揃っているか)。
+     */
+    public function validateForWamNet(Request $request): JsonResponse
+    {
+        $request->validate(['year_month' => 'required|string|regex:/^\d{4}-\d{2}$/']);
+        $classroomId = $request->user()->classroom_id;
+        $errors = $this->wam->validate($classroomId, $request->string('year_month')->toString());
+        return response()->json(['data' => ['errors' => $errors, 'ok' => empty($errors)]]);
+    }
+
+    /**
+     * WAM-NET 形式 (請求書/明細書/実績記録票 の 3 ファイル) を ZIP で返す。
+     * Shift-JIS / CRLF。国保連へのオンライン送信ソフトに取り込める形。
+     */
+    public function downloadWamNetZip(Request $request): Response
+    {
+        $request->validate(['year_month' => 'required|string|regex:/^\d{4}-\d{2}$/']);
+        $classroomId = $request->user()->classroom_id;
+        $yearMonth   = $request->string('year_month')->toString();
+
+        $errors = $this->wam->validate($classroomId, $yearMonth);
+        if (! empty($errors)) {
+            return response()->json([
+                'message' => '提出データに不備があります。',
+                'errors'  => $errors,
+            ], 422);
+        }
+
+        $zipPath = $this->wam->generateBundle($classroomId, $yearMonth);
+        $filename = "wamnet-{$classroomId}-{$yearMonth}.zip";
+
+        return response()->download($zipPath, $filename, [
+            'Content-Type' => 'application/zip',
+        ])->deleteFileAfterSend(true);
     }
 
     /**
