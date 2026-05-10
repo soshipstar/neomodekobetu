@@ -48,6 +48,7 @@ class IndividualSupportPlan extends Model
         'is_hidden',
         'source_monitoring_id',
         'basis_generated_at',
+        'service_type_data',
     ];
 
     protected function casts(): array
@@ -67,6 +68,7 @@ class IndividualSupportPlan extends Model
             'guardian_confirmed' => 'boolean',
             'guardian_confirmed_at' => 'datetime',
             'basis_generated_at' => 'datetime',
+            'service_type_data' => 'array',
         ];
     }
 

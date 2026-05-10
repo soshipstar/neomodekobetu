@@ -34,6 +34,7 @@ class MonitoringRecord extends Model
         'guardian_signature_date',
         'staff_signature_date',
         'staff_signer_name',
+        'service_type_data',
     ];
 
     protected function casts(): array
@@ -48,6 +49,7 @@ class MonitoringRecord extends Model
             'guardian_signature_date' => 'date:Y-m-d',
             'staff_signature_date' => 'date:Y-m-d',
             'strengths_summary' => 'array',
+            'service_type_data' => 'array',
         ];
     }
 
