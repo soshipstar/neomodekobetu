@@ -62,6 +62,16 @@ class Student extends Model
         'piece_rate_amount',
         'paid_leave_days',
         'employment_status',
+        // Phase D-1: 国保連請求
+        'beneficiary_number',
+        'municipality_code',
+        'disability_category',
+        'disability_grade',
+        'monthly_copay_cap',
+        'copay_management_provider',
+        'certificate_issued_date',
+        'certificate_expiry_date',
+        'monthly_usage_days_cap',
     ];
 
     protected $hidden = [
@@ -101,6 +111,9 @@ class Student extends Model
             'hourly_rate'        => 'decimal:2',
             'piece_rate_amount'  => 'decimal:2',
             'paid_leave_days'    => 'decimal:1',
+            // Phase D-1: 請求
+            'certificate_issued_date' => 'date:Y-m-d',
+            'certificate_expiry_date' => 'date:Y-m-d',
         ];
     }
 

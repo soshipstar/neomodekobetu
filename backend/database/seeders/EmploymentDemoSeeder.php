@@ -184,6 +184,19 @@ class EmploymentDemoSeeder extends Seeder
                 ],
             };
 
+            // Phase D-1: 国保連請求用のサンプル属性
+            $billingDefaults = [
+                'beneficiary_number'        => '14' . str_pad((string) (count($config['users']) * 100 + array_search($u, $config['users'], true)), 8, '0', STR_PAD_LEFT),
+                'municipality_code'         => '141305', // 神奈川県横浜市西区 (例)
+                'disability_category'       => $serviceType === ServiceTypeRegistry::EMPLOYMENT_A ? 'mental' : 'intellectual',
+                'disability_grade'          => $serviceType === ServiceTypeRegistry::EMPLOYMENT_A ? '区分3' : '区分4',
+                'monthly_copay_cap'         => 9300,    // 一般 1
+                'copay_management_provider' => '自事業所',
+                'certificate_issued_date'   => $u['contract_start_date'],
+                'certificate_expiry_date'   => $u['usage_limit_date'] ?: $startDate->copy()->addYears(2)->toDateString(),
+                'monthly_usage_days_cap'    => 23,
+            ];
+
             $student = Student::firstOrCreate(
                 ['username' => $u['student_username']],
                 array_merge([
@@ -202,7 +215,7 @@ class EmploymentDemoSeeder extends Seeder
                     'scheduled_wednesday' => true,
                     'scheduled_thursday'  => true,
                     'scheduled_friday'    => true,
-                ], $wageDefaults)
+                ], $wageDefaults, $billingDefaults)
             );
 
             // 4. 6 ヶ月分の連絡帳記録 (週 3 日 → ~78 件)

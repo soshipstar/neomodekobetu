@@ -558,6 +558,10 @@ Route::prefix('staff')
         Route::delete('/job-placements/{placement}',      [App\Http\Controllers\Staff\TransitionSupportController::class, 'destroyPlacement']);
         Route::post  ('/job-placements/{placement}/contacts', [App\Http\Controllers\Staff\TransitionSupportController::class, 'storeContact']);
 
+        // --- 国保連請求 ---
+        Route::get('/billing/summary',   [App\Http\Controllers\Staff\BillingController::class, 'summary']);
+        Route::get('/billing/csv',       [App\Http\Controllers\Staff\BillingController::class, 'downloadCsv']);
+
         // --- 一括登録 ---
         Route::post('/bulk-register/parse', [App\Http\Controllers\Staff\BulkRegisterController::class, 'parse']);
         Route::post('/bulk-register/execute', [App\Http\Controllers\Staff\BulkRegisterController::class, 'execute']);
