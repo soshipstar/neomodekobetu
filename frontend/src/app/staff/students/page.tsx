@@ -165,6 +165,10 @@ export default function StudentsPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('active');
   const debouncedSearch = useDebounce(search, 300);
+  // 年齢計算の基準時刻をマウント時に1度だけ固定する。
+  // render 中の Date.now() 直接呼び出しは react-hooks/impure-function-during-render で
+  // エラーになる (戻り値が render 毎に変わる純粋でない関数のため)。
+  const [pageRenderedAt] = useState(() => Date.now());
 
   const [sortKey, setSortKey] = useState<string>('id');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
@@ -276,9 +280,12 @@ export default function StudentsPage() {
         case 'student_name': va = a.student_name; vb = b.student_name; break;
         case 'birth_date': va = a.birth_date; vb = b.birth_date; break;
         case 'age': {
-          const now = Date.now();
-          va = a.birth_date ? now - new Date(a.birth_date).getTime() : 0;
-          vb = b.birth_date ? now - new Date(b.birth_date).getTime() : 0;
+          // 年齢ソートは「誕生日が古い = 年上」と等価なので、Date.now() を
+          // 引かなくてもソート順は変わらない。render 中の impure 関数呼び出し
+          // (react-hooks/impure-function-during-render) を回避するため
+          // birth_date のタイムスタンプ昇順 (=年齢降順) を符号反転で表現する。
+          va = a.birth_date ? -new Date(a.birth_date).getTime() : 0;
+          vb = b.birth_date ? -new Date(b.birth_date).getTime() : 0;
           break;
         }
         case 'grade_level': va = a.grade_level; vb = b.grade_level; break;
@@ -407,7 +414,7 @@ export default function StudentsPage() {
             <tbody>
               {sortedStudents.map((student) => {
                 const age = student.birth_date
-                  ? Math.floor((Date.now() - new Date(student.birth_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+                  ? Math.floor((pageRenderedAt - new Date(student.birth_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
                   : null;
                 return (
                   <tr key={student.id} className="border-b border-[var(--neutral-stroke-3)] hover:bg-[var(--neutral-background-3)] transition-colors">

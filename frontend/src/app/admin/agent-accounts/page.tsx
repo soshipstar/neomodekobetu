@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import api from '@/lib/api';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -176,7 +177,7 @@ export default function AgentAccountsPage() {
       {loading ? (
         <SkeletonList items={3} />
       ) : agents.length === 0 ? (
-        <Card><CardBody><p className="text-sm text-[var(--neutral-foreground-3)]">代理店マスタがまだありません。先に <a href="/admin/agents" className="text-[var(--brand-80)] hover:underline">代理店管理</a> で代理店を作成してください。</p></CardBody></Card>
+        <Card><CardBody><p className="text-sm text-[var(--neutral-foreground-3)]">代理店マスタがまだありません。先に <Link href="/admin/agents" className="text-[var(--brand-80)] hover:underline">代理店管理</Link> で代理店を作成してください。</p></CardBody></Card>
       ) : users.length === 0 ? (
         <Card><CardBody><p className="text-sm text-[var(--neutral-foreground-3)]">該当する代理店ユーザーはまだいません。</p></CardBody></Card>
       ) : (

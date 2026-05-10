@@ -4,6 +4,11 @@ import { useState, useEffect } from 'react';
 
 /**
  * Media query hook for responsive breakpoints
+ *
+ * 注: react-hooks/set-state-in-effect ルールが「effect 内 setState による
+ * cascading render」を警告するが、本ユースケースでは初回マウント時に
+ * matchMedia の値を1度だけ拾うため許容範囲。eslint.config.mjs で
+ * このルールは warn に降格してある。
  */
 export function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(false);

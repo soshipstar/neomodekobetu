@@ -161,10 +161,10 @@ jobs:
         working-directory: frontend
         run: npx tsc --noEmit
 
-      # ESLint は既存コードベースに pre-existing 70 errors / 98 warnings が
-      # 蓄積しているため、CI 初期は advisory (失敗してもジョブ全体は赤くしない)。
-      # 段階的に修正しながら、最終的に continue-on-error を外して enforce する。
-      - name: ESLint (advisory)
+      # ESLint: 真のバグ系ルール (refs / immutability / impure-function-during-render)
+      # を error として強制ゲート化。一部の React 19 strict ルール
+      # (set-state-in-effect / preserve-manual-memoization) と no-explicit-any は
+      # eslint.config.mjs で warning に降格してあり、161 warnings は段階的に解消する。
+      - name: ESLint
         working-directory: frontend
-        continue-on-error: true
         run: npm run lint
