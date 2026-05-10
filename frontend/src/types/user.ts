@@ -44,6 +44,23 @@ export interface Student {
   contract_start_date: string | null;
   contract_end_date: string | null;
   usage_limit_date: string | null;
+  // Phase A: 工賃計算 (就労 A/B)
+  wage_calculation_type: 'hourly' | 'piece_rate' | 'fixed' | null;
+  hourly_rate: string | number | null;
+  piece_rate_unit: string | null;
+  piece_rate_amount: string | number | null;
+  paid_leave_days: string | number | null;
+  employment_status: string | null;
+  // Phase D: 国保連請求
+  beneficiary_number: string | null;
+  municipality_code: string | null;
+  disability_category: string | null;
+  disability_grade: string | null;
+  monthly_copay_cap: number | null;
+  copay_management_provider: string | null;
+  certificate_issued_date: string | null;
+  certificate_expiry_date: string | null;
+  monthly_usage_days_cap: number | null;
   last_login_at: string | null;
   created_at: string;
   updated_at: string;

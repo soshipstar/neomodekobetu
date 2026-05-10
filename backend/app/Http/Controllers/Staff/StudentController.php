@@ -114,6 +114,23 @@ class StudentController extends Controller
             'contract_start_date'    => 'nullable|date',
             'contract_end_date'      => 'nullable|date|after_or_equal:contract_start_date',
             'usage_limit_date'       => 'nullable|date',
+            // Phase A: 工賃計算 (就労 A/B)
+            'wage_calculation_type'  => 'nullable|string|in:hourly,piece_rate,fixed',
+            'hourly_rate'            => 'nullable|numeric|min:0|max:9999',
+            'piece_rate_unit'        => 'nullable|string|max:50',
+            'piece_rate_amount'      => 'nullable|numeric|min:0|max:9999',
+            'paid_leave_days'        => 'nullable|numeric|min:0|max:40',
+            'employment_status'      => 'nullable|string|in:full_time,part_time,trainee',
+            // Phase D: 国保連請求
+            'beneficiary_number'         => 'nullable|string|max:20',
+            'municipality_code'          => 'nullable|string|max:10',
+            'disability_category'        => 'nullable|string|in:intellectual,physical,mental,developmental,dual',
+            'disability_grade'           => 'nullable|string|max:30',
+            'monthly_copay_cap'          => 'nullable|integer|min:0|max:99999999',
+            'copay_management_provider'  => 'nullable|string|max:50',
+            'certificate_issued_date'    => 'nullable|date',
+            'certificate_expiry_date'    => 'nullable|date',
+            'monthly_usage_days_cap'     => 'nullable|integer|min:0|max:31',
         ]);
 
         $status = $validated['status'] ?? 'active';
@@ -212,6 +229,24 @@ class StudentController extends Controller
             'contract_start_date'    => 'nullable|date',
             'contract_end_date'      => 'nullable|date|after_or_equal:contract_start_date',
             'usage_limit_date'       => 'nullable|date',
+            // Phase A: 工賃計算 (就労 A/B)
+            'wage_calculation_type'  => 'nullable|string|in:hourly,piece_rate,fixed',
+            'hourly_rate'            => 'nullable|numeric|min:0|max:9999',
+            'piece_rate_unit'        => 'nullable|string|max:50',
+            'piece_rate_amount'      => 'nullable|numeric|min:0|max:9999',
+            'paid_leave_days'        => 'nullable|numeric|min:0|max:40',
+            'employment_status'      => 'nullable|string|in:full_time,part_time,trainee',
+            // Phase D: 国保連請求
+            'beneficiary_number'         => 'nullable|string|max:20',
+            'municipality_code'          => 'nullable|string|max:10',
+            'disability_category'        => 'nullable|string|in:intellectual,physical,mental,developmental,dual',
+            'disability_grade'           => 'nullable|string|max:30',
+            'monthly_copay_cap'          => 'nullable|integer|min:0|max:99999999',
+            'copay_management_provider'  => 'nullable|string|max:50',
+            'certificate_issued_date'    => 'nullable|date',
+            'certificate_expiry_date'    => 'nullable|date',
+            'monthly_usage_days_cap'     => 'nullable|integer|min:0|max:31',
+            'notes'                  => 'nullable|string|max:5000',
         ]);
 
         // 学年再計算
