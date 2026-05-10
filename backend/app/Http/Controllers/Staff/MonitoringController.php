@@ -178,6 +178,9 @@ class MonitoringController extends Controller
             return $record;
         });
 
+        // Phase C: モニタリング作成後に計画の next_monitoring_due_date を更新
+        app(\App\Services\PlanCycleService::class)->bumpNextMonitoringDate($record);
+
         $message = $record->is_draft
             ? 'モニタリング表を下書き保存しました。（保護者には非公開）'
             : 'モニタリング表を提出しました。（保護者にも公開）';

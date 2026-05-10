@@ -116,7 +116,13 @@ class SupportPlanController extends Controller
         // 達成時期のデフォルト値を自動設定
         $validated = $this->fillDefaultDates($validated);
 
-        $plan = DB::transaction(function () use ($request, $student, $validated) {
+        // Phase C: サイクル番号 / 期間 / 期日を自動算出
+        $cycleService = app(\App\Services\PlanCycleService::class);
+        $cycleFields = $cycleService->fillCycleFields([
+            'created_date' => $validated['created_date'],
+        ], $student->id);
+
+        $plan = DB::transaction(function () use ($request, $student, $validated, $cycleFields) {
             $managerName = $validated['manager_name'] ?? $validated['consent_name'] ?? null;
             $plan = IndividualSupportPlan::create([
                 'student_id'          => $student->id,
@@ -136,6 +142,12 @@ class SupportPlanController extends Controller
                 'is_official'         => ($validated['status'] ?? 'draft') === 'official',
                 'created_by'          => $request->user()->id,
                 'service_type_data'   => $this->sanitizePlanServiceTypeData($validated['service_type_data'] ?? null),
+                // Phase C
+                'cycle_number'             => $cycleFields['cycle_number'] ?? null,
+                'plan_period_start'        => $cycleFields['plan_period_start'] ?? null,
+                'plan_period_end'          => $cycleFields['plan_period_end'] ?? null,
+                'next_monitoring_due_date' => $cycleFields['next_monitoring_due_date'] ?? null,
+                'next_plan_due_date'       => $cycleFields['next_plan_due_date'] ?? null,
             ]);
 
             // 明細を保存

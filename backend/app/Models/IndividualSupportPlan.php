@@ -49,6 +49,12 @@ class IndividualSupportPlan extends Model
         'source_monitoring_id',
         'basis_generated_at',
         'service_type_data',
+        // Phase C: サイクル管理
+        'cycle_number',
+        'plan_period_start',
+        'plan_period_end',
+        'next_monitoring_due_date',
+        'next_plan_due_date',
     ];
 
     protected function casts(): array
@@ -56,6 +62,10 @@ class IndividualSupportPlan extends Model
         return [
             'created_date' => 'date:Y-m-d',
             'consent_date' => 'date:Y-m-d',
+            'plan_period_start' => 'date:Y-m-d',
+            'plan_period_end'   => 'date:Y-m-d',
+            'next_monitoring_due_date' => 'date:Y-m-d',
+            'next_plan_due_date'       => 'date:Y-m-d',
             'is_draft' => 'boolean',
             'is_official' => 'boolean',
             'staff_signature_date' => 'date:Y-m-d',
