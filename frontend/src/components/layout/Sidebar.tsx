@@ -18,7 +18,7 @@ interface NavLink {
   href: string;
   icon: string; // Material Symbols icon name
   badge?: number;
-  visibility?: 'all' | 'master_only' | 'non_master' | 'company_admin_or_master';
+  visibility?: 'all' | 'master_only' | 'non_master' | 'company_admin_or_master' | 'employment_only' | 'after_school_only' | 'transition_only';
 }
 
 interface NavDivider {
@@ -52,6 +52,7 @@ const staffNav: NavItem[] = [
   { type: 'link', label: '面談管理', href: '/staff/meetings', icon: 'event' },
   { type: 'link', label: '個別支援計画', href: '/staff/kobetsu-plan', icon: 'folder_special' },
   { type: 'link', label: 'モニタリング', href: '/staff/kobetsu-monitoring', icon: 'monitoring' },
+  { type: 'link', label: '工賃管理', href: '/staff/wage-management', icon: 'payments', visibility: 'employment_only' },
   { type: 'divider', label: '提出物' },
   { type: 'link', label: '生徒提出物', href: '/staff/submissions', icon: 'assignment_turned_in' },
   { type: 'link', label: '提出物管理', href: '/staff/submission-management', icon: 'folder_open' },
@@ -196,7 +197,7 @@ export function Sidebar() {
   const { user } = useAuthStore();
   const { logout } = useAuth();
   const isDesktop = useIsDesktop();
-  const { terms } = useWorkspace();
+  const { terms, serviceType } = useWorkspace();
 
   if (!user) return null;
 
@@ -279,6 +280,7 @@ function SidebarContent({
   onToggle,
   onLogout,
 }: SidebarContentProps) {
+  const { serviceType } = useWorkspace();
   const userTypeLabel: Record<string, string> = {
     admin: '管理者',
     staff: 'スタッフ',
@@ -351,6 +353,11 @@ function SidebarContent({
             if (vis === 'master_only' && !isMaster) return false;
             if (vis === 'non_master' && isMaster) return false;
             if (vis === 'company_admin_or_master' && !isMaster && !isCompanyAdmin) return false;
+            // serviceType-based visibility
+            const isEmployment = serviceType === 'employment_a' || serviceType === 'employment_b';
+            if (vis === 'employment_only' && !isEmployment) return false;
+            if (vis === 'after_school_only' && serviceType !== 'after_school') return false;
+            if (vis === 'transition_only' && serviceType !== 'transition') return false;
             return true;
           }).map((item, index) => {
             if (item.type === 'divider') {

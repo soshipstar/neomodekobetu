@@ -532,6 +532,14 @@ Route::prefix('staff')
         Route::post('/daily-routines/reorder', [App\Http\Controllers\Staff\DailyRoutineController::class, 'reorder']); // (#26)
         Route::post('/daily-routines/batch-save', [App\Http\Controllers\Staff\DailyRoutineController::class, 'batchSave']);
 
+        // --- 工賃管理 (就労 A/B) ---
+        Route::get('/wage-periods', [App\Http\Controllers\Staff\WageController::class, 'index']);
+        Route::post('/wage-periods/calculate', [App\Http\Controllers\Staff\WageController::class, 'calculate']);
+        Route::get('/wage-periods/{period}', [App\Http\Controllers\Staff\WageController::class, 'show']);
+        Route::post('/wage-periods/{period}/finalize', [App\Http\Controllers\Staff\WageController::class, 'finalize']);
+        Route::post('/wage-periods/{period}/mark-paid', [App\Http\Controllers\Staff\WageController::class, 'markPaid']);
+        Route::put('/wage-records/{record}', [App\Http\Controllers\Staff\WageController::class, 'updateRecord']);
+
         // --- 一括登録 ---
         Route::post('/bulk-register/parse', [App\Http\Controllers\Staff\BulkRegisterController::class, 'parse']);
         Route::post('/bulk-register/execute', [App\Http\Controllers\Staff\BulkRegisterController::class, 'execute']);

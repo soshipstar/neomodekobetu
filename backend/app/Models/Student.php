@@ -55,6 +55,13 @@ class Student extends Model
         'contract_start_date',
         'contract_end_date',
         'usage_limit_date',
+        // Phase A-1: 就労 A/B 工賃計算用
+        'wage_calculation_type',
+        'hourly_rate',
+        'piece_rate_unit',
+        'piece_rate_amount',
+        'paid_leave_days',
+        'employment_status',
     ];
 
     protected $hidden = [
@@ -90,6 +97,10 @@ class Student extends Model
             'contract_start_date' => 'date:Y-m-d',
             'contract_end_date'   => 'date:Y-m-d',
             'usage_limit_date'    => 'date:Y-m-d',
+            // Phase A-1: 工賃計算
+            'hourly_rate'        => 'decimal:2',
+            'piece_rate_amount'  => 'decimal:2',
+            'paid_leave_days'    => 'decimal:1',
         ];
     }
 

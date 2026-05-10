@@ -158,9 +158,31 @@ class EmploymentDemoSeeder extends Seeder
                 ]
             );
 
+            // 工賃計算用のデフォルト値 (種別ごとに想定値を入れる)
+            $wageDefaults = match ($serviceType) {
+                ServiceTypeRegistry::EMPLOYMENT_A => [
+                    'wage_calculation_type' => 'hourly',
+                    'hourly_rate'           => 1100,  // A型は最低賃金以上
+                    'employment_status'     => 'part_time',
+                    'paid_leave_days'       => 10,
+                ],
+                ServiceTypeRegistry::EMPLOYMENT_B => [
+                    'wage_calculation_type' => 'hourly',
+                    'hourly_rate'           => 250,   // B型平均工賃 ~250円/h
+                    'employment_status'     => null,
+                    'paid_leave_days'       => 0,
+                ],
+                default => [
+                    'wage_calculation_type' => null,
+                    'hourly_rate'           => null,
+                    'employment_status'     => null,
+                    'paid_leave_days'       => 0,
+                ],
+            };
+
             $student = Student::firstOrCreate(
                 ['username' => $u['student_username']],
-                [
+                array_merge([
                     'classroom_id'        => $classroom->id,
                     'student_name'        => $u['student_name'],
                     'username'            => $u['student_username'],
@@ -176,7 +198,7 @@ class EmploymentDemoSeeder extends Seeder
                     'scheduled_wednesday' => true,
                     'scheduled_thursday'  => true,
                     'scheduled_friday'    => true,
-                ]
+                ], $wageDefaults)
             );
 
             // 4. 6 ヶ月分の連絡帳記録 (週 3 日 → ~78 件)
