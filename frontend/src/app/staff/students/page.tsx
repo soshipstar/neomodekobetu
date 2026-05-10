@@ -52,6 +52,27 @@ interface Student {
   desired_saturday: boolean;
   desired_sunday: boolean;
   waiting_notes: string | null;
+  // Phase L
+  contract_start_date: string | null;
+  contract_end_date:   string | null;
+  usage_limit_date:    string | null;
+  // Phase D
+  beneficiary_number:        string | null;
+  municipality_code:         string | null;
+  disability_category:       string | null;
+  disability_grade:          string | null;
+  monthly_copay_cap:         number | null;
+  copay_management_provider: string | null;
+  certificate_issued_date:   string | null;
+  certificate_expiry_date:   string | null;
+  monthly_usage_days_cap:    number | null;
+  // Phase A
+  wage_calculation_type: 'hourly' | 'piece_rate' | 'fixed' | null;
+  hourly_rate:           string | number | null;
+  piece_rate_unit:       string | null;
+  piece_rate_amount:     string | number | null;
+  paid_leave_days:       string | number | null;
+  employment_status:     string | null;
 }
 
 interface Guardian {
@@ -88,6 +109,27 @@ interface StudentForm {
   desired_saturday: boolean;
   desired_sunday: boolean;
   waiting_notes: string;
+  // Phase L: 契約期間 / 利用期限 (就労 A/B/移行)
+  contract_start_date: string;
+  contract_end_date: string;
+  usage_limit_date: string;
+  // Phase D: 国保連請求情報 (全種別)
+  beneficiary_number: string;
+  municipality_code: string;
+  disability_category: string;
+  disability_grade: string;
+  monthly_copay_cap: number;
+  copay_management_provider: string;
+  certificate_issued_date: string;
+  certificate_expiry_date: string;
+  monthly_usage_days_cap: number;
+  // Phase A: 工賃計算 (就労 A/B)
+  wage_calculation_type: string;
+  hourly_rate: number;
+  piece_rate_unit: string;
+  piece_rate_amount: number;
+  paid_leave_days: number;
+  employment_status: string;
 }
 
 const emptyForm: StudentForm = {
@@ -118,6 +160,24 @@ const emptyForm: StudentForm = {
   desired_saturday: false,
   desired_sunday: false,
   waiting_notes: '',
+  contract_start_date: '',
+  contract_end_date: '',
+  usage_limit_date: '',
+  beneficiary_number: '',
+  municipality_code: '',
+  disability_category: '',
+  disability_grade: '',
+  monthly_copay_cap: 9300,
+  copay_management_provider: '',
+  certificate_issued_date: '',
+  certificate_expiry_date: '',
+  monthly_usage_days_cap: 23,
+  wage_calculation_type: '',
+  hourly_rate: 0,
+  piece_rate_unit: '',
+  piece_rate_amount: 0,
+  paid_leave_days: 0,
+  employment_status: '',
 };
 
 const GRADE_LABELS: Record<string, string> = {
@@ -327,6 +387,24 @@ export default function StudentsPage() {
       desired_saturday: student.desired_saturday,
       desired_sunday: student.desired_sunday,
       waiting_notes: student.waiting_notes || '',
+      contract_start_date: toDateStr(student.contract_start_date),
+      contract_end_date:   toDateStr(student.contract_end_date),
+      usage_limit_date:    toDateStr(student.usage_limit_date),
+      beneficiary_number:        student.beneficiary_number ?? '',
+      municipality_code:         student.municipality_code ?? '',
+      disability_category:       student.disability_category ?? '',
+      disability_grade:          student.disability_grade ?? '',
+      monthly_copay_cap:         student.monthly_copay_cap ?? 9300,
+      copay_management_provider: student.copay_management_provider ?? '',
+      certificate_issued_date:   toDateStr(student.certificate_issued_date),
+      certificate_expiry_date:   toDateStr(student.certificate_expiry_date),
+      monthly_usage_days_cap:    student.monthly_usage_days_cap ?? 23,
+      wage_calculation_type: student.wage_calculation_type ?? '',
+      hourly_rate:           Number(student.hourly_rate ?? 0),
+      piece_rate_unit:       student.piece_rate_unit ?? '',
+      piece_rate_amount:     Number(student.piece_rate_amount ?? 0),
+      paid_leave_days:       Number(student.paid_leave_days ?? 0),
+      employment_status:     student.employment_status ?? '',
     });
     setEditModal(true);
   };
@@ -493,7 +571,9 @@ function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel
   onDelete?: () => void;
   studentId?: number;
 }) {
-  const { terms } = useWorkspace();
+  const { terms, serviceType } = useWorkspace();
+  const isEmployment = serviceType === 'employment_a' || serviceType === 'employment_b';
+  const isTransition = serviceType === 'transition';
   const inputCls = 'block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]';
 
   const handlePrintLogin = () => {
@@ -665,6 +745,167 @@ function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel
                 className={inputCls} placeholder="変更する場合のみ入力" />
               <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">※変更しない場合は空欄</p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* === 契約・利用期限 (就労 A/B/移行 のみ) === */}
+      {(isEmployment || isTransition) && (
+        <div className="rounded-lg border border-[var(--neutral-stroke-2)] p-3">
+          <h3 className="mb-3 text-sm font-semibold text-[var(--brand-70)]">契約・利用期間</h3>
+          <div className="space-y-3">
+            {isEmployment && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">契約開始日</label>
+                  <input type="date" value={form.contract_start_date} onChange={(e) => updateField('contract_start_date', e.target.value)} className={inputCls} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">契約終了日</label>
+                  <input type="date" value={form.contract_end_date} onChange={(e) => updateField('contract_end_date', e.target.value)} className={inputCls} />
+                </div>
+              </div>
+            )}
+            {isTransition && (
+              <div>
+                <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">利用期限 (通常 開始から2年)</label>
+                <input type="date" value={form.usage_limit_date} onChange={(e) => updateField('usage_limit_date', e.target.value)} className={inputCls} />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* === 受給者証・請求情報 (全種別共通) === */}
+      <div className="rounded-lg border border-[var(--neutral-stroke-2)] p-3">
+        <h3 className="mb-3 text-sm font-semibold text-[var(--brand-70)]">受給者証・請求情報</h3>
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">受給者証番号</label>
+              <input value={form.beneficiary_number} onChange={(e) => updateField('beneficiary_number', e.target.value)} className={inputCls} placeholder="1410012345" maxLength={20} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">支給市町村コード</label>
+              <input value={form.municipality_code} onChange={(e) => updateField('municipality_code', e.target.value)} className={inputCls} placeholder="141305" maxLength={10} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">障害種別</label>
+              <select value={form.disability_category} onChange={(e) => updateField('disability_category', e.target.value)} className={inputCls}>
+                <option value="">選択</option>
+                <option value="intellectual">知的</option>
+                <option value="physical">身体</option>
+                <option value="mental">精神</option>
+                <option value="developmental">発達</option>
+                <option value="dual">重複</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">障害支援区分</label>
+              <select value={form.disability_grade} onChange={(e) => updateField('disability_grade', e.target.value)} className={inputCls}>
+                <option value="">未設定</option>
+                <option value="区分1">区分1</option>
+                <option value="区分2">区分2</option>
+                <option value="区分3">区分3</option>
+                <option value="区分4">区分4</option>
+                <option value="区分5">区分5</option>
+                <option value="区分6">区分6</option>
+                <option value="非該当">非該当</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">月額負担上限額</label>
+              <select value={form.monthly_copay_cap} onChange={(e) => updateField('monthly_copay_cap', Number(e.target.value))} className={inputCls}>
+                <option value={0}>0 円 (生活保護)</option>
+                <option value={4600}>4,600 円 (低所得)</option>
+                <option value={9300}>9,300 円 (一般1)</option>
+                <option value={37200}>37,200 円 (一般2)</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">上限管理事業所</label>
+              <select value={form.copay_management_provider} onChange={(e) => updateField('copay_management_provider', e.target.value)} className={inputCls}>
+                <option value="">未設定</option>
+                <option value="自事業所">自事業所</option>
+                <option value="別事業所">別事業所</option>
+                <option value="上限管理対象外">上限管理対象外</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">受給者証 発行日</label>
+              <input type="date" value={form.certificate_issued_date} onChange={(e) => updateField('certificate_issued_date', e.target.value)} className={inputCls} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">受給者証 有効期限</label>
+              <input type="date" value={form.certificate_expiry_date} onChange={(e) => updateField('certificate_expiry_date', e.target.value)} className={inputCls} />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">月利用日数上限 (日)</label>
+            <input type="number" min={0} max={31} value={form.monthly_usage_days_cap} onChange={(e) => updateField('monthly_usage_days_cap', Number(e.target.value))} className={inputCls} />
+          </div>
+        </div>
+      </div>
+
+      {/* === 工賃計算 (就労 A/B のみ) === */}
+      {isEmployment && (
+        <div className="rounded-lg border border-[var(--neutral-stroke-2)] p-3">
+          <h3 className="mb-3 text-sm font-semibold text-[var(--brand-70)]">
+            工賃計算設定 (就労 {serviceType === 'employment_a' ? 'A型' : 'B型'})
+          </h3>
+          <div className="space-y-3">
+            <div>
+              <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">計算方式</label>
+              <select value={form.wage_calculation_type} onChange={(e) => updateField('wage_calculation_type', e.target.value)} className={inputCls}>
+                <option value="">未設定</option>
+                <option value="hourly">時給制</option>
+                <option value="piece_rate">出来高制</option>
+                <option value="fixed">固定制</option>
+              </select>
+            </div>
+            {(form.wage_calculation_type === 'hourly' || serviceType === 'employment_a') && (
+              <div>
+                <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">
+                  時給 (円){serviceType === 'employment_a' && ' ※最低賃金以上'}
+                </label>
+                <input type="number" min={0} max={9999} value={form.hourly_rate} onChange={(e) => updateField('hourly_rate', Number(e.target.value))} className={inputCls} />
+              </div>
+            )}
+            {form.wage_calculation_type === 'piece_rate' && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">出来高単位</label>
+                  <input value={form.piece_rate_unit} onChange={(e) => updateField('piece_rate_unit', e.target.value)} className={inputCls} placeholder="例: 1袋, 1個" />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">出来高単価 (円)</label>
+                  <input type="number" min={0} max={9999} value={form.piece_rate_amount} onChange={(e) => updateField('piece_rate_amount', Number(e.target.value))} className={inputCls} />
+                </div>
+              </div>
+            )}
+            {serviceType === 'employment_a' && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">雇用形態</label>
+                  <select value={form.employment_status} onChange={(e) => updateField('employment_status', e.target.value)} className={inputCls}>
+                    <option value="">未設定</option>
+                    <option value="full_time">正社員</option>
+                    <option value="part_time">パート・アルバイト</option>
+                    <option value="trainee">訓練生</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">有給休暇 残日数</label>
+                  <input type="number" step="0.5" min={0} max={40} value={form.paid_leave_days} onChange={(e) => updateField('paid_leave_days', Number(e.target.value))} className={inputCls} />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
