@@ -22,6 +22,8 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
+  # Actions UI から「Run workflow」ボタンで手動トリガー可能 (初回検証用)
+  workflow_dispatch:
 
 # 同じブランチで連続 push された場合は古い run をキャンセルしてリソース節約
 concurrency:
