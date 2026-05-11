@@ -36,22 +36,22 @@ return [
         'timeout' => (int) env('OPENAI_TIMEOUT', 60),
 
         // 全般のフォールバック (用途別に未設定の場合に使用)
-        'model'   => env('OPENAI_MODEL', 'gpt-4.1-mini'),
+        'model'   => env('OPENAI_MODEL', 'gpt-5.4-mini'),
 
-        // 用途別モデル (旧 soship での使い分けを踏襲)
+        // 用途別モデル (旧 soship での使い分けを踏襲、gpt-5 世代に更新)
         // 高品質 (構造化された長文生成):
-        'model_plan'        => env('OPENAI_MODEL_PLAN',        'gpt-4.1'),         // 個別支援計画 (legacy: gpt-5.2)
-        'model_monitoring'  => env('OPENAI_MODEL_MONITORING',  'gpt-4.1'),         // モニタリング (legacy: gpt-5.2)
-        'model_assessment'  => env('OPENAI_MODEL_ASSESSMENT',  'gpt-4.1'),         // アセスメント (legacy: gpt-5.2)
+        'model_plan'        => env('OPENAI_MODEL_PLAN',        'gpt-5.4'),         // 個別支援計画
+        'model_monitoring'  => env('OPENAI_MODEL_MONITORING',  'gpt-5.4'),         // モニタリング
+        'model_assessment'  => env('OPENAI_MODEL_ASSESSMENT',  'gpt-5.4'),         // アセスメント
         // 中品質 (テキスト生成、コスト重視):
-        'model_newsletter'  => env('OPENAI_MODEL_NEWSLETTER',  'gpt-4.1-mini'),    // ニュースレター
-        'model_renrakucho'  => env('OPENAI_MODEL_RENRAKUCHO',  'gpt-4.1-mini'),    // 連絡帳 補助
-        'model_meeting'     => env('OPENAI_MODEL_MEETING',     'gpt-4.1-mini'),    // 面談記録/希望抽出
-        'model_summary'     => env('OPENAI_MODEL_SUMMARY',     'gpt-4.1-mini'),    // 事業所評価サマリ等
+        'model_newsletter'  => env('OPENAI_MODEL_NEWSLETTER',  'gpt-5.4-mini'),    // ニュースレター
+        'model_renrakucho'  => env('OPENAI_MODEL_RENRAKUCHO',  'gpt-5.4-mini'),    // 連絡帳 補助
+        'model_meeting'     => env('OPENAI_MODEL_MEETING',     'gpt-5.4-mini'),    // 面談記録/希望抽出
+        'model_summary'     => env('OPENAI_MODEL_SUMMARY',     'gpt-5.4-mini'),    // 事業所評価サマリ等
         // 構造化抽出 (CSV/JSON 解析):
-        'model_extract'     => env('OPENAI_MODEL_EXTRACT',     'gpt-4o'),          // 一括登録 AI パース
+        'model_extract'     => env('OPENAI_MODEL_EXTRACT',     'gpt-5.4'),         // 一括登録 AI パース
         // 対話 (低レイテンシ):
-        'model_chatbot'     => env('OPENAI_MODEL_CHATBOT',     'gpt-4o-mini'),     // チャット応答
+        'model_chatbot'     => env('OPENAI_MODEL_CHATBOT',     'gpt-5-mini'),      // チャット応答
     ],
 
     'external_api' => [
