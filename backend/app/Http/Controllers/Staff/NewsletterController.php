@@ -743,7 +743,7 @@ PROMPT;
             }
             $client = \OpenAI::client($apiKey);
             $response = $client->chat()->create([
-                'model'    => 'gpt-5.4-mini-2026-03-17',
+                'model'    => 'gpt-5.4-2026-03-05',
                 'messages' => [
                     [
                         'role'    => 'system',
