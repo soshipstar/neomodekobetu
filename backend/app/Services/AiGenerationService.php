@@ -26,7 +26,7 @@ class AiGenerationService
         $startTime = microtime(true);
 
         $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
-            'model' => config('services.openai.model', 'gpt-4.1-mini'),
+            'model' => config('services.openai.model_plan', 'gpt-4.1-mini'),
             'messages' => [
                 [
                     'role' => 'system',
@@ -67,7 +67,7 @@ class AiGenerationService
         $startTime = microtime(true);
 
         $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
-            'model' => config('services.openai.model', 'gpt-4.1-mini'),
+            'model' => config('services.openai.model_monitoring', 'gpt-4.1-mini'),
             'messages' => [
                 [
                     'role' => 'system',
@@ -110,7 +110,7 @@ class AiGenerationService
         $startTime = microtime(true);
 
         $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
-            'model' => config('services.openai.model', 'gpt-4.1-mini'),
+            'model' => config('services.openai.model_newsletter', 'gpt-4.1-mini'),
             'messages' => [
                 [
                     'role' => 'system',
@@ -153,7 +153,7 @@ class AiGenerationService
         $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY"));
         $client = \OpenAI::client($apiKey);
         $response = $client->chat()->create([
-            'model' => config('services.openai.model', 'gpt-4.1-mini'),
+            'model' => config('services.openai.model_summary', 'gpt-4.1-mini'),
             'messages' => [
                 [
                     'role' => 'system',

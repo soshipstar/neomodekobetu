@@ -113,7 +113,7 @@ class AiGenerationController extends Controller
 
         try {
             $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
-                'model'    => 'gpt-4.1-mini',
+                'model'    => config('services.openai.model_plan'),
                 'messages' => [
                     [
                         'role'    => 'system',
@@ -154,7 +154,7 @@ class AiGenerationController extends Controller
             // 生成ログ保存
             AiGenerationLog::create([
                 'user_id'      => $request->user()->id,
-                'model'        => 'gpt-4.1-mini',
+                'model'        => config('services.openai.model_plan'),
                 'prompt_type'  => 'support_plan',
                 'input_tokens' => $response->usage->promptTokens ?? null,
                 'output_tokens' => $response->usage->completionTokens ?? null,
@@ -248,7 +248,7 @@ class AiGenerationController extends Controller
 
         try {
             $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
-                'model'    => 'gpt-4.1-mini',
+                'model'    => config('services.openai.model_monitoring'),
                 'messages' => [
                     [
                         'role'    => 'system',
@@ -277,7 +277,7 @@ class AiGenerationController extends Controller
 
             AiGenerationLog::create([
                 'user_id'      => $request->user()->id,
-                'model'        => 'gpt-4.1-mini',
+                'model'        => config('services.openai.model_monitoring'),
                 'prompt_type'  => 'monitoring',
                 'input_tokens' => $response->usage->promptTokens ?? null,
                 'output_tokens' => $response->usage->completionTokens ?? null,
@@ -327,7 +327,7 @@ class AiGenerationController extends Controller
 
         try {
             $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
-                'model'    => 'gpt-4.1-mini',
+                'model'    => config('services.openai.model_newsletter'),
                 'messages' => [
                     [
                         'role'    => 'system',
@@ -351,7 +351,7 @@ class AiGenerationController extends Controller
 
             AiGenerationLog::create([
                 'user_id'      => $request->user()->id,
-                'model'        => 'gpt-4.1-mini',
+                'model'        => config('services.openai.model_newsletter'),
                 'prompt_type'  => 'newsletter',
                 'input_tokens' => $response->usage->promptTokens ?? null,
                 'output_tokens' => $response->usage->completionTokens ?? null,

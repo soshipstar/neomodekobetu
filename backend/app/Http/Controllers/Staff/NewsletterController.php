@@ -743,7 +743,7 @@ PROMPT;
             }
             $client = \OpenAI::client($apiKey);
             $response = $client->chat()->create([
-                'model'    => 'gpt-4.1-mini',
+                'model'    => config('services.openai.model_newsletter'),
                 'messages' => [
                     [
                         'role'    => 'system',

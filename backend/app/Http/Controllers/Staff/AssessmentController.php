@@ -297,7 +297,7 @@ class AssessmentController extends Controller
             }
 
             $client = \OpenAI::client($apiKey);
-            $aiModel = 'gpt-4.1-mini';
+            $aiModel = config('services.openai.model_assessment');
             $totalInputTokens = 0;
             $totalOutputTokens = 0;
 

@@ -437,7 +437,7 @@ class SupportPlanController extends Controller
 
             $client = \OpenAI::client($apiKey);
             $response = $client->chat()->create([
-                'model'    => 'gpt-4.1-mini',
+                'model'    => config('services.openai.model_plan'),
                 'messages' => [
                     [
                         'role'    => 'system',
@@ -501,7 +501,7 @@ class SupportPlanController extends Controller
                 \App\Models\AiGenerationLog::create([
                     'user_id'           => $request->user()->id,
                     'generation_type'   => 'support_plan_edit',
-                    'model'             => 'gpt-4.1-mini',
+                    'model'             => config('services.openai.model_plan'),
                     'prompt_tokens'     => $response->usage->promptTokens ?? null,
                     'completion_tokens' => $response->usage->completionTokens ?? null,
                 ]);
@@ -769,7 +769,7 @@ class SupportPlanController extends Controller
 
             $client = \OpenAI::client($apiKey);
             $response = $client->chat()->create([
-                'model'    => 'gpt-4.1-mini',
+                'model'    => config('services.openai.model_plan'),
                 'messages' => [
                     [
                         'role'    => 'system',
@@ -829,7 +829,7 @@ class SupportPlanController extends Controller
                 \App\Models\AiGenerationLog::create([
                     'user_id'           => $request->user()->id,
                     'generation_type'   => 'support_plan_new',
-                    'model'             => 'gpt-4.1-mini',
+                    'model'             => config('services.openai.model_plan'),
                     'prompt_tokens'     => $response->usage->promptTokens ?? null,
                     'completion_tokens' => $response->usage->completionTokens ?? null,
                 ]);
@@ -1175,7 +1175,7 @@ class SupportPlanController extends Controller
 
             $client = \OpenAI::client($apiKey);
             $response = $client->chat()->create([
-                'model'    => 'gpt-4.1-mini',
+                'model'    => config('services.openai.model_plan'),
                 'messages' => [
                     [
                         'role'    => 'system',
@@ -1202,7 +1202,7 @@ class SupportPlanController extends Controller
             try {
                 \App\Models\AiGenerationLog::create([
                     'user_id'       => $request->user()->id,
-                    'model'         => 'gpt-4.1-mini',
+                    'model'         => config('services.openai.model_plan'),
                     'prompt_type'   => 'basis',
                     'input_tokens'  => $response->usage->promptTokens ?? null,
                     'output_tokens' => $response->usage->completionTokens ?? null,
@@ -1280,7 +1280,7 @@ class SupportPlanController extends Controller
 
             $client = \OpenAI::client($apiKey);
             $response = $client->chat()->create([
-                'model'    => 'gpt-4.1-mini',
+                'model'    => config('services.openai.model_plan'),
                 'messages' => [
                     [
                         'role'    => 'system',
@@ -1301,7 +1301,7 @@ class SupportPlanController extends Controller
             try {
                 \App\Models\AiGenerationLog::create([
                     'user_id'       => $request->user()->id,
-                    'model'         => 'gpt-4.1-mini',
+                    'model'         => config('services.openai.model_plan'),
                     'prompt_type'   => 'wish_from_interview',
                     'input_tokens'  => $response->usage->promptTokens ?? null,
                     'output_tokens' => $response->usage->completionTokens ?? null,

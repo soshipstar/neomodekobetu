@@ -488,7 +488,7 @@ class MonitoringController extends Controller
                     . "\"monitoring_comment\": \"評価コメント（150〜200字程度。連絡帳の記録を踏まえた具体的な評価と、今後の支援の方向性を含める）\"}";
 
                 $response = $client->chat()->create([
-                    'model'    => 'gpt-4.1-mini',
+                    'model'    => config('services.openai.model_monitoring'),
                     'messages' => [
                         [
                             'role'    => 'system',
