@@ -75,8 +75,13 @@ class GuardianProfileController extends Controller
             ], 422);
         }
 
+        // R-pw-c: 保護者が自分でパスワードを変更したら、スタッフ画面の
+        // 「現在のパスワード」表示用 (password_plain) を NULL に落とす。
+        // 残しておくとスタッフが古い (= 既に無効な) 平文を見て誤って保護者に
+        // 案内してしまう事故が起きる。再発行はスタッフ側の編集画面で行う。
         $user->update([
-            'password' => Hash::make($request->new_password),
+            'password'       => Hash::make($request->new_password),
+            'password_plain' => null,
         ]);
 
         return response()->json([
