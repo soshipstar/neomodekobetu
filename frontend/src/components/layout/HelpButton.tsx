@@ -197,14 +197,16 @@ export function HelpButton() {
 
   return (
     <>
-      {/* Toggle Button (draggable) */}
+      {/* Toggle Button (draggable)
+          R5: スマホではドラッグでの移動が touch + scroll の競合により安定しないため、
+          md (768px) 未満では非表示にする。デスクトップでは従来通りドラッグ可能。 */}
       <button
         ref={btnRef}
         data-help-toggle
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        className={`fixed z-50 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br ${accentGradient} text-white shadow-lg transition-shadow hover:shadow-xl lg:h-14 lg:w-14 touch-none select-none cursor-grab active:cursor-grabbing`}
+        className={`fixed z-50 hidden h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br ${accentGradient} text-white shadow-lg transition-shadow hover:shadow-xl md:flex lg:h-14 lg:w-14 touch-none select-none cursor-grab active:cursor-grabbing`}
         style={btnPos ? { left: btnPos.x, top: btnPos.y, right: 'auto', bottom: 'auto' } : { bottom: '6rem', right: '1rem' }}
         aria-label="ヘルプを開く（ドラッグで移動可能）"
       >
