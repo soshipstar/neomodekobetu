@@ -24,7 +24,9 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $guardianId = $user->id;
-        $classroomId = $user->classroom_id;
+        // 保護者が複数教室の児童を持つ場合に対応するため、user.classroom_id (単一) ではなく
+        // 児童経由で取得した教室IDの集合を使う (R2: 保護者×複数教室紐づけ)
+        $classroomIds = $user->accessibleClassroomIds();
         $today = Carbon::today()->toDateString();
         $oneWeekLater = Carbon::today()->addDays(7)->toDateString();
         $oneMonthLater = Carbon::today()->addMonth()->toDateString();
@@ -399,14 +401,14 @@ class DashboardController extends Controller
         // 事業所評価アンケート
         // ==============================
         $pendingFacilityEvaluations = [];
-        if ($classroomId) {
+        if (! empty($classroomIds)) {
             $evals = DB::table('facility_evaluation_periods')
                 ->leftJoin('facility_guardian_evaluations', function ($join) use ($guardianId) {
                     $join->on('facility_evaluation_periods.id', '=', 'facility_guardian_evaluations.period_id')
                          ->where('facility_guardian_evaluations.guardian_id', '=', $guardianId);
                 })
                 ->where('facility_evaluation_periods.status', 'collecting')
-                ->where('facility_evaluation_periods.classroom_id', $classroomId)
+                ->whereIn('facility_evaluation_periods.classroom_id', $classroomIds)
                 ->where(function ($q) {
                     $q->where('facility_guardian_evaluations.is_submitted', false)
                       ->orWhereNull('facility_guardian_evaluations.is_submitted');
@@ -432,7 +434,7 @@ class DashboardController extends Controller
         // カレンダーデータ
         // ==============================
         $calendar = $this->buildCalendarData(
-            $guardianId, $classroomId, $studentIds, $students,
+            $guardianId, $classroomIds, $studentIds, $students,
             $year, $month, $firstDay, $lastDay
         );
 
@@ -463,10 +465,13 @@ class DashboardController extends Controller
 
     /**
      * カレンダーデータを構築 (legacy dashboard.php と同等)
+     *
+     * R2: $classroomIds は保護者の児童経由で取得した教室IDの配列。
+     * 1保護者が複数教室の児童を持つケースに対応するため `whereIn` で取得する。
      */
     private function buildCalendarData(
         int $guardianId,
-        ?int $classroomId,
+        array $classroomIds,
         array $studentIds,
         $students,
         int $year,
@@ -479,8 +484,8 @@ class DashboardController extends Controller
         $holidayQuery = DB::table('holidays')
             ->whereRaw('EXTRACT(YEAR FROM holiday_date) = ?', [$year])
             ->whereRaw('EXTRACT(MONTH FROM holiday_date) = ?', [$month]);
-        if ($classroomId) {
-            $holidayQuery->where('classroom_id', $classroomId);
+        if (! empty($classroomIds)) {
+            $holidayQuery->whereIn('classroom_id', $classroomIds);
         }
         foreach ($holidayQuery->get() as $h) {
             $holidays[$h->holiday_date] = [
@@ -494,8 +499,8 @@ class DashboardController extends Controller
         $eventQuery = DB::table('events')
             ->whereRaw('EXTRACT(YEAR FROM event_date) = ?', [$year])
             ->whereRaw('EXTRACT(MONTH FROM event_date) = ?', [$month]);
-        if ($classroomId) {
-            $eventQuery->where('classroom_id', $classroomId);
+        if (! empty($classroomIds)) {
+            $eventQuery->whereIn('classroom_id', $classroomIds);
         }
         foreach ($eventQuery->get() as $ev) {
             $events[$ev->event_date][] = [
@@ -510,10 +515,10 @@ class DashboardController extends Controller
 
         // 学校休業日活動
         $schoolHolidayActivities = [];
-        if ($classroomId) {
+        if (! empty($classroomIds)) {
             try {
                 $shaRows = DB::table('school_holiday_activities')
-                    ->where('classroom_id', $classroomId)
+                    ->whereIn('classroom_id', $classroomIds)
                     ->whereRaw('EXTRACT(YEAR FROM activity_date) = ?', [$year])
                     ->whereRaw('EXTRACT(MONTH FROM activity_date) = ?', [$month])
                     ->pluck('activity_date');

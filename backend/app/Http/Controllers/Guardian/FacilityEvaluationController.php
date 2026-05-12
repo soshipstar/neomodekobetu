@@ -15,14 +15,17 @@ class FacilityEvaluationController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $classroomId = $user->classroom_id;
+
+        // R2: 保護者が複数教室の児童を持つ場合、児童経由で取得した教室IDの集合で
+        // 評価期間を引き当てる。
+        $classroomIds = $user->accessibleClassroomIds();
 
         // 収集中の評価期間を取得（教室でフィルタ）
         $periodQuery = DB::table('facility_evaluation_periods')
             ->where('status', 'collecting');
 
-        if ($classroomId) {
-            $periodQuery->where('classroom_id', $classroomId);
+        if (! empty($classroomIds)) {
+            $periodQuery->whereIn('classroom_id', $classroomIds);
         }
 
         $period = $periodQuery->orderByDesc('fiscal_year')->first();

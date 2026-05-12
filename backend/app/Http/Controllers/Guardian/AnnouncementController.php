@@ -24,7 +24,11 @@ class AnnouncementController extends Controller
             ->pluck('id')
             ->toArray();
 
-        $query = Announcement::where('classroom_id', $user->classroom_id)
+        // R2: 保護者が複数教室の児童を持つ場合、児童経由で取得した教室IDの集合で
+        // お知らせを引き当てる。
+        $classroomIds = $user->accessibleClassroomIds();
+
+        $query = Announcement::whereIn('classroom_id', $classroomIds ?: [0])
             ->where('is_published', true)
             ->where(function ($q) use ($myStudentIds) {
                 $q->where('target_type', 'all');
