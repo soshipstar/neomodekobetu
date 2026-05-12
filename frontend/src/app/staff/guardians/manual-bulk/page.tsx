@@ -152,21 +152,60 @@ export default function GuardianManualBulkPage() {
 
       <style>{`
         @media print {
-          body { margin: 0; padding: 0; font-size: 11pt; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-          .print\\:hidden { display: none !important; }
           @page { size: A4 portrait; margin: 15mm; }
-          /* 親コンテナの min-height: 100vh が印刷時の改ページを阻害するのを防ぐ */
-          .guardian-sheet-container { min-height: 0 !important; height: auto !important; }
-          /* page-break-* (CSS2) と break-* (CSS3) を併記してブラウザ互換性を最大化 */
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            height: auto !important;
+            overflow: visible !important;
+            font-size: 11pt;
+            background: white !important;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+          }
+
+          /* 「印刷したい部分だけ visible にする」古典テク。
+             親 AuthenticatedLayout の flex/overflow-hidden/h-screen に縛られず、
+             サイドバー・ヘッダ・モバイルナビ・ヘルプボタン等も自動的に消える。 */
+          body * { visibility: hidden !important; }
+          .guardian-sheet-container,
+          .guardian-sheet-container * { visibility: visible !important; }
+
+          /* 印刷コンテンツを画面左上に絶対配置し、親のレイアウト制約を完全に無視する。 */
+          .guardian-sheet-container {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            min-height: 0 !important;
+            height: auto !important;
+            display: block !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+            overflow: visible !important;
+            box-shadow: none !important;
+          }
+
+          /* 1 名 1 ページ。page-break-* (CSS2) と break-* (CSS3) を併記。
+             screen 用の box-shadow / margin / max-width / border-radius は完全クリア。 */
           .guardian-sheet {
-            page-break-after: always;
-            break-after: page;
-            page-break-inside: avoid;
-            break-inside: avoid;
+            display: block !important;
+            page-break-after: always !important;
+            break-after: page !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            background: white !important;
           }
           .guardian-sheet:last-child {
-            page-break-after: auto;
-            break-after: auto;
+            page-break-after: auto !important;
+            break-after: auto !important;
           }
         }
         @media screen {

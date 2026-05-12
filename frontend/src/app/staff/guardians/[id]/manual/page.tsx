@@ -64,12 +64,36 @@ export default function GuardianManualPage() {
       </div>
 
       {/* Printable content */}
-      <div className="mx-auto max-w-3xl bg-white print:max-w-none print:m-0">
+      <div className="guardian-manual-print mx-auto max-w-3xl bg-white print:max-w-none print:m-0">
         <style>{`
           @media print {
-            body { margin: 0; padding: 0; font-size: 11pt; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-            .print\\:hidden { display: none !important; }
             @page { size: A4 portrait; margin: 15mm; }
+            html, body {
+              margin: 0 !important;
+              padding: 0 !important;
+              height: auto !important;
+              overflow: visible !important;
+              font-size: 11pt;
+              background: white !important;
+              print-color-adjust: exact;
+              -webkit-print-color-adjust: exact;
+            }
+            /* 親 AuthenticatedLayout の flex/overflow-hidden/h-screen を回避するため、
+               印刷対象だけ visibility:visible にして絶対配置にする。 */
+            body * { visibility: hidden !important; }
+            .guardian-manual-print,
+            .guardian-manual-print * { visibility: visible !important; }
+            .guardian-manual-print {
+              position: absolute !important;
+              left: 0 !important;
+              top: 0 !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              background: white !important;
+            }
+            .print\\:hidden { display: none !important; }
             div[style*="marginBottom"] { page-break-inside: avoid; }
           }
         `}</style>
