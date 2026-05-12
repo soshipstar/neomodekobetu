@@ -8,6 +8,7 @@ use App\Models\StaffChatMessage;
 use App\Models\StaffChatRead;
 use App\Models\StaffChatRoom;
 use App\Models\User;
+use App\Services\ChatAttachmentStorage;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -342,6 +343,19 @@ class StaffChatController extends Controller
 
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
+
+            // 教室別チャット添付の合計容量チェック (staff_chat_rooms.classroom_id を直接利用)
+            $classroomId = $room->classroom_id;
+            if ($classroomId) {
+                $storage = app(ChatAttachmentStorage::class);
+                if (! $storage->canUpload((int) $classroomId, (int) $file->getSize())) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $storage->quotaMessage((int) $classroomId),
+                    ], 422);
+                }
+            }
+
             $path = $file->store('staff_chat_attachments', 'public');
             $attachmentPath = $path;
             $attachmentName = $file->getClientOriginalName();

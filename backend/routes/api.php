@@ -264,6 +264,7 @@ Route::prefix('staff')
 
         // --- チャット ---
         Route::prefix('chat')->group(function () {
+            Route::get('/storage-usage', [App\Http\Controllers\Staff\ChatController::class, 'storageUsage']);
             Route::get('/rooms', [App\Http\Controllers\Staff\ChatController::class, 'rooms']);
             Route::get('/rooms/{room}/messages', [App\Http\Controllers\Staff\ChatController::class, 'messages']);
             Route::post('/rooms/{room}/messages', [App\Http\Controllers\Staff\ChatController::class, 'sendMessage']);
@@ -591,6 +592,7 @@ Route::prefix('guardian')
         Route::get('/students/{student}/weekly-plans', [App\Http\Controllers\Guardian\GuardianWeeklyPlanController::class, 'index']);
 
         // チャット
+        Route::get('/chat/storage-usage', [App\Http\Controllers\Guardian\ChatController::class, 'storageUsage']);
         Route::get('/chat/rooms', [App\Http\Controllers\Guardian\ChatController::class, 'rooms']);
         Route::get('/chat/rooms/{room}/messages', [App\Http\Controllers\Guardian\ChatController::class, 'messages']);
         Route::post('/chat/rooms/{room}/messages', [App\Http\Controllers\Guardian\ChatController::class, 'sendMessage']);
@@ -679,6 +681,7 @@ Route::prefix('student')
         Route::get('/dashboard', [App\Http\Controllers\Student\DashboardController::class, 'index']);
 
         // チャット
+        Route::get('/chat/storage-usage', [App\Http\Controllers\Student\ChatController::class, 'storageUsage']);
         Route::get('/chat/messages', [App\Http\Controllers\Student\ChatController::class, 'messages']);
         Route::post('/chat/messages', [App\Http\Controllers\Student\ChatController::class, 'sendMessage']);
 

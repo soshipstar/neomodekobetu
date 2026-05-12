@@ -133,7 +133,7 @@ jobs:
         # 当初は本セッションで安定動作を確認済のテストだけを対象に。
         # 他の既存テストも順次 CI に取り込む。
         run: |
-          php artisan test --filter='S001|S002|L005|L007|L008|B120|B121|B122|B130|NT020' --stop-on-failure
+          php artisan test --filter='S001|S002|L005|L007|L008|B120|B121|B122|B130|B131|NT020' --stop-on-failure
 
   # =====================================================================
   # Frontend (Next.js 16 / TypeScript) - lint + 型チェック

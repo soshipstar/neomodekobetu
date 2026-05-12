@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Student;
 use App\Models\StudentChatMessage;
 use App\Models\StudentChatRoom;
+use App\Services\ChatAttachmentStorage;
 use App\Services\NotificationService;
 use App\Traits\ResolvesStudent;
 use Illuminate\Http\JsonResponse;
@@ -16,6 +17,24 @@ use Illuminate\Support\Facades\Log;
 class ChatController extends Controller
 {
     use ResolvesStudent;
+
+    /**
+     * チャット添付ファイルの教室別ストレージ使用量
+     */
+    public function storageUsage(Request $request): JsonResponse
+    {
+        $student = $this->getStudent($request);
+        if (! $student) {
+            return response()->json(['success' => false, 'message' => '生徒情報が見つかりません。'], 404);
+        }
+
+        $storage = app(ChatAttachmentStorage::class);
+        return response()->json([
+            'success' => true,
+            'data'    => $storage->summary((int) $student->classroom_id),
+        ]);
+    }
+
     /**
      * 生徒のチャットメッセージ一覧を取得
      */
@@ -108,6 +127,16 @@ class ChatController extends Controller
 
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
+
+            // 教室別チャット添付の合計容量チェック (200MB / 教室)
+            $storage = app(ChatAttachmentStorage::class);
+            if (! $storage->canUpload((int) $student->classroom_id, (int) $file->getSize())) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $storage->quotaMessage((int) $student->classroom_id),
+                ], 422);
+            }
+
             $path = $file->store('student_chat_attachments', 'public');
             $attachmentPath = $path;
             $attachmentName = $file->getClientOriginalName();
