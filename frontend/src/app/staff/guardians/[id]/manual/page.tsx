@@ -68,32 +68,50 @@ export default function GuardianManualPage() {
         <style>{`
           @media print {
             @page { size: A4 portrait; margin: 15mm; }
+
             html, body {
               margin: 0 !important;
               padding: 0 !important;
               height: auto !important;
+              min-height: 0 !important;
               overflow: visible !important;
               font-size: 11pt;
               background: white !important;
               print-color-adjust: exact;
               -webkit-print-color-adjust: exact;
             }
-            /* 親 AuthenticatedLayout の flex/overflow-hidden/h-screen を回避するため、
-               印刷対象だけ visibility:visible にして絶対配置にする。 */
-            body * { visibility: hidden !important; }
-            .guardian-manual-print,
-            .guardian-manual-print * { visibility: visible !important; }
+
+            /* AuthenticatedLayout のクロームを非表示にする */
+            aside, header, nav,
+            [data-help-toggle],
+            .print\\:hidden, .no-print {
+              display: none !important;
+            }
+
+            /* 祖先 flex/overflow を解除して自然な flow にする。
+               position: absolute は使わない (page-break-* が無視されるため) */
+            body, body > div, body > div > div, main {
+              display: block !important;
+              overflow: visible !important;
+              height: auto !important;
+              min-height: 0 !important;
+              max-height: none !important;
+              padding: 0 !important;
+              margin: 0 !important;
+              background: transparent !important;
+              flex: none !important;
+            }
+
             .guardian-manual-print {
-              position: absolute !important;
-              left: 0 !important;
-              top: 0 !important;
-              width: 100% !important;
+              display: block !important;
               max-width: 100% !important;
+              width: 100% !important;
               margin: 0 !important;
               padding: 0 !important;
               background: white !important;
+              box-shadow: none !important;
             }
-            .print\\:hidden { display: none !important; }
+
             div[style*="marginBottom"] { page-break-inside: avoid; }
           }
         `}</style>

@@ -153,10 +153,12 @@ export default function GuardianManualBulkPage() {
       <style>{`
         @media print {
           @page { size: A4 portrait; margin: 15mm; }
+
           html, body {
             margin: 0 !important;
             padding: 0 !important;
             height: auto !important;
+            min-height: 0 !important;
             overflow: visible !important;
             font-size: 11pt;
             background: white !important;
@@ -164,31 +166,40 @@ export default function GuardianManualBulkPage() {
             -webkit-print-color-adjust: exact;
           }
 
-          /* 「印刷したい部分だけ visible にする」古典テク。
-             親 AuthenticatedLayout の flex/overflow-hidden/h-screen に縛られず、
-             サイドバー・ヘッダ・モバイルナビ・ヘルプボタン等も自動的に消える。 */
-          body * { visibility: hidden !important; }
-          .guardian-sheet-container,
-          .guardian-sheet-container * { visibility: visible !important; }
-
-          /* 印刷コンテンツを画面左上に絶対配置し、親のレイアウト制約を完全に無視する。 */
-          .guardian-sheet-container {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            min-height: 0 !important;
-            height: auto !important;
-            display: block !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            background: white !important;
-            overflow: visible !important;
-            box-shadow: none !important;
+          /* AuthenticatedLayout に含まれる UI クロームを非表示にする */
+          aside, header, nav,
+          [data-help-toggle],
+          .print\\:hidden, .no-print {
+            display: none !important;
           }
 
-          /* 1 名 1 ページ。page-break-* (CSS2) と break-* (CSS3) を併記。
-             screen 用の box-shadow / margin / max-width / border-radius は完全クリア。 */
+          /* 親 AuthenticatedLayout の flex / h-screen / overflow-hidden を完全に解除する。
+             position: absolute を使うと多くのブラウザで page-break-after が無視され、
+             ページ末尾に次ページ先頭が重なって表示されてしまうため、絶対配置は使わず
+             祖先要素のレイアウト制約を直接リセットして自然な flow に戻す。 */
+          body, body > div, body > div > div, main {
+            display: block !important;
+            overflow: visible !important;
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: transparent !important;
+            flex: none !important;
+          }
+
+          .guardian-sheet-container {
+            display: block !important;
+            background: white !important;
+            box-shadow: none !important;
+            min-height: 0 !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+
+          /* 1 名 1 ページ。page-break-* (CSS2) と break-* (CSS3) を併記。 */
           .guardian-sheet {
             display: block !important;
             page-break-after: always !important;
