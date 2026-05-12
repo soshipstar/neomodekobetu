@@ -837,7 +837,7 @@ function QuickNotifyModal({
   const [body, setBody] = useState<string>(defaultBody);
   const [savingTemplate, setSavingTemplate] = useState(false);
   const [templateLoaded, setTemplateLoaded] = useState(false);
-  const { toast: rootToast } = useToast();
+  const { success: notifySuccess, error: notifyError } = useToast();
 
   // モーダル open 時にテンプレートをロード
   useEffect(() => {
@@ -871,9 +871,9 @@ function QuickNotifyModal({
       await api.put('/api/staff/chat/quick-broadcast-templates', {
         [action]: { body },
       });
-      rootToast.success('定型メッセージを保存しました');
+      notifySuccess('定型メッセージを保存しました');
     } catch {
-      rootToast.error('定型メッセージの保存に失敗しました');
+      notifyError('定型メッセージの保存に失敗しました');
     } finally {
       setSavingTemplate(false);
     }
