@@ -276,6 +276,8 @@ Route::prefix('staff')
             Route::get('/rooms/{room}/archived', [App\Http\Controllers\Staff\ChatController::class, 'archivedMessages']);
             Route::post('/broadcast', [App\Http\Controllers\Staff\ChatController::class, 'broadcast']);
             Route::post('/quick-broadcast', [App\Http\Controllers\Staff\ChatController::class, 'quickBroadcast']);
+            Route::get('/quick-broadcast-templates', [App\Http\Controllers\Staff\ChatController::class, 'quickBroadcastTemplates']);
+            Route::put('/quick-broadcast-templates', [App\Http\Controllers\Staff\ChatController::class, 'updateQuickBroadcastTemplates']);
         });
 
         // --- 生徒管理 ---

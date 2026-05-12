@@ -246,29 +246,39 @@ export default function StaffChatPage() {
   }, []);
 
   // クイック通知送信 (選択した保護者に)
-  const handleQuickBroadcastSubmit = useCallback(async () => {
-    if (!quickModal) return;
-    if (quickRoomIds.size === 0) {
-      toast.error('送信先を選択してください');
-      return;
-    }
-    const label = quickModal === 'departure' ? 'これから帰ります' : '到着しました';
-    setQuickSending(true);
-    try {
-      const res = await api.post('/api/staff/chat/quick-broadcast', {
-        action: quickModal,
-        room_ids: Array.from(quickRoomIds),
-      });
-      toast.success(res.data?.message || `${label} を送信しました`);
-      setQuickModal(null);
-      setQuickRoomIds(new Set());
-      fetchRooms();
-    } catch {
-      toast.error(`${label}の送信に失敗しました`);
-    } finally {
-      setQuickSending(false);
-    }
-  }, [quickModal, quickRoomIds, fetchRooms, toast]);
+  // R1: 編集された body を custom_body として送る
+  const handleQuickBroadcastSubmit = useCallback(
+    async (customBody: string) => {
+      if (!quickModal) return;
+      if (quickRoomIds.size === 0) {
+        toast.error('送信先を選択してください');
+        return;
+      }
+      if (!customBody.trim()) {
+        toast.error('送信メッセージを入力してください');
+        return;
+      }
+      const label = quickModal === 'departure' ? 'これから帰ります' : '到着しました';
+      setQuickSending(true);
+      try {
+        const res = await api.post('/api/staff/chat/quick-broadcast', {
+          action: quickModal,
+          room_ids: Array.from(quickRoomIds),
+          custom_body: customBody,
+        });
+        toast.success(res.data?.message || `${label} を送信しました`);
+        setQuickModal(null);
+        setQuickRoomIds(new Set());
+        fetchRooms();
+      } catch (err: unknown) {
+        const e = err as { response?: { data?: { message?: string } } };
+        toast.error(e?.response?.data?.message || `${label}の送信に失敗しました`);
+      } finally {
+        setQuickSending(false);
+      }
+    },
+    [quickModal, quickRoomIds, fetchRooms, toast]
+  );
 
   // Toggle grade group accordion
   const toggleGroup = (key: string) => {
@@ -813,16 +823,65 @@ function QuickNotifyModal({
   toggleRoom: (id: number) => void;
   selectAll: () => void;
   selectNone: () => void;
-  onSubmit: () => void;
+  onSubmit: (body: string) => void;
   isSending: boolean;
   todayStudentIds?: Set<number>;
 }) {
   const label = action === 'departure' ? 'これから帰ります' : '到着しました';
   const iconName = action === 'departure' ? 'directions_bus' : 'check_circle';
-  const bodyPreview =
+  const defaultBody =
     action === 'departure'
       ? '【これから帰ります】\n\nこれより帰路につきます。無事の帰宅をご確認ください。'
       : '【到着しました】\n\nご対応ありがとうございました。';
+  // R1: 編集可能 body (教室テンプレートを既定として読み込む)
+  const [body, setBody] = useState<string>(defaultBody);
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const [templateLoaded, setTemplateLoaded] = useState(false);
+  const { toast: rootToast } = useToast();
+
+  // モーダル open 時にテンプレートをロード
+  useEffect(() => {
+    if (action === null) {
+      setTemplateLoaded(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await api.get('/api/staff/chat/quick-broadcast-templates');
+        if (cancelled) return;
+        const tpl = res.data?.data?.[action];
+        if (tpl?.body) setBody(tpl.body);
+        else setBody(defaultBody);
+      } catch {
+        setBody(defaultBody);
+      } finally {
+        if (!cancelled) setTemplateLoaded(true);
+      }
+    })();
+    return () => { cancelled = true; };
+    // action が変わった時だけリロード。defaultBody は action に従って決まるので意図的に依存から除外
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [action]);
+
+  const saveTemplate = async () => {
+    if (!action) return;
+    setSavingTemplate(true);
+    try {
+      await api.put('/api/staff/chat/quick-broadcast-templates', {
+        [action]: { body },
+      });
+      rootToast.success('定型メッセージを保存しました');
+    } catch {
+      rootToast.error('定型メッセージの保存に失敗しました');
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
+
+  const resetToDefault = () => {
+    setBody(defaultBody);
+  };
 
   // 本日の参加予定者を上に、その他を下に分割
   const todayRooms = todayStudentIds && todayStudentIds.size > 0
@@ -860,11 +919,41 @@ function QuickNotifyModal({
     <Modal isOpen={action !== null} onClose={onClose} title={`${label} を送信`} size="md">
       <div className="space-y-4">
         <div className="rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] p-3">
-          <div className="flex items-center gap-2 text-sm font-semibold text-[var(--neutral-foreground-1)]">
-            <MaterialIcon name={iconName} size={18} className="text-[var(--brand-80)]" />
-            送信内容（固定）
+          <div className="mb-2 flex items-center justify-between gap-2 text-sm font-semibold text-[var(--neutral-foreground-1)]">
+            <div className="flex items-center gap-2">
+              <MaterialIcon name={iconName} size={18} className="text-[var(--brand-80)]" />
+              送信内容（編集可能）
+            </div>
+            <div className="flex gap-1 text-[10px]">
+              <button
+                type="button"
+                onClick={resetToDefault}
+                className="rounded border border-[var(--neutral-stroke-2)] px-2 py-0.5 text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-3)]"
+                title="システム既定の文言に戻す"
+              >
+                既定に戻す
+              </button>
+              <button
+                type="button"
+                onClick={saveTemplate}
+                disabled={savingTemplate || !templateLoaded}
+                className="rounded border border-[var(--brand-80)] px-2 py-0.5 text-[var(--brand-80)] hover:bg-[var(--brand-160)] disabled:opacity-50"
+                title="この文言を教室のテンプレートとして保存します（次回以降の既定値）"
+              >
+                {savingTemplate ? '保存中…' : 'テンプレ保存'}
+              </button>
+            </div>
           </div>
-          <pre className="mt-2 whitespace-pre-wrap text-xs text-[var(--neutral-foreground-2)]">{bodyPreview}</pre>
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={5}
+            className="block w-full resize-none rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-2 py-1.5 text-xs text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+            placeholder="送信するメッセージを入力"
+          />
+          <p className="mt-1 text-[10px] text-[var(--neutral-foreground-4)]">
+            この欄を空にすると送信できません。テンプレ保存後はこの教室の既定値として保存されます。
+          </p>
         </div>
 
         <div>
@@ -919,8 +1008,8 @@ function QuickNotifyModal({
 
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose}>キャンセル</Button>
-          <Button onClick={onSubmit} isLoading={isSending}
-            disabled={selectedRoomIds.size === 0}
+          <Button onClick={() => onSubmit(body)} isLoading={isSending}
+            disabled={selectedRoomIds.size === 0 || !body.trim()}
             leftIcon={<MaterialIcon name="send" size={16} />}>
             {selectedRoomIds.size}件に送信
           </Button>

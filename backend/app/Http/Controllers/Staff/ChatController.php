@@ -7,6 +7,7 @@ use App\Models\ChatMessage;
 use App\Models\ChatMessageStaffRead;
 use App\Models\ChatRoom;
 use App\Models\ChatRoomPin;
+use App\Models\Classroom;
 use App\Models\User;
 use App\Services\ChatAttachmentStorage;
 use App\Services\NotificationService;
@@ -369,22 +370,12 @@ class ChatController extends Controller
     }
 
     /**
-     * クイック通知の一斉送信 (これから帰ります / 到着しました)
+     * クイック通知の固定テンプレート (システム既定値)
      *
-     * body は固定テンプレート、message_type は 'quick_departure' または
-     * 'quick_arrival' を使用する。room_ids を省略した場合は担当教室の
-     * 全保護者ルームに配信する。
+     * @return array{type:string,title:string,body:string}
      */
-    public function quickBroadcast(Request $request): JsonResponse
+    private function defaultQuickTemplate(string $action): array
     {
-        $user = $request->user();
-
-        $validated = $request->validate([
-            'action' => 'required|string|in:departure,arrival',
-            'room_ids' => 'required|array|min:1',
-            'room_ids.*' => 'integer',
-        ]);
-
         $templates = [
             'departure' => [
                 'type' => 'quick_departure',
@@ -397,7 +388,122 @@ class ChatController extends Controller
                 'body' => "【到着しました】\n\nご対応ありがとうございました。",
             ],
         ];
-        $tpl = $templates[$validated['action']];
+        return $templates[$action];
+    }
+
+    /**
+     * R1: クイック通知テンプレート (departure/arrival) を返す。
+     * 教室の settings.quick_broadcast_templates に保存があればそれを返し、
+     * なければシステム既定値を返す。
+     */
+    public function quickBroadcastTemplates(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $classroom = $user->classroom_id ? Classroom::find($user->classroom_id) : null;
+        $stored = $classroom?->settings['quick_broadcast_templates'] ?? [];
+
+        $arrivalDefault = $this->defaultQuickTemplate('arrival');
+        $departureDefault = $this->defaultQuickTemplate('departure');
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'arrival' => [
+                    'body'    => $stored['arrival']['body'] ?? $arrivalDefault['body'],
+                    'enabled' => (bool) ($stored['arrival']['enabled'] ?? true),
+                    'default_body' => $arrivalDefault['body'],
+                ],
+                'departure' => [
+                    'body'    => $stored['departure']['body'] ?? $departureDefault['body'],
+                    'enabled' => (bool) ($stored['departure']['enabled'] ?? true),
+                    'default_body' => $departureDefault['body'],
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * R1: クイック通知テンプレートを保存する。
+     */
+    public function updateQuickBroadcastTemplates(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user->classroom_id) {
+            return response()->json([
+                'success' => false,
+                'message' => '所属教室が未設定のため保存できません。',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'arrival.body'    => 'nullable|string|max:2000',
+            'arrival.enabled' => 'nullable|boolean',
+            'departure.body'  => 'nullable|string|max:2000',
+            'departure.enabled' => 'nullable|boolean',
+        ]);
+
+        $classroom = Classroom::findOrFail($user->classroom_id);
+        $settings = $classroom->settings ?? [];
+        $current = $settings['quick_broadcast_templates'] ?? [];
+
+        // arrival
+        $arrival = $current['arrival'] ?? [];
+        if (array_key_exists('arrival', $validated)) {
+            if (isset($validated['arrival']['body'])) $arrival['body'] = $validated['arrival']['body'];
+            if (isset($validated['arrival']['enabled'])) $arrival['enabled'] = (bool) $validated['arrival']['enabled'];
+        }
+        // departure
+        $departure = $current['departure'] ?? [];
+        if (array_key_exists('departure', $validated)) {
+            if (isset($validated['departure']['body'])) $departure['body'] = $validated['departure']['body'];
+            if (isset($validated['departure']['enabled'])) $departure['enabled'] = (bool) $validated['departure']['enabled'];
+        }
+
+        $settings['quick_broadcast_templates'] = [
+            'arrival'   => $arrival,
+            'departure' => $departure,
+        ];
+        $classroom->settings = $settings;
+        $classroom->save();
+
+        return $this->quickBroadcastTemplates($request);
+    }
+
+    /**
+     * クイック通知の一斉送信 (これから帰ります / 到着しました)
+     *
+     * R1: body は教室の保存テンプレートを既定とし、リクエストで `custom_body`
+     * を渡せばそれを優先する。enabled=false の場合は 422 で拒否する。
+     */
+    public function quickBroadcast(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'action' => 'required|string|in:departure,arrival',
+            'room_ids' => 'required|array|min:1',
+            'room_ids.*' => 'integer',
+            'custom_body' => 'nullable|string|max:2000',
+        ]);
+
+        $tpl = $this->defaultQuickTemplate($validated['action']);
+
+        // 教室 settings からテンプレート上書き / enabled 判定
+        $classroom = $user->classroom_id ? Classroom::find($user->classroom_id) : null;
+        $stored = $classroom?->settings['quick_broadcast_templates'][$validated['action']] ?? [];
+        if (isset($stored['enabled']) && $stored['enabled'] === false) {
+            return response()->json([
+                'success' => false,
+                'message' => 'このクイック通知は無効化されています。設定画面で有効化してください。',
+            ], 422);
+        }
+        if (! empty($stored['body'])) {
+            $tpl['body'] = $stored['body'];
+        }
+        // custom_body はリクエスト単位の上書き
+        if (! empty($validated['custom_body'])) {
+            $tpl['body'] = $validated['custom_body'];
+        }
 
         $rooms = ChatRoom::forUser($user)
             ->whereIn('id', $validated['room_ids'])
