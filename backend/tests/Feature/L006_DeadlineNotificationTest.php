@@ -89,7 +89,7 @@ class L006_DeadlineNotificationTest extends TestCase
         $job->handle();
 
         $results = $job->getResults();
-        $this->assertEquals(1, $results['kakehashi_guardian']);
+        $this->assertEquals(1, $results['assessment_guardian']);
 
         // Check notification was created
         $notification = Notification::where('user_id', $this->guardian->id)
@@ -102,7 +102,7 @@ class L006_DeadlineNotificationTest extends TestCase
 
         // Check audit log was created with notification key
         $auditLog = AuditLog::where('action', 'deadline_reminder')
-            ->where('target_table', 'kakehashi_guardian')
+            ->where('target_table', 'assessment_guardian')
             ->first();
         $this->assertNotNull($auditLog);
         $this->assertNotNull($auditLog->new_values['notification_key'] ?? null);
@@ -130,7 +130,7 @@ class L006_DeadlineNotificationTest extends TestCase
         $job->handle();
 
         $results = $job->getResults();
-        $this->assertEquals(1, $results['kakehashi_guardian']);
+        $this->assertEquals(1, $results['assessment_guardian']);
 
         $notification = Notification::where('user_id', $this->guardian->id)
             ->where('type', 'deadline_reminder')
@@ -171,7 +171,7 @@ class L006_DeadlineNotificationTest extends TestCase
         $job->handle();
 
         $results = $job->getResults();
-        $this->assertEquals(0, $results['kakehashi_guardian']);
+        $this->assertEquals(0, $results['assessment_guardian']);
 
         Carbon::setTestNow();
     }
@@ -200,7 +200,7 @@ class L006_DeadlineNotificationTest extends TestCase
         $job->handle();
 
         $results = $job->getResults();
-        $this->assertEquals(1, $results['kakehashi_staff']);
+        $this->assertEquals(1, $results['assessment_staff']);
 
         $notification = Notification::where('user_id', $this->staff->id)
             ->where('type', 'deadline_reminder')
@@ -240,7 +240,7 @@ class L006_DeadlineNotificationTest extends TestCase
         $job->handle();
 
         $results = $job->getResults();
-        $this->assertEquals(0, $results['kakehashi_staff']);
+        $this->assertEquals(0, $results['assessment_staff']);
 
         Carbon::setTestNow();
     }
@@ -270,16 +270,16 @@ class L006_DeadlineNotificationTest extends TestCase
         $job1->handle();
 
         $firstResults = $job1->getResults();
-        $this->assertEquals(1, $firstResults['kakehashi_guardian']);
-        $this->assertEquals(1, $firstResults['kakehashi_staff']);
+        $this->assertEquals(1, $firstResults['assessment_guardian']);
+        $this->assertEquals(1, $firstResults['assessment_staff']);
 
         // Second run - should be suppressed by audit log check
         $job2 = new SendDeadlineNotificationsJob();
         $job2->handle();
 
         $secondResults = $job2->getResults();
-        $this->assertEquals(0, $secondResults['kakehashi_guardian']);
-        $this->assertEquals(0, $secondResults['kakehashi_staff']);
+        $this->assertEquals(0, $secondResults['assessment_guardian']);
+        $this->assertEquals(0, $secondResults['assessment_staff']);
 
         Carbon::setTestNow();
     }
@@ -482,8 +482,8 @@ class L006_DeadlineNotificationTest extends TestCase
         $job->handle();
 
         $results = $job->getResults();
-        $this->assertEquals(0, $results['kakehashi_guardian']);
-        $this->assertEquals(0, $results['kakehashi_staff']);
+        $this->assertEquals(0, $results['assessment_guardian']);
+        $this->assertEquals(0, $results['assessment_staff']);
 
         Carbon::setTestNow();
     }
@@ -510,7 +510,7 @@ class L006_DeadlineNotificationTest extends TestCase
         $job->handle();
 
         $results = $job->getResults();
-        $this->assertEquals(0, $results['kakehashi_guardian']);
+        $this->assertEquals(0, $results['assessment_guardian']);
 
         Carbon::setTestNow();
     }

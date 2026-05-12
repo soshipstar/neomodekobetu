@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Builder;
 
 class KakehashiPeriod extends Model
 {
+    // テーブル名は assessment_periods に統一済 (元 kakehashi_periods)
+    protected $table = 'assessment_periods';
+
     public $timestamps = false;
 
     protected $fillable = [

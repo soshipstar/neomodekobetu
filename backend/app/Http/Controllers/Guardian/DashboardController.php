@@ -107,9 +107,9 @@ class DashboardController extends Controller
                     kg.id as kakehashi_id,
                     kg.is_submitted,
                     kg.is_hidden
-                FROM kakehashi_periods kp
+                FROM assessment_periods kp
                 INNER JOIN students s ON kp.student_id = s.id
-                LEFT JOIN kakehashi_guardian kg ON kp.id = kg.period_id AND kg.student_id = kp.student_id
+                LEFT JOIN assessment_guardian kg ON kp.id = kg.period_id AND kg.student_id = kp.student_id
                 WHERE kp.student_id = ANY(?)
                 AND kp.is_active = true
                 AND (kg.is_submitted = false OR kg.is_submitted IS NULL)
@@ -367,23 +367,23 @@ class DashboardController extends Controller
         // ==============================
         $pendingStaffKakehashi = [];
         if (!empty($studentIds)) {
-            $staffKakehashi = DB::table('kakehashi_staff')
-                ->join('kakehashi_periods', 'kakehashi_staff.period_id', '=', 'kakehashi_periods.id')
-                ->join('students', 'kakehashi_staff.student_id', '=', 'students.id')
-                ->whereIn('kakehashi_staff.student_id', $studentIds)
-                ->where('kakehashi_staff.is_submitted', true)
+            $staffKakehashi = DB::table('assessment_staff')
+                ->join('assessment_periods', 'assessment_staff.period_id', '=', 'assessment_periods.id')
+                ->join('students', 'assessment_staff.student_id', '=', 'students.id')
+                ->whereIn('assessment_staff.student_id', $studentIds)
+                ->where('assessment_staff.is_submitted', true)
                 ->where(function ($q) {
-                    $q->where('kakehashi_staff.guardian_confirmed', false)
-                      ->orWhereNull('kakehashi_staff.guardian_confirmed');
+                    $q->where('assessment_staff.guardian_confirmed', false)
+                      ->orWhereNull('assessment_staff.guardian_confirmed');
                 })
                 ->select([
-                    'kakehashi_staff.id',
-                    'kakehashi_staff.submitted_at',
-                    'kakehashi_periods.period_name',
+                    'assessment_staff.id',
+                    'assessment_staff.submitted_at',
+                    'assessment_periods.period_name',
                     'students.student_name',
                     'students.id as student_id',
                 ])
-                ->orderByDesc('kakehashi_staff.submitted_at')
+                ->orderByDesc('assessment_staff.submitted_at')
                 ->get();
 
             foreach ($staffKakehashi as $sk) {

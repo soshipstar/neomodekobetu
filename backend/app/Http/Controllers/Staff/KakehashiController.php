@@ -166,7 +166,7 @@ class KakehashiController extends Controller
     {
         $validated = $request->validate([
             'student_id' => 'required|exists:students,id',
-            'period_id'  => 'required|exists:kakehashi_periods,id',
+            'period_id'  => 'required|exists:assessment_periods,id',
         ]);
 
         $student = Student::with('classroom')->findOrFail($validated['student_id']);

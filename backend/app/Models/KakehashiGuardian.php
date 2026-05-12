@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class KakehashiGuardian extends Model
 {
-    protected $table = 'kakehashi_guardian';
+    protected $table = 'assessment_guardian';
 
     protected $fillable = [
         'period_id',

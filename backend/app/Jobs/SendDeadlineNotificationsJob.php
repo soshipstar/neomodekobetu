@@ -37,8 +37,8 @@ class SendDeadlineNotificationsJob implements ShouldQueue
 
     /** @var array<string, int> */
     protected array $results = [
-        'kakehashi_guardian' => 0,
-        'kakehashi_staff' => 0,
+        'assessment_guardian' => 0,
+        'assessment_staff' => 0,
         'monitoring' => 0,
         'plan' => 0,
         'errors' => 0,
@@ -115,9 +115,9 @@ class SendDeadlineNotificationsJob implements ShouldQueue
                     continue;
                 }
 
-                $notificationKey = "kakehashi_guardian_{$period->id}_{$guardian->id}";
+                $notificationKey = "assessment_guardian_{$period->id}_{$guardian->id}";
 
-                if ($this->isAlreadySentToday('deadline_reminder', 'kakehashi_guardian', $notificationKey)) {
+                if ($this->isAlreadySentToday('deadline_reminder', 'assessment_guardian', $notificationKey)) {
                     continue;
                 }
 
@@ -132,7 +132,7 @@ class SendDeadlineNotificationsJob implements ShouldQueue
                     "【アセスメント提出期限】{$student->student_name}",
                     "{$student->student_name}さんのアセスメント（保護者）の提出期限が近づいています。{$urgency}（期限: {$period->submission_deadline->format('Y年n月j日')}）",
                     [
-                        'type' => 'kakehashi_guardian',
+                        'type' => 'assessment_guardian',
                         'period_id' => $period->id,
                         'student_id' => $student->id,
                         'deadline' => $period->submission_deadline->toDateString(),
@@ -142,12 +142,12 @@ class SendDeadlineNotificationsJob implements ShouldQueue
 
                 $this->logNotificationSent(
                     'deadline_reminder',
-                    'kakehashi_guardian',
+                    'assessment_guardian',
                     $notificationKey,
                     "保護者アセスメント期限通知: {$student->student_name} / 期限: {$period->submission_deadline->toDateString()}"
                 );
 
-                $this->results['kakehashi_guardian']++;
+                $this->results['assessment_guardian']++;
             }
         } catch (\Throwable $e) {
             Log::error('SendDeadlineNotificationsJob: kakehashi guardian error', [
@@ -213,9 +213,9 @@ class SendDeadlineNotificationsJob implements ShouldQueue
                     : "提出期限まであと{$daysLeft}日です";
 
                 foreach ($staffMembers as $staff) {
-                    $notificationKey = "kakehashi_staff_{$period->id}_{$staff->id}";
+                    $notificationKey = "assessment_staff_{$period->id}_{$staff->id}";
 
-                    if ($this->isAlreadySentToday('deadline_reminder', 'kakehashi_staff', $notificationKey)) {
+                    if ($this->isAlreadySentToday('deadline_reminder', 'assessment_staff', $notificationKey)) {
                         continue;
                     }
 
@@ -225,7 +225,7 @@ class SendDeadlineNotificationsJob implements ShouldQueue
                         "【アセスメント提出期限】{$student->student_name}",
                         "{$student->student_name}さんのアセスメント（スタッフ）の提出期限が近づいています。{$urgency}（期限: {$period->submission_deadline->format('Y年n月j日')}）",
                         [
-                            'type' => 'kakehashi_staff',
+                            'type' => 'assessment_staff',
                             'period_id' => $period->id,
                             'student_id' => $student->id,
                             'deadline' => $period->submission_deadline->toDateString(),
@@ -235,12 +235,12 @@ class SendDeadlineNotificationsJob implements ShouldQueue
 
                     $this->logNotificationSent(
                         'deadline_reminder',
-                        'kakehashi_staff',
+                        'assessment_staff',
                         $notificationKey,
                         "スタッフアセスメント期限通知: {$student->student_name} / 期限: {$period->submission_deadline->toDateString()} / 送信先: {$staff->full_name}"
                     );
 
-                    $this->results['kakehashi_staff']++;
+                    $this->results['assessment_staff']++;
                 }
             }
         } catch (\Throwable $e) {

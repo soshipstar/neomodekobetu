@@ -19,8 +19,8 @@ class D001_LiteralNewlineTest extends TestCase
     private array $tablesToCheck = [
         'integrated_notes' => ['integrated_content'],
         'student_records' => ['health_life', 'motor_sensory', 'cognitive_behavior', 'language_communication', 'social_relations', 'notes'],
-        'kakehashi_guardian' => ['home_situation', 'concerns', 'requests', 'student_wish', 'home_challenges', 'short_term_goal', 'long_term_goal', 'domain_health_life', 'domain_motor_sensory', 'domain_cognitive_behavior', 'domain_language_communication', 'domain_social_relations', 'other_challenges'],
-        'kakehashi_staff' => ['student_wish', 'short_term_goal', 'long_term_goal', 'health_life', 'motor_sensory', 'cognitive_behavior', 'language_communication', 'social_relations', 'other_challenges'],
+        'assessment_guardian' => ['home_situation', 'concerns', 'requests', 'student_wish', 'home_challenges', 'short_term_goal', 'long_term_goal', 'domain_health_life', 'domain_motor_sensory', 'domain_cognitive_behavior', 'domain_language_communication', 'domain_social_relations', 'other_challenges'],
+        'assessment_staff' => ['student_wish', 'short_term_goal', 'long_term_goal', 'health_life', 'motor_sensory', 'cognitive_behavior', 'language_communication', 'social_relations', 'other_challenges'],
         'individual_support_plans' => ['life_intention', 'overall_policy', 'long_term_goal', 'short_term_goal', 'basis_content', 'guardian_review_comment'],
         'monitoring_records' => ['overall_comment', 'short_term_goal_achievement', 'long_term_goal_achievement', 'short_term_goal_comment', 'long_term_goal_comment'],
         'monitoring_details' => ['comment', 'next_action'],

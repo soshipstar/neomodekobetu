@@ -489,8 +489,8 @@ class PendingTaskController extends Controller
     {
         $query = DB::table('students as s')
             ->join('users as u', 's.guardian_id', '=', 'u.id')
-            ->join('kakehashi_periods as kp', 's.id', '=', 'kp.student_id')
-            ->leftJoin('kakehashi_guardian as kg', function ($join) {
+            ->join('assessment_periods as kp', 's.id', '=', 'kp.student_id')
+            ->leftJoin('assessment_guardian as kg', function ($join) {
                 $join->on('kp.id', '=', 'kg.period_id')
                     ->on('kg.student_id', '=', 's.id');
             })
@@ -507,7 +507,7 @@ class PendingTaskController extends Controller
             ->where('kp.submission_deadline', '<=', $oneMonthLater)
             ->whereRaw('kp.submission_deadline = (
                 SELECT MAX(kp2.submission_deadline)
-                FROM kakehashi_periods kp2
+                FROM assessment_periods kp2
                 WHERE kp2.student_id = s.id AND kp2.is_active = true
                 AND kp2.submission_deadline <= ?
             )', [$oneMonthLater]);
@@ -568,12 +568,12 @@ class PendingTaskController extends Controller
     {
         $query = DB::table('students as s')
             ->join('users as u', 's.guardian_id', '=', 'u.id')
-            ->join('kakehashi_periods as kp', 's.id', '=', 'kp.student_id')
-            ->leftJoin('kakehashi_staff as ks', function ($join) {
+            ->join('assessment_periods as kp', 's.id', '=', 'kp.student_id')
+            ->leftJoin('assessment_staff as ks', function ($join) {
                 $join->on('kp.id', '=', 'ks.period_id')
                     ->on('ks.student_id', '=', 's.id');
             })
-            ->leftJoin('kakehashi_guardian as kg', function ($join) {
+            ->leftJoin('assessment_guardian as kg', function ($join) {
                 $join->on('kp.id', '=', 'kg.period_id')
                     ->on('kg.student_id', '=', 's.id');
             })
@@ -598,7 +598,7 @@ class PendingTaskController extends Controller
             ->where('kp.submission_deadline', '<=', $oneMonthLater)
             ->whereRaw('kp.submission_deadline = (
                 SELECT MAX(kp2.submission_deadline)
-                FROM kakehashi_periods kp2
+                FROM assessment_periods kp2
                 WHERE kp2.student_id = s.id AND kp2.is_active = true
                 AND kp2.submission_deadline <= ?
             )', [$oneMonthLater]);
