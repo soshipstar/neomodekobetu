@@ -65,12 +65,15 @@ export function Header() {
           <MaterialIcon name="menu" size={20} />
         </button>
         {classrooms.length > 1 ? (
+          // R4: スマホでも教室切替できるよう sm:block 制限を解除し、画面幅に応じて
+          // 文字サイズと最大幅を可変にする。
           <select
             value={user.classroom_id || ''}
             onChange={(e) => handleSwitchClassroom(Number(e.target.value))}
             disabled={switching}
-            className="hidden rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-2 py-1 text-sm font-medium text-[var(--neutral-foreground-2)] sm:block"
+            className="block max-w-[160px] truncate rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-2 py-1 text-xs font-medium text-[var(--neutral-foreground-2)] sm:max-w-none sm:text-sm"
             title="教室を切り替え"
+            aria-label="教室を切り替え"
           >
             {classrooms.map((c) => (
               <option key={c.id} value={c.id}>{c.classroom_name}</option>
