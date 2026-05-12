@@ -7,6 +7,13 @@ import { Button } from '@/components/ui/Button';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { formatFileSize, nl } from '@/lib/utils';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { compressImageUnderSize, isHeicFile, HEIC_HINT } from '@/lib/imageCompression';
+
+// サーバー側の max:3072 (3MB) と整合させる
+const ATTACHMENT_MAX_BYTES = 3 * 1024 * 1024;
+// 画像ファイル判定 (MIME ベース、HEIC/HEIF も「画像」として扱う)
+const isImageFile = (f: File) =>
+  (f.type && f.type.startsWith('image/')) || isHeicFile(f);
 
 interface StudentChatMessage {
   id: number;
@@ -81,10 +88,34 @@ export default function StudentChatPage() {
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [compressing, setCompressing] = useState(false);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = ''; // 同じファイルを再選択できるようにクリア
     if (!file) return;
-    if (file.size > 3 * 1024 * 1024) {
+
+    // 画像なら自動的に 3MB 以下まで縮小して添付。元から 3MB 以下でも画像は JPEG 化する。
+    if (isImageFile(file)) {
+      setCompressing(true);
+      try {
+        const compressed = await compressImageUnderSize(file, ATTACHMENT_MAX_BYTES);
+        if (compressed.size > ATTACHMENT_MAX_BYTES) {
+          alert('画像を圧縮しましたが 3MB に収まりませんでした。別の画像を選んでください。');
+          return;
+        }
+        setAttachment(compressed);
+      } catch (err) {
+        console.warn('chat image compress failed', file.name, err);
+        alert(isHeicFile(file) ? HEIC_HINT : '画像を読み込めませんでした。別のファイルを選んでください。');
+      } finally {
+        setCompressing(false);
+      }
+      return;
+    }
+
+    // 画像以外 (PDF 等) は従来通り 3MB ハード制限
+    if (file.size > ATTACHMENT_MAX_BYTES) {
       alert('ファイルサイズは3MB以下にしてください');
       return;
     }
@@ -167,8 +198,15 @@ export default function StudentChatPage() {
 
       {/* Input area */}
       <div className="border-t border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] p-3 flex-shrink-0">
+        {/* Compressing indicator */}
+        {compressing && (
+          <div className="flex items-center gap-2 mb-2 rounded-lg bg-[var(--neutral-background-2)] px-3 py-2 text-sm text-[var(--neutral-foreground-3)]">
+            <MaterialIcon name="hourglass_top" size={16} />
+            <span>画像を圧縮しています...</span>
+          </div>
+        )}
         {/* File preview */}
-        {attachment && (
+        {attachment && !compressing && (
           <div className="flex items-center gap-2 mb-2 rounded-lg bg-[var(--neutral-background-2)] px-3 py-2 text-sm">
             <MaterialIcon name="attach_file" size={16} className="text-[var(--neutral-foreground-3)]" />
             <span className="flex-1 truncate text-[var(--neutral-foreground-2)]">{attachment.name}</span>
@@ -182,7 +220,8 @@ export default function StudentChatPage() {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex-shrink-0 rounded-full p-2 text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-2)]"
+            disabled={compressing}
+            className="flex-shrink-0 rounded-full p-2 text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-2)] disabled:opacity-50"
             title="ファイルを添付"
           >
             <MaterialIcon name="attach_file" size={20} />
@@ -191,7 +230,8 @@ export default function StudentChatPage() {
             ref={fileInputRef}
             type="file"
             className="hidden"
-            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+            // HEIC/HEIF (iPhone デフォルト形式) も追加
+            accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,.doc,.docx,image/*"
             onChange={handleFileSelect}
           />
           <textarea
@@ -207,7 +247,7 @@ export default function StudentChatPage() {
             size="sm"
             className="flex-shrink-0 rounded-full !p-2"
             onClick={handleSend}
-            disabled={sendMutation.isPending || (!message.trim() && !attachment)}
+            disabled={sendMutation.isPending || compressing || (!message.trim() && !attachment)}
             isLoading={sendMutation.isPending}
           >
             <MaterialIcon name="send" size={20} />
