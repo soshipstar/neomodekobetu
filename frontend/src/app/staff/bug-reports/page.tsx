@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import api from '@/lib/api';
@@ -72,6 +72,8 @@ export default function BugReportsPage() {
   const [selectedReport, setSelectedReport] = useState<BugReport | null>(null);
   const [statusFilter, setStatusFilter] = useState('open');
   const [replyText, setReplyText] = useState('');
+  // R3: 並び替えオプション
+  const [sortKey, setSortKey] = useState<'created_desc' | 'created_asc' | 'reporter_asc' | 'priority_desc'>('created_desc');
 
   // Form
   const [form, setForm] = useState({
@@ -93,6 +95,29 @@ export default function BugReportsPage() {
     },
   });
   const reports: BugReport[] = reportsData?.data || [];
+
+  // R3: 並び替え (クライアントサイド)。あいうえお順は日本語ローケル比較で正確に並ぶ。
+  const sortedReports = useMemo(() => {
+    const arr = [...reports];
+    const priorityRank: Record<string, number> = { critical: 0, high: 1, normal: 2, low: 3 };
+    arr.sort((a, b) => {
+      switch (sortKey) {
+        case 'created_asc':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'reporter_asc': {
+          const an = a.reporter?.full_name ?? '';
+          const bn = b.reporter?.full_name ?? '';
+          return an.localeCompare(bn, 'ja');
+        }
+        case 'priority_desc':
+          return (priorityRank[a.priority] ?? 99) - (priorityRank[b.priority] ?? 99);
+        case 'created_desc':
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+    return arr;
+  }, [reports, sortKey]);
 
   // Fetch detail
   const { data: detail } = useQuery({
@@ -213,32 +238,47 @@ export default function BugReportsPage() {
         </CardBody>
       </Card>
 
-      {/* Filter */}
-      <div className="flex gap-2 flex-wrap">
-        {[
-          { value: 'open', label: '未対応' },
-          { value: 'in_progress', label: '対応済み確認依頼中' },
-          { value: 'resolved', label: '解決済み' },
-          { value: '', label: 'すべて' },
-        ].map((f) => (
-          <button
-            key={f.value}
-            onClick={() => setStatusFilter(f.value)}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-              statusFilter === f.value
-                ? 'bg-purple-600 text-white'
-                : 'bg-[var(--neutral-background-3)] text-[var(--neutral-foreground-2)] hover:bg-[var(--neutral-background-4)]'
-            }`}
+      {/* Filter + R3: 並び替えセレクタ */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {[
+            { value: 'open', label: '未対応' },
+            { value: 'in_progress', label: '対応済み確認依頼中' },
+            { value: 'resolved', label: '解決済み' },
+            { value: '', label: 'すべて' },
+          ].map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setStatusFilter(f.value)}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                statusFilter === f.value
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-[var(--neutral-background-3)] text-[var(--neutral-foreground-2)] hover:bg-[var(--neutral-background-4)]'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <label className="flex items-center gap-1 text-xs text-[var(--neutral-foreground-3)]">
+          <span>並び替え:</span>
+          <select
+            value={sortKey}
+            onChange={(e) => setSortKey(e.target.value as typeof sortKey)}
+            className="rounded-md border border-[var(--neutral-stroke-2)] bg-white px-2 py-1 text-xs text-[var(--neutral-foreground-1)] focus:border-purple-600 focus:outline-none"
           >
-            {f.label}
-          </button>
-        ))}
+            <option value="created_desc">新しい順</option>
+            <option value="created_asc">古い順</option>
+            <option value="reporter_asc">報告者あいうえお順</option>
+            <option value="priority_desc">優先度高い順</option>
+          </select>
+        </label>
       </div>
 
       {/* Report List */}
       {isLoading ? (
         <SkeletonList items={3} />
-      ) : reports.length === 0 ? (
+      ) : sortedReports.length === 0 ? (
         <Card>
           <CardBody>
             <div className="py-12 text-center">
@@ -249,7 +289,7 @@ export default function BugReportsPage() {
         </Card>
       ) : (
         <div className="space-y-2">
-          {reports.map((r) => {
+          {sortedReports.map((r) => {
             const st = STATUS_MAP[r.status] || STATUS_MAP.open;
             const pr = PRIORITY_MAP[r.priority] || PRIORITY_MAP.normal;
             return (
