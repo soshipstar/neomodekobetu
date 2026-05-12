@@ -201,9 +201,10 @@ class AttendanceController extends Controller
             'advice_at' => $isCleared ? null : now(),
         ]);
 
-        // 新規アドバイス保存・更新時のみ保護者通知 (クリア時は通知しない)
+        // 新規アドバイス保存・更新時のみ保護者へ通知・チャット投稿
         if (! $isCleared && $previousAdvice !== $advice) {
-            $this->notifyGuardianOfAdvice($absence, $advice);
+            $this->notifyGuardianOfAdvice($absence, $advice, $user);
+            $this->postAdviceToChat($absence, $advice, $user);
         }
 
         return response()->json([
@@ -217,7 +218,7 @@ class AttendanceController extends Controller
      * 欠席連絡へスタッフがアドバイスを記入したとき、対象生徒の保護者に通知する。
      * 例外は握り潰す (advice 保存自体は成功しているため、通知失敗で 500 にしない)。
      */
-    private function notifyGuardianOfAdvice(AbsenceNotification $absence, string $advice): void
+    private function notifyGuardianOfAdvice(AbsenceNotification $absence, string $advice, ?User $sender = null): void
     {
         try {
             $absence->loadMissing('student');
@@ -245,6 +246,46 @@ class AttendanceController extends Controller
             );
         } catch (\Throwable $e) {
             Log::warning('absence advice notify failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * R7: 欠席アドバイスを保護者チャットルームにも自動投稿する。
+     *
+     * 報告: アドバイス入力後、保護者が欠席ページを開かない限り内容に気付けないため、
+     * 保護者チャットへも自動転載して見落としを防ぐ。
+     *
+     * 例外は握り潰す (advice 保存自体は成功しているため、転載失敗で 500 にしない)。
+     */
+    private function postAdviceToChat(AbsenceNotification $absence, string $advice, User $staff): void
+    {
+        try {
+            $absence->loadMissing('student');
+            $student = $absence->student;
+            if (! $student || ! $student->guardian_id) {
+                return;
+            }
+
+            // 該当保護者のチャットルームを取得 (なければ作成)
+            $room = ChatRoom::firstOrCreate(
+                ['student_id' => $student->id, 'guardian_id' => $student->guardian_id],
+                ['last_message_at' => now()],
+            );
+
+            $dateStr = Carbon::parse($absence->absence_date)->format('n月j日');
+            $body = "【{$dateStr}の欠席連絡へのアドバイス】\n" . $advice;
+
+            ChatMessage::create([
+                'room_id'      => $room->id,
+                'sender_id'    => $staff->id,
+                'sender_type'  => 'staff',
+                'message_type' => 'normal',
+                'message'      => $body,
+            ]);
+
+            $room->update(['last_message_at' => now()]);
+        } catch (\Throwable $e) {
+            Log::warning('absence advice chat post failed: ' . $e->getMessage());
         }
     }
 }
