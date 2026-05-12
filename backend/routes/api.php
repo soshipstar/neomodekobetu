@@ -62,6 +62,7 @@ Route::prefix('admin')
         Route::get('/students/grade-promotion/preview', [App\Http\Controllers\Admin\StudentController::class, 'gradePromotionPreview']);
         Route::post('/students/grade-promotion/execute', [App\Http\Controllers\Admin\StudentController::class, 'gradePromotionExecute']);
         // 児童を別教室に複製（同一企業内）
+        Route::get('/students/{student}/copy-targets', [App\Http\Controllers\Admin\StudentController::class, 'copyTargets']);
         Route::post('/students/{student}/copy-to-classroom', [App\Http\Controllers\Admin\StudentController::class, 'copyToClassroom']);
         // 同一人物としてリンクされている他教室のレコード取得・同期
         Route::get('/students/{student}/linked', [App\Http\Controllers\Admin\StudentController::class, 'linkedStudents']);

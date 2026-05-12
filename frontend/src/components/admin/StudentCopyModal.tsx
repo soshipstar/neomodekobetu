@@ -41,25 +41,25 @@ export function StudentCopyModal({ student, onClose, onCopied }: Props) {
   useEffect(() => {
     (async () => {
       try {
-        const res = await api.get('/api/admin/classrooms', { params: { per_page: 500 } });
-        const allData = res.data.data ?? res.data;
-        const list: ClassroomOption[] = Array.isArray(allData) ? allData : allData?.data || [];
+        // R6: 複製専用エンドポイントから候補を取得する。
+        // /api/admin/classrooms は権限により自分の教室1つしか返さないケースがあり、
+        // 同企業の別教室が表示されない不具合があった。
+        const res = await api.get(`/api/admin/students/${student.id}/copy-targets`);
+        const list: ClassroomOption[] = res.data?.data ?? [];
         setClassrooms(list);
-      } catch {
-        toast('教室一覧の取得に失敗しました', 'error');
+      } catch (err: unknown) {
+        const msg =
+          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          '複製先教室の取得に失敗しました';
+        toast(msg, 'error');
       } finally {
         setLoading(false);
       }
     })();
-  }, [toast]);
+  }, [student.id, toast]);
 
-  // 複製先候補: 同じ企業 かつ 複製元とは別の教室 のみ
-  const candidateClassrooms =
-    sourceCompanyId !== null
-      ? classrooms.filter(
-          (c) => c.company_id === sourceCompanyId && c.id !== student.classroom_id
-        )
-      : [];
+  // 複製専用エンドポイントは既に source と他教室を絞った結果を返すので、追加フィルタは不要。
+  const candidateClassrooms = classrooms;
 
   const validate = (): boolean => {
     const next: Record<string, string> = {};

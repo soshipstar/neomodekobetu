@@ -175,15 +175,10 @@ class StudentController extends Controller
             ]);
         }
 
-        // 非マスターは自分がアクセス可能な教室のみ
-        if (!$isMaster && !in_array((int) $validated['classroom_id'], $user->switchableClassroomIds(), true)) {
-            return response()->json([
-                'success' => false,
-                'message' => '指定した教室への権限がありません。',
-            ], 403);
-        }
-
         // 同一企業制約
+        // R6: 旧実装は switchableClassroomIds() (= ユーザーの所属教室1個) で判定していたため
+        // 「同企業の別教室の管理者」が複製できなかった。同企業内であれば管理者は児童複製を
+        // 許可する。マスター管理者と「複製元教室の所属企業 == 自分の所属教室の所属企業」管理者を許可する。
         $student->loadMissing('classroom');
         $sourceCompanyId = $student->classroom?->company_id;
         if ($sourceCompanyId === null) {
@@ -196,6 +191,18 @@ class StudentController extends Controller
             throw ValidationException::withMessages([
                 'classroom_id' => ['複製先は複製元と同じ企業の教室である必要があります。'],
             ]);
+        }
+
+        // 非マスター: 自分の所属企業 (= 自教室の company_id) と複製元の company_id が一致する必要がある
+        if (!$isMaster) {
+            $user->loadMissing('classroom');
+            $userCompanyId = $user->classroom?->company_id;
+            if ($userCompanyId === null || $userCompanyId !== $sourceCompanyId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => '別企業の児童は複製できません。',
+                ], 403);
+            }
         }
 
         // 同一人物識別用の person_id: source に無ければ新規 uuid を両方に割り当てる
@@ -228,6 +235,53 @@ class StudentController extends Controller
             'data'    => $copy->load(['classroom', 'guardian']),
             'message' => '児童を別教室に複製しました。',
         ], 201);
+    }
+
+    /**
+     * R6: 児童の別教室複製モーダル用に、複製先候補の教室一覧を返す。
+     *
+     * `/api/admin/classrooms` は管理者の権限階層 (master / company_admin / 通常)
+     * 別に絞り込みをかけるため、通常管理者には自分の教室1つだけが返り、
+     * 「同企業内の他教室」が見れなかった。本エンドポイントは複製専用の用途に
+     * 限定して、複製元教室の所属企業の全教室 (source を除く) を返す。
+     *
+     * 認可: マスター、または「source の company と一致する admin」
+     */
+    public function copyTargets(Request $request, Student $student): JsonResponse
+    {
+        $user = $request->user();
+        $isMaster = $user->user_type === 'admin' && $user->is_master;
+
+        $student->loadMissing('classroom');
+        $sourceCompanyId = $student->classroom?->company_id;
+        if ($sourceCompanyId === null) {
+            return response()->json([
+                'success' => false,
+                'message' => '複製元の教室に所属企業が設定されていません。',
+            ], 422);
+        }
+
+        if (! $isMaster) {
+            $user->loadMissing('classroom');
+            $userCompanyId = $user->classroom?->company_id;
+            if ($userCompanyId === null || $userCompanyId !== $sourceCompanyId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'この児童の複製先教室を閲覧する権限がありません。',
+                ], 403);
+            }
+        }
+
+        $targets = Classroom::where('company_id', $sourceCompanyId)
+            ->where('id', '!=', $student->classroom_id)
+            ->where('is_active', true)
+            ->orderBy('classroom_name')
+            ->get(['id', 'classroom_name', 'company_id', 'is_active']);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $targets,
+        ]);
     }
 
     /**
