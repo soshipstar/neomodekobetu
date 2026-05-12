@@ -282,12 +282,14 @@ export default function GuardiansPage() {
                     className={inputCls} required />
                 </div>
 
-                {/* 現在のパスワード（読み取り専用） */}
+                {/* 現在のパスワード（読み取り専用）
+                    保護者が自分で変更した後は password_plain が NULL になるため、
+                    その旨を明示してスタッフが古い値を案内しないようにする。 */}
                 <div className="mb-3">
                   <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">現在のパスワード</label>
                   <div className="flex gap-2 items-center">
                     <input
-                      value={editingGuardian.password_plain || '（未設定）'}
+                      value={editingGuardian.password_plain || '（保護者により変更済み・スタッフからは確認できません）'}
                       readOnly
                       className={`${inputCls} flex-1 bg-[var(--neutral-background-3)]`}
                     />
@@ -297,6 +299,11 @@ export default function GuardiansPage() {
                       </Button>
                     )}
                   </div>
+                  {!editingGuardian.password_plain && (
+                    <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">
+                      保護者が自分でパスワードを変更すると、安全のため初期パスワードは消去されます。紛失時は下の「新しいパスワード」で再発行してください。
+                    </p>
+                  )}
                 </div>
 
                 {/* 新しいパスワード */}

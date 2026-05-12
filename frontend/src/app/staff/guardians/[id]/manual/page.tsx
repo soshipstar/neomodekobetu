@@ -132,7 +132,7 @@ export default function GuardianManualPage() {
               <tr style={{ background: '#fff3cd' }}>
                 <td style={{ padding: '6px 12px', fontWeight: 'bold', color: '#444' }}>初期パスワード</td>
                 <td style={{ padding: '6px 12px', fontSize: '14pt', fontFamily: 'monospace', fontWeight: 'bold' }}>
-                  {guardian.password_plain || '（設定済み・表示不可）'}
+                  {guardian.password_plain || '（保護者により変更済み）'}
                 </td>
               </tr>
             </tbody>
