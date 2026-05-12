@@ -87,7 +87,7 @@ class DashboardController extends Controller
         ", [$guardianId]);
 
         // ==============================
-        // 未提出かけはし (overdue/urgent/pending)
+        // 未提出アセスメント (overdue/urgent/pending)
         // ==============================
         $overdueKakehashi = [];
         $urgentKakehashi = [];
@@ -363,7 +363,7 @@ class DashboardController extends Controller
         }
 
         // ==============================
-        // スタッフかけはしの確認待ち
+        // スタッフアセスメントの確認待ち
         // ==============================
         $pendingStaffKakehashi = [];
         if (!empty($studentIds)) {

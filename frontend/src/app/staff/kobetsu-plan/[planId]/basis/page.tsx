@@ -167,7 +167,7 @@ export default function PlanBasisPage() {
           <span>{plan.student?.student_name}</span>
           <span>計画作成日: {formatDate(plan.created_date)}</span>
           {kakehashi_period && (
-            <span>根拠期間: {formatDate(kakehashi_period.submission_deadline)} 期限のかけはし</span>
+            <span>根拠期間: {formatDate(kakehashi_period.submission_deadline)} 期限のアセスメント</span>
           )}
         </div>
       </div>
@@ -175,7 +175,7 @@ export default function PlanBasisPage() {
       {hasNoData ? (
         <div className="rounded-lg bg-[var(--neutral-background-3)] p-8 text-center text-[var(--neutral-foreground-3)]">
           <h3 className="text-lg font-semibold mb-2">根拠データが見つかりません</h3>
-          <p>この計画書に関連するかけはしデータやモニタリングデータが見つかりませんでした。</p>
+          <p>この計画書に関連するアセスメントデータやモニタリングデータが見つかりませんでした。</p>
           <p>計画書が手動で作成された可能性があります。</p>
         </div>
       ) : (
@@ -187,7 +187,7 @@ export default function PlanBasisPage() {
             <CardHeader><CardTitle className="text-base">目標の比較と整合性</CardTitle></CardHeader>
             <CardBody>
               <p className="text-sm text-[var(--neutral-foreground-3)] mb-4">
-                保護者・スタッフのかけはしで設定された目標と、個別支援計画で設定された目標を比較します。
+                保護者・スタッフのアセスメントで設定された目標と、個別支援計画で設定された目標を比較します。
               </p>
               <p className="text-sm font-semibold text-[var(--neutral-foreground-1)] mb-2">【短期目標】</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
@@ -210,7 +210,7 @@ export default function PlanBasisPage() {
           {guardian_kakehashi && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">保護者からのかけはし</CardTitle>
+                <CardTitle className="text-base">保護者からのアセスメント</CardTitle>
               </CardHeader>
               <CardBody>
                 <p className="text-sm text-[var(--neutral-foreground-3)] mb-4">
@@ -236,7 +236,7 @@ export default function PlanBasisPage() {
           {staff_kakehashi && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">スタッフからのかけはし</CardTitle>
+                <CardTitle className="text-base">スタッフからのアセスメント</CardTitle>
               </CardHeader>
               <CardBody>
                 <p className="text-sm text-[var(--neutral-foreground-3)] mb-4">

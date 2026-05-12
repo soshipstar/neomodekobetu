@@ -189,7 +189,7 @@ export default function KakehashiStaffPage() {
       api.post(`/api/staff/kakehashi/${periodId}`, { ...data, action }),
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'kakehashi', 'periods', selectedStudentId] });
-      toast.success(vars.action === 'submit' ? 'かけはしを提出しました' : '下書きを保存しました');
+      toast.success(vars.action === 'submit' ? 'アセスメントを提出しました' : '下書きを保存しました');
       if (vars.action === 'submit') {
         setEditingPeriodId(null);
       }
@@ -203,7 +203,7 @@ export default function KakehashiStaffPage() {
       api.put(`/api/staff/kakehashi/${periodId}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'kakehashi', 'periods', selectedStudentId] });
-      toast.success('かけはしを更新しました');
+      toast.success('アセスメントを更新しました');
       setEditingPeriodId(null);
     },
     onError: () => toast.error('更新に失敗しました'),
@@ -285,7 +285,7 @@ export default function KakehashiStaffPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">かけはし（職員）</h1>
+      <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">アセスメント（職員）</h1>
 
       {/* Student selector */}
       <Card>
@@ -321,7 +321,7 @@ export default function KakehashiStaffPage() {
         ) : periods.length === 0 ? (
           <Card>
             <CardBody>
-              <p className="text-sm text-[var(--neutral-foreground-3)]">かけはし期間がありません。</p>
+              <p className="text-sm text-[var(--neutral-foreground-3)]">アセスメント期間がありません。</p>
             </CardBody>
           </Card>
         ) : (

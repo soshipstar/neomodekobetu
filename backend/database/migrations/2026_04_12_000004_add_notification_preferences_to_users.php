@@ -13,7 +13,7 @@ return new class extends Migration
      *  - chat          : チャットメッセージ
      *  - announcement  : お知らせ
      *  - meeting       : 面談予約
-     *  - kakehashi     : かけはし依頼
+     *  - kakehashi     : アセスメント依頼
      *  - monitoring    : モニタリング表
      *  - support_plan  : 個別支援計画依頼
      *  - submission    : 提出物依頼

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>かけはし提出期限のお知らせ</title>
+    <title>アセスメント提出期限のお知らせ</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'Meiryo', sans-serif; line-height: 1.6; color: #333333; background-color: #f0f2f5;">
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f0f2f5;">
@@ -17,7 +17,7 @@
                                 {{ $facilityName ?? 'きづり' }}
                             </h1>
                             <p style="margin: 8px 0 0 0; font-size: 14px; color: rgba(255, 255, 255, 0.85);">
-                                かけはし提出期限のお知らせ
+                                アセスメント提出期限のお知らせ
                             </p>
                         </td>
                     </tr>
@@ -30,7 +30,7 @@
                             </p>
 
                             <p style="font-size: 15px; margin: 0 0 24px 0; color: #444444;">
-                                <strong>{{ $studentName }}</strong> さんのかけはしの提出期限が近づいています。
+                                <strong>{{ $studentName }}</strong> さんのアセスメントの提出期限が近づいています。
                             </p>
 
                             {{-- Deadline display --}}
@@ -71,7 +71,7 @@
                                 <tr>
                                     <td align="center">
                                         <a href="{{ $kakehashiUrl }}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 25px; font-weight: 600; font-size: 15px; letter-spacing: 0.5px;">
-                                            かけはしを記入する
+                                            アセスメントを記入する
                                         </a>
                                     </td>
                                 </tr>

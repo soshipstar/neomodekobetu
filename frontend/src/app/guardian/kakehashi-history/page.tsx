@@ -139,14 +139,14 @@ export default function GuardianKakehashiHistoryPage() {
       {/* Page Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">かけはし履歴</h1>
+          <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">アセスメント履歴</h1>
           <p className="mt-1 text-sm text-[var(--neutral-foreground-3)]">
-            過去のかけはしを閲覧・印刷できます
+            過去のアセスメントを閲覧・印刷できます
           </p>
         </div>
         <Link href="/guardian/kakehashi">
           <Button variant="primary" leftIcon={<MaterialIcon name="menu_book" size={16} />}>
-            かけはし入力
+            アセスメント入力
           </Button>
         </Link>
       </div>
@@ -234,8 +234,8 @@ export default function GuardianKakehashiHistoryPage() {
                 <MaterialIcon name="menu_book" size={48} className="mx-auto mb-3 text-[var(--neutral-foreground-4)]" />
                 <p className="text-sm text-[var(--neutral-foreground-3)]">
                   {selectedStudentName
-                    ? `${selectedStudentName}さんの提出済みかけはしはまだありません`
-                    : '表示するかけはし履歴がありません'}
+                    ? `${selectedStudentName}さんの提出済みアセスメントはまだありません`
+                    : '表示するアセスメント履歴がありません'}
                 </p>
               </div>
             </Card>
@@ -404,7 +404,7 @@ export default function GuardianKakehashiHistoryPage() {
                                     leftIcon={<MaterialIcon name="check_circle" size={14} />}
                                     isLoading={confirmMutation.isPending}
                                     onClick={() => {
-                                      if (window.confirm('事業所かけはしの内容を確認しましたか？')) {
+                                      if (window.confirm('事業所アセスメントの内容を確認しましたか？')) {
                                         confirmMutation.mutate({
                                           student_id: Number(activeStudentId),
                                           period_id: item.period_id,
@@ -438,7 +438,7 @@ export default function GuardianKakehashiHistoryPage() {
         <Modal
           isOpen={detailModal.open}
           onClose={() => setDetailModal(null)}
-          title={`${detailModal.type === 'guardian' ? '保護者' : '事業所'}かけはし`}
+          title={`${detailModal.type === 'guardian' ? '保護者' : '事業所'}アセスメント`}
           size="lg"
         >
           {isLoadingDetail ? (

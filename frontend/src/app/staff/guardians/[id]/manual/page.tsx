@@ -200,7 +200,7 @@ export default function GuardianManualPage() {
             {[
               { title: '📒 連絡帳の確認', desc: 'お子様の日々の活動記録を確認できます' },
               { title: '📊 個別支援計画', desc: 'お子様の支援計画を確認・署名できます' },
-              { title: '🤝 かけはし入力', desc: '家庭でのお子様の様子をお知らせください' },
+              { title: '🤝 アセスメント入力', desc: '家庭でのお子様の様子をお知らせください' },
               { title: '💬 チャット', desc: 'スタッフとメッセージのやり取りができます' },
             ].map((f) => (
               <div key={f.title} style={{ border: '1px solid #ddd', borderRadius: '8px', padding: '12px' }}>

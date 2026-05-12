@@ -22,8 +22,8 @@ use Illuminate\Support\Facades\Log;
  * 期限通知ジョブ
  *
  * 毎朝9時に実行し、以下の期限通知を送信する:
- * - かけはし（保護者）提出期限リマインダー（7日前・当日）
- * - かけはし（スタッフ）提出期限リマインダー（7日前・当日）
+ * - アセスメント（保護者）提出期限リマインダー（7日前・当日）
+ * - アセスメント（スタッフ）提出期限リマインダー（7日前・当日）
  * - モニタリング作成期限リマインダー（1ヶ月前から当日まで）
  * - 個別支援計画書更新期限リマインダー（1ヶ月前から当日まで）
  */
@@ -74,7 +74,7 @@ class SendDeadlineNotificationsJob implements ShouldQueue
     // =========================================================================
 
     /**
-     * 保護者かけはし期限リマインダー
+     * 保護者アセスメント期限リマインダー
      * 提出期限が本日 または 7日後で未提出の保護者に通知
      */
     protected function sendKakehashiGuardianReminders(): void
@@ -129,8 +129,8 @@ class SendDeadlineNotificationsJob implements ShouldQueue
                 $this->createNotification(
                     $guardian,
                     'deadline_reminder',
-                    "【かけはし提出期限】{$student->student_name}",
-                    "{$student->student_name}さんのかけはし（保護者）の提出期限が近づいています。{$urgency}（期限: {$period->submission_deadline->format('Y年n月j日')}）",
+                    "【アセスメント提出期限】{$student->student_name}",
+                    "{$student->student_name}さんのアセスメント（保護者）の提出期限が近づいています。{$urgency}（期限: {$period->submission_deadline->format('Y年n月j日')}）",
                     [
                         'type' => 'kakehashi_guardian',
                         'period_id' => $period->id,
@@ -144,7 +144,7 @@ class SendDeadlineNotificationsJob implements ShouldQueue
                     'deadline_reminder',
                     'kakehashi_guardian',
                     $notificationKey,
-                    "保護者かけはし期限通知: {$student->student_name} / 期限: {$period->submission_deadline->toDateString()}"
+                    "保護者アセスメント期限通知: {$student->student_name} / 期限: {$period->submission_deadline->toDateString()}"
                 );
 
                 $this->results['kakehashi_guardian']++;
@@ -162,7 +162,7 @@ class SendDeadlineNotificationsJob implements ShouldQueue
     // =========================================================================
 
     /**
-     * スタッフかけはし期限リマインダー
+     * スタッフアセスメント期限リマインダー
      * 提出期限が本日 または 7日後で未提出のスタッフに通知
      */
     protected function sendKakehashiStaffReminders(): void
@@ -222,8 +222,8 @@ class SendDeadlineNotificationsJob implements ShouldQueue
                     $this->createNotification(
                         $staff,
                         'deadline_reminder',
-                        "【かけはし提出期限】{$student->student_name}",
-                        "{$student->student_name}さんのかけはし（スタッフ）の提出期限が近づいています。{$urgency}（期限: {$period->submission_deadline->format('Y年n月j日')}）",
+                        "【アセスメント提出期限】{$student->student_name}",
+                        "{$student->student_name}さんのアセスメント（スタッフ）の提出期限が近づいています。{$urgency}（期限: {$period->submission_deadline->format('Y年n月j日')}）",
                         [
                             'type' => 'kakehashi_staff',
                             'period_id' => $period->id,
@@ -237,7 +237,7 @@ class SendDeadlineNotificationsJob implements ShouldQueue
                         'deadline_reminder',
                         'kakehashi_staff',
                         $notificationKey,
-                        "スタッフかけはし期限通知: {$student->student_name} / 期限: {$period->submission_deadline->toDateString()} / 送信先: {$staff->full_name}"
+                        "スタッフアセスメント期限通知: {$student->student_name} / 期限: {$period->submission_deadline->toDateString()} / 送信先: {$staff->full_name}"
                     );
 
                     $this->results['kakehashi_staff']++;
@@ -257,7 +257,7 @@ class SendDeadlineNotificationsJob implements ShouldQueue
 
     /**
      * モニタリング期限リマインダー
-     * かけはし期間の提出期限が1ヶ月以内で、モニタリングが未完了の生徒の教室スタッフに通知
+     * アセスメント期間の提出期限が1ヶ月以内で、モニタリングが未完了の生徒の教室スタッフに通知
      */
     protected function sendMonitoringReminders(): void
     {
@@ -360,7 +360,7 @@ class SendDeadlineNotificationsJob implements ShouldQueue
 
     /**
      * 個別支援計画書更新期限リマインダー
-     * かけはし期間の提出期限が1ヶ月以内で、新しい計画書が必要な生徒の教室スタッフに通知
+     * アセスメント期間の提出期限が1ヶ月以内で、新しい計画書が必要な生徒の教室スタッフに通知
      */
     protected function sendPlanReminders(): void
     {

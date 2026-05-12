@@ -950,7 +950,7 @@ function NotificationGrid({ summary }: { summary: DashboardSummary }) {
     {
       borderColor: 'border-l-[var(--status-warning-fg)]',
       icon: <MaterialIcon name="warning" size={16} className="text-[var(--status-warning-fg)]" />,
-      label: 'かけはし期限',
+      label: 'アセスメント期限',
       count: summary.kakehashi_deadlines.guardian_pending + summary.kakehashi_deadlines.staff_pending,
       href: '/staff/pending-tasks',
       detail:

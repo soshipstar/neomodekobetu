@@ -14,7 +14,7 @@ use App\Jobs\SendDeadlineNotificationsJob;
 |
 */
 
-// かけはし期間の自動生成 - 毎月1日の午前0時に実行
+// アセスメント期間の自動生成 - 毎月1日の午前0時に実行
 Schedule::job(new AutoGenerateKakehashiPeriodJob())
     ->monthlyOn(1, '00:00')
     ->withoutOverlapping()

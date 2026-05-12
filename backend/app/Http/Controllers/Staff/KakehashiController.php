@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Log;
 class KakehashiController extends Controller
 {
     /**
-     * 生徒のかけはし一覧を取得（期間ごと）
+     * 生徒のアセスメント一覧を取得（期間ごと）
      */
     public function index(Request $request, Student $student): JsonResponse
     {
@@ -36,7 +36,7 @@ class KakehashiController extends Controller
     }
 
     /**
-     * かけはしスタッフ記入を保存（新規 or 更新）
+     * アセスメントスタッフ記入を保存（新規 or 更新）
      */
     public function store(Request $request, KakehashiPeriod $period): JsonResponse
     {
@@ -101,19 +101,19 @@ class KakehashiController extends Controller
         }
 
         $message = match ($action) {
-            'update' => 'かけはしの内容を修正しました。',
-            'submit' => 'かけはしを提出しました。',
+            'update' => 'アセスメントの内容を修正しました。',
+            'submit' => 'アセスメントを提出しました。',
             default  => '下書きを保存しました。',
         };
 
-        // 提出時は保護者に通知（かけはしの記入依頼）
+        // 提出時は保護者に通知（アセスメントの記入依頼）
         if ($action === 'submit' && $period->student && $period->student->guardian_id) {
             $guardian = User::find($period->student->guardian_id);
             if ($guardian) {
                 app(NotificationService::class)->notify(
                     $guardian,
                     'kakehashi_request',
-                    'かけはしの入力依頼が届きました',
+                    'アセスメントの入力依頼が届きました',
                     'スタッフからの記入が完了しました。ご家庭での記入をお願いいたします。',
                     ['url' => '/guardian/kakehashi', 'period_id' => $period->id],
                 );
@@ -128,7 +128,7 @@ class KakehashiController extends Controller
     }
 
     /**
-     * かけはしスタッフ記入を更新
+     * アセスメントスタッフ記入を更新
      */
     public function update(Request $request, KakehashiPeriod $period): JsonResponse
     {
@@ -138,7 +138,7 @@ class KakehashiController extends Controller
     }
 
     /**
-     * かけはし PDF をダウンロード
+     * アセスメント PDF をダウンロード
      */
     public function pdf(Request $request, KakehashiPeriod $period)
     {
@@ -160,7 +160,7 @@ class KakehashiController extends Controller
     }
 
     /**
-     * かけはし内容をAI生成（期間内の連絡帳データを参照）
+     * アセスメント内容をAI生成（期間内の連絡帳データを参照）
      */
     public function generate(Request $request): JsonResponse
     {
@@ -275,7 +275,7 @@ class KakehashiController extends Controller
             }
         }
 
-        // 前回のスタッフかけはしの目標を取得（レガシー準拠）
+        // 前回のスタッフアセスメントの目標を取得（レガシー準拠）
         $previousEntry = KakehashiStaff::where('student_id', $student->id)
             ->where('is_submitted', true)
             ->whereHas('period', function ($q) use ($period) {
@@ -462,7 +462,7 @@ class KakehashiController extends Controller
     }
 
     /**
-     * 保護者入力かけはしの表示/非表示を切り替え
+     * 保護者入力アセスメントの表示/非表示を切り替え
      */
     public function toggleGuardianHidden(Request $request, KakehashiPeriod $period): JsonResponse
     {
@@ -479,7 +479,7 @@ class KakehashiController extends Controller
             ->first();
 
         if (! $entry) {
-            return response()->json(['success' => false, 'message' => 'かけはしが見つかりませんでした。'], 404);
+            return response()->json(['success' => false, 'message' => 'アセスメントが見つかりませんでした。'], 404);
         }
 
         $entry->update([
@@ -487,8 +487,8 @@ class KakehashiController extends Controller
         ]);
 
         $message = $entry->is_hidden
-            ? '保護者用かけはしを非表示にしました。'
-            : '保護者用かけはしを再表示しました。';
+            ? '保護者用アセスメントを非表示にしました。'
+            : '保護者用アセスメントを再表示しました。';
 
         return response()->json([
             'success' => true,

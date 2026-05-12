@@ -147,10 +147,10 @@ export default function MeetingsPage() {
     },
     onSuccess: (res) => {
       setKakehashiResult({ data: res.data, period: res.period });
-      toast.success(res.message || '保護者かけはしに反映しました');
+      toast.success(res.message || '保護者アセスメントに反映しました');
     },
     onError: (err: any) => {
-      toast.error(err?.response?.data?.message || 'かけはし生成に失敗しました');
+      toast.error(err?.response?.data?.message || 'アセスメント生成に失敗しました');
     },
   });
 
@@ -483,11 +483,11 @@ export default function MeetingsPage() {
                   <div className="border-t border-[var(--neutral-stroke-2)] pt-4">
                     <h4 className="mb-2 text-sm font-semibold text-[var(--brand-60)] flex items-center gap-1.5">
                       <MaterialIcon name="description" size={16} />
-                      保護者かけはし用ヒアリング
+                      保護者アセスメント用ヒアリング
                     </h4>
                     <p className="mb-2 text-xs text-[var(--neutral-foreground-4)]">
-                      面談で聞き取った内容を入力し、AIで保護者かけはしに変換・反映します。
-                      提出期限1か月以内の空のかけはしがあればそこに、なければ最新の期限切れかけはしに記入されます。
+                      面談で聞き取った内容を入力し、AIで保護者アセスメントに変換・反映します。
+                      提出期限1か月以内の空のアセスメントがあればそこに、なければ最新の期限切れアセスメントに記入されます。
                     </p>
                     <textarea
                       value={hearingNotes}
@@ -502,7 +502,7 @@ export default function MeetingsPage() {
                         onClick={() => kakehashiMutation.mutate()}
                         isLoading={kakehashiMutation.isPending}
                         disabled={hearingNotes.trim().length < 10}>
-                        {kakehashiMutation.isPending ? 'AI生成中...' : '保護者かけはしに反映'}
+                        {kakehashiMutation.isPending ? 'AI生成中...' : '保護者アセスメントに反映'}
                       </Button>
                     </div>
 
@@ -510,7 +510,7 @@ export default function MeetingsPage() {
                     {kakehashiResult && (
                       <div className="mt-3 rounded-lg border border-green-200 bg-green-50 p-3 space-y-2">
                         <p className="text-sm font-semibold text-green-800">
-                          保護者かけはしに反映しました（{kakehashiResult.period.period_name}）
+                          保護者アセスメントに反映しました（{kakehashiResult.period.period_name}）
                         </p>
                         <p className="text-xs text-green-600">
                           提出期限: {kakehashiResult.period.submission_deadline}

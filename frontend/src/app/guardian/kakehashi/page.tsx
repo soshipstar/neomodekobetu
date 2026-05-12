@@ -158,7 +158,7 @@ export default function GuardianKakehashiPage() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['guardian', 'kakehashi'] });
       if (variables.action === 'submit') {
-        toast.success('かけはしを提出しました。');
+        toast.success('アセスメントを提出しました。');
       } else {
         toast.success('下書きを保存しました。');
       }
@@ -185,14 +185,14 @@ export default function GuardianKakehashiPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">かけはし入力</h1>
+          <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">アセスメント入力</h1>
           <p className="mt-1 text-sm text-[var(--neutral-foreground-3)]">
-            かけはしの内容を入力してください
+            アセスメントの内容を入力してください
           </p>
         </div>
         <Link href="/guardian/kakehashi-history">
           <Button variant="outline" leftIcon={<MaterialIcon name="history" size={16} />}>
-            かけはし履歴
+            アセスメント履歴
           </Button>
         </Link>
       </div>
@@ -225,13 +225,13 @@ export default function GuardianKakehashiPage() {
         <Card>
           <CardBody>
             <label className="mb-2 block text-sm font-medium text-[var(--neutral-foreground-2)]">
-              かけはし提出期限を選択 <span className="text-[var(--status-danger-fg)]">*</span>
+              アセスメント提出期限を選択 <span className="text-[var(--status-danger-fg)]">*</span>
             </label>
             {loadingPeriods ? (
               <Skeleton className="h-10 w-full rounded-lg" />
             ) : availablePeriods.length === 0 ? (
               <p className="text-sm text-[var(--neutral-foreground-3)]">
-                入力可能なかけはし期間がありません。
+                入力可能なアセスメント期間がありません。
               </p>
             ) : (
               <select

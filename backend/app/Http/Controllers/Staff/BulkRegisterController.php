@@ -330,13 +330,13 @@ class BulkRegisterController extends Controller
                         'guardian_id' => $guardianId,
                     ]);
 
-                    // かけはし期間の自動生成（支援開始日が設定されている場合）
+                    // アセスメント期間の自動生成（支援開始日が設定されている場合）
                     if (! empty($row['support_start_date'])) {
                         try {
                             $kakehashiService = app(\App\Services\KakehashiService::class);
                             $kakehashiService->generateKakehashiPeriodsForStudent($student->id, $row['support_start_date']);
                         } catch (\Exception $e) {
-                            \Illuminate\Support\Facades\Log::warning("一括登録: かけはし生成エラー（{$row['student_name']}）: " . $e->getMessage());
+                            \Illuminate\Support\Facades\Log::warning("一括登録: アセスメント生成エラー（{$row['student_name']}）: " . $e->getMessage());
                         }
                     }
 

@@ -485,7 +485,7 @@ export default function GuardianDashboardPage() {
             {pendingStaffKakehashi.length > 0 && (
               <AlertCard
                 icon={<MaterialIcon name="description" size={20} />}
-                title="スタッフからのかけはし"
+                title="スタッフからのアセスメント"
                 borderColor="border-l-blue-500"
                 bgColor="bg-[var(--brand-160)]"
                 textColor="text-[var(--brand-70)]"
@@ -514,12 +514,12 @@ export default function GuardianDashboardPage() {
               pendingKakehashi.length > 0) && (
               <AlertCard
                 icon={<MaterialIcon name="handshake" size={20} />}
-                title="かけはしの提出"
+                title="アセスメントの提出"
                 borderColor="border-l-orange-500"
                 bgColor="bg-orange-50"
                 textColor="text-orange-700"
                 link="/guardian/kakehashi"
-                linkText="かけはしを作成する"
+                linkText="アセスメントを作成する"
               >
                 {overdueKakehashi.length > 0 && (
                   <div className="mb-1 text-red-600">
@@ -1127,7 +1127,7 @@ export default function GuardianDashboardPage() {
           <QuickLink href="/guardian/support-plan" label="個別支援計画" icon="description" />
           <QuickLink href="/guardian/meetings" label="面談" icon="event" />
           <QuickLink href="/guardian/evaluation" label="事業所評価" icon="star" />
-          <QuickLink href="/guardian/kakehashi" label="かけはし" icon="handshake" />
+          <QuickLink href="/guardian/kakehashi" label="アセスメント" icon="handshake" />
           <QuickLink href="/guardian/notes" label="連絡帳" icon="edit" />
           <QuickLink href="/guardian/monitoring" label="モニタリング" icon="analytics" />
           <QuickLink href="/guardian/absence" label="欠席連絡" icon="cancel" />

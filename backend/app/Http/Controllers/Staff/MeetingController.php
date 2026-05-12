@@ -322,7 +322,7 @@ class MeetingController extends Controller
     }
 
     /**
-     * 面談ヒアリング内容から保護者かけはしをAI生成して保存
+     * 面談ヒアリング内容から保護者アセスメントをAI生成して保存
      */
     public function generateKakehashi(Request $request, MeetingRequest $meeting): JsonResponse
     {
@@ -333,9 +333,9 @@ class MeetingController extends Controller
         $user = $request->user();
         $studentId = $meeting->student_id;
 
-        // 対象のかけはし期間を特定:
-        // 1. 提出期限1か月以内で未入力の保護者かけはし
-        // 2. なければ期限切れの最新の保護者かけはし
+        // 対象のアセスメント期間を特定:
+        // 1. 提出期限1か月以内で未入力の保護者アセスメント
+        // 2. なければ期限切れの最新の保護者アセスメント
         $now = Carbon::now();
         $oneMonthLater = $now->copy()->addMonth();
 
@@ -365,7 +365,7 @@ class MeetingController extends Controller
         if (! $targetEntry) {
             return response()->json([
                 'success' => false,
-                'message' => 'この生徒の保護者かけはしが見つかりません。かけはし期間を作成してください。',
+                'message' => 'この生徒の保護者アセスメントが見つかりません。アセスメント期間を作成してください。',
             ], 422);
         }
 
@@ -380,7 +380,7 @@ class MeetingController extends Controller
             $client = \OpenAI::client($apiKey);
             $aiModel = 'gpt-5.4-mini-2026-03-17';
 
-            $prompt = "あなたは放課後等デイサービスの専門スタッフです。保護者面談で聞き取った内容を、保護者用かけはし（個別支援計画の保護者記入欄）に適切な文章で整理してください。\n\n"
+            $prompt = "あなたは放課後等デイサービスの専門スタッフです。保護者面談で聞き取った内容を、保護者用アセスメント（個別支援計画の保護者記入欄）に適切な文章で整理してください。\n\n"
                 . "【生徒名】{$student->student_name}\n"
                 . "【面談目的】{$meeting->purpose}\n"
                 . "【面談ヒアリング内容】\n{$validated['hearing_notes']}\n\n"
@@ -418,7 +418,7 @@ class MeetingController extends Controller
                 throw new \Exception('AI応答のパースに失敗しました。');
             }
 
-            // かけはしに保存
+            // アセスメントに保存
             $updateData = [];
             $fields = ['student_wish', 'home_challenges', 'short_term_goal', 'long_term_goal',
                 'domain_health_life', 'domain_motor_sensory', 'domain_cognitive_behavior',
@@ -451,7 +451,7 @@ class MeetingController extends Controller
                     'submission_deadline' => $period->submission_deadline,
                 ],
                 'entry_id' => $targetEntry->id,
-                'message'  => '保護者かけはしにAI生成内容を反映しました。',
+                'message'  => '保護者アセスメントにAI生成内容を反映しました。',
             ]);
         } catch (\Exception $e) {
             Log::error('Meeting kakehashi generation failed', ['error' => $e->getMessage()]);

@@ -197,7 +197,7 @@ export default function PendingTasksPage() {
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">未作成タスク一覧</h1>
-          <p className="text-sm text-[var(--neutral-foreground-3)]">個別支援計画書・モニタリング・かけはしの未作成タスク</p>
+          <p className="text-sm text-[var(--neutral-foreground-3)]">個別支援計画書・モニタリング・アセスメントの未作成タスク</p>
         </div>
       </div>
 
@@ -228,8 +228,8 @@ export default function PendingTasksPage() {
                 <option value="">全て</option>
                 <option value="plan">個別支援計画書</option>
                 <option value="monitoring">モニタリング</option>
-                <option value="guardian_kakehashi">かけはし（保護者）</option>
-                <option value="staff_kakehashi">かけはし（職員）</option>
+                <option value="guardian_kakehashi">アセスメント（保護者）</option>
+                <option value="staff_kakehashi">アセスメント（職員）</option>
               </select>
             </div>
             <div className="flex flex-col gap-1">
@@ -270,12 +270,12 @@ export default function PendingTasksPage() {
               variant={data?.summary.monitoring ? 'warning' : 'success'}
             />
             <SummaryCard
-              title="保護者かけはし"
+              title="保護者アセスメント"
               count={data?.summary.guardian_kakehashi ?? 0}
               variant={data?.summary.guardian_kakehashi ? 'warning' : 'success'}
             />
             <SummaryCard
-              title="スタッフかけはし"
+              title="スタッフアセスメント"
               count={data?.summary.staff_kakehashi ?? 0}
               variant={data?.summary.staff_kakehashi ? 'warning' : 'success'}
             />
@@ -447,10 +447,10 @@ export default function PendingTasksPage() {
           {/* Guardian Kakehashi Section */}
           {(categoryFilter === '' || categoryFilter === 'guardian_kakehashi') && (
             <TaskSection
-              title="保護者かけはし"
+              title="保護者アセスメント"
               icon={<MaterialIcon name="handshake" size={20} />}
               count={filteredData.guardian_kakehashi.length}
-              emptyMessage="すべての保護者かけはしが提出済みです"
+              emptyMessage="すべての保護者アセスメントが提出済みです"
               badgeText={filteredData.guardian_kakehashi.length > 0 ? `${filteredData.guardian_kakehashi.length}件の未提出があります` : 'すべて提出済みです'}
               badgeSuccess={filteredData.guardian_kakehashi.length === 0}
             >
@@ -491,7 +491,7 @@ export default function PendingTasksPage() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => {
-                                    if (confirm('このかけはしを非表示にしますか？')) {
+                                    if (confirm('このアセスメントを非表示にしますか？')) {
                                       hideMutation.mutate({ type: 'guardian_kakehashi', period_id: kak.period_id, student_id: kak.student_id, action: 'hide' });
                                     }
                                   }}
@@ -514,10 +514,10 @@ export default function PendingTasksPage() {
           {/* Staff Kakehashi Section */}
           {(categoryFilter === '' || categoryFilter === 'staff_kakehashi') && (
             <TaskSection
-              title="スタッフかけはし"
+              title="スタッフアセスメント"
               icon={<MaterialIcon name="handshake" size={20} />}
               count={filteredData.staff_kakehashi.length}
-              emptyMessage="すべてのスタッフかけはしが作成済みです"
+              emptyMessage="すべてのスタッフアセスメントが作成済みです"
               badgeText={filteredData.staff_kakehashi.length > 0 ? `${filteredData.staff_kakehashi.length}件の未作成があります` : 'すべて作成済みです'}
               badgeSuccess={filteredData.staff_kakehashi.length === 0}
             >
@@ -561,7 +561,7 @@ export default function PendingTasksPage() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => {
-                                    if (confirm('このかけはしを非表示にしますか？')) {
+                                    if (confirm('このアセスメントを非表示にしますか？')) {
                                       hideMutation.mutate({ type: 'staff_kakehashi', period_id: kak.period_id, student_id: kak.student_id, action: 'hide' });
                                     }
                                   }}

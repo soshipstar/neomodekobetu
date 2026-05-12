@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 class KakehashiController extends Controller
 {
     /**
-     * 保護者の子どもに関するかけはし期間一覧を取得
+     * 保護者の子どもに関するアセスメント期間一覧を取得
      */
     public function index(Request $request): JsonResponse
     {
@@ -33,7 +33,7 @@ class KakehashiController extends Controller
     }
 
     /**
-     * かけはしの内容を表示（スタッフ記入分 + 保護者記入分）
+     * アセスメントの内容を表示（スタッフ記入分 + 保護者記入分）
      */
     public function show(Request $request, KakehashiPeriod $period): JsonResponse
     {
@@ -53,7 +53,7 @@ class KakehashiController extends Controller
     }
 
     /**
-     * 保護者のかけはし記入を保存
+     * 保護者のアセスメント記入を保存
      */
     public function store(Request $request, KakehashiPeriod $period): JsonResponse
     {
@@ -121,7 +121,7 @@ class KakehashiController extends Controller
             ]));
         }
 
-        $message = $isSubmitted ? 'かけはしを提出しました。' : '下書きを保存しました。';
+        $message = $isSubmitted ? 'アセスメントを提出しました。' : '下書きを保存しました。';
 
         return response()->json([
             'success' => true,
@@ -131,8 +131,8 @@ class KakehashiController extends Controller
     }
 
     /**
-     * かけはし履歴一覧 (legacy kakehashi_history.php と同等)
-     * 提出済みのスタッフ・保護者かけはしのみ返す
+     * アセスメント履歴一覧 (legacy kakehashi_history.php と同等)
+     * 提出済みのスタッフ・保護者アセスメントのみ返す
      */
     public function history(Request $request): JsonResponse
     {
@@ -200,7 +200,7 @@ class KakehashiController extends Controller
     }
 
     /**
-     * かけはし履歴詳細（期間IDで取得）
+     * アセスメント履歴詳細（期間IDで取得）
      * type=guardian or type=staff で保護者/スタッフの記入内容を返す
      */
     public function historyDetail(Request $request, KakehashiPeriod $period): JsonResponse
@@ -288,7 +288,7 @@ class KakehashiController extends Controller
             ->first();
 
         if (! $staffKakehashi) {
-            return response()->json(['success' => false, 'message' => 'スタッフかけはしが見つかりません。'], 404);
+            return response()->json(['success' => false, 'message' => 'スタッフアセスメントが見つかりません。'], 404);
         }
 
         if ($staffKakehashi->guardian_confirmed) {
@@ -312,7 +312,7 @@ class KakehashiController extends Controller
     }
 
     /**
-     * かけはしエントリーを保存（entryエイリアス - storeと同じ処理）
+     * アセスメントエントリーを保存（entryエイリアス - storeと同じ処理）
      */
     public function entry(Request $request, KakehashiPeriod $period): JsonResponse
     {

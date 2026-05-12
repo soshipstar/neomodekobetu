@@ -155,7 +155,7 @@ class HiddenDocumentController extends Controller
                     if ($period) {
                         return [
                             'student_name' => $period->student?->student_name,
-                            'title'        => 'かけはし',
+                            'title'        => 'アセスメント',
                             'date'         => $period->start_date ?? $period->created_at?->toDateString(),
                         ];
                     }
@@ -195,7 +195,7 @@ class HiddenDocumentController extends Controller
         return match ($type) {
             'support_plan' => '個別支援計画書',
             'monitoring'   => 'モニタリング記録',
-            'kakehashi'    => 'かけはし',
+            'kakehashi'    => 'アセスメント',
             'newsletter'   => 'お便り',
             default        => $type,
         };

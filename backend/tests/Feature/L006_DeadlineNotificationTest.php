@@ -207,7 +207,7 @@ class L006_DeadlineNotificationTest extends TestCase
             ->first();
 
         $this->assertNotNull($notification);
-        $this->assertStringContains('かけはし提出期限', $notification->title);
+        $this->assertStringContains('アセスメント提出期限', $notification->title);
 
         Carbon::setTestNow();
     }

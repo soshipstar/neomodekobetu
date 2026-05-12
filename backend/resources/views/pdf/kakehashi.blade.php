@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>かけはし - {{ $student->student_name ?? '' }}</title>
+    <title>アセスメント - {{ $student->student_name ?? '' }}</title>
     <style>
         
         @page {
@@ -169,7 +169,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>かけはし</h1>
+        <h1>アセスメント</h1>
         <div class="header-subtitle">個別支援計画用 スタッフ・保護者 統合記録</div>
     </div>
 

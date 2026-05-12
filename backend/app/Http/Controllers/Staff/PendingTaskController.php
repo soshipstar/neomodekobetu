@@ -19,7 +19,7 @@ class PendingTaskController extends Controller
 {
     /**
      * 未作成タスク一覧を取得
-     * 個別支援計画書・モニタリング・かけはし（保護者・スタッフ）の未作成タスクを集約
+     * 個別支援計画書・モニタリング・アセスメント（保護者・スタッフ）の未作成タスクを集約
      * Legacy: pending_tasks.php + pending_tasks_helper.php の完全移植
      */
     public function index(Request $request): JsonResponse
@@ -29,7 +29,7 @@ class PendingTaskController extends Controller
         $today = Carbon::today();
         $oneMonthLater = Carbon::today()->addMonth();
 
-        // かけはし期間の自動生成（Legacy: pending_tasks.php の autoGenerateNextKakehashiPeriods と同等）
+        // アセスメント期間の自動生成（Legacy: pending_tasks.php の autoGenerateNextKakehashiPeriods と同等）
         try {
             app(KakehashiService::class)->autoGenerateNextKakehashiPeriods();
         } catch (\Exception $e) {
@@ -43,10 +43,10 @@ class PendingTaskController extends Controller
         // 2. モニタリングタスク
         $monitoringTasks = $this->getMonitoringTasks($accessibleIds, $today, $oneMonthLater);
 
-        // 3. 保護者かけはしタスク
+        // 3. 保護者アセスメントタスク
         $guardianKakehashiTasks = $this->getGuardianKakehashiTasks($accessibleIds, $today, $oneMonthLater);
 
-        // 4. スタッフかけはしタスク
+        // 4. スタッフアセスメントタスク
         $staffKakehashiTasks = $this->getStaffKakehashiTasks($accessibleIds, $today, $oneMonthLater);
 
         return response()->json([
@@ -266,7 +266,7 @@ class PendingTaskController extends Controller
                     }
                 }
 
-                // 方法2: かけはし期間ベースチェック
+                // 方法2: アセスメント期間ベースチェック
                 if (!$needsNewPlan) {
                     $hasNewPeriod = KakehashiPeriod::where('student_id', $student->id)
                         ->where('is_active', true)
@@ -483,7 +483,7 @@ class PendingTaskController extends Controller
     }
 
     /**
-     * 保護者かけはしの未提出タスクを取得
+     * 保護者アセスメントの未提出タスクを取得
      */
     private function getGuardianKakehashiTasks(?array $accessibleIds, Carbon $today, Carbon $oneMonthLater): array
     {
@@ -562,7 +562,7 @@ class PendingTaskController extends Controller
     }
 
     /**
-     * スタッフかけはしの未作成タスクを取得
+     * スタッフアセスメントの未作成タスクを取得
      */
     private function getStaffKakehashiTasks(?array $accessibleIds, Carbon $today, Carbon $oneMonthLater): array
     {
@@ -665,11 +665,11 @@ class PendingTaskController extends Controller
 
     /**
      * 次の個別支援計画書期限が1ヶ月以内かチェック
-     * かけはし期間ベースの判定
+     * アセスメント期間ベースの判定
      */
     private function isNextPlanDeadlineWithinOneMonth(int $studentId, $supportStartDate, ?string $latestPlanDate, Carbon $oneMonthLater): bool
     {
-        // かけはし期間の提出期限が1ヶ月以内のものがあればtrue
+        // アセスメント期間の提出期限が1ヶ月以内のものがあればtrue
         $exists = KakehashiPeriod::where('student_id', $studentId)
             ->where('is_active', true)
             ->where('submission_deadline', '<=', $oneMonthLater)

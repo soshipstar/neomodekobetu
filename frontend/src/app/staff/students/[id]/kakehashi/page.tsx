@@ -139,7 +139,7 @@ export default function KakehashiPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">かけはし</h1>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">アセスメント</h1>
       </div>
 
       {periods && periods.length > 0 ? (
@@ -310,7 +310,7 @@ export default function KakehashiPage() {
         <Card>
           <CardBody>
             <p className="py-8 text-center text-sm text-[var(--neutral-foreground-3)]">
-              かけはし記録がありません
+              アセスメント記録がありません
             </p>
           </CardBody>
         </Card>

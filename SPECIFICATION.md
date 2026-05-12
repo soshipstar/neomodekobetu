@@ -131,7 +131,7 @@ kiduri2026/
 │   │   │   ├── NotificationService.php      # 通知管理
 │   │   │   ├── ChatService.php              # チャットロジック
 │   │   │   ├── SupportPlanService.php       # 支援計画ロジック
-│   │   │   ├── KakehashiService.php         # かけはしロジック
+│   │   │   ├── KakehashiService.php         # アセスメントロジック
 │   │   │   ├── AttendanceService.php        # 出欠管理
 │   │   │   └── AnalyticsBridgeService.php   # Python分析連携
 │   │   ├── Events/                          # イベント（WebSocket配信用）
@@ -617,7 +617,7 @@ CREATE TABLE monitoring_details (
     sort_order INT DEFAULT 0
 );
 
--- ===== かけはし =====
+-- ===== アセスメント =====
 
 CREATE TABLE kakehashi_periods (
     id BIGSERIAL PRIMARY KEY,
@@ -1033,8 +1033,8 @@ CREATE INDEX idx_login_attempts_ip ON login_attempts(ip_address, attempted_at DE
 | **モニタリング** | | |
 | GET/POST | `/api/staff/students/{id}/monitoring` | モニタリング |
 | POST | `/api/staff/monitoring/{id}/generate-ai` | AI生成 |
-| **かけはし** | | |
-| GET | `/api/staff/students/{id}/kakehashi` | かけはし一覧 |
+| **アセスメント** | | |
+| GET | `/api/staff/students/{id}/kakehashi` | アセスメント一覧 |
 | POST/PUT | `/api/staff/kakehashi/{periodId}` | スタッフ入力 |
 | GET | `/api/staff/kakehashi/{periodId}/pdf` | PDF出力 |
 | **連絡帳** | | |
@@ -1068,7 +1068,7 @@ CREATE INDEX idx_login_attempts_ip ON login_attempts(ip_address, attempted_at DE
 | GET | `/api/guardian/support-plans` | 支援計画閲覧 |
 | POST | `/api/guardian/support-plans/{id}/review` | 計画レビュー |
 | POST | `/api/guardian/support-plans/{id}/sign` | 電子署名 |
-| GET/POST | `/api/guardian/kakehashi/{periodId}` | かけはし入力 |
+| GET/POST | `/api/guardian/kakehashi/{periodId}` | アセスメント入力 |
 | POST | `/api/guardian/absence` | 欠席連絡 |
 | GET/PUT | `/api/guardian/meetings/{id}` | 面談回答 |
 | POST | `/api/guardian/evaluation` | 施設評価 |
@@ -1341,7 +1341,7 @@ volumes:
 ### Phase 3: 支援計画系 (3週間)
 - [ ] 個別支援計画 (CRUD + AI生成)
 - [ ] モニタリング
-- [ ] かけはし
+- [ ] アセスメント
 - [ ] 電子署名
 - [ ] PDF生成
 

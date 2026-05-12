@@ -75,9 +75,9 @@
       "icons": [{ "src": "/assets/icons/icon-96x96.svg", "sizes": "96x96" }]
     },
     {
-      "name": "かけはし",
-      "short_name": "かけはし",
-      "description": "かけはしを開く",
+      "name": "アセスメント",
+      "short_name": "アセスメント",
+      "description": "アセスメントを開く",
       "url": "/guardian/kakehashi",
       "icons": [{ "src": "/assets/icons/icon-96x96.svg", "sizes": "96x96" }]
     }

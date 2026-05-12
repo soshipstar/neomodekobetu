@@ -332,7 +332,7 @@ Route::prefix('staff')
         Route::post('/monitoring/{monitoring}/generate-ai', [App\Http\Controllers\Staff\MonitoringController::class, 'generateAi']);
         Route::get('/monitoring/{monitoring}/pdf', [App\Http\Controllers\Staff\MonitoringController::class, 'pdf']);
 
-        // --- かけはし ---
+        // --- アセスメント ---
         Route::get('/students/{student}/kakehashi', [App\Http\Controllers\Staff\KakehashiController::class, 'index']);
         Route::post('/kakehashi/generate', [App\Http\Controllers\Staff\KakehashiController::class, 'generate']);
         Route::post('/kakehashi/{period}', [App\Http\Controllers\Staff\KakehashiController::class, 'store']);
@@ -617,7 +617,7 @@ Route::prefix('guardian')
         Route::post('/support-plans/{plan}/sign', [App\Http\Controllers\Guardian\SupportPlanController::class, 'sign']);
         Route::post('/support-plans/{plan}/comment', [App\Http\Controllers\Guardian\SupportPlanController::class, 'addComment']);
 
-        // かけはし
+        // アセスメント
         Route::get('/kakehashi', [App\Http\Controllers\Guardian\KakehashiController::class, 'index']);
         Route::get('/kakehashi/history', [App\Http\Controllers\Guardian\KakehashiController::class, 'history']); // (#17)
         Route::get('/kakehashi/history/{period}', [App\Http\Controllers\Guardian\KakehashiController::class, 'historyDetail']); // (#18)

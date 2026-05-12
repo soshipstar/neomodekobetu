@@ -44,7 +44,7 @@ const sections: ManualSection[] = [
         <ul className="ml-6 list-disc space-y-1">
           <li><strong>管理者</strong> - システム全体の設定、ユーザー管理、教室管理</li>
           <li><strong>スタッフ</strong> - 日常の記録入力、計画作成、保護者対応</li>
-          <li><strong>保護者</strong> - 連絡帳確認、かけはし入力、チャット</li>
+          <li><strong>保護者</strong> - 連絡帳確認、アセスメント入力、チャット</li>
           <li><strong>生徒</strong> - 週間計画、チャット、提出物</li>
           <li><strong>タブレット</strong> - 活動記録の入力端末</li>
         </ul>
@@ -80,7 +80,7 @@ const sections: ManualSection[] = [
             <p className="text-sm text-[var(--neutral-foreground-3)]">計画の進捗評価と達成状況</p>
           </div>
           <div className="rounded-lg bg-[var(--neutral-background-2)] p-3">
-            <p className="font-medium text-[var(--neutral-foreground-1)]">かけはし</p>
+            <p className="font-medium text-[var(--neutral-foreground-1)]">アセスメント</p>
             <p className="text-sm text-[var(--neutral-foreground-3)]">保護者・職員間の架け橋となるドキュメント</p>
           </div>
         </div>
@@ -145,7 +145,7 @@ const sections: ManualSection[] = [
               </tr>
               <tr className="border-b border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-2)]">
                 <td className="p-3 font-medium">6ヶ月ごと</td>
-                <td className="p-3">かけはしの作成</td>
+                <td className="p-3">アセスメントの作成</td>
                 <td className="p-3">保護者・職員の双方向記入</td>
               </tr>
               <tr className="border-b border-[var(--neutral-stroke-2)]">
@@ -203,7 +203,7 @@ const sections: ManualSection[] = [
           <li><strong>ダッシュボード</strong> - 未読の連絡帳や通知を確認</li>
           <li><strong>連絡帳</strong> - 日々の活動記録を確認、確認ボタンで既読通知</li>
           <li><strong>チャット</strong> - スタッフとのメッセージのやりとり</li>
-          <li><strong>かけはし</strong> - 半期ごとの振り返り記入、職員記入分の確認</li>
+          <li><strong>アセスメント</strong> - 半期ごとの振り返り記入、職員記入分の確認</li>
           <li><strong>個別支援計画</strong> - 計画内容の確認と署名</li>
           <li><strong>モニタリング</strong> - 評価結果の確認</li>
           <li><strong>事業所評価</strong> - アンケートの回答</li>
@@ -253,10 +253,10 @@ const sections: ManualSection[] = [
   {
     id: 'kakehashi',
     icon: <MaterialIcon name="handshake" size={20} />,
-    title: 'かけはし管理',
+    title: 'アセスメント管理',
     content: (
       <div className="space-y-3">
-        <p>「かけはし」は保護者と職員をつなぐ半期ごとの振り返りドキュメントです。</p>
+        <p>「アセスメント」は保護者と職員をつなぐ半期ごとの振り返りドキュメントです。</p>
         <div className="grid gap-3 md:grid-cols-2">
           <div className="rounded-lg bg-[var(--neutral-background-2)] p-4">
             <p className="mb-2 font-medium text-[var(--brand-80)]">職員側の記入</p>
@@ -301,12 +301,12 @@ const sections: ManualSection[] = [
     title: '書類作成スケジュールと期限ルール',
     content: (
       <div className="space-y-3">
-        <p>個別支援計画やモニタリング、かけはしには期限が設定されています。</p>
+        <p>個別支援計画やモニタリング、アセスメントには期限が設定されています。</p>
         <ul className="ml-6 list-disc space-y-2 text-sm text-[var(--neutral-foreground-2)]">
           <li><strong className="text-[var(--status-danger-fg)]">期限超過（赤）</strong> - 期限を過ぎたもの。早急に対応してください</li>
           <li><strong className="text-[var(--status-warning-fg)]">期限間近（黄）</strong> - 1ヶ月以内に期限が来るもの</li>
           <li>ダッシュボードに期限情報がまとめて表示されます</li>
-          <li>かけはし期間は自動生成されます（期限1ヶ月前に次の期間を生成）</li>
+          <li>アセスメント期間は自動生成されます（期限1ヶ月前に次の期間を生成）</li>
         </ul>
       </div>
     ),

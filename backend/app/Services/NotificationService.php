@@ -198,7 +198,7 @@ class NotificationService
         string $kakehashiUrl,
         string $facilityName = '',
     ): void {
-        $subject = "【かけはし】{$studentName}さんのかけはし提出期限が近づいています";
+        $subject = "【アセスメント】{$studentName}さんのアセスメント提出期限が近づいています";
 
         $this->sendEmailNotification($recipient, $subject, 'kakehashi-reminder', [
             'recipientName' => $recipient->full_name,
