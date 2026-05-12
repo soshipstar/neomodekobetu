@@ -595,6 +595,16 @@ export default function RenrakuchoPage() {
       return;
     }
 
+    // R8: 保護者送信は取り消し不可のため、送信前に必ず確認ダイアログを表示する。
+    // 「途中保存」と「保護者に送信」の押し間違い対策。
+    const confirmMsg =
+      `${notesArray.length}名の保護者にこの内容で連絡帳を送信します。\n` +
+      `\n` +
+      `送信後は取り消せません。よろしいですか？`;
+    if (!window.confirm(confirmMsg)) {
+      return;
+    }
+
     setIsSending(true);
     try {
       const res = await api.post(`/api/staff/renrakucho/${sendActivityId}/send-to-guardians`, {
