@@ -10,6 +10,7 @@ import { Modal } from '@/components/ui/Modal';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { useToast } from '@/components/ui/Toast';
 import { useAuthStore } from '@/stores/authStore';
+import { StorageUsageBar } from '@/components/photos/StorageUsageBar';
 
 interface Photo {
   id: number;
@@ -114,8 +115,6 @@ export default function ClassroomPhotosPage() {
     }
   };
 
-  const usedPercent = usage ? (usage.used_bytes / usage.limit_bytes) * 100 : 0;
-
   return (
     <div className="space-y-4 p-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -134,28 +133,15 @@ export default function ClassroomPhotosPage() {
         </Button>
       </div>
 
-      {/* ストレージ使用量 */}
+      {/* ストレージ使用量 (共通コンポーネント、80%/95%/100%で色変化 + 警告メッセージ) */}
       {usage && (
         <Card>
           <CardBody>
-            <div className="flex items-center justify-between text-sm mb-2">
-              <span className="font-medium">保存容量</span>
-              <span className="text-xs text-[var(--neutral-foreground-3)]">
-                {usage.used_mb}MB / {usage.limit_mb}MB
-              </span>
-            </div>
-            <div className="h-2 rounded-full bg-[var(--neutral-background-4)] overflow-hidden">
-              <div
-                className="h-full transition-all"
-                style={{
-                  width: `${Math.min(100, usedPercent)}%`,
-                  backgroundColor:
-                    usedPercent > 90 ? 'var(--status-danger-fg)' :
-                    usedPercent > 70 ? 'var(--status-warning-fg)' :
-                    'var(--status-success-fg)',
-                }}
-              />
-            </div>
+            <StorageUsageBar
+              usedBytes={usage.used_bytes}
+              limitBytes={usage.limit_bytes}
+              label="事業所写真の保存容量"
+            />
           </CardBody>
         </Card>
       )}

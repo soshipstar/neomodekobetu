@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 import { useAuthStore } from '@/stores/authStore';
+import { StorageUsageBar } from '@/components/photos/StorageUsageBar';
 
 interface Photo {
   id: number;
@@ -19,8 +20,11 @@ interface Photo {
 }
 
 interface StorageUsage {
+  used_bytes: number;
+  limit_bytes: number;
   used_mb: number;
   limit_mb: number;
+  available_bytes: number;
 }
 
 interface StudentOption {
@@ -265,13 +269,16 @@ export default function TabletPhotosPage() {
   return (
     <div className="space-y-6">
       {/* ヘッダー */}
-      <div className="flex items-center justify-between rounded-xl bg-white p-6 shadow-md">
-        <div>
+      <div className="flex items-start justify-between gap-4 rounded-xl bg-white p-6 shadow-md">
+        <div className="flex-1 min-w-0">
           <h1 className="text-2xl font-bold">写真ライブラリ</h1>
           {usage && (
-            <p className="mt-1 text-lg text-[var(--neutral-foreground-3)]">
-              使用量: {usage.used_mb}MB / {usage.limit_mb}MB
-            </p>
+            <div className="mt-2 max-w-md">
+              <StorageUsageBar
+                usedBytes={usage.used_bytes}
+                limitBytes={usage.limit_bytes}
+              />
+            </div>
           )}
         </div>
         <button
