@@ -8,6 +8,7 @@ import { SkeletonList } from '@/components/ui/Skeleton';
 import { formatFileSize, nl } from '@/lib/utils';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { compressImageUnderSize, isHeicFile, HEIC_HINT } from '@/lib/imageCompression';
+import { ChatStorageBar } from '@/components/chat/ChatStorageBar';
 
 // サーバー側の max:3072 (3MB) と整合させる
 const ATTACHMENT_MAX_BYTES = 3 * 1024 * 1024;
@@ -65,8 +66,16 @@ export default function StudentChatPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['student', 'chat', 'messages'] });
+      // 容量バーも添付送信成功時に再フェッチ
+      queryClient.invalidateQueries({ queryKey: ['chat', 'storage-usage', 'student'] });
       setMessage('');
       setAttachment(null);
+    },
+    onError: (err: unknown) => {
+      // 容量超過 (422) など、サーバー側のメッセージを表示
+      const e = err as { response?: { data?: { message?: string } } };
+      const serverMsg = e?.response?.data?.message;
+      alert(serverMsg ?? 'メッセージの送信に失敗しました。');
     },
   });
 
@@ -198,6 +207,8 @@ export default function StudentChatPage() {
 
       {/* Input area */}
       <div className="border-t border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] p-3 flex-shrink-0">
+        {/* Storage usage bar (95%以上のときだけ表示) */}
+        <ChatStorageBar role="student" compact fullOnly className="mb-2" />
         {/* Compressing indicator */}
         {compressing && (
           <div className="flex items-center gap-2 mb-2 rounded-lg bg-[var(--neutral-background-2)] px-3 py-2 text-sm text-[var(--neutral-foreground-3)]">

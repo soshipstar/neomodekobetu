@@ -7,6 +7,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { ChatMessageList } from '@/components/chat/ChatMessageList';
 import { ChatInput } from '@/components/chat/ChatInput';
+import { ChatStorageBar } from '@/components/chat/ChatStorageBar';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -120,9 +121,16 @@ export default function StaffChatPage() {
 
   const handleSend = useCallback(
     async (message: string, attachment?: File) => {
-      await sendMessage(message, attachment);
+      try {
+        await sendMessage(message, attachment);
+      } catch (err: unknown) {
+        // 422 容量超過などサーバー側のエラーメッセージをトーストで通知
+        const e = err as { response?: { data?: { message?: string } } };
+        const serverMsg = e?.response?.data?.message;
+        toast.error(serverMsg ?? 'メッセージの送信に失敗しました。');
+      }
     },
-    [sendMessage]
+    [sendMessage, toast]
   );
 
   // Toggle pin
@@ -505,6 +513,11 @@ export default function StaffChatPage() {
                     currentUserId={user?.id || 0}
                   />
                 )}
+              </div>
+
+              {/* Storage usage bar (容量上限警告用 / 95%以上のときだけ表示) */}
+              <div className="px-3 pt-2">
+                <ChatStorageBar role="staff" compact fullOnly />
               </div>
 
               {/* Input */}

@@ -8,6 +8,7 @@ import type { ChatMessage } from '@/types/chat';
 import { useAuthStore } from '@/stores/authStore';
 import { ChatMessageList } from '@/components/chat/ChatMessageList';
 import { ChatInput } from '@/components/chat/ChatInput';
+import { ChatStorageBar } from '@/components/chat/ChatStorageBar';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
@@ -117,6 +118,20 @@ export default function GuardianChatRoomPage() {
     setMessageType('normal');
   }, [fetchMessages, roomId]);
 
+  // ChatInput からの送信を toast つきでラップ (容量超過 422 等を可視化)
+  const handleSendWithErrorToast = useCallback(
+    async (message: string, attachment?: File) => {
+      try {
+        await sendMessage(message, attachment);
+      } catch (err: unknown) {
+        const e = err as { response?: { data?: { message?: string } } };
+        const serverMsg = e?.response?.data?.message;
+        toast.error(serverMsg ?? 'メッセージの送信に失敗しました。');
+      }
+    },
+    [sendMessage, toast]
+  );
+
   const studentId = activeRoom?.student_id || activeRoom?.student?.id;
 
   return (
@@ -198,9 +213,14 @@ export default function GuardianChatRoomPage() {
         </div>
       </div>
 
+      {/* Storage usage bar (容量上限警告用 / 95%以上のときだけ表示) */}
+      <div className="px-3 pt-2">
+        <ChatStorageBar role="guardian" compact fullOnly />
+      </div>
+
       {/* Form Area */}
       {messageType === 'normal' ? (
-        <ChatInput onSend={sendMessage} isSending={isSending} disabled={!activeRoom} />
+        <ChatInput onSend={handleSendWithErrorToast} isSending={isSending} disabled={!activeRoom} />
       ) : messageType === 'absence_notification' ? (
         <AbsenceForm
           roomId={roomId}

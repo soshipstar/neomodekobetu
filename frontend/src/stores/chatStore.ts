@@ -116,8 +116,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
         messages: [...state.messages, newMessage],
         isSending: false,
       }));
-    } catch {
+    } catch (err) {
+      // 容量超過 (422) など、サーバー側のメッセージは呼び出し元 (page) で
+      // トーストに出したいので、isSending リセット後に rethrow する。
       set({ isSending: false });
+      throw err;
     }
   },
 
