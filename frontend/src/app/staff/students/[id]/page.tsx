@@ -89,7 +89,7 @@ export default function StudentDetailPage() {
   const actionLinks = [
     { href: `/staff/students/${studentId}/support-plan`, label: '個別支援計画', icon: 'description' },
     { href: `/staff/students/${studentId}/monitoring`, label: 'モニタリング', icon: 'monitoring' },
-    { href: `/staff/students/${studentId}/kakehashi`, label: 'アセスメント', icon: 'handshake' },
+    { href: `/staff/students/${studentId}/assessment`, label: 'アセスメント', icon: 'handshake' },
   ];
 
   return (

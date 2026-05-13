@@ -99,15 +99,15 @@ export const monitoringSchema = z.object({
 
 export type MonitoringFormData = z.infer<typeof monitoringSchema>;
 
-// ===== Kakehashi =====
+// ===== Assessment =====
 
-export const kakehashiStaffSchema = z.object({
+export const assessmentStaffSchema = z.object({
   question_number: z.number(),
   response_value: z.number().min(1).max(5),
   comment: z.string().optional(),
 });
 
-export const kakehashiGuardianSchema = z.object({
+export const assessmentGuardianSchema = z.object({
   question_number: z.number(),
   response_value: z.number().min(1).max(5),
   comment: z.string().optional(),

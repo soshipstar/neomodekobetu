@@ -251,7 +251,7 @@ const sections: ManualSection[] = [
     ),
   },
   {
-    id: 'kakehashi',
+    id: 'assessment',
     icon: <MaterialIcon name="handshake" size={20} />,
     title: 'アセスメント管理',
     content: (

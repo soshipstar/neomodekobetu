@@ -31,21 +31,21 @@ const DOC_TYPE_OPTIONS = [
   { value: '', label: 'すべて' },
   { value: 'support_plan', label: '個別支援計画書' },
   { value: 'monitoring', label: 'モニタリング' },
-  { value: 'kakehashi', label: 'アセスメント' },
+  { value: 'assessment', label: 'アセスメント' },
   { value: 'newsletter', label: 'お便り' },
 ] as const;
 
 const DOC_TYPE_LABELS: Record<string, string> = {
   support_plan: '個別支援計画書',
   monitoring: 'モニタリング',
-  kakehashi: 'アセスメント',
+  assessment: 'アセスメント',
   newsletter: 'お便り',
 };
 
 const DOC_TYPE_VARIANTS: Record<string, 'default' | 'info' | 'warning' | 'success'> = {
   support_plan: 'info',
   monitoring: 'warning',
-  kakehashi: 'success',
+  assessment: 'success',
   newsletter: 'default',
 };
 

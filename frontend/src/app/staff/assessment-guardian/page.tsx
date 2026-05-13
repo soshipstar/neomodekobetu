@@ -51,7 +51,7 @@ interface StaffEntry {
   submitted_at: string | null;
 }
 
-interface KakehashiPeriod {
+interface AssessmentPeriod {
   id: number;
   student_id: number;
   period_name: string;
@@ -73,7 +73,7 @@ function nl(text: string | null | undefined): string {
 // Main Component
 // ---------------------------------------------------------------------------
 
-export default function KakehashiGuardianViewPage() {
+export default function AssessmentGuardianViewPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const searchParams = useSearchParams();
@@ -97,7 +97,7 @@ export default function KakehashiGuardianViewPage() {
 
   // Fetch students
   const { data: students = [], isLoading: loadingStudents } = useQuery({
-    queryKey: ['staff', 'kakehashi', 'students'],
+    queryKey: ['staff', 'assessment', 'students'],
     queryFn: async () => {
       const res = await api.get<{ data: Student[] }>('/api/staff/students');
       return res.data.data;
@@ -106,10 +106,10 @@ export default function KakehashiGuardianViewPage() {
 
   // Fetch periods for selected student
   const { data: periods = [], isLoading: loadingPeriods } = useQuery({
-    queryKey: ['staff', 'kakehashi', 'periods', selectedStudentId],
+    queryKey: ['staff', 'assessment', 'periods', selectedStudentId],
     queryFn: async () => {
-      const res = await api.get<{ data: KakehashiPeriod[] }>(
-        `/api/staff/students/${selectedStudentId}/kakehashi`
+      const res = await api.get<{ data: AssessmentPeriod[] }>(
+        `/api/staff/students/${selectedStudentId}/assessment`
       );
       return res.data.data;
     },
@@ -131,7 +131,7 @@ export default function KakehashiGuardianViewPage() {
   // PDF download
   const handlePdfDownload = useCallback(async (periodId: number, periodName: string) => {
     try {
-      const res = await api.get(`/api/staff/kakehashi/${periodId}/pdf`, { responseType: 'blob' });
+      const res = await api.get(`/api/staff/assessment/${periodId}/pdf`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -158,12 +158,12 @@ export default function KakehashiGuardianViewPage() {
 
       {/* Navigation tabs */}
       <div className="flex flex-wrap gap-2">
-        <Link href="/staff/kakehashi-guardian">
+        <Link href="/staff/assessment-guardian">
           <Button variant="primary" size="sm" leftIcon={<MaterialIcon name="visibility" size={16} />}>
             保護者入力アセスメント確認
           </Button>
         </Link>
-        <Link href="/staff/kakehashi-staff">
+        <Link href="/staff/assessment-staff">
           <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="edit" size={16} />}>
             スタッフ入力
           </Button>
@@ -377,8 +377,8 @@ export default function KakehashiGuardianViewPage() {
                     return;
                   }
                   try {
-                    await api.post(`/api/staff/kakehashi/${selectedPeriod.id}/toggle-guardian-hidden`);
-                    queryClient.invalidateQueries({ queryKey: ['staff', 'kakehashi'] });
+                    await api.post(`/api/staff/assessment/${selectedPeriod.id}/toggle-guardian-hidden`);
+                    queryClient.invalidateQueries({ queryKey: ['staff', 'assessment'] });
                     toast.success(`保護者用アセスメントを${action}しました。`);
                   } catch {
                     toast.error('操作に失敗しました');

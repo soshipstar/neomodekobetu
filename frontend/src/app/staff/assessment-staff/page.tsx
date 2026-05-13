@@ -22,7 +22,7 @@ interface Student {
   support_start_date: string | null;
 }
 
-interface KakehashiStaffEntry {
+interface AssessmentStaffEntry {
   id: number;
   student_id: number;
   period_id: number;
@@ -44,7 +44,7 @@ interface KakehashiStaffEntry {
   updated_at: string;
 }
 
-interface KakehashiGuardianEntry {
+interface AssessmentGuardianEntry {
   id: number;
   home_situation: string;
   concerns: string;
@@ -52,7 +52,7 @@ interface KakehashiGuardianEntry {
   is_submitted: boolean;
 }
 
-interface KakehashiPeriod {
+interface AssessmentPeriod {
   id: number;
   student_id: number;
   period_name: string;
@@ -60,11 +60,11 @@ interface KakehashiPeriod {
   end_date: string;
   submission_deadline: string;
   is_active: boolean;
-  staff_entries: KakehashiStaffEntry[];
-  guardian_entries: KakehashiGuardianEntry[];
+  staff_entries: AssessmentStaffEntry[];
+  guardian_entries: AssessmentGuardianEntry[];
 }
 
-interface KakehashiForm {
+interface AssessmentForm {
   student_wish: string;
   short_term_goal: string;
   long_term_goal: string;
@@ -86,7 +86,7 @@ const DOMAIN_FIELDS = [
 
 type DomainKey = typeof DOMAIN_FIELDS[number]['key'];
 
-const emptyForm: KakehashiForm = {
+const emptyForm: AssessmentForm = {
   student_wish: '',
   short_term_goal: '',
   long_term_goal: '',
@@ -108,7 +108,7 @@ function nl(text: string | null | undefined): string {
 // Main Component
 // ---------------------------------------------------------------------------
 
-export default function KakehashiStaffPage() {
+export default function AssessmentStaffPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const searchParams = useSearchParams();
@@ -116,13 +116,13 @@ export default function KakehashiStaffPage() {
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
   const [selectedPeriodId, setSelectedPeriodId] = useState<number | null>(null);
   const [editingPeriodId, setEditingPeriodId] = useState<number | null>(null);
-  const [form, setForm] = useState<KakehashiForm>(emptyForm);
+  const [form, setForm] = useState<AssessmentForm>(emptyForm);
   const [generating, setGenerating] = useState(false);
   const [expandedPeriods, setExpandedPeriods] = useState<Set<number>>(new Set());
 
   // Fetch students
   const { data: students = [], isLoading: loadingStudents } = useQuery({
-    queryKey: ['staff', 'kakehashi', 'students'],
+    queryKey: ['staff', 'assessment', 'students'],
     queryFn: async () => {
       const res = await api.get<{ data: Student[] }>('/api/staff/students');
       return res.data.data;
@@ -131,10 +131,10 @@ export default function KakehashiStaffPage() {
 
   // Fetch periods for selected student
   const { data: periods = [], isLoading: loadingPeriods } = useQuery({
-    queryKey: ['staff', 'kakehashi', 'periods', selectedStudentId],
+    queryKey: ['staff', 'assessment', 'periods', selectedStudentId],
     queryFn: async () => {
-      const res = await api.get<{ data: KakehashiPeriod[] }>(
-        `/api/staff/students/${selectedStudentId}/kakehashi`
+      const res = await api.get<{ data: AssessmentPeriod[] }>(
+        `/api/staff/students/${selectedStudentId}/assessment`
       );
       return res.data.data;
     },
@@ -183,12 +183,12 @@ export default function KakehashiStaffPage() {
     }
   }, [selectedPeriodId, periods]);
 
-  // Save/submit mutation (POST to /api/staff/kakehashi/{periodId})
+  // Save/submit mutation (POST to /api/staff/assessment/{periodId})
   const saveMutation = useMutation({
-    mutationFn: async ({ periodId, action, ...data }: KakehashiForm & { periodId: number; action: 'save' | 'submit' }) =>
-      api.post(`/api/staff/kakehashi/${periodId}`, { ...data, action }),
+    mutationFn: async ({ periodId, action, ...data }: AssessmentForm & { periodId: number; action: 'save' | 'submit' }) =>
+      api.post(`/api/staff/assessment/${periodId}`, { ...data, action }),
     onSuccess: (_, vars) => {
-      queryClient.invalidateQueries({ queryKey: ['staff', 'kakehashi', 'periods', selectedStudentId] });
+      queryClient.invalidateQueries({ queryKey: ['staff', 'assessment', 'periods', selectedStudentId] });
       toast.success(vars.action === 'submit' ? 'アセスメントを提出しました' : '下書きを保存しました');
       if (vars.action === 'submit') {
         setEditingPeriodId(null);
@@ -197,12 +197,12 @@ export default function KakehashiStaffPage() {
     onError: () => toast.error('保存に失敗しました'),
   });
 
-  // Update mutation (PUT to /api/staff/kakehashi/{periodId})
+  // Update mutation (PUT to /api/staff/assessment/{periodId})
   const updateMutation = useMutation({
-    mutationFn: async ({ periodId, ...data }: KakehashiForm & { periodId: number }) =>
-      api.put(`/api/staff/kakehashi/${periodId}`, data),
+    mutationFn: async ({ periodId, ...data }: AssessmentForm & { periodId: number }) =>
+      api.put(`/api/staff/assessment/${periodId}`, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['staff', 'kakehashi', 'periods', selectedStudentId] });
+      queryClient.invalidateQueries({ queryKey: ['staff', 'assessment', 'periods', selectedStudentId] });
       toast.success('アセスメントを更新しました');
       setEditingPeriodId(null);
     },
@@ -214,7 +214,7 @@ export default function KakehashiStaffPage() {
     if (!selectedStudentId) return;
     setGenerating(true);
     try {
-      const res = await api.post<{ data: KakehashiForm; record_count: number }>('/api/staff/kakehashi/generate', {
+      const res = await api.post<{ data: AssessmentForm; record_count: number }>('/api/staff/assessment/generate', {
         student_id: selectedStudentId,
         period_id: periodId,
       });
@@ -230,7 +230,7 @@ export default function KakehashiStaffPage() {
   // PDF download
   const handlePdfDownload = useCallback(async (periodId: number, periodName: string) => {
     try {
-      const res = await api.get(`/api/staff/kakehashi/${periodId}/pdf`, { responseType: 'blob' });
+      const res = await api.get(`/api/staff/assessment/${periodId}/pdf`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -243,7 +243,7 @@ export default function KakehashiStaffPage() {
   }, [toast]);
 
   // Start editing a period
-  const startEditing = useCallback((periodId: number, entry?: KakehashiStaffEntry) => {
+  const startEditing = useCallback((periodId: number, entry?: AssessmentStaffEntry) => {
     setEditingPeriodId(periodId);
     if (entry) {
       setForm({

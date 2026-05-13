@@ -21,7 +21,7 @@ interface DashboardSummary {
   unconfirmed_renrakucho: number;
   plan_deadlines: { overdue: number; urgent: number };
   monitoring_deadlines: { overdue: number; urgent: number };
-  kakehashi_deadlines: { guardian_pending: number; staff_pending: number };
+  assessment_deadlines: { guardian_pending: number; staff_pending: number };
   unsubmitted_documents: number;
   facility_evaluation_incomplete: boolean;
 }
@@ -73,7 +73,7 @@ const emptyDashboardSummary: DashboardSummary = {
   unconfirmed_renrakucho: 0,
   plan_deadlines: { overdue: 0, urgent: 0 },
   monitoring_deadlines: { overdue: 0, urgent: 0 },
-  kakehashi_deadlines: { guardian_pending: 0, staff_pending: 0 },
+  assessment_deadlines: { guardian_pending: 0, staff_pending: 0 },
   unsubmitted_documents: 0,
   facility_evaluation_incomplete: false,
 };
@@ -116,9 +116,9 @@ async function fetchSummary(): Promise<DashboardSummary> {
         overdue: data.monitoring_deadlines?.overdue ?? 0,
         urgent: data.monitoring_deadlines?.urgent ?? 0,
       },
-      kakehashi_deadlines: {
-        guardian_pending: data.kakehashi_deadlines?.guardian_pending ?? 0,
-        staff_pending: data.kakehashi_deadlines?.staff_pending ?? 0,
+      assessment_deadlines: {
+        guardian_pending: data.assessment_deadlines?.guardian_pending ?? 0,
+        staff_pending: data.assessment_deadlines?.staff_pending ?? 0,
       },
     };
   } catch {
@@ -951,11 +951,11 @@ function NotificationGrid({ summary }: { summary: DashboardSummary }) {
       borderColor: 'border-l-[var(--status-warning-fg)]',
       icon: <MaterialIcon name="warning" size={16} className="text-[var(--status-warning-fg)]" />,
       label: 'アセスメント期限',
-      count: summary.kakehashi_deadlines.guardian_pending + summary.kakehashi_deadlines.staff_pending,
+      count: summary.assessment_deadlines.guardian_pending + summary.assessment_deadlines.staff_pending,
       href: '/staff/pending-tasks',
       detail:
-        summary.kakehashi_deadlines.guardian_pending > 0 || summary.kakehashi_deadlines.staff_pending > 0
-          ? `保護者: ${summary.kakehashi_deadlines.guardian_pending}件 / 職員: ${summary.kakehashi_deadlines.staff_pending}件`
+        summary.assessment_deadlines.guardian_pending > 0 || summary.assessment_deadlines.staff_pending > 0
+          ? `保護者: ${summary.assessment_deadlines.guardian_pending}件 / 職員: ${summary.assessment_deadlines.staff_pending}件`
           : undefined,
     },
     {

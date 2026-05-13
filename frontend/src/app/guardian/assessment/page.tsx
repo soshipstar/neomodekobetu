@@ -41,7 +41,7 @@ interface GuardianEntry {
   is_hidden: boolean;
 }
 
-interface KakehashiPeriod {
+interface AssessmentPeriod {
   id: number;
   student_id: number;
   period_name: string;
@@ -86,7 +86,7 @@ const emptyForm: FormState = {
 // Main Component
 // ---------------------------------------------------------------------------
 
-export default function GuardianKakehashiPage() {
+export default function GuardianAssessmentPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
@@ -106,10 +106,10 @@ export default function GuardianKakehashiPage() {
 
   // Fetch periods for selected student
   const { data: periods = [], isLoading: loadingPeriods } = useQuery({
-    queryKey: ['guardian', 'kakehashi', activeStudentId],
+    queryKey: ['guardian', 'assessment', activeStudentId],
     queryFn: async () => {
-      const res = await api.get<{ data: KakehashiPeriod[] }>(
-        `/api/guardian/students/${activeStudentId}/kakehashi`
+      const res = await api.get<{ data: AssessmentPeriod[] }>(
+        `/api/guardian/students/${activeStudentId}/assessment`
       );
       return res.data.data;
     },
@@ -150,13 +150,13 @@ export default function GuardianKakehashiPage() {
   // Save/submit mutation
   const saveMutation = useMutation({
     mutationFn: async ({ action }: { action: 'save' | 'submit' }) => {
-      return api.post(`/api/guardian/kakehashi/${selectedPeriodId}`, {
+      return api.post(`/api/guardian/assessment/${selectedPeriodId}`, {
         ...form,
         action,
       });
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['guardian', 'kakehashi'] });
+      queryClient.invalidateQueries({ queryKey: ['guardian', 'assessment'] });
       if (variables.action === 'submit') {
         toast.success('アセスメントを提出しました。');
       } else {
@@ -190,7 +190,7 @@ export default function GuardianKakehashiPage() {
             アセスメントの内容を入力してください
           </p>
         </div>
-        <Link href="/guardian/kakehashi-history">
+        <Link href="/guardian/assessment-history">
           <Button variant="outline" leftIcon={<MaterialIcon name="history" size={16} />}>
             アセスメント履歴
           </Button>

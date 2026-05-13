@@ -1,4 +1,4 @@
-export interface KakehashiPeriod {
+export interface AssessmentPeriod {
   id: number;
   student_id: number;
   period_name: string | null;
@@ -8,14 +8,14 @@ export interface KakehashiPeriod {
   is_active: boolean;
   created_at: string;
   // API returns snake_case relation names
-  staff_entries?: KakehashiStaff[];
-  guardian_entries?: KakehashiGuardian[];
+  staff_entries?: AssessmentStaff[];
+  guardian_entries?: AssessmentGuardian[];
   // Legacy camelCase aliases (kept for backward compat)
-  staffEntries?: KakehashiStaff[];
-  guardianEntries?: KakehashiGuardian[];
+  staffEntries?: AssessmentStaff[];
+  guardianEntries?: AssessmentGuardian[];
 }
 
-export interface KakehashiStaff {
+export interface AssessmentStaff {
   id: number;
   period_id: number;
   student_id: number;
@@ -38,7 +38,7 @@ export interface KakehashiStaff {
   updated_at: string;
 }
 
-export interface KakehashiGuardian {
+export interface AssessmentGuardian {
   id: number;
   period_id: number;
   student_id: number;

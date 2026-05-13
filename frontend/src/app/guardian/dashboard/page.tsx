@@ -30,7 +30,7 @@ interface UnreadChat {
   last_message_at: string;
 }
 
-interface KakehashiItem {
+interface AssessmentItem {
   period_id: number;
   period_name: string;
   submission_deadline: string;
@@ -89,7 +89,7 @@ interface MonitoringAlert {
   monitoring_date: string;
 }
 
-interface StaffKakehashiAlert {
+interface StaffAssessmentAlert {
   id: number;
   student_name: string;
   student_id: number;
@@ -156,9 +156,9 @@ interface CalendarData {
 interface GuardianDashboardData {
   children: DashboardChild[];
   unread_chat_messages: UnreadChat[];
-  overdue_kakehashi: KakehashiItem[];
-  urgent_kakehashi: KakehashiItem[];
-  pending_kakehashi: KakehashiItem[];
+  overdue_assessment: AssessmentItem[];
+  urgent_assessment: AssessmentItem[];
+  pending_assessment: AssessmentItem[];
   overdue_submissions: SubmissionItem[];
   urgent_submissions: SubmissionItem[];
   pending_submissions: SubmissionItem[];
@@ -169,7 +169,7 @@ interface GuardianDashboardData {
   signature_pending_plans: SupportPlanAlert[];
   pending_monitoring_records: MonitoringAlert[];
   signature_pending_monitoring: MonitoringAlert[];
-  pending_staff_kakehashi: StaffKakehashiAlert[];
+  pending_staff_assessment: StaffAssessmentAlert[];
   pending_facility_evaluations: FacilityEvaluation[];
   calendar: CalendarData;
 }
@@ -295,16 +295,16 @@ export default function GuardianDashboardPage() {
   // Use safe defaults when API fails or is loading
   const children = data?.children ?? [];
   const unreadChat = data?.unread_chat_messages ?? [];
-  const overdueKakehashi = data?.overdue_kakehashi ?? [];
-  const urgentKakehashi = data?.urgent_kakehashi ?? [];
-  const pendingKakehashi = data?.pending_kakehashi ?? [];
+  const overdueAssessment = data?.overdue_assessment ?? [];
+  const urgentAssessment = data?.urgent_assessment ?? [];
+  const pendingAssessment = data?.pending_assessment ?? [];
   const overdueSubmissions = data?.overdue_submissions ?? [];
   const urgentSubmissions = data?.urgent_submissions ?? [];
   const pendingSupportPlans = data?.pending_support_plans ?? [];
   const signaturePendingPlans = data?.signature_pending_plans ?? [];
   const pendingMonitoringRecords = data?.pending_monitoring_records ?? [];
   const signaturePendingMonitoring = data?.signature_pending_monitoring ?? [];
-  const pendingStaffKakehashi = data?.pending_staff_kakehashi ?? [];
+  const pendingStaffAssessment = data?.pending_staff_assessment ?? [];
   const pendingMeetingRequests = data?.pending_meeting_requests ?? [];
   const confirmedMeetings = data?.confirmed_meetings ?? [];
   const pendingFacilityEvaluations = data?.pending_facility_evaluations ?? [];
@@ -318,10 +318,10 @@ export default function GuardianDashboardPage() {
     signaturePendingPlans.length > 0 ||
     pendingMonitoringRecords.length > 0 ||
     signaturePendingMonitoring.length > 0 ||
-    pendingStaffKakehashi.length > 0 ||
-    overdueKakehashi.length > 0 ||
-    urgentKakehashi.length > 0 ||
-    pendingKakehashi.length > 0 ||
+    pendingStaffAssessment.length > 0 ||
+    overdueAssessment.length > 0 ||
+    urgentAssessment.length > 0 ||
+    pendingAssessment.length > 0 ||
     overdueSubmissions.length > 0 ||
     urgentSubmissions.length > 0 ||
     pendingMeetingRequests.length > 0 ||
@@ -481,25 +481,25 @@ export default function GuardianDashboardPage() {
               </AlertCard>
             )}
 
-            {/* Staff Kakehashi */}
-            {pendingStaffKakehashi.length > 0 && (
+            {/* Staff Assessment */}
+            {pendingStaffAssessment.length > 0 && (
               <AlertCard
                 icon={<MaterialIcon name="description" size={20} />}
                 title="スタッフからのアセスメント"
                 borderColor="border-l-blue-500"
                 bgColor="bg-[var(--brand-160)]"
                 textColor="text-[var(--brand-70)]"
-                link="/guardian/kakehashi"
+                link="/guardian/assessment"
                 linkText="確認する"
               >
                 <p>
                   <span className="font-semibold text-[var(--brand-70)]">
-                    {pendingStaffKakehashi.length}件
+                    {pendingStaffAssessment.length}件
                   </span>
                   の確認待ちがあります
                 </p>
                 <ul className="mt-1 list-disc pl-5 text-xs text-[var(--neutral-foreground-3)]">
-                  {pendingStaffKakehashi.map((sk) => (
+                  {pendingStaffAssessment.map((sk) => (
                     <li key={sk.id}>
                       {sk.student_name}さん「{sk.period_name}」
                     </li>
@@ -508,25 +508,25 @@ export default function GuardianDashboardPage() {
               </AlertCard>
             )}
 
-            {/* Guardian Kakehashi (pending submission) */}
-            {(overdueKakehashi.length > 0 ||
-              urgentKakehashi.length > 0 ||
-              pendingKakehashi.length > 0) && (
+            {/* Guardian Assessment (pending submission) */}
+            {(overdueAssessment.length > 0 ||
+              urgentAssessment.length > 0 ||
+              pendingAssessment.length > 0) && (
               <AlertCard
                 icon={<MaterialIcon name="handshake" size={20} />}
                 title="アセスメントの提出"
                 borderColor="border-l-orange-500"
                 bgColor="bg-orange-50"
                 textColor="text-orange-700"
-                link="/guardian/kakehashi"
+                link="/guardian/assessment"
                 linkText="アセスメントを作成する"
               >
-                {overdueKakehashi.length > 0 && (
+                {overdueAssessment.length > 0 && (
                   <div className="mb-1 text-red-600">
-                    <span className="font-semibold">{overdueKakehashi.length}件</span>
+                    <span className="font-semibold">{overdueAssessment.length}件</span>
                     が期限を過ぎています
                     <ul className="mt-1 list-disc pl-5 text-xs">
-                      {overdueKakehashi.map((k) => (
+                      {overdueAssessment.map((k) => (
                         <li key={k.period_id}>
                           {k.student_name}さん「{k.period_name}」（期限:{' '}
                           {formatDate(k.submission_deadline, 'yyyy/MM/dd')}）
@@ -535,14 +535,14 @@ export default function GuardianDashboardPage() {
                     </ul>
                   </div>
                 )}
-                {urgentKakehashi.length > 0 && (
+                {urgentAssessment.length > 0 && (
                   <div className="mb-1">
                     <span className="font-semibold text-orange-600">
-                      {urgentKakehashi.length}件
+                      {urgentAssessment.length}件
                     </span>
                     の提出期限が近づいています（7日以内）
                     <ul className="mt-1 list-disc pl-5 text-xs text-[var(--neutral-foreground-3)]">
-                      {urgentKakehashi.map((k) => (
+                      {urgentAssessment.map((k) => (
                         <li key={k.period_id}>
                           {k.student_name}さん「{k.period_name}」（期限:{' '}
                           {formatDate(k.submission_deadline, 'yyyy/MM/dd')}）
@@ -551,14 +551,14 @@ export default function GuardianDashboardPage() {
                     </ul>
                   </div>
                 )}
-                {pendingKakehashi.length > 0 && (
+                {pendingAssessment.length > 0 && (
                   <div>
                     <span className="font-semibold text-[var(--neutral-foreground-3)]">
-                      {pendingKakehashi.length}件
+                      {pendingAssessment.length}件
                     </span>
                     の提出期限が1ヶ月以内です
                     <ul className="mt-1 list-disc pl-5 text-xs text-[var(--neutral-foreground-3)]">
-                      {pendingKakehashi.map((k) => (
+                      {pendingAssessment.map((k) => (
                         <li key={k.period_id}>
                           {k.student_name}さん「{k.period_name}」（期限:{' '}
                           {formatDate(k.submission_deadline, 'yyyy/MM/dd')}）
@@ -578,7 +578,7 @@ export default function GuardianDashboardPage() {
                 borderColor="border-l-red-500"
                 bgColor="bg-red-50"
                 textColor="text-red-700"
-                link="/guardian/kakehashi"
+                link="/guardian/assessment"
                 linkText="提出物を確認する"
               >
                 {overdueSubmissions.length > 0 && (
@@ -1127,7 +1127,7 @@ export default function GuardianDashboardPage() {
           <QuickLink href="/guardian/support-plan" label="個別支援計画" icon="description" />
           <QuickLink href="/guardian/meetings" label="面談" icon="event" />
           <QuickLink href="/guardian/evaluation" label="事業所評価" icon="star" />
-          <QuickLink href="/guardian/kakehashi" label="アセスメント" icon="handshake" />
+          <QuickLink href="/guardian/assessment" label="アセスメント" icon="handshake" />
           <QuickLink href="/guardian/notes" label="連絡帳" icon="edit" />
           <QuickLink href="/guardian/monitoring" label="モニタリング" icon="analytics" />
           <QuickLink href="/guardian/absence" label="欠席連絡" icon="cancel" />

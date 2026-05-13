@@ -20,18 +20,18 @@ interface StudentOption {
   student_name: string;
 }
 
-interface KakehashiHistoryItem {
+interface AssessmentHistoryItem {
   period_id: number;
   period_name: string;
   start_date: string;
   end_date: string;
   submission_deadline: string;
-  staff_kakehashi_id: number | null;
+  staff_assessment_id: number | null;
   staff_submitted: boolean;
   staff_submitted_at: string | null;
   staff_guardian_confirmed: boolean;
   staff_guardian_confirmed_at: string | null;
-  guardian_kakehashi_id: number | null;
+  guardian_assessment_id: number | null;
   guardian_submitted: boolean;
   guardian_submitted_at: string | null;
   // Detail fields (for expanded view) - legacy field names
@@ -53,7 +53,7 @@ interface KakehashiHistoryItem {
   staff_category?: string;
 }
 
-export default function GuardianKakehashiHistoryPage() {
+export default function GuardianAssessmentHistoryPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
@@ -80,12 +80,12 @@ export default function GuardianKakehashiHistoryPage() {
   // Auto-select first student
   const activeStudentId = selectedStudentId || (students.length > 0 ? String(students[0].id) : '');
 
-  // Fetch kakehashi history
+  // Fetch assessment history
   const { data: history = [], isLoading: isLoadingHistory } = useQuery({
-    queryKey: ['guardian', 'kakehashi', 'history', activeStudentId],
+    queryKey: ['guardian', 'assessment', 'history', activeStudentId],
     queryFn: async () => {
-      const res = await api.get<{ data: KakehashiHistoryItem[] }>(
-        `/api/guardian/kakehashi/history`,
+      const res = await api.get<{ data: AssessmentHistoryItem[] }>(
+        `/api/guardian/assessment/history`,
         { params: { student_id: activeStudentId } }
       );
       return res.data.data;
@@ -93,12 +93,12 @@ export default function GuardianKakehashiHistoryPage() {
     enabled: !!activeStudentId,
   });
 
-  // Confirm staff kakehashi mutation
+  // Confirm staff assessment mutation
   const confirmMutation = useMutation({
     mutationFn: (params: { student_id: number; period_id: number }) =>
-      api.post('/api/guardian/kakehashi/confirm-staff', params),
+      api.post('/api/guardian/assessment/confirm-staff', params),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['guardian', 'kakehashi', 'history'] });
+      queryClient.invalidateQueries({ queryKey: ['guardian', 'assessment', 'history'] });
       toast.success('確認しました。ありがとうございます。');
     },
     onError: () => toast.error('確認処理に失敗しました'),
@@ -106,11 +106,11 @@ export default function GuardianKakehashiHistoryPage() {
 
   // Fetch detail for modal
   const { data: detail, isLoading: isLoadingDetail } = useQuery({
-    queryKey: ['guardian', 'kakehashi', 'detail', detailModal?.periodId, detailModal?.studentId, detailModal?.type],
+    queryKey: ['guardian', 'assessment', 'detail', detailModal?.periodId, detailModal?.studentId, detailModal?.type],
     queryFn: async () => {
       if (!detailModal) return null;
-      const res = await api.get<{ data: KakehashiHistoryItem }>(
-        `/api/guardian/kakehashi/history/${detailModal.periodId}`,
+      const res = await api.get<{ data: AssessmentHistoryItem }>(
+        `/api/guardian/assessment/history/${detailModal.periodId}`,
         { params: { student_id: detailModal.studentId, type: detailModal.type } }
       );
       return res.data.data;
@@ -144,7 +144,7 @@ export default function GuardianKakehashiHistoryPage() {
             過去のアセスメントを閲覧・印刷できます
           </p>
         </div>
-        <Link href="/guardian/kakehashi">
+        <Link href="/guardian/assessment">
           <Button variant="primary" leftIcon={<MaterialIcon name="menu_book" size={16} />}>
             アセスメント入力
           </Button>
@@ -278,7 +278,7 @@ export default function GuardianKakehashiHistoryPage() {
                   {expandedPeriod === item.period_id && (
                     <div className="border-t border-[var(--neutral-stroke-2)] px-5 pb-5 pt-4">
                       <div className="grid gap-4 sm:grid-cols-2">
-                        {/* Guardian kakehashi card */}
+                        {/* Guardian assessment card */}
                         <div
                           className={`rounded-lg border p-4 ${
                             item.guardian_submitted
@@ -324,7 +324,7 @@ export default function GuardianKakehashiHistoryPage() {
                                   leftIcon={<MaterialIcon name="print" size={14} />}
                                   onClick={() =>
                                     window.open(
-                                      `/guardian/kakehashi-history/print?student_id=${activeStudentId}&period_id=${item.period_id}&type=guardian`,
+                                      `/guardian/assessment-history/print?student_id=${activeStudentId}&period_id=${item.period_id}&type=guardian`,
                                       '_blank'
                                     )
                                   }
@@ -340,7 +340,7 @@ export default function GuardianKakehashiHistoryPage() {
                           )}
                         </div>
 
-                        {/* Staff kakehashi card */}
+                        {/* Staff assessment card */}
                         <div
                           className={`rounded-lg border p-4 ${
                             item.staff_submitted
