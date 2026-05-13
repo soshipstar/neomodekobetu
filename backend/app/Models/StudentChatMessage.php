@@ -15,6 +15,9 @@ class StudentChatMessage extends Model
         'sender_id',
         'sender_type',
         'message',
+        'attachment_path',
+        'attachment_original_name',
+        'attachment_size',
         'is_deleted',
         'is_archived',
     ];
@@ -25,9 +28,10 @@ class StudentChatMessage extends Model
         // "Y-m-d H:i:s" 固定だと UTC の wall clock が TZ マーカー無しで出力され、
         // チャット時刻が日本時間から 9 時間ズレて表示される。
         return [
-            'is_deleted' => 'boolean',
-            'is_archived' => 'boolean',
-            'created_at' => 'datetime',
+            'is_deleted'      => 'boolean',
+            'is_archived'     => 'boolean',
+            'attachment_size' => 'integer',
+            'created_at'      => 'datetime',
         ];
     }
 
