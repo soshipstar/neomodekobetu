@@ -52,7 +52,7 @@ class NT010_NotificationPreferencesTest extends TestCase
         $this->assertArrayHasKey('chat', $data);
         $this->assertArrayHasKey('announcement', $data);
         $this->assertArrayHasKey('meeting', $data);
-        $this->assertArrayHasKey('kakehashi', $data);
+        $this->assertArrayHasKey('assessment', $data);
         $this->assertArrayHasKey('monitoring', $data);
         $this->assertArrayHasKey('support_plan', $data);
         $this->assertArrayHasKey('submission', $data);

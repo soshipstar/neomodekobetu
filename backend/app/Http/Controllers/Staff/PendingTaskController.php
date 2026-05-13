@@ -4,12 +4,12 @@ namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
 use App\Models\IndividualSupportPlan;
-use App\Models\KakehashiGuardian;
-use App\Models\KakehashiPeriod;
-use App\Models\KakehashiStaff;
+use App\Models\AssessmentGuardian;
+use App\Models\AssessmentPeriod;
+use App\Models\AssessmentStaff;
 use App\Models\MonitoringRecord;
 use App\Models\Student;
-use App\Services\KakehashiService;
+use App\Services\AssessmentService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,12 +29,12 @@ class PendingTaskController extends Controller
         $today = Carbon::today();
         $oneMonthLater = Carbon::today()->addMonth();
 
-        // アセスメント期間の自動生成（Legacy: pending_tasks.php の autoGenerateNextKakehashiPeriods と同等）
+        // アセスメント期間の自動生成（Legacy: pending_tasks.php の autoGenerateNextAssessmentPeriods と同等）
         try {
-            app(KakehashiService::class)->autoGenerateNextKakehashiPeriods();
+            app(AssessmentService::class)->autoGenerateNextAssessmentPeriods();
         } catch (\Exception $e) {
             // 自動生成失敗してもタスク一覧は返す
-            \Log::warning('Auto-generate kakehashi periods failed: ' . $e->getMessage());
+            \Log::warning('Auto-generate assessment periods failed: ' . $e->getMessage());
         }
 
         // 1. 個別支援計画書タスク
@@ -44,26 +44,26 @@ class PendingTaskController extends Controller
         $monitoringTasks = $this->getMonitoringTasks($accessibleIds, $today, $oneMonthLater);
 
         // 3. 保護者アセスメントタスク
-        $guardianKakehashiTasks = $this->getGuardianKakehashiTasks($accessibleIds, $today, $oneMonthLater);
+        $guardianAssessmentTasks = $this->getGuardianAssessmentTasks($accessibleIds, $today, $oneMonthLater);
 
         // 4. スタッフアセスメントタスク
-        $staffKakehashiTasks = $this->getStaffKakehashiTasks($accessibleIds, $today, $oneMonthLater);
+        $staffAssessmentTasks = $this->getStaffAssessmentTasks($accessibleIds, $today, $oneMonthLater);
 
         return response()->json([
             'success' => true,
             'data'    => [
                 'plans'              => $planTasks,
                 'monitoring'         => $monitoringTasks,
-                'guardian_kakehashi' => $guardianKakehashiTasks,
-                'staff_kakehashi'    => $staffKakehashiTasks,
+                'guardian_assessment' => $guardianAssessmentTasks,
+                'staff_assessment'    => $staffAssessmentTasks,
             ],
             'summary' => [
                 'plans'              => count($planTasks),
                 'monitoring'         => count($monitoringTasks),
-                'guardian_kakehashi' => count($guardianKakehashiTasks),
-                'staff_kakehashi'    => count($staffKakehashiTasks),
+                'guardian_assessment' => count($guardianAssessmentTasks),
+                'staff_assessment'    => count($staffAssessmentTasks),
             ],
-            'total_count' => count($planTasks) + count($monitoringTasks) + count($guardianKakehashiTasks) + count($staffKakehashiTasks),
+            'total_count' => count($planTasks) + count($monitoringTasks) + count($guardianAssessmentTasks) + count($staffAssessmentTasks),
         ]);
     }
 
@@ -268,7 +268,7 @@ class PendingTaskController extends Controller
 
                 // 方法2: アセスメント期間ベースチェック
                 if (!$needsNewPlan) {
-                    $hasNewPeriod = KakehashiPeriod::where('student_id', $student->id)
+                    $hasNewPeriod = AssessmentPeriod::where('student_id', $student->id)
                         ->where('is_active', true)
                         ->where('start_date', '>', $completedPlan->created_date)
                         ->where('submission_deadline', '<=', $oneMonthLater)
@@ -485,7 +485,7 @@ class PendingTaskController extends Controller
     /**
      * 保護者アセスメントの未提出タスクを取得
      */
-    private function getGuardianKakehashiTasks(?array $accessibleIds, Carbon $today, Carbon $oneMonthLater): array
+    private function getGuardianAssessmentTasks(?array $accessibleIds, Carbon $today, Carbon $oneMonthLater): array
     {
         $query = DB::table('students as s')
             ->join('users as u', 's.guardian_id', '=', 'u.id')
@@ -525,7 +525,7 @@ class PendingTaskController extends Controller
             'kp.start_date',
             'kp.end_date',
             DB::raw("(kp.submission_deadline::date - '{$today->format('Y-m-d')}'::date) as days_left"),
-            'kg.id as kakehashi_id',
+            'kg.id as assessment_id',
             'kg.is_submitted',
         ])
             ->orderBy('kp.submission_deadline')
@@ -553,7 +553,7 @@ class PendingTaskController extends Controller
                 'start_date'          => $row->start_date,
                 'end_date'            => $row->end_date,
                 'days_left'           => $daysLeft,
-                'kakehashi_id'        => $row->kakehashi_id,
+                'assessment_id'        => $row->assessment_id,
                 'status_code'         => $statusCode,
             ];
         }
@@ -564,7 +564,7 @@ class PendingTaskController extends Controller
     /**
      * スタッフアセスメントの未作成タスクを取得
      */
-    private function getStaffKakehashiTasks(?array $accessibleIds, Carbon $today, Carbon $oneMonthLater): array
+    private function getStaffAssessmentTasks(?array $accessibleIds, Carbon $today, Carbon $oneMonthLater): array
     {
         $query = DB::table('students as s')
             ->join('users as u', 's.guardian_id', '=', 'u.id')
@@ -616,7 +616,7 @@ class PendingTaskController extends Controller
             'kp.start_date',
             'kp.end_date',
             DB::raw("(kp.submission_deadline::date - '{$today->format('Y-m-d')}'::date) as days_left"),
-            'ks.id as kakehashi_id',
+            'ks.id as assessment_id',
             'ks.is_submitted',
             DB::raw('COALESCE(ks.is_hidden, false) as is_hidden'),
             DB::raw('COALESCE(kg.is_submitted, false) as guardian_submitted'),
@@ -627,9 +627,9 @@ class PendingTaskController extends Controller
 
         $result = [];
         foreach ($rows as $row) {
-            $isNotCreated = empty($row->kakehashi_id);
-            $isDraft = !empty($row->kakehashi_id) && !$row->is_submitted;
-            $isNeedsGuardianConfirm = !empty($row->kakehashi_id) && $row->is_submitted && !$row->guardian_submitted;
+            $isNotCreated = empty($row->assessment_id);
+            $isDraft = !empty($row->assessment_id) && !$row->is_submitted;
+            $isNeedsGuardianConfirm = !empty($row->assessment_id) && $row->is_submitted && !$row->guardian_submitted;
             $daysLeft = (int) $row->days_left;
 
             if ($isNeedsGuardianConfirm) {
@@ -653,7 +653,7 @@ class PendingTaskController extends Controller
                 'start_date'          => $row->start_date,
                 'end_date'            => $row->end_date,
                 'days_left'           => $daysLeft,
-                'kakehashi_id'        => $row->kakehashi_id,
+                'assessment_id'        => $row->assessment_id,
                 'is_submitted'        => (bool) $row->is_submitted,
                 'guardian_confirmed'  => (bool) $row->guardian_submitted,
                 'status_code'         => $statusCode,
@@ -670,7 +670,7 @@ class PendingTaskController extends Controller
     private function isNextPlanDeadlineWithinOneMonth(int $studentId, $supportStartDate, ?string $latestPlanDate, Carbon $oneMonthLater): bool
     {
         // アセスメント期間の提出期限が1ヶ月以内のものがあればtrue
-        $exists = KakehashiPeriod::where('student_id', $studentId)
+        $exists = AssessmentPeriod::where('student_id', $studentId)
             ->where('is_active', true)
             ->where('submission_deadline', '<=', $oneMonthLater)
             ->exists();
@@ -771,21 +771,21 @@ class PendingTaskController extends Controller
                     return response()->json(['success' => false, 'error' => 'Invalid parameters'], 422);
                 }
                 Student::where('id', $studentId)->update(['hide_initial_monitoring' => $isHidden]);
-            } elseif ($type === 'guardian_kakehashi') {
+            } elseif ($type === 'guardian_assessment') {
                 $periodId = (int) $request->input('period_id', 0);
                 if (!$periodId || !$studentId) {
                     return response()->json(['success' => false, 'error' => 'Invalid parameters'], 422);
                 }
-                KakehashiGuardian::updateOrCreate(
+                AssessmentGuardian::updateOrCreate(
                     ['period_id' => $periodId, 'student_id' => $studentId],
                     ['is_hidden' => $isHidden]
                 );
-            } elseif ($type === 'staff_kakehashi') {
+            } elseif ($type === 'staff_assessment') {
                 $periodId = (int) $request->input('period_id', 0);
                 if (!$periodId || !$studentId) {
                     return response()->json(['success' => false, 'error' => 'Invalid parameters'], 422);
                 }
-                KakehashiStaff::updateOrCreate(
+                AssessmentStaff::updateOrCreate(
                     ['period_id' => $periodId, 'student_id' => $studentId],
                     ['is_hidden' => $isHidden]
                 );

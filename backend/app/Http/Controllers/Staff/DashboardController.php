@@ -177,8 +177,8 @@ class DashboardController extends Controller
         // 保留タスクの件数をそのまま使用
         $planCount = $pendingSummary['plans'] ?? 0;
         $monitoringCount = $pendingSummary['monitoring'] ?? 0;
-        $guardianPending = $pendingSummary['guardian_kakehashi'] ?? 0;
-        $staffPending = $pendingSummary['staff_kakehashi'] ?? 0;
+        $guardianPending = $pendingSummary['guardian_assessment'] ?? 0;
+        $staffPending = $pendingSummary['staff_assessment'] ?? 0;
 
         // plan/monitoringはoverdue/urgentの内訳を保留タスクデータから計算
         $planTasks = $pendingData['data']['plans'] ?? [];
@@ -234,7 +234,7 @@ class DashboardController extends Controller
                     'overdue' => $monitoringOverdue,
                     'urgent'  => $monitoringUrgent,
                 ],
-                'kakehashi_deadlines'           => [
+                'assessment_deadlines'           => [
                     'guardian_pending' => $guardianPending,
                     'staff_pending'   => $staffPending,
                 ],

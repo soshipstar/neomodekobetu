@@ -5,26 +5,28 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class KakehashiStaff extends Model
+class AssessmentGuardian extends Model
 {
-    protected $table = 'assessment_staff';
+    protected $table = 'assessment_guardian';
 
     protected $fillable = [
         'period_id',
         'student_id',
-        'staff_id',
-        'student_wish',
-        'short_term_goal',
-        'long_term_goal',
-        'health_life',
-        'motor_sensory',
-        'cognitive_behavior',
-        'language_communication',
-        'social_relations',
+        'guardian_id',
+        'home_situation',
+        'concerns',
+        'requests',
         'is_submitted',
         'submitted_at',
-        'guardian_confirmed',
-        'guardian_confirmed_at',
+        'student_wish',
+        'home_challenges',
+        'short_term_goal',
+        'long_term_goal',
+        'domain_health_life',
+        'domain_motor_sensory',
+        'domain_cognitive_behavior',
+        'domain_language_communication',
+        'domain_social_relations',
         'other_challenges',
         'is_hidden',
     ];
@@ -34,8 +36,6 @@ class KakehashiStaff extends Model
         return [
             'is_submitted' => 'boolean',
             'submitted_at' => 'datetime',
-            'guardian_confirmed' => 'boolean',
-            'guardian_confirmed_at' => 'datetime',
             'is_hidden' => 'boolean',
         ];
     }
@@ -44,10 +44,10 @@ class KakehashiStaff extends Model
     // Relationships
     // =========================================================================
 
-    /** @return BelongsTo<KakehashiPeriod, self> */
+    /** @return BelongsTo<AssessmentPeriod, self> */
     public function period(): BelongsTo
     {
-        return $this->belongsTo(KakehashiPeriod::class, 'period_id');
+        return $this->belongsTo(AssessmentPeriod::class, 'period_id');
     }
 
     /** @return BelongsTo<Student, self> */
@@ -57,8 +57,8 @@ class KakehashiStaff extends Model
     }
 
     /** @return BelongsTo<User, self> */
-    public function staff(): BelongsTo
+    public function guardian(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'staff_id');
+        return $this->belongsTo(User::class, 'guardian_id');
     }
 }

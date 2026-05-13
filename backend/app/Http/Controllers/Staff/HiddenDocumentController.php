@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
 use App\Models\IndividualSupportPlan;
-use App\Models\KakehashiPeriod;
+use App\Models\AssessmentPeriod;
 use App\Models\MonitoringRecord;
 use App\Models\Newsletter;
 use App\Models\User;
@@ -81,7 +81,7 @@ class HiddenDocumentController extends Controller
         $user = $request->user();
 
         $validated = $request->validate([
-            'document_type' => 'required|string|in:newsletter,support_plan,monitoring,kakehashi',
+            'document_type' => 'required|string|in:newsletter,support_plan,monitoring,assessment',
             'document_id'   => 'required|integer',
         ]);
 
@@ -150,8 +150,8 @@ class HiddenDocumentController extends Controller
                     }
                     break;
 
-                case 'kakehashi':
-                    $period = KakehashiPeriod::with('student:id,student_name')->find($id);
+                case 'assessment':
+                    $period = AssessmentPeriod::with('student:id,student_name')->find($id);
                     if ($period) {
                         return [
                             'student_name' => $period->student?->student_name,
@@ -195,7 +195,7 @@ class HiddenDocumentController extends Controller
         return match ($type) {
             'support_plan' => '個別支援計画書',
             'monitoring'   => 'モニタリング記録',
-            'kakehashi'    => 'アセスメント',
+            'assessment'    => 'アセスメント',
             'newsletter'   => 'お便り',
             default        => $type,
         };

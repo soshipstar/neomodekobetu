@@ -60,7 +60,7 @@ class NotificationService
         return match ($type) {
             'announcement' => 'announcement',
             'meeting' => 'meeting',
-            'kakehashi_request', 'kakehashi' => 'kakehashi',
+            'assessment_request', 'assessment' => 'assessment',
             'monitoring' => 'monitoring',
             'support_plan_request', 'support_plan' => 'support_plan',
             'submission_request', 'submission' => 'submission',
@@ -188,24 +188,24 @@ class NotificationService
     }
 
     /**
-     * Send a kakehashi deadline reminder email.
+     * Send a assessment deadline reminder email.
      */
-    public function sendKakehashiReminderEmail(
+    public function sendAssessmentReminderEmail(
         User $recipient,
         string $studentName,
         string $deadline,
         int $daysRemaining,
-        string $kakehashiUrl,
+        string $assessmentUrl,
         string $facilityName = '',
     ): void {
         $subject = "【アセスメント】{$studentName}さんのアセスメント提出期限が近づいています";
 
-        $this->sendEmailNotification($recipient, $subject, 'kakehashi-reminder', [
+        $this->sendEmailNotification($recipient, $subject, 'assessment-reminder', [
             'recipientName' => $recipient->full_name,
             'studentName' => $studentName,
             'deadline' => $deadline,
             'daysRemaining' => $daysRemaining,
-            'kakehashiUrl' => $kakehashiUrl,
+            'assessmentUrl' => $assessmentUrl,
             'facilityName' => $facilityName ?: config('app.name', 'きづり'),
         ]);
     }

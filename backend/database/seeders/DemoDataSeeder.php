@@ -8,7 +8,7 @@ use App\Models\ChatRoom;
 use App\Models\Classroom;
 use App\Models\DailyRecord;
 use App\Models\IndividualSupportPlan;
-use App\Models\KakehashiPeriod;
+use App\Models\AssessmentPeriod;
 use App\Models\Student;
 use App\Models\StudentRecord;
 use App\Models\SupportPlanDetail;
@@ -199,10 +199,10 @@ class DemoDataSeeder extends Seeder
         }
 
         // =====================================================================
-        // Kakehashi Periods
+        // Assessment Periods
         // =====================================================================
 
-        KakehashiPeriod::firstOrCreate(
+        AssessmentPeriod::firstOrCreate(
             [
                 'student_id' => $student1->id,
                 'start_date' => '2025-10-01',
@@ -216,7 +216,7 @@ class DemoDataSeeder extends Seeder
             ]
         );
 
-        KakehashiPeriod::firstOrCreate(
+        AssessmentPeriod::firstOrCreate(
             [
                 'student_id' => $student2->id,
                 'start_date' => '2025-10-01',

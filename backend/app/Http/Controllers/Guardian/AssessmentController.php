@@ -3,15 +3,15 @@
 namespace App\Http\Controllers\Guardian;
 
 use App\Http\Controllers\Controller;
-use App\Models\KakehashiGuardian;
-use App\Models\KakehashiPeriod;
-use App\Models\KakehashiStaff;
+use App\Models\AssessmentGuardian;
+use App\Models\AssessmentPeriod;
+use App\Models\AssessmentStaff;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class KakehashiController extends Controller
+class AssessmentController extends Controller
 {
     /**
      * 保護者の子どもに関するアセスメント期間一覧を取得
@@ -21,7 +21,7 @@ class KakehashiController extends Controller
         $user = $request->user();
         $studentIds = $user->students()->pluck('id');
 
-        $periods = KakehashiPeriod::whereIn('student_id', $studentIds)
+        $periods = AssessmentPeriod::whereIn('student_id', $studentIds)
             ->with(['student:id,student_name', 'guardianEntries'])
             ->orderByDesc('start_date')
             ->get();
@@ -35,7 +35,7 @@ class KakehashiController extends Controller
     /**
      * アセスメントの内容を表示（スタッフ記入分 + 保護者記入分）
      */
-    public function show(Request $request, KakehashiPeriod $period): JsonResponse
+    public function show(Request $request, AssessmentPeriod $period): JsonResponse
     {
         $user = $request->user();
         $studentIds = $user->students()->pluck('id')->toArray();
@@ -55,7 +55,7 @@ class KakehashiController extends Controller
     /**
      * 保護者のアセスメント記入を保存
      */
-    public function store(Request $request, KakehashiPeriod $period): JsonResponse
+    public function store(Request $request, AssessmentPeriod $period): JsonResponse
     {
         $user = $request->user();
         $studentIds = $user->students()->pluck('id')->toArray();
@@ -82,7 +82,7 @@ class KakehashiController extends Controller
         unset($validated['action']);
 
         // Check for existing entry
-        $existing = KakehashiGuardian::where('period_id', $period->id)
+        $existing = AssessmentGuardian::where('period_id', $period->id)
             ->where('student_id', $period->student_id)
             ->first();
 
@@ -111,7 +111,7 @@ class KakehashiController extends Controller
             ]));
             $entry = $existing;
         } else {
-            $entry = KakehashiGuardian::create(array_merge($validated, [
+            $entry = AssessmentGuardian::create(array_merge($validated, [
                 'period_id'    => $period->id,
                 'student_id'   => $period->student_id,
                 'guardian_id'  => $user->id,
@@ -131,7 +131,7 @@ class KakehashiController extends Controller
     }
 
     /**
-     * アセスメント履歴一覧 (legacy kakehashi_history.php と同等)
+     * アセスメント履歴一覧 (legacy assessment_history.php と同等)
      * 提出済みのスタッフ・保護者アセスメントのみ返す
      */
     public function history(Request $request): JsonResponse
@@ -175,12 +175,12 @@ class KakehashiController extends Controller
                 'kp.start_date',
                 'kp.end_date',
                 'kp.submission_deadline',
-                'ks.id as staff_kakehashi_id',
+                'ks.id as staff_assessment_id',
                 'ks.is_submitted as staff_submitted',
                 'ks.submitted_at as staff_submitted_at',
                 'ks.guardian_confirmed as staff_guardian_confirmed',
                 'ks.guardian_confirmed_at as staff_guardian_confirmed_at',
-                'kg.id as guardian_kakehashi_id',
+                'kg.id as guardian_assessment_id',
                 'kg.is_submitted as guardian_submitted',
                 'kg.submitted_at as guardian_submitted_at',
             ])
@@ -203,7 +203,7 @@ class KakehashiController extends Controller
      * アセスメント履歴詳細（期間IDで取得）
      * type=guardian or type=staff で保護者/スタッフの記入内容を返す
      */
-    public function historyDetail(Request $request, KakehashiPeriod $period): JsonResponse
+    public function historyDetail(Request $request, AssessmentPeriod $period): JsonResponse
     {
         $user = $request->user();
         $studentIds = $user->students()->pluck('id')->toArray();
@@ -224,7 +224,7 @@ class KakehashiController extends Controller
         ];
 
         if ($type === 'guardian') {
-            $entry = KakehashiGuardian::where('period_id', $period->id)
+            $entry = AssessmentGuardian::where('period_id', $period->id)
                 ->where('student_id', $studentId)
                 ->first();
 
@@ -241,7 +241,7 @@ class KakehashiController extends Controller
                 $data['guardian_other_challenges'] = $entry->other_challenges;
             }
         } else {
-            $entry = KakehashiStaff::where('period_id', $period->id)
+            $entry = AssessmentStaff::where('period_id', $period->id)
                 ->where('student_id', $studentId)
                 ->first();
 
@@ -282,16 +282,16 @@ class KakehashiController extends Controller
         }
 
         // Update assessment_staff record (matching legacy behavior)
-        $staffKakehashi = KakehashiStaff::where('student_id', $validated['student_id'])
+        $staffAssessment = AssessmentStaff::where('student_id', $validated['student_id'])
             ->where('period_id', $validated['period_id'])
             ->where('is_submitted', true)
             ->first();
 
-        if (! $staffKakehashi) {
+        if (! $staffAssessment) {
             return response()->json(['success' => false, 'message' => 'スタッフアセスメントが見つかりません。'], 404);
         }
 
-        if ($staffKakehashi->guardian_confirmed) {
+        if ($staffAssessment->guardian_confirmed) {
             return response()->json([
                 'success' => true,
                 'message' => '既に確認済みです。',
@@ -299,14 +299,14 @@ class KakehashiController extends Controller
             ]);
         }
 
-        $staffKakehashi->update([
+        $staffAssessment->update([
             'guardian_confirmed'    => true,
             'guardian_confirmed_at' => now(),
         ]);
 
         return response()->json([
             'success' => true,
-            'data'    => $staffKakehashi->fresh(),
+            'data'    => $staffAssessment->fresh(),
             'message' => '確認しました。',
         ]);
     }
@@ -314,7 +314,7 @@ class KakehashiController extends Controller
     /**
      * アセスメントエントリーを保存（entryエイリアス - storeと同じ処理）
      */
-    public function entry(Request $request, KakehashiPeriod $period): JsonResponse
+    public function entry(Request $request, AssessmentPeriod $period): JsonResponse
     {
         return $this->store($request, $period);
     }

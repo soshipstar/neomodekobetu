@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\IndividualSupportPlan;
-use App\Models\KakehashiPeriod;
+use App\Models\AssessmentPeriod;
 use App\Models\MonitoringRecord;
 use App\Models\Newsletter;
 use Illuminate\Support\Facades\Storage;
@@ -53,16 +53,16 @@ class PdfGenerationService
     }
 
     /**
-     * Generate a PDF for a Kakehashi period report.
+     * Generate a PDF for a Assessment period report.
      *
-     * @param  KakehashiPeriod  $period
+     * @param  AssessmentPeriod  $period
      * @return string  Storage path of the generated PDF
      */
-    public function generateKakehashiPdf(KakehashiPeriod $period): string
+    public function generateAssessmentPdf(AssessmentPeriod $period): string
     {
         $period->load(['student.classroom', 'staffEntries', 'guardianEntries']);
 
-        $html = View::make('pdf.kakehashi', [
+        $html = View::make('pdf.assessment', [
             'period' => $period,
             'student' => $period->student,
             'classroom' => $period->student->classroom,
@@ -70,7 +70,7 @@ class PdfGenerationService
             'guardianEntries' => $period->guardianEntries,
         ])->render();
 
-        return $this->storePdf($html, 'kakehashi', "kakehashi_{$period->id}_{$period->student_id}");
+        return $this->storePdf($html, 'assessment', "assessment_{$period->id}_{$period->student_id}");
     }
 
     /**

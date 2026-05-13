@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
 use App\Models\AiGenerationLog;
-use App\Models\KakehashiGuardian;
-use App\Models\KakehashiPeriod;
-use App\Models\KakehashiStaff;
+use App\Models\AssessmentGuardian;
+use App\Models\AssessmentPeriod;
+use App\Models\AssessmentStaff;
 use App\Models\Student;
 use App\Models\StudentRecord;
 use App\Models\User;
@@ -15,7 +15,7 @@ use App\Services\PuppeteerPdfService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-class KakehashiController extends Controller
+class AssessmentController extends Controller
 {
     /**
      * 生徒のアセスメント一覧を取得（期間ごと）
@@ -24,7 +24,7 @@ class KakehashiController extends Controller
     {
         $this->authorizeClassroom($request->user(), $student);
 
-        $periods = KakehashiPeriod::where('student_id', $student->id)
+        $periods = AssessmentPeriod::where('student_id', $student->id)
             ->with(['staffEntries', 'guardianEntries.guardian:id,full_name'])
             ->orderByDesc('start_date')
             ->get();
@@ -38,7 +38,7 @@ class KakehashiController extends Controller
     /**
      * アセスメントスタッフ記入を保存（新規 or 更新）
      */
-    public function store(Request $request, KakehashiPeriod $period): JsonResponse
+    public function store(Request $request, AssessmentPeriod $period): JsonResponse
     {
         $period->load('student');
 
@@ -64,7 +64,7 @@ class KakehashiController extends Controller
         $action = $validated['action'] ?? 'save';
         unset($validated['action']);
 
-        $existing = KakehashiStaff::where('period_id', $period->id)
+        $existing = AssessmentStaff::where('period_id', $period->id)
             ->where('student_id', $period->student_id)
             ->first();
 
@@ -91,7 +91,7 @@ class KakehashiController extends Controller
             $existing->update($updateData);
             $entry = $existing;
         } else {
-            $entry = KakehashiStaff::create(array_merge($validated, [
+            $entry = AssessmentStaff::create(array_merge($validated, [
                 'period_id'    => $period->id,
                 'student_id'   => $period->student_id,
                 'staff_id'     => $request->user()->id,
@@ -112,10 +112,10 @@ class KakehashiController extends Controller
             if ($guardian) {
                 app(NotificationService::class)->notify(
                     $guardian,
-                    'kakehashi_request',
+                    'assessment_request',
                     'アセスメントの入力依頼が届きました',
                     'スタッフからの記入が完了しました。ご家庭での記入をお願いいたします。',
-                    ['url' => '/guardian/kakehashi', 'period_id' => $period->id],
+                    ['url' => '/guardian/assessment', 'period_id' => $period->id],
                 );
             }
         }
@@ -130,7 +130,7 @@ class KakehashiController extends Controller
     /**
      * アセスメントスタッフ記入を更新
      */
-    public function update(Request $request, KakehashiPeriod $period): JsonResponse
+    public function update(Request $request, AssessmentPeriod $period): JsonResponse
     {
         // store と同じロジックを使用（action=update）
         $request->merge(['action' => 'update']);
@@ -140,7 +140,7 @@ class KakehashiController extends Controller
     /**
      * アセスメント PDF をダウンロード
      */
-    public function pdf(Request $request, KakehashiPeriod $period)
+    public function pdf(Request $request, AssessmentPeriod $period)
     {
         $period->load(['student.classroom', 'staffEntries', 'guardianEntries']);
 
@@ -148,9 +148,9 @@ class KakehashiController extends Controller
             $this->authorizeClassroom($request->user(), $period->student);
         }
 
-        $filename = 'kakehashi_' . ($period->student->student_name ?? $period->id) . '_' . $period->start_date . '.pdf';
+        $filename = 'assessment_' . ($period->student->student_name ?? $period->id) . '_' . $period->start_date . '.pdf';
 
-        return PuppeteerPdfService::download('pdf.kakehashi', [
+        return PuppeteerPdfService::download('pdf.assessment', [
             'period'          => $period,
             'student'         => $period->student,
             'classroom'       => $period->student->classroom ?? null,
@@ -172,7 +172,7 @@ class KakehashiController extends Controller
         $student = Student::with('classroom')->findOrFail($validated['student_id']);
         $this->authorizeClassroom($request->user(), $student);
 
-        $period = KakehashiPeriod::findOrFail($validated['period_id']);
+        $period = AssessmentPeriod::findOrFail($validated['period_id']);
 
         // 対象期間の開始日から5か月前の連絡帳データを取得（レガシー準拠）
         $periodStart = $period->start_date;
@@ -276,7 +276,7 @@ class KakehashiController extends Controller
         }
 
         // 前回のスタッフアセスメントの目標を取得（レガシー準拠）
-        $previousEntry = KakehashiStaff::where('student_id', $student->id)
+        $previousEntry = AssessmentStaff::where('student_id', $student->id)
             ->where('is_submitted', true)
             ->whereHas('period', function ($q) use ($period) {
                 $q->where('submission_deadline', '<', $period->submission_deadline);
@@ -428,7 +428,7 @@ class KakehashiController extends Controller
                 AiGenerationLog::create([
                     'user_id'       => $request->user()->id,
                     'model'         => $aiModel,
-                    'prompt_type'   => 'kakehashi',
+                    'prompt_type'   => 'assessment',
                     'input_tokens'  => $totalInputTokens,
                     'output_tokens' => $totalOutputTokens,
                     'student_id'    => $student->id,
@@ -464,7 +464,7 @@ class KakehashiController extends Controller
     /**
      * 保護者入力アセスメントの表示/非表示を切り替え
      */
-    public function toggleGuardianHidden(Request $request, KakehashiPeriod $period): JsonResponse
+    public function toggleGuardianHidden(Request $request, AssessmentPeriod $period): JsonResponse
     {
         $period->load('student');
 
@@ -474,7 +474,7 @@ class KakehashiController extends Controller
 
         $this->authorizeClassroom($request->user(), $period->student);
 
-        $entry = KakehashiGuardian::where('period_id', $period->id)
+        $entry = AssessmentGuardian::where('period_id', $period->id)
             ->where('student_id', $period->student_id)
             ->first();
 

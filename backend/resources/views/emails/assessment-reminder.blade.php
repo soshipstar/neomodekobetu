@@ -70,7 +70,7 @@
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                                 <tr>
                                     <td align="center">
-                                        <a href="{{ $kakehashiUrl }}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 25px; font-weight: 600; font-size: 15px; letter-spacing: 0.5px;">
+                                        <a href="{{ $assessmentUrl }}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 25px; font-weight: 600; font-size: 15px; letter-spacing: 0.5px;">
                                             アセスメントを記入する
                                         </a>
                                     </td>

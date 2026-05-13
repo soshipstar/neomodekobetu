@@ -6,9 +6,9 @@ use App\Jobs\SendDeadlineNotificationsJob;
 use App\Models\AuditLog;
 use App\Models\Classroom;
 use App\Models\IndividualSupportPlan;
-use App\Models\KakehashiGuardian;
-use App\Models\KakehashiPeriod;
-use App\Models\KakehashiStaff;
+use App\Models\AssessmentGuardian;
+use App\Models\AssessmentPeriod;
+use App\Models\AssessmentStaff;
 use App\Models\MonitoringRecord;
 use App\Models\Notification;
 use App\Models\Student;
@@ -66,17 +66,17 @@ class L006_DeadlineNotificationTest extends TestCase
     }
 
     // =========================================================================
-    // Kakehashi Guardian Reminders
+    // Assessment Guardian Reminders
     // =========================================================================
 
     /**
-     * Test: guardian receives notification 7 days before kakehashi deadline.
+     * Test: guardian receives notification 7 days before assessment deadline.
      */
-    public function test_kakehashi_guardian_reminder_7_days_before(): void
+    public function test_assessment_guardian_reminder_7_days_before(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-03-18'));
 
-        $period = KakehashiPeriod::create([
+        $period = AssessmentPeriod::create([
             'student_id' => $this->student->id,
             'period_name' => 'Period 2',
             'start_date' => '2026-02-17',
@@ -113,11 +113,11 @@ class L006_DeadlineNotificationTest extends TestCase
     /**
      * Test: guardian receives notification on deadline day.
      */
-    public function test_kakehashi_guardian_reminder_on_deadline_day(): void
+    public function test_assessment_guardian_reminder_on_deadline_day(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-03-25'));
 
-        KakehashiPeriod::create([
+        AssessmentPeriod::create([
             'student_id' => $this->student->id,
             'period_name' => 'Period 2',
             'start_date' => '2026-02-17',
@@ -149,7 +149,7 @@ class L006_DeadlineNotificationTest extends TestCase
     {
         Carbon::setTestNow(Carbon::parse('2026-03-18'));
 
-        $period = KakehashiPeriod::create([
+        $period = AssessmentPeriod::create([
             'student_id' => $this->student->id,
             'period_name' => 'Period 2',
             'start_date' => '2026-02-17',
@@ -159,7 +159,7 @@ class L006_DeadlineNotificationTest extends TestCase
         ]);
 
         // Mark as submitted
-        KakehashiGuardian::create([
+        AssessmentGuardian::create([
             'period_id' => $period->id,
             'student_id' => $this->student->id,
             'guardian_id' => $this->guardian->id,
@@ -177,17 +177,17 @@ class L006_DeadlineNotificationTest extends TestCase
     }
 
     // =========================================================================
-    // Kakehashi Staff Reminders
+    // Assessment Staff Reminders
     // =========================================================================
 
     /**
-     * Test: staff receives notification 7 days before kakehashi deadline.
+     * Test: staff receives notification 7 days before assessment deadline.
      */
-    public function test_kakehashi_staff_reminder_7_days_before(): void
+    public function test_assessment_staff_reminder_7_days_before(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-03-18'));
 
-        KakehashiPeriod::create([
+        AssessmentPeriod::create([
             'student_id' => $this->student->id,
             'period_name' => 'Period 2',
             'start_date' => '2026-02-17',
@@ -219,7 +219,7 @@ class L006_DeadlineNotificationTest extends TestCase
     {
         Carbon::setTestNow(Carbon::parse('2026-03-18'));
 
-        $period = KakehashiPeriod::create([
+        $period = AssessmentPeriod::create([
             'student_id' => $this->student->id,
             'period_name' => 'Period 2',
             'start_date' => '2026-02-17',
@@ -228,7 +228,7 @@ class L006_DeadlineNotificationTest extends TestCase
             'is_active' => true,
         ]);
 
-        KakehashiStaff::create([
+        AssessmentStaff::create([
             'period_id' => $period->id,
             'student_id' => $this->student->id,
             'staff_id' => $this->staff->id,
@@ -256,7 +256,7 @@ class L006_DeadlineNotificationTest extends TestCase
     {
         Carbon::setTestNow(Carbon::parse('2026-03-18'));
 
-        KakehashiPeriod::create([
+        AssessmentPeriod::create([
             'student_id' => $this->student->id,
             'period_name' => 'Period 2',
             'start_date' => '2026-02-17',
@@ -304,8 +304,8 @@ class L006_DeadlineNotificationTest extends TestCase
             'is_draft' => false,
         ]);
 
-        // Create a kakehashi period with deadline within 1 month
-        KakehashiPeriod::create([
+        // Create a assessment period with deadline within 1 month
+        AssessmentPeriod::create([
             'student_id' => $this->student->id,
             'period_name' => 'Period 2',
             'start_date' => '2026-02-17',
@@ -346,7 +346,7 @@ class L006_DeadlineNotificationTest extends TestCase
             'is_draft' => false,
         ]);
 
-        $period = KakehashiPeriod::create([
+        $period = AssessmentPeriod::create([
             'student_id' => $this->student->id,
             'period_name' => 'Period 2',
             'start_date' => '2026-02-17',
@@ -396,7 +396,7 @@ class L006_DeadlineNotificationTest extends TestCase
             'is_draft' => false,
         ]);
 
-        KakehashiPeriod::create([
+        AssessmentPeriod::create([
             'student_id' => $this->student->id,
             'period_name' => 'Period 2',
             'start_date' => '2026-02-17',
@@ -438,7 +438,7 @@ class L006_DeadlineNotificationTest extends TestCase
             'is_draft' => false,
         ]);
 
-        KakehashiPeriod::create([
+        AssessmentPeriod::create([
             'student_id' => $this->student->id,
             'period_name' => 'Period 2',
             'start_date' => '2026-02-17',
@@ -469,7 +469,7 @@ class L006_DeadlineNotificationTest extends TestCase
 
         $this->student->update(['status' => 'withdrawn']);
 
-        KakehashiPeriod::create([
+        AssessmentPeriod::create([
             'student_id' => $this->student->id,
             'period_name' => 'Period 2',
             'start_date' => '2026-02-17',
@@ -497,7 +497,7 @@ class L006_DeadlineNotificationTest extends TestCase
 
         $this->guardian->update(['email' => null]);
 
-        KakehashiPeriod::create([
+        AssessmentPeriod::create([
             'student_id' => $this->student->id,
             'period_name' => 'Period 2',
             'start_date' => '2026-02-17',

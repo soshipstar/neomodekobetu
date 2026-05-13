@@ -4,7 +4,7 @@ namespace App\Jobs;
 
 use App\Models\AuditLog;
 use App\Models\IndividualSupportPlan;
-use App\Models\KakehashiPeriod;
+use App\Models\AssessmentPeriod;
 use App\Models\MonitoringRecord;
 use App\Models\Notification;
 use App\Models\Student;
@@ -53,8 +53,8 @@ class SendDeadlineNotificationsJob implements ShouldQueue
     {
         Log::info('SendDeadlineNotificationsJob: starting deadline notification check');
 
-        $this->sendKakehashiGuardianReminders();
-        $this->sendKakehashiStaffReminders();
+        $this->sendAssessmentGuardianReminders();
+        $this->sendAssessmentStaffReminders();
         $this->sendMonitoringReminders();
         $this->sendPlanReminders();
 
@@ -70,20 +70,20 @@ class SendDeadlineNotificationsJob implements ShouldQueue
     }
 
     // =========================================================================
-    // Kakehashi Guardian Reminders
+    // Assessment Guardian Reminders
     // =========================================================================
 
     /**
      * 保護者アセスメント期限リマインダー
      * 提出期限が本日 または 7日後で未提出の保護者に通知
      */
-    protected function sendKakehashiGuardianReminders(): void
+    protected function sendAssessmentGuardianReminders(): void
     {
         try {
             $today = Carbon::today();
             $sevenDaysLater = $today->copy()->addDays(7);
 
-            $periods = KakehashiPeriod::query()
+            $periods = AssessmentPeriod::query()
                 ->where('is_active', true)
                 ->where(function ($q) use ($today, $sevenDaysLater) {
                     $q->whereDate('submission_deadline', $today)
@@ -150,7 +150,7 @@ class SendDeadlineNotificationsJob implements ShouldQueue
                 $this->results['assessment_guardian']++;
             }
         } catch (\Throwable $e) {
-            Log::error('SendDeadlineNotificationsJob: kakehashi guardian error', [
+            Log::error('SendDeadlineNotificationsJob: assessment guardian error', [
                 'error' => $e->getMessage(),
             ]);
             $this->results['errors']++;
@@ -158,20 +158,20 @@ class SendDeadlineNotificationsJob implements ShouldQueue
     }
 
     // =========================================================================
-    // Kakehashi Staff Reminders
+    // Assessment Staff Reminders
     // =========================================================================
 
     /**
      * スタッフアセスメント期限リマインダー
      * 提出期限が本日 または 7日後で未提出のスタッフに通知
      */
-    protected function sendKakehashiStaffReminders(): void
+    protected function sendAssessmentStaffReminders(): void
     {
         try {
             $today = Carbon::today();
             $sevenDaysLater = $today->copy()->addDays(7);
 
-            $periods = KakehashiPeriod::query()
+            $periods = AssessmentPeriod::query()
                 ->where('is_active', true)
                 ->where(function ($q) use ($today, $sevenDaysLater) {
                     $q->whereDate('submission_deadline', $today)
@@ -244,7 +244,7 @@ class SendDeadlineNotificationsJob implements ShouldQueue
                 }
             }
         } catch (\Throwable $e) {
-            Log::error('SendDeadlineNotificationsJob: kakehashi staff error', [
+            Log::error('SendDeadlineNotificationsJob: assessment staff error', [
                 'error' => $e->getMessage(),
             ]);
             $this->results['errors']++;
@@ -265,8 +265,8 @@ class SendDeadlineNotificationsJob implements ShouldQueue
             $today = Carbon::today();
             $oneMonthLater = $today->copy()->addMonth();
 
-            // Find students with upcoming kakehashi deadlines who need monitoring
-            $periods = KakehashiPeriod::query()
+            // Find students with upcoming assessment deadlines who need monitoring
+            $periods = AssessmentPeriod::query()
                 ->where('is_active', true)
                 ->whereDate('submission_deadline', '>=', $today)
                 ->whereDate('submission_deadline', '<=', $oneMonthLater)
@@ -368,7 +368,7 @@ class SendDeadlineNotificationsJob implements ShouldQueue
             $today = Carbon::today();
             $oneMonthLater = $today->copy()->addMonth();
 
-            $periods = KakehashiPeriod::query()
+            $periods = AssessmentPeriod::query()
                 ->where('is_active', true)
                 ->whereDate('submission_deadline', '>=', $today)
                 ->whereDate('submission_deadline', '<=', $oneMonthLater)

@@ -333,8 +333,8 @@ class BulkRegisterController extends Controller
                     // アセスメント期間の自動生成（支援開始日が設定されている場合）
                     if (! empty($row['support_start_date'])) {
                         try {
-                            $kakehashiService = app(\App\Services\KakehashiService::class);
-                            $kakehashiService->generateKakehashiPeriodsForStudent($student->id, $row['support_start_date']);
+                            $assessmentService = app(\App\Services\AssessmentService::class);
+                            $assessmentService->generateAssessmentPeriodsForStudent($student->id, $row['support_start_date']);
                         } catch (\Exception $e) {
                             \Illuminate\Support\Facades\Log::warning("一括登録: アセスメント生成エラー（{$row['student_name']}）: " . $e->getMessage());
                         }

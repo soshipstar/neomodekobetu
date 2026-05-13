@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ClassroomCapacity;
 use App\Models\Student;
-use App\Services\KakehashiService;
+use App\Services\AssessmentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -259,9 +259,9 @@ class WaitingListController extends Controller
 
             // アセスメント期間の自動生成 (legacy behavior)
             try {
-                $kakehashiService = app(KakehashiService::class);
-                $generatedPeriods = $kakehashiService->generateKakehashiPeriodsForStudent($student->id, $supportStartDate);
-                Log::info("Generated " . count($generatedPeriods) . " kakehashi periods for student {$student->id} on admission");
+                $assessmentService = app(AssessmentService::class);
+                $generatedPeriods = $assessmentService->generateAssessmentPeriodsForStudent($student->id, $supportStartDate);
+                Log::info("Generated " . count($generatedPeriods) . " assessment periods for student {$student->id} on admission");
             } catch (\Exception $e) {
                 Log::error("アセスメント期間生成エラー（入所時）: " . $e->getMessage());
             }

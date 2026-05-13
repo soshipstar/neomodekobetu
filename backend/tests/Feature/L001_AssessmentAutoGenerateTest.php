@@ -3,24 +3,24 @@
 namespace Tests\Feature;
 
 use App\Models\Classroom;
-use App\Models\KakehashiPeriod;
+use App\Models\AssessmentPeriod;
 use App\Models\Student;
 use App\Models\User;
-use App\Services\KakehashiService;
+use App\Services\AssessmentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
-class L001_KakehashiAutoGenerateTest extends TestCase
+class L001_AssessmentAutoGenerateTest extends TestCase
 {
     use RefreshDatabase;
 
-    private KakehashiService $service;
+    private AssessmentService $service;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new KakehashiService();
+        $this->service = new AssessmentService();
     }
 
     /**
@@ -31,7 +31,7 @@ class L001_KakehashiAutoGenerateTest extends TestCase
     {
         $supportStart = Carbon::parse('2025-08-17');
 
-        $dates = $this->service->calculateKakehashiDates($supportStart, 1);
+        $dates = $this->service->calculateAssessmentDates($supportStart, 1);
 
         $this->assertEquals('2025-08-17', $dates['start_date']->toDateString());
         $this->assertEquals('2026-02-16', $dates['end_date']->toDateString());
@@ -47,7 +47,7 @@ class L001_KakehashiAutoGenerateTest extends TestCase
         $supportStart = Carbon::parse('2025-08-17');
         $prevEndDate = Carbon::parse('2026-02-16');
 
-        $dates = $this->service->calculateKakehashiDates($supportStart, 2, $prevEndDate);
+        $dates = $this->service->calculateAssessmentDates($supportStart, 2, $prevEndDate);
 
         $this->assertEquals('2026-02-17', $dates['start_date']->toDateString());
         $this->assertEquals('2026-08-16', $dates['end_date']->toDateString());
@@ -63,7 +63,7 @@ class L001_KakehashiAutoGenerateTest extends TestCase
         $supportStart = Carbon::parse('2025-08-17');
         $prevEndDate = Carbon::parse('2026-08-16');
 
-        $dates = $this->service->calculateKakehashiDates($supportStart, 3, $prevEndDate);
+        $dates = $this->service->calculateAssessmentDates($supportStart, 3, $prevEndDate);
 
         $this->assertEquals('2026-08-17', $dates['start_date']->toDateString());
         $this->assertEquals('2027-02-16', $dates['end_date']->toDateString());
@@ -72,7 +72,7 @@ class L001_KakehashiAutoGenerateTest extends TestCase
 
     /**
      * Test full auto-generation: given a student with support_start_date=2025-08-17,
-     * 3 kakehashi periods should be generated with correct dates.
+     * 3 assessment periods should be generated with correct dates.
      */
     public function test_generates_three_periods_for_student(): void
     {
@@ -102,12 +102,12 @@ class L001_KakehashiAutoGenerateTest extends TestCase
             'is_active' => true,
         ]);
 
-        $periods = $this->service->generateKakehashiPeriodsForStudent($student->id, '2025-08-17');
+        $periods = $this->service->generateAssessmentPeriodsForStudent($student->id, '2025-08-17');
 
         $this->assertCount(3, $periods);
 
         // Verify from database
-        $dbPeriods = KakehashiPeriod::where('student_id', $student->id)
+        $dbPeriods = AssessmentPeriod::where('student_id', $student->id)
             ->orderBy('start_date')
             ->get();
 
@@ -132,14 +132,14 @@ class L001_KakehashiAutoGenerateTest extends TestCase
     }
 
     /**
-     * Test that the job calls the correct method on KakehashiService.
+     * Test that the job calls the correct method on AssessmentService.
      */
     public function test_job_calls_auto_generate_method(): void
     {
-        $job = new \App\Jobs\AutoGenerateKakehashiPeriodJob();
+        $job = new \App\Jobs\AutoGenerateAssessmentPeriodJob();
 
-        $mock = $this->mock(KakehashiService::class);
-        $mock->shouldReceive('autoGenerateNextKakehashiPeriods')
+        $mock = $this->mock(AssessmentService::class);
+        $mock->shouldReceive('autoGenerateNextAssessmentPeriods')
             ->once()
             ->andReturn([]);
 
@@ -165,9 +165,9 @@ class L001_KakehashiAutoGenerateTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->service->generateKakehashiPeriodsForStudent($student->id, '2025-08-17');
+        $this->service->generateAssessmentPeriodsForStudent($student->id, '2025-08-17');
 
-        $period = KakehashiPeriod::where('student_id', $student->id)->first();
+        $period = AssessmentPeriod::where('student_id', $student->id)->first();
         $this->assertTrue($period->is_auto_generated);
         $this->assertTrue($period->is_active);
 
@@ -194,12 +194,12 @@ class L001_KakehashiAutoGenerateTest extends TestCase
         ]);
 
         // First generation
-        $this->service->generateKakehashiPeriodsForStudent($student->id, '2025-08-17');
-        $firstCount = KakehashiPeriod::where('student_id', $student->id)->count();
+        $this->service->generateAssessmentPeriodsForStudent($student->id, '2025-08-17');
+        $firstCount = AssessmentPeriod::where('student_id', $student->id)->count();
 
         // Second generation should skip
-        $result = $this->service->generateKakehashiPeriodsForStudent($student->id, '2025-08-17');
-        $secondCount = KakehashiPeriod::where('student_id', $student->id)->count();
+        $result = $this->service->generateAssessmentPeriodsForStudent($student->id, '2025-08-17');
+        $secondCount = AssessmentPeriod::where('student_id', $student->id)->count();
 
         $this->assertEmpty($result);
         $this->assertEquals($firstCount, $secondCount);
@@ -212,15 +212,15 @@ class L001_KakehashiAutoGenerateTest extends TestCase
      */
     public function test_support_plan_deadline_period_1(): void
     {
-        $kakehashiDeadline = Carbon::parse('2025-08-16');
-        $deadline = $this->service->calculateSupportPlanDeadline($kakehashiDeadline, 1);
+        $assessmentDeadline = Carbon::parse('2025-08-16');
+        $deadline = $this->service->calculateSupportPlanDeadline($assessmentDeadline, 1);
         $this->assertEquals('2025-08-16', $deadline->toDateString());
     }
 
     public function test_support_plan_deadline_period_2(): void
     {
-        $kakehashiDeadline = Carbon::parse('2026-01-17');
-        $deadline = $this->service->calculateSupportPlanDeadline($kakehashiDeadline, 2);
+        $assessmentDeadline = Carbon::parse('2026-01-17');
+        $deadline = $this->service->calculateSupportPlanDeadline($assessmentDeadline, 2);
         $this->assertEquals('2026-02-17', $deadline->toDateString());
     }
 
