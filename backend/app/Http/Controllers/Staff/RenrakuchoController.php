@@ -278,6 +278,9 @@ class RenrakuchoController extends Controller
             'language_communication'   => 'nullable|string',
             'social_relations'         => 'nullable|string',
             'notes'                    => 'nullable|string',
+            // 個別支援計画の目標スナップショット + コメント (2026-05-14)
+            'goal_text'                => 'nullable|string|max:2000',
+            'goal_comment'             => 'nullable|string|max:2000',
         ]);
 
         $studentRecord = StudentRecord::updateOrCreate(
@@ -292,12 +295,59 @@ class RenrakuchoController extends Controller
                 'language_communication'   => $validated['language_communication'] ?? null,
                 'social_relations'         => $validated['social_relations'] ?? null,
                 'notes'                    => $validated['notes'] ?? null,
+                'goal_text'                => $validated['goal_text'] ?? null,
+                'goal_comment'             => $validated['goal_comment'] ?? null,
             ]
         );
 
         return response()->json([
             'success' => true,
             'data'    => $studentRecord,
+        ]);
+    }
+
+    /**
+     * 生徒の有効な個別支援計画 (最新の is_official=true) の目標を返す。
+     * 連絡帳の生徒記録画面で「目標を選び→コメントをつける」UI に使う。
+     *
+     * 返却例: { plan_id, created_date, short_term_goal, long_term_goal }
+     */
+    public function activeSupportPlanGoals(Request $request, int $studentId): JsonResponse
+    {
+        $student = \App\Models\Student::find($studentId);
+        if (! $student) {
+            return response()->json(['success' => false, 'message' => '生徒が見つかりません。'], 404);
+        }
+
+        // 最新の正式版 (is_official=true) を優先、なければ最新の non-draft を返す
+        $plan = \App\Models\IndividualSupportPlan::where('student_id', $studentId)
+            ->where(function ($q) {
+                $q->where('is_official', true)
+                  ->orWhere(function ($q2) {
+                      $q2->where('is_draft', false)
+                         ->where('is_official', false);
+                  });
+            })
+            ->orderByDesc('is_official')
+            ->orderByDesc('created_date')
+            ->first();
+
+        if (! $plan) {
+            return response()->json([
+                'success' => true,
+                'data'    => null,
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'plan_id'         => $plan->id,
+                'created_date'    => $plan->created_date,
+                'short_term_goal' => $plan->short_term_goal,
+                'long_term_goal'  => $plan->long_term_goal,
+                'is_official'     => (bool) $plan->is_official,
+            ],
         ]);
     }
 
@@ -692,6 +742,15 @@ class RenrakuchoController extends Controller
             $prompt .= "【本日の様子】\n{$notes}\n\n";
         }
 
+        // 個別支援計画の目標 + スタッフコメント (2026-05-14 追加)
+        if (! empty($studentRecord->goal_text)) {
+            $prompt .= "【個別支援計画の目標】\n{$studentRecord->goal_text}\n";
+            if (! empty($studentRecord->goal_comment)) {
+                $prompt .= "【目標に対するスタッフのコメント】\n{$studentRecord->goal_comment}\n";
+            }
+            $prompt .= "\n";
+        }
+
         $prompt .= "【気になったこと】\n{$domainText}\n\n";
 
         $prompt .= "上記の情報を、保護者が読みやすいように、敬体（です・ます調）で1つの自然な文章にまとめてください。";
@@ -707,6 +766,9 @@ class RenrakuchoController extends Controller
         $prompt .= "・対象児童を指す表現は「本人」または上記の児童名 ({$studentName}) を使用し、「子ども」「お子様」は使わないでください。\n";
         $prompt .= "・他の児童に言及する場合は「友だち」と表記してください (「友達」は使わない)。\n";
         $prompt .= "・呼び方は「保護者」で統一してください (「保護者様」は使わない)。\n";
+        if (! empty($studentRecord->goal_text)) {
+            $prompt .= "・個別支援計画の目標が提示されている場合は、その目標に向けた成長や取り組みを文章中で必ず言及してください。\n";
+        }
         $prompt .= "・保護者が読んで嬉しくなるような、温かく励みになる文章にしてください。";
 
         try {

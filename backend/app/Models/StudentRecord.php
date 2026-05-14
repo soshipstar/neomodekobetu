@@ -16,6 +16,9 @@ class StudentRecord extends Model
         'language_communication',
         'social_relations',
         'notes',
+        // 個別支援計画の目標スナップショット + コメント (2026-05-14 追加)
+        'goal_text',
+        'goal_comment',
     ];
 
     // =========================================================================
