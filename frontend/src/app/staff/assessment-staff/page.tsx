@@ -11,6 +11,7 @@ import { Skeleton, SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { format } from 'date-fns';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { StudentSortableList, type StudentRow } from '@/components/staff/StudentSortableList';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -20,6 +21,7 @@ interface Student {
   id: number;
   student_name: string;
   support_start_date: string | null;
+  grade_level?: string | null;
 }
 
 interface AssessmentStaffEntry {
@@ -121,6 +123,15 @@ export default function AssessmentStaffPage() {
   const [expandedPeriods, setExpandedPeriods] = useState<Set<number>>(new Set());
 
   // Fetch students
+  // 一覧 + ソート用集計データ (BE が overview を返す)
+  const { data: overviewRows = [], isLoading: loadingOverview } = useQuery<StudentRow[]>({
+    queryKey: ['staff', 'students-overview', 'assessment-staff'],
+    queryFn: async () => {
+      const res = await api.get<{ data: StudentRow[] }>('/api/staff/students-overview/assessment-staff');
+      return res.data.data ?? [];
+    },
+  });
+
   const { data: students = [], isLoading: loadingStudents } = useQuery({
     queryKey: ['staff', 'assessment', 'students'],
     queryFn: async () => {
@@ -287,30 +298,21 @@ export default function AssessmentStaffPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">アセスメント（職員）</h1>
 
-      {/* Student selector */}
+      {/* Student selector (sortable list) */}
       <Card>
         <CardBody>
           <label className="mb-2 block text-sm font-medium text-[var(--neutral-foreground-2)]">生徒を選択</label>
-          {loadingStudents ? (
-            <Skeleton className="h-10 w-full rounded-lg" />
-          ) : (
-            <select
-              className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
-              value={selectedStudentId ?? ''}
-              onChange={(e) => {
-                const id = e.target.value ? Number(e.target.value) : null;
-                setSelectedStudentId(id);
-                setSelectedPeriodId(null);
-                setEditingPeriodId(null);
-                setExpandedPeriods(new Set());
-              }}
-            >
-              <option value="">-- 生徒を選択してください --</option>
-              {students.map((s) => (
-                <option key={s.id} value={s.id}>{s.student_name}</option>
-              ))}
-            </select>
-          )}
+          <StudentSortableList
+            students={overviewRows}
+            selectedId={selectedStudentId}
+            loading={loadingOverview || loadingStudents}
+            onSelect={(id) => {
+              setSelectedStudentId(id);
+              setSelectedPeriodId(null);
+              setEditingPeriodId(null);
+              setExpandedPeriods(new Set());
+            }}
+          />
         </CardBody>
       </Card>
 

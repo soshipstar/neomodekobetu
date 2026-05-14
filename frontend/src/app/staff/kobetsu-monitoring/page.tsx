@@ -13,6 +13,7 @@ import { nl } from '@/lib/utils';
 import { format } from 'date-fns';
 import { SignaturePad, type SignaturePadRef } from '@/components/ui/SignaturePad';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { StudentSortableList, type StudentRow } from '@/components/staff/StudentSortableList';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -115,6 +116,15 @@ export default function KobetsuMonitoringPage() {
     queryFn: async () => {
       const res = await api.get<{ data: Student[] }>('/api/staff/students');
       return res.data.data;
+    },
+  });
+
+  // Sortable list overview (latest monitoring date, alerts)
+  const { data: overviewRows = [], isLoading: loadingOverview } = useQuery<StudentRow[]>({
+    queryKey: ['staff', 'students-overview', 'monitoring'],
+    queryFn: async () => {
+      const res = await api.get<{ data: StudentRow[] }>('/api/staff/students-overview/monitoring');
+      return res.data.data ?? [];
     },
   });
 
@@ -407,19 +417,15 @@ export default function KobetsuMonitoringPage() {
       {/* Student & Plan Selection */}
       <Card>
         <CardBody>
-          <div className="flex flex-wrap gap-5">
-            <div className="min-w-[200px] flex-1">
+          <div className="flex flex-col gap-5 lg:flex-row">
+            <div className="min-w-[280px] flex-1">
               <label className="mb-2 block text-sm font-semibold text-[var(--neutral-foreground-2)]">生徒を選択 *</label>
-              <select
-                className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
-                value={selectedStudentId ?? ''}
-                onChange={(e) => handleStudentChange(e.target.value ? Number(e.target.value) : null)}
-              >
-                <option value="">-- 生徒を選択してください --</option>
-                {students.map((s) => (
-                  <option key={s.id} value={s.id}>{s.student_name}</option>
-                ))}
-              </select>
+              <StudentSortableList
+                students={overviewRows}
+                selectedId={selectedStudentId}
+                loading={loadingOverview}
+                onSelect={(id) => handleStudentChange(id)}
+              />
             </div>
 
             {selectedStudentId && studentPlans.length > 0 && (

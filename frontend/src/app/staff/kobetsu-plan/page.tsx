@@ -14,6 +14,7 @@ import { useToast } from '@/components/ui/Toast';
 import { SignaturePad, type SignaturePadRef } from '@/components/ui/SignaturePad';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import Link from 'next/link';
+import { StudentSortableList, type StudentRow } from '@/components/staff/StudentSortableList';
 
 // ---------------------------------------------------------------------------
 // Text normalizer
@@ -189,6 +190,14 @@ export default function KobetsuPlanPage() {
   const [existingGuardianSig, setExistingGuardianSig] = useState<string | undefined>(undefined);
 
   // ------ Data fetching ------
+
+  const { data: overviewRows = [], isLoading: loadingOverview } = useQuery<StudentRow[]>({
+    queryKey: ['staff', 'students-overview', 'support-plan'],
+    queryFn: async () => {
+      const res = await api.get<{ data: StudentRow[] }>('/api/staff/students-overview/support-plan');
+      return res.data.data ?? [];
+    },
+  });
 
   const { data: students = [], isLoading: loadingStudents } = useQuery({
     queryKey: ['staff', 'students'],
@@ -1240,26 +1249,16 @@ export default function KobetsuPlanPage() {
         </CardBody>
       </Card>
 
-      {/* Student selector */}
+      {/* Student selector (sortable list) */}
       <Card>
         <CardBody>
           <label className={labelClass}>生徒を選択</label>
-          {loadingStudents ? (
-            <SkeletonList items={1} />
-          ) : (
-            <select
-              className={selectClass}
-              value={selectedStudentId ?? ''}
-              onChange={(e) => setSelectedStudentId(e.target.value ? Number(e.target.value) : null)}
-            >
-              <option value="">-- 生徒を選択してください --</option>
-              {students.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.student_name}
-                </option>
-              ))}
-            </select>
-          )}
+          <StudentSortableList
+            students={overviewRows}
+            selectedId={selectedStudentId}
+            loading={loadingOverview || loadingStudents}
+            onSelect={(id) => setSelectedStudentId(id)}
+          />
         </CardBody>
       </Card>
 

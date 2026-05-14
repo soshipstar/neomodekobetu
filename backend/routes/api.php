@@ -295,6 +295,10 @@ Route::prefix('staff')
         Route::delete('/students/{student}', [App\Http\Controllers\Staff\StudentController::class, 'destroy']);
 
         // --- アセスメント ---
+        // 共通: 生徒選択リスト用の集計 (assessment-staff/-guardian, support-plan, monitoring)
+        Route::get('/students-overview/{kind}', [App\Http\Controllers\Staff\StudentOverviewController::class, 'show'])
+            ->where('kind', 'assessment-staff|assessment-guardian|support-plan|monitoring');
+
         Route::get('/students/{student}/assessments', [App\Http\Controllers\Staff\StudentAssessmentController::class, 'index']);
         Route::post('/students/{student}/assessments', [App\Http\Controllers\Staff\StudentAssessmentController::class, 'store']);
 
