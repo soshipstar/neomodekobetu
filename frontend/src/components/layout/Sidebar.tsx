@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { ClassroomSwitcher } from './ClassroomSwitcher';
 import type { UserType } from '@/types/user';
 
 interface NavLink {
@@ -296,12 +297,18 @@ function SidebarContent({
 
       {/* User info */}
       {!collapsed && (
-        <div className="border-b border-[var(--neutral-stroke-2)] px-4 py-3">
-          <p className="text-sm font-medium text-[var(--neutral-foreground-1)] truncate">{user.full_name}</p>
-          <p className="text-xs text-[var(--neutral-foreground-3)]">{userTypeLabel[user.user_type] || user.user_type}</p>
-          {user.classroom && (
-            <p className="text-xs text-[var(--neutral-foreground-4)] truncate">{user.classroom.classroom_name}</p>
-          )}
+        <div className="border-b border-[var(--neutral-stroke-2)] px-4 py-3 space-y-2">
+          <div>
+            <p className="text-sm font-medium text-[var(--neutral-foreground-1)] truncate">{user.full_name}</p>
+            <p className="text-xs text-[var(--neutral-foreground-3)]">{userTypeLabel[user.user_type] || user.user_type}</p>
+            {user.classroom && (
+              <p className="text-xs text-[var(--neutral-foreground-4)] truncate">{user.classroom.classroom_name}</p>
+            )}
+          </div>
+          {/* 教室切替セレクタ (R4-bis: スマホヘッダで押せなかった問題対策。
+              複数教室を持つユーザーのみ表示。ClassroomSwitcher が内部で
+              classrooms.length <= 1 のとき null を返す) */}
+          <ClassroomSwitcher variant="sidebar" />
         </div>
       )}
 
