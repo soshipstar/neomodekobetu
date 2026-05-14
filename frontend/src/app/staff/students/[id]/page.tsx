@@ -479,7 +479,7 @@ const PROFILE_SECTIONS: SectionDef[] = [
       { key: 'to_others_example', label: '具体的なやりとり例（→相手）', type: 'textarea' },
       { key: 'from_others_method', label: '相手から本人に伝えるとき', type: 'text', placeholder: 'ことば（文章）/ ことば（単語）/ ジェスチャー / 写真・絵カード' },
       { key: 'from_others_example', label: '具体的なやりとり例（←相手）', type: 'textarea' },
-      { key: 'friend_interaction', label: '友達とのやりとり・関わり方', type: 'textarea' },
+      { key: 'friend_interaction', label: '友だちとのやりとり・関わり方', type: 'textarea' },
     ],
   },
 ];
