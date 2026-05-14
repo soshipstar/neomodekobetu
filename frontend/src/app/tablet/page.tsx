@@ -193,17 +193,18 @@ export default function TabletHomePage() {
     },
   });
 
-  // モーダル open 時に body と送信先 (全件選択) を初期化
+  // モーダル open 時に body と送信先 (デフォルトは空 = 誤送信防止) を初期化。
+  // ユーザーは「全選択」ボタンで一括選択、「全解除」で個別解除する運用。
   useEffect(() => {
     if (quickModal && quickTemplates) {
       setQuickBody(quickTemplates[quickModal].body);
-      setQuickRoomIds(new Set(chatRooms.map((r) => r.id)));
+      setQuickRoomIds(new Set());
     }
     if (!quickModal) {
       setQuickBody('');
       setQuickRoomIds(new Set());
     }
-  }, [quickModal, quickTemplates, chatRooms]);
+  }, [quickModal, quickTemplates]);
 
   const sendQuickBroadcast = async () => {
     if (!quickModal) return;
