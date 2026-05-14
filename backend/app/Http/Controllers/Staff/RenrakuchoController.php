@@ -362,7 +362,7 @@ class RenrakuchoController extends Controller
             ]);
         }
 
-        // domain ラベル (例: 健康・生活) を内部 key (例: health_life) に正規化するマップ
+        // 五領域ラベル → 内部 key のマップ
         $domainLabelToKey = [
             '健康・生活'             => 'health_life',
             '運動・感覚'             => 'motor_sensory',
@@ -379,9 +379,30 @@ class RenrakuchoController extends Controller
             'social_relations'       => null,
         ];
 
+        // 実データ調査:
+        //   support_plan_details.domain は「本人支援 / 家族支援 / 地域支援」のいずれかが入る。
+        //   五領域は sub_category の括弧書き (例: 「生活習慣（健康・生活）」「運動・感覚（運動・感覚）」
+        //   「学習（認知・行動）」「コミュニケーション（言語・コミュニケーション）」
+        //   「社会性（人間関係・社会性）」) に埋め込まれている。
+        // domain が直接「健康・生活」のような旧データも互換維持。
         foreach ($plan->details as $detail) {
-            $key = $domainLabelToKey[$detail->domain] ?? $detail->domain;
-            if (array_key_exists($key, $domains) && ! empty($detail->goal)) {
+            if (empty($detail->goal)) continue;
+
+            $key = $domainLabelToKey[$detail->domain] ?? null;
+
+            // domain で取れなければ sub_category の括弧内から領域名を抽出
+            if (! $key && ! empty($detail->sub_category)) {
+                if (preg_match('/[（(]([^）)]+)[）)]/u', (string) $detail->sub_category, $m)) {
+                    $key = $domainLabelToKey[$m[1]] ?? null;
+                }
+                // 括弧書きが無い場合: sub_category 全体が領域名と一致するか
+                if (! $key) {
+                    $key = $domainLabelToKey[$detail->sub_category] ?? null;
+                }
+            }
+
+            // 同じ領域に複数 detail がある場合は最初の non-empty を採用
+            if ($key && array_key_exists($key, $domains) && empty($domains[$key])) {
                 $domains[$key] = $detail->goal;
             }
         }

@@ -1189,21 +1189,30 @@ export default function RenrakuchoPage() {
                                     <p className="mt-0.5 whitespace-pre-wrap text-[11px] text-[var(--neutral-foreground-1)]">
                                       {domainGoal}
                                     </p>
-                                    <label className="mt-1 flex cursor-pointer items-center gap-1.5 text-[11px]">
-                                      <input
-                                        type="checkbox"
-                                        checked={isQuoted}
-                                        onChange={(e) =>
-                                          updateDomainQuote(key, {
-                                            quoted: e.target.checked,
-                                            goal_snapshot: e.target.checked ? domainGoal : null,
-                                          })
-                                        }
-                                      />
-                                      <span className="text-[var(--neutral-foreground-1)]">
-                                        引用する（統合時にこの目標を AI 文章に含める）
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        // 観察記録 textarea に目標を追記
+                                        const current = (studentFormData[key] || '').trim();
+                                        const prefix = current ? current + '\n\n' : '';
+                                        setStudentFormData((prev) => ({
+                                          ...prev,
+                                          [key]: prefix + '【支援計画の目標】\n' + domainGoal,
+                                        }));
+                                        updateDomainQuote(key, { quoted: true, goal_snapshot: domainGoal });
+                                      }}
+                                      className="mt-1 inline-flex items-center gap-1 rounded border border-[var(--brand-80)] bg-white px-2 py-1 text-[10px] font-bold text-[var(--brand-80)] hover:bg-[var(--brand-160)]/40"
+                                      title={`この目標を「${DOMAIN_LABELS[key]}」の観察記録欄に引用する`}
+                                    >
+                                      <MaterialIcon name="format_quote" size={11} />
+                                      この目標を引用
+                                    </button>
+                                    {isQuoted && (
+                                      <span className="ml-2 inline-flex items-center gap-0.5 text-[10px] text-[var(--status-success-fg)]">
+                                        <MaterialIcon name="check" size={10} />
+                                        引用済み
                                       </span>
-                                    </label>
+                                    )}
                                   </>
                                 ) : (
                                   <p className="mt-0.5 text-[10px] text-[var(--neutral-foreground-4)]">

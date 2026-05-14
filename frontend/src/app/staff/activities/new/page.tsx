@@ -599,17 +599,28 @@ function StudentRecordCard({
                     <p className="mb-1.5 whitespace-pre-wrap text-xs text-[var(--neutral-foreground-1)]">
                       {c.goal_snapshot}
                     </p>
-                    <label className="flex cursor-pointer items-center gap-1.5 text-[11px]">
-                      <input
-                        type="checkbox"
-                        checked={c.quote_goal}
-                        onChange={(e) => onUpdateConcern(idx, { quote_goal: e.target.checked })}
-                        className="rounded border-[var(--neutral-stroke-2)]"
-                      />
-                      <span className="text-[var(--neutral-foreground-1)]">
-                        引用する（統合時にこの目標を AI 文章に含める）
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // 「この目標を引用」: 目標テキストを「具体的な内容」欄に追記
+                        const prefix = c.content.trim() ? c.content.trim() + '\n\n' : '';
+                        onUpdateConcern(idx, {
+                          content: prefix + '【支援計画の目標】\n' + c.goal_snapshot,
+                          quote_goal: true, // 統合 AI プロンプトでも引用扱いにする
+                        });
+                      }}
+                      className="inline-flex items-center gap-1 rounded border border-[var(--brand-80)] bg-white px-2 py-1 text-[11px] font-bold text-[var(--brand-80)] hover:bg-[var(--brand-160)]/40"
+                      title="この目標を「具体的な内容を記入」欄に引用する"
+                    >
+                      <MaterialIcon name="format_quote" size={12} />
+                      この目標を引用
+                    </button>
+                    {c.quote_goal && (
+                      <span className="ml-2 inline-flex items-center gap-0.5 text-[10px] text-[var(--status-success-fg)]">
+                        <MaterialIcon name="check" size={10} />
+                        引用済み
                       </span>
-                    </label>
+                    )}
                   </>
                 ) : (
                   <p className="text-[11px] text-[var(--neutral-foreground-4)]">
