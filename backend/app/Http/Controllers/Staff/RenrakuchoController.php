@@ -651,6 +651,7 @@ class RenrakuchoController extends Controller
         }
 
         $student = \App\Models\Student::find($validated['student_id']);
+        $studentName = $student?->student_name ?? '本人';
         $domainText = implode("\n", $domains);
         $activityName = $record->activity_name;
         $commonActivity = $record->common_activity ?? '';
@@ -658,6 +659,10 @@ class RenrakuchoController extends Controller
 
         // Build prompt matching legacy style (chatgpt.php generateIntegratedNote)
         $prompt = "あなたは個別支援教育の専門家です。以下の情報を元に、保護者に送る連絡帳として自然で読みやすい1つの文章にまとめてください。\n\n";
+
+        // 対象児童名を明示。AI 出力で「お子様」「子ども」ではなく
+        // 本人または上記の児童名で表現させるため。
+        $prompt .= "【対象児童】\n{$studentName}\n\n";
 
         // Support plan info (matching legacy)
         if ($record->support_plan_id) {
@@ -698,7 +703,10 @@ class RenrakuchoController extends Controller
         $prompt .= "・ポジティブで前向きな表現を使用してください。\n";
         $prompt .= "・「しかし」「ですが」「気になった点」などのネガティブな接続詞や表現は避けてください。\n";
         $prompt .= "・課題や改善点は「次のステップとして」「さらに成長するために」「これから挑戦できること」など、成長の機会として前向きに表現してください。\n";
-        $prompt .= "・子どもの頑張りや成長、良かった点を中心に記述してください。\n";
+        $prompt .= "・本人 ({$studentName}) の頑張りや成長、良かった点を中心に記述してください。\n";
+        $prompt .= "・対象児童を指す表現は「本人」または上記の児童名 ({$studentName}) を使用し、「子ども」「お子様」は使わないでください。\n";
+        $prompt .= "・他の児童に言及する場合は「友だち」と表記してください (「友達」は使わない)。\n";
+        $prompt .= "・呼び方は「保護者」で統一してください (「保護者様」は使わない)。\n";
         $prompt .= "・保護者が読んで嬉しくなるような、温かく励みになる文章にしてください。";
 
         try {
@@ -711,7 +719,7 @@ class RenrakuchoController extends Controller
             $response = $client->chat()->create([
                 'model'    => 'gpt-5.4-mini-2026-03-17',
                 'messages' => [
-                    ['role' => 'system', 'content' => 'あなたは個別支援教育の経験豊富な教員です。保護者に向けて温かく丁寧で、前向きでポジティブな連絡帳を書きます。子どもの良い面や成長を見つけ、課題も成長の機会として前向きに伝えます。「しかし」「ですが」などのネガティブな接続詞は使わず、常にポジティブな表現を心がけます。'],
+                    ['role' => 'system', 'content' => 'あなたは個別支援教育の経験豊富な教員です。保護者に向けて温かく丁寧で、前向きでポジティブな連絡帳を書きます。本人の良い面や成長を見つけ、課題も成長の機会として前向きに伝えます。「しかし」「ですが」などのネガティブな接続詞は使わず、常にポジティブな表現を心がけます。連絡帳の対象児童を指すときは「本人」または児童名を使い、「子ども」「お子様」という言葉は使いません。他の児童は「友だち」と表記し、「友達」「保護者様」も使いません。'],
                     ['role' => 'user', 'content' => $prompt],
                 ],
                 'temperature' => 0.7,
