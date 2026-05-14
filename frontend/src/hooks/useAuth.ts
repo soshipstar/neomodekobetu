@@ -38,15 +38,16 @@ export function useAuth(requiredUserType?: UserType | UserType[]) {
 
   const handleLogin = async (username: string, password: string) => {
     await login({ username, password });
-    const loggedUser = useAuthStore.getState().user;
-    if (loggedUser) {
-      const prefix = loggedUser.user_type === 'guardian' ? '/guardian'
-        : loggedUser.user_type === 'admin' ? '/admin'
-        : loggedUser.user_type === 'student' ? '/student'
-        : loggedUser.user_type === 'agent' ? '/agent'
-        : '/staff';
-      router.push(`${prefix}/dashboard`);
-    }
+    // authStore.login() 内で既に window.location.href = getDashboardPath(...)
+    // による全画面リロードが発火している。ここで重ねて router.push を呼ぶと
+    // ダブルナビゲーションが発生し、iPhone Safari 等では SPA 遷移 (router.push) が
+    // 全画面リロードを先取りして、user_type に合わないダッシュボード (例: tablet が
+    // staff/dashboard へ) が一瞬表示された後に AuthenticatedLayout の認可で
+    // /auth/login に戻されるレースが起きていた。
+    //
+    // 修正: authStore に redirect を一元化し、ここでは何もしない。
+    // (もし authStore 側が将来 redirect しない設計に戻したら、getDashboardPath を
+    //  ここで再度呼ぶ形で復活させればよい)
   };
 
   const handleLogout = async () => {
