@@ -738,6 +738,10 @@ Route::prefix('tablet')
         Route::post('/renrakucho', [App\Http\Controllers\Tablet\TabletController::class, 'storeRenrakucho']);
         Route::post('/renrakucho/student', [App\Http\Controllers\Tablet\TabletController::class, 'saveStudentRecord']);
         Route::post('/renrakucho/bulk', [App\Http\Controllers\Tablet\TabletController::class, 'saveRenrakucho']);
+        // 本日の利用者一覧 (Staff\DashboardController::attendance を再利用)
+        // タブレットユーザーから「誰に出欠連絡をしたか」を可視化するため
+        Route::get('/dashboard/attendance', [App\Http\Controllers\Staff\DashboardController::class, 'attendance']);
+
         // 保護者チャット (Staff\ChatController を再利用) - tablet からは
         // 自所属教室の保護者ルームのみ。送信者は user_type='tablet' だが
         // ChatMessage::sender_type は 'staff' として保存される (既存仕様)

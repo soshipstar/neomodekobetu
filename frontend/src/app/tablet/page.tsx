@@ -32,6 +32,26 @@ interface QuickRoom {
   guardian?: { full_name?: string } | null;
 }
 
+interface AttendanceStudent {
+  id: number;
+  name: string;
+  grade_group: '未就学' | '小学生' | '中学生' | '高校生';
+  type: 'regular' | 'makeup' | 'additional';
+  is_absent: boolean;
+  chat_room_id: number | null;
+  notified?: 'arrival' | 'departure' | null;
+}
+
+const GRADE_ORDER: AttendanceStudent['grade_group'][] = ['未就学', '小学生', '中学生', '高校生'];
+
+function typeLabel(type: AttendanceStudent['type']): string {
+  switch (type) {
+    case 'regular': return '通常';
+    case 'makeup': return '振替';
+    case 'additional': return '加算';
+  }
+}
+
 export default function TabletHomePage() {
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -43,6 +63,10 @@ export default function TabletHomePage() {
   const [quickBody, setQuickBody] = useState('');
   const [quickRoomIds, setQuickRoomIds] = useState<Set<number>>(new Set());
   const [quickSending, setQuickSending] = useState(false);
+
+  // 本日の利用者一覧 (per-student の通知状態は手元キャッシュで補強)
+  const [notifiedLocal, setNotifiedLocal] = useState<Record<number, 'arrival' | 'departure'>>({});
+  const [perStudentSending, setPerStudentSending] = useState<Record<string, boolean>>({});
 
   const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
   const calYear = calendarMonth.getFullYear();
@@ -93,6 +117,69 @@ export default function TabletHomePage() {
       return res.data.data || [];
     },
   });
+
+  // 本日の利用者一覧
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  const { data: attendanceData, isLoading: attendanceLoading } = useQuery<{ students: AttendanceStudent[] }>({
+    queryKey: ['tablet', 'attendance', todayStr],
+    queryFn: async () => {
+      const res = await api.get<{ data: { activities: unknown[]; students: AttendanceStudent[] } }>(
+        '/api/tablet/dashboard/attendance',
+        { params: { date: todayStr } }
+      );
+      // BE はそのままレスポンスを返す。data.data.students を取り出す
+      const payload = res.data?.data ?? res.data;
+      return {
+        students: Array.isArray((payload as { students?: AttendanceStudent[] })?.students)
+          ? (payload as { students: AttendanceStudent[] }).students
+          : [],
+      };
+    },
+  });
+  const attendance = attendanceData?.students || [];
+
+  // BE からの通知済 (notified) + ローカルキャッシュをマージ
+  const mergedNotified = useMemo(() => {
+    const merged: Record<number, 'arrival' | 'departure'> = { ...notifiedLocal };
+    attendance.forEach((s) => {
+      if (s.notified && !merged[s.id]) merged[s.id] = s.notified;
+    });
+    return merged;
+  }, [attendance, notifiedLocal]);
+
+  const attendanceByGrade = useMemo(() => {
+    const grouped: Record<string, AttendanceStudent[]> = {};
+    GRADE_ORDER.forEach((g) => { grouped[g] = []; });
+    attendance.forEach((s) => { if (grouped[s.grade_group]) grouped[s.grade_group].push(s); });
+    return grouped;
+  }, [attendance]);
+
+  const handlePerStudentNotify = async (
+    studentId: number,
+    chatRoomId: number,
+    action: 'arrival' | 'departure'
+  ) => {
+    const key = `${studentId}-${action}`;
+    setPerStudentSending((p) => ({ ...p, [key]: true }));
+    try {
+      await api.post('/api/tablet/chat/quick-broadcast', {
+        action,
+        room_ids: [chatRoomId],
+      });
+      setNotifiedLocal((p) => ({ ...p, [studentId]: action }));
+      const label = action === 'arrival' ? '到着しました' : 'これから帰ります';
+      toast.success(`${label} を送信しました`);
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } };
+      toast.error(e?.response?.data?.message || '送信に失敗しました');
+    } finally {
+      setPerStudentSending((p) => {
+        const next = { ...p };
+        delete next[key];
+        return next;
+      });
+    }
+  };
 
   // クイック通知テンプレート (教室別の保存値を BE から取得)
   type TplShape = { body: string; enabled: boolean };
@@ -192,6 +279,120 @@ export default function TabletHomePage() {
           <MaterialIcon name="chat" size={20} />
           <span>保護者チャット</span>
         </Link>
+      </div>
+
+      {/* 本日の利用者一覧 (誰に通知済か可視化) */}
+      <div className="rounded-xl bg-white p-3 shadow-md sm:p-5 lg:p-6">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 sm:mb-4">
+          <h2 className="text-base font-bold sm:text-lg lg:text-xl">
+            本日の利用者一覧
+            <span className="ml-2 text-xs font-normal text-[var(--neutral-foreground-3)] sm:text-sm">
+              ({attendance.length}名)
+            </span>
+          </h2>
+          <div className="flex items-center gap-3 text-xs text-[var(--neutral-foreground-3)] sm:text-sm">
+            <span className="flex items-center gap-1">
+              <MaterialIcon name="how_to_reg" size={14} className="text-[var(--status-success-fg)]" />
+              出席 {attendance.filter((s) => !s.is_absent).length}
+            </span>
+            <span className="flex items-center gap-1">
+              <MaterialIcon name="person_off" size={14} className="text-[var(--status-danger-fg)]" />
+              欠席 {attendance.filter((s) => s.is_absent).length}
+            </span>
+          </div>
+        </div>
+
+        {attendanceLoading ? (
+          <p className="py-6 text-center text-sm text-[var(--neutral-foreground-4)]">読み込み中...</p>
+        ) : attendance.length === 0 ? (
+          <p className="py-6 text-center text-sm text-[var(--neutral-foreground-4)]">
+            本日の参加予定者はいません
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {GRADE_ORDER.map((grade) => {
+              const students = attendanceByGrade[grade];
+              if (!students || students.length === 0) return null;
+              return (
+                <div key={grade}>
+                  <div className="mb-1.5 flex items-center gap-2">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--neutral-foreground-3)]">
+                      {grade}
+                    </h4>
+                    <span className="text-xs text-[var(--neutral-foreground-4)]">{students.length}名</span>
+                  </div>
+                  <ul className="space-y-1">
+                    {students.map((s) => {
+                      const notif = mergedNotified[s.id];
+                      const arrivalSending = !!perStudentSending[`${s.id}-arrival`];
+                      const departSending = !!perStudentSending[`${s.id}-departure`];
+                      return (
+                        <li
+                          key={s.id}
+                          className={`flex flex-wrap items-center justify-between gap-2 rounded-md px-3 py-2 text-sm ${
+                            s.is_absent
+                              ? 'bg-[var(--status-danger-bg)] text-[var(--status-danger-fg)] line-through'
+                              : 'bg-[var(--neutral-background-3)] text-[var(--neutral-foreground-2)]'
+                          }`}
+                        >
+                          <span className="font-medium">
+                            {s.name}
+                            {s.type !== 'regular' && (
+                              <span className="ml-1.5 rounded bg-[var(--neutral-background-1)] px-1.5 py-0.5 text-[10px] font-normal text-[var(--neutral-foreground-3)]">
+                                {typeLabel(s.type)}
+                              </span>
+                            )}
+                            {s.is_absent && (
+                              <span className="ml-1.5 rounded bg-[var(--status-danger-fg)] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                                欠席
+                              </span>
+                            )}
+                          </span>
+                          {!s.is_absent && s.chat_room_id && (
+                            <div className="flex items-center gap-1.5">
+                              {notif === 'arrival' ? (
+                                <span className="flex items-center gap-0.5 rounded bg-[var(--status-success-bg)] px-2 py-1 text-xs font-medium text-[var(--status-success-fg)]">
+                                  <MaterialIcon name="check" size={12} />
+                                  到着済
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handlePerStudentNotify(s.id, s.chat_room_id!, 'arrival')}
+                                  disabled={arrivalSending}
+                                  className="flex items-center gap-1 rounded border border-blue-600/30 bg-blue-50 px-2 py-1 text-xs font-bold text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+                                >
+                                  <MaterialIcon name="check_circle" size={12} />
+                                  {arrivalSending ? '送信中…' : '到着'}
+                                </button>
+                              )}
+                              {notif === 'departure' ? (
+                                <span className="flex items-center gap-0.5 rounded bg-[var(--status-success-bg)] px-2 py-1 text-xs font-medium text-[var(--status-success-fg)]">
+                                  <MaterialIcon name="check" size={12} />
+                                  帰宅済
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handlePerStudentNotify(s.id, s.chat_room_id!, 'departure')}
+                                  disabled={departSending}
+                                  className="flex items-center gap-1 rounded border border-amber-600/30 bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700 hover:bg-amber-100 disabled:opacity-50"
+                                >
+                                  <MaterialIcon name="directions_bus" size={12} />
+                                  {departSending ? '送信中…' : '帰宅'}
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* カレンダー */}
