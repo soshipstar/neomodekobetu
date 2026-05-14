@@ -60,6 +60,10 @@ class TabletAccountController extends Controller
         }
 
         $accounts = $query->orderBy('classroom_id')->orderBy('username')->get();
+        // 管理者が一覧から平文パスワードを参照・コピーできるように visible 化
+        $accounts->each(function ($a) {
+            $a->makeVisible('password_plain');
+        });
 
         return response()->json([
             'success' => true,
@@ -92,13 +96,17 @@ class TabletAccountController extends Controller
         }
 
         $account = User::create([
-            'classroom_id' => $validated['classroom_id'],
-            'username'     => $validated['username'],
-            'password'     => Hash::make($validated['password']),
-            'full_name'    => $validated['full_name'],
-            'user_type'    => 'tablet',
-            'is_active'    => true,
+            'classroom_id'   => $validated['classroom_id'],
+            'username'       => $validated['username'],
+            'password'       => Hash::make($validated['password']),
+            // B137-bis: 管理者が後から印刷・案内できるよう平文を保存する。
+            // 保護者・スタッフアカウント (StaffGuardianController) と同じ運用。
+            'password_plain' => $validated['password'],
+            'full_name'      => $validated['full_name'],
+            'user_type'      => 'tablet',
+            'is_active'      => true,
         ]);
+        $account->makeVisible('password_plain');
 
         return response()->json([
             'success' => true,
@@ -139,16 +147,23 @@ class TabletAccountController extends Controller
         }
 
         if (isset($validated['password'])) {
-            $validated['password'] = Hash::make($validated['password']);
+            // B137-bis: 平文を保持して管理者が表示・コピーできるようにする
+            $validated['password_plain'] = $validated['password'];
+            $validated['password']       = Hash::make($validated['password']);
         } else {
             unset($validated['password']);
         }
 
         $account->update($validated);
 
+        $fresh = $account->fresh('classroom:id,classroom_name');
+        if ($fresh) {
+            $fresh->makeVisible('password_plain');
+        }
+
         return response()->json([
             'success' => true,
-            'data'    => $account->fresh('classroom:id,classroom_name'),
+            'data'    => $fresh,
             'message' => '更新しました。',
         ]);
     }

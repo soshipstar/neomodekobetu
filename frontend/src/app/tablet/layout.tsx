@@ -14,8 +14,12 @@ export default function TabletLayout({ children }: { children: ReactNode }) {
       {/* メインヘッダ。右側 padding は env(safe-area-inset-right) を考慮して、
           iPhone のホームインジケータ / ノッチ向けの安全領域でクリッピングしないようにする。 */}
       <header
-        className="flex items-center justify-between gap-2 bg-white py-2 shadow-md sm:gap-4 sm:py-3"
+        className="flex items-center justify-between gap-2 bg-white shadow-md sm:gap-4"
         style={{
+          // iPhone のステータスバー (時刻・電波・電池) と被らないよう
+          // safe-area-inset-top を確保。最小 0.5rem (8px) は通常のヘッダ余白。
+          paddingTop: 'max(0.5rem, env(safe-area-inset-top))',
+          paddingBottom: '0.5rem',
           paddingLeft: 'max(1rem, env(safe-area-inset-left))',
           paddingRight: 'max(1rem, env(safe-area-inset-right))',
         }}

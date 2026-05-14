@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
+import { Modal } from '@/components/ui/Modal';
 import { format, startOfMonth, endOfMonth, getDay, getDaysInMonth, addMonths, subMonths, isSameDay, isToday } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
@@ -25,11 +26,23 @@ interface ActivityRecord {
 
 const DAY_HEADERS = ['日', '月', '火', '水', '木', '金', '土'];
 
+interface QuickRoom {
+  id: number;
+  student?: { student_name?: string } | null;
+  guardian?: { full_name?: string } | null;
+}
+
 export default function TabletHomePage() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [calendarMonth, setCalendarMonth] = useState(new Date());
+
+  // Quick broadcast (これから帰ります / 到着しました)
+  const [quickModal, setQuickModal] = useState<'departure' | 'arrival' | null>(null);
+  const [quickBody, setQuickBody] = useState('');
+  const [quickRoomIds, setQuickRoomIds] = useState<Set<number>>(new Set());
+  const [quickSending, setQuickSending] = useState(false);
 
   const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
   const calYear = calendarMonth.getFullYear();
@@ -72,6 +85,66 @@ export default function TabletHomePage() {
     }
   };
 
+  // 保護者チャットルーム一覧 (クイック通知の送信先選択用)
+  const { data: chatRooms = [] } = useQuery<QuickRoom[]>({
+    queryKey: ['tablet', 'chat', 'rooms'],
+    queryFn: async () => {
+      const res = await api.get<{ data: QuickRoom[] }>('/api/tablet/chat/rooms');
+      return res.data.data || [];
+    },
+  });
+
+  // クイック通知テンプレート (教室別の保存値を BE から取得)
+  type TplShape = { body: string; enabled: boolean };
+  const { data: quickTemplates } = useQuery<{ arrival: TplShape; departure: TplShape } | null>({
+    queryKey: ['tablet', 'chat', 'quick-broadcast-templates'],
+    queryFn: async () => {
+      const res = await api.get<{ data: { arrival: TplShape; departure: TplShape } }>(
+        '/api/tablet/chat/quick-broadcast-templates'
+      );
+      return res.data.data;
+    },
+  });
+
+  // モーダル open 時に body と送信先 (全件選択) を初期化
+  useEffect(() => {
+    if (quickModal && quickTemplates) {
+      setQuickBody(quickTemplates[quickModal].body);
+      setQuickRoomIds(new Set(chatRooms.map((r) => r.id)));
+    }
+    if (!quickModal) {
+      setQuickBody('');
+      setQuickRoomIds(new Set());
+    }
+  }, [quickModal, quickTemplates, chatRooms]);
+
+  const sendQuickBroadcast = async () => {
+    if (!quickModal) return;
+    if (quickRoomIds.size === 0) {
+      toast.error('送信先を選択してください');
+      return;
+    }
+    if (!quickBody.trim()) {
+      toast.error('送信メッセージを入力してください');
+      return;
+    }
+    setQuickSending(true);
+    try {
+      const res = await api.post('/api/tablet/chat/quick-broadcast', {
+        action: quickModal,
+        room_ids: Array.from(quickRoomIds),
+        custom_body: quickBody,
+      });
+      toast.success(res.data?.message || '送信しました');
+      setQuickModal(null);
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } };
+      toast.error(e?.response?.data?.message || '送信に失敗しました');
+    } finally {
+      setQuickSending(false);
+    }
+  };
+
   // カレンダー生成
   const calendarDays = useMemo(() => {
     const first = startOfMonth(calendarMonth);
@@ -91,6 +164,36 @@ export default function TabletHomePage() {
 
   return (
     <div className="space-y-6">
+      {/* クイック通知ボタン (これから帰ります / 到着しました) + 保護者チャット導線 */}
+      <div className="flex flex-wrap items-center gap-2 rounded-xl bg-white p-3 shadow-md sm:p-4">
+        <button
+          type="button"
+          onClick={() => setQuickModal('departure')}
+          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-amber-500 px-3 py-3 text-sm font-bold text-white hover:bg-amber-600 sm:flex-none sm:px-5 sm:text-base"
+          title="保護者全員に「これから帰ります」を送信"
+        >
+          <MaterialIcon name="directions_bus" size={20} />
+          <span>これから帰ります</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setQuickModal('arrival')}
+          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-3 text-sm font-bold text-white hover:bg-blue-700 sm:flex-none sm:px-5 sm:text-base"
+          title="保護者全員に「到着しました」を送信"
+        >
+          <MaterialIcon name="check_circle" size={20} />
+          <span>到着しました</span>
+        </button>
+        <Link
+          href="/tablet/chat"
+          className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-[var(--neutral-stroke-2)] bg-white px-3 py-3 text-sm font-bold text-[var(--neutral-foreground-2)] hover:bg-[var(--neutral-background-3)] sm:flex-none sm:px-5 sm:text-base"
+          title="保護者チャット"
+        >
+          <MaterialIcon name="chat" size={20} />
+          <span>保護者チャット</span>
+        </Link>
+      </div>
+
       {/* カレンダー */}
       <div className="rounded-xl bg-white p-3 shadow-md sm:p-5 lg:p-6">
         {/* カレンダー上部コントロール: 月ナビ + 新規追加ボタン
@@ -224,6 +327,107 @@ export default function TabletHomePage() {
           </div>
         )}
       </div>
+
+      {/* クイック通知モーダル */}
+      <Modal
+        isOpen={quickModal !== null}
+        onClose={() => setQuickModal(null)}
+        title={`${quickModal === 'departure' ? 'これから帰ります' : '到着しました'} を送信`}
+        size="md"
+      >
+        <div className="space-y-4">
+          <div className="rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] p-3">
+            <label className="mb-1 block text-sm font-semibold text-[var(--neutral-foreground-1)]">
+              送信内容 (編集可能)
+            </label>
+            <textarea
+              value={quickBody}
+              onChange={(e) => setQuickBody(e.target.value)}
+              rows={4}
+              className="block w-full resize-none rounded border border-[var(--neutral-stroke-2)] bg-white px-2 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+              placeholder="送信するメッセージを入力"
+            />
+          </div>
+
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="text-sm font-medium text-[var(--neutral-foreground-2)]">
+                送信先 ({quickRoomIds.size}/{chatRooms.length}件)
+              </label>
+              <div className="flex gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setQuickRoomIds(new Set(chatRooms.map((r) => r.id)))}
+                  className="text-[var(--brand-80)] hover:underline"
+                >
+                  全選択
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickRoomIds(new Set())}
+                  className="text-[var(--neutral-foreground-4)] hover:underline"
+                >
+                  全解除
+                </button>
+              </div>
+            </div>
+            <div className="max-h-[300px] overflow-y-auto rounded-lg border border-[var(--neutral-stroke-2)] p-2">
+              {chatRooms.length === 0 ? (
+                <p className="p-2 text-center text-xs text-[var(--neutral-foreground-4)]">
+                  保護者チャットがありません
+                </p>
+              ) : (
+                chatRooms.map((room) => {
+                  const checked = quickRoomIds.has(room.id);
+                  return (
+                    <label
+                      key={room.id}
+                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-[var(--neutral-background-3)]"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          const next = new Set(quickRoomIds);
+                          if (checked) next.delete(room.id);
+                          else next.add(room.id);
+                          setQuickRoomIds(next);
+                        }}
+                        className="rounded border-[var(--neutral-stroke-2)]"
+                      />
+                      <span>{room.student?.student_name || `ID:${room.id}`}</span>
+                      {room.guardian?.full_name && (
+                        <span className="text-xs text-[var(--neutral-foreground-4)]">
+                          ({room.guardian.full_name})
+                        </span>
+                      )}
+                    </label>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => setQuickModal(null)}
+              className="rounded-lg border border-[var(--neutral-stroke-2)] px-4 py-2 text-sm font-medium text-[var(--neutral-foreground-2)] hover:bg-[var(--neutral-background-3)]"
+            >
+              キャンセル
+            </button>
+            <button
+              type="button"
+              onClick={sendQuickBroadcast}
+              disabled={quickSending || quickRoomIds.size === 0 || !quickBody.trim()}
+              className="flex items-center gap-1.5 rounded-lg bg-[var(--brand-80)] px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              <MaterialIcon name="send" size={16} />
+              {quickRoomIds.size}件に送信
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

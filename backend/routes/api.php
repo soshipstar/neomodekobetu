@@ -738,6 +738,17 @@ Route::prefix('tablet')
         Route::post('/renrakucho', [App\Http\Controllers\Tablet\TabletController::class, 'storeRenrakucho']);
         Route::post('/renrakucho/student', [App\Http\Controllers\Tablet\TabletController::class, 'saveStudentRecord']);
         Route::post('/renrakucho/bulk', [App\Http\Controllers\Tablet\TabletController::class, 'saveRenrakucho']);
+        // 保護者チャット (Staff\ChatController を再利用) - tablet からは
+        // 自所属教室の保護者ルームのみ。送信者は user_type='tablet' だが
+        // ChatMessage::sender_type は 'staff' として保存される (既存仕様)
+        Route::get('/chat/rooms', [App\Http\Controllers\Staff\ChatController::class, 'rooms']);
+        Route::get('/chat/rooms/{room}/messages', [App\Http\Controllers\Staff\ChatController::class, 'messages']);
+        Route::post('/chat/rooms/{room}/messages', [App\Http\Controllers\Staff\ChatController::class, 'sendMessage']);
+        Route::post('/chat/rooms/{room}/read', [App\Http\Controllers\Staff\ChatController::class, 'markRead']);
+        Route::post('/chat/quick-broadcast', [App\Http\Controllers\Staff\ChatController::class, 'quickBroadcast']);
+        Route::get('/chat/quick-broadcast-templates', [App\Http\Controllers\Staff\ChatController::class, 'quickBroadcastTemplates']);
+        Route::put('/chat/quick-broadcast-templates', [App\Http\Controllers\Staff\ChatController::class, 'updateQuickBroadcastTemplates']);
+
         // 写真ライブラリ (既存 ClassroomPhotoController を再利用)
         Route::get('/photos', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'index']);
         Route::get('/photos/storage-usage', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'storageUsage']);

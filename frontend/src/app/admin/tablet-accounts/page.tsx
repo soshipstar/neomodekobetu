@@ -17,6 +17,7 @@ interface TabletAccount {
   id: number;
   username: string;
   full_name: string;
+  password_plain: string | null;
   classroom_id: number;
   classroom?: { id: number; classroom_name: string } | null;
   is_active: boolean;
@@ -100,6 +101,26 @@ export default function AdminTabletAccountsPage() {
     },
   });
 
+  // パスワードリセット (既存アカウントに新しい平文パスワードを生成 → 保存)
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ id }: { id: number }) => {
+      const chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let pw = '';
+      for (let i = 0; i < 10; i++) pw += chars[Math.floor(Math.random() * chars.length)];
+      const res = await api.put(`/api/admin/tablet-accounts/${id}`, { password: pw });
+      return { pw, res };
+    },
+    onSuccess: ({ pw }) => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'tablet-accounts'] });
+      toast.success(`新しいパスワード: ${pw}`);
+      navigator.clipboard.writeText(pw).catch(() => undefined);
+    },
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { message?: string } } };
+      toast.error(e?.response?.data?.message || 'パスワード再発行に失敗しました');
+    },
+  });
+
   const columns: Column<TabletAccount>[] = [
     {
       key: 'full_name',
@@ -112,6 +133,32 @@ export default function AdminTabletAccountsPage() {
       ),
     },
     { key: 'username', label: 'ユーザー名' },
+    {
+      key: 'password_plain',
+      label: 'パスワード',
+      render: (a) => (
+        a.password_plain ? (
+          <div className="flex items-center gap-1.5">
+            <code className="rounded bg-[var(--neutral-background-3)] px-1.5 py-0.5 font-mono text-xs text-[var(--neutral-foreground-1)]">
+              {a.password_plain}
+            </code>
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(a.password_plain!);
+                toast.success('パスワードをコピーしました');
+              }}
+              className="rounded p-1 text-[var(--neutral-foreground-4)] hover:bg-[var(--neutral-background-3)] hover:text-[var(--neutral-foreground-1)]"
+              title="パスワードをコピー"
+            >
+              <MaterialIcon name="content_copy" size={14} />
+            </button>
+          </div>
+        ) : (
+          <span className="text-xs text-[var(--neutral-foreground-4)]">（再設定が必要）</span>
+        )
+      ),
+    },
     { key: 'classroom_name', label: '事業所', render: (a) => a.classroom?.classroom_name || '-' },
     {
       key: 'is_active',
@@ -131,14 +178,29 @@ export default function AdminTabletAccountsPage() {
       key: 'actions',
       label: '操作',
       render: (a) => (
-        <Button
-          variant={a.is_active ? 'outline' : 'primary'}
-          size="sm"
-          onClick={() => toggleMutation.mutate({ id: a.id })}
-          leftIcon={a.is_active ? <MaterialIcon name="power_off" size={16} /> : <MaterialIcon name="power_settings_new" size={16} />}
-        >
-          {a.is_active ? '無効にする' : '有効にする'}
-        </Button>
+        <div className="flex flex-wrap gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (confirm(`「${a.full_name}」のパスワードを再発行します。よろしいですか？\n\n新しいパスワードは画面に表示され、自動でクリップボードにコピーされます。`)) {
+                resetPasswordMutation.mutate({ id: a.id });
+              }
+            }}
+            isLoading={resetPasswordMutation.isPending}
+            leftIcon={<MaterialIcon name="key" size={14} />}
+          >
+            パスワード再発行
+          </Button>
+          <Button
+            variant={a.is_active ? 'outline' : 'primary'}
+            size="sm"
+            onClick={() => toggleMutation.mutate({ id: a.id })}
+            leftIcon={a.is_active ? <MaterialIcon name="power_off" size={14} /> : <MaterialIcon name="power_settings_new" size={14} />}
+          >
+            {a.is_active ? '無効にする' : '有効にする'}
+          </Button>
+        </div>
       ),
     },
   ];
