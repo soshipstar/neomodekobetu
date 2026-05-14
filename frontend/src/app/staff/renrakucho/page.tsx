@@ -56,6 +56,16 @@ interface StudentRecord {
   language_communication: string | null;
   social_relations: string | null;
   notes: string | null;
+  goal_text?: string | null;
+  goal_comment?: string | null;
+}
+
+interface ActiveSupportPlanGoals {
+  plan_id: number;
+  created_date: string;
+  short_term_goal: string | null;
+  long_term_goal: string | null;
+  is_official: boolean;
 }
 
 interface HiyariHattoCandidate {
@@ -157,6 +167,11 @@ export default function RenrakuchoPage() {
   const [isLoadingRecords, setIsLoadingRecords] = useState(false);
   const [editingStudentId, setEditingStudentId] = useState<number | null>(null);
   const [studentFormData, setStudentFormData] = useState<Record<string, string>>({});
+  // 個別支援計画の目標選択・コメント (2026-05-14 追加)
+  const [activeGoals, setActiveGoals] = useState<ActiveSupportPlanGoals | null>(null);
+  const [selectedGoalType, setSelectedGoalType] = useState<'short' | 'long' | ''>('');
+  const [hasGoalComment, setHasGoalComment] = useState(false);
+  const [goalComment, setGoalComment] = useState('');
   const [isSavingStudent, setIsSavingStudent] = useState(false);
 
   // --- Add student to activity ---
@@ -275,7 +290,7 @@ export default function RenrakuchoPage() {
     }
   };
 
-  const handleSelectStudent = (rec: StudentRecord) => {
+  const handleSelectStudent = async (rec: StudentRecord) => {
     setEditingStudentId(rec.student_id);
     setStudentFormData({
       health_life: nl(rec.health_life),
@@ -285,6 +300,32 @@ export default function RenrakuchoPage() {
       social_relations: nl(rec.social_relations),
       notes: nl(rec.notes),
     });
+    // 個別支援計画の目標を取得
+    try {
+      const res = await api.get<{ data: ActiveSupportPlanGoals | null }>(
+        `/api/staff/renrakucho/student-goals/${rec.student_id}`
+      );
+      setActiveGoals(res.data?.data ?? null);
+    } catch {
+      setActiveGoals(null);
+    }
+    // 既存記録から goal_text/comment を復元 (どちらの goal か判定は短期/長期との一致で行う)
+    const existingGoalText = nl(rec.goal_text);
+    const existingGoalComment = nl(rec.goal_comment);
+    if (existingGoalText && existingGoalComment) {
+      setHasGoalComment(true);
+      setGoalComment(existingGoalComment);
+      // 復元: 一致判定は遅延読み込みされた activeGoals に依存するので、暫定で short
+      setSelectedGoalType('short');
+    } else if (existingGoalText) {
+      setHasGoalComment(false);
+      setGoalComment('');
+      setSelectedGoalType('');
+    } else {
+      setHasGoalComment(false);
+      setGoalComment('');
+      setSelectedGoalType('');
+    }
   };
 
   const handleAddStudent = (student: Student) => {
@@ -319,10 +360,19 @@ export default function RenrakuchoPage() {
     if (!editingActivity || !editingStudentId) return;
     setIsSavingStudent(true);
     try {
-      await api.post(`/api/staff/renrakucho/${editingActivity.id}/student-records`, {
-        student_id: editingStudentId,
+      // 目標スナップショット計算: 選択された type の goal text を抽出
+      const selectedGoalText =
+        selectedGoalType === 'short' ? (activeGoals?.short_term_goal ?? '') :
+        selectedGoalType === 'long' ? (activeGoals?.long_term_goal ?? '') :
+        '';
+      const payload: Record<string, string | null> = {
+        student_id: String(editingStudentId),
         ...studentFormData,
-      });
+        // チェックが ON かつ目標が選択されている時のみ goal_text/comment を保存
+        goal_text: hasGoalComment && selectedGoalText ? selectedGoalText : null,
+        goal_comment: hasGoalComment && goalComment.trim() ? goalComment.trim() : null,
+      };
+      await api.post(`/api/staff/renrakucho/${editingActivity.id}/student-records`, payload);
       toast.success('保存しました');
       const res = await api.get(`/api/staff/renrakucho/${editingActivity.id}/student-records`);
       setStudentRecords(res.data?.data ?? []);
@@ -1081,7 +1131,8 @@ export default function RenrakuchoPage() {
                         の記録
                       </p>
 
-                      {/* 5 domain textareas */}
+                      {/* 5 domain textareas
+                          + 「健康・生活」の直後に個別支援計画の目標と目標コメントを差し込む */}
                       {DOMAIN_KEYS.map((key) => (
                         <div key={key}>
                           <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-2)]">
@@ -1104,6 +1155,90 @@ export default function RenrakuchoPage() {
                             placeholder={`${DOMAIN_LABELS[key]}の観察記録...`}
                             className="block w-full resize-none overflow-hidden rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] placeholder-[var(--neutral-foreground-4)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
                           />
+                          {/* 「健康・生活」の直後に目標選択ブロックを差し込む */}
+                          {key === 'health_life' && (
+                            <div className="mt-3 rounded-md border border-[var(--brand-80)]/30 bg-[var(--brand-160)]/50 p-3">
+                              <div className="mb-2 flex items-center gap-2">
+                                <MaterialIcon name="flag" size={16} className="text-[var(--brand-80)]" />
+                                <span className="text-xs font-semibold text-[var(--neutral-foreground-1)]">
+                                  個別支援計画の目標
+                                </span>
+                              </div>
+                              {activeGoals ? (
+                                <>
+                                  <div className="space-y-1.5 text-xs">
+                                    {activeGoals.short_term_goal && (
+                                      <label className="flex cursor-pointer items-start gap-2 rounded p-1.5 hover:bg-white/70">
+                                        <input
+                                          type="radio"
+                                          name="goal_type"
+                                          value="short"
+                                          checked={selectedGoalType === 'short'}
+                                          onChange={() => setSelectedGoalType('short')}
+                                          className="mt-0.5"
+                                        />
+                                        <div className="flex-1">
+                                          <span className="font-semibold text-[var(--neutral-foreground-2)]">短期目標</span>
+                                          <p className="mt-0.5 whitespace-pre-wrap text-[var(--neutral-foreground-1)]">
+                                            {activeGoals.short_term_goal}
+                                          </p>
+                                        </div>
+                                      </label>
+                                    )}
+                                    {activeGoals.long_term_goal && (
+                                      <label className="flex cursor-pointer items-start gap-2 rounded p-1.5 hover:bg-white/70">
+                                        <input
+                                          type="radio"
+                                          name="goal_type"
+                                          value="long"
+                                          checked={selectedGoalType === 'long'}
+                                          onChange={() => setSelectedGoalType('long')}
+                                          className="mt-0.5"
+                                        />
+                                        <div className="flex-1">
+                                          <span className="font-semibold text-[var(--neutral-foreground-2)]">長期目標</span>
+                                          <p className="mt-0.5 whitespace-pre-wrap text-[var(--neutral-foreground-1)]">
+                                            {activeGoals.long_term_goal}
+                                          </p>
+                                        </div>
+                                      </label>
+                                    )}
+                                    {!activeGoals.short_term_goal && !activeGoals.long_term_goal && (
+                                      <p className="text-[var(--neutral-foreground-4)]">登録された目標がありません。</p>
+                                    )}
+                                  </div>
+                                  <label className="mt-3 flex cursor-pointer items-center gap-2 border-t border-[var(--brand-80)]/20 pt-2 text-xs">
+                                    <input
+                                      type="checkbox"
+                                      checked={hasGoalComment}
+                                      onChange={(e) => {
+                                        setHasGoalComment(e.target.checked);
+                                        if (!e.target.checked) setGoalComment('');
+                                      }}
+                                      disabled={!selectedGoalType}
+                                    />
+                                    <span className={selectedGoalType ? 'font-medium text-[var(--neutral-foreground-1)]' : 'text-[var(--neutral-foreground-4)]'}>
+                                      目標に対するコメントをする
+                                      {!selectedGoalType && '（先に目標を選択してください）'}
+                                    </span>
+                                  </label>
+                                  {hasGoalComment && (
+                                    <textarea
+                                      rows={3}
+                                      value={goalComment}
+                                      onChange={(e) => setGoalComment(e.target.value)}
+                                      placeholder="目標に対するコメント (連絡帳本文と AI 文章生成に反映されます)..."
+                                      className="mt-2 block w-full resize-none overflow-hidden rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] placeholder-[var(--neutral-foreground-4)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+                                    />
+                                  )}
+                                </>
+                              ) : (
+                                <p className="text-xs text-[var(--neutral-foreground-4)]">
+                                  この生徒には有効な個別支援計画がありません。
+                                </p>
+                              )}
+                            </div>
+                          )}
                         </div>
                       ))}
 
