@@ -56,8 +56,9 @@ interface StudentRecord {
   language_communication: string | null;
   social_relations: string | null;
   notes: string | null;
-  goal_text?: string | null;
-  goal_comment?: string | null;
+  domain_goal_quotes?: Record<string, DomainGoalQuoteEntry> | null;
+  short_term_goal_comment?: string | null;
+  long_term_goal_comment?: string | null;
 }
 
 interface ActiveSupportPlanGoals {
@@ -66,6 +67,19 @@ interface ActiveSupportPlanGoals {
   short_term_goal: string | null;
   long_term_goal: string | null;
   is_official: boolean;
+  // 領域別目標 (support_plan_details からの抽出)
+  domains?: {
+    health_life?: string | null;
+    motor_sensory?: string | null;
+    cognitive_behavior?: string | null;
+    language_communication?: string | null;
+    social_relations?: string | null;
+  };
+}
+
+interface DomainGoalQuoteEntry {
+  quoted: boolean;
+  goal_snapshot: string | null;
 }
 
 interface HiyariHattoCandidate {
@@ -167,11 +181,13 @@ export default function RenrakuchoPage() {
   const [isLoadingRecords, setIsLoadingRecords] = useState(false);
   const [editingStudentId, setEditingStudentId] = useState<number | null>(null);
   const [studentFormData, setStudentFormData] = useState<Record<string, string>>({});
-  // 個別支援計画の目標選択・コメント (2026-05-14 追加)
+  // 個別支援計画の目標 (2026-05-14 改修):
+  //  - per-domain の goal 表示 + 引用チェック (domainGoalQuotes)
+  //  - 短期/長期目標に対するコメント (個別メモの上に表示)
   const [activeGoals, setActiveGoals] = useState<ActiveSupportPlanGoals | null>(null);
-  const [selectedGoalType, setSelectedGoalType] = useState<'short' | 'long' | ''>('');
-  const [hasGoalComment, setHasGoalComment] = useState(false);
-  const [goalComment, setGoalComment] = useState('');
+  const [domainGoalQuotes, setDomainGoalQuotes] = useState<Record<string, DomainGoalQuoteEntry>>({});
+  const [shortTermComment, setShortTermComment] = useState('');
+  const [longTermComment, setLongTermComment] = useState('');
   const [isSavingStudent, setIsSavingStudent] = useState(false);
 
   // --- Add student to activity ---
@@ -300,7 +316,13 @@ export default function RenrakuchoPage() {
       social_relations: nl(rec.social_relations),
       notes: nl(rec.notes),
     });
-    // 個別支援計画の目標を取得
+
+    // 既存の per-domain 引用設定 + 短期/長期コメントを復元
+    setDomainGoalQuotes((rec.domain_goal_quotes as Record<string, DomainGoalQuoteEntry>) ?? {});
+    setShortTermComment(nl(rec.short_term_goal_comment));
+    setLongTermComment(nl(rec.long_term_goal_comment));
+
+    // 個別支援計画の領域別目標を取得
     try {
       const res = await api.get<{ data: ActiveSupportPlanGoals | null }>(
         `/api/staff/renrakucho/student-goals/${rec.student_id}`
@@ -308,23 +330,6 @@ export default function RenrakuchoPage() {
       setActiveGoals(res.data?.data ?? null);
     } catch {
       setActiveGoals(null);
-    }
-    // 既存記録から goal_text/comment を復元 (どちらの goal か判定は短期/長期との一致で行う)
-    const existingGoalText = nl(rec.goal_text);
-    const existingGoalComment = nl(rec.goal_comment);
-    if (existingGoalText && existingGoalComment) {
-      setHasGoalComment(true);
-      setGoalComment(existingGoalComment);
-      // 復元: 一致判定は遅延読み込みされた activeGoals に依存するので、暫定で short
-      setSelectedGoalType('short');
-    } else if (existingGoalText) {
-      setHasGoalComment(false);
-      setGoalComment('');
-      setSelectedGoalType('');
-    } else {
-      setHasGoalComment(false);
-      setGoalComment('');
-      setSelectedGoalType('');
     }
   };
 
@@ -360,17 +365,22 @@ export default function RenrakuchoPage() {
     if (!editingActivity || !editingStudentId) return;
     setIsSavingStudent(true);
     try {
-      // 目標スナップショット計算: 選択された type の goal text を抽出
-      const selectedGoalText =
-        selectedGoalType === 'short' ? (activeGoals?.short_term_goal ?? '') :
-        selectedGoalType === 'long' ? (activeGoals?.long_term_goal ?? '') :
-        '';
-      const payload: Record<string, string | null> = {
-        student_id: String(editingStudentId),
+      // 引用設定: チェック ON のみ送信。goal_snapshot は activeGoals.domains から取る
+      const quotesToSave: Record<string, DomainGoalQuoteEntry> = {};
+      for (const [domain, entry] of Object.entries(domainGoalQuotes)) {
+        if (entry?.quoted) {
+          const snapshot = entry.goal_snapshot || (activeGoals?.domains?.[domain as keyof NonNullable<ActiveSupportPlanGoals['domains']>] ?? '');
+          if (snapshot) {
+            quotesToSave[domain] = { quoted: true, goal_snapshot: snapshot };
+          }
+        }
+      }
+      const payload: Record<string, unknown> = {
+        student_id: editingStudentId,
         ...studentFormData,
-        // チェックが ON かつ目標が選択されている時のみ goal_text/comment を保存
-        goal_text: hasGoalComment && selectedGoalText ? selectedGoalText : null,
-        goal_comment: hasGoalComment && goalComment.trim() ? goalComment.trim() : null,
+        domain_goal_quotes: Object.keys(quotesToSave).length > 0 ? quotesToSave : null,
+        short_term_goal_comment: shortTermComment.trim() || null,
+        long_term_goal_comment: longTermComment.trim() || null,
       };
       await api.post(`/api/staff/renrakucho/${editingActivity.id}/student-records`, payload);
       toast.success('保存しました');
@@ -383,6 +393,14 @@ export default function RenrakuchoPage() {
     } finally {
       setIsSavingStudent(false);
     }
+  };
+
+  // domain の引用フラグをトグル/snapshot更新
+  const updateDomainQuote = (domain: string, patch: Partial<DomainGoalQuoteEntry>) => {
+    setDomainGoalQuotes((prev) => ({
+      ...prev,
+      [domain]: { ...prev[domain], ...patch } as DomainGoalQuoteEntry,
+    }));
   };
 
   const handleDeleteStudentRecord = async (studentId: number, studentName: string) => {
@@ -1131,116 +1149,112 @@ export default function RenrakuchoPage() {
                         の記録
                       </p>
 
-                      {/* 5 domain textareas
-                          + 「健康・生活」の直後に個別支援計画の目標と目標コメントを差し込む */}
-                      {DOMAIN_KEYS.map((key) => (
-                        <div key={key}>
-                          <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-2)]">
-                            {DOMAIN_LABELS[key]}
-                          </label>
-                          <textarea
-                            rows={2}
-                            value={studentFormData[key] || ''}
-                            onChange={(e) => {
-                              setStudentFormData((prev) => ({ ...prev, [key]: e.target.value }));
-                              e.target.style.height = 'auto';
-                              e.target.style.height = e.target.scrollHeight + 'px';
-                            }}
-                            ref={(el) => {
-                              if (el) {
-                                el.style.height = 'auto';
-                                el.style.height = el.scrollHeight + 'px';
-                              }
-                            }}
-                            placeholder={`${DOMAIN_LABELS[key]}の観察記録...`}
-                            className="block w-full resize-none overflow-hidden rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] placeholder-[var(--neutral-foreground-4)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
-                          />
-                          {/* 「健康・生活」の直後に目標選択ブロックを差し込む */}
-                          {key === 'health_life' && (
-                            <div className="mt-3 rounded-md border border-[var(--brand-80)]/30 bg-[var(--brand-160)]/50 p-3">
-                              <div className="mb-2 flex items-center gap-2">
-                                <MaterialIcon name="flag" size={16} className="text-[var(--brand-80)]" />
-                                <span className="text-xs font-semibold text-[var(--neutral-foreground-1)]">
-                                  個別支援計画の目標
-                                </span>
+                      {/* 5 domain textareas — 各 textarea 直下に当該領域の
+                          個別支援計画目標 + 引用チェックを表示する */}
+                      {DOMAIN_KEYS.map((key) => {
+                        const domainGoal = activeGoals?.domains?.[key as keyof NonNullable<ActiveSupportPlanGoals['domains']>] ?? null;
+                        const quoteEntry = domainGoalQuotes[key];
+                        const isQuoted = !!quoteEntry?.quoted;
+                        return (
+                          <div key={key}>
+                            <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-2)]">
+                              {DOMAIN_LABELS[key]}
+                            </label>
+                            <textarea
+                              rows={2}
+                              value={studentFormData[key] || ''}
+                              onChange={(e) => {
+                                setStudentFormData((prev) => ({ ...prev, [key]: e.target.value }));
+                                e.target.style.height = 'auto';
+                                e.target.style.height = e.target.scrollHeight + 'px';
+                              }}
+                              ref={(el) => {
+                                if (el) {
+                                  el.style.height = 'auto';
+                                  el.style.height = el.scrollHeight + 'px';
+                                }
+                              }}
+                              placeholder={`${DOMAIN_LABELS[key]}の観察記録...`}
+                              className="block w-full resize-none overflow-hidden rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] placeholder-[var(--neutral-foreground-4)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+                            />
+                            {/* 当該領域の個別支援計画目標 + 引用チェック */}
+                            {activeGoals && (
+                              <div className="mt-1.5 rounded border border-[var(--brand-80)]/20 bg-[var(--brand-160)]/30 px-2 py-1.5">
+                                <div className="flex items-center gap-1 text-[10px] font-semibold text-[var(--brand-80)]">
+                                  <MaterialIcon name="flag" size={11} />
+                                  個別支援計画の目標 ({DOMAIN_LABELS[key]})
+                                </div>
+                                {domainGoal ? (
+                                  <>
+                                    <p className="mt-0.5 whitespace-pre-wrap text-[11px] text-[var(--neutral-foreground-1)]">
+                                      {domainGoal}
+                                    </p>
+                                    <label className="mt-1 flex cursor-pointer items-center gap-1.5 text-[11px]">
+                                      <input
+                                        type="checkbox"
+                                        checked={isQuoted}
+                                        onChange={(e) =>
+                                          updateDomainQuote(key, {
+                                            quoted: e.target.checked,
+                                            goal_snapshot: e.target.checked ? domainGoal : null,
+                                          })
+                                        }
+                                      />
+                                      <span className="text-[var(--neutral-foreground-1)]">
+                                        引用する（統合時にこの目標を AI 文章に含める）
+                                      </span>
+                                    </label>
+                                  </>
+                                ) : (
+                                  <p className="mt-0.5 text-[10px] text-[var(--neutral-foreground-4)]">
+                                    この領域の目標は登録されていません。
+                                  </p>
+                                )}
                               </div>
-                              {activeGoals ? (
-                                <>
-                                  <div className="space-y-1.5 text-xs">
-                                    {activeGoals.short_term_goal && (
-                                      <label className="flex cursor-pointer items-start gap-2 rounded p-1.5 hover:bg-white/70">
-                                        <input
-                                          type="radio"
-                                          name="goal_type"
-                                          value="short"
-                                          checked={selectedGoalType === 'short'}
-                                          onChange={() => setSelectedGoalType('short')}
-                                          className="mt-0.5"
-                                        />
-                                        <div className="flex-1">
-                                          <span className="font-semibold text-[var(--neutral-foreground-2)]">短期目標</span>
-                                          <p className="mt-0.5 whitespace-pre-wrap text-[var(--neutral-foreground-1)]">
-                                            {activeGoals.short_term_goal}
-                                          </p>
-                                        </div>
-                                      </label>
-                                    )}
-                                    {activeGoals.long_term_goal && (
-                                      <label className="flex cursor-pointer items-start gap-2 rounded p-1.5 hover:bg-white/70">
-                                        <input
-                                          type="radio"
-                                          name="goal_type"
-                                          value="long"
-                                          checked={selectedGoalType === 'long'}
-                                          onChange={() => setSelectedGoalType('long')}
-                                          className="mt-0.5"
-                                        />
-                                        <div className="flex-1">
-                                          <span className="font-semibold text-[var(--neutral-foreground-2)]">長期目標</span>
-                                          <p className="mt-0.5 whitespace-pre-wrap text-[var(--neutral-foreground-1)]">
-                                            {activeGoals.long_term_goal}
-                                          </p>
-                                        </div>
-                                      </label>
-                                    )}
-                                    {!activeGoals.short_term_goal && !activeGoals.long_term_goal && (
-                                      <p className="text-[var(--neutral-foreground-4)]">登録された目標がありません。</p>
-                                    )}
-                                  </div>
-                                  <label className="mt-3 flex cursor-pointer items-center gap-2 border-t border-[var(--brand-80)]/20 pt-2 text-xs">
-                                    <input
-                                      type="checkbox"
-                                      checked={hasGoalComment}
-                                      onChange={(e) => {
-                                        setHasGoalComment(e.target.checked);
-                                        if (!e.target.checked) setGoalComment('');
-                                      }}
-                                      disabled={!selectedGoalType}
-                                    />
-                                    <span className={selectedGoalType ? 'font-medium text-[var(--neutral-foreground-1)]' : 'text-[var(--neutral-foreground-4)]'}>
-                                      目標に対するコメントをする
-                                      {!selectedGoalType && '（先に目標を選択してください）'}
-                                    </span>
-                                  </label>
-                                  {hasGoalComment && (
-                                    <textarea
-                                      rows={3}
-                                      value={goalComment}
-                                      onChange={(e) => setGoalComment(e.target.value)}
-                                      placeholder="目標に対するコメント (連絡帳本文と AI 文章生成に反映されます)..."
-                                      className="mt-2 block w-full resize-none overflow-hidden rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] placeholder-[var(--neutral-foreground-4)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
-                                    />
-                                  )}
-                                </>
-                              ) : (
-                                <p className="text-xs text-[var(--neutral-foreground-4)]">
-                                  この生徒には有効な個別支援計画がありません。
-                                </p>
-                              )}
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {/* 短期/長期目標に関するコメント (個別メモの直前に表示) */}
+                      {activeGoals && (activeGoals.short_term_goal || activeGoals.long_term_goal) && (
+                        <div className="rounded-md border border-[var(--brand-80)]/30 bg-[var(--brand-160)]/40 p-3">
+                          <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-[var(--neutral-foreground-1)]">
+                            <MaterialIcon name="flag" size={14} className="text-[var(--brand-80)]" />
+                            個別支援計画の短期・長期目標に関するコメント
+                          </div>
+                          {activeGoals.short_term_goal && (
+                            <div className="mb-2">
+                              <div className="text-[11px] font-semibold text-[var(--neutral-foreground-2)]">短期目標</div>
+                              <p className="mb-1 whitespace-pre-wrap text-[11px] text-[var(--neutral-foreground-1)]">
+                                {activeGoals.short_term_goal}
+                              </p>
+                              <textarea
+                                rows={2}
+                                value={shortTermComment}
+                                onChange={(e) => setShortTermComment(e.target.value)}
+                                placeholder="短期目標に関するコメント..."
+                                className="block w-full resize-none overflow-hidden rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-xs text-[var(--neutral-foreground-1)] placeholder-[var(--neutral-foreground-4)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+                              />
+                            </div>
+                          )}
+                          {activeGoals.long_term_goal && (
+                            <div>
+                              <div className="text-[11px] font-semibold text-[var(--neutral-foreground-2)]">長期目標</div>
+                              <p className="mb-1 whitespace-pre-wrap text-[11px] text-[var(--neutral-foreground-1)]">
+                                {activeGoals.long_term_goal}
+                              </p>
+                              <textarea
+                                rows={2}
+                                value={longTermComment}
+                                onChange={(e) => setLongTermComment(e.target.value)}
+                                placeholder="長期目標に関するコメント..."
+                                className="block w-full resize-none overflow-hidden rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-xs text-[var(--neutral-foreground-1)] placeholder-[var(--neutral-foreground-4)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+                              />
                             </div>
                           )}
                         </div>
-                      ))}
+                      )}
 
                       {/* Notes */}
                       <div>

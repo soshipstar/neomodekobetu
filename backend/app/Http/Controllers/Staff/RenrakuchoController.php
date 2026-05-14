@@ -286,6 +286,9 @@ class RenrakuchoController extends Controller
             'notes'                    => 'nullable|string',
             // 領域別の目標引用 (2026-05-14 置換: goal_text/goal_comment → domain_goal_quotes)
             'domain_goal_quotes'       => 'nullable|array',
+            // 個別支援計画の短期・長期目標に対するコメント (2026-05-14)
+            'short_term_goal_comment'  => 'nullable|string|max:2000',
+            'long_term_goal_comment'   => 'nullable|string|max:2000',
         ]);
 
         $studentRecord = StudentRecord::updateOrCreate(
@@ -301,6 +304,8 @@ class RenrakuchoController extends Controller
                 'social_relations'         => $validated['social_relations'] ?? null,
                 'notes'                    => $validated['notes'] ?? null,
                 'domain_goal_quotes'       => $validated['domain_goal_quotes'] ?? null,
+                'short_term_goal_comment'  => $validated['short_term_goal_comment'] ?? null,
+                'long_term_goal_comment'   => $validated['long_term_goal_comment'] ?? null,
             ]
         );
 
@@ -808,6 +813,18 @@ class RenrakuchoController extends Controller
         }
         if (! empty($quotedGoals)) {
             $prompt .= "【個別支援計画から引用する目標】\n" . implode("\n", $quotedGoals) . "\n\n";
+        }
+
+        // 短期・長期目標に対するコメント (個別メモの上に表示される項目)
+        $overallComments = [];
+        if (! empty($studentRecord->short_term_goal_comment)) {
+            $overallComments[] = "・短期目標について: {$studentRecord->short_term_goal_comment}";
+        }
+        if (! empty($studentRecord->long_term_goal_comment)) {
+            $overallComments[] = "・長期目標について: {$studentRecord->long_term_goal_comment}";
+        }
+        if (! empty($overallComments)) {
+            $prompt .= "【個別支援計画の短期/長期目標に関する所感】\n" . implode("\n", $overallComments) . "\n\n";
         }
 
         $prompt .= "【気になったこと】\n{$domainText}\n\n";
