@@ -23,14 +23,20 @@ interface Student {
   is_scheduled_today: boolean;
 }
 
+interface ConcernEntry {
+  domain: string;        // domain key (health_life, etc.) or '' if not selected
+  content: string;       // 具体的な内容
+  goal_snapshot: string; // 領域選択時に自動で挿入される目標 (read-only 表示)
+  quote_goal: boolean;   // 「引用する」チェック
+}
+
 interface StudentFormData {
   id: number;
   student_name: string;
   daily_note: string;
-  domain1: string;
-  domain1_content: string;
-  domain2: string;
-  domain2_content: string;
+  concerns: ConcernEntry[];
+  /** 領域別目標を即時取得した結果のキャッシュ (FE 表示用) */
+  domain_goals?: Record<string, string | null>;
 }
 
 const DOMAINS = [
@@ -40,6 +46,14 @@ const DOMAINS = [
   { value: 'language_communication', label: '言語・コミュニケーション' },
   { value: 'social_relations', label: '人間関係・社会性' },
 ];
+const DOMAIN_LABEL_MAP: Record<string, string> = Object.fromEntries(DOMAINS.map((d) => [d.value, d.label]));
+
+/** 必須の concern 数。1つ目と2つ目 (index 0, 1) は必須。 */
+const REQUIRED_CONCERNS = 2;
+
+function emptyConcern(): ConcernEntry {
+  return { domain: '', content: '', goal_snapshot: '', quote_goal: false };
+}
 
 const GRADE_LABELS: Record<string, string> = {
   preschool: '未就学',
@@ -144,6 +158,19 @@ export default function NewActivityPage() {
     }
   };
 
+  /** 生徒の領域別目標 (support_plan_details) を fetch してフォームに格納 */
+  const fetchStudentGoals = useCallback(async (studentId: number) => {
+    try {
+      const res = await api.get<{ data: { domains: Record<string, string | null> } | null }>(
+        `/api/staff/renrakucho/student-goals/${studentId}`
+      );
+      const domains = res.data?.data?.domains ?? null;
+      setStudents((prev) => prev.map((s) => (s.id === studentId ? { ...s, domain_goals: domains ?? {} } : s)));
+    } catch {
+      setStudents((prev) => prev.map((s) => (s.id === studentId ? { ...s, domain_goals: {} } : s)));
+    }
+  }, []);
+
   // Add students to form
   const addStudent = (student: Student) => {
     if (students.find((s) => s.id === student.id)) return;
@@ -153,39 +180,72 @@ export default function NewActivityPage() {
         id: student.id,
         student_name: student.student_name,
         daily_note: '',
-        domain1: '',
-        domain1_content: '',
-        domain2: '',
-        domain2_content: '',
+        concerns: [emptyConcern(), emptyConcern()],  // 1つ目・2つ目 必須
       },
     ]);
+    fetchStudentGoals(student.id);
   };
 
   const removeStudent = (studentId: number) => {
     setStudents((prev) => prev.filter((s) => s.id !== studentId));
   };
 
-  const updateStudentField = (studentId: number, field: keyof StudentFormData, value: string) => {
+  const updateStudentDailyNote = (studentId: number, value: string) => {
+    setStudents((prev) => prev.map((s) => (s.id === studentId ? { ...s, daily_note: value } : s)));
+  };
+
+  const updateConcern = (studentId: number, idx: number, patch: Partial<ConcernEntry>) => {
     setStudents((prev) =>
-      prev.map((s) => (s.id === studentId ? { ...s, [field]: value } : s))
+      prev.map((s) => {
+        if (s.id !== studentId) return s;
+        const next = [...s.concerns];
+        next[idx] = { ...next[idx], ...patch };
+        // 領域変更時は goal_snapshot を再取得 (domain_goals キャッシュから)
+        if (patch.domain !== undefined) {
+          const goal = (s.domain_goals?.[patch.domain] ?? '') as string;
+          next[idx].goal_snapshot = goal;
+          // 領域が空になったら quote_goal は false に
+          if (!patch.domain) next[idx].quote_goal = false;
+        }
+        return { ...s, concerns: next };
+      })
+    );
+  };
+
+  const addConcernRow = (studentId: number) => {
+    setStudents((prev) =>
+      prev.map((s) => {
+        if (s.id !== studentId) return s;
+        if (s.concerns.length >= DOMAINS.length) return s; // 上限: 5領域
+        return { ...s, concerns: [...s.concerns, emptyConcern()] };
+      })
+    );
+  };
+
+  const removeConcernRow = (studentId: number, idx: number) => {
+    setStudents((prev) =>
+      prev.map((s) => {
+        if (s.id !== studentId) return s;
+        // 必須 (1つ目・2つ目) は削除不可
+        if (idx < REQUIRED_CONCERNS) return s;
+        return { ...s, concerns: s.concerns.filter((_, i) => i !== idx) };
+      })
     );
   };
 
   // Add all scheduled students
   const addAllScheduled = () => {
     const existing = new Set(students.map((s) => s.id));
-    const newStudents = availableStudents
+    const newOnes = availableStudents
       .filter((s) => s.is_scheduled_today && !existing.has(s.id))
       .map((s) => ({
         id: s.id,
         student_name: s.student_name,
         daily_note: '',
-        domain1: '',
-        domain1_content: '',
-        domain2: '',
-        domain2_content: '',
+        concerns: [emptyConcern(), emptyConcern()],
       }));
-    setStudents((prev) => [...prev, ...newStudents]);
+    setStudents((prev) => [...prev, ...newOnes]);
+    newOnes.forEach((s) => fetchStudentGoals(s.id));
   };
 
   // Save
@@ -203,18 +263,29 @@ export default function NewActivityPage() {
       return;
     }
 
-    // Validate student domains
+    // Validate concerns: 1つ目・2つ目は必須、3つ目以降は任意だが domain 入力時は content 必須
     for (const s of students) {
-      if (!s.domain1) {
-        toast.warning(`${s.student_name}: 領域1を選択してください`);
-        return;
+      for (let i = 0; i < s.concerns.length; i++) {
+        const c = s.concerns[i];
+        if (i < REQUIRED_CONCERNS) {
+          if (!c.domain) {
+            toast.warning(`${s.student_name}: 気になったこと${i + 1}つ目の領域を選択してください`);
+            return;
+          }
+          if (!c.content.trim()) {
+            toast.warning(`${s.student_name}: 気になったこと${i + 1}つ目の内容を入力してください`);
+            return;
+          }
+        } else if (c.domain && !c.content.trim()) {
+          toast.warning(`${s.student_name}: ${i + 1}つ目の気になったことの内容を入力してください`);
+          return;
+        }
       }
-      if (!s.domain1_content.trim()) {
-        toast.warning(`${s.student_name}: 領域1の内容を入力してください`);
-        return;
-      }
-      if (s.domain2 && s.domain1 === s.domain2) {
-        toast.warning(`${s.student_name}: 領域1と領域2に同じ項目を選択できません`);
+      // 領域重複チェック
+      const usedDomains = s.concerns.map((c) => c.domain).filter(Boolean);
+      const uniqueDomains = new Set(usedDomains);
+      if (uniqueDomains.size !== usedDomains.length) {
+        toast.warning(`${s.student_name}: 同じ領域を複数回選択できません`);
         return;
       }
     }
@@ -226,14 +297,32 @@ export default function NewActivityPage() {
         activity_name: activityName,
         common_activity: commonActivity,
         support_plan_id: selectedPlanId || undefined,
-        students: students.map((s) => ({
-          id: s.id,
-          daily_note: s.daily_note,
-          domain1: s.domain1,
-          domain1_content: s.domain1_content,
-          domain2: s.domain2 || null,
-          domain2_content: s.domain2_content || null,
-        })),
+        students: students.map((s) => {
+          // concerns を 5 領域カラム + domain_goal_quotes に展開
+          const domainFields: Record<string, string | null> = {
+            health_life: null,
+            motor_sensory: null,
+            cognitive_behavior: null,
+            language_communication: null,
+            social_relations: null,
+          };
+          const goalQuotes: Record<string, { quoted: boolean; goal_snapshot: string | null }> = {};
+          for (const c of s.concerns) {
+            if (!c.domain) continue;
+            if (c.content.trim()) {
+              domainFields[c.domain] = c.content.trim();
+            }
+            if (c.quote_goal && c.goal_snapshot) {
+              goalQuotes[c.domain] = { quoted: true, goal_snapshot: c.goal_snapshot };
+            }
+          }
+          return {
+            id: s.id,
+            notes: s.daily_note,
+            ...domainFields,
+            domain_goal_quotes: Object.keys(goalQuotes).length > 0 ? goalQuotes : null,
+          };
+        }),
       });
       toast.success('活動を保存しました');
       router.push(`/staff/renrakucho?date=${dateParam}`);
@@ -369,7 +458,10 @@ export default function NewActivityPage() {
                 <StudentRecordCard
                   key={student.id}
                   student={student}
-                  onUpdate={(field, value) => updateStudentField(student.id, field, value)}
+                  onUpdateDailyNote={(v) => updateStudentDailyNote(student.id, v)}
+                  onUpdateConcern={(idx, patch) => updateConcern(student.id, idx, patch)}
+                  onAddConcern={() => addConcernRow(student.id)}
+                  onRemoveConcern={(idx) => removeConcernRow(student.id, idx)}
                   onRemove={() => removeStudent(student.id)}
                 />
               ))}
@@ -409,13 +501,22 @@ export default function NewActivityPage() {
 
 function StudentRecordCard({
   student,
-  onUpdate,
+  onUpdateDailyNote,
+  onUpdateConcern,
+  onAddConcern,
+  onRemoveConcern,
   onRemove,
 }: {
   student: StudentFormData;
-  onUpdate: (field: keyof StudentFormData, value: string) => void;
+  onUpdateDailyNote: (value: string) => void;
+  onUpdateConcern: (idx: number, patch: Partial<ConcernEntry>) => void;
+  onAddConcern: () => void;
+  onRemoveConcern: (idx: number) => void;
   onRemove: () => void;
 }) {
+  const usedDomainsExcept = (idx: number): Set<string> =>
+    new Set(student.concerns.map((c, i) => (i === idx ? '' : c.domain)).filter(Boolean));
+
   return (
     <div className="rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] p-4">
       {/* Header */}
@@ -426,6 +527,7 @@ function StudentRecordCard({
         <button
           onClick={onRemove}
           className="rounded p-1 text-[var(--neutral-foreground-4)] hover:bg-[var(--neutral-background-3)] hover:text-[var(--status-danger-fg)]"
+          title="生徒をフォームから外す"
         >
           <MaterialIcon name="delete" size={16} />
         </button>
@@ -440,60 +542,105 @@ function StudentRecordCard({
           className="w-full rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
           rows={2}
           value={student.daily_note}
-          onChange={(e) => onUpdate('daily_note', e.target.value)}
+          onChange={(e) => onUpdateDailyNote(e.target.value)}
           placeholder="本日の様子を記入..."
         />
       </div>
 
-      {/* Domain 1 */}
-      <div className="mb-3 rounded-md bg-[var(--status-info-bg)] p-3">
-        <label className="mb-1 block text-xs font-semibold text-[var(--neutral-foreground-1)]">
-          気になったこと 1つ目 <span className="text-[var(--status-danger-fg)]">*</span>
-        </label>
-        <select
-          className="mb-2 w-full rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm focus:border-[var(--brand-80)] focus:outline-none"
-          value={student.domain1}
-          onChange={(e) => onUpdate('domain1', e.target.value)}
-        >
-          <option value="">領域を選択...</option>
-          {DOMAINS.map((d) => (
-            <option key={d.value} value={d.value}>{d.label}</option>
-          ))}
-        </select>
-        <textarea
-          className="w-full rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm focus:border-[var(--brand-80)] focus:outline-none"
-          rows={2}
-          value={student.domain1_content}
-          onChange={(e) => onUpdate('domain1_content', e.target.value)}
-          placeholder="具体的な内容を記入..."
-        />
-      </div>
+      {/* Concerns (1つ目..N つ目) */}
+      {student.concerns.map((c, idx) => {
+        const isRequired = idx < REQUIRED_CONCERNS;
+        const bg = isRequired ? 'bg-[var(--status-info-bg)]' : 'bg-[var(--neutral-background-3)]';
+        const used = usedDomainsExcept(idx);
+        const availableDomains = DOMAINS.filter((d) => !used.has(d.value));
+        return (
+          <div key={idx} className={`mb-3 rounded-md ${bg} p-3`}>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="block text-xs font-semibold text-[var(--neutral-foreground-1)]">
+                気になったこと {idx + 1}つ目
+                {isRequired && <span className="ml-1 text-[var(--status-danger-fg)]">*</span>}
+                {!isRequired && <span className="ml-1 text-[var(--neutral-foreground-4)]">（任意）</span>}
+              </label>
+              {!isRequired && (
+                <button
+                  type="button"
+                  onClick={() => onRemoveConcern(idx)}
+                  className="text-[10px] text-[var(--neutral-foreground-4)] hover:text-[var(--status-danger-fg)]"
+                >
+                  <MaterialIcon name="close" size={14} className="inline" /> 削除
+                </button>
+              )}
+            </div>
+            <select
+              className="mb-2 w-full rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm focus:border-[var(--brand-80)] focus:outline-none"
+              value={c.domain}
+              onChange={(e) => onUpdateConcern(idx, { domain: e.target.value })}
+            >
+              <option value="">領域を選択...</option>
+              {availableDomains.map((d) => (
+                <option key={d.value} value={d.value}>{d.label}</option>
+              ))}
+            </select>
 
-      {/* Domain 2 */}
-      <div className="rounded-md bg-[var(--neutral-background-3)] p-3">
-        <label className="mb-1 block text-xs font-semibold text-[var(--neutral-foreground-2)]">
-          気になったこと 2つ目（任意）
-        </label>
-        <select
-          className="mb-2 w-full rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm focus:border-[var(--brand-80)] focus:outline-none"
-          value={student.domain2}
-          onChange={(e) => onUpdate('domain2', e.target.value)}
+            {/* 個別支援計画の目標表示 + 引用チェックボックス */}
+            {c.domain && (
+              <div className="mb-2 rounded border border-[var(--brand-80)]/30 bg-[var(--brand-160)]/40 p-2">
+                <div className="mb-1 flex items-center gap-1 text-[11px] font-semibold text-[var(--brand-80)]">
+                  <MaterialIcon name="flag" size={12} />
+                  個別支援計画の目標
+                  {DOMAIN_LABEL_MAP[c.domain] && (
+                    <span className="ml-1 text-[var(--neutral-foreground-3)]">
+                      （{DOMAIN_LABEL_MAP[c.domain]}）
+                    </span>
+                  )}
+                </div>
+                {c.goal_snapshot ? (
+                  <>
+                    <p className="mb-1.5 whitespace-pre-wrap text-xs text-[var(--neutral-foreground-1)]">
+                      {c.goal_snapshot}
+                    </p>
+                    <label className="flex cursor-pointer items-center gap-1.5 text-[11px]">
+                      <input
+                        type="checkbox"
+                        checked={c.quote_goal}
+                        onChange={(e) => onUpdateConcern(idx, { quote_goal: e.target.checked })}
+                        className="rounded border-[var(--neutral-stroke-2)]"
+                      />
+                      <span className="text-[var(--neutral-foreground-1)]">
+                        引用する（統合時にこの目標を AI 文章に含める）
+                      </span>
+                    </label>
+                  </>
+                ) : (
+                  <p className="text-[11px] text-[var(--neutral-foreground-4)]">
+                    この領域の目標は個別支援計画に登録されていません。
+                  </p>
+                )}
+              </div>
+            )}
+
+            <textarea
+              className="w-full rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm focus:border-[var(--brand-80)] focus:outline-none"
+              rows={2}
+              value={c.content}
+              onChange={(e) => onUpdateConcern(idx, { content: e.target.value })}
+              placeholder="具体的な内容を記入..."
+            />
+          </div>
+        );
+      })}
+
+      {/* 追加ボタン (上限 = 5 領域分) */}
+      {student.concerns.length < DOMAINS.length && (
+        <button
+          type="button"
+          onClick={onAddConcern}
+          className="inline-flex items-center gap-1 rounded border border-dashed border-[var(--brand-80)]/50 px-3 py-1.5 text-xs font-medium text-[var(--brand-80)] hover:bg-[var(--brand-160)]/40"
         >
-          <option value="">領域を選択...</option>
-          {DOMAINS.filter((d) => d.value !== student.domain1).map((d) => (
-            <option key={d.value} value={d.value}>{d.label}</option>
-          ))}
-        </select>
-        {student.domain2 && (
-          <textarea
-            className="w-full rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm focus:border-[var(--brand-80)] focus:outline-none"
-            rows={2}
-            value={student.domain2_content}
-            onChange={(e) => onUpdate('domain2_content', e.target.value)}
-            placeholder="具体的な内容を記入..."
-          />
-        )}
-      </div>
+          <MaterialIcon name="add" size={14} />
+          気になったことを追加
+        </button>
+      )}
     </div>
   );
 }

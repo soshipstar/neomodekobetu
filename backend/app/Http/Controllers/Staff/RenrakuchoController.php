@@ -128,6 +128,8 @@ class RenrakuchoController extends Controller
             'students.*.domain1_content'           => 'nullable|string',
             'students.*.domain2'                   => 'nullable|string',
             'students.*.domain2_content'           => 'nullable|string',
+            // 領域別の目標引用 { domain_key: { quoted, goal_snapshot } }
+            'students.*.domain_goal_quotes'        => 'nullable|array',
         ]);
 
         try {
@@ -154,6 +156,7 @@ class RenrakuchoController extends Controller
                         'language_communication'   => $studentData['language_communication'] ?? null,
                         'social_relations'         => $studentData['social_relations'] ?? null,
                         'notes'                    => $studentData['notes'] ?? null,
+                        'domain_goal_quotes'       => $studentData['domain_goal_quotes'] ?? null,
                     ]);
                 }
 
@@ -217,6 +220,8 @@ class RenrakuchoController extends Controller
             'students.*.domain1_content'           => 'nullable|string',
             'students.*.domain2'                   => 'nullable|string',
             'students.*.domain2_content'           => 'nullable|string',
+            // 領域別の目標引用 { domain_key: { quoted, goal_snapshot } }
+            'students.*.domain_goal_quotes'        => 'nullable|array',
         ]);
 
         DB::transaction(function () use ($record, $validated) {
@@ -238,6 +243,7 @@ class RenrakuchoController extends Controller
                         'language_communication'   => $studentData['language_communication'] ?? null,
                         'social_relations'         => $studentData['social_relations'] ?? null,
                         'notes'                    => $studentData['notes'] ?? null,
+                        'domain_goal_quotes'       => $studentData['domain_goal_quotes'] ?? null,
                     ]);
                 }
             }
@@ -278,9 +284,8 @@ class RenrakuchoController extends Controller
             'language_communication'   => 'nullable|string',
             'social_relations'         => 'nullable|string',
             'notes'                    => 'nullable|string',
-            // 個別支援計画の目標スナップショット + コメント (2026-05-14)
-            'goal_text'                => 'nullable|string|max:2000',
-            'goal_comment'             => 'nullable|string|max:2000',
+            // 領域別の目標引用 (2026-05-14 置換: goal_text/goal_comment → domain_goal_quotes)
+            'domain_goal_quotes'       => 'nullable|array',
         ]);
 
         $studentRecord = StudentRecord::updateOrCreate(
@@ -295,8 +300,7 @@ class RenrakuchoController extends Controller
                 'language_communication'   => $validated['language_communication'] ?? null,
                 'social_relations'         => $validated['social_relations'] ?? null,
                 'notes'                    => $validated['notes'] ?? null,
-                'goal_text'                => $validated['goal_text'] ?? null,
-                'goal_comment'             => $validated['goal_comment'] ?? null,
+                'domain_goal_quotes'       => $validated['domain_goal_quotes'] ?? null,
             ]
         );
 
@@ -307,10 +311,24 @@ class RenrakuchoController extends Controller
     }
 
     /**
-     * 生徒の有効な個別支援計画 (最新の is_official=true) の目標を返す。
-     * 連絡帳の生徒記録画面で「目標を選び→コメントをつける」UI に使う。
+     * 生徒の有効な個別支援計画 (最新の is_official=true) の領域別目標を返す。
      *
-     * 返却例: { plan_id, created_date, short_term_goal, long_term_goal }
+     * support_plan_details テーブルから domain ごとの goal を抽出し、
+     * domain_key (health_life など) 形式に正規化して返却する。
+     *
+     * 返却例:
+     * {
+     *   plan_id: 12,
+     *   created_date: "2026-04-01",
+     *   is_official: true,
+     *   domains: {
+     *     health_life: "集団指示を最後まで聞き取れる",
+     *     motor_sensory: null,
+     *     cognitive_behavior: "...",
+     *     language_communication: "...",
+     *     social_relations: "..."
+     *   }
+     * }
      */
     public function activeSupportPlanGoals(Request $request, int $studentId): JsonResponse
     {
@@ -319,7 +337,6 @@ class RenrakuchoController extends Controller
             return response()->json(['success' => false, 'message' => '生徒が見つかりません。'], 404);
         }
 
-        // 最新の正式版 (is_official=true) を優先、なければ最新の non-draft を返す
         $plan = \App\Models\IndividualSupportPlan::where('student_id', $studentId)
             ->where(function ($q) {
                 $q->where('is_official', true)
@@ -330,6 +347,7 @@ class RenrakuchoController extends Controller
             })
             ->orderByDesc('is_official')
             ->orderByDesc('created_date')
+            ->with('details')
             ->first();
 
         if (! $plan) {
@@ -339,14 +357,40 @@ class RenrakuchoController extends Controller
             ]);
         }
 
+        // domain ラベル (例: 健康・生活) を内部 key (例: health_life) に正規化するマップ
+        $domainLabelToKey = [
+            '健康・生活'             => 'health_life',
+            '運動・感覚'             => 'motor_sensory',
+            '認知・行動'             => 'cognitive_behavior',
+            '言語・コミュニケーション' => 'language_communication',
+            '人間関係・社会性'       => 'social_relations',
+        ];
+
+        $domains = [
+            'health_life'            => null,
+            'motor_sensory'          => null,
+            'cognitive_behavior'     => null,
+            'language_communication' => null,
+            'social_relations'       => null,
+        ];
+
+        foreach ($plan->details as $detail) {
+            $key = $domainLabelToKey[$detail->domain] ?? $detail->domain;
+            if (array_key_exists($key, $domains) && ! empty($detail->goal)) {
+                $domains[$key] = $detail->goal;
+            }
+        }
+
         return response()->json([
             'success' => true,
             'data'    => [
                 'plan_id'         => $plan->id,
                 'created_date'    => $plan->created_date,
+                'is_official'     => (bool) $plan->is_official,
+                'domains'         => $domains,
+                // 後方互換: 短期/長期も併せて返却
                 'short_term_goal' => $plan->short_term_goal,
                 'long_term_goal'  => $plan->long_term_goal,
-                'is_official'     => (bool) $plan->is_official,
             ],
         ]);
     }
@@ -742,13 +786,28 @@ class RenrakuchoController extends Controller
             $prompt .= "【本日の様子】\n{$notes}\n\n";
         }
 
-        // 個別支援計画の目標 + スタッフコメント (2026-05-14 追加)
-        if (! empty($studentRecord->goal_text)) {
-            $prompt .= "【個別支援計画の目標】\n{$studentRecord->goal_text}\n";
-            if (! empty($studentRecord->goal_comment)) {
-                $prompt .= "【目標に対するスタッフのコメント】\n{$studentRecord->goal_comment}\n";
+        // 領域別目標の引用 (2026-05-14 置換: domain_goal_quotes 形式)
+        // 形式: { domain_key: { quoted: true, goal_snapshot: "..." } }
+        $quotedGoals = [];
+        if (! empty($studentRecord->domain_goal_quotes) && is_array($studentRecord->domain_goal_quotes)) {
+            $domainLabels = [
+                'health_life'            => '健康・生活',
+                'motor_sensory'          => '運動・感覚',
+                'cognitive_behavior'     => '認知・行動',
+                'language_communication' => '言語・コミュニケーション',
+                'social_relations'       => '人間関係・社会性',
+            ];
+            foreach ($studentRecord->domain_goal_quotes as $domainKey => $entry) {
+                if (! is_array($entry)) continue;
+                $quoted = (bool) ($entry['quoted'] ?? false);
+                $snapshot = trim((string) ($entry['goal_snapshot'] ?? ''));
+                if ($quoted && $snapshot !== '' && isset($domainLabels[$domainKey])) {
+                    $quotedGoals[] = "・【{$domainLabels[$domainKey]}】の目標: {$snapshot}";
+                }
             }
-            $prompt .= "\n";
+        }
+        if (! empty($quotedGoals)) {
+            $prompt .= "【個別支援計画から引用する目標】\n" . implode("\n", $quotedGoals) . "\n\n";
         }
 
         $prompt .= "【気になったこと】\n{$domainText}\n\n";
@@ -766,8 +825,8 @@ class RenrakuchoController extends Controller
         $prompt .= "・対象児童を指す表現は「本人」または上記の児童名 ({$studentName}) を使用し、「子ども」「お子様」は使わないでください。\n";
         $prompt .= "・他の児童に言及する場合は「友だち」と表記してください (「友達」は使わない)。\n";
         $prompt .= "・呼び方は「保護者」で統一してください (「保護者様」は使わない)。\n";
-        if (! empty($studentRecord->goal_text)) {
-            $prompt .= "・個別支援計画の目標が提示されている場合は、その目標に向けた成長や取り組みを文章中で必ず言及してください。\n";
+        if (! empty($quotedGoals)) {
+            $prompt .= "・上記の【個別支援計画から引用する目標】が提示されている場合は、それぞれの目標に向けた成長や取り組みを文章中で必ず言及してください。\n";
         }
         $prompt .= "・保護者が読んで嬉しくなるような、温かく励みになる文章にしてください。";
 

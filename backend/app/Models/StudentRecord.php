@@ -16,10 +16,17 @@ class StudentRecord extends Model
         'language_communication',
         'social_relations',
         'notes',
-        // 個別支援計画の目標スナップショット + コメント (2026-05-14 追加)
-        'goal_text',
-        'goal_comment',
+        // 領域別の目標引用設定 (2026-05-14 追加・置換)
+        // 形式: { domain_key: { quoted: bool, goal_snapshot: string|null } }
+        'domain_goal_quotes',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'domain_goal_quotes' => 'array',
+        ];
+    }
 
     // =========================================================================
     // Relationships
