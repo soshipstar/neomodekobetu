@@ -75,11 +75,18 @@ export default function StaffAccountsPage() {
   const [classroomStaff, setClassroomStaff] = useState<StaffAccount | null>(null);
   const [formData, setFormData] = useState<StaffAccountFormData>(emptyFormData);
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof StaffAccountFormData, string>>>({});
+  // 「削除」は実態としては論理削除 (is_active=false)。デフォルトでは有効ユーザーのみ
+  // 表示することで「削除を押したのに行が消えない」体験を解消する。
+  // 無効化済を見たい場合はトグルで切替。
+  const [showInactive, setShowInactive] = useState(false);
 
   const { data: staffAccounts, meta, isLoading, goToPage } = usePagination<StaffAccount>({
     endpoint: '/api/admin/staff-accounts',
-    queryKey: ['admin', 'staff-accounts'],
-    params: { search: debouncedSearch || undefined },
+    queryKey: ['admin', 'staff-accounts', showInactive ? 'all' : 'active'],
+    params: {
+      search: debouncedSearch || undefined,
+      is_active: showInactive ? undefined : 'true',
+    },
   });
 
   const { data: classroomsData } = useQuery({
@@ -145,12 +152,26 @@ export default function StaffAccountsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'staff-accounts'] });
-      toast.success('スタッフを削除しました');
+      toast.success('スタッフを無効化しました');
       setDeleteModalOpen(false);
       setDeletingStaff(null);
     },
     onError: () => {
       toast.error('削除に失敗しました');
+    },
+  });
+
+  // 無効化されたスタッフを復活させる (is_active=true に戻す)
+  const reactivateMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return api.put(`/api/admin/staff-accounts/${id}`, { is_active: true });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'staff-accounts'] });
+      toast.success('スタッフを再有効化しました');
+    },
+    onError: () => {
+      toast.error('再有効化に失敗しました');
     },
   });
 
@@ -281,15 +302,28 @@ export default function StaffAccountsPage() {
           >
             管理者に変換
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => { setDeletingStaff(s); setDeleteModalOpen(true); }}
-            leftIcon={<MaterialIcon name="delete" size={14} />}
-            className="text-[var(--status-danger-fg)]"
-          >
-            削除
-          </Button>
+          {s.is_active ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setDeletingStaff(s); setDeleteModalOpen(true); }}
+              leftIcon={<MaterialIcon name="delete" size={14} />}
+              className="text-[var(--status-danger-fg)]"
+            >
+              削除
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => reactivateMutation.mutate(s.id)}
+              leftIcon={<MaterialIcon name="restore" size={14} />}
+              isLoading={reactivateMutation.isPending}
+              className="text-[var(--status-success-fg)]"
+            >
+              再有効化
+            </Button>
+          )}
         </div>
       ),
     },
@@ -309,14 +343,25 @@ export default function StaffAccountsPage() {
         </Button>
       </div>
 
-      <div className="relative">
-        <MaterialIcon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
-        <Input
-          placeholder="氏名・ユーザー名で検索..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-10"
-        />
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative min-w-[240px] flex-1">
+          <MaterialIcon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
+          <Input
+            placeholder="氏名・ユーザー名で検索..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <label className="flex shrink-0 cursor-pointer items-center gap-2 text-sm text-[var(--neutral-foreground-2)]">
+          <input
+            type="checkbox"
+            checked={showInactive}
+            onChange={(e) => setShowInactive(e.target.checked)}
+            className="h-4 w-4 rounded border-[var(--neutral-stroke-1)] text-[var(--brand-80)]"
+          />
+          無効化済みも表示
+        </label>
       </div>
 
       {isLoading ? (
@@ -453,19 +498,23 @@ export default function StaffAccountsPage() {
         </form>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal
+          実装は「ログイン不可にする (is_active=false)」の論理削除。
+          ハードデリートではないので過去レコード (チャット履歴等) の参照は壊れない。
+          再有効化が必要な場合は「無効化済みも表示」トグルから操作可能。 */}
       <Modal
         isOpen={deleteModalOpen}
         onClose={() => { setDeleteModalOpen(false); setDeletingStaff(null); }}
-        title="スタッフ削除の確認"
+        title="スタッフを無効化"
         size="sm"
       >
         <div className="space-y-4">
           <p className="text-sm text-[var(--neutral-foreground-2)]">
-            本当に「<span className="font-semibold">{deletingStaff?.full_name}</span>」を削除しますか？
+            「<span className="font-semibold">{deletingStaff?.full_name}</span>」をログイン不可にしますか？
           </p>
-          <p className="text-xs text-[var(--status-danger-fg)]">
-            この操作は取り消せません。
+          <p className="text-xs text-[var(--neutral-foreground-3)]">
+            一覧から非表示になりますが、過去のチャット・記録などはそのまま残ります。
+            復活させたい場合は「無効化済みも表示」にチェックを入れて「再有効化」ボタンから操作してください。
           </p>
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => { setDeleteModalOpen(false); setDeletingStaff(null); }}>
@@ -476,7 +525,7 @@ export default function StaffAccountsPage() {
               isLoading={deleteMutation.isPending}
               onClick={() => deletingStaff && deleteMutation.mutate(deletingStaff.id)}
             >
-              削除する
+              無効化する
             </Button>
           </div>
         </div>
