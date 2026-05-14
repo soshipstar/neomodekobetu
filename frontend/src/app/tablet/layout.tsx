@@ -4,13 +4,22 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { ClassroomSwitcher } from '@/components/layout/ClassroomSwitcher';
 
 export default function TabletLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
 
   return (
     <div className="min-h-screen bg-[var(--neutral-background-4)]">
-      <header className="flex items-center justify-between gap-2 bg-white px-3 py-2 shadow-md sm:gap-4 sm:px-4 sm:py-3 lg:px-6">
+      {/* メインヘッダ。右側 padding は env(safe-area-inset-right) を考慮して、
+          iPhone のホームインジケータ / ノッチ向けの安全領域でクリッピングしないようにする。 */}
+      <header
+        className="flex items-center justify-between gap-2 bg-white py-2 shadow-md sm:gap-4 sm:py-3"
+        style={{
+          paddingLeft: 'max(1rem, env(safe-area-inset-left))',
+          paddingRight: 'max(1rem, env(safe-area-inset-right))',
+        }}
+      >
         {/* Left: タイトル + (デスクトップでは) 教室名・ユーザー名 */}
         <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
           <Link
@@ -19,7 +28,7 @@ export default function TabletLayout({ children }: { children: ReactNode }) {
           >
             本日の記録
           </Link>
-          {/* 教室名・ユーザー名: 狭い画面では非表示。中サイズ以上で truncate 表示 */}
+          {/* 教室名・ユーザー名: 狭幅では非表示 (サブヘッダで表示)、md 以上で表示 */}
           {user && (
             <span className="hidden min-w-0 truncate text-sm text-[var(--neutral-foreground-3)] md:inline lg:text-base">
               {user.classroom?.classroom_name && `${user.classroom.classroom_name} | `}
@@ -28,7 +37,7 @@ export default function TabletLayout({ children }: { children: ReactNode }) {
           )}
         </div>
 
-        {/* Right: アイコンボタン群 (狭い画面はアイコンのみ、広い画面はアイコン + ラベル) */}
+        {/* Right: アイコンボタン群 */}
         <nav className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <Link
             href="/tablet"
@@ -60,13 +69,28 @@ export default function TabletLayout({ children }: { children: ReactNode }) {
         </nav>
       </header>
 
-      {/* スマホ画面でヘッダに収まらない教室名・ユーザー名をサブヘッダで表示 */}
+      {/* サブヘッダ: 狭幅では教室名・ユーザー名 + 教室切替を表示。
+          複数教室を持つタブレットアカウントは事業所をまたぐ運用が可能 (R4-bis tablet)。
+          ClassroomSwitcher は 1 教室しか持たないユーザーには何も描画しない。 */}
       {user && (
-        <div className="border-b border-[var(--neutral-stroke-2)] bg-white px-3 py-1.5 text-xs text-[var(--neutral-foreground-3)] md:hidden">
-          <span className="truncate">
-            {user.classroom?.classroom_name && `${user.classroom.classroom_name} / `}
-            {user.full_name}
-          </span>
+        <div
+          className="border-b border-[var(--neutral-stroke-2)] bg-white"
+          style={{
+            paddingLeft: 'max(1rem, env(safe-area-inset-left))',
+            paddingRight: 'max(1rem, env(safe-area-inset-right))',
+          }}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2 py-1.5 text-xs text-[var(--neutral-foreground-3)] md:hidden">
+            <span className="truncate">
+              {user.classroom?.classroom_name && `${user.classroom.classroom_name} / `}
+              {user.full_name}
+            </span>
+            <ClassroomSwitcher variant="header" />
+          </div>
+          {/* md 以上ではメインヘッダに既に表示済なので、教室切替だけサブヘッダで提供 */}
+          <div className="hidden md:flex md:items-center md:justify-end md:py-1.5">
+            <ClassroomSwitcher variant="header" />
+          </div>
         </div>
       )}
 
