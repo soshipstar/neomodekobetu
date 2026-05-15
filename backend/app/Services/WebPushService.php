@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\PushSubscription;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Psr\Log\LoggerInterface;
 
 /**
  * Web Push通知サービス
@@ -31,6 +32,17 @@ class WebPushService
     }
 
     /**
+     * Web Push 専用ログチャネル。
+     * laravel.log の LOG_LEVEL とは独立に info 以上を webpush.log に記録する。
+     * 配信成功・HTTP 失敗・暗号化失敗を一箇所に集約することで
+     * 「通知が届かない」障害の切り分けを可能にする。
+     */
+    private function log(): LoggerInterface
+    {
+        return Log::channel('webpush');
+    }
+
+    /**
      * VAPID キーが設定されているかどうか。未設定なら push を送らず静かに 0 を返す。
      */
     private function isConfigured(): bool
@@ -44,7 +56,7 @@ class WebPushService
     public function sendToUser(int $userId, string $title, string $body, ?string $url = null): int
     {
         if (!$this->isConfigured()) {
-            Log::debug('Web Push skipped: VAPID keys not configured', ['user_id' => $userId]);
+            $this->log()->debug('Web Push skipped: VAPID keys not configured', ['user_id' => $userId]);
             return 0;
         }
 
@@ -70,14 +82,14 @@ class WebPushService
             } elseif ($result === 'gone') {
                 // 410 Gone - subscription expired, remove from DB
                 $subscription->delete();
-                Log::info('Removed expired push subscription', [
+                $this->log()->info('Removed expired push subscription', [
                     'user_id' => $userId,
                     'endpoint' => substr($subscription->endpoint, 0, 80),
                 ]);
             }
         }
 
-        Log::info('Web Push sent', [
+        $this->log()->info('Web Push sent', [
             'user_id' => $userId,
             'sent' => $sent,
             'total_subscriptions' => $subscriptions->count(),
@@ -111,7 +123,7 @@ class WebPushService
     private function sendPush(PushSubscription $subscription, string $payload): bool|string
     {
         if (empty($this->publicKey) || empty($this->privateKey)) {
-            Log::warning('Web Push: VAPID keys not configured');
+            $this->log()->warning('Web Push: VAPID keys not configured');
 
             return false;
         }
@@ -128,7 +140,7 @@ class WebPushService
 
             $jwt = $this->createVapidJwt($audience);
             if (! $jwt) {
-                Log::error('Web Push: JWT creation failed');
+                $this->log()->error('Web Push: JWT creation failed');
 
                 return false;
             }
@@ -163,7 +175,7 @@ class WebPushService
                 return 'gone';
             }
 
-            Log::warning('Web Push HTTP error', [
+            $this->log()->warning('Web Push HTTP error', [
                 'status' => $httpCode,
                 'body' => substr($response->body(), 0, 200),
                 'endpoint' => substr($subscription->endpoint, 0, 80),
@@ -171,7 +183,7 @@ class WebPushService
 
             return false;
         } catch (\Exception $e) {
-            Log::error('Web Push error', [
+            $this->log()->error('Web Push error', [
                 'message' => $e->getMessage(),
                 'endpoint' => substr($subscription->endpoint, 0, 80),
             ]);
@@ -201,7 +213,7 @@ class WebPushService
         $pem = $this->createEcPemFromRaw($privKeyRaw, $pubKeyRaw);
         $key = openssl_pkey_get_private($pem);
         if (! $key) {
-            Log::error('VAPID: Failed to load private key');
+            $this->log()->error('VAPID: Failed to load private key');
 
             return null;
         }
@@ -229,7 +241,7 @@ class WebPushService
         ]);
 
         if (! $localKey) {
-            Log::error('Web Push: Cannot generate EC key pair');
+            $this->log()->error('Web Push: Cannot generate EC key pair');
 
             return null;
         }
@@ -248,7 +260,7 @@ class WebPushService
         // 生成鍵の PEM を直接取り出しておき、ECDH 計算時にはそれを使う。
         $localPem = null;
         if (! openssl_pkey_export($localKey, $localPem)) {
-            Log::error('Web Push: openssl_pkey_export failed');
+            $this->log()->error('Web Push: openssl_pkey_export failed');
 
             return null;
         }
@@ -296,7 +308,7 @@ class WebPushService
         );
 
         if ($encrypted === false) {
-            Log::error('Web Push: AES-GCM encryption failed');
+            $this->log()->error('Web Push: AES-GCM encryption failed');
 
             return null;
         }
@@ -321,7 +333,7 @@ class WebPushService
     private function computeEcdh(string $localPem, string $peerPubKeyRaw): ?string
     {
         if (! function_exists('openssl_pkey_derive')) {
-            Log::error('Web Push: openssl_pkey_derive not available');
+            $this->log()->error('Web Push: openssl_pkey_derive not available');
 
             return null;
         }
@@ -332,7 +344,7 @@ class WebPushService
         $peerKeyRes = openssl_pkey_get_public($peerPem);
 
         if (! $localKeyRes || ! $peerKeyRes) {
-            Log::error('Web Push ECDH: Failed to load keys', [
+            $this->log()->error('Web Push ECDH: Failed to load keys', [
                 'local_loaded' => (bool) $localKeyRes,
                 'peer_loaded' => (bool) $peerKeyRes,
                 'peer_len' => strlen($peerPubKeyRaw),
@@ -343,7 +355,7 @@ class WebPushService
 
         $shared = openssl_pkey_derive($peerKeyRes, $localKeyRes, 256);
         if ($shared === false) {
-            Log::error('Web Push ECDH: derive failed');
+            $this->log()->error('Web Push ECDH: derive failed');
 
             return null;
         }
