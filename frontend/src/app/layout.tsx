@@ -3,6 +3,7 @@ import { Noto_Sans_JP } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
+import { NotificationFollowUpPrompt } from '@/components/NotificationFollowUpPrompt';
 
 const notoSansJp = Noto_Sans_JP({
   variable: '--font-noto-sans-jp',
@@ -59,6 +60,8 @@ export default function RootLayout({
         <Providers>{children}</Providers>
         {/* PWA インストール案内 (全ロール共通 / スマホ・タブレットのみ表示) */}
         <PwaInstallPrompt />
+        {/* インストール後の通知許可誘導 (PWA standalone で permission=default のときのみ) */}
+        <NotificationFollowUpPrompt />
         <script
           dangerouslySetInnerHTML={{
             __html: `
