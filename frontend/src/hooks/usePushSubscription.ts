@@ -187,6 +187,33 @@ export function usePushSubscription() {
     }
   }, [refreshStatus]);
 
+  const sendTest = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.post<{
+        success: boolean;
+        sent: number;
+        total: number;
+        message: string;
+      }>('/api/push/test');
+      return {
+        ok: res.data.success,
+        message: res.data.message,
+        sent: res.data.sent,
+        total: res.data.total,
+      };
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } }; message?: string })
+          ?.response?.data?.message ??
+        (err as { message?: string })?.message ??
+        'テスト送信に失敗しました。';
+      return { ok: false, message: msg, sent: 0, total: 0 };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const disable = useCallback(async () => {
     if (typeof window === 'undefined') return { ok: false, message: 'unavailable' };
     setLoading(true);
@@ -221,6 +248,7 @@ export function usePushSubscription() {
     loading,
     enable,
     disable,
+    sendTest,
     refresh: refreshStatus,
   };
 }

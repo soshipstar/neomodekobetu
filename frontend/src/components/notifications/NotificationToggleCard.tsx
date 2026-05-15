@@ -23,6 +23,7 @@ export function NotificationToggleCard() {
     loading,
     enable,
     disable,
+    sendTest,
   } = usePushSubscription();
   const [busy, setBusy] = useState(false);
 
@@ -40,6 +41,22 @@ export function NotificationToggleCard() {
   const handleDisable = async () => {
     setBusy(true);
     const res = await disable();
+    setBusy(false);
+    if (res.ok) {
+      toast.success(res.message);
+    } else {
+      toast.error(res.message);
+    }
+  };
+
+  /**
+   * テスト通知ボタン。
+   * 認証中ユーザの全 push 購読端末に「KIDURI 通知テスト」を送信し、
+   * 通知センターに実際に届くかをユーザー自身が即座に確認できるようにする。
+   */
+  const handleTest = async () => {
+    setBusy(true);
+    const res = await sendTest();
     setBusy(false);
     if (res.ok) {
       toast.success(res.message);
@@ -135,6 +152,26 @@ export function NotificationToggleCard() {
                     通知を有効にする
                   </Button>
                 )}
+              </div>
+            )}
+
+            {/* テスト送信 — 有効化されているときだけ表示する */}
+            {supported && canPrompt && permission === 'granted' && subscribed && (
+              <div className="mt-3 rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-2)] p-3">
+                <p className="text-xs text-[var(--neutral-foreground-2)]">
+                  実際に通知が届くか、ご自身で確認できます。下のボタンを押して通知センターを開いてください。
+                </p>
+                <div className="mt-2 flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleTest}
+                    isLoading={loading || busy}
+                    leftIcon={<MaterialIcon name="send" size={16} />}
+                  >
+                    テスト通知を送る
+                  </Button>
+                </div>
               </div>
             )}
           </div>

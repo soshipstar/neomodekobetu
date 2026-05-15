@@ -820,6 +820,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/push/vapid-key', [App\Http\Controllers\Api\PushSubscriptionController::class, 'vapidPublicKey']);
     Route::post('/push/subscribe', [App\Http\Controllers\Api\PushSubscriptionController::class, 'subscribe']);
     Route::post('/push/unsubscribe', [App\Http\Controllers\Api\PushSubscriptionController::class, 'unsubscribe']);
+    Route::post('/push/test', [App\Http\Controllers\Api\PushSubscriptionController::class, 'test']);
 
     // --- 通知カテゴリ設定 ---
     Route::get('/notification-preferences', [App\Http\Controllers\Api\NotificationPreferenceController::class, 'show']);

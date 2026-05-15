@@ -6,7 +6,9 @@ use App\Models\Classroom;
 use App\Models\Company;
 use App\Models\PushSubscription;
 use App\Models\User;
+use App\Services\WebPushService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Mockery;
 use Tests\TestCase;
 
 /**
@@ -134,6 +136,51 @@ class NT011_PushSubscriptionEndpointTest extends TestCase
         ]);
     }
 
+    public function test_test_endpoint_returns_no_subscription_when_none_registered(): void
+    {
+        $user = $this->user();
+
+        $response = $this->actingAs($user, 'sanctum')->postJson('/api/push/test');
+
+        $response->assertStatus(200);
+        $this->assertFalse($response->json('success'));
+        $this->assertEquals(0, $response->json('sent'));
+        $this->assertEquals(0, $response->json('total'));
+        $this->assertStringContainsString('通知が有効になっていません', $response->json('message'));
+    }
+
+    public function test_test_endpoint_sends_push_when_subscribed(): void
+    {
+        $user = $this->user();
+        PushSubscription::create([
+            'user_id' => $user->id,
+            'endpoint' => 'https://fcm.googleapis.com/fcm/send/abc',
+            'p256dh' => 'p',
+            'auth' => 'a',
+        ]);
+
+        // WebPushService をモック化して実 push を行わない
+        $mock = Mockery::mock(WebPushService::class);
+        $mock->shouldReceive('sendToUser')
+            ->once()
+            ->with($user->id, Mockery::any(), Mockery::any(), '/')
+            ->andReturn(1);
+        $this->app->instance(WebPushService::class, $mock);
+
+        $response = $this->actingAs($user, 'sanctum')->postJson('/api/push/test');
+
+        $response->assertStatus(200);
+        $this->assertTrue($response->json('success'));
+        $this->assertEquals(1, $response->json('sent'));
+        $this->assertEquals(1, $response->json('total'));
+    }
+
+    public function test_test_endpoint_requires_authentication(): void
+    {
+        $response = $this->postJson('/api/push/test');
+        $response->assertStatus(401);
+    }
+
     public function test_unsubscribe_only_affects_own_user(): void
     {
         $user1 = $this->user();
@@ -164,5 +211,11 @@ class NT011_PushSubscriptionEndpointTest extends TestCase
             'user_id' => $user2->id,
             'endpoint' => 'https://fcm.googleapis.com/fcm/send/user2',
         ]);
+    }
+
+    protected function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
     }
 }
