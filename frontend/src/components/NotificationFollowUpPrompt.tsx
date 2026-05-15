@@ -67,8 +67,8 @@ function profilePathForUserType(userType: string | null | undefined): string {
       // 管理者ダッシュボードに通知トグルが無い場合もあるためスタッフ画面で代替
       return '/staff/profile';
     case 'tablet':
-      // タブレットアカウントは固有のプロフィール画面がないためスタッフ側
-      return '/staff/profile';
+      // タブレットアカウント専用の通知設定画面 (/tablet/profile を別途用意)
+      return '/tablet/profile';
     default:
       return '/';
   }

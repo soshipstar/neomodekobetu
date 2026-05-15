@@ -61,6 +61,20 @@ export default function TabletLayout({ children }: { children: ReactNode }) {
             <MaterialIcon name="photo_library" size={20} />
             <span className="hidden sm:inline">写真</span>
           </Link>
+          {/*
+            通知設定への導線。タブレットアカウントは元々サイドバーが無いため、
+            プロフィール / 通知設定の入口がヘッダにしか作れない。
+            PWA インストール後にここから「通知を有効にする」までたどり着く動線。
+          */}
+          <Link
+            href="/tablet/profile"
+            className="flex items-center gap-1.5 rounded-lg bg-[var(--brand-80)] px-2.5 py-2 text-sm font-bold text-white hover:bg-blue-700 sm:px-4 sm:py-2.5 sm:text-base"
+            aria-label="通知設定"
+            title="通知設定"
+          >
+            <MaterialIcon name="notifications" size={20} />
+            <span className="hidden sm:inline">通知</span>
+          </Link>
           <button
             onClick={logout}
             className="flex items-center gap-1.5 rounded-lg bg-red-500 px-2.5 py-2 text-sm font-bold text-white hover:bg-red-600 sm:px-4 sm:py-2.5 sm:text-base"
