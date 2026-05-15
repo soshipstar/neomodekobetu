@@ -2,43 +2,33 @@
   "name": "KIDURI - 個別支援連絡帳",
   "short_name": "KIDURI",
   "description": "放課後等デイサービス向け 個別支援連絡帳システム",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
+  "id": "/?source=pwa",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#ffffff",
-  "theme_color": "#2563eb",
+  "theme_color": "#14a898",
   "orientation": "portrait-primary",
   "scope": "/",
   "lang": "ja",
   "icons": [
     {
-      "src": "/assets/icons/icon-72x72.svg",
-      "sizes": "72x72",
-      "type": "image/svg+xml",
+      "src": "/assets/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/assets/icons/icon-96x96.svg",
-      "sizes": "96x96",
-      "type": "image/svg+xml",
+      "src": "/assets/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/assets/icons/icon-128x128.svg",
-      "sizes": "128x128",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/assets/icons/icon-144x144.svg",
-      "sizes": "144x144",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/assets/icons/icon-152x152.svg",
-      "sizes": "152x152",
-      "type": "image/svg+xml",
-      "purpose": "any"
+      "src": "/assets/icons/icon-512x512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/assets/icons/icon-192x192.svg",
@@ -47,16 +37,10 @@
       "purpose": "any"
     },
     {
-      "src": "/assets/icons/icon-384x384.svg",
-      "sizes": "384x384",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
       "src": "/assets/icons/icon-512x512.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ],
   "shortcuts": [

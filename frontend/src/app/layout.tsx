@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Noto_Sans_JP } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
+import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 
 const notoSansJp = Noto_Sans_JP({
   variable: '--font-noto-sans-jp',
@@ -56,6 +57,8 @@ export default function RootLayout({
       </head>
       <body className={`${notoSansJp.variable} font-sans antialiased`}>
         <Providers>{children}</Providers>
+        {/* PWA インストール案内 (全ロール共通 / スマホ・タブレットのみ表示) */}
+        <PwaInstallPrompt />
         <script
           dangerouslySetInnerHTML={{
             __html: `
