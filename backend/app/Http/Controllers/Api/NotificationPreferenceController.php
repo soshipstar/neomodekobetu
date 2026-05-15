@@ -13,6 +13,7 @@ class NotificationPreferenceController extends Controller
      */
     public const CATEGORIES = [
         'chat' => 'チャット',
+        'renrakucho' => '連絡帳',
         'announcement' => 'お知らせ',
         'meeting' => '面談予約',
         'assessment' => 'アセスメント依頼',

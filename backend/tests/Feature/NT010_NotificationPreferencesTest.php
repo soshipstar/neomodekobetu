@@ -50,6 +50,7 @@ class NT010_NotificationPreferencesTest extends TestCase
         $response->assertStatus(200);
         $data = $response->json('data');
         $this->assertArrayHasKey('chat', $data);
+        $this->assertArrayHasKey('renrakucho', $data);
         $this->assertArrayHasKey('announcement', $data);
         $this->assertArrayHasKey('meeting', $data);
         $this->assertArrayHasKey('assessment', $data);
@@ -140,6 +141,54 @@ class NT010_NotificationPreferencesTest extends TestCase
         $this->assertDatabaseHas('notifications', [
             'user_id' => $user->id,
             'type' => 'chat_message',
+        ]);
+    }
+
+    /**
+     * 連絡帳 (renrakucho) は独立カテゴリ。
+     * 保護者がチャットを OFF にしても連絡帳の push は止まらない。
+     */
+    public function test_notify_renrakucho_is_independent_from_chat_category(): void
+    {
+        $user = $this->user();
+        // チャットだけ OFF にする
+        $user->notification_preferences = ['chat' => false];
+        $user->save();
+
+        $mock = Mockery::mock(WebPushService::class);
+        // renrakucho 通知では push が呼ばれることを期待
+        $mock->shouldReceive('sendToUser')->once()->andReturn(1);
+        $this->app->instance(WebPushService::class, $mock);
+
+        $service = new NotificationService();
+        $service->notify($user->fresh(), 'renrakucho', '連絡帳が届きました', '本日の連絡帳');
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $user->id,
+            'type' => 'renrakucho',
+        ]);
+    }
+
+    /**
+     * 連絡帳カテゴリだけ OFF にすると、連絡帳の push は飛ばないがチャットは飛ぶ。
+     */
+    public function test_notify_renrakucho_skips_push_when_renrakucho_disabled(): void
+    {
+        $user = $this->user();
+        $user->notification_preferences = ['renrakucho' => false];
+        $user->save();
+
+        $mock = Mockery::mock(WebPushService::class);
+        $mock->shouldNotReceive('sendToUser');
+        $this->app->instance(WebPushService::class, $mock);
+
+        $service = new NotificationService();
+        $service->notify($user->fresh(), 'renrakucho', '連絡帳が届きました', '本日の連絡帳');
+
+        // in-app 通知は履歴として残る
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $user->id,
+            'type' => 'renrakucho',
         ]);
     }
 

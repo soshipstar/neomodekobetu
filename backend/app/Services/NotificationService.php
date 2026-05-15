@@ -50,10 +50,16 @@ class NotificationService
 
     /**
      * type 文字列から通知カテゴリへのマッピング。
-     * 既存の type を notification_preferences の 8 カテゴリに集約する。
+     * 既存の type を notification_preferences のカテゴリに集約する。
+     *
+     * 連絡帳 (renrakucho) は独立カテゴリとして扱う。
+     * 「保護者がチャット通知を OFF にすると連絡帳の Web Push まで止まる」
+     * という UX 不整合を防ぐため、必ずここで独立に分岐する。
      */
     private function categoryFromType(string $type): string
     {
+        // 連絡帳系
+        if ($type === 'renrakucho') return 'renrakucho';
         // チャット系
         if (str_starts_with($type, 'chat')) return 'chat';
         // 既存 type 名からの変換
