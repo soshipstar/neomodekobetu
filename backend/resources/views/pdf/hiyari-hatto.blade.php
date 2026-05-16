@@ -1,3 +1,9 @@
+@php
+    // 曜日を日本語短縮 (日,月,火,水,木,金,土) で出すヘルパ。
+    // Carbon の format('D') は英語短縮 (Tue 等) しか出ないため、
+    // dayOfWeek (0=日..6=土) から日本語ラベルを引く (バグ報告 #58)。
+    $jpDays = ['日','月','火','水','木','金','土'];
+@endphp
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -47,7 +53,7 @@
     <table>
         <tr>
             <th>発生日時</th>
-            <td>{{ $record->occurred_at->format('Y年n月j日 (D) H:i') }}</td>
+            <td>{{ $record->occurred_at->format('Y年n月j日') . '（' . $jpDays[$record->occurred_at->dayOfWeek] . '）' . $record->occurred_at->format(' H:i') }}</td>
             <th>発生場所</th>
             <td>{{ $record->location ?? '—' }}</td>
         </tr>
@@ -56,7 +62,7 @@
             <td>
                 {{ $record->student?->student_name ?? '—' }}
                 @if($record->student?->grade_level)
-                    ({{ $record->student->grade_level }})
+                    （{{ $gradeLabels[$record->student->grade_level] ?? $record->student->grade_level }}）
                 @endif
             </td>
             <th>事業所</th>
@@ -140,7 +146,7 @@
                 <span class="checkbox">{{ $record->guardian_notified ? '✓' : '' }}</span>
                 連絡済み
                 @if($record->guardian_notified_at)
-                    ({{ $record->guardian_notified_at->format('Y年n月j日 H:i') }})
+                    ({{ $record->guardian_notified_at->format('Y年n月j日') . '（' . $jpDays[$record->guardian_notified_at->dayOfWeek] . '）' . $record->guardian_notified_at->format(' H:i') }})
                 @endif
                 @if($record->guardian_notification_content)
                     <div class="note">{!! nl2br(e($record->guardian_notification_content)) !!}</div>

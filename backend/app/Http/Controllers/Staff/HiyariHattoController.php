@@ -124,11 +124,34 @@ class HiyariHattoController extends Controller
         $this->authorizeAccess($request, $hiyariHatto);
         $hiyariHatto->load(['student:id,student_name,grade_level', 'reporter:id,full_name', 'confirmedBy:id,full_name', 'classroom:id,classroom_name']);
 
+        // 学年コード (elementary_2, junior_high_1 等) を日本語ラベルに変換するマスタ。
+        // students.grade_level の値はすべて英語コードで保存されているため、PDF 表示時に
+        // 必ずこのマップを通す必要がある (バグ報告 #58)。
+        $gradeLabels = [
+            'preschool'        => '未就学',
+            'elementary'       => '小学生',
+            'elementary_1'     => '小1',
+            'elementary_2'     => '小2',
+            'elementary_3'     => '小3',
+            'elementary_4'     => '小4',
+            'elementary_5'     => '小5',
+            'elementary_6'     => '小6',
+            'junior_high'      => '中学生',
+            'junior_high_1'    => '中1',
+            'junior_high_2'    => '中2',
+            'junior_high_3'    => '中3',
+            'high_school'      => '高校生',
+            'high_school_1'    => '高1',
+            'high_school_2'    => '高2',
+            'high_school_3'    => '高3',
+        ];
+
         $filename = 'hiyari-hatto-' . $hiyariHatto->id . '-' . $hiyariHatto->occurred_at->format('Ymd') . '.pdf';
         return PuppeteerPdfService::download('pdf.hiyari-hatto', [
-            'record' => $hiyariHatto,
-            'severities' => HiyariHattoRecord::SEVERITIES,
-            'categories' => HiyariHattoRecord::CATEGORIES,
+            'record'      => $hiyariHatto,
+            'severities'  => HiyariHattoRecord::SEVERITIES,
+            'categories'  => HiyariHattoRecord::CATEGORIES,
+            'gradeLabels' => $gradeLabels,
         ], $filename);
     }
 
