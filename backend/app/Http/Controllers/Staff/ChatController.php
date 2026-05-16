@@ -385,7 +385,9 @@ class ChatController extends Controller
             'arrival' => [
                 'type' => 'quick_arrival',
                 'title' => '到着しました',
-                'body' => "【到着しました】\n\nご対応ありがとうございました。",
+                // バグ報告 #47: 旧文言「【到着しました】 ご対応ありがとうございました。」の
+                // 2 行目は現場で不要との要望。タイトル相当の 1 行だけに簡素化する。
+                'body' => '【到着しました】',
             ],
         ];
         return $templates[$action];
