@@ -266,7 +266,20 @@ function StudentSchedule({ studentId, student }: { studentId: number; student: S
       setEditing(false);
       queryClient.invalidateQueries({ queryKey: ['staff', 'student', studentId] });
     },
-    onError: (e: any) => toast.error(e?.response?.data?.message || '更新に失敗しました'),
+    onError: (e: any) => {
+      // バグ報告 #56「通常利用日を追加できない (422)」対応:
+      // 422 で具体的にどのフィールドが失敗したかをトーストに列挙し、
+      // 現場が原因を切り分けられるようにする。
+      const errors = e?.response?.data?.errors;
+      if (errors && typeof errors === 'object') {
+        const lines = Object.entries(errors).map(([k, v]) =>
+          `${k}: ${Array.isArray(v) ? v[0] : String(v)}`,
+        );
+        toast.error(`更新に失敗しました\n${lines.join('\n')}`);
+      } else {
+        toast.error(e?.response?.data?.message || '更新に失敗しました');
+      }
+    },
   });
 
   const toggleDay = (idx: number) => {

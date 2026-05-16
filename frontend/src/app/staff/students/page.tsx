@@ -218,21 +218,43 @@ export default function StudentsPage() {
       setCreateModal(false);
       setForm(emptyForm);
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || '登録に失敗しました'),
+    onError: (err: any) => {
+      const errors = err?.response?.data?.errors;
+      if (errors && typeof errors === 'object') {
+        const lines = Object.entries(errors).map(([k, v]) =>
+          `${k}: ${Array.isArray(v) ? v[0] : String(v)}`,
+        );
+        toast.error(`登録に失敗しました\n${lines.join('\n')}`);
+      } else {
+        toast.error(err?.response?.data?.message || '登録に失敗しました');
+      }
+    },
   });
 
   // Update
+  // バグ報告 #56「生徒の通常利用日を追加をしたいときに、エラーが出てできません」
+  // 原因: 空文字のまま送信されると nullable|date / nullable|integer などのバリデーションで
+  // 422 が返ることがある (BE 側 middleware が常に空文字→null 変換するとは限らないため、
+  // FE 側で確実に null 化する) 。日付・数値・任意文字列フィールドはすべて
+  // 空なら null として送信し、422 が発生しないように防御する。
   const updateMutation = useMutation({
     mutationFn: ({ id, ...data }: StudentForm & { id: number }) => {
       const payload: Record<string, unknown> = { ...data };
-      if (data.guardian_id) payload.guardian_id = Number(data.guardian_id);
-      else payload.guardian_id = null;
-      if (data.desired_weekly_count) payload.desired_weekly_count = Number(data.desired_weekly_count);
-      else payload.desired_weekly_count = null;
+      // 数値・参照系
+      payload.guardian_id = data.guardian_id ? Number(data.guardian_id) : null;
+      payload.desired_weekly_count = data.desired_weekly_count
+        ? Number(data.desired_weekly_count)
+        : null;
+      // 日付フィールド (空文字 → null)
+      for (const k of ['birth_date', 'support_start_date', 'withdrawal_date', 'desired_start_date'] as const) {
+        if (!data[k]) payload[k] = null;
+      }
+      // 任意文字列 (空文字 → null)
+      for (const k of ['username', 'waiting_notes'] as const) {
+        if (!data[k]) payload[k] = null;
+      }
+      // password は未入力なら送らない (現状維持)
       if (!data.password) delete payload.password;
-      if (!data.withdrawal_date) payload.withdrawal_date = null;
-      if (!data.desired_start_date) payload.desired_start_date = null;
-      if (!data.waiting_notes) payload.waiting_notes = null;
       return api.put(`/api/staff/students/${id}`, payload);
     },
     onSuccess: () => {
@@ -241,7 +263,19 @@ export default function StudentsPage() {
       setEditModal(false);
       setEditingStudent(null);
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || '更新に失敗しました'),
+    onError: (err: any) => {
+      const errors = err?.response?.data?.errors;
+      if (errors && typeof errors === 'object') {
+        // 個別フィールドの 422 エラーをトーストで列挙して、現場が自分で
+        // 何を直せばよいか分かるようにする (旧: 「更新に失敗しました」のみ)
+        const lines = Object.entries(errors).map(([k, v]) =>
+          `${k}: ${Array.isArray(v) ? v[0] : String(v)}`,
+        );
+        toast.error(`更新に失敗しました\n${lines.join('\n')}`);
+      } else {
+        toast.error(err?.response?.data?.message || '更新に失敗しました');
+      }
+    },
   });
 
   // Delete (退所処理)
