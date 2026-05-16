@@ -16,6 +16,7 @@ interface ClassroomOption {
 interface SourceStudent {
   id: number;
   student_name: string;
+  username?: string | null;
   classroom_id: number | null;
   classroom?: { id: number; classroom_name: string; company_id: number | null } | null;
 }
@@ -44,9 +45,19 @@ export function StudentCopyModal({ student, onClose, onCopied }: Props) {
         // R6: 複製専用エンドポイントから候補を取得する。
         // /api/admin/classrooms は権限により自分の教室1つしか返さないケースがあり、
         // 同企業の別教室が表示されない不具合があった。
-        const res = await api.get(`/api/admin/students/${student.id}/copy-targets`);
+        const res = await api.get<{
+          data: ClassroomOption[];
+          suggested_username?: string | null;
+        }>(`/api/admin/students/${student.id}/copy-targets`);
         const list: ClassroomOption[] = res.data?.data ?? [];
         setClassrooms(list);
+        // バグ報告 #62: 「ユーザーIDは末尾に v2,v3 のような数字をつけて、
+        // そのまま登録できるように」 BE からのサジェストを初期値に入れる。
+        // (これで初期値が空になりブラウザが管理者のログイン情報で
+        // オートフィルする現象も発生しなくなる)
+        if (res.data?.suggested_username) {
+          setUsername(res.data.suggested_username);
+        }
       } catch (err: unknown) {
         const msg =
           (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
@@ -153,20 +164,30 @@ export function StudentCopyModal({ student, onClose, onCopied }: Props) {
             )}
           </div>
 
+          {/*
+            autoComplete="off" + name にログイン系識別子を含めないことで、
+            ブラウザ (特に Safari/Chrome) が管理者のログイン情報を
+            このフィールドに自動入力してしまう現象を抑止する。
+            (バグ報告 #62「デフォルトでログインユーザの情報が入る」)
+          */}
           <Input
             label="新しいユーザー名 *"
+            name="copy_target_username"
+            autoComplete="off"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             error={errors.username}
-            helperText="複製先でのログイン用（students.username は全体で一意）"
+            helperText="既存 username の末尾に _v2, _v3 ... を付けたサジェストが入っています。そのまま登録できます。"
           />
           <Input
             label="新しいパスワード"
             type="password"
+            name="copy_target_secret"
+            autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             error={errors.password}
-            helperText="空欄ならランダムパスワードが設定されます"
+            helperText="空欄ならランダムパスワードが自動生成されます"
           />
 
           <div className="flex justify-end gap-2 pt-2">

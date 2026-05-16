@@ -278,9 +278,24 @@ class StudentController extends Controller
             ->orderBy('classroom_name')
             ->get(['id', 'classroom_name', 'company_id', 'is_active']);
 
+        // 複製先 username のサジェスト。
+        // バグ報告 #62: 「ユーザーIDは末尾に v2,v3 のような数字をつけて、そのまま登録できるように」
+        // 既存 username に対し _v2, _v3, ... を順に試し、最初に未使用のものを返す。
+        // 元 username が無い (null/空) 場合は student_{id} を起点とする。
+        $base = $student->username ?: ('student_' . $student->id);
+        $suggested = null;
+        for ($i = 2; $i <= 99; $i++) {
+            $candidate = $base . '_v' . $i;
+            if (!Student::where('username', $candidate)->exists()) {
+                $suggested = $candidate;
+                break;
+            }
+        }
+
         return response()->json([
             'success' => true,
             'data'    => $targets,
+            'suggested_username' => $suggested,
         ]);
     }
 
