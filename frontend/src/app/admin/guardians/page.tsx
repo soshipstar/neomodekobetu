@@ -105,12 +105,69 @@ export default function AdminGuardiansPage() {
       <Table columns={columns} data={guardians} keyExtractor={(g) => g.id} isLoading={isLoading} currentPage={meta?.current_page} totalPages={meta?.last_page} onPageChange={goToPage} emptyMessage="保護者がいません" />
 
       <Modal isOpen={modalOpen} onClose={closeModal} title={editing ? '保護者を編集' : '保護者を追加'} size="lg">
-        <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(form); }} className="space-y-4">
-          <Input label="氏名" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} required />
-          <Input label="ユーザー名" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} required={!editing} disabled={!!editing} />
-          <Input label="メールアドレス" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          <Input label="電話番号" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-          <Input label={editing ? '新しいパスワード（変更時のみ）' : 'パスワード'} type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required={!editing} />
+        {/*
+          バグ報告 #61:「電話番号などの欄にログインしているユーザのユーザー情報
+          (asakura_hiromi 等) が出力される」
+          原因: Safari/Chrome が同一サイトで保存しているログイン情報を、
+          name 属性や label を元に自動入力 (autofill) してしまう。とくに
+          「ユーザー名」「電話番号」「パスワード」の組み合わせがあると
+          ログインフォームと誤判定する。
+          対策: form 全体に autoComplete="off"、各 input に非ログイン系 name と
+          autoComplete=off / new-password を明示して autofill を抑止する。
+        */}
+        <form
+          onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(form); }}
+          className="space-y-4"
+          autoComplete="off"
+        >
+          {/* ブラウザの autofill 誘導を奪うためのダミー隠しフィールド。
+              一部 Safari/Chrome は form 直下に hidden の username/password を
+              置くと autofill 動作を吸収する。 */}
+          <input type="text" name="username" autoComplete="username" className="hidden" tabIndex={-1} aria-hidden="true" />
+          <input type="password" name="password" autoComplete="current-password" className="hidden" tabIndex={-1} aria-hidden="true" />
+
+          <Input
+            label="氏名"
+            name="guardian_full_name"
+            autoComplete="off"
+            value={form.full_name}
+            onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+            required
+          />
+          <Input
+            label="ユーザー名"
+            name="guardian_login_id"
+            autoComplete="off"
+            value={form.username}
+            onChange={(e) => setForm({ ...form, username: e.target.value })}
+            required={!editing}
+            disabled={!!editing}
+          />
+          <Input
+            label="メールアドレス"
+            type="email"
+            name="guardian_contact_email"
+            autoComplete="off"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+          />
+          <Input
+            label="電話番号"
+            name="guardian_contact_phone"
+            autoComplete="off"
+            inputMode="tel"
+            value={form.phone}
+            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+          />
+          <Input
+            label={editing ? '新しいパスワード（変更時のみ）' : 'パスワード'}
+            type="password"
+            name="guardian_new_secret"
+            autoComplete="new-password"
+            value={form.password}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            required={!editing}
+          />
           <label className="flex items-center gap-2"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="rounded border-[var(--neutral-stroke-1)]" /><span className="text-sm text-[var(--neutral-foreground-2)]">有効</span></label>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="secondary" type="button" onClick={closeModal}>キャンセル</Button>
