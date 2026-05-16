@@ -109,7 +109,7 @@ export default function StaffChatRoomPage() {
   }, [showArchived, roomId]);
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] flex-col lg:h-[calc(100vh-5rem)]">
+    <div className="flex h-[calc(100dvh-8rem)] flex-col lg:h-[calc(100dvh-5rem)]">
       {/* Chat header */}
       <div className="flex items-center gap-3 border-b border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-4 py-3">
         <Link

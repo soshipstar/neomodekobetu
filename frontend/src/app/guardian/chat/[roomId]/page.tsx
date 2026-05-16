@@ -135,7 +135,7 @@ export default function GuardianChatRoomPage() {
   const studentId = activeRoom?.student_id || activeRoom?.student?.id;
 
   return (
-    <div className="flex h-[calc(100vh-6rem)] flex-col sm:h-[calc(100vh-7rem)] lg:h-[calc(100vh-5rem)]">
+    <div className="flex h-[calc(100dvh-6rem)] flex-col sm:h-[calc(100dvh-7rem)] lg:h-[calc(100dvh-5rem)]">
       <div className="flex items-center gap-2 border-b border-[var(--neutral-stroke-2)] bg-white px-3 py-2 sm:gap-3 sm:px-4 sm:py-3">
         <Link href="/guardian/chat" className="rounded-lg p-1 text-[var(--neutral-foreground-4)] hover:text-[var(--neutral-foreground-3)] lg:hidden">
           <MaterialIcon name="arrow_back" size={20} />

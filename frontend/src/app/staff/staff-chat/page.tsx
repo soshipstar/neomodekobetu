@@ -249,7 +249,7 @@ export default function StaffChatPage() {
   const showChatArea = isDesktop || showChat;
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] overflow-hidden rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)]">
+    <div className="flex h-[calc(100dvh-4rem)] overflow-hidden rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)]">
       {/* ===== Left Panel: Room List ===== */}
       {showRoomList && (
         <div

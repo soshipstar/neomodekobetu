@@ -58,14 +58,18 @@ export function AuthenticatedLayout({ children, requiredUserType }: Authenticate
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[var(--neutral-background-2)]">
+    // iOS Safari の URL バー表示中、`h-screen` (= 100vh) は URL バー収納時の
+    // LARGE viewport を返すため画面より高くなり、body にスクロールが発生して
+    // ヘッダがオフスクリーンに押し上げられる「外側スクロール」問題が起きる。
+    // 100dvh (dynamic viewport) を使い、URL バーの可視状態に追従させる。
+    <div className="flex h-dvh overflow-hidden bg-[var(--neutral-background-2)]">
       {/* Sidebar */}
       <Sidebar />
 
       {/* Main content area */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
-        <main className="flex-1 overflow-y-auto p-4 pb-20 lg:p-5 lg:pb-5">
+        <main className="flex-1 overflow-y-auto overscroll-contain p-4 pb-20 lg:p-5 lg:pb-5">
           {children}
         </main>
       </div>
