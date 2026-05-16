@@ -102,7 +102,7 @@ export default function TabletChatPage() {
   const activeRoom = rooms.find((r) => r.id === activeRoomId);
 
   return (
-    <div className="flex h-[calc(100dvh-9rem)] flex-col gap-3 sm:flex-row">
+    <div className="flex h-full flex-col gap-3 sm:flex-row">
       {/* ルーム一覧 */}
       <aside
         className={`flex-shrink-0 overflow-y-auto rounded-xl bg-white shadow-md sm:w-[280px] ${activeRoomId ? 'hidden sm:block' : 'block flex-1'}`}

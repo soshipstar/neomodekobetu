@@ -16,7 +16,21 @@ export function Header() {
   if (!user) return null;
 
   return (
-    <header className="sticky top-0 z-30 flex h-12 items-center justify-between border-b border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-4 lg:px-6">
+    // iOS の viewport-fit=cover (layout.tsx で指定) によりページは
+    // iPhone のステータスバー / ノッチの背後まで描画される。
+    // 何もしないとヘッダがステータスバーに重なって h-12 (48px) の大半が
+    // 隠れ、メニューボタン・通知ベル・ユーザー名が見えなくなる
+    // (バグ報告 #63 の根本原因)。
+    // paddingTop に env(safe-area-inset-top) を加算し、ヘッダ全体を
+    // 安全領域の下に押し下げる。height は固定の代わりに minHeight に切替え。
+    <header
+      className="sticky top-0 z-30 flex min-h-12 items-center justify-between border-b border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-4 lg:px-6"
+      style={{
+        paddingTop: 'env(safe-area-inset-top, 0)',
+        paddingLeft: 'max(1rem, env(safe-area-inset-left, 0))',
+        paddingRight: 'max(1rem, env(safe-area-inset-right, 0))',
+      }}
+    >
       {/* Left side */}
       <div className="flex items-center gap-3">
         <button

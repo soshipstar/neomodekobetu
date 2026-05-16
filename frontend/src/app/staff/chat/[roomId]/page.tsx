@@ -109,7 +109,12 @@ export default function StaffChatRoomPage() {
   }, [showArchived, roomId]);
 
   return (
-    <div className="flex h-[calc(100dvh-8rem)] flex-col lg:h-[calc(100dvh-5rem)]">
+    // h-full で親 <main> の実高さにフィットさせる。
+    // 旧 calc(100dvh-Nrem) はヘッダ高さ・main padding・iOS の
+    // safe-area-inset-top を考慮しておらず、iPhone Safari で
+    // 「外側スクロール」+「ヘッダ切れ」が起きていた (バグ報告 #63 再発)。
+    // main は flex-1 で確定した高さを持つので、h-full で素直に追従する。
+    <div className="flex h-full flex-col">
       {/* Chat header */}
       <div className="flex items-center gap-3 border-b border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-4 py-3">
         <Link

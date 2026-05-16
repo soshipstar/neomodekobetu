@@ -146,7 +146,7 @@ export default function StudentChatPage() {
   }
 
   return (
-    <div className="flex h-[calc(100dvh-6rem)] flex-col sm:h-[calc(100dvh-7rem)] lg:h-[calc(100dvh-5rem)]">
+    <div className="flex h-full flex-col sm:h-full">
       {/* Header */}
       <div className="border-b border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 sm:px-4 sm:py-3 flex-shrink-0">
         <h2 className="text-sm font-semibold text-[var(--neutral-foreground-1)]">スタッフとのチャット</h2>
