@@ -832,7 +832,9 @@ function QuickNotifyModal({
   const defaultBody =
     action === 'departure'
       ? '【これから帰ります】\n\nこれより帰路につきます。無事の帰宅をご確認ください。'
-      : '【到着しました】\n\nご対応ありがとうございました。';
+      // バグ報告 #47: 到着メッセージは「【到着しました】」だけで十分。
+      // 旧2行目の「ご対応ありがとうございました。」は現場で不要との要望。
+      : '【到着しました】';
   // R1: 編集可能 body (教室テンプレートを既定として読み込む)
   const [body, setBody] = useState<string>(defaultBody);
   const [savingTemplate, setSavingTemplate] = useState(false);
