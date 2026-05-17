@@ -222,13 +222,6 @@
             color: var(--muted);
             font-style: italic;
         }
-        footer {
-            margin-top: 6px;
-            font-size: 0.6rem;
-            color: var(--muted);
-            text-align: right;
-            opacity: 0.7;
-        }
         .reloading {
             display: none;
             font-size: 0.65rem;
@@ -289,7 +282,6 @@
         @endif
 
         <p class="note">{{ $payload['note'] }}</p>
-        <footer>powered by KIDURI</footer>
     </div>
 
     <script>
