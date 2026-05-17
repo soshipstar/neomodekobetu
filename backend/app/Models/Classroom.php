@@ -21,6 +21,7 @@ class Classroom extends Model
         'logo_path',
         'settings',
         'is_active',
+        'vacancy_widget_token',
     ];
 
     protected function casts(): array

@@ -19,6 +19,18 @@ Route::post('/client-errors', [App\Http\Controllers\ClientErrorController::class
     ->middleware('throttle:60,1');
 
 // ==========================================================================
+// HP 埋め込みウィジェット (Public, token-protected, throttled)
+// 教室の HP に iframe で空き状況を公開するためのエンドポイント。
+// 個人情報は返さず、曜日別の集計値のみ。
+// ==========================================================================
+Route::middleware('throttle:600,1')->group(function () {
+    Route::get('/widget/vacancy/{token}/data',
+        [App\Http\Controllers\PublicVacancyWidgetController::class, 'data']);
+    Route::get('/widget/vacancy/{token}',
+        [App\Http\Controllers\PublicVacancyWidgetController::class, 'widget']);
+});
+
+// ==========================================================================
 // 4.1 認証 API (Public)
 // ==========================================================================
 Route::prefix('auth')->group(function () {
@@ -72,6 +84,16 @@ Route::prefix('admin')
         // システム設定
         Route::get('/settings', [App\Http\Controllers\Admin\SettingController::class, 'index']);
         Route::put('/settings', [App\Http\Controllers\Admin\SettingController::class, 'update']);
+
+        // --- HP 埋め込みウィジェット 管理 ---
+        // 教室ごとに公開トークン (vacancy_widget_token) を発行・再発行・無効化する。
+        // 一覧と embed code 一式 (URL / iframe HTML) を返却。
+        Route::get('/widget-tokens',
+            [App\Http\Controllers\Admin\VacancyWidgetTokenController::class, 'index']);
+        Route::post('/classrooms/{classroom}/widget-token',
+            [App\Http\Controllers\Admin\VacancyWidgetTokenController::class, 'store']);
+        Route::delete('/classrooms/{classroom}/widget-token',
+            [App\Http\Controllers\Admin\VacancyWidgetTokenController::class, 'destroy']);
 
         // 監査ログ
         Route::get('/audit-logs', [App\Http\Controllers\Admin\AuditLogController::class, 'index']);
