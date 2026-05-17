@@ -137,6 +137,10 @@ function StudentInfo({ studentId, student }: { studentId: number; student: Stude
     status: student.status || 'active',
     support_start_date: toDateStr((student as any).support_start_date),
     notes: (student as any).notes || '',
+    // 待機児童登録時に問い合わせ内容が入る別カラム。
+    // 詳細ページからも編集できないと「登録時に書いたコメントが見えない」
+    // 不具合になる (バグ報告: /staff/students/261)。
+    waiting_notes: (student as any).waiting_notes || '',
   });
 
   const saveMutation = useMutation({
@@ -196,6 +200,18 @@ function StudentInfo({ studentId, student }: { studentId: number; student: Stude
                 <dd className="mt-1 text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{(student as any).notes}</dd>
               </div>
             )}
+            {/* 待機児童として登録された際に問い合わせ内容として書かれたメモを表示。
+                生年月日が無い待機児童は「コメント参照」表示でこの欄に誘導される (バグ報告 #261)。 */}
+            {(student as any).waiting_notes && (
+              <div className="sm:col-span-2">
+                <dt className="text-xs font-medium text-[var(--neutral-foreground-3)]">
+                  待機メモ（登録時の問い合わせ内容）
+                </dt>
+                <dd className="mt-1 rounded-md bg-[var(--neutral-background-3)] p-3 text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">
+                  {(student as any).waiting_notes}
+                </dd>
+              </div>
+            )}
           </dl>
         </CardBody>
       </Card>
@@ -233,6 +249,22 @@ function StudentInfo({ studentId, student }: { studentId: number; student: Stude
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
             />
+          </div>
+          {/* 待機メモ (登録時の問い合わせ内容) も詳細ページから編集できるようにする */}
+          <div>
+            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">
+              待機メモ（登録時の問い合わせ内容）
+            </label>
+            <textarea
+              className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
+              rows={4}
+              value={form.waiting_notes}
+              onChange={(e) => setForm({ ...form, waiting_notes: e.target.value })}
+              placeholder="問い合わせ内容、希望条件、生年月日 (未確定の場合) など"
+            />
+            <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">
+              待機児童で生年月日が未入力の場合、一覧画面で「コメント参照」表示の参照先になります。
+            </p>
           </div>
           <Button leftIcon={<MaterialIcon name="save" size={16} />} onClick={() => saveMutation.mutate()} isLoading={saveMutation.isPending}>
             保存
