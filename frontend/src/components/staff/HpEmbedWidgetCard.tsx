@@ -45,6 +45,8 @@ interface ThemeState {
   radius: RadiusKey;
   compact: boolean;
   header: boolean;
+  layout: 'h' | 'v';   // h=横並び (デフォルト) / v=縦並び
+  predict: boolean;    // 満席日に「○月頃に空く見込み」を表示
 }
 
 const THEME_PRESETS: { key: ThemeKey; label: string; swatch: string }[] = [
@@ -63,6 +65,8 @@ const DEFAULT_STATE: ThemeState = {
   radius: 'md',
   compact: false,
   header: true,
+  layout: 'h',
+  predict: false,
 };
 
 export function HpEmbedWidgetCard() {
@@ -148,18 +152,27 @@ export function HpEmbedWidgetCard() {
       primary: state.primary,
       bg: state.bg,
       radius: state.radius,
+      layout: state.layout,
     });
     if (state.compact) params.set('compact', '1');
     if (!state.header) params.set('header', '0');
+    if (state.predict) params.set('predict', '1');
     return params.toString();
   }, [state]);
 
   const previewUrl = embed?.widget_url ? `${embed.widget_url}?${queryString}` : null;
+  // 横並びは縦方向にコンパクト (~180px)、縦並びは ~340px、compact は更に小さい
+  const widgetHeight = useMemo(() => {
+    if (state.compact) return state.predict ? 380 : 340;
+    if (state.layout === 'h') return state.predict ? 220 : 180;
+    return state.predict ? 380 : 340;
+  }, [state.compact, state.layout, state.predict]);
+  const widgetMaxWidth = state.compact ? 320 : state.layout === 'h' ? 720 : 420;
+
   const iframeCode = useMemo(() => {
     if (!previewUrl || !embed) return '';
-    const heightDefault = state.compact ? 380 : 430;
-    return `<iframe src="${previewUrl}" width="100%" height="${heightDefault}" style="border:0;max-width:${state.compact ? '320' : '640'}px;" title="${embed.classroom_name} 空き状況" loading="lazy"></iframe>`;
-  }, [previewUrl, embed, state.compact]);
+    return `<iframe src="${previewUrl}" width="100%" height="${widgetHeight}" style="border:0;max-width:${widgetMaxWidth}px;" title="${embed.classroom_name} 空き状況" loading="lazy"></iframe>`;
+  }, [previewUrl, embed, widgetHeight, widgetMaxWidth]);
 
   const copy = async (text: string, label: string) => {
     try {
@@ -340,27 +353,63 @@ export function HpEmbedWidgetCard() {
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-3)]">
-                    オプション
+                    レイアウト
                   </label>
-                  <div className="flex flex-wrap gap-2 text-xs text-[var(--neutral-foreground-2)]">
-                    <label className="flex items-center gap-1.5">
-                      <input
-                        type="checkbox"
-                        checked={state.header}
-                        onChange={(e) => setState((p) => ({ ...p, header: e.target.checked }))}
-                      />
-                      ヘッダ表示
-                    </label>
-                    <label className="flex items-center gap-1.5">
-                      <input
-                        type="checkbox"
-                        checked={state.compact}
-                        onChange={(e) => setState((p) => ({ ...p, compact: e.target.checked }))}
-                      />
-                      サイドバー幅 (320px)
-                    </label>
+                  <div className="flex gap-1">
+                    {(['h', 'v'] as const).map((l) => (
+                      <button
+                        key={l}
+                        type="button"
+                        onClick={() => setState((p) => ({ ...p, layout: l }))}
+                        className={`flex-1 rounded border px-2 py-1 text-[11px] ${
+                          state.layout === l
+                            ? 'border-[var(--brand-80)] bg-[var(--brand-160)] text-[var(--brand-60)]'
+                            : 'border-[var(--neutral-stroke-2)] bg-white text-[var(--neutral-foreground-2)]'
+                        }`}
+                      >
+                        {l === 'h' ? '横並び (コンパクト)' : '縦並び (リスト)'}
+                      </button>
+                    ))}
                   </div>
                 </div>
+              </div>
+
+              {/* オプション (チェックボックス群) */}
+              <div className="mt-3 border-t border-[var(--neutral-stroke-2)] pt-3">
+                <div className="mb-1 text-xs font-medium text-[var(--neutral-foreground-3)]">表示オプション</div>
+                <div className="flex flex-wrap gap-3 text-xs text-[var(--neutral-foreground-2)]">
+                  <label className="flex items-center gap-1.5">
+                    <input
+                      type="checkbox"
+                      checked={state.header}
+                      onChange={(e) => setState((p) => ({ ...p, header: e.target.checked }))}
+                    />
+                    ヘッダ表示
+                  </label>
+                  <label className="flex items-center gap-1.5">
+                    <input
+                      type="checkbox"
+                      checked={state.compact}
+                      onChange={(e) => setState((p) => ({ ...p, compact: e.target.checked }))}
+                    />
+                    サイドバー幅 (320px)
+                  </label>
+                  <label className="flex items-center gap-1.5">
+                    <input
+                      type="checkbox"
+                      checked={state.predict}
+                      onChange={(e) => setState((p) => ({ ...p, predict: e.target.checked }))}
+                    />
+                    満席日に「○月頃に空く見込み」を表示
+                  </label>
+                </div>
+                {state.predict && (
+                  <p className="mt-1.5 rounded bg-[var(--status-warning-bg)] px-2 py-1 text-[10px] text-[var(--status-warning-fg)]">
+                    予想は待機児童データ・在籍児童の卒業/退所予定から計算した
+                    あくまで目安です。実際の空き時期を保証するものではない旨が
+                    ウィジェット内にも自動で注記されます。
+                  </p>
+                )}
               </div>
             </div>
 
@@ -376,8 +425,8 @@ export function HpEmbedWidgetCard() {
                     key={previewUrl}
                     src={previewUrl}
                     width="100%"
-                    height={state.compact ? 380 : 430}
-                    style={{ border: 0, maxWidth: state.compact ? 320 : 640, margin: '0 auto', display: 'block' }}
+                    height={widgetHeight}
+                    style={{ border: 0, maxWidth: widgetMaxWidth, margin: '0 auto', display: 'block' }}
                     title="プレビュー"
                   />
                 )}

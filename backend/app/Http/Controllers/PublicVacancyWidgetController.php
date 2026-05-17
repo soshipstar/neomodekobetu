@@ -30,11 +30,13 @@ class PublicVacancyWidgetController extends Controller
 {
     /**
      * 曜日別空き状況の JSON データを返す。
+     * クエリ `predict=1` で「満席日の空く見込み」予想も含める。
      */
-    public function data(string $token): JsonResponse
+    public function data(Request $request, string $token): JsonResponse
     {
         $classroom = $this->resolveClassroom($token);
-        $payload = $this->buildVacancyPayload($classroom);
+        $predict = $request->query('predict') === '1';
+        $payload = $this->buildVacancyPayload($classroom, $predict);
 
         return response()->json($payload)
             ->header('Cache-Control', 'public, max-age=60, must-revalidate')
@@ -54,11 +56,15 @@ class PublicVacancyWidgetController extends Controller
      *   radius=none|sm|md|lg   角丸度合い  既定 md
      *   compact=1         サイドバー用の縦長コンパクト表示
      *   header=0          教室名ヘッダを非表示
+     *   layout=h|v        h=横並び (既定, コンパクト) / v=縦並び
+     *   predict=1         満席日の「○月頃に空く見込み」予想を表示
      */
     public function widget(Request $request, string $token): SymfonyResponse
     {
         $classroom = $this->resolveClassroom($token);
-        $payload = $this->buildVacancyPayload($classroom);
+        $layout = $request->query('layout', 'h') === 'v' ? 'v' : 'h';
+        $predict = $request->query('predict') === '1';
+        $payload = $this->buildVacancyPayload($classroom, $predict);
         $theme = $this->resolveTheme($request);
 
         $html = view('widget.vacancy', [
@@ -66,6 +72,8 @@ class PublicVacancyWidgetController extends Controller
             'payload'   => $payload,
             'token'     => $token,
             'theme'     => $theme,
+            'layout'    => $layout,
+            'predict'   => $predict,
         ])->render();
 
         return response($html, 200)
@@ -165,8 +173,21 @@ class PublicVacancyWidgetController extends Controller
      * 曜日別の空き状況 payload を組み立てる。
      * Admin\WaitingListController::summary と同じ計算ロジックだが、
      * 個人情報を含めない (集計値のみ)。
+     *
+     * 状態判定 (HP 公開用に簡素化):
+     *   - 空きあり (open)  : 残席率 > 10%
+     *   - わずか   (limited): 残席 0 < 残席率 <= 10%
+     *   - 満席    (full)   : 残席率 = 0
+     *   - 休業    (closed) : is_open=false
+     *
+     * predict=true のとき、満席日に対して「○月頃に空く見込み」を計算する。
+     * 計算根拠は:
+     *   (a) 待機児童で desired_start_date が設定されている最早日
+     *   (b) 在籍児童で高校3年生がいれば 翌4月 (卒業見込み)
+     *   (c) 在籍児童で future withdrawal_date が設定されている最早日
+     * の min を使う。あくまで推定であり確約はしない (view 側で免責表示)。
      */
-    private function buildVacancyPayload(Classroom $classroom): array
+    private function buildVacancyPayload(Classroom $classroom, bool $predict = false): array
     {
         $days = [
             ['key' => 'monday',    'dow' => 1, 'label' => '月'],
@@ -198,6 +219,8 @@ class PublicVacancyWidgetController extends Controller
                     'available'    => 0,
                     'status'       => 'closed',
                     'status_label' => '休業',
+                    'status_icon'  => '休',
+                    'prediction'   => null,
                 ];
                 continue;
             }
@@ -209,14 +232,30 @@ class PublicVacancyWidgetController extends Controller
                 ->count();
             $available = max(0, $maxCapacity - $enrolled);
 
-            // 状態判定:
-            //   available 0     → 満員 (full)
-            //   available 1-2  → わずか (limited)
-            //   available >= 3 → 空きあり (open)
-            $status = $available === 0 ? 'full' : ($available <= 2 ? 'limited' : 'open');
-            $statusLabel = $available === 0
-                ? '満員'
-                : ($available <= 2 ? "残り{$available}名" : '空きあり');
+            // 10% 閾値で空き状態を 3 段階に分類:
+            //   満席 (available = 0)             → full ×
+            //   わずか (0 < available/max <= 10%) → limited △
+            //   空きあり (available/max > 10%)    → open 〇
+            $rate = $maxCapacity > 0 ? $available / $maxCapacity : 0;
+            if ($available === 0) {
+                $status = 'full';
+                $statusLabel = '満席';
+                $statusIcon = '×';
+            } elseif ($rate <= 0.10) {
+                $status = 'limited';
+                $statusLabel = 'わずか';
+                $statusIcon = '△';
+            } else {
+                $status = 'open';
+                $statusLabel = '空きあり';
+                $statusIcon = '〇';
+            }
+
+            // 満席日にだけ predict=true で空く見込みを計算
+            $prediction = null;
+            if ($predict && $available === 0) {
+                $prediction = $this->predictReopening($classroom, $d['key']);
+            }
 
             $result[] = [
                 'day'          => $d['key'],
@@ -227,6 +266,8 @@ class PublicVacancyWidgetController extends Controller
                 'available'    => $available,
                 'status'       => $status,
                 'status_label' => $statusLabel,
+                'status_icon'  => $statusIcon,
+                'prediction'   => $prediction, // {month_label, date} or null
             ];
         }
 
@@ -239,6 +280,76 @@ class PublicVacancyWidgetController extends Controller
             'days'       => $result,
             'updated_at' => now()->toIso8601String(),
             'note'       => '空き状況は1日1回〜数分単位で更新されます。最新の状況は教室までお問い合わせください。',
+            'predict_enabled' => $predict,
+        ];
+    }
+
+    /**
+     * 指定曜日の「空く見込み」を推定する。
+     * 確約ではなく見込み (disclaimer はview側で表示)。
+     *
+     * 推定根拠 (それぞれ計算し min を採用):
+     *   (a) 待機児童の最早 desired_start_date (その曜日希望)
+     *   (b) 在籍児童の高校3年生 (= 翌年4月卒業見込み)
+     *   (c) 在籍児童の future withdrawal_date 最早日
+     *
+     * @return array{month_label:string,date:string,sources:array<string>}|null
+     */
+    private function predictReopening(Classroom $classroom, string $day): ?array
+    {
+        $candidates = [];
+
+        // (a) 待機児童の希望開始日
+        $earliestDesired = Student::where('classroom_id', $classroom->id)
+            ->where('status', 'waiting')
+            ->where("desired_{$day}", true)
+            ->whereNotNull('desired_start_date')
+            ->where('desired_start_date', '>=', now()->toDateString())
+            ->orderBy('desired_start_date')
+            ->value('desired_start_date');
+        if ($earliestDesired) {
+            $candidates[] = ['date' => \Carbon\Carbon::parse($earliestDesired), 'source' => 'waiting_start'];
+        }
+
+        // (b) 在籍高校3年生 → 翌年4月
+        $hasGraduating = Student::where('classroom_id', $classroom->id)
+            ->whereIn('status', ['active', 'trial', 'short_term'])
+            ->where('is_active', true)
+            ->where("scheduled_{$day}", true)
+            ->where('grade_level', 'high_school_3')
+            ->exists();
+        if ($hasGraduating) {
+            // 4/1 を超えたなら来年の4/1、超えてないなら今年の4/1
+            $aprilYear = now()->month >= 4 ? now()->year + 1 : now()->year;
+            $candidates[] = [
+                'date'   => \Carbon\Carbon::create($aprilYear, 4, 1),
+                'source' => 'graduation',
+            ];
+        }
+
+        // (c) 在籍児童の future withdrawal_date
+        $earliestWithdrawal = Student::where('classroom_id', $classroom->id)
+            ->whereIn('status', ['active', 'trial', 'short_term'])
+            ->where('is_active', true)
+            ->where("scheduled_{$day}", true)
+            ->whereNotNull('withdrawal_date')
+            ->where('withdrawal_date', '>', now()->toDateString())
+            ->orderBy('withdrawal_date')
+            ->value('withdrawal_date');
+        if ($earliestWithdrawal) {
+            $candidates[] = ['date' => \Carbon\Carbon::parse($earliestWithdrawal), 'source' => 'withdrawal'];
+        }
+
+        if (empty($candidates)) return null;
+
+        // 最早を採用
+        usort($candidates, fn ($a, $b) => $a['date']->timestamp <=> $b['date']->timestamp);
+        $earliest = $candidates[0];
+
+        return [
+            'month_label' => $earliest['date']->format('n月') . '頃',
+            'date'        => $earliest['date']->toDateString(),
+            'sources'     => array_map(fn ($c) => $c['source'], $candidates),
         ];
     }
 }
