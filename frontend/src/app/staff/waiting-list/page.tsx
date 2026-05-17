@@ -531,11 +531,15 @@ export default function WaitingListPage() {
                         key={s.id}
                         className="flex flex-wrap items-center gap-3 py-2 border-b border-[var(--neutral-stroke-3)] last:border-b-0"
                       >
-                        {/* Name + grade */}
+                        {/* Name + grade
+                            待機児童は生年月日未入力のケースがあり、その時は
+                            学年が計算できないので備考 (waiting_notes) を読んでもらう */}
                         <div className="min-w-[120px]">
                           <p className="font-semibold text-sm text-[var(--neutral-foreground-1)]">{s.student_name}</p>
                           <p className="text-xs text-[var(--neutral-foreground-3)]">
-                            {GRADE_LABELS[s.grade_level || ''] || s.grade_level || '-'}
+                            {GRADE_LABELS[s.grade_level || ''] || s.grade_level || (
+                              <span className="text-[var(--neutral-foreground-4)]">コメント参照</span>
+                            )}
                           </p>
                         </div>
                         {/* Desired weekly count */}

@@ -83,7 +83,9 @@ class StudentController extends Controller
 
         $validated = $request->validate([
             'student_name'           => 'required|string|max:255',
-            'birth_date'             => 'required|date',
+            // 待機児童 (status=waiting) は生年月日が未確定なケースがあるので
+            // その場合のみ任意。待機以外 (active/trial/short_term/withdrawn) は必須。
+            'birth_date'             => 'required_unless:status,waiting|nullable|date',
             'grade_adjustment'       => 'nullable|integer|min:-2|max:2',
             'guardian_id'            => 'nullable|exists:users,id',
             'support_start_date'     => 'nullable|date',

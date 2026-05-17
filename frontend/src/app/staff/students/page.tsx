@@ -452,9 +452,19 @@ export default function StudentsPage() {
                       </Link>
                     </td>
                     <td className="px-3 py-2 text-[var(--neutral-foreground-2)]">
-                      {student.birth_date ? format(new Date(student.birth_date), 'yyyy/MM/dd') : '-'}
+                      {student.birth_date
+                        ? format(new Date(student.birth_date), 'yyyy/MM/dd')
+                        : student.status === 'waiting'
+                          ? <span className="text-[var(--neutral-foreground-4)]">コメント参照</span>
+                          : '-'}
                     </td>
-                    <td className="px-3 py-2 text-[var(--neutral-foreground-2)]">{age !== null ? `${age}歳` : '-'}</td>
+                    <td className="px-3 py-2 text-[var(--neutral-foreground-2)]">
+                      {age !== null
+                        ? `${age}歳`
+                        : student.status === 'waiting'
+                          ? <span className="text-[var(--neutral-foreground-4)]">コメント参照</span>
+                          : '-'}
+                    </td>
                     <td className="px-3 py-2 text-[var(--neutral-foreground-2)]">
                       {GRADE_LABELS[student.grade_level || ''] || student.grade_level || '未設定'}
                     </td>
@@ -546,12 +556,23 @@ function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel
           className={inputCls} placeholder="例: 山田 太郎" required />
       </div>
 
-      {/* 生年月日 */}
+      {/* 生年月日
+          status='waiting' (待機児童) の場合は生年月日が分からないケースがあるので任意。
+          そのときは「コメント参照」と表示される (備考欄に生年情報を書く運用)。 */}
       <div>
-        <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">生年月日 <span className="text-[var(--status-danger-fg)]">*</span></label>
-        <input type="date" value={form.birth_date} onChange={(e) => updateField('birth_date', e.target.value)}
-          className={inputCls} required />
-        <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">※学年は生年月日から自動で計算されます</p>
+        <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">
+          生年月日{form.status !== 'waiting' && <span className="text-[var(--status-danger-fg)]"> *</span>}
+        </label>
+        <input
+          type="date"
+          value={form.birth_date}
+          onChange={(e) => updateField('birth_date', e.target.value)}
+          className={inputCls}
+          required={form.status !== 'waiting'}
+        />
+        <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">
+          ※学年は生年月日から自動で計算されます{form.status === 'waiting' && '。待機児童は未入力でも登録できます (備考に生年情報を記入してください)'}
+        </p>
       </div>
 
       {/* 学年調整 */}
