@@ -11,6 +11,7 @@ import { useToast } from '@/components/ui/Toast';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { HpEmbedWidgetCard } from '@/components/staff/HpEmbedWidgetCard';
 
 // ---------------------------------------------------------------------------
 // Types & Constants
@@ -598,6 +599,13 @@ export default function WaitingListPage() {
           )}
         </CardBody>
       </Card>
+
+      {/* ================================================================= */}
+      {/* HP 埋め込みコード (バグ報告と同じ位置 = ページ最下部)             */}
+      {/* HP にこれを貼り付けると曜日別空き状況を利用者に知らせられる。     */}
+      {/* テーマ調整 + ライブプレビュー + HP URL からの色サジェスト対応。   */}
+      {/* ================================================================= */}
+      <HpEmbedWidgetCard />
 
       {/* Withdrawal modal */}
       <Modal

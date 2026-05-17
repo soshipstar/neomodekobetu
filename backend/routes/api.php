@@ -94,6 +94,9 @@ Route::prefix('admin')
             [App\Http\Controllers\Admin\VacancyWidgetTokenController::class, 'store']);
         Route::delete('/classrooms/{classroom}/widget-token',
             [App\Http\Controllers\Admin\VacancyWidgetTokenController::class, 'destroy']);
+        // HP の URL から theme-color / favicon を抽出して推奨色を返す
+        Route::post('/widget-tokens/suggest-theme',
+            [App\Http\Controllers\Admin\VacancyWidgetTokenController::class, 'suggestTheme']);
 
         // 監査ログ
         Route::get('/audit-logs', [App\Http\Controllers\Admin\AuditLogController::class, 'index']);
@@ -284,6 +287,11 @@ Route::prefix('staff')
         Route::get('/dashboard/calendar', [App\Http\Controllers\Staff\DashboardController::class, 'calendar']);
         Route::get('/dashboard/attendance', [App\Http\Controllers\Staff\DashboardController::class, 'attendance']);
         Route::get('/dashboard', [App\Http\Controllers\Staff\DashboardController::class, 'index']);
+
+        // HP 埋め込みウィジェット (自教室のみ)
+        Route::get('/widget-token',    [App\Http\Controllers\Staff\WidgetTokenController::class, 'show']);
+        Route::post('/widget-token',   [App\Http\Controllers\Staff\WidgetTokenController::class, 'store']);
+        Route::delete('/widget-token', [App\Http\Controllers\Staff\WidgetTokenController::class, 'destroy']);
 
         // --- チャット ---
         Route::prefix('chat')->group(function () {

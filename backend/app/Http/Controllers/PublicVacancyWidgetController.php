@@ -45,16 +45,27 @@ class PublicVacancyWidgetController extends Controller
     /**
      * iframe で外部 HP に埋め込むための装飾済み HTML を返す。
      * meta refresh + 60 秒の fetch ポーリングでほぼリアルタイム反映する。
+     *
+     * 受け付けるテーマクエリパラメータ (任意):
+     *   theme=light|dark|warm|cool|minimal|brand   既定 brand (#14a898)
+     *   primary=14a898    primary 色 (#なしの 3 or 6 桁 hex)
+     *   bg=ffffff         背景色 (transparent も可)
+     *   fg=1a1a1a         文字色
+     *   radius=none|sm|md|lg   角丸度合い  既定 md
+     *   compact=1         サイドバー用の縦長コンパクト表示
+     *   header=0          教室名ヘッダを非表示
      */
-    public function widget(string $token): SymfonyResponse
+    public function widget(Request $request, string $token): SymfonyResponse
     {
         $classroom = $this->resolveClassroom($token);
         $payload = $this->buildVacancyPayload($classroom);
+        $theme = $this->resolveTheme($request);
 
         $html = view('widget.vacancy', [
             'classroom' => $classroom,
             'payload'   => $payload,
             'token'     => $token,
+            'theme'     => $theme,
         ])->render();
 
         return response($html, 200)
@@ -64,6 +75,73 @@ class PublicVacancyWidgetController extends Controller
             // production.conf の `add_header X-Frame-Options "SAMEORIGIN" always` は
             // nginx 側の location ブロックで上書きする (production.conf に追記済み)。
             ->header('Content-Security-Policy', "frame-ancestors *");
+    }
+
+    /**
+     * テーマパラメータを正規化して安全な値だけ返す。
+     * 不正値は無視して既定にフォールバック (XSS / CSS injection 防御)。
+     */
+    private function resolveTheme(Request $request): array
+    {
+        $presets = [
+            // [primary, bg, fg, mode]
+            'brand'   => ['14a898', 'ffffff', '1a1a1a', 'light'],
+            'light'   => ['2563eb', 'ffffff', '1a1a1a', 'light'],
+            'dark'    => ['38bdf8', '111827', 'f9fafb', 'dark'],
+            'warm'    => ['ea580c', 'fff7ed', '431407', 'light'],
+            'cool'    => ['0891b2', 'ecfeff', '083344', 'light'],
+            'minimal' => ['333333', 'ffffff', '111111', 'light'],
+            'transparent' => ['14a898', 'transparent', '1a1a1a', 'light'],
+        ];
+        $themeKey = $request->query('theme', 'brand');
+        if (!isset($presets[$themeKey])) $themeKey = 'brand';
+        [$primary, $bg, $fg, $mode] = $presets[$themeKey];
+
+        // 個別 override (preset を上書き)
+        $primary = $this->sanitizeColor($request->query('primary'), $primary);
+        $bg      = $this->sanitizeBackground($request->query('bg'), $bg);
+        $fg      = $this->sanitizeColor($request->query('fg'), $fg);
+
+        $radius = $request->query('radius', 'md');
+        if (!in_array($radius, ['none', 'sm', 'md', 'lg'], true)) $radius = 'md';
+
+        return [
+            'preset'  => $themeKey,
+            'primary' => $primary,
+            'bg'      => $bg,
+            'fg'      => $fg,
+            'mode'    => $mode,
+            'radius'  => $radius,
+            'compact' => (bool) $request->query('compact', false),
+            'header'  => $request->query('header', '1') !== '0',
+        ];
+    }
+
+    /**
+     * 16進カラー (3 桁または 6 桁) を厳格に検証する。# は前置でも可。
+     * 不正なら fallback を返す。
+     */
+    private function sanitizeColor(?string $value, string $fallback): string
+    {
+        if (!is_string($value) || $value === '') return $fallback;
+        $value = ltrim($value, '#');
+        if (preg_match('/^[0-9a-fA-F]{3}$/', $value)) {
+            // 3桁を6桁に展開
+            return strtolower($value[0] . $value[0] . $value[1] . $value[1] . $value[2] . $value[2]);
+        }
+        if (preg_match('/^[0-9a-fA-F]{6}$/', $value)) {
+            return strtolower($value);
+        }
+        return $fallback;
+    }
+
+    /**
+     * 背景色は transparent も許可する。
+     */
+    private function sanitizeBackground(?string $value, string $fallback): string
+    {
+        if ($value === 'transparent') return 'transparent';
+        return $this->sanitizeColor($value, $fallback);
     }
 
     /**

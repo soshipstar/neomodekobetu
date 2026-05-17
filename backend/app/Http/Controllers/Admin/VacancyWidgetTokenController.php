@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Classroom;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 /**
@@ -84,6 +86,135 @@ class VacancyWidgetTokenController extends Controller
             'success' => true,
             'message' => 'ウィジェットコードを無効化しました。',
         ]);
+    }
+
+    /**
+     * 指定された HP の URL を取得し、`<meta name="theme-color">` などから
+     * 推奨テーマカラーを抽出して返す。
+     *
+     * 失敗してもエラーにせず、抽出できた限りの情報を返す (suggested は
+     * null の場合あり)。
+     *
+     * セキュリティ:
+     *   - 公開 HTTP(S) URL のみ許可
+     *   - localhost/private IP への SSRF を防ぐため、ホスト名を限定
+     *   - 5 秒タイムアウト、最大 256KB だけダウンロード
+     */
+    public function suggestTheme(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'url' => 'required|string|max:500|url:http,https',
+        ]);
+        $url = $validated['url'];
+        $host = parse_url($url, PHP_URL_HOST);
+        if (!$host || $this->isPrivateHost($host)) {
+            return response()->json([
+                'success'    => false,
+                'message'    => 'プライベート IP やローカルホストは指定できません。',
+                'suggested'  => null,
+            ], 422);
+        }
+
+        try {
+            $res = Http::timeout(5)
+                ->withHeaders(['User-Agent' => 'KIDURI-Widget-Color-Sniffer/1.0'])
+                ->withOptions(['allow_redirects' => ['max' => 3]])
+                ->get($url);
+            if (!$res->ok()) {
+                return response()->json([
+                    'success'   => false,
+                    'message'   => "URL から HTTP {$res->status()} が返りました。",
+                    'suggested' => null,
+                ]);
+            }
+            // 大きすぎる HTML は先頭 256KB だけ見る
+            $html = mb_substr($res->body(), 0, 262144);
+
+            $themeColor = $this->extractMetaThemeColor($html);
+            $title      = $this->extractTitle($html);
+
+            // theme-color が無ければ favicon の URL だけ返す (FE で利用者に提示)
+            $faviconUrl = $this->extractFaviconUrl($html, $url);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'host'        => $host,
+                    'title'       => $title,
+                    'theme_color' => $themeColor,     // 例: "#14a898" or null
+                    'favicon_url' => $faviconUrl,
+                    // FE は theme_color を primary に流し込む
+                    'suggested' => $themeColor ? [
+                        'primary' => ltrim($themeColor, '#'),
+                    ] : null,
+                ],
+            ]);
+        } catch (ConnectionException $e) {
+            return response()->json([
+                'success'   => false,
+                'message'   => 'URL に接続できませんでした。',
+                'suggested' => null,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success'   => false,
+                'message'   => '解析中にエラーが発生しました。',
+                'suggested' => null,
+            ]);
+        }
+    }
+
+    private function extractMetaThemeColor(string $html): ?string
+    {
+        // <meta name="theme-color" content="#XXXXXX">
+        if (preg_match('/<meta[^>]*name=["\']theme-color["\'][^>]*content=["\']([^"\']+)["\']/i', $html, $m)) {
+            return trim($m[1]);
+        }
+        // 順序が逆のパターン: content="" 先 name="" 後
+        if (preg_match('/<meta[^>]*content=["\']([^"\']+)["\'][^>]*name=["\']theme-color["\']/i', $html, $m)) {
+            return trim($m[1]);
+        }
+        return null;
+    }
+
+    private function extractTitle(string $html): ?string
+    {
+        if (preg_match('/<title[^>]*>([^<]+)<\/title>/i', $html, $m)) {
+            return trim(html_entity_decode($m[1], ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        }
+        return null;
+    }
+
+    private function extractFaviconUrl(string $html, string $baseUrl): ?string
+    {
+        if (preg_match('/<link[^>]*rel=["\'](?:icon|shortcut icon|apple-touch-icon)["\'][^>]*href=["\']([^"\']+)["\']/i', $html, $m)) {
+            $href = trim($m[1]);
+            // 相対パスを base URL で吸収する
+            if (preg_match('/^https?:\/\//i', $href)) return $href;
+            $parsed = parse_url($baseUrl);
+            $scheme = $parsed['scheme'] ?? 'https';
+            $host   = $parsed['host'] ?? '';
+            if ($host === '') return null;
+            $port   = isset($parsed['port']) ? ':' . $parsed['port'] : '';
+            if (str_starts_with($href, '//')) return $scheme . ':' . $href;
+            if (str_starts_with($href, '/'))  return "{$scheme}://{$host}{$port}{$href}";
+            $path = $parsed['path'] ?? '/';
+            $dir  = rtrim(dirname($path), '/');
+            return "{$scheme}://{$host}{$port}{$dir}/{$href}";
+        }
+        return null;
+    }
+
+    /**
+     * SSRF 対策: ローカル/プライベート IP / 内部ドメインは弾く。
+     */
+    private function isPrivateHost(string $host): bool
+    {
+        if (in_array(strtolower($host), ['localhost', '127.0.0.1', '0.0.0.0', '::1'], true)) return true;
+        if (preg_match('/\.local$/i', $host)) return true;
+        if (preg_match('/^(10|192\.168|172\.(1[6-9]|2[0-9]|3[01]))\./', $host)) return true;
+        if (preg_match('/^169\.254\./', $host)) return true; // link-local
+        return false;
     }
 
     /**

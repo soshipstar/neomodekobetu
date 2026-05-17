@@ -1,3 +1,39 @@
+@php
+    /**
+     * テーマカラーから派生色を計算する。
+     * 全部 inline で完結させて XSS / CSS injection を避ける
+     * (theme 配列は Controller で正規化済み = hex 6 桁 / 'transparent' のみ)。
+     */
+    $primary = $theme['primary'];
+    $bg      = $theme['bg'];
+    $fg      = $theme['fg'];
+    $mode    = $theme['mode']; // light | dark
+    $radiusMap = ['none' => '0', 'sm' => '6px', 'md' => '10px', 'lg' => '16px'];
+    $radius = $radiusMap[$theme['radius']];
+
+    // primary 色を base に薄/濃を生成 (HSL 風だが簡易: 1byteづつ操作)
+    $hex2rgb = function (string $hex) {
+        return [hexdec(substr($hex, 0, 2)), hexdec(substr($hex, 2, 2)), hexdec(substr($hex, 4, 2))];
+    };
+    [$pr, $pg, $pb] = $hex2rgb($primary);
+    $primarySoft = sprintf('rgba(%d,%d,%d,0.1)', $pr, $pg, $pb);
+
+    // dark mode の補正
+    if ($mode === 'dark') {
+        $border = 'rgba(255,255,255,0.1)';
+        $muted = 'rgba(255,255,255,0.5)';
+        $rowAlt = 'rgba(255,255,255,0.03)';
+    } else {
+        $border = '#e5e7eb';
+        $muted = '#6b7280';
+        $rowAlt = '#fafafa';
+    }
+    // bg=transparent のときは subtle な薄背景を CSS で吸収
+    $bgValue = $bg === 'transparent' ? 'transparent' : '#' . $bg;
+    $fgValue = '#' . $fg;
+    $primaryValue = '#' . $primary;
+    $compact = $theme['compact'];
+@endphp
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -8,21 +44,31 @@
     <meta http-equiv="refresh" content="300">
     <style>
         :root {
-            --bg: #ffffff;
-            --fg: #1a1a1a;
-            --muted: #6b7280;
-            --border: #e5e7eb;
-            --brand: #14a898;
-            --brand-soft: #e0f4f1;
-            --open-bg: #d1fae5;
+            --bg: {{ $bgValue }};
+            --fg: {{ $fgValue }};
+            --primary: {{ $primaryValue }};
+            --primary-soft: {{ $primarySoft }};
+            --muted: {{ $muted }};
+            --border: {{ $border }};
+            --row-alt: {{ $rowAlt }};
+            --radius: {{ $radius }};
+            --open-bg: rgba(16,185,129,0.15);
             --open-fg: #047857;
-            --limited-bg: #fef3c7;
+            --limited-bg: rgba(245,158,11,0.18);
             --limited-fg: #b45309;
-            --full-bg: #fee2e2;
+            --full-bg: rgba(239,68,68,0.15);
             --full-fg: #b91c1c;
-            --closed-bg: #f3f4f6;
+            --closed-bg: rgba(107,114,128,0.15);
             --closed-fg: #6b7280;
         }
+        @if($mode === 'dark')
+        :root {
+            --open-fg: #34d399;
+            --limited-fg: #fbbf24;
+            --full-fg: #f87171;
+            --closed-fg: #9ca3af;
+        }
+        @endif
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body {
             background: var(--bg);
@@ -33,15 +79,16 @@
             -webkit-font-smoothing: antialiased;
         }
         .widget {
-            max-width: 640px;
+            max-width: {{ $compact ? '320px' : '640px' }};
             margin: 0 auto;
             padding: 16px;
         }
+        @if($theme['header'])
         header {
             display: flex;
             align-items: baseline;
             justify-content: space-between;
-            border-bottom: 2px solid var(--brand);
+            border-bottom: 2px solid var(--primary);
             padding-bottom: 8px;
             margin-bottom: 12px;
             gap: 8px;
@@ -50,27 +97,35 @@
         header h1 {
             font-size: 1.05rem;
             font-weight: 700;
-            color: var(--brand);
+            color: var(--primary);
         }
         header .updated {
             font-size: 0.7rem;
             color: var(--muted);
         }
+        @endif
         table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid var(--border);
         }
         th, td {
-            padding: 10px 8px;
+            padding: {{ $compact ? '8px 6px' : '10px 8px' }};
             text-align: center;
             border-bottom: 1px solid var(--border);
             font-size: 0.95rem;
         }
+        tbody tr:last-child td { border-bottom: 0; }
+        tbody tr:nth-child(even) td { background: var(--row-alt); }
         th {
-            background: var(--brand-soft);
-            color: var(--brand);
+            background: var(--primary-soft);
+            color: var(--primary);
             font-weight: 600;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
+            letter-spacing: 0.05em;
         }
         td.day {
             font-weight: 700;
@@ -79,7 +134,7 @@
         }
         td.count {
             color: var(--muted);
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             width: 32%;
         }
         td.count strong { color: var(--fg); font-size: 1rem; }
@@ -94,46 +149,40 @@
             font-size: 0.85rem;
             min-width: 76px;
         }
-        .badge.open   { background: var(--open-bg);    color: var(--open-fg); }
+        .badge.open    { background: var(--open-bg);    color: var(--open-fg); }
         .badge.limited { background: var(--limited-bg); color: var(--limited-fg); }
-        .badge.full   { background: var(--full-bg);    color: var(--full-fg); }
-        .badge.closed { background: var(--closed-bg);  color: var(--closed-fg); }
-        footer {
-            margin-top: 12px;
-            font-size: 0.7rem;
-            color: var(--muted);
-            text-align: right;
-        }
+        .badge.full    { background: var(--full-bg);    color: var(--full-fg); }
+        .badge.closed  { background: var(--closed-bg);  color: var(--closed-fg); }
         .note {
-            margin-top: 8px;
+            margin-top: 10px;
             font-size: 0.7rem;
             color: var(--muted);
             line-height: 1.4;
         }
+        footer {
+            margin-top: 10px;
+            font-size: 0.65rem;
+            color: var(--muted);
+            text-align: right;
+            opacity: 0.7;
+        }
         .reloading {
             display: none;
             font-size: 0.7rem;
-            color: var(--brand);
+            color: var(--primary);
             margin-left: 4px;
         }
         .reloading.show { display: inline; }
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg: #1f2937;
-                --fg: #f9fafb;
-                --muted: #9ca3af;
-                --border: #374151;
-                --brand-soft: #134e4a;
-            }
-        }
     </style>
 </head>
 <body>
     <div class="widget" id="widget-root">
+        @if($theme['header'])
         <header>
             <h1>{{ $payload['classroom']['name'] }} 空き状況<span class="reloading" id="reloading">更新中…</span></h1>
             <span class="updated" id="updated">更新: {{ \Carbon\Carbon::parse($payload['updated_at'])->format('n/j H:i') }}</span>
         </header>
+        @endif
         <table>
             <thead>
                 <tr>
@@ -166,8 +215,6 @@
 
     <script>
         // 60 秒ごとに最新の空き状況を取得して画面を書き換える。
-        // ページ遷移は発生しないので iframe 内で滑らかに見える。
-        // 取得失敗時は meta refresh (5 分) によりフォールバック再読込される。
         (function () {
             const ENDPOINT = {!! json_encode(url('/api/widget/vacancy/' . $token . '/data')) !!};
             const INTERVAL = 60 * 1000;
@@ -196,11 +243,11 @@
                         '</tr>';
                 }).join('');
                 rowsEl.innerHTML = html;
-                updatedEl.textContent = '更新: ' + formatTime(payload.updated_at);
+                if (updatedEl) updatedEl.textContent = '更新: ' + formatTime(payload.updated_at);
             }
 
             async function refresh() {
-                reloading.classList.add('show');
+                if (reloading) reloading.classList.add('show');
                 try {
                     const res = await fetch(ENDPOINT, { cache: 'no-store' });
                     if (!res.ok) return;
@@ -209,7 +256,7 @@
                 } catch (e) {
                     /* ネットワーク失敗時は次回 (60秒後) に再試行 */
                 } finally {
-                    reloading.classList.remove('show');
+                    if (reloading) reloading.classList.remove('show');
                 }
             }
 
