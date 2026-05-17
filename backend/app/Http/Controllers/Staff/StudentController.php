@@ -121,6 +121,11 @@ class StudentController extends Controller
         }
 
         $classroomId = $user->classroom_id;
+        // 待機児童 (status=waiting) は生年月日未入力で登録できるようにしたため、
+        // birth_date が空のときは grade_level の自動計算をスキップする。
+        // 一方 students.grade_level カラムは NOT NULL + DEFAULT 'elementary' のため、
+        // 計算できない場合は明示的に default 'elementary' を入れる
+        // (実運用ではコメント参照として表示。後で生年月日が判明したら再計算される)。
         $gradeLevel = null;
         if (!empty($validated['birth_date'])) {
             $gradeLevel = self::calculateGradeLevel($validated['birth_date'], $validated['grade_adjustment'] ?? 0);
@@ -135,7 +140,8 @@ class StudentController extends Controller
 
         $student = Student::create(array_merge($validated, [
             'classroom_id'    => $classroomId,
-            'grade_level'     => $gradeLevel,
+            // null だと NOT NULL 制約に引っかかるので default 'elementary' に
+            'grade_level'     => $gradeLevel ?? 'elementary',
             'status'          => $status,
             'is_active'       => $isActive,
             'password_hash'   => $password ? Hash::make($password) : null,

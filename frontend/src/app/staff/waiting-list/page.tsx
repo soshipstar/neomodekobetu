@@ -537,9 +537,9 @@ export default function WaitingListPage() {
                         <div className="min-w-[120px]">
                           <p className="font-semibold text-sm text-[var(--neutral-foreground-1)]">{s.student_name}</p>
                           <p className="text-xs text-[var(--neutral-foreground-3)]">
-                            {GRADE_LABELS[s.grade_level || ''] || s.grade_level || (
-                              <span className="text-[var(--neutral-foreground-4)]">コメント参照</span>
-                            )}
+                            {!s.birth_date
+                              ? <span className="text-[var(--neutral-foreground-4)]">コメント参照</span>
+                              : (GRADE_LABELS[s.grade_level || ''] || s.grade_level || '-')}
                           </p>
                         </div>
                         {/* Desired weekly count */}

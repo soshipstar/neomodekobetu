@@ -466,7 +466,11 @@ export default function StudentsPage() {
                           : '-'}
                     </td>
                     <td className="px-3 py-2 text-[var(--neutral-foreground-2)]">
-                      {GRADE_LABELS[student.grade_level || ''] || student.grade_level || '未設定'}
+                      {/* 待機児童で生年月日未入力なら学年は計算できないので
+                          「コメント参照」を表示 (備考 = waiting_notes へ誘導) */}
+                      {student.status === 'waiting' && !student.birth_date
+                        ? <span className="text-[var(--neutral-foreground-4)]">コメント参照</span>
+                        : (GRADE_LABELS[student.grade_level || ''] || student.grade_level || '未設定')}
                     </td>
                     <td className="px-3 py-2 text-[var(--neutral-foreground-2)]">{student.guardian?.full_name || '-'}</td>
                     <td className="px-3 py-2">
