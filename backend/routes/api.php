@@ -770,6 +770,14 @@ Route::prefix('tablet')
         Route::post('/activities/integrate', [App\Http\Controllers\Tablet\TabletController::class, 'integrateActivities']);
         Route::get('/activities/{activity}/integrate-data', [App\Http\Controllers\Tablet\TabletController::class, 'integrateData']);
         Route::post('/activities/{activity}/integrate-save', [App\Http\Controllers\Tablet\TabletController::class, 'saveIntegration']);
+
+        // バグ報告 (#タブレット): AI生成・保護者送信・送信済閲覧 をタブレットからも実行可能に。
+        // ロジックは Staff\RenrakuchoController を再利用 (内部で user->classroom_id を見るので
+        // タブレットユーザでも所属教室の record にしかアクセスできない)。
+        // {activity} は daily_records のルートモデル束縛 = staff 側の {record} と同じ。
+        Route::post('/activities/{record}/generate-integrated', [App\Http\Controllers\Staff\RenrakuchoController::class, 'generateIntegrated']);
+        Route::post('/activities/{record}/send-to-guardians',   [App\Http\Controllers\Staff\RenrakuchoController::class, 'sendToGuardians']);
+        Route::get('/activities/{record}/view-integrated',      [App\Http\Controllers\Staff\RenrakuchoController::class, 'viewIntegrated']);
         Route::get('/active-dates', [App\Http\Controllers\Tablet\TabletController::class, 'activeDates']);
         Route::get('/support-plans', [App\Http\Controllers\Tablet\TabletController::class, 'supportPlans']);
         Route::post('/renrakucho', [App\Http\Controllers\Tablet\TabletController::class, 'storeRenrakucho']);

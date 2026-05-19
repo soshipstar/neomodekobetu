@@ -507,13 +507,16 @@ export default function TabletHomePage() {
                     <MaterialIcon name="edit_note" size={18} />
                     <span>連絡帳</span>
                   </Link>
+                  {/* バグ報告 (タブレットユーザ): AI生成・送信・送信済確認 が
+                      まとめてここから出来るようになったため、ラベルを「統合」から
+                      「送信/確認」に変更。送信済の場合もこのページから内容を確認可能。 */}
                   <Link
                     href={`/tablet/integrate?id=${activity.id}&date=${selectedDateStr}`}
-                    className="flex items-center gap-1 rounded-lg bg-gray-600 px-3 py-2 text-sm font-bold text-white hover:bg-gray-700 sm:px-4 sm:text-base lg:px-5 lg:py-2.5 lg:text-lg"
-                    title="統合"
+                    className="flex items-center gap-1 rounded-lg bg-purple-600 px-3 py-2 text-sm font-bold text-white hover:bg-purple-700 sm:px-4 sm:text-base lg:px-5 lg:py-2.5 lg:text-lg"
+                    title="AIで連絡帳を作成、保護者に送信、送信済の内容確認"
                   >
-                    <MaterialIcon name="merge_type" size={18} />
-                    <span>統合</span>
+                    <MaterialIcon name="send" size={18} />
+                    <span>送信/確認</span>
                   </Link>
                   <button
                     onClick={() => handleDelete(activity.id)}
