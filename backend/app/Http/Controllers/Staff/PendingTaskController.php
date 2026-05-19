@@ -126,13 +126,15 @@ class PendingTaskController extends Controller
 
                     // デフォルトの7行詳細を作成
                     $defaultDetails = [
+                        // バグ報告 (石川達也さん @てらこや):
+                        //  「移行支援」を必須として追加、「地域支援」はデフォルトから外す
                         ['domain' => '健康・生活', 'category' => '本人支援', 'sub_category' => '生活習慣（健康・生活）'],
                         ['domain' => '言語・コミュニケーション', 'category' => '本人支援', 'sub_category' => 'コミュニケーション（言語・コミュニケーション）'],
                         ['domain' => '人間関係・社会性', 'category' => '本人支援', 'sub_category' => '対人関係（人間関係・社会性）'],
                         ['domain' => '運動・感覚', 'category' => '本人支援', 'sub_category' => '運動機能（運動・感覚）'],
                         ['domain' => '認知・行動', 'category' => '本人支援', 'sub_category' => '学習面（認知・行動）'],
                         ['domain' => '家族支援', 'category' => '家族支援', 'sub_category' => '保護者支援'],
-                        ['domain' => '地域支援', 'category' => '地域支援', 'sub_category' => '地域連携'],
+                        ['domain' => '移行支援', 'category' => '移行支援', 'sub_category' => '学校・他事業所等への移行'],
                     ];
                     foreach ($defaultDetails as $i => $detail) {
                         $autoPlan->details()->create(array_merge($detail, ['sort_order' => $i]));
@@ -319,6 +321,8 @@ class PendingTaskController extends Controller
                             'source_monitoring_id' => $student->monitoringRecords()->where('plan_id', $completedPlan->id)->value('id'),
                         ]);
 
+                        // バグ報告 (石川達也さん @てらこや):
+                        //  「移行支援」を必須として追加、「地域支援」はデフォルトから外す
                         $defaultDetails = [
                             ['domain' => '健康・生活', 'category' => '本人支援', 'sub_category' => '生活習慣（健康・生活）'],
                             ['domain' => '言語・コミュニケーション', 'category' => '本人支援', 'sub_category' => 'コミュニケーション（言語・コミュニケーション）'],
@@ -326,7 +330,7 @@ class PendingTaskController extends Controller
                             ['domain' => '運動・感覚', 'category' => '本人支援', 'sub_category' => '運動機能（運動・感覚）'],
                             ['domain' => '認知・行動', 'category' => '本人支援', 'sub_category' => '学習面（認知・行動）'],
                             ['domain' => '家族支援', 'category' => '家族支援', 'sub_category' => '保護者支援'],
-                            ['domain' => '地域支援', 'category' => '地域支援', 'sub_category' => '地域連携'],
+                            ['domain' => '移行支援', 'category' => '移行支援', 'sub_category' => '学校・他事業所等への移行'],
                         ];
                         foreach ($defaultDetails as $i => $detail) {
                             $autoPlan->details()->create(array_merge($detail, ['sort_order' => $i]));

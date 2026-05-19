@@ -19,6 +19,9 @@ interface PlanFormProps {
   onCancel: () => void;
 }
 
+// バグ報告 (石川達也さん @てらこや):
+//  「移行支援」を必須として追加、「地域支援」はデフォルトから外す
+//  (地域支援は必要時のみ追加する運用に変更)
 const DEFAULT_DETAILS = [
   { category: '本人支援', sub_category: '生活習慣（健康・生活）', staff_organization: '保育士\n児童指導員' },
   { category: '本人支援', sub_category: 'コミュニケーション（言語・コミュニケーション）', staff_organization: '保育士\n児童指導員' },
@@ -26,7 +29,7 @@ const DEFAULT_DETAILS = [
   { category: '本人支援', sub_category: '運動・感覚（運動・感覚）', staff_organization: '保育士\n児童指導員' },
   { category: '本人支援', sub_category: '学習（認知・行動）', staff_organization: '保育士\n児童指導員' },
   { category: '家族支援', sub_category: '保護者支援', staff_organization: '児童発達支援管理責任者\n保育士' },
-  { category: '地域支援', sub_category: '関係機関連携', staff_organization: '児童発達支援管理責任者' },
+  { category: '移行支援', sub_category: '学校・他事業所等への移行', staff_organization: '児童発達支援管理責任者' },
 ];
 
 export function PlanForm({ studentId, existingPlan, onSuccess, onCancel }: PlanFormProps) {

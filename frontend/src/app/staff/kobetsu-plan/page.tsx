@@ -98,6 +98,9 @@ interface PlanForm {
 // Defaults
 // ---------------------------------------------------------------------------
 
+// バグ報告 (石川達也さん @てらこや):
+//  「移行支援」を必須として追加、「地域支援」はデフォルトから外す
+//  (地域支援は必要時のみ追加する運用に変更)
 const DEFAULT_DETAILS: SupportPlanDetail[] = [
   { category: '本人支援', sub_category: '生活習慣（健康・生活）', support_goal: '', support_content: '', achievement_date: '', staff_organization: '保育士\n児童指導員', notes: '', priority: 1, sort_order: 1 },
   { category: '本人支援', sub_category: 'コミュニケーション（言語・コミュニケーション）', support_goal: '', support_content: '', achievement_date: '', staff_organization: '保育士\n児童指導員', notes: '', priority: 2, sort_order: 2 },
@@ -105,7 +108,7 @@ const DEFAULT_DETAILS: SupportPlanDetail[] = [
   { category: '本人支援', sub_category: '運動・感覚（運動・感覚）', support_goal: '', support_content: '', achievement_date: '', staff_organization: '保育士\n児童指導員', notes: '', priority: 4, sort_order: 4 },
   { category: '本人支援', sub_category: '学習（認知・行動）', support_goal: '', support_content: '', achievement_date: '', staff_organization: '保育士\n児童指導員', notes: '', priority: 5, sort_order: 5 },
   { category: '家族支援', sub_category: '保護者支援', support_goal: '', support_content: '', achievement_date: '', staff_organization: '児童発達支援管理責任者', notes: '', priority: 6, sort_order: 6 },
-  { category: '地域支援', sub_category: '関係機関連携', support_goal: '', support_content: '', achievement_date: '', staff_organization: '児童発達支援管理責任者', notes: '', priority: 7, sort_order: 7 },
+  { category: '移行支援', sub_category: '学校・他事業所等への移行', support_goal: '', support_content: '', achievement_date: '', staff_organization: '児童発達支援管理責任者', notes: '', priority: 7, sort_order: 7 },
 ];
 
 const emptyForm = (): PlanForm => ({
@@ -930,7 +933,8 @@ export default function KobetsuPlanPage() {
                             <option value="">選択してください</option>
                             <option value="本人支援">本人支援</option>
                             <option value="家族支援">家族支援</option>
-                            <option value="地域支援">地域支援</option>
+                            <option value="移行支援">移行支援</option>
+                            <option value="地域支援">地域支援（必要時）</option>
                           </select>
                         </div>
                         <div>
