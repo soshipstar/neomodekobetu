@@ -382,13 +382,24 @@ class UnsentRecordsController extends Controller
 
     /**
      * 欠席時対応加算一覧
+     *
+     * バグ報告 (淡田由貴さん): 保護者が入力した体温・症状・通院・困りごと
+     * および スタッフが入力するアドバイスを画面で扱えるよう、絡みの絶える
+     * absence_notification (= 欠席連絡) を一緒に返す。
      */
     public function absenceResponseList(Request $request): JsonResponse
     {
         $user = $request->user();
 
         $query = AbsenceResponseRecord::whereIn('classroom_id', $user->accessibleClassroomIds())
-            ->with(['student:id,student_name,grade_level', 'staff:id,full_name']);
+            ->with([
+                'student:id,student_name,grade_level',
+                'staff:id,full_name',
+                'absenceNotification:id,student_id,absence_date,reason,body_temperature,hospital_visit,'
+                    . 'symptom_abdominal_pain,symptom_headache,symptom_sore_throat,symptom_cough,'
+                    . 'symptom_sneeze,symptom_runny_nose,other_concerns,advice,advice_by,advice_at',
+                'absenceNotification.adviceAuthor:id,full_name',
+            ]);
 
         if ($request->filled('date_from')) {
             $query->where('absence_date', '>=', $request->date_from);

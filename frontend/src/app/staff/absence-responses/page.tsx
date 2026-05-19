@@ -6,10 +6,28 @@ import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { SkeletonList } from '@/components/ui/Skeleton';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/components/ui/Toast';
 import { format, subMonths } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+
+interface AbsenceNotification {
+  id: number;
+  reason: string | null;
+  body_temperature: number | string | null;
+  hospital_visit: boolean | null;
+  symptom_abdominal_pain: boolean;
+  symptom_headache: boolean;
+  symptom_sore_throat: boolean;
+  symptom_cough: boolean;
+  symptom_sneeze: boolean;
+  symptom_runny_nose: boolean;
+  other_concerns: string | null;
+  advice: string | null;
+  advice_at: string | null;
+  advice_author?: { id: number; full_name: string } | null;
+}
 
 interface AbsenceResponseItem {
   id: number;
@@ -23,11 +41,26 @@ interface AbsenceResponseItem {
   guardian_confirmed: boolean;
   student: { id: number; student_name: string; grade_level: string | null } | null;
   staff: { id: number; full_name: string } | null;
+  absence_notification: AbsenceNotification | null;
 }
 
+const SYMPTOM_LABELS: Array<{ key: keyof Pick<AbsenceNotification, 'symptom_abdominal_pain'|'symptom_headache'|'symptom_sore_throat'|'symptom_cough'|'symptom_sneeze'|'symptom_runny_nose'>; label: string }> = [
+  { key: 'symptom_abdominal_pain', label: '腹痛' },
+  { key: 'symptom_headache',       label: '頭痛' },
+  { key: 'symptom_sore_throat',    label: '咽頭痛' },
+  { key: 'symptom_cough',          label: '咳' },
+  { key: 'symptom_sneeze',         label: 'くしゃみ' },
+  { key: 'symptom_runny_nose',     label: '鼻水' },
+];
+
 export default function AbsenceResponsesPage() {
+  const toast = useToast();
+  const queryClient = useQueryClient();
   const [dateFrom, setDateFrom] = useState(() => format(subMonths(new Date(), 1), 'yyyy-MM-dd'));
   const [dateTo, setDateTo] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+  const [showGuide, setShowGuide] = useState(true);
+  const [expanded, setExpanded] = useState<Record<number, boolean>>({});
+  const [adviceDrafts, setAdviceDrafts] = useState<Record<number, string>>({});
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['staff', 'absence-responses', dateFrom, dateTo],
@@ -38,6 +71,20 @@ export default function AbsenceResponsesPage() {
   });
 
   const records: AbsenceResponseItem[] = data || [];
+
+  // バグ報告 (淡田由貴さん): スタッフがアドバイスを入力できる UI が無かった。
+  // BE 側のエンドポイント (PUT /api/staff/absence/{id}/advice) を呼び出し、
+  // 保存後に保護者へ通知 + チャットへも自動投稿される。
+  const adviceMutation = useMutation({
+    mutationFn: ({ absenceNotificationId, advice }: { absenceNotificationId: number; advice: string }) =>
+      api.put(`/api/staff/absence/${absenceNotificationId}/advice`, { advice }),
+    onSuccess: () => {
+      toast.success('アドバイスを保存しました。保護者に通知が送られます。');
+      queryClient.invalidateQueries({ queryKey: ['staff', 'absence-responses'] });
+    },
+    onError: (e: { response?: { data?: { message?: string } } }) =>
+      toast.error(e?.response?.data?.message || 'アドバイスの保存に失敗しました'),
+  });
 
   const handleCsvDownload = useCallback(async () => {
     try {
@@ -70,6 +117,50 @@ export default function AbsenceResponsesPage() {
           </Button>
         </div>
       </div>
+
+      {/* ────────────────────────────────────────────────────────────────
+          使い方ガイド (バグ報告 #淡田由貴さん: 様式の入力導線が分からなかった)
+          開閉式。閉じても次回は開いた状態で戻る (要望時に詳細を確認しやすく)。
+      ──────────────────────────────────────────────────────────────── */}
+      {showGuide && (
+        <Card>
+          <CardBody>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <h2 className="flex items-center gap-2 text-sm font-bold text-[var(--brand-80)]">
+                <MaterialIcon name="info" size={18} />
+                欠席時対応加算 — 使い方ガイド
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowGuide(false)}
+                className="rounded p-1 text-[var(--neutral-foreground-4)] hover:bg-[var(--neutral-background-3)]"
+                aria-label="ガイドを閉じる"
+              >
+                <MaterialIcon name="close" size={16} />
+              </button>
+            </div>
+            <ol className="ml-5 list-decimal space-y-1.5 text-xs text-[var(--neutral-foreground-2)]">
+              <li>
+                <strong>保護者が体温・症状などを入力</strong>: 保護者は <code className="rounded bg-[var(--neutral-background-3)] px-1.5 py-0.5">/guardian/absence</code>{' '}
+                (ダッシュボード →「欠席連絡」ボタン) から、体温・通院の有無・症状チェック (腹痛/頭痛/咽頭痛/咳/くしゃみ/鼻水)・その他困っていることを入力できます。
+              </li>
+              <li>
+                <strong>本画面に欠席連絡が一覧表示</strong>: 該当する子どもが本画面のカードとして表示されます。各カードの「詳細を開く」で保護者の入力内容を確認できます。
+              </li>
+              <li>
+                <strong>スタッフがアドバイスを記入</strong>: カード詳細内の「スタッフからのアドバイス」欄に体調アドバイスを記入し「保存」を押すと、
+                <strong className="text-[var(--brand-80)]"> 保護者の連絡帳通知・チャットルームに自動投稿</strong>されます。
+              </li>
+              <li>
+                <strong>欠席時対応加算の記録としても残る</strong>: 加算請求の根拠資料として CSV ダウンロードできます (右上「CSVダウンロード」)。
+              </li>
+            </ol>
+            <p className="mt-2 text-[10px] text-[var(--neutral-foreground-4)]">
+              ※ このガイドは右上の × で閉じられます。再表示はページを開き直してください。
+            </p>
+          </CardBody>
+        </Card>
+      )}
 
       {/* Date filter */}
       <Card><CardBody>
@@ -105,7 +196,16 @@ export default function AbsenceResponsesPage() {
       {/* Records list */}
       {isLoading ? <SkeletonList items={5} /> : records.length > 0 ? (
         <div className="space-y-3">
-          {records.map((record) => (
+          {records.map((record) => {
+            const an = record.absence_notification;
+            const isExpanded = !!expanded[record.id];
+            const hasHealthInfo = an && (
+              an.body_temperature != null ||
+              an.hospital_visit ||
+              SYMPTOM_LABELS.some((s) => an[s.key]) ||
+              an.other_concerns
+            );
+            return (
             <Card key={record.id} className="transition-shadow hover:shadow-[var(--shadow-8)]">
               <CardBody>
                 <div className="flex items-start justify-between gap-2 mb-2">
@@ -114,7 +214,17 @@ export default function AbsenceResponsesPage() {
                     {record.student?.grade_level && <span className="text-xs text-[var(--neutral-foreground-3)]">{record.student.grade_level}</span>}
                     <Badge variant="info">{format(new Date(record.absence_date), 'M月d日(E)', { locale: ja })}</Badge>
                     {record.is_sent ? <Badge variant="success">送信済</Badge> : <Badge variant="warning">未送信</Badge>}
+                    {hasHealthInfo && <Badge variant="info">体調情報あり</Badge>}
+                    {an?.advice && <Badge variant="success">アドバイス記入済</Badge>}
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setExpanded((p) => ({ ...p, [record.id]: !p[record.id] }))}
+                    className="flex shrink-0 items-center gap-1 rounded border border-[var(--neutral-stroke-2)] bg-white px-2 py-1 text-xs text-[var(--neutral-foreground-2)] hover:bg-[var(--neutral-background-3)]"
+                  >
+                    <MaterialIcon name={isExpanded ? 'expand_less' : 'expand_more'} size={14} />
+                    {isExpanded ? '閉じる' : '詳細を開く'}
+                  </button>
                 </div>
 
                 {record.absence_reason && (
@@ -136,9 +246,114 @@ export default function AbsenceResponsesPage() {
                     <p className="mt-1 text-[var(--neutral-foreground-4)]">送信日時: {format(new Date(record.sent_at), 'M/d HH:mm')}</p>
                   )}
                 </div>
+
+                {/* ──────────────────────────────────────────────────
+                    展開時: 保護者の体調情報 + スタッフのアドバイス入力
+                ────────────────────────────────────────────────── */}
+                {isExpanded && an && (
+                  <div className="mt-3 space-y-3 rounded-md border border-[var(--neutral-stroke-2)] bg-white p-3">
+                    {/* 保護者の体調情報 */}
+                    <div>
+                      <h4 className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-[var(--brand-80)]">
+                        <MaterialIcon name="thermostat" size={14} />
+                        保護者から受け取った体調情報
+                      </h4>
+                      {hasHealthInfo ? (
+                        <dl className="grid grid-cols-1 gap-1.5 text-xs sm:grid-cols-2">
+                          {an.body_temperature != null && (
+                            <div className="flex items-center gap-1">
+                              <dt className="text-[var(--neutral-foreground-3)]">体温:</dt>
+                              <dd className="font-semibold text-[var(--neutral-foreground-1)]">{an.body_temperature} ℃</dd>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1">
+                            <dt className="text-[var(--neutral-foreground-3)]">通院:</dt>
+                            <dd className="font-semibold text-[var(--neutral-foreground-1)]">{an.hospital_visit ? 'あり' : 'なし'}</dd>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <dt className="text-[var(--neutral-foreground-3)] mb-0.5">症状:</dt>
+                            <dd className="flex flex-wrap gap-1">
+                              {SYMPTOM_LABELS.filter((s) => an[s.key]).length === 0 ? (
+                                <span className="text-[var(--neutral-foreground-4)]">記入なし</span>
+                              ) : (
+                                SYMPTOM_LABELS.filter((s) => an[s.key]).map((s) => (
+                                  <span key={s.key} className="rounded-full bg-[var(--status-warning-bg)] px-2 py-0.5 text-[10px] text-[var(--status-warning-fg)]">
+                                    {s.label}
+                                  </span>
+                                ))
+                              )}
+                            </dd>
+                          </div>
+                          {an.other_concerns && (
+                            <div className="sm:col-span-2">
+                              <dt className="text-[var(--neutral-foreground-3)] mb-0.5">その他困っていること:</dt>
+                              <dd className="whitespace-pre-wrap rounded bg-[var(--neutral-background-3)] p-2 text-[var(--neutral-foreground-1)]">{an.other_concerns}</dd>
+                            </div>
+                          )}
+                        </dl>
+                      ) : (
+                        <p className="text-xs text-[var(--neutral-foreground-4)]">
+                          保護者からの体調情報はまだありません。<br />
+                          保護者は『欠席連絡』画面から体温・症状などを入力できます。
+                        </p>
+                      )}
+                    </div>
+
+                    {/* スタッフのアドバイス入力 */}
+                    <div className="border-t border-[var(--neutral-stroke-2)] pt-3">
+                      <h4 className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-[var(--brand-80)]">
+                        <MaterialIcon name="psychology" size={14} />
+                        スタッフからのアドバイス
+                      </h4>
+                      {an.advice && (
+                        <div className="mb-2 rounded border border-[var(--status-success-fg)]/30 bg-[var(--status-success-bg)] p-2 text-xs">
+                          <p className="whitespace-pre-wrap text-[var(--neutral-foreground-1)]">{an.advice}</p>
+                          {(an.advice_author || an.advice_at) && (
+                            <p className="mt-1 text-[10px] text-[var(--neutral-foreground-4)]">
+                              {an.advice_author?.full_name ?? ''}
+                              {an.advice_at ? ` (${format(new Date(an.advice_at), 'M/d HH:mm')})` : ''}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      <textarea
+                        value={adviceDrafts[record.id] ?? an.advice ?? ''}
+                        onChange={(e) => setAdviceDrafts((p) => ({ ...p, [record.id]: e.target.value }))}
+                        className="block w-full resize-none rounded border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-2 py-1.5 text-xs text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none"
+                        rows={3}
+                        placeholder="体温や症状を踏まえたアドバイスを記入してください (保護者に通知 + チャット投稿されます)"
+                      />
+                      <div className="mt-2 flex justify-end">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          leftIcon={<MaterialIcon name="send" size={14} />}
+                          isLoading={adviceMutation.isPending && adviceMutation.variables?.absenceNotificationId === an.id}
+                          onClick={() => {
+                            const text = (adviceDrafts[record.id] ?? an.advice ?? '').trim();
+                            if (!text) {
+                              toast.error('アドバイスを入力してください');
+                              return;
+                            }
+                            adviceMutation.mutate({ absenceNotificationId: an.id, advice: text });
+                          }}
+                        >
+                          {an.advice ? 'アドバイスを更新' : 'アドバイスを保存して保護者に通知'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {isExpanded && !an && (
+                  <div className="mt-3 rounded-md border border-dashed border-[var(--neutral-stroke-2)] bg-white p-3 text-xs text-[var(--neutral-foreground-4)]">
+                    この対応記録には保護者からの欠席連絡 (体調情報) が紐づいていません。
+                    口頭連絡など、保護者が画面から欠席連絡を送らずに対応した場合に該当します。
+                  </div>
+                )}
               </CardBody>
             </Card>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <Card><CardBody>
