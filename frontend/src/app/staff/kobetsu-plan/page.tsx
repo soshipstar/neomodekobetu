@@ -1262,6 +1262,9 @@ export default function KobetsuPlanPage() {
             selectedId={selectedStudentId}
             loading={loadingOverview || loadingStudents}
             onSelect={(id) => setSelectedStudentId(id)}
+            // 個別支援計画は児童を名前で探す動線が多いため
+            // 五十音順をデフォルトにする (バグ報告: 淡田由貴さん)
+            defaultSort="name_asc"
           />
         </CardBody>
       </Card>

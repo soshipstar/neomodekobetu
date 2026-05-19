@@ -63,6 +63,12 @@ interface Props {
   onSelect: (studentId: number) => void;
   loading?: boolean;
   emptyMessage?: string;
+  /**
+   * 初期の並び順。指定しなければ 'latest_desc' (最新作成日順)。
+   * 50音順 (name_asc) を既定にしたい画面はこれを 'name_asc' で渡す。
+   * バグ報告: 「個別支援計画のところでは50音順になりませんでした」
+   */
+  defaultSort?: SortKey;
 }
 
 export function StudentSortableList({
@@ -71,8 +77,9 @@ export function StudentSortableList({
   onSelect,
   loading = false,
   emptyMessage = '生徒が見つかりません',
+  defaultSort = 'latest_desc',
 }: Props) {
-  const [sortKey, setSortKey] = useState<SortKey>('latest_desc');
+  const [sortKey, setSortKey] = useState<SortKey>(defaultSort);
   const [search, setSearch] = useState('');
   const [onlyAlert, setOnlyAlert] = useState(false);
 
