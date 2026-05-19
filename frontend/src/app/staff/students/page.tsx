@@ -56,7 +56,9 @@ interface Student {
 interface Guardian {
   id: number;
   full_name: string;
-  email?: string;
+  email?: string | null;
+  classroom_id?: number | null;
+  classroom_name?: string | null;
 }
 
 interface StudentForm {
@@ -617,7 +619,12 @@ function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel
         <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">保護者（任意）</label>
         <select value={form.guardian_id} onChange={(e) => updateField('guardian_id', e.target.value)} className={inputCls}>
           <option value="">保護者を選択（後で設定可能）</option>
-          {guardians.map((g) => <option key={g.id} value={g.id}>{g.full_name}</option>)}
+          {guardians.map((g) => (
+            <option key={g.id} value={g.id}>
+              {g.full_name}
+              {g.classroom_name ? `  [${g.classroom_name}]` : ''}
+            </option>
+          ))}
         </select>
       </div>
 

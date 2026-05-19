@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
 use App\Models\ChatRoom;
+use App\Models\Classroom;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\AssessmentService;
@@ -306,19 +307,54 @@ class StudentController extends Controller
 
     /**
      * 保護者一覧を取得（生徒登録時の選択用）
+     *
+     * 修正履歴:
+     *   旧: accessibleClassroomIds() (= 自教室1つのみ) でフィルタしており、
+     *       同一企業の別教室で登録した保護者を紐づけ候補に出せなかった。
+     *   新: 自教室の company_id を取り、その企業に属する全教室の保護者を返す。
+     *       現場要望:「同企業内で複数施設使う場合は他施設で登録した保護者も
+     *       紐づけられるようにしたい」。
+     *
+     * レスポンス:
+     *   FE で「どの教室の保護者か」を表示できるよう classroom_name も含める。
      */
     public function guardians(Request $request): JsonResponse
     {
         $user = $request->user();
+        $isMaster = (bool) ($user->is_master ?? false);
 
-        $guardians = User::where('user_type', 'guardian')
-            ->when($user->classroom_id, function ($q) use ($user) {
-                $q->whereIn('classroom_id', $user->accessibleClassroomIds());
-            })
+        $query = User::where('user_type', 'guardian')
             ->where('is_active', true)
-            ->select('id', 'full_name', 'email')
+            ->with('classroom:id,classroom_name');
+
+        if (!$isMaster) {
+            // 自教室の company_id を起点に、その企業に属する全教室の保護者を許可
+            $user->loadMissing('classroom');
+            $companyId = $user->classroom?->company_id;
+            if ($companyId !== null) {
+                $classroomIds = Classroom::where('company_id', $companyId)
+                    ->pluck('id')->all();
+                $query->whereIn('classroom_id', $classroomIds);
+            } elseif ($user->classroom_id) {
+                // 企業未設定の例外ケースは従来通り自教室のみ
+                $query->where('classroom_id', $user->classroom_id);
+            } else {
+                // classroom_id すら無い場合は空配列
+                $query->whereRaw('1=0');
+            }
+        }
+
+        $guardians = $query
+            ->select('id', 'full_name', 'email', 'classroom_id')
             ->orderBy('full_name')
-            ->get();
+            ->get()
+            ->map(fn ($g) => [
+                'id'             => $g->id,
+                'full_name'      => $g->full_name,
+                'email'          => $g->email,
+                'classroom_id'   => $g->classroom_id,
+                'classroom_name' => $g->classroom?->classroom_name,
+            ]);
 
         return response()->json([
             'success' => true,

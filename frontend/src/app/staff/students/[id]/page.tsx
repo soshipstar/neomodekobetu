@@ -147,12 +147,15 @@ function StudentInfo({ studentId, student }: { studentId: number; student: Stude
     guardian_id: (student as any).guardian_id ? String((student as any).guardian_id) : '',
   });
 
-  // 同教室の保護者候補一覧 (= /staff/students 一覧モーダルと同じエンドポイント)。
+  // 同企業 (= 自教室の company_id 配下) の全保護者候補。
+  // 他施設で登録された保護者も含む (BE で company_id ベースに修正済)。
   // 編集モードに入ったら fetch する (常時 fetch しないことで通信を節約)。
-  const { data: guardians = [] } = useQuery<{ id: number; full_name: string; email: string | null }[]>({
+  const { data: guardians = [] } = useQuery<
+    { id: number; full_name: string; email: string | null; classroom_id: number | null; classroom_name: string | null }[]
+  >({
     queryKey: ['staff', 'students', 'guardians'],
     queryFn: async () => {
-      const res = await api.get<{ data: { id: number; full_name: string; email: string | null }[] }>('/api/staff/students/guardians');
+      const res = await api.get<{ data: { id: number; full_name: string; email: string | null; classroom_id: number | null; classroom_name: string | null }[] }>('/api/staff/students/guardians');
       return res.data.data;
     },
     enabled: editing,
@@ -203,7 +206,20 @@ function StudentInfo({ studentId, student }: { studentId: number; student: Stude
             <div>
               <dt className="text-xs font-medium text-[var(--neutral-foreground-3)]">保護者</dt>
               <dd className="mt-1 text-sm text-[var(--neutral-foreground-1)]">
-                {student.guardian?.full_name || (
+                {student.guardian?.full_name ? (
+                  <span className="inline-flex items-center gap-2">
+                    <span>{student.guardian.full_name}</span>
+                    {/* 紐づけ済でも「変更」ボタンで即座に編集モードへ。
+                        紐づけ解除や別の保護者への切替もここから出来る。 */}
+                    <button
+                      type="button"
+                      onClick={() => setEditing(true)}
+                      className="rounded border border-[var(--neutral-stroke-2)] px-2 py-0.5 text-xs text-[var(--neutral-foreground-2)] hover:bg-[var(--neutral-background-3)]"
+                    >
+                      変更
+                    </button>
+                  </span>
+                ) : (
                   <span className="inline-flex items-center gap-2">
                     <span className="text-[var(--neutral-foreground-4)]">未紐づけ</span>
                     <button
@@ -276,10 +292,12 @@ function StudentInfo({ studentId, student }: { studentId: number; student: Stude
           <Input label="支援開始日" type="date" value={form.support_start_date} onChange={(e) => setForm({ ...form, support_start_date: e.target.value })} />
           {/* 保護者紐づけ。登録時に「あとで」を選んだ場合や、保護者を
               入れ替えたい場合にこの select から設定する。
-              保存時に BE が新規紐づけを検知すると ChatRoom も自動生成する。 */}
+              保存時に BE が新規紐づけを検知すると ChatRoom も自動生成する。
+              候補には自教室だけでなく同企業内の全教室の保護者が含まれる
+              (option ラベルに教室名を併記して識別しやすくする)。 */}
           <div>
             <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">
-              保護者（あとから紐づけ可）
+              保護者（あとから変更可）
             </label>
             <select
               className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
@@ -289,12 +307,16 @@ function StudentInfo({ studentId, student }: { studentId: number; student: Stude
               <option value="">未紐づけ（保護者なし）</option>
               {guardians.map((g) => (
                 <option key={g.id} value={g.id}>
-                  {g.full_name}{g.email ? ` (${g.email})` : ''}
+                  {g.full_name}
+                  {g.classroom_name ? `  [${g.classroom_name}]` : ''}
+                  {g.email ? `  (${g.email})` : ''}
                 </option>
               ))}
             </select>
             <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">
-              ※候補に保護者が見つからない場合は、先に「保護者管理」画面で保護者ユーザーを作成してください。新規に紐づけるとチャットルームも自動的に作られます。
+              ※同一企業内の全教室の保護者から選べます。候補に該当者がいない場合は、
+              先に「保護者管理」画面で保護者ユーザーを作成してください。
+              新規に紐づけるとチャットルームも自動的に作られます。
             </p>
           </div>
           <div>
