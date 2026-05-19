@@ -308,15 +308,23 @@ class StudentController extends Controller
     /**
      * 保護者一覧を取得（生徒登録時の選択用）
      *
-     * 修正履歴:
-     *   旧: accessibleClassroomIds() (= 自教室1つのみ) でフィルタしており、
-     *       同一企業の別教室で登録した保護者を紐づけ候補に出せなかった。
-     *   新: 自教室の company_id を取り、その企業に属する全教室の保護者を返す。
-     *       現場要望:「同企業内で複数施設使う場合は他施設で登録した保護者も
-     *       紐づけられるようにしたい」。
+     * 設計思想:
+     *   「保護者は教室属性を持たず、企業 (company) に属する」が正しい設計。
+     *   ただし現実装は legacy で users.classroom_id を保護者にも持たせて
+     *   いる + classroom_user pivot で多対多も併存 + 児童 (students) 経由でも
+     *   関連付け可能、という 3 経路が並走している。
+     *
+     *   そのため「同企業内のどこかの教室と関連付くか」を以下 3 経路の OR で
+     *   判定し、設計のズレを吸収する:
+     *     (a) 保護者の児童が同企業内の教室にいる    (students.classroom_id 経由)
+     *     (b) classroom_user pivot に同企業の教室がある (多対多経由)
+     *     (c) users.classroom_id が同企業内 (legacy 1対1)
+     *
+     *   この方式なら保護者の users.classroom_id がどこに設定されていても、
+     *   その人の児童が我が社の教室にいれば候補に出る。
      *
      * レスポンス:
-     *   FE で「どの教室の保護者か」を表示できるよう classroom_name も含める。
+     *   FE 表示用に classroom_name (児童在籍教室名の代表 or primary) も同梱。
      */
     public function guardians(Request $request): JsonResponse
     {
@@ -328,37 +336,76 @@ class StudentController extends Controller
             ->with('classroom:id,classroom_name');
 
         if (!$isMaster) {
-            // 自教室の company_id を起点に、その企業に属する全教室の保護者を許可
             $user->loadMissing('classroom');
             $companyId = $user->classroom?->company_id;
             if ($companyId !== null) {
-                $classroomIds = Classroom::where('company_id', $companyId)
+                $companyClassroomIds = Classroom::where('company_id', $companyId)
                     ->pluck('id')->all();
-                $query->whereIn('classroom_id', $classroomIds);
+
+                // 3 経路の OR (詳細は phpdoc 参照)
+                $query->where(function ($q) use ($companyClassroomIds) {
+                    // (a) 児童経由
+                    $q->whereIn('id', function ($sub) use ($companyClassroomIds) {
+                        $sub->select('guardian_id')
+                            ->from('students')
+                            ->whereIn('classroom_id', $companyClassroomIds)
+                            ->whereNotNull('guardian_id');
+                    })
+                    // (b) classroom_user pivot 経由
+                    ->orWhereIn('id', function ($sub) use ($companyClassroomIds) {
+                        $sub->select('user_id')
+                            ->from('classroom_user')
+                            ->whereIn('classroom_id', $companyClassroomIds);
+                    })
+                    // (c) users.classroom_id (legacy 1対1)
+                    ->orWhereIn('classroom_id', $companyClassroomIds);
+                });
             } elseif ($user->classroom_id) {
-                // 企業未設定の例外ケースは従来通り自教室のみ
                 $query->where('classroom_id', $user->classroom_id);
             } else {
-                // classroom_id すら無い場合は空配列
                 $query->whereRaw('1=0');
             }
         }
 
+        // 児童在籍教室の名前を別途取得して表示ラベルに使う
+        // (users.classroom_id ベースだと、児童だけが別教室の保護者で
+        //  「[教室名なし]」になり判別不能になる)
         $guardians = $query
             ->select('id', 'full_name', 'email', 'classroom_id')
             ->orderBy('full_name')
-            ->get()
-            ->map(fn ($g) => [
+            ->get();
+
+        // 各保護者の児童が在籍している教室名を全て取得 (FE表示用)
+        $guardianIds = $guardians->pluck('id')->all();
+        $studentClassrooms = Student::whereIn('guardian_id', $guardianIds)
+            ->whereNotNull('classroom_id')
+            ->with('classroom:id,classroom_name')
+            ->get(['id', 'guardian_id', 'classroom_id'])
+            ->groupBy('guardian_id');
+
+        $data = $guardians->map(function ($g) use ($studentClassrooms) {
+            $childClassroomNames = ($studentClassrooms[$g->id] ?? collect())
+                ->pluck('classroom.classroom_name')
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+            // 表示優先順: 児童在籍教室 > primary classroom_id
+            $displayName = !empty($childClassroomNames)
+                ? implode(' / ', $childClassroomNames)
+                : ($g->classroom?->classroom_name);
+            return [
                 'id'             => $g->id,
                 'full_name'      => $g->full_name,
                 'email'          => $g->email,
                 'classroom_id'   => $g->classroom_id,
-                'classroom_name' => $g->classroom?->classroom_name,
-            ]);
+                'classroom_name' => $displayName, // 児童の在籍教室を優先
+            ];
+        });
 
         return response()->json([
             'success' => true,
-            'data'    => $guardians,
+            'data'    => $data,
         ]);
     }
 
