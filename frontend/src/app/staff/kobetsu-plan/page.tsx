@@ -280,7 +280,20 @@ export default function KobetsuPlanPage() {
       toast.success('正式版として確定しました');
       setView('list');
     },
-    onError: () => toast.error('確定に失敗しました'),
+    onError: (e: { response?: { data?: { message?: string } } }) =>
+      toast.error(e?.response?.data?.message || '確定に失敗しました'),
+  });
+
+  // 緊急復旧用: 中身が空のまま official 化してしまった計画を draft に戻す。
+  // バグ報告 (淡田由貴さん) の救済手段。
+  const revertToDraftMutation = useMutation({
+    mutationFn: (id: number) => api.post(`/api/staff/support-plans/${id}/revert-to-draft`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['staff', 'support-plans', 'individual'] });
+      toast.success('下書きに戻しました。内容を編集できます');
+    },
+    onError: (e: { response?: { data?: { message?: string } } }) =>
+      toast.error(e?.response?.data?.message || '下書きへの戻しに失敗しました'),
   });
 
   const signMutation = useMutation({
@@ -1156,7 +1169,19 @@ export default function KobetsuPlanPage() {
                     size="sm"
                     leftIcon={<MaterialIcon name="description" size={18} />}
                     onClick={() => {
-                      if (confirm('紙面で署名済みとして確定しますか？\nこの操作により下書き状態が解除され、正式な計画書として扱われます。')) {
+                      // バグ報告 (淡田由貴さん @てらこや):
+                      //   中身が空のまま「紙面サイン済み」を押すと編集できない状態に陥る。
+                      //   FE 側でも事前にチェックし、空の場合は警告 (BE 側も 422 で防御)。
+                      const longGoal  = String(form.long_term_goal ?? '').trim();
+                      const shortGoal = String(form.short_term_goal ?? '').trim();
+                      const anyDetailFilled = (form.details ?? []).some((d: { support_goal?: string; support_content?: string }) =>
+                        String(d.support_goal ?? '').trim() || String(d.support_content ?? '').trim(),
+                      );
+                      if (!longGoal && !shortGoal && !anyDetailFilled) {
+                        alert('内容が未入力の状態では確定できません。\n長期目標・短期目標・各項目のいずれかを入力してから「紙面でサイン済み」を押してください。');
+                        return;
+                      }
+                      if (confirm('紙面で署名済みとして確定しますか？\nこの操作により下書き状態が解除され、正式な計画書として扱われます。\n\n※確定後に内容を変更したい場合は、画面右下の「下書きに戻す」ボタンから戻せます。')) {
                         makeOfficialMutation.mutate(editingPlanId);
                       }
                     }}
@@ -1167,7 +1192,27 @@ export default function KobetsuPlanPage() {
                 </>
               )}
               {isReadOnly && (
-                <Badge variant="success">この計画は署名済みです</Badge>
+                <>
+                  <Badge variant="success">この計画は署名済みです</Badge>
+                  {/* 確定後でも「下書きに戻す」で復旧できる動線。
+                      バグ報告 (空のまま紙面サイン → 編集不可) の救済手段。 */}
+                  {editingPlanId && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      leftIcon={<MaterialIcon name="undo" size={16} />}
+                      onClick={() => {
+                        if (confirm('この計画を下書きに戻しますか？\n\n署名情報・確定状態がクリアされ、再編集できるようになります。\n(誤って空のまま確定してしまった場合などに使ってください)')) {
+                          revertToDraftMutation.mutate(editingPlanId);
+                        }
+                      }}
+                      isLoading={revertToDraftMutation.isPending}
+                    >
+                      下書きに戻す
+                    </Button>
+                  )}
+                </>
               )}
 
               <div className="flex-1" />

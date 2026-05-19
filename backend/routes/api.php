@@ -350,6 +350,8 @@ Route::prefix('staff')
         Route::get('/support-plans/{plan}/export', [App\Http\Controllers\Staff\SupportPlanController::class, 'export']);
         Route::post('/support-plans/{plan}/publish', [App\Http\Controllers\Staff\SupportPlanController::class, 'publish']);
         Route::post('/support-plans/{plan}/make-official', [App\Http\Controllers\Staff\SupportPlanController::class, 'makeOfficial']);
+        // 緊急復旧用: 中身が空のまま確定してしまった official プランを draft に戻す
+        Route::post('/support-plans/{plan}/revert-to-draft', [App\Http\Controllers\Staff\SupportPlanController::class, 'revertToDraft']);
         Route::post('/support-plans/{plan}/request-signature', [App\Http\Controllers\Staff\SupportPlanController::class, 'requestSignature']);
         Route::get('/support-plans/{plan}/basis', [App\Http\Controllers\Staff\SupportPlanController::class, 'basis']);
         Route::post('/support-plans/{plan}/generate-basis', [App\Http\Controllers\Staff\SupportPlanController::class, 'generateBasis']);

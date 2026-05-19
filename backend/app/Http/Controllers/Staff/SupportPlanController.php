@@ -861,17 +861,39 @@ class SupportPlanController extends Controller
     }
 
     /**
-     * 正式版に変更
+     * 正式版に変更 (= 紙面サイン済みとして確定)
+     *
+     * バグ報告 (淡田由貴さん @てらこや):
+     *   「紙面でサイン済み」を選んで確定したら中身が空のまま official に
+     *   なってしまい、その後編集ができない児童が発生 (金堂桜久, 渡邊大誠)。
+     *
+     * 修正: 中身が実質空 (長期目標・短期目標・全 detail goal がすべて空)
+     *       のまま確定しようとした場合は 422 で拒否し、ユーザーに入力を促す。
      */
     public function makeOfficial(Request $request, IndividualSupportPlan $plan): JsonResponse
     {
-        $plan->load('student');
+        $plan->load('student', 'details');
         $this->authorizeClassroom($request->user(), $plan->student);
 
         if ($plan->status === 'official') {
             return response()->json([
                 'success' => false,
                 'message' => 'すでに正式版です。',
+            ], 422);
+        }
+
+        // 内容が実質空のまま確定しようとしていないかチェック
+        $hasLongTerm  = !empty(trim((string) $plan->long_term_goal));
+        $hasShortTerm = !empty(trim((string) $plan->short_term_goal));
+        $hasAnyDetailGoal = $plan->details
+            ->contains(fn ($d) => !empty(trim((string) $d->goal))
+                || !empty(trim((string) $d->support_content))
+                || !empty(trim((string) ($d->support_goal ?? ''))));
+
+        if (!$hasLongTerm && !$hasShortTerm && !$hasAnyDetailGoal) {
+            return response()->json([
+                'success' => false,
+                'message' => '内容が未入力の計画は確定できません。長期目標・短期目標または各項目を入力してから「紙面でサイン済み」を押してください。',
             ], 422);
         }
 
@@ -887,6 +909,46 @@ class SupportPlanController extends Controller
             'success' => true,
             'data'    => $plan->fresh('details'),
             'message' => '紙面サイン済みとして確定しました。',
+        ]);
+    }
+
+    /**
+     * 確定済の計画を下書きに戻す (緊急復旧用)
+     *
+     * 「紙面でサイン済み」を誤って空のまま押した、または内容を直したい
+     * といったケース用。署名情報も合わせてクリアする。
+     */
+    public function revertToDraft(Request $request, IndividualSupportPlan $plan): JsonResponse
+    {
+        $plan->load('student');
+        $this->authorizeClassroom($request->user(), $plan->student);
+
+        if ($plan->status === 'draft') {
+            return response()->json([
+                'success' => false,
+                'message' => 'すでに下書きです。',
+            ], 422);
+        }
+
+        $plan->update([
+            'status'                => 'draft',
+            'is_official'           => false,
+            'is_draft'              => true,
+            'guardian_confirmed'    => false,
+            'guardian_confirmed_at' => null,
+            // 電子署名情報もクリア (紙面サイン経由の場合は元々ない)
+            'staff_signature'       => null,
+            'staff_signature_image' => null,
+            'staff_signature_date'  => null,
+            'guardian_signature'    => null,
+            'guardian_signature_image' => null,
+            'guardian_signature_date' => null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $plan->fresh('details'),
+            'message' => '下書きに戻しました。内容を編集できます。',
         ]);
     }
 
