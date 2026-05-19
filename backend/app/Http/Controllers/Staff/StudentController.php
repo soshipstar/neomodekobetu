@@ -248,7 +248,22 @@ class StudentController extends Controller
         }
 
         $hadNoSupportDate = empty($student->support_start_date);
+        $previousGuardianId = $student->guardian_id;
         $student->update($validated);
+
+        // 保護者が新規に紐づけられた（または変更された）場合、ChatRoom を自動作成。
+        // store() には同等処理があるが update() で「後から保護者を付けた」ケースが
+        // 抜けていたため、保護者がチャットできない不具合があった (報告 #YYYY-MM-DD)。
+        if (
+            array_key_exists('guardian_id', $validated)
+            && !empty($validated['guardian_id'])
+            && (int) $validated['guardian_id'] !== (int) $previousGuardianId
+        ) {
+            ChatRoom::firstOrCreate([
+                'student_id'  => $student->id,
+                'guardian_id' => (int) $validated['guardian_id'],
+            ]);
+        }
 
         // support_start_dateが新たに設定された場合、アセスメント期間を自動生成
         if ($hadNoSupportDate && !empty($validated['support_start_date'])) {

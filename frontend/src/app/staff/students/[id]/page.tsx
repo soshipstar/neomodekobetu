@@ -141,10 +141,30 @@ function StudentInfo({ studentId, student }: { studentId: number; student: Stude
     // 詳細ページからも編集できないと「登録時に書いたコメントが見えない」
     // 不具合になる (バグ報告: /staff/students/261)。
     waiting_notes: (student as any).waiting_notes || '',
+    // 保護者紐づけ。「あとで」を選んで登録した場合、ここから後付けできる
+    // ようにする (ユーザー報告: 「保護者の紐づけをあとにしたとき紐づけできない」)。
+    // 既存値を文字列化して select の value と揃える。
+    guardian_id: (student as any).guardian_id ? String((student as any).guardian_id) : '',
+  });
+
+  // 同教室の保護者候補一覧 (= /staff/students 一覧モーダルと同じエンドポイント)。
+  // 編集モードに入ったら fetch する (常時 fetch しないことで通信を節約)。
+  const { data: guardians = [] } = useQuery<{ id: number; full_name: string; email: string | null }[]>({
+    queryKey: ['staff', 'students', 'guardians'],
+    queryFn: async () => {
+      const res = await api.get<{ data: { id: number; full_name: string; email: string | null }[] }>('/api/staff/students/guardians');
+      return res.data.data;
+    },
+    enabled: editing,
   });
 
   const saveMutation = useMutation({
-    mutationFn: async () => api.put(`/api/staff/students/${studentId}`, form),
+    mutationFn: async () => {
+      // guardian_id は数値 or null として送る (空文字を null に正規化)
+      const payload: Record<string, unknown> = { ...form };
+      payload.guardian_id = form.guardian_id ? Number(form.guardian_id) : null;
+      return api.put(`/api/staff/students/${studentId}`, payload);
+    },
     onSuccess: () => {
       toast.success('基本情報を更新しました');
       setEditing(false);
@@ -182,7 +202,20 @@ function StudentInfo({ studentId, student }: { studentId: number; student: Stude
             </div>
             <div>
               <dt className="text-xs font-medium text-[var(--neutral-foreground-3)]">保護者</dt>
-              <dd className="mt-1 text-sm text-[var(--neutral-foreground-1)]">{student.guardian?.full_name || '-'}</dd>
+              <dd className="mt-1 text-sm text-[var(--neutral-foreground-1)]">
+                {student.guardian?.full_name || (
+                  <span className="inline-flex items-center gap-2">
+                    <span className="text-[var(--neutral-foreground-4)]">未紐づけ</span>
+                    <button
+                      type="button"
+                      onClick={() => setEditing(true)}
+                      className="rounded border border-[var(--brand-80)] px-2 py-0.5 text-xs text-[var(--brand-80)] hover:bg-[var(--brand-160)]"
+                    >
+                      保護者を紐づける
+                    </button>
+                  </span>
+                )}
+              </dd>
             </div>
             <div>
               <dt className="text-xs font-medium text-[var(--neutral-foreground-3)]">状態</dt>
@@ -241,6 +274,29 @@ function StudentInfo({ studentId, student }: { studentId: number; student: Stude
             </select>
           </div>
           <Input label="支援開始日" type="date" value={form.support_start_date} onChange={(e) => setForm({ ...form, support_start_date: e.target.value })} />
+          {/* 保護者紐づけ。登録時に「あとで」を選んだ場合や、保護者を
+              入れ替えたい場合にこの select から設定する。
+              保存時に BE が新規紐づけを検知すると ChatRoom も自動生成する。 */}
+          <div>
+            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">
+              保護者（あとから紐づけ可）
+            </label>
+            <select
+              className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
+              value={form.guardian_id}
+              onChange={(e) => setForm({ ...form, guardian_id: e.target.value })}
+            >
+              <option value="">未紐づけ（保護者なし）</option>
+              {guardians.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.full_name}{g.email ? ` (${g.email})` : ''}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">
+              ※候補に保護者が見つからない場合は、先に「保護者管理」画面で保護者ユーザーを作成してください。新規に紐づけるとチャットルームも自動的に作られます。
+            </p>
+          </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">備考</label>
             <textarea
