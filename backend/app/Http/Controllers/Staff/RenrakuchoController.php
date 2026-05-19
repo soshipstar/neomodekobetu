@@ -490,10 +490,20 @@ class RenrakuchoController extends Controller
             }
         }
 
+        // バグ報告 (現場):
+        //   「連絡帳書く際にひとりずつ登録しようとすると保存できない。
+        //    まとめて保存すると全員の一言を入れないと保存できないため不便
+        //    → 一時保存時は未記入項目があってもOKにしましょう。」
+        //
+        // 旧: notes.*.content を required にしており、1名でも空欄があると
+        //     422 で全員分が保存できない (= ひとりずつ書き溜める運用が破綻)。
+        // 新: content を nullable に緩和し、空欄はループ内で continue で
+        //     スキップする (= 入った人だけ保存)。最終送信 (sendIntegrated)
+        //     側は引き続き required のままで品質担保。
         $validated = $request->validate([
             'notes'              => 'required|array',
             'notes.*.student_id' => 'required|exists:students,id',
-            'notes.*.content'    => 'required|string',
+            'notes.*.content'    => 'nullable|string',
         ]);
 
         $savedCount = 0;
@@ -501,7 +511,7 @@ class RenrakuchoController extends Controller
         DB::transaction(function () use ($record, $validated, &$savedCount) {
             foreach ($validated['notes'] as $noteData) {
                 $studentId = $noteData['student_id'];
-                $content = trim($noteData['content']);
+                $content = trim((string) ($noteData['content'] ?? ''));
 
                 if (empty($content)) {
                     continue;
