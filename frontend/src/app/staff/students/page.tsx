@@ -14,6 +14,7 @@ import { useToast } from '@/components/ui/Toast';
 import { useDebounce } from '@/hooks/useDebounce';
 import { format } from 'date-fns';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { GuardianPicker } from '@/components/staff/GuardianPicker';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -614,18 +615,14 @@ function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel
         </div>
       </div>
 
-      {/* 保護者 */}
+      {/* 保護者 (検索式 picker。教室名は出さない = R: 保護者は概念上 企業に属する) */}
       <div>
         <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">保護者（任意）</label>
-        <select value={form.guardian_id} onChange={(e) => updateField('guardian_id', e.target.value)} className={inputCls}>
-          <option value="">保護者を選択（後で設定可能）</option>
-          {guardians.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.full_name}
-              {g.classroom_name ? `  [${g.classroom_name}]` : ''}
-            </option>
-          ))}
-        </select>
+        <GuardianPicker
+          value={form.guardian_id}
+          onChange={(v) => updateField('guardian_id', v)}
+          placeholder="名前・メールで検索（後で設定可能）"
+        />
       </div>
 
       {/* 状態 */}

@@ -15,6 +15,7 @@ import { formatDate } from '@/lib/utils';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import Link from 'next/link';
 import type { Student } from '@/types/user';
+import { GuardianPicker } from '@/components/staff/GuardianPicker';
 
 const statusLabels: Record<string, string> = {
   active: '在籍', trial: '体験', short_term: '短期', withdrawn: '退所', waiting: '待機',
@@ -147,20 +148,6 @@ function StudentInfo({ studentId, student }: { studentId: number; student: Stude
     guardian_id: (student as any).guardian_id ? String((student as any).guardian_id) : '',
   });
 
-  // 同企業 (= 自教室の company_id 配下) の全保護者候補。
-  // 他施設で登録された保護者も含む (BE で company_id ベースに修正済)。
-  // 編集モードに入ったら fetch する (常時 fetch しないことで通信を節約)。
-  const { data: guardians = [] } = useQuery<
-    { id: number; full_name: string; email: string | null; classroom_id: number | null; classroom_name: string | null }[]
-  >({
-    queryKey: ['staff', 'students', 'guardians'],
-    queryFn: async () => {
-      const res = await api.get<{ data: { id: number; full_name: string; email: string | null; classroom_id: number | null; classroom_name: string | null }[] }>('/api/staff/students/guardians');
-      return res.data.data;
-    },
-    enabled: editing,
-  });
-
   const saveMutation = useMutation({
     mutationFn: async () => {
       // guardian_id は数値 or null として送る (空文字を null に正規化)
@@ -290,31 +277,20 @@ function StudentInfo({ studentId, student }: { studentId: number; student: Stude
             </select>
           </div>
           <Input label="支援開始日" type="date" value={form.support_start_date} onChange={(e) => setForm({ ...form, support_start_date: e.target.value })} />
-          {/* 保護者紐づけ。登録時に「あとで」を選んだ場合や、保護者を
-              入れ替えたい場合にこの select から設定する。
-              保存時に BE が新規紐づけを検知すると ChatRoom も自動生成する。
-              候補には自教室だけでなく同企業内の全教室の保護者が含まれる
-              (option ラベルに教室名を併記して識別しやすくする)。 */}
+          {/* 保護者紐づけ (検索式 picker)。
+              同一企業内の全保護者から名前/メールの部分一致検索で選ぶ。
+              「教室名は出さない」= 保護者は概念上 企業に属するもの (R: ユーザー指摘)。
+              新規紐づけ時は BE 側で ChatRoom も自動生成される。 */}
           <div>
             <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">
               保護者（あとから変更可）
             </label>
-            <select
-              className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
+            <GuardianPicker
               value={form.guardian_id}
-              onChange={(e) => setForm({ ...form, guardian_id: e.target.value })}
-            >
-              <option value="">未紐づけ（保護者なし）</option>
-              {guardians.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.full_name}
-                  {g.classroom_name ? `  [${g.classroom_name}]` : ''}
-                  {g.email ? `  (${g.email})` : ''}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setForm({ ...form, guardian_id: v })}
+            />
             <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">
-              ※同一企業内の全教室の保護者から選べます。候補に該当者がいない場合は、
+              ※同一企業内の保護者から名前・メールで検索できます。該当者がいない場合は、
               先に「保護者管理」画面で保護者ユーザーを作成してください。
               新規に紐づけるとチャットルームも自動的に作られます。
             </p>
