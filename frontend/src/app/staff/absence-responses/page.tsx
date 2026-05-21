@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import api from '@/lib/api';
+import Link from 'next/link';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -109,6 +110,14 @@ export default function AbsenceResponsesPage() {
           <p className="text-sm text-[var(--neutral-foreground-3)]">欠席時対応加算の記録一覧とCSVダウンロード</p>
         </div>
         <div className="flex gap-2">
+          {/* バグ報告 (淡田由貴さん): 「様式はどこから入力しますか？」
+              対応内容の新規入力は /staff/unsent-records にあるため、ここから直接遷移できる
+              プライマリボタンを目立つ場所に配置する。 */}
+          <Link href="/staff/unsent-records">
+            <Button variant="primary" size="sm" leftIcon={<MaterialIcon name="add" size={16} />}>
+              対応内容を新規入力する
+            </Button>
+          </Link>
           <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="download" size={16} />} onClick={handleCsvDownload}>
             CSVダウンロード
           </Button>
@@ -139,20 +148,66 @@ export default function AbsenceResponsesPage() {
                 <MaterialIcon name="close" size={16} />
               </button>
             </div>
+            {/* 入力箇所別の動線を明示 (淡田由貴さん要望)
+                「様式はどこから入力しますか？」への直接回答として、
+                3 つの記入箇所と その入口 を表で並べる */}
+            <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <Link
+                href="/staff/unsent-records"
+                className="flex flex-col gap-1 rounded-md border-2 border-[var(--brand-80)] bg-white p-3 hover:bg-[var(--brand-160)]"
+              >
+                <div className="flex items-center gap-1 text-xs font-bold text-[var(--brand-80)]">
+                  <MaterialIcon name="edit_note" size={14} />
+                  ① 対応内容を新規入力 (スタッフ)
+                </div>
+                <p className="text-[11px] text-[var(--neutral-foreground-2)]">
+                  欠席の子どもに対し電話・メール等で対応した内容 (= 加算の主な様式) を入力します。
+                </p>
+                <p className="text-[10px] font-semibold text-[var(--brand-80)] underline">
+                  → 未送信日誌一覧へ
+                </p>
+              </Link>
+              <div className="flex flex-col gap-1 rounded-md border border-[var(--neutral-stroke-2)] bg-white p-3">
+                <div className="flex items-center gap-1 text-xs font-bold text-[var(--neutral-foreground-1)]">
+                  <MaterialIcon name="psychology" size={14} className="text-[var(--brand-80)]" />
+                  ② アドバイスを記入 (スタッフ)
+                </div>
+                <p className="text-[11px] text-[var(--neutral-foreground-2)]">
+                  保護者の体調情報を踏まえた助言を本画面の各カード「詳細を開く」→ 末尾のフォームから入力。保存で保護者通知 + チャット投稿。
+                </p>
+                <p className="text-[10px] text-[var(--neutral-foreground-3)]">
+                  → ↓ 下の一覧の「詳細を開く」
+                </p>
+              </div>
+              <div className="flex flex-col gap-1 rounded-md border border-[var(--neutral-stroke-2)] bg-white p-3">
+                <div className="flex items-center gap-1 text-xs font-bold text-[var(--neutral-foreground-1)]">
+                  <MaterialIcon name="thermostat" size={14} className="text-[var(--brand-80)]" />
+                  ③ 体温・症状を入力 (保護者)
+                </div>
+                <p className="text-[11px] text-[var(--neutral-foreground-2)]">
+                  保護者がスマートフォンで体温・通院の有無・症状 6 種・その他困りごとを入力。
+                </p>
+                <p className="text-[10px] text-[var(--neutral-foreground-3)]">
+                  → 保護者画面「欠席連絡」ボタン
+                </p>
+              </div>
+            </div>
+
             <ol className="ml-5 list-decimal space-y-1.5 text-xs text-[var(--neutral-foreground-2)]">
               <li>
-                <strong>保護者が体温・症状などを入力</strong>: 保護者は <code className="rounded bg-[var(--neutral-background-3)] px-1.5 py-0.5">/guardian/absence</code>{' '}
-                (ダッシュボード →「欠席連絡」ボタン) から、体温・通院の有無・症状チェック (腹痛/頭痛/咽頭痛/咳/くしゃみ/鼻水)・その他困っていることを入力できます。
+                <strong>① 様式の新規作成</strong>: <Link href="/staff/unsent-records" className="font-semibold text-[var(--brand-80)] underline">「未送信日誌一覧」</Link> に欠席児童の一覧があり、各カードの「欠席時対応を入力」から
+                電話・メール等で行った対応内容を記入します。これが加算請求の本体の様式になります。
               </li>
               <li>
-                <strong>本画面に欠席連絡が一覧表示</strong>: 該当する子どもが本画面のカードとして表示されます。各カードの「詳細を開く」で保護者の入力内容を確認できます。
+                <strong>② アドバイスの記入</strong>: 本画面の一覧の各カード「詳細を開く」を押すと、保護者から届いた体調情報 (体温・症状) と
+                スタッフのアドバイス入力欄が表示されます。保存すると<strong className="text-[var(--brand-80)]"> 保護者の連絡帳通知 + チャットルームに自動投稿</strong>されます。
               </li>
               <li>
-                <strong>スタッフがアドバイスを記入</strong>: カード詳細内の「スタッフからのアドバイス」欄に体調アドバイスを記入し「保存」を押すと、
-                <strong className="text-[var(--brand-80)]"> 保護者の連絡帳通知・チャットルームに自動投稿</strong>されます。
+                <strong>③ 保護者の体調情報</strong>: 保護者は <code className="rounded bg-[var(--neutral-background-3)] px-1.5 py-0.5">/guardian/absence</code>{' '}
+                (ダッシュボード「欠席連絡」ボタン) から、体温・通院の有無・症状 (腹痛/頭痛/咽頭痛/咳/くしゃみ/鼻水)・その他困っていることを入力できます。
               </li>
               <li>
-                <strong>欠席時対応加算の記録としても残る</strong>: 加算請求の根拠資料として CSV ダウンロードできます (右上「CSVダウンロード」)。
+                <strong>④ 加算記録 → CSV</strong>: 月次の請求根拠資料として、右上「CSVダウンロード」で対応記録一覧を出力できます。
               </li>
             </ol>
             <p className="mt-2 text-[10px] text-[var(--neutral-foreground-4)]">

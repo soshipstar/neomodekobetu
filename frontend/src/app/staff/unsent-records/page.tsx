@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '@/lib/api';
+import Link from 'next/link';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -108,9 +109,20 @@ export default function UnsentRecordsPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">未送信日誌一覧</h1>
-          <p className="text-sm text-[var(--neutral-foreground-3)]">参加予定で日誌未作成の生徒と欠席者の一覧</p>
+          <p className="text-sm text-[var(--neutral-foreground-3)]">
+            参加予定で日誌未作成の生徒と欠席者の一覧。
+            欠席者の「欠席時対応を入力」が <strong>欠席時対応加算の様式</strong> 入力場所です。
+          </p>
         </div>
-        <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="refresh" size={16} />} onClick={fetchData} isLoading={isLoading}>更新</Button>
+        <div className="flex gap-2">
+          {/* バグ報告 (淡田由貴さん): 入力場所と一覧画面の往復が分かりづらかった */}
+          <Link href="/staff/absence-responses">
+            <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="fact_check" size={16} />}>
+              欠席時対応加算一覧へ
+            </Button>
+          </Link>
+          <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="refresh" size={16} />} onClick={fetchData} isLoading={isLoading}>更新</Button>
+        </div>
       </div>
 
       {/* Date filter */}
