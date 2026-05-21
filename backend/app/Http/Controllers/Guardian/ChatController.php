@@ -38,14 +38,34 @@ class ChatController extends Controller
 
     /**
      * チャットルーム一覧を取得 (legacy chat.php と同等)
+     *
+     * バグ報告 (保護者):
+     *   「保護者画面のチャット、2事業所分表示されます。該当事業所で記入すべき
+     *    チャットのみが表示されるように修正しなさい」
+     *
+     * 原因:
+     *   同じ物理的な保護者が複数の student レコード (= 同人の別教室在籍 or
+     *   退所履歴を含む別レコード) に紐づいているケースがある。
+     *   退所済 (status=withdrawn, is_active=false) の生徒に対応する chat_room
+     *   まで一覧に出していたため、保護者から見ると「退所したはずの教室の
+     *   チャットが残っている」状態になっていた。
+     *
+     * 修正:
+     *   student が無効化済 (is_active=false / status=withdrawn) のレコードに
+     *   紐づく chat_room を一覧から除外する。
+     *   履歴閲覧は別途のアーカイブ機能で対応する (今回は対象外)。
      */
     public function rooms(Request $request): JsonResponse
     {
         $user = $request->user();
 
         $rooms = ChatRoom::where('guardian_id', $user->id)
+            ->whereHas('student', function ($q) {
+                $q->where('is_active', true)
+                  ->where('status', '!=', 'withdrawn');
+            })
             ->with([
-                'student:id,student_name,classroom_id,grade_level',
+                'student:id,student_name,classroom_id,grade_level,status,is_active',
             ])
             ->withCount([
                 'messages as unread_count' => function ($q) {
