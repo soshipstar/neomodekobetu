@@ -29,6 +29,35 @@ interface ChatMessage {
   message_type: string;
   created_at: string;
   sender?: { id: number; full_name: string } | null;
+  // バグ報告: 保護者が添付した写真がタブレットでは見えなかった (= attachment_*
+  // フィールドを interface に含めず、レンダリングも省いていた)
+  attachment_path?: string | null;
+  attachment_name?: string | null;
+  attachment_size?: number | null;
+  attachment_mime?: string | null;
+}
+
+/**
+ * 添付ファイルの URL を組み立てる。
+ * Staff/Guardian チャットと同じ規約 (/storage/{path}) で BE 配下のストレージから配信。
+ */
+function attachmentUrl(path: string): string {
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+  return `${base}/storage/${path}`;
+}
+
+/** 添付がイメージかどうか判定 (mime を優先、無ければ拡張子) */
+function isImageAttachment(msg: Pick<ChatMessage, 'attachment_mime' | 'attachment_path' | 'attachment_name'>): boolean {
+  if (msg.attachment_mime?.startsWith('image/')) return true;
+  const name = (msg.attachment_name || msg.attachment_path || '').toLowerCase();
+  return /\.(png|jpe?g|gif|webp|heic|heif|bmp|svg)$/.test(name);
+}
+
+function formatBytes(n?: number | null): string {
+  if (n == null) return '';
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
 
 /**
@@ -198,6 +227,9 @@ export default function TabletChatPage() {
                 <div className="space-y-3">
                   {messages.map((msg) => {
                     const isFromStaff = msg.sender_type === 'staff';
+                    const hasAttachment = !!msg.attachment_path;
+                    const isImage = hasAttachment && isImageAttachment(msg);
+                    const url = hasAttachment ? attachmentUrl(msg.attachment_path!) : null;
                     return (
                       <div
                         key={msg.id}
@@ -210,7 +242,46 @@ export default function TabletChatPage() {
                               : 'rounded-bl-md bg-white text-[var(--neutral-foreground-1)] shadow-sm'
                           }`}
                         >
-                          {nl(msg.message)}
+                          {msg.message && <div>{nl(msg.message)}</div>}
+
+                          {/* 添付ファイル描画 — 旧仕様では tablet チャットで非表示だった
+                              (バグ報告: 保護者が添付した写真がタブレットで見られない) */}
+                          {hasAttachment && url && (
+                            isImage ? (
+                              // 画像はインラインサムネ。タップで原寸を別タブで開く
+                              <a
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`mt-2 block ${msg.message ? '' : '-mx-1'}`}
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={url}
+                                  alt={msg.attachment_name || '画像'}
+                                  className="max-h-[280px] rounded-lg border border-black/10 object-contain"
+                                  loading="lazy"
+                                />
+                              </a>
+                            ) : (
+                              // 画像以外はファイル名 + サイズのリンク (ダウンロード可能)
+                              <a
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                download={msg.attachment_name || undefined}
+                                className={`mt-2 flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs ${
+                                  isFromStaff
+                                    ? 'bg-white/15 text-white hover:bg-white/25'
+                                    : 'bg-[var(--neutral-background-3)] text-[var(--neutral-foreground-1)] hover:bg-[var(--neutral-background-4)]'
+                                }`}
+                              >
+                                <MaterialIcon name="attach_file" size={14} />
+                                <span className="truncate">{msg.attachment_name || 'ファイル'}</span>
+                                <span className="ml-auto shrink-0 opacity-70">{formatBytes(msg.attachment_size)}</span>
+                              </a>
+                            )
+                          )}
                         </div>
                       </div>
                     );
