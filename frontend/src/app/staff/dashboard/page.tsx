@@ -218,7 +218,19 @@ export default function StaffDashboardPage() {
   const [notified, setNotified] = useState<Record<number, 'departure' | 'arrival'>>({});
   const [sendingNotify, setSendingNotify] = useState<Record<string, string>>({});
 
-  const handleQuickNotify = useCallback(async (studentId: number, chatRoomId: number, action: 'departure' | 'arrival') => {
+  // バグ報告: 到着・帰宅ボタンは誤タップで誤送信が起きやすいため、
+  // 押下時に「本当によろしいですか？」確認ダイアログを挟む。
+  const handleQuickNotify = useCallback(async (
+    studentId: number,
+    chatRoomId: number,
+    action: 'departure' | 'arrival',
+    studentName?: string,
+  ) => {
+    const label = action === 'departure' ? 'これから帰ります' : '到着しました';
+    const who = studentName ?? 'この生徒';
+    if (!window.confirm(`${who}さんの保護者に「${label}」を送信します。\n\n本当によろしいですか？`)) {
+      return;
+    }
     const key = `${studentId}-${action}`;
     setSendingNotify((prev) => ({ ...prev, [key]: action }));
     try {
@@ -227,7 +239,6 @@ export default function StaffDashboardPage() {
         room_ids: [chatRoomId],
       });
       setNotified((prev) => ({ ...prev, [studentId]: action }));
-      const label = action === 'departure' ? 'これから帰ります' : '到着しました';
       toast.success(`${label} を送信しました`);
     } catch {
       toast.error('送信に失敗しました');
@@ -845,7 +856,7 @@ export default function StaffDashboardPage() {
                                         </span>
                                       ) : (
                                         <button
-                                          onClick={() => handleQuickNotify(s.id, s.chat_room_id!, 'arrival')}
+                                          onClick={() => handleQuickNotify(s.id, s.chat_room_id!, 'arrival', s.name)}
                                           disabled={arrivalSending}
                                           className="flex items-center gap-0.5 rounded border border-[var(--brand-80)]/30 bg-[var(--brand-10)] px-1 py-0.5 text-[10px] font-medium text-[var(--brand-100)] hover:bg-[var(--brand-20)] transition-colors disabled:opacity-50"
                                         >
@@ -859,7 +870,7 @@ export default function StaffDashboardPage() {
                                         </span>
                                       ) : (
                                         <button
-                                          onClick={() => handleQuickNotify(s.id, s.chat_room_id!, 'departure')}
+                                          onClick={() => handleQuickNotify(s.id, s.chat_room_id!, 'departure', s.name)}
                                           disabled={departSending}
                                           className="flex items-center gap-0.5 rounded border border-[var(--brand-80)]/30 bg-[var(--brand-10)] px-1 py-0.5 text-[10px] font-medium text-[var(--brand-100)] hover:bg-[var(--brand-20)] transition-colors disabled:opacity-50"
                                         >

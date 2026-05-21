@@ -154,11 +154,19 @@ export default function TabletHomePage() {
     return grouped;
   }, [attendance]);
 
+  // バグ報告: 到着・帰宅ボタンは誤タップで誤送信が起きやすいため、
+  // 押下時に「本当によろしいですか？」確認ダイアログを挟む。
   const handlePerStudentNotify = async (
     studentId: number,
     chatRoomId: number,
-    action: 'arrival' | 'departure'
+    action: 'arrival' | 'departure',
+    studentName?: string,
   ) => {
+    const label = action === 'arrival' ? '到着しました' : 'これから帰ります';
+    const who = studentName ?? 'この生徒';
+    if (!window.confirm(`${who}さんの保護者に「${label}」を送信します。\n\n本当によろしいですか？`)) {
+      return;
+    }
     const key = `${studentId}-${action}`;
     setPerStudentSending((p) => ({ ...p, [key]: true }));
     try {
@@ -167,7 +175,6 @@ export default function TabletHomePage() {
         room_ids: [chatRoomId],
       });
       setNotifiedLocal((p) => ({ ...p, [studentId]: action }));
-      const label = action === 'arrival' ? '到着しました' : 'これから帰ります';
       toast.success(`${label} を送信しました`);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };
@@ -359,7 +366,7 @@ export default function TabletHomePage() {
                               ) : (
                                 <button
                                   type="button"
-                                  onClick={() => handlePerStudentNotify(s.id, s.chat_room_id!, 'arrival')}
+                                  onClick={() => handlePerStudentNotify(s.id, s.chat_room_id!, 'arrival', s.name)}
                                   disabled={arrivalSending}
                                   className="flex items-center gap-1 rounded border border-blue-600/30 bg-blue-50 px-2 py-1 text-xs font-bold text-blue-700 hover:bg-blue-100 disabled:opacity-50"
                                 >
@@ -375,7 +382,7 @@ export default function TabletHomePage() {
                               ) : (
                                 <button
                                   type="button"
-                                  onClick={() => handlePerStudentNotify(s.id, s.chat_room_id!, 'departure')}
+                                  onClick={() => handlePerStudentNotify(s.id, s.chat_room_id!, 'departure', s.name)}
                                   disabled={departSending}
                                   className="flex items-center gap-1 rounded border border-amber-600/30 bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700 hover:bg-amber-100 disabled:opacity-50"
                                 >
