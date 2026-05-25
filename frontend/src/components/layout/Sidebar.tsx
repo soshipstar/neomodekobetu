@@ -120,6 +120,7 @@ const agentNav: NavItem[] = [
 const adminNav: NavItem[] = [
   { type: 'link', label: 'ダッシュボード', href: '/admin/dashboard', icon: 'dashboard' },
   { type: 'link', label: '生徒情報', href: '/admin/students', icon: 'school', visibility: 'non_master' },
+  { type: 'link', label: '生徒重複候補', href: '/admin/students/duplicates', icon: 'rule', visibility: 'non_master' },
   { type: 'link', label: '保護者情報', href: '/admin/guardians', icon: 'family_restroom', visibility: 'non_master' },
   { type: 'link', label: '待機児童管理', href: '/admin/waiting-list', icon: 'hourglass_top', visibility: 'non_master' },
   { type: 'link', label: 'スタッフ管理', href: '/admin/staff-management', icon: 'supervisor_account', visibility: 'non_master' },
