@@ -501,7 +501,46 @@ export default function StudentsPage() {
       <Modal isOpen={createModal} onClose={() => setCreateModal(false)} title="新規生徒登録" size="lg">
         <StudentFormComponent
           form={form} updateField={updateField} guardians={guardians}
-          onSubmit={() => createMutation.mutate(form)}
+          onSubmit={async () => {
+            // 登録前に同教室内の同名候補を確認する。
+            // 「石田 洋将」の二重登録のような事故を防ぐため、似た氏名の既存生徒があれば
+            // どの人物か (新規 / 既存と同一) を現場が判断してから登録する。
+            const name = form.student_name?.trim();
+            if (name) {
+              try {
+                const res = await api.post('/api/staff/students/check-duplicates', { student_name: name });
+                const dups: Array<{
+                  id: number;
+                  student_name: string;
+                  birth_date: string | null;
+                  status: string;
+                  is_active: boolean;
+                  guardian?: { id: number; full_name: string } | null;
+                  support_start_date: string | null;
+                  withdrawal_date: string | null;
+                }> = res.data?.duplicates ?? [];
+                if (dups.length > 0) {
+                  const lines = dups.slice(0, 10).map((d) => {
+                    const g = d.guardian?.full_name ? ` / 保護者: ${d.guardian.full_name}` : '';
+                    const s = STATUS_LABELS[d.status] || d.status;
+                    const bd = d.birth_date ? ` / 生年月日: ${d.birth_date.slice(0, 10)}` : '';
+                    return `・[#${d.id}] ${d.student_name} (${s})${bd}${g}`;
+                  });
+                  const extra = dups.length > 10 ? `\n…他 ${dups.length - 10} 件` : '';
+                  const ok = window.confirm(
+                    `同じ教室に「${name}」と似た氏名の既存生徒がいます。\n\n` +
+                      `${lines.join('\n')}${extra}\n\n` +
+                      `OK: それでも新しく登録する\n` +
+                      `キャンセル: いったん戻って既存生徒を確認する`,
+                  );
+                  if (!ok) return;
+                }
+              } catch {
+                // チェック失敗は登録ブロックしない (BE 障害時もユーザー作業は続けられる)
+              }
+            }
+            createMutation.mutate(form);
+          }}
           onCancel={() => setCreateModal(false)}
           isLoading={createMutation.isPending}
           submitLabel="登録する" isNew
