@@ -320,6 +320,8 @@ Route::prefix('staff')
         Route::get('/students', [App\Http\Controllers\Staff\StudentController::class, 'index']);
         Route::post('/students', [App\Http\Controllers\Staff\StudentController::class, 'store']);
         Route::get('/students/guardians', [App\Http\Controllers\Staff\StudentController::class, 'guardians']);
+        // 作成画面の事前重複チェック (同 classroom_id + 似た氏名)
+        Route::post('/students/check-duplicates', [App\Http\Controllers\Staff\StudentController::class, 'checkDuplicates']);
         Route::get('/students/{student}', [App\Http\Controllers\Staff\StudentController::class, 'show']);
         Route::put('/students/{student}', [App\Http\Controllers\Staff\StudentController::class, 'update']);
         Route::delete('/students/{student}', [App\Http\Controllers\Staff\StudentController::class, 'destroy']);

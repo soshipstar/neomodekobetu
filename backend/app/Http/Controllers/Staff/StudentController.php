@@ -76,6 +76,64 @@ class StudentController extends Controller
     }
 
     /**
+     * 同じ教室内に似た氏名の生徒が居ないかを確認する。
+     *
+     * 経緯: 「石田 洋将」のように、同名の生徒が誤って二重登録された結果、
+     * 退所済の旧レコードと現役の新レコードが並存し chat_room の二重表示・
+     * person_id の未連動など複数の派生不具合が発生した。
+     * 作成画面で submit する前にこのエンドポイントを叩き、似た氏名の
+     * 既存生徒があれば現場に「同じ人ですか？」と確認してから登録する。
+     *
+     * マッチ条件: 同 classroom_id (アクセス可能教室を含む) のうち、
+     *   - 空白を取り除いた student_name が完全一致 (大文字小文字差/全角半角差を緩める)
+     *   - もしくは partial match (LIKE %name%)
+     * を返す。重複の見落としよりも過検出 (= 「本当に別人」と現場が判断する手間)
+     * を優先するため、退所済や is_active=false も含めて返す。
+     */
+    public function checkDuplicates(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'student_name' => 'required|string|max:255',
+        ]);
+
+        $name = trim($validated['student_name']);
+        // 空白 (全角・半角) を除去して比較しやすくする
+        $normalized = preg_replace('/\s+/u', '', $name);
+
+        if ($normalized === '') {
+            return response()->json(['success' => true, 'duplicates' => []]);
+        }
+
+        $classroomIds = $user->classroom_id ? $user->accessibleClassroomIds() : [];
+
+        $query = Student::query()
+            ->select([
+                'id', 'student_name', 'birth_date', 'grade_level',
+                'status', 'is_active', 'classroom_id', 'guardian_id',
+                'support_start_date', 'withdrawal_date',
+            ])
+            ->with('guardian:id,full_name')
+            ->whereIn('classroom_id', $classroomIds);
+
+        // 部分一致 (空白除去後の文字列に対して) で候補を広めに拾う。
+        // PostgreSQL は ILIKE で大文字小文字を無視できるが、移植性のため
+        // LOWER + LIKE の形で書く。
+        $query->whereRaw('LOWER(REPLACE(REPLACE(student_name, \' \', \'\'), \'　\', \'\')) LIKE ?', ['%' . mb_strtolower($normalized) . '%']);
+
+        $candidates = $query->orderByRaw("CASE WHEN LOWER(REPLACE(REPLACE(student_name, ' ', ''), '　', '')) = ? THEN 0 ELSE 1 END", [mb_strtolower($normalized)])
+            ->orderByDesc('id')
+            ->limit(20)
+            ->get();
+
+        return response()->json([
+            'success'    => true,
+            'duplicates' => $candidates,
+        ]);
+    }
+
+    /**
      * 生徒を新規登録
      */
     public function store(Request $request): JsonResponse
