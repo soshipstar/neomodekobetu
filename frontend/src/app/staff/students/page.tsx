@@ -513,12 +513,31 @@ export default function StudentsPage() {
         title={`${editingStudent?.student_name} の編集`} size="lg">
         <StudentFormComponent
           form={form} updateField={updateField} guardians={guardians}
-          onSubmit={() => editingStudent && updateMutation.mutate({ id: editingStudent.id, ...form })}
+          onSubmit={() => {
+            if (!editingStudent) return;
+            // 保護者を別人へ変更する場合 → 旧チャットルームと履歴が消える旨を確認
+            // (BE 側 Staff/StudentController::update で旧 chat_room を CASCADE 削除)
+            const origId = editingStudent.guardian_id ? String(editingStudent.guardian_id) : '';
+            const guardianChanged = form.guardian_id !== origId;
+            const hadGuardian = origId !== '';
+            if (guardianChanged && hadGuardian) {
+              const prevName = editingStudent.guardian?.full_name || '現在の保護者';
+              const ok = window.confirm(
+                `保護者の紐づけを変更しようとしています。\n\n` +
+                  `現在の保護者「${prevName}」とこの生徒のチャットルームおよびこれまでの` +
+                  `メッセージ履歴はすべて削除されます。\n\n` +
+                  `この操作は取り消せません。続行しますか？`,
+              );
+              if (!ok) return;
+            }
+            updateMutation.mutate({ id: editingStudent.id, ...form });
+          }}
           onCancel={() => { setEditModal(false); setEditingStudent(null); }}
           isLoading={updateMutation.isPending}
           submitLabel="更新する" isNew={false}
           onDelete={handleDelete}
           studentId={editingStudent?.id}
+          originalGuardianId={editingStudent?.guardian_id ?? null}
         />
       </Modal>
     </div>
@@ -529,7 +548,7 @@ export default function StudentsPage() {
 // Student Form
 // ---------------------------------------------------------------------------
 
-function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel, isLoading, submitLabel, isNew, onDelete, studentId }: {
+function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel, isLoading, submitLabel, isNew, onDelete, studentId, originalGuardianId }: {
   form: StudentForm;
   updateField: (key: string, value: string | number | boolean) => void;
   guardians: Guardian[];
@@ -540,6 +559,10 @@ function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel
   isNew: boolean;
   onDelete?: () => void;
   studentId?: number;
+  // 編集時のみ渡される。元から紐づいていた guardian_id。
+  // 別人に切り替えると BE 側で旧 chat_room が CASCADE 削除されるので、
+  // フォーム内に警告文を出す根拠として使う。
+  originalGuardianId?: number | null;
 }) {
   const inputCls = 'block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]';
 
@@ -623,6 +646,12 @@ function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel
           onChange={(v) => updateField('guardian_id', v)}
           placeholder="名前・メールで検索（後で設定可能）"
         />
+        {originalGuardianId != null && (
+          <p className="mt-1 text-xs text-[var(--status-warning-foreground-1)]">
+            ⚠ 保護者を別の人に変更すると、現在の保護者とのチャット履歴は
+            すべて削除されます (取り消し不可)。
+          </p>
+        )}
       </div>
 
       {/* 状態 */}

@@ -163,6 +163,28 @@ function StudentInfo({ studentId, student }: { studentId: number; student: Stude
     onError: (e: any) => toast.error(e?.response?.data?.message || '更新に失敗しました'),
   });
 
+  // 保護者を変えると BE 側で旧 chat_room を削除する (メッセージも CASCADE で消える)。
+  // 誤操作で過去のチャット履歴を失わないよう、保存前に明示的に確認する。
+  const handleSave = () => {
+    const originalGuardianId = (student as any).guardian_id
+      ? String((student as any).guardian_id)
+      : '';
+    const guardianChanged = form.guardian_id !== originalGuardianId;
+    const hadGuardian = originalGuardianId !== '';
+
+    if (guardianChanged && hadGuardian) {
+      const prevName = student.guardian?.full_name || '現在の保護者';
+      const ok = window.confirm(
+        `保護者の紐づけを変更しようとしています。\n\n` +
+          `現在の保護者「${prevName}」とこの生徒のチャットルームおよびこれまでの` +
+          `メッセージ履歴はすべて削除されます。\n\n` +
+          `この操作は取り消せません。続行しますか？`,
+      );
+      if (!ok) return;
+    }
+    saveMutation.mutate();
+  };
+
   if (!editing) {
     return (
       <Card>
@@ -294,6 +316,12 @@ function StudentInfo({ studentId, student }: { studentId: number; student: Stude
               先に「保護者管理」画面で保護者ユーザーを作成してください。
               新規に紐づけるとチャットルームも自動的に作られます。
             </p>
+            {(student as any).guardian_id && (
+              <p className="mt-1 text-xs text-[var(--status-warning-foreground-1)]">
+                ⚠ 保護者を別の人に変更すると、現在の保護者とのチャット履歴は
+                すべて削除されます (取り消し不可)。
+              </p>
+            )}
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">備考</label>
@@ -320,7 +348,7 @@ function StudentInfo({ studentId, student }: { studentId: number; student: Stude
               待機児童で生年月日が未入力の場合、一覧画面で「コメント参照」表示の参照先になります。
             </p>
           </div>
-          <Button leftIcon={<MaterialIcon name="save" size={16} />} onClick={() => saveMutation.mutate()} isLoading={saveMutation.isPending}>
+          <Button leftIcon={<MaterialIcon name="save" size={16} />} onClick={handleSave} isLoading={saveMutation.isPending}>
             保存
           </Button>
         </div>
