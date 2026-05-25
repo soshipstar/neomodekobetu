@@ -136,6 +136,19 @@ class StudentController extends Controller
 
         $student->update($validated);
 
+        // バグ報告: 「石田 洋将」が active な student レコードを持ちながら
+        // chat_room が存在せず、保護者画面でチャットができない状態だった。
+        // update では従来 chat_room を生成していなかったため、guardian を
+        // 後から紐づけたケースで chat_room が作られなかった。firstOrCreate で
+        // 重複を防ぎつつ、guardian_id が現在 set されていれば必ず chat_room
+        // を保証する。
+        if (! empty($student->guardian_id)) {
+            ChatRoom::firstOrCreate([
+                'student_id'  => $student->id,
+                'guardian_id' => (int) $student->guardian_id,
+            ]);
+        }
+
         return response()->json([
             'success' => true,
             'data'    => $student->fresh(['classroom', 'guardian']),
