@@ -364,6 +364,32 @@ class TabletController extends Controller
             'student_ids.*'   => 'exists:students,id',
         ]);
 
+        // 事前重複チェック: (record_date, staff_id, activity_name) に unique 制約があるため、
+        // 同じスタッフが同日に同名の活動を 2 つ持とうとすると SQLSTATE 23505 で 500 になる
+        // (本番エラーログ id=942,943 で再現)。
+        // ユーザーが活動名を別の既存活動と同じ名前に変えようとしたケースを 422 で返し、
+        // 「同じ名前の活動が既にあります」と分かりやすく知らせる。
+        $newName = $validated['activity_name'] ?? $activity->activity_name;
+        if ($newName !== $activity->activity_name) {
+            $conflict = DailyRecord::query()
+                ->where('record_date', $activity->record_date)
+                ->where('staff_id', $activity->staff_id)
+                ->where('activity_name', $newName)
+                ->where('id', '!=', $activity->id)
+                ->first();
+            if ($conflict) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "同じ日付・スタッフで「{$newName}」という活動が既に登録されています。"
+                        . "別の活動名にするか、既存の活動を編集してください。",
+                    'errors'  => [
+                        'activity_name' => ["同じ日付・スタッフで「{$newName}」という活動が既に登録されています。"],
+                    ],
+                    'conflict_activity_id' => $conflict->id,
+                ], 422);
+            }
+        }
+
         DB::transaction(function () use ($activity, $validated) {
             $activity->update([
                 'activity_name'   => $validated['activity_name'] ?? $activity->activity_name,
