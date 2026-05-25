@@ -73,6 +73,8 @@ Route::prefix('admin')
         // 生徒管理
         Route::get('/students/grade-promotion/preview', [App\Http\Controllers\Admin\StudentController::class, 'gradePromotionPreview']);
         Route::post('/students/grade-promotion/execute', [App\Http\Controllers\Admin\StudentController::class, 'gradePromotionExecute']);
+        // 同名・重複登録の候補一覧 (同 classroom + 正規化氏名で 2 件以上)
+        Route::get('/students/duplicates', [App\Http\Controllers\Admin\StudentController::class, 'duplicates']);
         // 児童を別教室に複製（同一企業内）
         Route::get('/students/{student}/copy-targets', [App\Http\Controllers\Admin\StudentController::class, 'copyTargets']);
         Route::post('/students/{student}/copy-to-classroom', [App\Http\Controllers\Admin\StudentController::class, 'copyToClassroom']);

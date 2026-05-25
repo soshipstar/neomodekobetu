@@ -507,4 +507,85 @@ class StudentController extends Controller
             'message' => '生徒を退所扱いにしました。',
         ]);
     }
+
+    /**
+     * 重複候補の生徒グループ一覧。
+     *
+     * 経緯: 「石田 洋将」のように、同名の生徒が誤って複数レコードに分かれて
+     * 登録されると、保護者画面で chat_room が二重表示されたり、退所済の旧
+     * レコードと現役の新レコードが共存して紛らわしい。
+     * 管理者が能動的に重複候補を洗い出してマージ判断できるように、
+     * 「同 classroom + 正規化氏名」が一致するレコード群を返す。
+     *
+     * person_id が同じ生徒どうしは「正規に連結された別教室の同一人物」と
+     * 見なし、別グループ扱いにはしない (= 1 グループ内で展開しない)。
+     * person_id 未設定 (NULL) 同士が同氏名で並ぶケースが本来の警戒対象。
+     */
+    public function duplicates(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $isMaster = $user->user_type === 'admin' && $user->is_master;
+
+        $query = Student::query()
+            ->select(['id', 'student_name', 'classroom_id', 'birth_date', 'grade_level',
+                'status', 'is_active', 'guardian_id', 'person_id',
+                'support_start_date', 'withdrawal_date', 'created_at'])
+            ->with([
+                'classroom:id,classroom_name',
+                'guardian:id,full_name,email',
+            ]);
+
+        if (!$isMaster) {
+            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
+        }
+
+        $students = $query->orderBy('student_name')->orderBy('id')->get();
+
+        // 正規化キー: 空白(全角/半角)を除去 + 小文字化
+        $normalize = function (string $name): string {
+            $n = preg_replace('/[\s\x{3000}]+/u', '', $name) ?? '';
+            return mb_strtolower($n);
+        };
+
+        // (classroom_id, normalized_name) でグループ化
+        $groups = [];
+        foreach ($students as $s) {
+            $key = $s->classroom_id . '::' . $normalize($s->student_name ?? '');
+            if (!isset($groups[$key])) {
+                $groups[$key] = [];
+            }
+            $groups[$key][] = $s;
+        }
+
+        // 2 件以上のグループだけ抽出 + person_id がすべて一致するグループは除外
+        $duplicates = [];
+        foreach ($groups as $key => $members) {
+            if (count($members) < 2) continue;
+
+            // 全員が同じ person_id (NULL も含めて一致) なら「正規に連結済」と見なしスキップ
+            $personIds = array_unique(array_map(fn ($m) => $m->person_id, $members));
+            if (count($personIds) === 1 && $personIds[0] !== null) {
+                continue;
+            }
+
+            // classroom 名と name を先頭から取り出してグループ情報として返す
+            $classroom = $members[0]->classroom?->classroom_name;
+            $duplicates[] = [
+                'classroom_id'   => $members[0]->classroom_id,
+                'classroom_name' => $classroom,
+                'student_name'   => $members[0]->student_name,
+                'count'          => count($members),
+                'students'       => $members,
+            ];
+        }
+
+        // 件数の多いグループから返す
+        usort($duplicates, fn ($a, $b) => $b['count'] <=> $a['count']);
+
+        return response()->json([
+            'success'    => true,
+            'duplicates' => $duplicates,
+            'total'      => count($duplicates),
+        ]);
+    }
 }
