@@ -133,6 +133,21 @@ export default function AssessmentGuardianViewPage() {
     return true;
   });
 
+  // 非表示にされた件数 (ユーザーが「期間が見当たらない」と気付けるよう件数を表示)
+  const hiddenCount = periods.reduce((n, p) => {
+    const ge = p.guardian_entries?.[0];
+    return n + (ge?.is_hidden ? 1 : 0);
+  }, 0);
+  // 非表示の中でも「提出期限がまだ来ていない」もの = 隠れていると業務に支障が出る対象
+  const hiddenUpcomingCount = periods.reduce((n, p) => {
+    const ge = p.guardian_entries?.[0];
+    if (!ge?.is_hidden || !p.submission_deadline) return n;
+    const deadline = new Date(p.submission_deadline);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return n + (deadline.getTime() >= today.getTime() ? 1 : 0);
+  }, 0);
+
   const selectedPeriod = periods.find((p) => p.id === selectedPeriodId) ?? null;
   const guardianEntry = selectedPeriod?.guardian_entries?.[0] ?? null;
   const selectedStudent = students.find((s) => s.id === selectedStudentId);
@@ -213,8 +228,27 @@ export default function AssessmentGuardianViewPage() {
                   className="rounded border-[var(--neutral-stroke-2)]"
                 />
                 非表示を含む
+                {hiddenCount > 0 && (
+                  <span className="ml-1 rounded-full bg-[var(--neutral-background-3)] px-2 py-0.5 text-[10px]">
+                    {hiddenCount}
+                  </span>
+                )}
               </label>
             </div>
+            {/* 「期限が近いのに非表示になっている期間がある」場合だけ強調する。
+                飯田眞央の 6/4 締切が一括非表示のせいで一覧から消えていた事故を再発させない。 */}
+            {!showHidden && hiddenUpcomingCount > 0 && (
+              <div className="mb-2 rounded-lg border border-[var(--status-warning-fg)]/20 bg-[var(--status-warning-bg)] px-3 py-2 text-xs text-[var(--status-warning-fg)]">
+                ⚠ 提出期限が未来の保護者アセスメントが {hiddenUpcomingCount} 件 非表示になっています。
+                <button
+                  type="button"
+                  onClick={() => setShowHidden(true)}
+                  className="ml-2 underline hover:no-underline"
+                >
+                  非表示も表示する
+                </button>
+              </div>
+            )}
             {loadingPeriods ? (
               <Skeleton className="h-10 w-full rounded-lg" />
             ) : periodsWithGuardian.length === 0 ? (
@@ -373,8 +407,26 @@ export default function AssessmentGuardianViewPage() {
                 }`}
                 onClick={async () => {
                   const action = guardianEntry.is_hidden ? '再表示' : '非表示に';
-                  if (!guardianEntry.is_hidden && !window.confirm(`この保護者用アセスメントを非表示にしてもよろしいですか？\n再表示することもできます。`)) {
-                    return;
+                  if (!guardianEntry.is_hidden) {
+                    // 提出期限がまだ来ていない (もしくは過ぎたばかりの) 期間を非表示にしようとした場合、
+                    // ユーザーが気付かず本来必要なアセスメントを隠してしまう事故を防ぐため
+                    // 強めの警告を出す (例: 飯田眞央 6月4日締切が一括非表示で見えなくなった事象)。
+                    const deadline = selectedPeriod.submission_deadline
+                      ? new Date(selectedPeriod.submission_deadline)
+                      : null;
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const isUpcoming = deadline && deadline.getTime() >= today.getTime();
+                    const deadlineStr = deadline
+                      ? format(deadline, 'yyyy年M月d日')
+                      : '不明';
+                    const msg = isUpcoming
+                      ? `⚠ この期間の提出期限 (${deadlineStr}) はまだ過ぎていません。\n\n` +
+                        `非表示にすると一覧から消えるため、保護者への連絡や提出状況の確認が漏れる可能性があります。\n\n` +
+                        `本当に非表示にしますか？`
+                      : `この保護者用アセスメント (提出期限: ${deadlineStr}) を非表示にしてもよろしいですか？\n` +
+                        `「非表示を含む」チェックでいつでも再表示できます。`;
+                    if (!window.confirm(msg)) return;
                   }
                   try {
                     await api.post(`/api/staff/assessment/${selectedPeriod.id}/toggle-guardian-hidden`);
