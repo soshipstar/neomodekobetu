@@ -81,6 +81,9 @@ export default function TabletChatPage() {
       const res = await api.get<{ data: ChatRoomItem[] }>('/api/tablet/chat/rooms');
       return res.data.data || [];
     },
+    // 新着メッセージで unread_count が増えたとき、別ルームを開いたままでも
+    // 一覧側のバッジが追従するように定期 refetch する (messages と同じ 5 秒)。
+    refetchInterval: 5000,
   });
 
   const { data: messages = [], isLoading: msgsLoading } = useQuery<ChatMessage[]>({
@@ -115,13 +118,21 @@ export default function TabletChatPage() {
   });
 
   // 既読化
+  // バグ報告: 「タブレットユーザーで保護者チャットを見た後も未読バッジが
+  //  付いたまま」だった。原因は POST /read 後に rooms クエリを invalidate
+  //  していなかったため、サイドの一覧 (unread_count) が更新されなかった。
+  //  read 成功後に rooms を invalidate して即時バッジを消す。
   useEffect(() => {
-    if (activeRoomId) {
-      api.post(`/api/tablet/chat/rooms/${activeRoomId}/read`).catch(() => {
+    if (!activeRoomId) return;
+    api
+      .post(`/api/tablet/chat/rooms/${activeRoomId}/read`)
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ['tablet', 'chat', 'rooms'] });
+      })
+      .catch(() => {
         /* silent */
       });
-    }
-  }, [activeRoomId, messages.length]);
+  }, [activeRoomId, messages.length, queryClient]);
 
   // メッセージ末尾にスクロール
   useEffect(() => {
@@ -131,7 +142,18 @@ export default function TabletChatPage() {
   const activeRoom = rooms.find((r) => r.id === activeRoomId);
 
   return (
-    <div className="flex h-full flex-col gap-3 sm:flex-row">
+    // バグ報告: 「戻るボタンが一番最初のメッセージまでスクロールして戻らないと
+    //  名前の左横にある < のマークを押せない」原因は、ここで `h-full` を指定
+    //  していたが親 (<main className="p-4 sm:p-6">) に高さ指定がないため
+    //  実質 auto 扱いになり、ページ全体が縦方向にスクロールしていた。
+    //  → chat ヘッダ (戻るボタンを含む) もページと一緒にスクロールアウト。
+    //  ビューポートからレイアウトヘッダ + サブヘッダ + main padding を引いた
+    //  高さに固定し、メッセージ部分だけが内部スクロールするように修正。
+    //  100dvh は iOS Safari のアドレスバー伸縮にも追随する。
+    <div
+      className="flex flex-col gap-3 sm:flex-row"
+      style={{ height: 'calc(100dvh - 140px)', minHeight: '420px' }}
+    >
       {/* ルーム一覧 */}
       <aside
         className={`flex-shrink-0 overflow-y-auto rounded-xl bg-white shadow-md sm:w-[280px] ${activeRoomId ? 'hidden sm:block' : 'block flex-1'}`}
@@ -196,10 +218,14 @@ export default function TabletChatPage() {
       >
         {activeRoom ? (
           <>
-            <div className="flex items-center gap-2 border-b border-[var(--neutral-stroke-2)] px-3 py-2 sm:px-4">
+            {/* 念のため sticky top-0: たとえ page-level scroll が発生しても
+                戻るボタンが常にビューポート最上部に残る。bg-white で背景透過防止。 */}
+            <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-[var(--neutral-stroke-2)] bg-white px-3 py-2 sm:px-4">
               <button
                 type="button"
                 onClick={() => setActiveRoomId(null)}
+                // sm 以上では aside と main が常に side-by-side で見えているため
+                // 戻るボタンは不要 (元設計どおり)。mobile (< sm) でのみ表示。
                 className="rounded p-1 text-[var(--neutral-foreground-4)] hover:bg-[var(--neutral-background-3)] sm:hidden"
                 aria-label="戻る"
               >
