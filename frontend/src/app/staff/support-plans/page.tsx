@@ -121,12 +121,22 @@ export default function SupportPlansPage() {
   const [editingPlan, setEditingPlan] = useState<SupportPlan | null>(null);
 
   // Tags from backend
-  const { data: availableTags = DEFAULT_TAGS } = useQuery({
-    queryKey: ['staff', 'tags'],
+  // NOTE: queryKey は `['staff', 'tag-names']` を使う。`['staff', 'tags']` は
+  // /staff/tag-settings 側で「Tag オブジェクト配列」をキャッシュしている。
+  // 同じ key で異なる shape を共有すると、tag-settings → support-plans の
+  // 順に画面遷移したとき、キャッシュから Tag オブジェクトが返ってきて
+  // `{tag}` (文字列前提) のレンダリングが Minified React error #31 を起こす
+  // (本番エラーログ id=939,940,944)。ここでは name 文字列の配列だけが
+  // 欲しいので、用途別に key を分けて衝突を防ぐ。
+  const { data: availableTags = DEFAULT_TAGS } = useQuery<string[]>({
+    queryKey: ['staff', 'tag-names'],
     queryFn: async () => {
       try {
-        const res = await api.get<{ data: { name: string }[] }>('/api/staff/tag-settings');
-        const tags = res.data.data.map((t) => t.name);
+        const res = await api.get<{ data: { name?: string; tag_name?: string }[] }>('/api/staff/tag-settings');
+        // 念のため、name が無くても tag_name から拾えるようにフォールバックする
+        const tags = res.data.data
+          .map((t) => (typeof t === 'string' ? t : t?.name ?? t?.tag_name ?? ''))
+          .filter((s): s is string => typeof s === 'string' && s.length > 0);
         return tags.length > 0 ? tags : DEFAULT_TAGS;
       } catch {
         return DEFAULT_TAGS;
