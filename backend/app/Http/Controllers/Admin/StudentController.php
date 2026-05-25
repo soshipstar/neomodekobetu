@@ -134,18 +134,24 @@ class StudentController extends Controller
         }
         unset($validated['password']);
 
+        $prevGuardianId = $student->guardian_id ? (int) $student->guardian_id : null;
         $student->update($validated);
+        $newGuardianId = $student->guardian_id ? (int) $student->guardian_id : null;
 
-        // バグ報告: 「石田 洋将」が active な student レコードを持ちながら
-        // chat_room が存在せず、保護者画面でチャットができない状態だった。
-        // update では従来 chat_room を生成していなかったため、guardian を
-        // 後から紐づけたケースで chat_room が作られなかった。firstOrCreate で
-        // 重複を防ぎつつ、guardian_id が現在 set されていれば必ず chat_room
-        // を保証する。
-        if (! empty($student->guardian_id)) {
+        // 紐づけが変わった場合 → 旧 chat_room を削除 (CASCADE で messages も連動削除)
+        // FE 側で「既存のチャットが消える」旨を確認してから保存される想定。
+        if ($prevGuardianId !== $newGuardianId && $prevGuardianId !== null) {
+            ChatRoom::where('student_id', $student->id)
+                ->where('guardian_id', $prevGuardianId)
+                ->delete();
+        }
+
+        // 現在 guardian_id が set されていれば必ず chat_room を保証
+        // (バグ: 「石田 洋将」が active 生徒に chat_room が作られていなかった)
+        if ($newGuardianId !== null) {
             ChatRoom::firstOrCreate([
                 'student_id'  => $student->id,
-                'guardian_id' => (int) $student->guardian_id,
+                'guardian_id' => $newGuardianId,
             ]);
         }
 

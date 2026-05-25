@@ -252,18 +252,29 @@ class StudentController extends Controller
         $previousGuardianId = $student->guardian_id;
         $student->update($validated);
 
-        // 保護者が新規に紐づけられた（または変更された）場合、ChatRoom を自動作成。
-        // store() には同等処理があるが update() で「後から保護者を付けた」ケースが
-        // 抜けていたため、保護者がチャットできない不具合があった (報告 #YYYY-MM-DD)。
-        // バグ報告: guardian_id を後から付与した active 生徒に chat_room
-        // が作られず保護者画面にチャットが現れないケースがあった (id=266
-        // 石田洋将)。
-        // firstOrCreate で重複防止しつつ、現在 guardian_id が set されていれば
-        // 必ず chat_room を保証する (旧: previous との差分でしか作らない設計)。
-        if (! empty($student->guardian_id)) {
+        // バグ報告 + ユーザー要望:
+        //  (1) guardian_id を後から付与した active 生徒に chat_room が作られず
+        //      保護者画面にチャットが現れない (例 id=266 石田洋将) → firstOrCreate で保証
+        //  (2) 「紐づけを変え保存をしたら旧チャットルームは削除するようにしましょう」
+        //      旧保護者用 chat_room と中のメッセージを整理する。
+        //      FE 側で「既存の保護者チャットは消されることを警告」してから保存される想定。
+        $newGuardianId = $student->guardian_id ? (int) $student->guardian_id : null;
+        $prevGuardianId = $previousGuardianId ? (int) $previousGuardianId : null;
+
+        if ($prevGuardianId !== $newGuardianId) {
+            // 旧保護者の chat_room を削除 (CASCADE で messages も連動削除)
+            if ($prevGuardianId !== null) {
+                ChatRoom::where('student_id', $student->id)
+                    ->where('guardian_id', $prevGuardianId)
+                    ->delete();
+            }
+        }
+
+        // 現在 guardian_id が set されていれば必ず chat_room を保証
+        if ($newGuardianId !== null) {
             ChatRoom::firstOrCreate([
                 'student_id'  => $student->id,
-                'guardian_id' => (int) $student->guardian_id,
+                'guardian_id' => $newGuardianId,
             ]);
         }
 
