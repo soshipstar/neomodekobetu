@@ -51,10 +51,16 @@ function generatePassword(length = 8): string {
 // Main Component
 // ---------------------------------------------------------------------------
 
+// 「紐づき生徒」フィルタの種別。デフォルトは利用中の生徒がいる保護者のみ表示。
+type StudentLinkFilter = 'with' | 'without' | 'all';
+
 export default function GuardiansPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const [search, setSearch] = useState('');
+  // バグ報告: 利用している生徒がいない保護者と、いる保護者で表示を切り替えたい
+  // デフォルトは生徒がいる保護者のみ
+  const [linkFilter, setLinkFilter] = useState<StudentLinkFilter>('with');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingGuardian, setEditingGuardian] = useState<Guardian | null>(null);
   const [form, setForm] = useState<GuardianForm>({ full_name: '', email: '', username: '', password: '' });
@@ -62,7 +68,7 @@ export default function GuardiansPage() {
   const debouncedSearch = useDebounce(search, 300);
 
   // Fetch guardians
-  const { data: guardians = [], isLoading } = useQuery({
+  const { data: allGuardians = [], isLoading } = useQuery({
     queryKey: ['staff', 'guardians', debouncedSearch],
     queryFn: async () => {
       const res = await api.get('/api/staff/guardians', {
@@ -72,6 +78,17 @@ export default function GuardiansPage() {
       return Array.isArray(payload) ? payload as Guardian[] : [];
     },
   });
+
+  // 紐づき生徒の有無で client-side フィルタリング
+  const guardians = allGuardians.filter((g) => {
+    if (linkFilter === 'all') return true;
+    const hasStudents = g.students.length > 0;
+    return linkFilter === 'with' ? hasStudents : !hasStudents;
+  });
+
+  // 集計値 (タブの件数表示用)
+  const withCount = allGuardians.filter((g) => g.students.length > 0).length;
+  const withoutCount = allGuardians.length - withCount;
 
   // Save mutation (create: only full_name + email; edit: full_name + username + email + password)
   const saveMutation = useMutation({
@@ -168,6 +185,30 @@ export default function GuardiansPage() {
       <div className="relative">
         <MaterialIcon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
         <Input placeholder="氏名・ユーザー名・メールで検索..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+      </div>
+
+      {/* 紐づき生徒フィルタ (デフォルトは「利用中」= 生徒がいる保護者のみ) */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        {([
+          { key: 'with',    label: `利用中の生徒あり`,  count: withCount,    desc: '紐づく生徒がいる保護者のみ' },
+          { key: 'without', label: `紐づく生徒なし`,    count: withoutCount, desc: '退所/登録準備中などで生徒がいない保護者' },
+          { key: 'all',     label: `すべて`,            count: allGuardians.length, desc: '上記すべて表示' },
+        ] as const).map((opt) => (
+          <button
+            key={opt.key}
+            type="button"
+            onClick={() => setLinkFilter(opt.key)}
+            title={opt.desc}
+            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              linkFilter === opt.key
+                ? 'bg-[var(--brand-80)] text-white'
+                : 'border border-[var(--neutral-stroke-2)] bg-white text-[var(--neutral-foreground-2)] hover:bg-[var(--neutral-background-3)]'
+            }`}
+          >
+            {opt.label}
+            <span className="ml-1.5 text-[10px] opacity-80">({opt.count})</span>
+          </button>
+        ))}
       </div>
 
       {/* Table */}
