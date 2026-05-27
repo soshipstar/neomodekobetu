@@ -22,8 +22,13 @@ export function useWebSocket({
   onMessage,
   enabled = true,
 }: UseWebSocketOptions) {
+  // render 中の callbackRef.current = onMessage は React 19 strict
+  // (react-hooks/refs) で禁止される。最新 callback を ref に同期する処理は
+  // useEffect 内で行う。
   const callbackRef = useRef(onMessage);
-  callbackRef.current = onMessage;
+  useEffect(() => {
+    callbackRef.current = onMessage;
+  }, [onMessage]);
 
   useEffect(() => {
     if (!enabled || !channel || !event) return;
