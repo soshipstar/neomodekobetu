@@ -19,7 +19,15 @@ services:
       - backend
 
   # --- Backend (Laravel 12) ---
+  # 重要: backend / reverb / queue / scheduler は全て同一 Dockerfile.prod を使うため、
+  #   全サービスに `image: kiduri2026-backend:latest` を付けて同じイメージを共有する。
+  #   こうしないと、deploy.sh backend が backend だけを再ビルドした際、
+  #   scheduler/queue/reverb は古い `kiduri2026-{scheduler|queue|reverb}` 別イメージを
+  #   そのまま使い続け、新しい Artisan コマンドやスケジュール定義が反映されない
+  #   (実際 4 週間古いイメージが動き続けていて、photos:cleanup-old や
+  #    cleanup-resolved-error-logs などが登録されない事故があった)。
   backend:
+    image: kiduri2026-backend:latest
     build:
       context: .
       dockerfile: docker/php/Dockerfile.prod
@@ -45,6 +53,7 @@ services:
 
   # --- WebSocket (Laravel Reverb) ---
   reverb:
+    image: kiduri2026-backend:latest
     build:
       context: .
       dockerfile: docker/php/Dockerfile.prod
@@ -69,6 +78,7 @@ services:
 
   # --- Queue Worker ---
   queue:
+    image: kiduri2026-backend:latest
     build:
       context: .
       dockerfile: docker/php/Dockerfile.prod
@@ -92,6 +102,7 @@ services:
 
   # --- Task Scheduler ---
   scheduler:
+    image: kiduri2026-backend:latest
     build:
       context: .
       dockerfile: docker/php/Dockerfile.prod
