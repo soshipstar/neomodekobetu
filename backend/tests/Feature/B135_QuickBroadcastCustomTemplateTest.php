@@ -71,6 +71,11 @@ class B135_QuickBroadcastCustomTemplateTest extends TestCase
 
     /**
      * 既定値が GET で取得できる (教室未保存時)
+     *
+     * 注: arrival の body は Bug #47 対応で「【到着しました】」のみに簡素化済
+     * (ChatController::defaultQuickTemplate のコメント参照)。
+     * 旧文言「【到着しました】\n\nご対応ありがとうございました。」を期待するアサーションは
+     * 現実装と乖離していたためここで更新。
      */
     public function test_get_returns_system_defaults_when_no_classroom_settings(): void
     {
@@ -80,8 +85,9 @@ class B135_QuickBroadcastCustomTemplateTest extends TestCase
             ->getJson('/api/staff/chat/quick-broadcast-templates');
 
         $response->assertStatus(200);
-        $response->assertJsonPath('data.arrival.body', "【到着しました】\n\nご対応ありがとうございました。");
+        $response->assertJsonPath('data.arrival.body', '【到着しました】');
         $response->assertJsonPath('data.arrival.enabled', true);
+        $response->assertJsonPath('data.departure.body', "【これから帰ります】\n\nこれより帰路につきます。無事の帰宅をご確認ください。");
         $response->assertJsonPath('data.departure.enabled', true);
     }
 
