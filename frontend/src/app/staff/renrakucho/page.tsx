@@ -564,6 +564,35 @@ export default function RenrakuchoPage() {
     };
   }, [showSendModal, sendActivityId, handleSaveDraft]);
 
+  // 送信モーダルが開いている間、60 秒ごとに「まだ写真を 1 枚も見ていない (sendPhotos が undefined の)」
+  // 生徒について suggest を再実行する。
+  // モーダルを朝に開きっぱなしで写真が後からアップされても、自動で添付候補に
+  // 上がってくるようにする (バグ報告: てらこやプラス 淡田)。
+  // sendPhotos[sid] が [] (= ユーザが手動で全削除) の生徒は再取得しない。
+  useEffect(() => {
+    if (!showSendModal || !sendActivityId) return;
+    const interval = setInterval(async () => {
+      const unseenIds = Object.keys(sendNotes)
+        .map(Number)
+        .filter((sid) => !sentStudentIds.has(sid) && sendPhotos[sid] === undefined);
+      if (unseenIds.length === 0) return;
+      const updates: typeof sendPhotos = {};
+      await Promise.all(
+        unseenIds.map(async (sid) => {
+          try {
+            const sr = await api.get(`/api/staff/renrakucho/${sendActivityId}/photos/suggest`, { params: { student_id: sid } });
+            const suggested = sr.data?.data || [];
+            if (suggested.length > 0) updates[sid] = suggested;
+          } catch { /* ignore */ }
+        }),
+      );
+      if (Object.keys(updates).length > 0) {
+        setSendPhotos((prev) => ({ ...prev, ...updates }));
+      }
+    }, 60 * 1000);
+    return () => clearInterval(interval);
+  }, [showSendModal, sendActivityId, sendNotes, sentStudentIds, sendPhotos]);
+
   // Ctrl+S / Cmd+S shortcut for draft save
   useEffect(() => {
     if (!showSendModal) return;
@@ -650,24 +679,59 @@ export default function RenrakuchoPage() {
 
   const handleSendToGuardians = async () => {
     if (!sendActivityId) return;
-    const notesArray = Object.entries(sendNotes)
-      .filter(([studentId, content]) => content.trim() && !sentStudentIds.has(Number(studentId)))
-      .map(([studentId, content]) => ({
-        student_id: Number(studentId),
-        content,
-        photo_ids: (sendPhotos[Number(studentId)] || []).map((p) => p.id),
-      }));
 
-    if (notesArray.length === 0) {
+    const sendingPairs = Object.entries(sendNotes)
+      .filter(([studentId, content]) => content.trim() && !sentStudentIds.has(Number(studentId)));
+
+    if (sendingPairs.length === 0) {
       toast.warning('送信する内容がありません');
       return;
     }
 
+    // バグ報告 (てらこやプラス 淡田): 連絡帳に写真が添付されなくなった。
+    // 原因:
+    //  送信モーダルを朝に開く → 写真がない時点で suggest が 0 件 → sendPhotos[sid]
+    //  は undefined のまま → 夕方に写真がアップされても sendPhotos に反映されない
+    //  → 送信時の photo_ids が空のまま送られて保護者に届かない。
+    // 対応:
+    //  送信直前にも、sendPhotos[sid] が undefined の生徒について suggest を
+    //  再実行し、新着写真を自動で添付する。
+    //  sendPhotos[sid] = [] (= ユーザが意図的に全て外した) の場合は再取得しない
+    //  (= 「外した」という意思を尊重)。
+    const sendingIds = sendingPairs.map(([sid]) => Number(sid));
+    const unseenIds = sendingIds.filter((sid) => sendPhotos[sid] === undefined);
+    const freshPhotos: typeof sendPhotos = {};
+    if (unseenIds.length > 0) {
+      await Promise.all(
+        unseenIds.map(async (sid) => {
+          try {
+            const sr = await api.get(`/api/staff/renrakucho/${sendActivityId}/photos/suggest`, { params: { student_id: sid } });
+            const suggested = sr.data?.data || [];
+            if (suggested.length > 0) freshPhotos[sid] = suggested;
+          } catch { /* 写真なしでもエラーにしない */ }
+        }),
+      );
+    }
+    const newlyFoundCount = Object.values(freshPhotos).reduce((n, ps) => n + ps.length, 0);
+    if (newlyFoundCount > 0) {
+      setSendPhotos((prev) => ({ ...prev, ...freshPhotos }));
+    }
+
+    // setState は非同期なのでローカルでマージした写真マップで payload を作る
+    const effectivePhotos: typeof sendPhotos = { ...sendPhotos, ...freshPhotos };
+    const notesArray = sendingPairs.map(([studentId, content]) => ({
+      student_id: Number(studentId),
+      content,
+      photo_ids: (effectivePhotos[Number(studentId)] || []).map((p) => p.id),
+    }));
+
     // R8: 保護者送信は取り消し不可のため、送信前に必ず確認ダイアログを表示する。
     // 「途中保存」と「保護者に送信」の押し間違い対策。
+    const photoMsg = newlyFoundCount > 0
+      ? `\n(新規アップロード写真 ${newlyFoundCount} 枚を自動で添付します)\n`
+      : '';
     const confirmMsg =
-      `${notesArray.length}名の保護者にこの内容で連絡帳を送信します。\n` +
-      `\n` +
+      `${notesArray.length}名の保護者にこの内容で連絡帳を送信します。` + photoMsg + `\n` +
       `送信後は取り消せません。よろしいですか？`;
     if (!window.confirm(confirmMsg)) {
       return;
@@ -1408,30 +1472,83 @@ export default function RenrakuchoPage() {
                       }`}
                     />
 
-                    {/* 自動添付された写真 (日付+児童名が一致) */}
-                    {sendPhotos[studentId] && sendPhotos[studentId].length > 0 && (
+                    {/* 自動添付された写真 (日付+児童名が一致)
+                        + 写真がまだ無い (sendPhotos[sid] が undefined/[]) 状態でも
+                          「📷 写真を再取得」ボタンは出して、後からアップされた
+                          写真をその場で取り込めるようにする (報告: 朝にモーダル開いて
+                          夕方送信するワークフロー)。 */}
+                    {!isSent && (
+                      <div className="mt-2">
+                        <div className="mb-1 flex items-center justify-between gap-2">
+                          <p className="text-xs text-[var(--neutral-foreground-3)]">
+                            <MaterialIcon name="photo_library" size={12} className="inline mr-1" />
+                            {sendPhotos[studentId] && sendPhotos[studentId].length > 0
+                              ? `自動添付された写真 (${sendPhotos[studentId].length}枚 / 不要な画像は X で外せます)`
+                              : '自動添付対象の写真はまだ見つかりません'}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (!sendActivityId) return;
+                              try {
+                                const sr = await api.get(`/api/staff/renrakucho/${sendActivityId}/photos/suggest`, { params: { student_id: studentId } });
+                                const suggested = sr.data?.data || [];
+                                setSendPhotos((prev) => ({ ...prev, [studentId]: suggested }));
+                                if (suggested.length === 0) {
+                                  toast.info('添付可能な写真はまだありません');
+                                } else {
+                                  toast.success(`${suggested.length} 枚の写真を添付候補にしました`);
+                                }
+                              } catch {
+                                toast.error('写真の取得に失敗しました');
+                              }
+                            }}
+                            className="flex items-center gap-1 rounded border border-[var(--neutral-stroke-2)] px-2 py-0.5 text-xs text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-3)]"
+                            title="この生徒の本日の写真を再取得して添付候補に追加"
+                          >
+                            <MaterialIcon name="refresh" size={12} /> 写真を再取得
+                          </button>
+                        </div>
+                        {sendPhotos[studentId] && sendPhotos[studentId].length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {sendPhotos[studentId].map((photo) => (
+                              <div key={photo.id} className="relative group">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={photo.url}
+                                  alt={photo.activity_description ?? ''}
+                                  className="h-16 w-16 rounded object-cover border border-[var(--neutral-stroke-2)]"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeSendPhoto(studentId, photo.id)}
+                                  className="absolute -top-1 -right-1 rounded-full bg-[var(--status-danger-fg)] text-white p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  title="添付から外す"
+                                >
+                                  <MaterialIcon name="close" size={12} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {/* 送信済みの場合は写真ボタンを出さず、既存の写真サムネのみ表示 */}
+                    {isSent && sendPhotos[studentId] && sendPhotos[studentId].length > 0 && (
                       <div className="mt-2">
                         <p className="mb-1 text-xs text-[var(--neutral-foreground-3)]">
                           <MaterialIcon name="photo_library" size={12} className="inline mr-1" />
-                          自動添付された写真 ({sendPhotos[studentId].length}枚 / 不要な画像は X で外せます)
+                          添付済み写真 ({sendPhotos[studentId].length}枚)
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {sendPhotos[studentId].map((photo) => (
-                            <div key={photo.id} className="relative group">
+                            <div key={photo.id}>
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={photo.url}
                                 alt={photo.activity_description ?? ''}
                                 className="h-16 w-16 rounded object-cover border border-[var(--neutral-stroke-2)]"
                               />
-                              <button
-                                type="button"
-                                onClick={() => removeSendPhoto(studentId, photo.id)}
-                                className="absolute -top-1 -right-1 rounded-full bg-[var(--status-danger-fg)] text-white p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                                title="添付から外す"
-                              >
-                                <MaterialIcon name="close" size={12} />
-                              </button>
                             </div>
                           ))}
                         </div>
