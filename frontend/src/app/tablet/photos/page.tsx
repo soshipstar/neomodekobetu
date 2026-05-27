@@ -214,10 +214,20 @@ export default function TabletPhotosPage() {
         serverFailures = fails.map((x: any) => ({ reason: String(x?.reason ?? '不明') }));
       } catch (err: unknown) {
         // バッチ全体失敗 (容量超過の早期 422 / ネットワーク等)
-        const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-          || 'アップロードに失敗しました';
+        // 旧実装: 上位 message しか拾わず、per-file の `data.failed[].reason`
+        //   ("容量超過: 保存すると 100MB を超えます" 等) が捨てられていた。
+        //   結果ユーザに「すべての写真のアップロードに失敗しました」しか出ず、
+        //   原因不明で再試行が続く問題 (報告: 写真添付されない件) があった。
+        // 新実装: data.failed[].reason を優先採用、無ければ top-level message。
+        const respData = (err as { response?: { data?: { message?: string; data?: { failed?: Array<{ reason?: string }> } } } })?.response?.data;
+        const perFile = Array.isArray(respData?.data?.failed) ? respData!.data!.failed! : [];
+        const fallbackMsg = respData?.message || 'アップロードに失敗しました';
+        if (perFile.length > 0) {
+          serverFailures = perFile.map((x) => ({ reason: String(x?.reason ?? fallbackMsg) }));
+        } else {
+          serverFailures = compressed.map(() => ({ reason: fallbackMsg }));
+        }
         console.warn('batch upload failed', err);
-        serverFailures = compressed.map(() => ({ reason: msg }));
       }
     }
 
@@ -225,15 +235,36 @@ export default function TabletPhotosPage() {
     setUploading(false);
 
     // 3) 結果通知 (圧縮失敗とサーバー失敗を統合)
+    // 旧実装は「すべての写真のアップロードに失敗しました」など件数しか出さず、
+    // 容量超過などの原因が画面に届かなかった。serverFailures の reason から
+    // 代表的な理由 (頻度最多) を抜き出してユーザに知らせる。
     const totalFail = compressFailures.length + serverFailures.length;
+    // 失敗理由を頻度集計 → 代表理由を選ぶ
+    const reasonCounts: Record<string, number> = {};
+    serverFailures.forEach((f) => {
+      reasonCounts[f.reason] = (reasonCounts[f.reason] ?? 0) + 1;
+    });
+    const topReason = Object.entries(reasonCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+    const isQuotaIssue = (topReason ?? '').includes('容量') || (topReason ?? '').includes('100MB');
     if (totalFail === 0) {
       toast.success(`${serverCreated}件の写真をアップロードしました`);
     } else if (serverCreated === 0) {
       const heicOnly = compressFailures.length > 0 && compressFailures.every((x) => x.reason === 'heic');
-      toast.error(heicOnly ? HEIC_HINT : 'すべての写真のアップロードに失敗しました');
+      if (heicOnly) {
+        toast.error(HEIC_HINT);
+      } else if (isQuotaIssue) {
+        // 容量超過は特に大事 → 写真ライブラリで削除して回避する手順を案内
+        toast.error(`${topReason}\n\nこれ以上アップロードできません。写真ライブラリで古い写真を削除してから再度お試しください。`);
+      } else if (topReason) {
+        toast.error(`アップロードに失敗しました\n理由: ${topReason}`);
+      } else {
+        toast.error('すべての写真のアップロードに失敗しました');
+      }
     } else {
       const heicIncluded = compressFailures.some((x) => x.reason === 'heic');
-      toast.warning(`${serverCreated}件成功 / ${totalFail}件失敗${heicIncluded ? `\n${HEIC_HINT}` : ''}`);
+      const reasonSuffix = topReason ? `\n失敗理由: ${topReason}` : '';
+      const heicSuffix = heicIncluded ? `\n${HEIC_HINT}` : '';
+      toast.warning(`${serverCreated}件成功 / ${totalFail}件失敗${reasonSuffix}${heicSuffix}`);
     }
 
     // 4) リセット (失敗分も含めて全クリア。リトライ時は再選択する想定)
@@ -292,7 +323,36 @@ export default function TabletPhotosPage() {
       {/* アップロードフォーム */}
       {showUpload && (
         <div className="rounded-xl bg-white p-6 shadow-md space-y-5">
-          <h2 className="text-xl font-bold">写真をアップロード</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-xl font-bold">写真をアップロード</h2>
+            {/* 容量状況をモーダル内にも表示 — ヘッダーまでスクロールしなくても
+                残り容量や 95% / 100% 警告が常に視界に入るようにする */}
+            {usage && (
+              <div className="min-w-[260px] flex-1 max-w-md">
+                <StorageUsageBar
+                  usedBytes={usage.used_bytes}
+                  limitBytes={usage.limit_bytes}
+                  compact
+                />
+              </div>
+            )}
+          </div>
+
+          {/* 事前見積もり: 圧縮後 100KB/枚 で見積もり、残容量を超えそうなら警告 */}
+          {usage && pendingFiles.length > 0 && (() => {
+            const estimatePerFile = 100 * 1024; // BE 側 TARGET_FILE_SIZE と同値
+            const estimate = pendingFiles.length * estimatePerFile;
+            const available = Math.max(0, usage.limit_bytes - usage.used_bytes);
+            if (estimate <= available) return null;
+            const overMb = ((estimate - available) / 1024 / 1024).toFixed(1);
+            return (
+              <div className="rounded-md bg-[var(--status-warning-bg)] px-3 py-2 text-sm text-[var(--status-warning-fg)]">
+                ⚠ 選択中の {pendingFiles.length} 枚は圧縮後でも残り容量を約 {overMb} MB
+                超える可能性があります。一部または全部がアップロードされない場合があります。
+                古い写真の削除をおすすめします。
+              </div>
+            );
+          })()}
 
           {/* ファイル選択 */}
           <div>
