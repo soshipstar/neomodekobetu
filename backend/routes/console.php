@@ -32,6 +32,14 @@ Schedule::command('chat:delete-old')
     ->withoutOverlapping()
     ->onOneServer();
 
+// 古い事業所写真の自動削除 - 毎日午前3時30分に実行 (90日より古い、かつ連絡帳未添付の写真のみ)
+//   実利用ペース (てらこやプラス ~30日, narZE ~80日で 100MB 上限) を考慮し
+//   90 日でクリーンアップ。連絡帳に添付済みの写真は保護者の閲覧履歴として残す。
+Schedule::command('photos:cleanup-old --days=90')
+    ->dailyAt('03:30')
+    ->withoutOverlapping()
+    ->onOneServer();
+
 // 代理店の月次手数料を毎月1日 02:00 に前月分を集計（draft 状態で作成）
 // マスター管理者が手動で finalize → mark-paid を行うフロー。
 Schedule::command('agent-payouts:calculate')
