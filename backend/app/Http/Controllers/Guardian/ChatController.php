@@ -415,7 +415,16 @@ class ChatController extends Controller
             'makeup_date'   => 'nullable|date',
         ]);
 
-        $studentId = $request->student_id;
+        $studentId = (int) $request->student_id;
+
+        // セキュリティ硬化: student_id がこのチャットルームの student と一致しない場合は拒否。
+        // (= 他人の子供の id を入れて欠席連絡するのを防ぐ)
+        if ((int) $room->student_id !== $studentId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'このチャットの児童と一致しません。',
+            ], 403);
+        }
         $absenceDate = $request->absence_date;
         $reason = trim($request->reason ?? '');
         $makeupOption = $request->makeup_option;
@@ -506,9 +515,21 @@ class ChatController extends Controller
             'notes'      => 'nullable|string|max:500',
         ]);
 
-        $studentId = $request->student_id;
-        $eventId = $request->event_id;
+        $studentId = (int) $request->student_id;
+        $eventId = (int) $request->event_id;
         $notes = trim($request->notes ?? '');
+
+        // セキュリティ硬化 (バグ報告: 他事業所のイベント参加申込ができる):
+        //  (1) student_id はこのチャットルームの student と一致しないと拒否
+        //      → 他人の子供の id を入れて申し込みするのを防ぐ
+        //  (2) event.classroom_id が student.classroom_id と一致しないと拒否
+        //      → 他事業所のイベントへの誤申込みを防ぐ
+        if ((int) $room->student_id !== $studentId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'このチャットの児童と一致しません。',
+            ], 403);
+        }
 
         // イベント情報
         $event = DB::table('events')->where('id', $eventId)->first();
@@ -520,6 +541,13 @@ class ChatController extends Controller
         $student = DB::table('students')->where('id', $studentId)->first();
         if (!$student) {
             return response()->json(['success' => false, 'message' => '生徒が見つかりません'], 404);
+        }
+
+        if ((int) $event->classroom_id !== (int) $student->classroom_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'このイベントは別の事業所のため申し込みできません。',
+            ], 403);
         }
 
         // 重複チェック
@@ -587,7 +615,16 @@ class ChatController extends Controller
             'date3'      => 'nullable|date',
         ]);
 
-        $studentId = $request->student_id;
+        $studentId = (int) $request->student_id;
+
+        // セキュリティ硬化: student_id がこのチャットルームの student と一致しない場合は拒否。
+        // (= 他人の子供の id を入れて面談予約するのを防ぐ)
+        if ((int) $room->student_id !== $studentId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'このチャットの児童と一致しません。',
+            ], 403);
+        }
 
         // 教室IDを取得
         $student = DB::table('students')->where('id', $studentId)->first();
