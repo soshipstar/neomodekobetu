@@ -133,6 +133,10 @@ export default function GuardianChatRoomPage() {
   );
 
   const studentId = activeRoom?.student_id || activeRoom?.student?.id;
+  // バグ報告 (他事業所のイベント参加申込ができる): 連絡帳のチャットルームから
+  // イベント申込フォームを開いた際、保護者の全教室のイベントが候補に出ていた。
+  // ルームの児童が在籍する事業所の id を子フォームに渡して絞り込む。
+  const classroomId = (activeRoom as unknown as { student?: { classroom_id?: number } })?.student?.classroom_id;
 
   return (
     <div className="flex h-full flex-col sm:h-full">
@@ -232,6 +236,7 @@ export default function GuardianChatRoomPage() {
         <EventRegistrationForm
           roomId={roomId}
           studentId={studentId}
+          classroomId={classroomId}
           onSuccess={handleFormSuccess}
           toast={toast}
         />
@@ -387,7 +392,7 @@ function AbsenceForm({ roomId, studentId, onSuccess, toast }: FormProps) {
 // Event Registration Form
 // ---------------------------------------------------------------------------
 
-function EventRegistrationForm({ roomId, studentId, onSuccess, toast }: FormProps) {
+function EventRegistrationForm({ roomId, studentId, classroomId, onSuccess, toast }: FormProps & { classroomId?: number }) {
   const [eventId, setEventId] = useState<number | ''>('');
   const [notes, setNotes] = useState('');
   const [sending, setSending] = useState(false);
@@ -398,7 +403,13 @@ function EventRegistrationForm({ roomId, studentId, onSuccess, toast }: FormProp
     let cancelled = false;
     (async () => {
       try {
-        const res = await api.get('/api/guardian/events', { params: { upcoming: true } });
+        // バグ報告: 他事業所のイベントが候補に混入する。
+        // ルームの児童の在籍教室 id を渡し、その事業所のイベントだけを取得する。
+        // classroomId が未取得 (= ルーム情報の読み込み前) なら fetch を待つため、
+        // 取れた段階で再実行されるよう dependency に入れている。
+        const params: Record<string, unknown> = { upcoming: true };
+        if (classroomId) params.classroom_id = classroomId;
+        const res = await api.get('/api/guardian/events', { params });
         if (!cancelled) {
           setEvents(res.data?.data || []);
         }
@@ -409,7 +420,7 @@ function EventRegistrationForm({ roomId, studentId, onSuccess, toast }: FormProp
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [classroomId]);
 
   const handleSubmit = async () => {
     if (!studentId || !eventId) return;
