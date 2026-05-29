@@ -592,6 +592,24 @@ Route::prefix('staff')
         Route::post('/activity-support-plans/generate-ai/five-domains', [App\Http\Controllers\Staff\ActivitySupportPlanController::class, 'generateAiFiveDomains']);
         Route::post('/activity-support-plans/generate-ai/schedule-content', [App\Http\Controllers\Staff\ActivitySupportPlanController::class, 'generateAiScheduleContent']);
 
+        // --- フリースクール用報告書 ---
+        //  利用者登録 + 出席日一覧 + 報告書 AI 生成/編集/PDF + 期間一括 PDF
+        Route::prefix('free-school')->group(function () {
+            Route::get('/users', [App\Http\Controllers\Staff\FreeSchoolReportController::class, 'indexUsers']);
+            Route::post('/users', [App\Http\Controllers\Staff\FreeSchoolReportController::class, 'storeUser']);
+            Route::delete('/users/{freeSchoolUser}', [App\Http\Controllers\Staff\FreeSchoolReportController::class, 'destroyUser']);
+            Route::get('/users/{freeSchoolUser}/attendance', [App\Http\Controllers\Staff\FreeSchoolReportController::class, 'attendance']);
+
+            Route::get('/reports', [App\Http\Controllers\Staff\FreeSchoolReportController::class, 'indexReports']);
+            Route::get('/reports/{freeSchoolReport}', [App\Http\Controllers\Staff\FreeSchoolReportController::class, 'showReport']);
+            Route::post('/reports/generate', [App\Http\Controllers\Staff\FreeSchoolReportController::class, 'generateReport']);
+            Route::put('/reports/{freeSchoolReport}', [App\Http\Controllers\Staff\FreeSchoolReportController::class, 'updateReport']);
+            Route::delete('/reports/{freeSchoolReport}', [App\Http\Controllers\Staff\FreeSchoolReportController::class, 'destroyReport']);
+
+            Route::get('/reports/{freeSchoolReport}/pdf', [App\Http\Controllers\Staff\FreeSchoolReportController::class, 'pdfReport']);
+            Route::get('/reports/batch/pdf', [App\Http\Controllers\Staff\FreeSchoolReportController::class, 'batchPdf']);
+        });
+
         // --- スタッフ間チャット ---
         Route::prefix('staff-chat')->group(function () {
             Route::get('/staff-list', [App\Http\Controllers\Staff\StaffChatController::class, 'staffList']);
