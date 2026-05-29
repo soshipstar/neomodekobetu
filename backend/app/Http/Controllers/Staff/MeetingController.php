@@ -378,7 +378,8 @@ class MeetingController extends Controller
             }
 
             $client = \OpenAI::client($apiKey);
-            $aiModel = 'gpt-5.4-2026-03-17';
+            // 面談記録は短文を整理するタスクで軽量、mini で十分 (現場要望)
+            $aiModel = 'gpt-5.4-mini-2026-03-17';
 
             $prompt = "あなたは放課後等デイサービスの専門スタッフです。保護者面談で聞き取った内容を、保護者用アセスメント（個別支援計画の保護者記入欄）に適切な文章で整理してください。\n\n"
                 . "【生徒名】{$student->student_name}\n"
