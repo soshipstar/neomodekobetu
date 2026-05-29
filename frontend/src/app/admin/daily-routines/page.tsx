@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import api, { formatApiError } from '@/lib/api';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -45,13 +45,13 @@ export default function AdminDailyRoutinesPage() {
       return api.post('/api/admin/daily-routines', data);
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin', 'daily-routines'] }); toast.success('保存しました'); closeModal(); },
-    onError: () => toast.error('保存に失敗しました'),
+    onError: (err: unknown) => toast.error(formatApiError(err, '保存に失敗しました')),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => api.delete(`/api/admin/daily-routines/${id}`),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin', 'daily-routines'] }); toast.success('削除しました'); },
-    onError: () => toast.error('削除に失敗しました'),
+    onError: (err: unknown) => toast.error(formatApiError(err, '削除に失敗しました')),
   });
 
   const closeModal = () => { setModalOpen(false); setEditing(null); setForm({ name: '', start_time: '09:00', end_time: '09:30', description: '', classroom_id: '', is_active: true }); };

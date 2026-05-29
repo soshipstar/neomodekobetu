@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import api, { formatApiError } from '@/lib/api';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -45,13 +45,13 @@ export default function AdminHolidaysPage() {
       classroom_id: data.classroom_id ? Number(data.classroom_id) : null,
     }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin', 'holidays'] }); toast.success('追加しました'); setModalOpen(false); setForm({ holiday_date: '', holiday_name: '', classroom_id: '' }); },
-    onError: () => toast.error('追加に失敗しました'),
+    onError: (err: unknown) => toast.error(formatApiError(err, '追加に失敗しました')),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => api.delete(`/api/admin/holidays/${id}`),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin', 'holidays'] }); toast.success('削除しました'); },
-    onError: () => toast.error('削除に失敗しました'),
+    onError: (err: unknown) => toast.error(formatApiError(err, '削除に失敗しました')),
   });
 
   const holidaysByDate = useMemo(() => {

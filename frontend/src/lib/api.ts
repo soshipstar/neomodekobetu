@@ -83,3 +83,58 @@ api.interceptors.response.use(
 );
 
 export default api;
+
+/**
+ * API レスポンスのエラーを人間が読みやすいトースト用文字列に整形する。
+ *
+ * 旧実装: 各コンポーネントで `onError: () => toast.error('保存に失敗しました')`
+ *   のように一律メッセージを出していて、422 のバリデーション内容や 502 の
+ *   接続断などが画面に出ず原因が分からない問題があった。
+ *
+ * 優先順位:
+ *  1. Laravel の 422 `errors` (フィールド別エラー) を最大 3 行で展開
+ *  2. レスポンス body の `message` をそのまま表示
+ *  3. HTTP ステータスから一般的な原因を推測
+ *      - 502 / 503: 「サーバーに接続できません」
+ *      - 401     : 「認証が切れました」
+ *      - 403     : 「権限がありません」
+ *      - その他 : fallback メッセージ
+ *
+ * @param err   useMutation の onError などで渡される未知エラー
+ * @param fallback ステータス不明 / 解釈不能時の既定メッセージ
+ */
+export function formatApiError(err: unknown, fallback = '操作に失敗しました'): string {
+  if (axios.isAxiosError(err)) {
+    const status = err.response?.status;
+    const data = err.response?.data as
+      | { message?: string; errors?: Record<string, string | string[]> }
+      | undefined;
+
+    // 422 のフィールド別バリデーションエラー
+    if (data?.errors && typeof data.errors === 'object') {
+      const lines: string[] = [];
+      for (const [field, msgs] of Object.entries(data.errors)) {
+        const firstMsg = Array.isArray(msgs) ? msgs[0] : msgs;
+        if (firstMsg) lines.push(`${field}: ${firstMsg}`);
+        if (lines.length >= 3) break;
+      }
+      const head = data.message ? `${data.message}\n` : '';
+      return `${head}${lines.join('\n')}`.trim();
+    }
+
+    // 単純な message
+    if (data?.message) return data.message;
+
+    // ステータス別の一般メッセージ
+    if (status === 401) return '認証が切れました。再度ログインしてください。';
+    if (status === 403) return 'この操作の権限がありません。';
+    if (status === 404) return '対象が見つかりませんでした。';
+    if (status === 429) return 'リクエストが多すぎます。少し時間を空けてから再度お試しください。';
+    if (status === 502 || status === 503 || status === 504) {
+      return 'サーバーに接続できません。少し待ってから再試行してください。';
+    }
+    if (!err.response) return 'ネットワークエラー: サーバーに接続できませんでした。';
+  }
+  if (err instanceof Error && err.message) return err.message;
+  return fallback;
+}

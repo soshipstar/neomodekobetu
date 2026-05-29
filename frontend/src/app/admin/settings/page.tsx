@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import api, { formatApiError } from '@/lib/api';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -65,7 +65,7 @@ export default function AdminSettingsPage() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'classroom-settings'] });
       toast.success('設定を保存しました');
     },
-    onError: () => toast.error('保存に失敗しました'),
+    onError: (err: unknown) => toast.error(formatApiError(err, '保存に失敗しました')),
   });
 
   if (isLoading) {

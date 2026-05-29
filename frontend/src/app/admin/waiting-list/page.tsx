@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import api, { formatApiError } from '@/lib/api';
 import { usePagination } from '@/hooks/usePagination';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Card } from '@/components/ui/Card';
@@ -60,7 +60,7 @@ export default function AdminWaitingListPage() {
       toast.success('更新しました');
       setEditModal(false);
     },
-    onError: () => toast.error('更新に失敗しました'),
+    onError: (err: unknown) => toast.error(formatApiError(err, '更新に失敗しました')),
   });
 
   const openEdit = (student: WaitingStudent) => {

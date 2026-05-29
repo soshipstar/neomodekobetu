@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import api, { formatApiError } from '@/lib/api';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -78,7 +78,7 @@ export default function AdminEventsPage() {
       toast.success(editingEvent ? '更新しました' : '作成しました');
       closeModal();
     },
-    onError: () => toast.error('保存に失敗しました'),
+    onError: (err: unknown) => toast.error(formatApiError(err, '保存に失敗しました')),
   });
 
   const deleteMutation = useMutation({
@@ -87,7 +87,7 @@ export default function AdminEventsPage() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'events'] });
       toast.success('削除しました');
     },
-    onError: () => toast.error('削除に失敗しました'),
+    onError: (err: unknown) => toast.error(formatApiError(err, '削除に失敗しました')),
   });
 
   const emptyForm = {

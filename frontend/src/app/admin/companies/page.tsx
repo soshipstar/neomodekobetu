@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import api from '@/lib/api';
+import api, { formatApiError } from '@/lib/api';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -261,8 +261,8 @@ function CompanyClassroomModal({ company, onClose }: { company: Company; onClose
       await api.post(`/api/admin/companies/${company.id}/assign-classrooms`, { classroom_ids: selectedIds });
       toast.success('教室を割り当てました');
       onClose();
-    } catch {
-      toast.error('保存に失敗しました');
+    } catch (err) {
+      toast.error(formatApiError(err, '保存に失敗しました'));
     } finally {
       setSaving(false);
     }

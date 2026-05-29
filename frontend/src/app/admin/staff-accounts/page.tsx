@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import api, { formatApiError } from '@/lib/api';
 import { Table, type Column } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -141,8 +141,8 @@ export default function StaffAccountsPage() {
       toast.success(editingStaff ? 'スタッフ情報を更新しました' : 'スタッフを登録しました');
       closeModal();
     },
-    onError: () => {
-      toast.error('保存に失敗しました');
+    onError: (err: unknown) => {
+      toast.error(formatApiError(err, '保存に失敗しました'));
     },
   });
 
@@ -156,8 +156,8 @@ export default function StaffAccountsPage() {
       setDeleteModalOpen(false);
       setDeletingStaff(null);
     },
-    onError: () => {
-      toast.error('削除に失敗しました');
+    onError: (err: unknown) => {
+      toast.error(formatApiError(err, '削除に失敗しました'));
     },
   });
 
@@ -170,8 +170,8 @@ export default function StaffAccountsPage() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'staff-accounts'] });
       toast.success('スタッフを再有効化しました');
     },
-    onError: () => {
-      toast.error('再有効化に失敗しました');
+    onError: (err: unknown) => {
+      toast.error(formatApiError(err, '再有効化に失敗しました'));
     },
   });
 
@@ -186,8 +186,8 @@ export default function StaffAccountsPage() {
       setConvertModalOpen(false);
       setConvertingStaff(null);
     },
-    onError: () => {
-      toast.error('変換に失敗しました');
+    onError: (err: unknown) => {
+      toast.error(formatApiError(err, '変換に失敗しました'));
     },
   });
 

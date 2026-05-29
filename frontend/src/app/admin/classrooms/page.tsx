@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import api from '@/lib/api';
+import api, { formatApiError } from '@/lib/api';
 import { classroomSchema, type ClassroomFormData } from '@/lib/validators';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -60,7 +60,7 @@ export default function ClassroomsPage() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'classrooms'] });
       toast.success('ステータスを変更しました');
     },
-    onError: () => toast.error('変更に失敗しました'),
+    onError: (err: unknown) => toast.error(formatApiError(err, '変更に失敗しました')),
   });
 
   const createMutation = useMutation({
@@ -73,7 +73,7 @@ export default function ClassroomsPage() {
       createForm.reset();
       toast.success('事業所を作成しました');
     },
-    onError: () => toast.error('作成に失敗しました'),
+    onError: (err: unknown) => toast.error(formatApiError(err, '作成に失敗しました')),
   });
 
   const updateMutation = useMutation({
@@ -86,7 +86,7 @@ export default function ClassroomsPage() {
       editForm.reset();
       toast.success('事業所を更新しました');
     },
-    onError: () => toast.error('更新に失敗しました'),
+    onError: (err: unknown) => toast.error(formatApiError(err, '更新に失敗しました')),
   });
 
   // 教室の削除 (mode = 'soft' で無効化、'hard' で完全削除)。
@@ -102,10 +102,7 @@ export default function ClassroomsPage() {
       toast.success(variables.mode === 'hard' ? '事業所を完全に削除しました' : '事業所を無効にしました');
       setDeletingClassroom(null);
     },
-    onError: (err: { response?: { data?: { message?: string } } }) => {
-      const msg = err?.response?.data?.message || '削除に失敗しました';
-      toast.error(msg);
-    },
+    onError: (err: unknown) => toast.error(formatApiError(err, '削除に失敗しました')),
   });
 
   const columns: Column<Classroom>[] = [

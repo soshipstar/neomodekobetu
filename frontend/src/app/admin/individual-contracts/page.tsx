@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import api from '@/lib/api';
+import api, { formatApiError } from '@/lib/api';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -60,8 +60,8 @@ export default function AdminIndividualContractsPage() {
       const payload = res.data?.data;
       const list: IndividualContract[] = Array.isArray(payload?.data) ? payload.data : (Array.isArray(payload) ? payload : []);
       setContracts(list);
-    } catch {
-      toast.error('個別契約書の取得に失敗しました');
+    } catch (err) {
+      toast.error(formatApiError(err, '個別契約書の取得に失敗しました'));
     } finally {
       setLoading(false);
     }
@@ -87,8 +87,8 @@ export default function AdminIndividualContractsPage() {
       await api.put(`/api/admin/master/individual-contracts/${c.id}`, { [party]: newVal });
       toast.success(newVal ? '署名済としてマークしました' : '署名を解除しました');
       fetchContracts();
-    } catch {
-      toast.error('更新に失敗しました');
+    } catch (err) {
+      toast.error(formatApiError(err, '更新に失敗しました'));
     }
   };
 
@@ -98,8 +98,8 @@ export default function AdminIndividualContractsPage() {
       const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
       window.open(url, '_blank', 'noopener');
       setTimeout(() => window.URL.revokeObjectURL(url), 60000);
-    } catch {
-      toast.error('PDFを開けませんでした');
+    } catch (err) {
+      toast.error(formatApiError(err, 'PDFを開けませんでした'));
     }
   };
 
@@ -109,8 +109,8 @@ export default function AdminIndividualContractsPage() {
       await api.delete(`/api/admin/master/individual-contracts/${c.id}`);
       toast.success('削除しました');
       fetchContracts();
-    } catch {
-      toast.error('削除に失敗しました');
+    } catch (err) {
+      toast.error(formatApiError(err, '削除に失敗しました'));
     }
   };
 

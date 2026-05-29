@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import api from '@/lib/api';
+import api, { formatApiError } from '@/lib/api';
 import { userSchema, type UserFormData } from '@/lib/validators';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -49,7 +49,7 @@ export default function UsersPage() {
       reset();
       toast.success('ユーザーを作成しました');
     },
-    onError: () => toast.error('作成に失敗しました'),
+    onError: (err: unknown) => toast.error(formatApiError(err, '作成に失敗しました')),
   });
 
   const columns: Column<User>[] = [

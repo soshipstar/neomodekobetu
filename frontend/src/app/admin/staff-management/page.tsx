@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import api, { formatApiError } from '@/lib/api';
 import { Table, type Column } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -120,8 +120,8 @@ export default function StaffManagementPage() {
       toast.success(editingStaff ? 'スタッフ情報を更新しました' : 'スタッフを登録しました');
       closeModal();
     },
-    onError: () => {
-      toast.error('保存に失敗しました');
+    onError: (err: unknown) => {
+      toast.error(formatApiError(err, '保存に失敗しました'));
     },
   });
 
@@ -135,8 +135,8 @@ export default function StaffManagementPage() {
       setDeleteModalOpen(false);
       setDeletingStaff(null);
     },
-    onError: () => {
-      toast.error('削除に失敗しました');
+    onError: (err: unknown) => {
+      toast.error(formatApiError(err, '削除に失敗しました'));
     },
   });
 

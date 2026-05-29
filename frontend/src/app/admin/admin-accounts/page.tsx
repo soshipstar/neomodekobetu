@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import api, { formatApiError } from '@/lib/api';
 import { Table, type Column } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -141,8 +141,11 @@ export default function AdminAccountsPage() {
       toast.success(editingAdmin ? '管理者情報を更新しました' : '管理者を登録しました');
       closeModal();
     },
-    onError: () => {
-      toast.error('保存に失敗しました');
+    onError: (err: unknown) => {
+      // BE が返したメッセージとフィールド別エラーを画面に出す。
+      // 旧実装は一律「保存に失敗しました」を出して原因不明だった
+      // (502/422/権限エラーの区別がつかず、現場で問い合わせ多発)。
+      toast.error(formatApiError(err, '保存に失敗しました'));
     },
   });
 
@@ -156,8 +159,8 @@ export default function AdminAccountsPage() {
       setDeleteModalOpen(false);
       setDeletingAdmin(null);
     },
-    onError: () => {
-      toast.error('削除に失敗しました');
+    onError: (err: unknown) => {
+      toast.error(formatApiError(err, '削除に失敗しました'));
     },
   });
 
@@ -172,8 +175,8 @@ export default function AdminAccountsPage() {
       setConvertModalOpen(false);
       setConvertingAdmin(null);
     },
-    onError: () => {
-      toast.error('変換に失敗しました');
+    onError: (err: unknown) => {
+      toast.error(formatApiError(err, '変換に失敗しました'));
     },
   });
 

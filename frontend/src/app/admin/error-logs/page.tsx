@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import api, { formatApiError } from '@/lib/api';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -105,7 +105,7 @@ export default function ErrorLogsPage() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'error-logs'] });
       toast.success(res.data?.message || '古いログを削除しました');
     },
-    onError: () => toast.error('削除に失敗しました'),
+    onError: (err: unknown) => toast.error(formatApiError(err, '削除に失敗しました')),
   });
 
   // Resolve mutation
@@ -116,7 +116,7 @@ export default function ErrorLogsPage() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'error-logs'] });
       toast.success('対処済みステータスを更新しました');
     },
-    onError: () => toast.error('更新に失敗しました'),
+    onError: (err: unknown) => toast.error(formatApiError(err, '更新に失敗しました')),
   });
 
   return (

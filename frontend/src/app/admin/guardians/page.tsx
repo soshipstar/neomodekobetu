@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import api, { formatApiError } from '@/lib/api';
 import { usePagination } from '@/hooks/usePagination';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Button } from '@/components/ui/Button';
@@ -46,13 +46,13 @@ export default function AdminGuardiansPage() {
       return api.post('/api/admin/guardians', data);
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin', 'guardians'] }); toast.success('保存しました'); closeModal(); },
-    onError: () => toast.error('保存に失敗しました'),
+    onError: (err: unknown) => toast.error(formatApiError(err, '保存に失敗しました')),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => api.delete(`/api/admin/guardians/${id}`),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin', 'guardians'] }); toast.success('削除しました'); },
-    onError: () => toast.error('削除に失敗しました'),
+    onError: (err: unknown) => toast.error(formatApiError(err, '削除に失敗しました')),
   });
 
   const closeModal = () => { setModalOpen(false); setEditing(null); setForm({ full_name: '', username: '', email: '', phone: '', password: '', classroom_id: '', is_active: true }); };
