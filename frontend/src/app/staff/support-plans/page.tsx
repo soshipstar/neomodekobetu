@@ -615,6 +615,9 @@ function SupportPlanFormModal({
           activity_name: form.activity_name,
           activity_purpose: form.activity_purpose,
           activity_content: form.activity_content,
+          // 学年別の表現スタイルを反映するため target_grade を渡す
+          // (複数選択時は BE 側で最も若い学年のスタイルを採用する)
+          target_grade: form.target_grade.join(','),
         }
       );
       if (res.data.success && res.data.data) {

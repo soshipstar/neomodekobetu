@@ -292,17 +292,27 @@ class ActivitySupportPlanController extends Controller
             'activity_name' => 'required|string',
             'activity_purpose' => 'nullable|string',
             'activity_content' => 'nullable|string',
+            // 対象学年を受けて文言を学年相応に調整する (複数指定可・カンマ区切り)
+            'target_grade' => 'nullable|string',
         ]);
 
         $activityName = $request->activity_name;
         $activityPurpose = $request->activity_purpose ?? '';
         $activityContent = $request->activity_content ?? '';
 
+        // 学年別の文言スタイル (複数指定なら最も若い学年に合わせる)
+        $style = \App\Services\GradeLevelStyleService::forTargetGrade($request->target_grade);
+
         $prompt = "あなたは児童発達支援・放課後等デイサービスの支援員です。\n";
         $prompt .= "以下の活動について、五領域への配慮とその他の注意点を生成してください。\n\n";
         $prompt .= "【活動名】\n{$activityName}\n\n";
         $prompt .= "【活動の目的】\n{$activityPurpose}\n\n";
         $prompt .= "【活動の内容】\n{$activityContent}\n\n";
+        // 対象学年に合わせた表現スタイル + 重視観点を必ず注入する
+        $prompt .= "【対象年齢層: {$style['label']}】\n";
+        $prompt .= "{$style['guideline']}\n\n";
+        $prompt .= "【この年齢で五領域の配慮として重視すべき観点】\n";
+        $prompt .= "{$style['considerations']}\n\n";
         $prompt .= "以下の形式でJSON形式で出力してください。JSONのみを出力し、他の説明は不要です。\n\n";
         $prompt .= "{\n";
         $prompt .= '    "five_domains_consideration": "五領域への配慮を一つの文字列として記載（下記フォーマット参照）",' . "\n";
@@ -381,14 +391,16 @@ class ActivitySupportPlanController extends Controller
         $schedule = $request->schedule;
         $targetGrade = $request->target_grade ?? '';
 
-        // 対象年齢層の日本語変換
+        // 学年別の文言スタイル (複数指定なら最も若い学年に合わせる = 報告者要望)
+        $style = \App\Services\GradeLevelStyleService::forTargetGrade($targetGrade);
+
+        // 旧仕様互換: target_grade ラベルの並びも引き続き表示
         $gradeLabels = [
             'preschool' => '小学生未満',
             'elementary' => '小学生',
             'junior_high' => '中学生',
             'high_school' => '高校生',
         ];
-
         $targetGradeText = '';
         if ($targetGrade) {
             $grades = array_map(fn($g) => $gradeLabels[trim($g)] ?? trim($g), explode(',', $targetGrade));
@@ -417,8 +429,12 @@ class ActivitySupportPlanController extends Controller
         }
         $prompt .= "【総活動時間】{$totalDuration}分\n";
         if ($targetGradeText) {
-            $prompt .= "【対象年齢層】{$targetGradeText}\n";
+            $prompt .= "【対象年齢層】{$targetGradeText} (主たる対象: {$style['label']})\n";
+        } else {
+            $prompt .= "【対象年齢層】(主たる対象: {$style['label']})\n";
         }
+        // 学年別の表現スタイル ガイドラインを必ず入れて、文言が年齢相応になるようにする
+        $prompt .= "\n【対象年齢層の表現スタイルと配慮】\n{$style['guideline']}\n";
         $prompt .= "\n【活動スケジュール】\n{$scheduleText}\n";
         $prompt .= "\n以下の形式でJSON形式で出力してください。JSONのみを出力し、他の説明は不要です。\n\n";
         $prompt .= "{\n";

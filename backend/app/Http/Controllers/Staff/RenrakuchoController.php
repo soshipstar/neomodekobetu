@@ -794,6 +794,13 @@ class RenrakuchoController extends Controller
         // 本人または上記の児童名で表現させるため。
         $prompt .= "【対象児童】\n{$studentName}\n\n";
 
+        // 学年別の文言スタイルを注入 (要望: 児童の発達段階に合わせた表現で
+        // 連絡帳を生成する)。複数学年の活動でも、児童 1 人の grade_level に
+        // ぴったり合わせる。
+        $studentGradeStyle = \App\Services\GradeLevelStyleService::forStudentGrade($student?->grade_level);
+        $prompt .= "【本児童の発達段階 (連絡帳の文体に反映してください): {$studentGradeStyle['label']}】\n";
+        $prompt .= "{$studentGradeStyle['guideline']}\n\n";
+
         // Support plan info (matching legacy)
         if ($record->support_plan_id) {
             $supportPlan = DB::table('activity_support_plans')->find($record->support_plan_id);
