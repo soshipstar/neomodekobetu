@@ -77,6 +77,12 @@ deploy_backend() {
 
     log "Restarting backend / queue / reverb / scheduler containers..."
     ssh $SERVER "cd $REMOTE_DIR && docker compose -f docker-compose.prod.yml up -d --no-deps --no-build backend queue reverb scheduler"
+    # backend を再作成すると Docker が新しい内部 IP を割り当てる。
+    # nginx の upstream は起動時に DNS 解決した IP を握り続けるため、
+    # backend が再作成された後は必ず nginx も再起動して upstream を再解決させる。
+    # (2026-05-29 502 Bad Gateway 事故の再発防止)
+    log "Restarting nginx (refresh upstream DNS cache)..."
+    ssh $SERVER "cd $REMOTE_DIR && docker compose -f docker-compose.prod.yml restart nginx"
     ok "Backend deployed (migrations run automatically via entrypoint)"
 }
 
@@ -84,7 +90,8 @@ deploy_backend() {
 deploy_restart() {
     push_code
     log "Restarting containers (no rebuild)..."
-    ssh $SERVER "cd $REMOTE_DIR && docker compose -f docker-compose.prod.yml restart backend queue reverb scheduler"
+    # nginx も含めて再起動し upstream DNS を再解決させる (502 事故の再発防止)
+    ssh $SERVER "cd $REMOTE_DIR && docker compose -f docker-compose.prod.yml restart backend queue reverb scheduler nginx"
     ok "Restarted"
 }
 
