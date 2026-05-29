@@ -33,6 +33,9 @@ return [
 
     'openai' => [
         'api_key' => env('OPENAI_API_KEY'),
+        // 既定で GPT-5.4 通常版を使用 (旧: gpt-5.4-mini)。
+        // 必要に応じて .env の OPENAI_MODEL で上書き可能。
+        'model'   => env('OPENAI_MODEL', 'gpt-5.4-2026-03-17'),
     ],
 
     'external_api' => [

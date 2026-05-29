@@ -893,7 +893,7 @@ class RenrakuchoController extends Controller
 
             $client = \OpenAI::client($apiKey);
             $response = $client->chat()->create([
-                'model'    => 'gpt-5.4-mini-2026-03-17',
+                'model'    => 'gpt-5.4-2026-03-17',
                 'messages' => [
                     ['role' => 'system', 'content' => 'あなたは個別支援教育の経験豊富な教員です。保護者に向けて温かく丁寧で、前向きでポジティブな連絡帳を書きます。本人の良い面や成長を見つけ、課題も成長の機会として前向きに伝えます。「しかし」「ですが」などのネガティブな接続詞は使わず、常にポジティブな表現を心がけます。連絡帳の対象児童を指すときは「本人」または児童名を使い、「子ども」「お子様」という言葉は使いません。他の児童は「友だち」と表記し、「友達」「保護者様」も使いません。'],
                     ['role' => 'user', 'content' => $prompt],
@@ -1050,7 +1050,7 @@ class RenrakuchoController extends Controller
                 . "- 少しでも不安・危険・事故リスクを示唆する記述があれば detected=true";
 
             $response = $client->chat()->create([
-                'model' => 'gpt-5.4-mini-2026-03-17',
+                'model' => 'gpt-5.4-2026-03-17',
                 'messages' => [
                     ['role' => 'system', 'content' => 'あなたは児童安全管理の専門家です。厳密な JSON のみで応答します。'],
                     ['role' => 'user', 'content' => $detectPrompt],
