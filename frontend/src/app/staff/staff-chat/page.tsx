@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import { cn, formatRelativeTime, formatFileSize, truncate, nl } from '@/lib/utils';
+import { MessageBody } from '@/components/chat/MessageBody';
 import api from '@/lib/api';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
@@ -382,10 +383,9 @@ export default function StaffChatPage() {
                                 </span>
                               ) : (
                                 <>
+                                  {/* URL は「リンクを開く」ボタンに置換 (現場要望) */}
                                   {msg.message && (
-                                    <p className="whitespace-pre-wrap break-words">
-                                      {nl(msg.message)}
-                                    </p>
+                                    <MessageBody text={nl(msg.message)} tone={isMine ? 'mine' : 'other'} />
                                   )}
                                   {msg.attachment_path && (
                                     <a

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { cn, nl } from '@/lib/utils';
 import { ChatAttachment } from './ChatAttachment';
+import { MessageBody } from './MessageBody';
 import type { ChatMessage, MessageType } from '@/types/chat';
 import Link from 'next/link';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
@@ -181,8 +182,8 @@ export function ChatBubble({ message, isMine }: ChatBubbleProps) {
               </div>
             )}
 
-            {/* Message text */}
-            <p className="whitespace-pre-wrap break-words">{nl(message.message)}</p>
+            {/* Message text — URL は「リンクを開く」ボタンに置換される (現場要望) */}
+            <MessageBody text={nl(message.message)} tone={isMine ? 'mine' : 'other'} />
 
             {/* Meeting action button */}
             {message.meeting_request_id && (message.message_type === 'meeting_request' || message.message_type === 'meeting_counter' || message.message_type === 'meeting_confirmed') && (

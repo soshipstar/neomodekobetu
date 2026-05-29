@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { formatFileSize, nl } from '@/lib/utils';
+import { MessageBody } from '@/components/chat/MessageBody';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { compressImageUnderSize, isHeicFile, HEIC_HINT } from '@/lib/imageCompression';
 import { ChatStorageBar } from '@/components/chat/ChatStorageBar';
@@ -178,7 +179,8 @@ export default function StudentChatPage() {
                         ? 'bg-[var(--brand-80)] text-white rounded-br-md'
                         : 'bg-[var(--neutral-background-1)] text-[var(--neutral-foreground-1)] rounded-bl-md shadow-sm'
                     }`}>
-                      {nl(msg.message)}
+                      {/* URL は「リンクを開く」ボタンに置換 (現場要望) */}
+                      <MessageBody text={nl(msg.message)} tone={isSent ? 'mine' : 'other'} />
                       {msg.attachment_path && (
                         <div className={`mt-2 flex items-center gap-1 text-xs ${isSent ? 'text-white/80' : 'text-[var(--brand-80)]'}`}>
                           <MaterialIcon name="attach_file" size={12} />

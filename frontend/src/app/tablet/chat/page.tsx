@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { formatRelativeTime, nl } from '@/lib/utils';
+import { MessageBody } from '@/components/chat/MessageBody';
 
 interface ChatRoomItem {
   id: number;
@@ -268,7 +269,10 @@ export default function TabletChatPage() {
                               : 'rounded-bl-md bg-white text-[var(--neutral-foreground-1)] shadow-sm'
                           }`}
                         >
-                          {msg.message && <div>{nl(msg.message)}</div>}
+                          {/* URL は「リンクを開く」ボタンに置換 (現場要望) */}
+                          {msg.message && (
+                            <MessageBody text={nl(msg.message)} tone={isFromStaff ? 'mine' : 'other'} />
+                          )}
 
                           {/* 添付ファイル描画 — 旧仕様では tablet チャットで非表示だった
                               (バグ報告: 保護者が添付した写真がタブレットで見られない) */}
