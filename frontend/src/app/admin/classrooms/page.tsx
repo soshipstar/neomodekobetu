@@ -23,6 +23,8 @@ export default function ClassroomsPage() {
   const toast = useToast();
   const [showCreate, setShowCreate] = useState(false);
   const [editingClassroom, setEditingClassroom] = useState<Classroom | null>(null);
+  // 削除モーダル: 確認 + 「無効化」or「完全削除」を選ばせる
+  const [deletingClassroom, setDeletingClassroom] = useState<Classroom | null>(null);
 
   const { data: classrooms, isLoading } = useQuery({
     queryKey: ['admin', 'classrooms'],
@@ -87,6 +89,25 @@ export default function ClassroomsPage() {
     onError: () => toast.error('更新に失敗しました'),
   });
 
+  // 教室の削除 (mode = 'soft' で無効化、'hard' で完全削除)。
+  // BE 側で関連テーブルの件数をチェックし、hard の場合は
+  // すべて 0 件でないと 422 で拒否される。失敗時のレスポンスから
+  // 各テーブルの残件数を取り出してトーストに表示する。
+  const deleteMutation = useMutation({
+    mutationFn: async ({ id, mode }: { id: number; mode: 'soft' | 'hard' }) => {
+      await api.delete(`/api/admin/classrooms/${id}`, { params: { mode } });
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'classrooms'] });
+      toast.success(variables.mode === 'hard' ? '事業所を完全に削除しました' : '事業所を無効にしました');
+      setDeletingClassroom(null);
+    },
+    onError: (err: { response?: { data?: { message?: string } } }) => {
+      const msg = err?.response?.data?.message || '削除に失敗しました';
+      toast.error(msg);
+    },
+  });
+
   const columns: Column<Classroom>[] = [
     {
       key: 'classroom_name',
@@ -123,14 +144,25 @@ export default function ClassroomsPage() {
       key: 'actions',
       label: '操作',
       render: (c) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setEditingClassroom(c)}
-          leftIcon={<MaterialIcon name="edit" size={14} />}
-        >
-          編集
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setEditingClassroom(c)}
+            leftIcon={<MaterialIcon name="edit" size={14} />}
+          >
+            編集
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setDeletingClassroom(c)}
+            leftIcon={<MaterialIcon name="delete" size={14} />}
+            className="text-[var(--status-danger-fg)] hover:bg-[var(--status-danger-bg)]"
+          >
+            削除
+          </Button>
+        </div>
       ),
     },
   ];
@@ -184,6 +216,64 @@ export default function ClassroomsPage() {
             <Button type="submit" isLoading={updateMutation.isPending}>更新</Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Delete Modal: 無効化 (soft) と 完全削除 (hard) の 2 つを提示。
+          BE 側は hard delete の場合、関連テーブル (students/users/daily_records/photos 等)
+          に 1 件でも参照が残っていれば 422 で拒否する。 */}
+      <Modal
+        isOpen={!!deletingClassroom}
+        onClose={() => setDeletingClassroom(null)}
+        title={`事業所を削除: ${deletingClassroom?.classroom_name ?? ''}`}
+      >
+        <div className="space-y-4">
+          <div className="rounded-md bg-[var(--status-warning-bg)] p-3 text-sm text-[var(--status-warning-fg)]">
+            <p className="font-semibold">⚠ 操作の選択</p>
+            <ul className="mt-2 list-disc pl-5 space-y-1 text-xs">
+              <li>
+                <strong>無効化</strong>: ステータスを「無効」に変更します (元に戻せます)。
+                生徒が在籍中だと拒否されます。
+              </li>
+              <li>
+                <strong>完全削除</strong>: DB レコードを物理削除します
+                (<strong className="text-[var(--status-danger-fg)]">取り消し不可</strong>)。
+                生徒・スタッフ・記録・写真などが 1 件でも残っていれば拒否されます。
+                テスト/誤作成の事業所を整理する場合のみ使ってください。
+              </li>
+            </ul>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="ghost" type="button" onClick={() => setDeletingClassroom(null)}>
+              キャンセル
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (!deletingClassroom) return;
+                if (!confirm(`「${deletingClassroom.classroom_name}」を無効化します。よろしいですか？`)) return;
+                deleteMutation.mutate({ id: deletingClassroom.id, mode: 'soft' });
+              }}
+              isLoading={deleteMutation.isPending && deleteMutation.variables?.mode === 'soft'}
+            >
+              無効化
+            </Button>
+            <Button
+              onClick={() => {
+                if (!deletingClassroom) return;
+                if (!confirm(
+                  `「${deletingClassroom.classroom_name}」を完全削除します。\n\n` +
+                  `この操作は取り消せません。本当に実行しますか？\n` +
+                  `(関連データが残っている場合は自動で拒否されます)`,
+                )) return;
+                deleteMutation.mutate({ id: deletingClassroom.id, mode: 'hard' });
+              }}
+              isLoading={deleteMutation.isPending && deleteMutation.variables?.mode === 'hard'}
+              className="bg-[var(--status-danger-fg)] hover:bg-[var(--status-danger-fg)]/90"
+            >
+              完全削除
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
