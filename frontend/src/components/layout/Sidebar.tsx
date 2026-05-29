@@ -63,6 +63,7 @@ const staffNav: NavItem[] = [
   { type: 'divider', label: '記録・日誌' },
   { type: 'link', label: '連絡帳', href: '/staff/renrakucho', icon: 'auto_stories' },
   { type: 'link', label: '未確認連絡帳', href: '/staff/unconfirmed-notes', icon: 'mark_email_unread' },
+  { type: 'link', label: 'フリースクール用報告書', href: '/staff/free-school-reports', icon: 'description' },
   { type: 'link', label: '業務日誌', href: '/staff/work-diary', icon: 'edit_document' },
   { type: 'divider', label: '管理・設定' },
   { type: 'link', label: '待機児童管理', href: '/staff/waiting-list', icon: 'hourglass_top' },
