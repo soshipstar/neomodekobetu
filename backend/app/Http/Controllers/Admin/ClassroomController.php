@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Classroom;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class ClassroomController extends Controller
@@ -155,17 +156,50 @@ class ClassroomController extends Controller
     }
 
     /**
-     * 教室を削除（マスター管理者専用、論理削除 = is_active を false にする）
+     * 教室を削除（マスター管理者専用）
+     *
+     * 2 モード:
+     *  - mode=soft (既定): is_active = false に変えるだけ (論理削除)。
+     *    生徒が在籍している場合は拒否。元に戻せる。
+     *  - mode=hard: 物理削除。全 28 個の関連テーブル
+     *    (students / users / daily_records / classroom_photos / events / 等)
+     *    に 1 件でも参照があれば拒否。ON DELETE CASCADE が走るので、
+     *    本当に空の教室だけを対象にする (テスト/誤作成 classroom の整理用)。
      */
     public function destroy(Request $request, Classroom $classroom): JsonResponse
     {
         if ($deny = $this->requireMaster($request)) return $deny;
 
-        // 生徒が紐づいている場合は削除不可
+        $mode = $request->input('mode', 'soft');
+
+        // 関連テーブルの件数を取得 (FE 側のエラー表示と hard delete の判定に使う)
+        $relationCounts = $this->countClassroomDependencies($classroom);
+        $totalRelated = array_sum($relationCounts);
+
+        if ($mode === 'hard') {
+            if ($totalRelated > 0) {
+                $nonZero = array_filter($relationCounts, fn ($n) => $n > 0);
+                $detail = collect($nonZero)->map(fn ($n, $k) => "{$k}: {$n} 件")->implode(' / ');
+                return response()->json([
+                    'success' => false,
+                    'message' => "関連データが残っているため完全削除できません。先に整理してください ({$detail})。",
+                    'data'    => ['relation_counts' => $relationCounts],
+                ], 422);
+            }
+            $name = $classroom->classroom_name;
+            $classroom->delete();
+            return response()->json([
+                'success' => true,
+                'message' => "事業所「{$name}」を完全に削除しました。",
+            ]);
+        }
+
+        // 既定 = 論理削除 (旧仕様維持)
         if ($classroom->students()->exists()) {
             return response()->json([
                 'success' => false,
-                'message' => '生徒が在籍している教室は削除できません。',
+                'message' => '生徒が在籍している教室は無効化できません。先に生徒を退所処理してください。',
+                'data'    => ['relation_counts' => $relationCounts],
             ], 422);
         }
 
@@ -175,5 +209,30 @@ class ClassroomController extends Controller
             'success' => true,
             'message' => '教室を無効にしました。',
         ]);
+    }
+
+    /**
+     * 教室削除時の安全チェック用に関連テーブルの件数を集計。
+     * hard delete の許可判定および FE への詳細メッセージで使用。
+     *
+     * @return array<string,int>
+     */
+    private function countClassroomDependencies(Classroom $classroom): array
+    {
+        $cid = $classroom->id;
+        return [
+            'students'         => DB::table('students')->where('classroom_id', $cid)->count(),
+            'users'            => DB::table('users')->where('classroom_id', $cid)->count(),
+            'classroom_users'  => DB::table('classroom_user')->where('classroom_id', $cid)->count(),
+            'daily_records'    => DB::table('daily_records')->where('classroom_id', $cid)->count(),
+            'classroom_photos' => DB::table('classroom_photos')->where('classroom_id', $cid)->count(),
+            'events'           => DB::table('events')->where('classroom_id', $cid)->count(),
+            'newsletters'      => DB::table('newsletters')->where('classroom_id', $cid)->count(),
+            'announcements'    => DB::table('announcements')->where('classroom_id', $cid)->count(),
+            'meeting_requests' => DB::table('meeting_requests')->where('classroom_id', $cid)->count(),
+            'support_plans'    => DB::table('individual_support_plans')->where('classroom_id', $cid)->count(),
+            'monitoring'       => DB::table('monitoring_records')->where('classroom_id', $cid)->count(),
+            'activity_plans'   => DB::table('activity_support_plans')->where('classroom_id', $cid)->count(),
+        ];
     }
 }
