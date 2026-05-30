@@ -300,7 +300,7 @@ class AssessmentController extends Controller
             // スタッフアセスメントは個別支援計画書のベースになる重要な分析。
             // 5 か月分の連絡帳記録を入力に 5 領域 + 短期目標 + 長期目標を生成する
             // 長文タスクなので通常版で品質確保。他箇所と日付を 2026-03-17 に統一。
-            $aiModel = 'gpt-5.4-2026-03-17';
+            $aiModel = 'gpt-5.4-2026-03-05';
             $totalInputTokens = 0;
             $totalOutputTokens = 0;
 

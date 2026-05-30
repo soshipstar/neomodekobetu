@@ -339,7 +339,7 @@ class ActivitySupportPlanController extends Controller
             $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
             $client = \OpenAI::client($apiKey);
             $response = $client->chat()->create([
-                'model' => 'gpt-5.4-2026-03-17',
+                'model' => 'gpt-5.4-2026-03-05',
                 'messages' => [
                     [
                         'role' => 'system',
@@ -471,7 +471,7 @@ class ActivitySupportPlanController extends Controller
             $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
             $client = \OpenAI::client($apiKey);
             $response = $client->chat()->create([
-                'model' => 'gpt-5.4-2026-03-17',
+                'model' => 'gpt-5.4-2026-03-05',
                 'messages' => [
                     [
                         'role' => 'system',
@@ -510,7 +510,7 @@ class ActivitySupportPlanController extends Controller
             AiGenerationLog::create([
                 'user_id' => Auth::id(),
                 'generation_type' => $type,
-                'model' => $response->model ?? config('services.openai.model', 'gpt-5.4-2026-03-17'),
+                'model' => $response->model ?? config('services.openai.model', 'gpt-5.4-2026-03-05'),
                 'prompt_tokens' => $response->usage->promptTokens ?? 0,
                 'completion_tokens' => $response->usage->completionTokens ?? 0,
                 'input_data' => ['prompt' => mb_substr($prompt, 0, 5000)],

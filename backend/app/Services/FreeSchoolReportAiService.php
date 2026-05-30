@@ -25,11 +25,11 @@ use Illuminate\Support\Facades\Log;
  *   - evaluation_and_next    : 評価・今後の課題 (個別支援計画の目標と照らして)
  *
  * 文体は学年別に GradeLevelStyleService で調整。
- * モデルは要望通り gpt-5.4-2026-03-17。
+ * モデルは要望通り gpt-5.4-2026-03-05。
  */
 class FreeSchoolReportAiService
 {
-    public const MODEL = 'gpt-5.4-2026-03-17';
+    public const MODEL = 'gpt-5.4-2026-03-05';
 
     /**
      * @return array{
