@@ -256,6 +256,24 @@ class User extends Authenticatable
         return $this->hasMany(Student::class, 'guardian_id');
     }
 
+    /**
+     * 保護者が現在選択している事業所(classroom_id)に在籍する生徒のみのクエリ。
+     *
+     * 同じ子どもでも事業所(わくわく/プラス等)ごとに別 Student レコードを持つ
+     * データ構造のため、保護者画面では「選択中の事業所」だけに絞らないと
+     * モニタリング・支援計画・連絡帳・欠席連絡に他事業所のデータが混在する。
+     * classroom_id 未選択(null)時のみ全件にフォールバックする(後方互換)。
+     *
+     * @return HasMany<Student>
+     */
+    public function studentsInSelectedClassroom(): HasMany
+    {
+        return $this->students()->when(
+            $this->classroom_id,
+            fn ($q) => $q->where('classroom_id', $this->classroom_id)
+        );
+    }
+
     /** @return HasMany<ChatMessage> */
     public function chatMessages(): HasMany
     {
