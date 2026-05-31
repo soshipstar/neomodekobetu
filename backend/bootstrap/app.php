@@ -59,6 +59,15 @@ return Application::configure(basePath: dirname(__DIR__))
             }
             return \Illuminate\Cache\RateLimiting\Limit::perMinute(10)->by('ip:' . $request->ip());
         });
+        // 'login': 総当たり攻撃対策。IP + 入力ユーザー名の組で 1 分 10 回まで。
+        //   正規ユーザーの打ち間違いには十分な猶予を残しつつ、機械的な
+        //   パスワード総当たりを抑止する。username 込みにすることで、攻撃者が
+        //   1 アカウントを狙い撃ちする場合も、IP 全体を巻き込む誤ロックを避ける。
+        \Illuminate\Support\Facades\RateLimiter::for('login', function (\Illuminate\Http\Request $request) {
+            $username = (string) $request->input('username', '');
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(10)
+                ->by('login:' . $request->ip() . '|' . mb_strtolower($username));
+        });
     })
     ->withMiddleware(function (Middleware $middleware) {
         // Bearer トークン認証を使用するため、statefulApi() は不要

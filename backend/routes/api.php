@@ -34,14 +34,18 @@ Route::middleware('throttle:600,1')->group(function () {
 // 4.1 認証 API (Public)
 // ==========================================================================
 Route::prefix('auth')->group(function () {
-    Route::post('/login', [App\Http\Controllers\Auth\AuthController::class, 'login']);
+    // ログインは総当たり対策で 'login' リミッタ (IP+username で 10/分) を適用
+    Route::post('/login', [App\Http\Controllers\Auth\AuthController::class, 'login'])
+        ->middleware('throttle:login');
     Route::post('/logout', [App\Http\Controllers\Auth\AuthController::class, 'logout'])
         ->middleware('auth:sanctum');
     Route::post('/refresh', [App\Http\Controllers\Auth\AuthController::class, 'refresh'])
         ->middleware('auth:sanctum');
     Route::get('/me', [App\Http\Controllers\Auth\AuthController::class, 'me'])
         ->middleware('auth:sanctum');
-    Route::post('/password/reset', [App\Http\Controllers\Auth\AuthController::class, 'resetPassword']);
+    // パスワードリセットも総当たり/列挙対策で同じリミッタを適用
+    Route::post('/password/reset', [App\Http\Controllers\Auth\AuthController::class, 'resetPassword'])
+        ->middleware('throttle:login');
 });
 
 // --- 教室切り替え（全認証ユーザー共通） ---
