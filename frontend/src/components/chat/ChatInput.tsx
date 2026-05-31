@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, type KeyboardEvent } from 'react';
+import { useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { formatFileSize } from '@/lib/utils';
