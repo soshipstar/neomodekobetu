@@ -211,20 +211,7 @@ export default function GuardianManualPage() {
           </div>
         </div>
 
-        {/* FAQ */}
-        <div style={{ marginBottom: '24px' }}>
-          <h2 style={{ fontSize: '14pt', fontWeight: 'bold', color: '#1e3a5f', borderLeft: '4px solid #2563eb', paddingLeft: '12px', marginBottom: '12px' }}>
-            よくあるご質問
-          </h2>
-          <div style={{ paddingLeft: '16px', fontSize: '10pt' }}>
-            <p style={{ fontWeight: 'bold', marginBottom: '2px' }}>Q. パスワードを忘れました</p>
-            <p style={{ color: '#555', marginBottom: '8px' }}>A. スタッフにお声がけください。新しいパスワードを発行いたします。</p>
-            <p style={{ fontWeight: 'bold', marginBottom: '2px' }}>Q. スマートフォンでも利用できますか？</p>
-            <p style={{ color: '#555', marginBottom: '8px' }}>A. はい。スマートフォン・タブレット・パソコンのブラウザからご利用いただけます。</p>
-            <p style={{ fontWeight: 'bold', marginBottom: '2px' }}>Q. 複数の子どもがいる場合は？</p>
-            <p style={{ color: '#555', marginBottom: '8px' }}>A. 1つのアカウントでお子様全員の情報をご確認いただけます。</p>
-          </div>
-        </div>
+        {/* FAQ「よくあるご質問」は要望により削除 (印刷PDF・画面とも非表示) */}
 
         {/* Contact */}
         <div style={{ background: '#fff8e1', border: '1px solid #ffcc02', borderRadius: '8px', padding: '16px', marginBottom: '24px' }}>
