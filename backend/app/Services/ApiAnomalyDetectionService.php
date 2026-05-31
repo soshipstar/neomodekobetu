@@ -196,14 +196,22 @@ class ApiAnomalyDetectionService
             try {
                 if ($withEmail) {
                     // notifyWithEmail(user, type, title, body, emailTemplate, emailData, notificationData)
-                    // 汎用テンプレ emails.notification は $title / $body を受け取る。
+                    // 既存テンプレ emails.general-notification を流用
+                    // (recipientName/title/body/actionUrl/actionLabel/facilityName を受け取る)。
                     $notif->notifyWithEmail(
                         $master,
                         'security_alert',
                         $alert['title'],
                         $body,
-                        'notification',
-                        ['title' => $alert['title'], 'body' => $body],
+                        'general-notification',
+                        [
+                            'recipientName' => $master->full_name,
+                            'title'         => $alert['title'],
+                            'body'          => $body,
+                            'actionUrl'     => rtrim(config('app.frontend_url', env('FRONTEND_URL', 'https://kiduri.xyz')), '/') . '/admin/security-alerts',
+                            'actionLabel'   => 'セキュリティアラートを確認',
+                            'facilityName'  => config('app.name', 'きづり'),
+                        ],
                         $data,
                     );
                 } else {
