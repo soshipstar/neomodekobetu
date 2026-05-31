@@ -32,7 +32,7 @@ export default function AdminGuardiansPage() {
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Guardian | null>(null);
-  const [form, setForm] = useState({ full_name: '', username: '', email: '', phone: '', password: '', classroom_id: '', is_active: true });
+  const [form, setForm] = useState({ full_name: '', full_name_kana: '', username: '', email: '', phone: '', password: '', classroom_id: '', is_active: true });
   const debouncedSearch = useDebounce(search, 300);
 
   const { data: guardians, meta, isLoading, goToPage } = usePagination<Guardian>({
@@ -56,11 +56,11 @@ export default function AdminGuardiansPage() {
     onError: (err: unknown) => toast.error(formatApiError(err, '削除に失敗しました')),
   });
 
-  const closeModal = () => { setModalOpen(false); setEditing(null); setForm({ full_name: '', username: '', email: '', phone: '', password: '', classroom_id: '', is_active: true }); };
+  const closeModal = () => { setModalOpen(false); setEditing(null); setForm({ full_name: '', full_name_kana: '', username: '', email: '', phone: '', password: '', classroom_id: '', is_active: true }); };
 
   const openEdit = (g: Guardian) => {
     setEditing(g);
-    setForm({ full_name: g.full_name, username: g.username, email: g.email || '', phone: g.phone || '', password: '', classroom_id: '', is_active: g.is_active });
+    setForm({ full_name: g.full_name, full_name_kana: g.full_name_kana || '', username: g.username, email: g.email || '', phone: g.phone || '', password: '', classroom_id: '', is_active: g.is_active });
     setModalOpen(true);
   };
 
@@ -134,6 +134,14 @@ export default function AdminGuardiansPage() {
             value={form.full_name}
             onChange={(e) => setForm({ ...form, full_name: e.target.value })}
             required
+          />
+          <Input
+            label="ふりがな"
+            name="guardian_full_name_kana"
+            autoComplete="off"
+            placeholder="やまだ はなこ"
+            value={form.full_name_kana}
+            onChange={(e) => setForm({ ...form, full_name_kana: e.target.value })}
           />
           <Input
             label="ユーザー名"

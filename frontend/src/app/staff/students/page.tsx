@@ -23,6 +23,7 @@ import { GuardianPicker } from '@/components/staff/GuardianPicker';
 interface Student {
   id: number;
   student_name: string;
+  student_name_kana?: string | null;
   birth_date: string | null;
   grade_level: string | null;
   grade_adjustment: number | null;
@@ -338,6 +339,7 @@ export default function StudentsPage() {
     const toDateStr = (d: string | null) => d ? d.slice(0, 10) : '';
     setForm({
       student_name: student.student_name,
+      student_name_kana: student.student_name_kana || '',
       birth_date: toDateStr(student.birth_date),
       grade_adjustment: student.grade_adjustment ?? 0,
       support_start_date: toDateStr(student.support_start_date),
@@ -625,6 +627,14 @@ function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel
         <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">生徒名 <span className="text-[var(--status-danger-fg)]">*</span></label>
         <input value={form.student_name} onChange={(e) => updateField('student_name', e.target.value)}
           className={inputCls} placeholder="例: 山田 太郎" required />
+      </div>
+
+      {/* ふりがな (50音順ソート用) */}
+      <div>
+        <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">ふりがな</label>
+        <input value={form.student_name_kana} onChange={(e) => updateField('student_name_kana', e.target.value)}
+          className={inputCls} placeholder="例: やまだ たろう" />
+        <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">50音順の並び替えに使います（ひらがなで入力）</p>
       </div>
 
       {/* 生年月日
