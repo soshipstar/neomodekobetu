@@ -61,6 +61,29 @@ function formatBytes(n?: number | null): string {
   return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
 
+// 日付区切りラベル（例: 2026年6月1日 / 今日 / 昨日）
+function formatChatDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (d.toDateString() === today.toDateString()) return '今日';
+  if (d.toDateString() === yesterday.toDateString()) return '昨日';
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+}
+
+// メッセージ時刻（HH:mm）
+function formatChatTime(dateStr: string): string {
+  const d = new Date(dateStr);
+  return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+}
+
+// 前メッセージと日付が変わったか
+function isNewChatDay(current: string, previous: string | null): boolean {
+  if (!previous) return true;
+  return new Date(current).toDateString() !== new Date(previous).toDateString();
+}
+
 /**
  * タブレット用 保護者チャット画面 (簡易版)
  *
