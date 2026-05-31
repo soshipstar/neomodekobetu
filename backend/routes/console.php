@@ -65,3 +65,14 @@ Schedule::call(function () {
         \Illuminate\Support\Facades\Log::info("Deleted {$deleted} api_access_logs older than 90 days");
     }
 })->dailyAt('04:15')->name('cleanup-api-access-logs')->onOneServer();
+
+// API 異常検知 - 毎時 0 分に実行。
+//   直近 1 時間の api_access_logs を分析し、過大リクエスト/403連発/PDF連射/404連発
+//   を検出してマスター管理者に通知する (security_alert)。
+//   同じ (user_id, rule) は 6 時間以内は再通知しないクールダウン付き。
+Schedule::call(function () {
+    $alerts = app(\App\Services\ApiAnomalyDetectionService::class)->run();
+    if (!empty($alerts)) {
+        \Illuminate\Support\Facades\Log::info('API anomaly detection: ' . count($alerts) . ' alert(s)');
+    }
+})->hourly()->name('api-anomaly-detection')->onOneServer();
