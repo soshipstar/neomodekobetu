@@ -36,8 +36,8 @@ export function useAuth(requiredUserType?: UserType | UserType[]) {
     }
   }, [isLoading, isAuthenticated, user, requiredUserType, router]);
 
-  const handleLogin = async (username: string, password: string) => {
-    await login({ username, password });
+  const handleLogin = async (username: string, password: string, code?: string) => {
+    await login({ username, password, ...(code ? { code } : {}) });
     // authStore.login() 内で既に window.location.href = getDashboardPath(...)
     // による全画面リロードが発火している。ここで重ねて router.push を呼ぶと
     // ダブルナビゲーションが発生し、iPhone Safari 等では SPA 遷移 (router.push) が

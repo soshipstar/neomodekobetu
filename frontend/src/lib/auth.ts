@@ -46,6 +46,8 @@ export interface AuthResponse {
 export interface LoginCredentials {
   username: string;
   password: string;
+  // 2FA 有効ユーザーのみ送る認証コード (TOTP もしくはリカバリコード)
+  code?: string;
 }
 
 /**

@@ -79,6 +79,29 @@ class AuthController extends Controller
             ]);
         }
 
+        // 2 要素認証 (TOTP)。有効化済みユーザーのみ追加検証する。
+        //  - code 未提供 → two_factor_required:true を返してトークンは発行しない
+        //    (FE はこの応答でコード入力欄を出して再 POST する)
+        //  - code 提供 → TOTP もしくはリカバリコードを検証。失敗なら 401。
+        //  2FA 未設定ユーザーは素通り (既存挙動は不変)。
+        if ($user->hasTwoFactorEnabled()) {
+            $code = trim((string) $request->input('code', ''));
+            if ($code === '') {
+                return response()->json([
+                    'success' => false,
+                    'two_factor_required' => true,
+                    'message' => '認証アプリの 6 桁コードを入力してください。',
+                ], 401);
+            }
+            if (! $this->verifyTwoFactor($user, $code)) {
+                return response()->json([
+                    'success' => false,
+                    'two_factor_required' => true,
+                    'message' => '認証コードが正しくありません。',
+                ], 401);
+            }
+        }
+
         // レート制限リセット
         RateLimiter::clear('login:' . $request->ip());
 

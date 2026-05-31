@@ -7,7 +7,7 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
 
-  login: (credentials: LoginCredentials) => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<void>;  // credentials.code で 2FA 対応
   logout: () => Promise<void>;
   fetchUser: () => Promise<void>;
   clearError: () => void;
