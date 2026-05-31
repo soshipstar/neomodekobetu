@@ -108,6 +108,16 @@ Route::prefix('admin')
         Route::delete('/error-logs/cleanup', [App\Http\Controllers\Admin\ErrorLogController::class, 'cleanup']);
         Route::patch('/error-logs/{errorLog}/resolve', [App\Http\Controllers\Admin\ErrorLogController::class, 'resolve']);
 
+        // --- API アクセス監査ログ（マスター管理者のみ） ---
+        // 既存 /audit-logs (操作履歴) と衝突しないよう /api-access-logs に分ける。
+        Route::get('/api-access-logs', [App\Http\Controllers\Admin\ApiAccessLogController::class, 'index']);
+        Route::get('/api-access-logs/stats', [App\Http\Controllers\Admin\ApiAccessLogController::class, 'stats']);
+
+        // --- セキュリティアラート（異常検知結果、マスター管理者のみ） ---
+        Route::get('/security-alerts', [App\Http\Controllers\Admin\SecurityAlertController::class, 'index']);
+        Route::get('/security-alerts/unresolved-count', [App\Http\Controllers\Admin\SecurityAlertController::class, 'unresolvedCount']);
+        Route::patch('/security-alerts/{securityAlert}/resolve', [App\Http\Controllers\Admin\SecurityAlertController::class, 'resolve']);
+
         // --- イベント管理 ---
         Route::apiResource('events', App\Http\Controllers\Admin\EventController::class);
 
