@@ -144,6 +144,8 @@ const adminNav: NavItem[] = [
   { type: 'link', label: '操作履歴(マスター)', href: '/admin/master-audit-logs', icon: 'history', visibility: 'master_only' },
   { type: 'divider', label: 'システム' },
   { type: 'link', label: 'エラーログ', href: '/admin/error-logs', icon: 'warning', visibility: 'master_only' },
+  { type: 'link', label: 'セキュリティアラート', href: '/admin/security-alerts', icon: 'security', visibility: 'master_only' },
+  { type: 'link', label: 'アクセスログ', href: '/admin/audit-logs', icon: 'manage_search', visibility: 'master_only' },
   { type: 'link', label: 'バグ報告', href: '/staff/bug-reports', icon: 'bug_report' },
 ];
 
