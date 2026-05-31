@@ -77,6 +77,12 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\ClampPerPage::class,
         ]);
 
+        // 全 /api/* リクエストを api_access_logs テーブルに記録 (terminate で
+        // 非同期書き込みのためユーザー待ち時間に影響なし)。流出/不正解析の後追い用。
+        $middleware->api(append: [
+            \App\Http\Middleware\LogApiAccess::class,
+        ]);
+
         // API レート制限。booted() で定義した 'api' リミッタ (user 単位 200/分、
         // 未認証 IP 単位 60/分) を全 /api/* に適用。
         // 重いエクスポート系には別途 'throttle:export' (30/時間/user) を個別付与する。

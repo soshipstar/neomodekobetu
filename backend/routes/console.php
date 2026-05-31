@@ -56,3 +56,12 @@ Schedule::call(function () {
         \Illuminate\Support\Facades\Log::info("Deleted {$deleted} resolved error logs older than 3 days");
     }
 })->dailyAt('04:00')->name('cleanup-resolved-error-logs')->onOneServer();
+
+// API アクセスログの自動削除 - 90 日経過したものを毎日午前 4:15 に削除
+// (流出/不正解析の後追いに 3 か月あれば十分。DB 肥大化を防ぐ。)
+Schedule::call(function () {
+    $deleted = \App\Models\ApiAccessLog::where('created_at', '<', now()->subDays(90))->delete();
+    if ($deleted > 0) {
+        \Illuminate\Support\Facades\Log::info("Deleted {$deleted} api_access_logs older than 90 days");
+    }
+})->dailyAt('04:15')->name('cleanup-api-access-logs')->onOneServer();
