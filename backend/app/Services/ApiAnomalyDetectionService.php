@@ -136,6 +136,40 @@ class ApiAnomalyDetectionService
     }
 
     /**
+     * Honeypot エンドポイントが叩かれたことを即時記録 + マスター管理者へ通知。
+     *
+     * HoneypotController から直接呼ばれる (毎時バッチではなく即時)。
+     * 通常のユーザーは存在を知らない fake API なので、叩いた = ほぼ確実に
+     * アプリを解析している内部ユーザー。自動 BAN はせず「検出 + 通知」に留め、
+     * マスター管理者が手動で判断する (= 現場を誤って止めないため)。
+     *
+     * @param int|null $userId  叩いたユーザー (未認証なら null)
+     * @param string   $path    叩かれた honeypot パス
+     * @param string|null $ip
+     */
+    public function recordHoneypot(?int $userId, string $path, ?string $ip = null): void
+    {
+        $cfg = config('security.anomaly');
+
+        $alert = [
+            'rule'    => 'E_honeypot',
+            'user_id' => $userId,
+            'count'   => 1,
+            'title'   => '🚨 ハニーポット作動 (不正解析の強い疑い)',
+            'body'    => ($userId ? "uid={$userId}" : '未認証ユーザー')
+                . " が罠用エンドポイント [{$path}] にアクセスしました。"
+                . ($ip ? " IP={$ip}." : '')
+                . " このパスは通常の画面からは到達しません。アプリの解析/スクレイピングを試みている可能性が高いため、"
+                . "対象ユーザーのアクセスログを確認してください。",
+        ];
+
+        $record = $this->persist($alert);
+        if ($record) {
+            $this->notifyMasterAdmins($alert, (bool) $cfg['email_master_admins'], (int) $cfg['cooldown_seconds']);
+        }
+    }
+
+    /**
      * security_alerts に保存。
      * (rule, user_id, detected_hour) unique なので、同じ時間帯の同ルールは
      * 1 回しか保存されない。重複時は null を返し、通知もスキップさせる。

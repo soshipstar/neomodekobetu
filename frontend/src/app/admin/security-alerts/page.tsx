@@ -23,6 +23,7 @@ const RULE_LABELS: Record<string, string> = {
   B_excessive_forbidden: '権限外アクセス連発',
   C_excessive_exports: 'PDF/CSV 連射',
   D_excessive_not_found: '404 連発 (列挙疑い)',
+  E_honeypot: 'ハニーポット作動',
 };
 
 interface SecurityAlert {
