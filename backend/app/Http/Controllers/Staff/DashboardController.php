@@ -39,11 +39,56 @@ class DashboardController extends Controller
             ->count();
 
         // --- 本日の出席予定生徒数 ---
+        // 通常利用 + 振替(承認済) + 追加利用 + イベント参加 を重複なくカウントする。
+        // (旧: 通常利用のみカウントしていたため、振替/追加/イベントの児童が
+        //  ダッシュボードの「本日の参加予定」数に反映されず、リスト表示と件数が
+        //  食い違っていた。)
         $dayColumn = 'scheduled_' . strtolower($today->format('l'));
-        $todayAttendance = Student::whereIn('classroom_id', $accessibleIds)
+        $todayStr = $today->toDateString();
+
+        $attendingIds = Student::whereIn('classroom_id', $accessibleIds)
             ->active()
             ->where($dayColumn, true)
-            ->count();
+            ->pluck('id')
+            ->all();
+
+        try {
+            $makeupIds = AbsenceNotification::whereHas('student', function ($q) use ($accessibleIds) {
+                $q->whereIn('classroom_id', $accessibleIds)->active();
+            })
+                ->where('makeup_status', 'approved')
+                ->whereDate('makeup_request_date', $todayStr)
+                ->pluck('student_id')->all();
+            $attendingIds = array_merge($attendingIds, $makeupIds);
+        } catch (\Throwable $e) { /* ignore */ }
+
+        try {
+            $additionalIds = DB::table('additional_usages')
+                ->join('students', 'additional_usages.student_id', '=', 'students.id')
+                ->whereIn('students.classroom_id', $accessibleIds)
+                ->where('students.is_active', true)
+                ->whereDate('additional_usages.usage_date', $todayStr)
+                ->pluck('students.id')->all();
+            $attendingIds = array_merge($attendingIds, $additionalIds);
+        } catch (\Throwable $e) { /* ignore */ }
+
+        try {
+            $eventIds = DB::table('event_registrations')
+                ->join('events', 'event_registrations.event_id', '=', 'events.id')
+                ->join('students', 'event_registrations.student_id', '=', 'students.id')
+                ->whereIn('students.classroom_id', $accessibleIds)
+                ->where('students.is_active', true)
+                ->where('event_registrations.status', 'registered')
+                ->whereDate('events.event_date', $todayStr)
+                ->pluck('students.id')->all();
+            $attendingIds = array_merge($attendingIds, $eventIds);
+        } catch (\Throwable $e) { /* ignore */ }
+
+        // 欠席連絡が出ている児童は参加予定から除外
+        $absentTodayIds = AbsenceNotification::whereDate('absence_date', $todayStr)
+            ->pluck('student_id')->all();
+
+        $todayAttendance = count(array_diff(array_unique($attendingIds), $absentTodayIds));
 
         // --- 本日の欠席連絡数 ---
         $todayAbsences = AbsenceNotification::whereHas('student', function ($q) use ($accessibleIds) {
@@ -432,6 +477,39 @@ class DashboardController extends Controller
             }
         } catch (\Exception $e) {
             Log::warning('additional_usages table not available: ' . $e->getMessage());
+        }
+
+        // --- Event participation students ---
+        // バグ報告: イベント参加申込 (event_registrations) をした児童が、その
+        //   イベント開催日の「本日の参加予定者」に出てこなかった。
+        //   イベント参加 = その日に来所する追加利用扱いなので、ここに統合する。
+        //   保護者チャットのイベント参加申込で event_registrations に
+        //   status='registered' で入る。events.event_date が当日のものを拾う。
+        try {
+            $eventStudents = DB::table('event_registrations')
+                ->join('events', 'event_registrations.event_id', '=', 'events.id')
+                ->join('students', 'event_registrations.student_id', '=', 'students.id')
+                ->whereIn('students.classroom_id', $accessibleIds)
+                ->where('students.is_active', true)
+                ->where('event_registrations.status', 'registered')
+                ->whereDate('events.event_date', $date)
+                ->select('students.id', 'students.student_name', 'students.grade_level', 'events.event_name')
+                ->get();
+
+            foreach ($eventStudents as $student) {
+                if (!isset($results[$student->id])) {
+                    $results[$student->id] = [
+                        'id'          => $student->id,
+                        'name'        => $student->student_name,
+                        'grade_group' => $gradeGroupMap($student->grade_level),
+                        'type'        => 'event',
+                        'event_name'  => $student->event_name,
+                        'is_absent'   => false,
+                    ];
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning('event_registrations table not available: ' . $e->getMessage());
         }
 
         // --- Mark absent students ---
