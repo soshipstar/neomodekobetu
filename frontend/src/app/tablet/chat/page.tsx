@@ -252,14 +252,24 @@ export default function TabletChatPage() {
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {messages.map((msg) => {
+                  {messages.map((msg, index) => {
                     const isFromStaff = msg.sender_type === 'staff';
                     const hasAttachment = !!msg.attachment_path;
                     const isImage = hasAttachment && isImageAttachment(msg);
                     const url = hasAttachment ? attachmentUrl(msg.attachment_path!) : null;
+                    const prev = index > 0 ? messages[index - 1] : null;
+                    const showDate = isNewChatDay(msg.created_at, prev?.created_at ?? null);
                     return (
+                      <div key={msg.id}>
+                        {/* 日付区切り */}
+                        {showDate && (
+                          <div className="my-3 flex items-center justify-center">
+                            <span className="rounded-full bg-[var(--neutral-background-4)] px-3 py-1 text-xs text-[var(--neutral-foreground-3)]">
+                              {formatChatDate(msg.created_at)}
+                            </span>
+                          </div>
+                        )}
                       <div
-                        key={msg.id}
                         className={`flex ${isFromStaff ? 'justify-end' : 'justify-start'}`}
                       >
                         <div
@@ -313,6 +323,13 @@ export default function TabletChatPage() {
                             )
                           )}
                         </div>
+                      </div>
+                      {/* 時刻 */}
+                      <div className={`mt-0.5 flex ${isFromStaff ? 'justify-end' : 'justify-start'}`}>
+                        <span className="px-1 text-[10px] text-[var(--neutral-foreground-4)]">
+                          {formatChatTime(msg.created_at)}
+                        </span>
+                      </div>
                       </div>
                     );
                   })}
