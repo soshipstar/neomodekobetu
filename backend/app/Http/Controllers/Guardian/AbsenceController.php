@@ -15,7 +15,8 @@ class AbsenceController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $studentIds = $user->students()->pluck('id');
+        // 選択中の事業所のみに絞る（他事業所のデータ混在を防ぐ）
+        $studentIds = $user->studentsInSelectedClassroom()->pluck('id');
 
         $absences = AbsenceNotification::whereIn('student_id', $studentIds)
             ->with([

@@ -43,7 +43,8 @@ class GuardianNoteController extends Controller
     public function byDate(Request $request, string $date): JsonResponse
     {
         $user = $request->user();
-        $studentIds = $user->students()->pluck('id');
+        // 選択中の事業所のみに絞る（他事業所のデータ混在を防ぐ）
+        $studentIds = $user->studentsInSelectedClassroom()->pluck('id');
 
         $notes = IntegratedNote::whereIn('student_id', $studentIds)
             ->where('is_sent', true)
