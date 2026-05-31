@@ -21,6 +21,7 @@ class User extends Authenticatable
         'password',
         'password_plain',
         'full_name',
+        'full_name_kana',
         'email',
         'user_type',
         'is_master',

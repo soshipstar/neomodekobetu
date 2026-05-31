@@ -52,7 +52,8 @@ class StudentController extends Controller
             $query->where('is_active', true);
         }
 
-        $students = $query->orderByDesc('is_active')->orderBy('student_name')->get();
+        // ふりがな優先で50音順（未設定は漢字氏名でフォールバック）
+        $students = $query->orderByDesc('is_active')->orderBy('student_name_kana')->orderBy('student_name')->get();
 
         return response()->json([
             'success' => true,
@@ -142,6 +143,7 @@ class StudentController extends Controller
 
         $validated = $request->validate([
             'student_name'           => 'required|string|max:255',
+            'student_name_kana'      => 'nullable|string|max:255',
             // 待機児童 (status=waiting) は生年月日が未確定なケースがあるので
             // その場合のみ任意。待機以外 (active/trial/short_term/withdrawn) は必須。
             'birth_date'             => 'required_unless:status,waiting|nullable|date',
@@ -244,6 +246,7 @@ class StudentController extends Controller
 
         $validated = $request->validate([
             'student_name'           => 'nullable|string|max:255',
+            'student_name_kana'      => 'nullable|string|max:255',
             'birth_date'             => 'nullable|date',
             'grade_adjustment'       => 'nullable|integer|min:-2|max:2',
             'guardian_id'            => 'nullable|exists:users,id',

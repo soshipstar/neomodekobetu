@@ -43,7 +43,7 @@ class GuardianController extends Controller
             });
         }
 
-        $guardians = $query->orderBy('classroom_id')->orderBy('full_name')
+        $guardians = $query->orderBy('classroom_id')->orderBy('full_name_kana')->orderBy('full_name')
             ->paginate($request->input('per_page', 50));
 
         return response()->json([
@@ -69,6 +69,7 @@ class GuardianController extends Controller
             'username'     => 'required|string|max:100|unique:users,username',
             'password'     => 'required|string|min:6',
             'full_name'    => 'required|string|max:100',
+            'full_name_kana' => 'nullable|string|max:100',
             'email'        => 'nullable|email|max:255',
         ]);
 
@@ -98,6 +99,7 @@ class GuardianController extends Controller
             'username'     => $validated['username'],
             'password'     => Hash::make($validated['password']),
             'full_name'    => $validated['full_name'],
+            'full_name_kana' => $validated['full_name_kana'] ?? null,
             'email'        => $validated['email'] ?? null,
             'user_type'    => 'guardian',
             'is_active'    => true,
@@ -152,6 +154,7 @@ class GuardianController extends Controller
         $validated = $request->validate([
             'classroom_id' => 'sometimes|exists:classrooms,id',
             'full_name'    => 'sometimes|string|max:100',
+            'full_name_kana' => 'nullable|string|max:100',
             'email'        => 'nullable|email|max:255',
             'password'     => 'nullable|string|min:6',
             'is_active'    => 'boolean',

@@ -73,7 +73,7 @@ class StaffGuardianController extends Controller
         }
 
         // レガシーと同じソート: 有効→無効、氏名順
-        $guardians = $query->orderByDesc('is_active')->orderBy('full_name')->get();
+        $guardians = $query->orderByDesc('is_active')->orderBy('full_name_kana')->orderBy('full_name')->get();
 
         // password_plainを含めて返す（$hiddenを一時的に解除）
         $guardians->each(function ($g) {
@@ -108,6 +108,7 @@ class StaffGuardianController extends Controller
             'data'    => [
                 'id'             => $guardian->id,
                 'full_name'      => $guardian->full_name,
+                'full_name_kana' => $guardian->full_name_kana,
                 'username'       => $guardian->username,
                 'email'          => $guardian->email,
                 'password_plain' => $guardian->password_plain ?? null,

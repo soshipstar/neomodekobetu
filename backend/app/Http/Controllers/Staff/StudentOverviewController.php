@@ -37,8 +37,10 @@ class StudentOverviewController extends Controller
             ->whereIn('classroom_id', $accessibleIds ?: [0])
             ->where('is_active', true)
             ->where('status', 'active')
+            // ふりがな優先で50音順（未設定は漢字氏名でフォールバック）
+            ->orderBy('student_name_kana')
             ->orderBy('student_name')
-            ->get(['id', 'student_name', 'grade_level'])
+            ->get(['id', 'student_name', 'student_name_kana', 'grade_level'])
             ->keyBy('id');
 
         $studentIds = $students->keys()->all();
@@ -71,9 +73,10 @@ class StudentOverviewController extends Controller
                 'subtitle'     => null,
             ];
             return [
-                'id'           => $s->id,
-                'student_name' => $s->student_name,
-                'grade_level'  => $s->grade_level,
+                'id'                => $s->id,
+                'student_name'      => $s->student_name,
+                'student_name_kana' => $s->student_name_kana,
+                'grade_level'       => $s->grade_level,
                 ...$entry,
             ];
         })->values();
