@@ -183,6 +183,8 @@ function typeLabel(type: AttendanceStudent['type']): string {
     case 'regular': return '通常';
     case 'makeup': return '振替';
     case 'additional': return '加算';
+    case 'event': return 'イベント';
+    default: return '通常';
   }
 }
 
@@ -191,6 +193,8 @@ function typeBadgeVariant(type: AttendanceStudent['type']) {
     case 'regular': return 'default' as const;
     case 'makeup': return 'info' as const;
     case 'additional': return 'warning' as const;
+    case 'event': return 'success' as const;
+    default: return 'default' as const;
   }
 }
 
