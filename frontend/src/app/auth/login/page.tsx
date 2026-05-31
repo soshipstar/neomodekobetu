@@ -77,6 +77,9 @@ export default function LoginPage() {
       <p className="mt-6 text-center text-xs text-[var(--neutral-foreground-4)]">
         ログインID・パスワードが不明な場合は管理者にお問い合わせください
       </p>
+      <p className="mt-2 text-center text-xs text-[var(--neutral-foreground-4)]">
+        <a href="/terms" className="hover:underline hover:text-[var(--neutral-foreground-3)]">利用規約</a>
+      </p>
     </div>
   );
 }
