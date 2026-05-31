@@ -576,11 +576,11 @@ Route::prefix('staff')
 
         // --- 提出物管理 ---
         Route::get('/submissions', [App\Http\Controllers\Staff\StaffSubmissionController::class, 'index']);
-        Route::get('/submissions/{request}', [App\Http\Controllers\Staff\StaffSubmissionController::class, 'show']);
+        Route::get('/submissions/{submissionRequest}', [App\Http\Controllers\Staff\StaffSubmissionController::class, 'show']);
         Route::post('/submissions', [App\Http\Controllers\Staff\StaffSubmissionController::class, 'store']);
-        Route::put('/submissions/{submission}', [App\Http\Controllers\Staff\StaffSubmissionController::class, 'update']);
-        Route::delete('/submissions/{submission}', [App\Http\Controllers\Staff\StaffSubmissionController::class, 'destroy']); // (#29) バグ修正: {request}→{submission} で route-model binding を有効化
-        Route::get('/submissions/{request}/students', [App\Http\Controllers\Staff\StaffSubmissionController::class, 'students']); // (#30)
+        Route::put('/submissions/{submissionRequest}', [App\Http\Controllers\Staff\StaffSubmissionController::class, 'update']);
+        Route::delete('/submissions/{submissionRequest}', [App\Http\Controllers\Staff\StaffSubmissionController::class, 'destroy']); // (#29) バグ修正: ルートパラメータ名をコントローラ引数 $submissionRequest に一致させ route-model binding を有効化
+        Route::get('/submissions/{submissionRequest}/students', [App\Http\Controllers\Staff\StaffSubmissionController::class, 'students']); // (#30)
 
         // --- 生徒ログイン印刷 ---
         Route::get('/student-login-print/{student}', [App\Http\Controllers\Staff\StudentLoginPrintController::class, 'show']);
