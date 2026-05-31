@@ -156,5 +156,6 @@
     <div class="footer">
         {{ $classroom_name }} — {{ now()->format('Y/m/d H:i') }} 出力
     </div>
+    @include('pdf._watermark')
 </body>
 </html>

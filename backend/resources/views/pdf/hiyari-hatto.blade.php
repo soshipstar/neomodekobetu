@@ -182,5 +182,6 @@
             <td>{{ $record->confirmedBy?->full_name ?? '' }}</td>
         </tr>
     </table>
+    @include('pdf._watermark')
 </body>
 </html>

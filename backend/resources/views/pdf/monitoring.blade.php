@@ -282,5 +282,6 @@
     <div class="footer">
         出力日時: {{ now()->format('Y年m月d日 H:i') }}
     </div>
+    @include('pdf._watermark')
 </body>
 </html>

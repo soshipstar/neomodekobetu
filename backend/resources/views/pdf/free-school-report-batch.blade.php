@@ -186,5 +186,6 @@
             </section>
         </div>
     @endforeach
+    @include('pdf._watermark')
 </body>
 </html>

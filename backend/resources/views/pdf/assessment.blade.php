@@ -304,5 +304,6 @@
     <div class="footer">
         出力日時: {{ now()->format('Y/m/d H:i') }} | {{ $period->period_name ?? '' }}
     </div>
+    @include('pdf._watermark')
 </body>
 </html>

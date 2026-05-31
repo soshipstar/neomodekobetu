@@ -499,5 +499,6 @@
         </div>
         <div class="footer-facility">{{ $classroomName }}</div>
     </div>
+    @include('pdf._watermark')
 </body>
 </html>

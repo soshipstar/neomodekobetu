@@ -122,5 +122,6 @@
     <div class="footer">
         {{ $classroom->classroom_name ?? '' }} / 発行 {{ now()->format('Y年n月j日') }}
     </div>
+    @include('pdf._watermark')
 </body>
 </html>
