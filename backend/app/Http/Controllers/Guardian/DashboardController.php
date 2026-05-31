@@ -720,7 +720,9 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        $students = $user->students()
+        // 選択中の事業所(わくわく/プラス)の子どものみ。
+        // 子どもセレクタが他事業所の在籍レコードを出さないようにする。
+        $students = $user->studentsInSelectedClassroom()
             ->with('classroom:id,classroom_name')
             ->get(['id', 'student_name', 'classroom_id', 'grade_level', 'birth_date', 'status']);
 
