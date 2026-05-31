@@ -146,6 +146,7 @@ const adminNav: NavItem[] = [
   { type: 'link', label: 'エラーログ', href: '/admin/error-logs', icon: 'warning', visibility: 'master_only' },
   { type: 'link', label: 'セキュリティアラート', href: '/admin/security-alerts', icon: 'security', visibility: 'master_only' },
   { type: 'link', label: 'アクセスログ', href: '/admin/audit-logs', icon: 'manage_search', visibility: 'master_only' },
+  { type: 'link', label: '2要素認証', href: '/admin/two-factor', icon: 'shield', visibility: 'master_only' },
   { type: 'link', label: 'バグ報告', href: '/staff/bug-reports', icon: 'bug_report' },
 ];
 
