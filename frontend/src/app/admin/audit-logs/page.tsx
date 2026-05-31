@@ -60,16 +60,16 @@ export default function AuditLogsPage() {
   }, []);
 
   const { data: stats } = useQuery({
-    queryKey: ['admin', 'audit-logs', 'stats'],
-    queryFn: async () => (await api.get('/api/admin/audit-logs/stats')).data?.data,
+    queryKey: ['admin', 'api-access-logs', 'stats'],
+    queryFn: async () => (await api.get('/api/admin/api-access-logs/stats')).data?.data,
     enabled: isReady && isMaster,
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin', 'audit-logs', appliedFilters],
+    queryKey: ['admin', 'api-access-logs', appliedFilters],
     queryFn: async () => {
       const params: Record<string, unknown> = { per_page: 100, ...appliedFilters };
-      return (await api.get('/api/admin/audit-logs', { params })).data;
+      return (await api.get('/api/admin/api-access-logs', { params })).data;
     },
     enabled: isReady && isMaster,
   });
