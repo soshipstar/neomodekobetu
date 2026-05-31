@@ -91,12 +91,7 @@ export default function StudentChatPage() {
     sendMutation.mutate({ msg: trimmed, file: attachment || undefined });
   }, [message, attachment, sendMutation]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
+  // 要望: Enter/改行では送信せず送信ボタンのみで送る (誤送信防止)。handleKeyDown は廃止。
 
   const [compressing, setCompressing] = useState(false);
 
@@ -251,7 +246,6 @@ export default function StudentChatPage() {
             ref={textareaRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
             placeholder="メッセージを入力..."
             className="flex-1 resize-none rounded-2xl border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-4 py-2 text-sm text-[var(--neutral-foreground-1)] placeholder:text-[var(--neutral-foreground-4)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-80)]"
             rows={1}

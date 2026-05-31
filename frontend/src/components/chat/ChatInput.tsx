@@ -37,13 +37,7 @@ export function ChatInput({ onSend, isSending, disabled = false }: ChatInputProp
     textareaRef.current?.focus();
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    // Send on Enter (without shift)
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
+  // 要望: Enter/改行では送信せず送信ボタンのみで送る (誤送信防止)。handleKeyDown は廃止。
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -137,7 +131,6 @@ export function ChatInput({ onSend, isSending, disabled = false }: ChatInputProp
           ref={textareaRef}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={handleKeyDown}
           placeholder="メッセージを入力..."
           disabled={disabled}
           rows={1}

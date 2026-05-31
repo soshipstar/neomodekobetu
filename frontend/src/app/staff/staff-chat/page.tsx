@@ -183,16 +183,7 @@ export default function StaffChatPage() {
     }
   }, [messageText, attachment, activeRoom, fetchMessages, toast]);
 
-  // ---- Key handler ----
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        handleSend();
-      }
-    },
-    [handleSend]
-  );
+  // 要望: Enter/改行では送信せず送信ボタンのみで送る (誤送信防止)。handleKeyDown は廃止。
 
   // ---- File select ----
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -477,7 +468,6 @@ export default function StaffChatPage() {
                     ref={textareaRef}
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
-                    onKeyDown={handleKeyDown}
                     placeholder="メッセージを入力..."
                     rows={1}
                     className={cn(
@@ -507,7 +497,7 @@ export default function StaffChatPage() {
                 </div>
 
                 <p className="mt-1 text-center text-[10px] text-[var(--neutral-foreground-4)]">
-                  Shift+Enterで改行
+                  送信ボタンで送信 (Enterは改行)
                 </p>
               </div>
             </>

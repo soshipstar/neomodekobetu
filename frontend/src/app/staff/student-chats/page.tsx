@@ -452,7 +452,6 @@ export default function StudentChatsPage() {
                   <textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                     placeholder="メッセージを入力..."
                     rows={1}
                     className={cn(
@@ -478,7 +477,7 @@ export default function StudentChatsPage() {
                   </Button>
                 </div>
                 <p className="mt-1 text-center text-[10px] text-[var(--neutral-foreground-4)]">
-                  Shift+Enterで改行
+                  送信ボタンで送信 (Enterは改行)
                 </p>
               </div>
             </>
