@@ -578,8 +578,8 @@ Route::prefix('staff')
         Route::get('/submissions', [App\Http\Controllers\Staff\StaffSubmissionController::class, 'index']);
         Route::get('/submissions/{request}', [App\Http\Controllers\Staff\StaffSubmissionController::class, 'show']);
         Route::post('/submissions', [App\Http\Controllers\Staff\StaffSubmissionController::class, 'store']);
-        Route::put('/submissions/{request}', [App\Http\Controllers\Staff\StaffSubmissionController::class, 'update']);
-        Route::delete('/submissions/{request}', [App\Http\Controllers\Staff\StaffSubmissionController::class, 'destroy']); // (#29)
+        Route::put('/submissions/{submission}', [App\Http\Controllers\Staff\StaffSubmissionController::class, 'update']);
+        Route::delete('/submissions/{submission}', [App\Http\Controllers\Staff\StaffSubmissionController::class, 'destroy']); // (#29) バグ修正: {request}→{submission} で route-model binding を有効化
         Route::get('/submissions/{request}/students', [App\Http\Controllers\Staff\StaffSubmissionController::class, 'students']); // (#30)
 
         // --- 生徒ログイン印刷 ---
