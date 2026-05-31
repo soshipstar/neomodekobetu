@@ -46,6 +46,16 @@ Route::prefix('auth')->group(function () {
     // パスワードリセットも総当たり/列挙対策で同じリミッタを適用
     Route::post('/password/reset', [App\Http\Controllers\Auth\AuthController::class, 'resetPassword'])
         ->middleware('throttle:login');
+
+    // 2 要素認証 (TOTP) 管理 — マスター管理者のみ (コントローラ内で制限)。
+    // 認証済みであることが前提なので auth:sanctum を付与。
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/two-factor/status', [App\Http\Controllers\Auth\TwoFactorController::class, 'status']);
+        Route::post('/two-factor/enable', [App\Http\Controllers\Auth\TwoFactorController::class, 'enable']);
+        Route::post('/two-factor/confirm', [App\Http\Controllers\Auth\TwoFactorController::class, 'confirm']);
+        Route::post('/two-factor/disable', [App\Http\Controllers\Auth\TwoFactorController::class, 'disable']);
+        Route::post('/two-factor/recovery-codes', [App\Http\Controllers\Auth\TwoFactorController::class, 'regenerateRecoveryCodes']);
+    });
 });
 
 // --- 教室切り替え（全認証ユーザー共通） ---
