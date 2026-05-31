@@ -17,6 +17,8 @@ import { MaterialIcon } from '@/components/ui/MaterialIcon';
 export interface StudentRow {
   id: number;
   student_name: string;
+  /** ふりがな。50音順ソートの基準 (未設定時は漢字氏名でフォールバック) */
+  student_name_kana?: string | null;
   /** 'preschool', 'elementary_1' などの enum 値 (Backend が返す) */
   grade_level: string | null;
   /** ページ別の「最新作成日」(ISO 文字列 / null)。例: 最新の period.start_date、最新の plan.created_date 等 */
@@ -94,8 +96,12 @@ export function StudentSortableList({
     }
     list.sort((a, b) => {
       switch (sortKey) {
-        case 'name_asc':
-          return a.student_name.localeCompare(b.student_name, 'ja');
+        case 'name_asc': {
+          // ふりがな優先で50音順。未設定は漢字氏名でフォールバック。
+          const ka = (a.student_name_kana || a.student_name) ?? '';
+          const kb = (b.student_name_kana || b.student_name) ?? '';
+          return ka.localeCompare(kb, 'ja');
+        }
         case 'grade_asc': {
           const ga = GRADE_ORDER[a.grade_level ?? ''] ?? 99;
           const gb = GRADE_ORDER[b.grade_level ?? ''] ?? 99;

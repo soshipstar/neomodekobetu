@@ -16,6 +16,7 @@ import { MaterialIcon } from '@/components/ui/MaterialIcon';
 interface Guardian {
   id: number;
   full_name: string;
+  full_name_kana?: string | null;
   username: string;
   email: string | null;
   phone: string | null;

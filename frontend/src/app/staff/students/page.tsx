@@ -64,6 +64,7 @@ interface Guardian {
 
 interface StudentForm {
   student_name: string;
+  student_name_kana: string;
   birth_date: string;
   grade_adjustment: number;
   support_start_date: string;
@@ -94,6 +95,7 @@ interface StudentForm {
 
 const emptyForm: StudentForm = {
   student_name: '',
+  student_name_kana: '',
   birth_date: '',
   grade_adjustment: 0,
   support_start_date: '',
