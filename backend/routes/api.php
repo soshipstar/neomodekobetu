@@ -51,6 +51,22 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // ==========================================================================
+// ハニーポット (おとり) エンドポイント
+// ------------------------------------------------------------------------
+// 通常の画面からは到達しない fake API。叩いた = アプリ解析の強い疑い。
+// 自動 BAN はせず、security_alerts に記録 + マスター管理者へ通知し 404 を返す。
+// 認証必須にして、ログイン済みユーザーの不審行動に絞る (bot ノイズ除外)。
+// ※ これらのパスは絶対に FE から呼ばないこと。
+// ==========================================================================
+Route::middleware('auth:sanctum')->group(function () {
+    Route::any('/staff/secret-export', [App\Http\Controllers\HoneypotController::class, 'trap']);
+    Route::any('/staff/students/full-export', [App\Http\Controllers\HoneypotController::class, 'trap']);
+    Route::any('/admin/database-backup', [App\Http\Controllers\HoneypotController::class, 'trap']);
+    Route::any('/admin/all-data-export', [App\Http\Controllers\HoneypotController::class, 'trap']);
+    Route::any('/internal/users-dump', [App\Http\Controllers\HoneypotController::class, 'trap']);
+});
+
+// ==========================================================================
 // 4.2 管理者 API (auth:sanctum + user_type:admin)
 // ==========================================================================
 Route::prefix('admin')

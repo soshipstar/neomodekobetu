@@ -1,0 +1,17 @@
+# きづり robots.txt
+# 認証が必要な業務画面・API は検索エンジンにインデックスさせない。
+# (情報露出の抑制 + アプリ構造の解析難度を少し上げる)
+
+User-agent: *
+Disallow: /admin
+Disallow: /staff
+Disallow: /guardian
+Disallow: /student
+Disallow: /tablet
+Disallow: /api
+Disallow: /agent
+
+# 公開してよいもの (ログイン・利用規約・空き状況ウィジェット)
+Allow: /$
+Allow: /auth/login
+Allow: /terms
