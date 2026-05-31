@@ -56,7 +56,8 @@ interface AttendanceStudent {
   id: number;
   name: string;
   grade_group: '未就学' | '小学生' | '中学生' | '高校生';
-  type: 'regular' | 'makeup' | 'additional';
+  type: 'regular' | 'makeup' | 'additional' | 'event';
+  event_name?: string;
   is_absent: boolean;
   chat_room_id: number | null;
   notified?: 'arrival' | 'departure';
