@@ -38,6 +38,27 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Cashier の Billable model を Company に変更（顧客 = 企業単位の課金）
         \Laravel\Cashier\Cashier::useCustomerModel(\App\Models\Company::class);
+
+        // ==================================================================
+        // RateLimiter 定義 (悪意あるスクレイピング / 大量データ吸い上げ対策)
+        // ==================================================================
+        // 'api': 認証ユーザーは user_id 単位で 200/分、未認証は IP 単位で 60/分。
+        //   現場のダッシュボード自動更新やリアルタイム描画でも余裕がある水準。
+        // 'export': PDF/CSV ダウンロードや一括出力など重い処理。
+        //   user_id 単位で 30/時間に絞り、業務 1 日分のエクスポートは十分カバーしつつ
+        //   機械的に全件抜き取りされるのを抑止する。
+        \Illuminate\Support\Facades\RateLimiter::for('api', function (\Illuminate\Http\Request $request) {
+            if ($request->user()) {
+                return \Illuminate\Cache\RateLimiting\Limit::perMinute(200)->by('user:' . $request->user()->id);
+            }
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(60)->by('ip:' . $request->ip());
+        });
+        \Illuminate\Support\Facades\RateLimiter::for('export', function (\Illuminate\Http\Request $request) {
+            if ($request->user()) {
+                return \Illuminate\Cache\RateLimiting\Limit::perHour(30)->by('user:' . $request->user()->id);
+            }
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(10)->by('ip:' . $request->ip());
+        });
     })
     ->withMiddleware(function (Middleware $middleware) {
         // Bearer トークン認証を使用するため、statefulApi() は不要
@@ -50,8 +71,16 @@ return Application::configure(basePath: dirname(__DIR__))
             'external_api_key' => \App\Http\Middleware\VerifyExternalApiKey::class,
         ]);
 
-        // API レート制限（ダッシュボードのポーリング等を考慮して余裕を持たせる）
-        $middleware->throttleApi('180,1');
+        // 全 /api/* に per_page クランプを適用 (上限 100)。
+        // 悪意あるクライアントが per_page=10000 で一括吸い上げするのを防ぐ。
+        $middleware->api(prepend: [
+            \App\Http\Middleware\ClampPerPage::class,
+        ]);
+
+        // API レート制限。booted() で定義した 'api' リミッタ (user 単位 200/分、
+        // 未認証 IP 単位 60/分) を全 /api/* に適用。
+        // 重いエクスポート系には別途 'throttle:export' (30/時間/user) を個別付与する。
+        $middleware->throttleApi();
 
         // 信頼されたプロキシ (Docker/Nginx経由)
         $middleware->trustProxies(at: '*');

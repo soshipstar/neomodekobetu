@@ -350,8 +350,8 @@ Route::prefix('staff')
         Route::delete('/support-plans/{plan}', [App\Http\Controllers\Staff\SupportPlanController::class, 'destroy']);
         Route::post('/support-plans/{plan}/generate-ai', [App\Http\Controllers\Staff\SupportPlanController::class, 'generateAi']);
         Route::post('/support-plans/{plan}/sign', [App\Http\Controllers\Staff\SupportPlanController::class, 'sign']);
-        Route::get('/support-plans/{plan}/pdf', [App\Http\Controllers\Staff\SupportPlanController::class, 'pdf']);
-        Route::get('/support-plans/{plan}/export', [App\Http\Controllers\Staff\SupportPlanController::class, 'export']);
+        Route::get('/support-plans/{plan}/pdf', [App\Http\Controllers\Staff\SupportPlanController::class, 'pdf'])->middleware('throttle:export');
+        Route::get('/support-plans/{plan}/export', [App\Http\Controllers\Staff\SupportPlanController::class, 'export'])->middleware('throttle:export');
         Route::post('/support-plans/{plan}/publish', [App\Http\Controllers\Staff\SupportPlanController::class, 'publish']);
         Route::post('/support-plans/{plan}/make-official', [App\Http\Controllers\Staff\SupportPlanController::class, 'makeOfficial']);
         // 緊急復旧用: 中身が空のまま確定してしまった official プランを draft に戻す
@@ -370,14 +370,14 @@ Route::prefix('staff')
         Route::post('/monitoring/{monitoring}/sign', [App\Http\Controllers\Staff\MonitoringController::class, 'sign']);
         Route::post('/monitoring/generate', [App\Http\Controllers\Staff\MonitoringController::class, 'generate']);
         Route::post('/monitoring/{monitoring}/generate-ai', [App\Http\Controllers\Staff\MonitoringController::class, 'generateAi']);
-        Route::get('/monitoring/{monitoring}/pdf', [App\Http\Controllers\Staff\MonitoringController::class, 'pdf']);
+        Route::get('/monitoring/{monitoring}/pdf', [App\Http\Controllers\Staff\MonitoringController::class, 'pdf'])->middleware('throttle:export');
 
         // --- アセスメント ---
         Route::get('/students/{student}/assessment', [App\Http\Controllers\Staff\AssessmentController::class, 'index']);
         Route::post('/assessment/generate', [App\Http\Controllers\Staff\AssessmentController::class, 'generate']);
         Route::post('/assessment/{period}', [App\Http\Controllers\Staff\AssessmentController::class, 'store']);
         Route::put('/assessment/{period}', [App\Http\Controllers\Staff\AssessmentController::class, 'update']);
-        Route::get('/assessment/{period}/pdf', [App\Http\Controllers\Staff\AssessmentController::class, 'pdf']);
+        Route::get('/assessment/{period}/pdf', [App\Http\Controllers\Staff\AssessmentController::class, 'pdf'])->middleware('throttle:export');
         Route::post('/assessment/{period}/toggle-guardian-hidden', [App\Http\Controllers\Staff\AssessmentController::class, 'toggleGuardianHidden']);
 
         // --- 連絡帳 (日常活動記録) ---
@@ -418,7 +418,7 @@ Route::prefix('staff')
         Route::get('/hiyari-hatto/{hiyariHatto}', [App\Http\Controllers\Staff\HiyariHattoController::class, 'show']);
         Route::put('/hiyari-hatto/{hiyariHatto}', [App\Http\Controllers\Staff\HiyariHattoController::class, 'update']);
         Route::delete('/hiyari-hatto/{hiyariHatto}', [App\Http\Controllers\Staff\HiyariHattoController::class, 'destroy']);
-        Route::get('/hiyari-hatto/{hiyariHatto}/pdf', [App\Http\Controllers\Staff\HiyariHattoController::class, 'pdf']);
+        Route::get('/hiyari-hatto/{hiyariHatto}/pdf', [App\Http\Controllers\Staff\HiyariHattoController::class, 'pdf'])->middleware('throttle:export');
 
         // --- お便り ---
         Route::get('/newsletter-settings', [App\Http\Controllers\Staff\NewsletterSettingController::class, 'show']);
@@ -427,7 +427,7 @@ Route::prefix('staff')
         Route::post('/newsletters/{newsletter}/generate-ai', [App\Http\Controllers\Staff\NewsletterController::class, 'generateAi']);
         Route::post('/newsletters/{newsletter}/generate-all', [App\Http\Controllers\Staff\NewsletterController::class, 'generateAll']);
         Route::post('/newsletters/{newsletter}/publish', [App\Http\Controllers\Staff\NewsletterController::class, 'publish']);
-        Route::get('/newsletters/{newsletter}/pdf', [App\Http\Controllers\Staff\NewsletterController::class, 'pdf']);
+        Route::get('/newsletters/{newsletter}/pdf', [App\Http\Controllers\Staff\NewsletterController::class, 'pdf'])->middleware('throttle:export');
         Route::get('/newsletters/{newsletter}/word', [App\Http\Controllers\Staff\NewsletterController::class, 'word']);
         Route::post('/newsletters/pdf-preview', [App\Http\Controllers\Staff\NewsletterController::class, 'pdfPreview']);
 
@@ -451,14 +451,14 @@ Route::prefix('staff')
         Route::post('/absence-response/{record}/send', [App\Http\Controllers\Staff\UnsentRecordsController::class, 'sendAbsenceResponse']);
         Route::post('/absence-response/batch-send', [App\Http\Controllers\Staff\UnsentRecordsController::class, 'batchSendAbsenceResponse']);
         Route::get('/absence-response/list', [App\Http\Controllers\Staff\UnsentRecordsController::class, 'absenceResponseList']);
-        Route::get('/absence-response/csv', [App\Http\Controllers\Staff\UnsentRecordsController::class, 'absenceResponseCsv']);
+        Route::get('/absence-response/csv', [App\Http\Controllers\Staff\UnsentRecordsController::class, 'absenceResponseCsv'])->middleware('throttle:export');
 
         // --- 週間計画 ---
         Route::get('/weekly-plans', [App\Http\Controllers\Staff\WeeklyPlanController::class, 'index']);
         Route::post('/weekly-plans', [App\Http\Controllers\Staff\WeeklyPlanController::class, 'store']);
         Route::get('/weekly-plans/{studentId}', [App\Http\Controllers\Staff\WeeklyPlanController::class, 'show'])->where('studentId', '[0-9]+');
         Route::put('/weekly-plans/{plan}', [App\Http\Controllers\Staff\WeeklyPlanController::class, 'update']);
-        Route::get('/weekly-plans/{plan}/pdf', [App\Http\Controllers\Staff\WeeklyPlanController::class, 'pdf']);
+        Route::get('/weekly-plans/{plan}/pdf', [App\Http\Controllers\Staff\WeeklyPlanController::class, 'pdf'])->middleware('throttle:export');
 
         // --- 業務日誌 ---
         Route::get('/work-diary', [App\Http\Controllers\Staff\WorkDiaryController::class, 'index']);
@@ -473,7 +473,7 @@ Route::prefix('staff')
         Route::get('/student-interviews/{interview}', [App\Http\Controllers\Staff\StudentInterviewController::class, 'showSingle']);
         Route::put('/student-interviews/{interview}', [App\Http\Controllers\Staff\StudentInterviewController::class, 'update']);
         Route::delete('/student-interviews/{interview}', [App\Http\Controllers\Staff\StudentInterviewController::class, 'destroy']);
-        Route::get('/student-interviews/{interview}/pdf', [App\Http\Controllers\Staff\StudentInterviewController::class, 'pdf']);
+        Route::get('/student-interviews/{interview}/pdf', [App\Http\Controllers\Staff\StudentInterviewController::class, 'pdf'])->middleware('throttle:export');
 
         // --- 未作成タスク ---
         Route::get('/pending-tasks', [App\Http\Controllers\Staff\PendingTaskController::class, 'index']);
@@ -486,7 +486,7 @@ Route::prefix('staff')
         Route::get('/facility-evaluation/periods/{period}/status', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'responseStatus']);
         Route::get('/facility-evaluation/summary', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'summary']);
         Route::get('/facility-evaluation/responses', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'responses']);
-        Route::get('/facility-evaluation/responses/{evaluation}/pdf', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'responsePdf']);
+        Route::get('/facility-evaluation/responses/{evaluation}/pdf', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'responsePdf'])->middleware('throttle:export');
         Route::get('/facility-evaluation/self-summary', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'selfSummary']);
         Route::post('/facility-evaluation/self-summary', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'saveSelfSummary']);
         Route::get('/facility-evaluation/staff-evaluation', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'staffEvaluation']);
@@ -495,9 +495,9 @@ Route::prefix('staff')
         Route::post('/facility-evaluation/facility-comment', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'saveFacilityComment']);
         Route::get('/facility-evaluation/staff-evaluation-detail', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'staffEvaluationDetail']);
         Route::post('/facility-evaluation/update-summary-counts', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'updateSummaryCounts']);
-        Route::get('/facility-evaluation/summary-pdf', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'summaryPdf']);
+        Route::get('/facility-evaluation/summary-pdf', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'summaryPdf'])->middleware('throttle:export');
         Route::post('/facility-evaluation/generate-self-evaluation', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'generateSelfEvaluation']);
-        Route::get('/facility-evaluation/self-evaluation-pdf', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'selfEvaluationPdf']);
+        Route::get('/facility-evaluation/self-evaluation-pdf', [App\Http\Controllers\Staff\FacilityEvaluationController::class, 'selfEvaluationPdf'])->middleware('throttle:export');
 
         // --- 学校休業日活動 ---
         Route::get('/school-holiday-activities', [App\Http\Controllers\Staff\SchoolHolidayActivityController::class, 'index']);
@@ -586,7 +586,7 @@ Route::prefix('staff')
         Route::get('/activity-support-plans/past', [App\Http\Controllers\Staff\ActivitySupportPlanController::class, 'pastPlans']);
         Route::post('/activity-support-plans', [App\Http\Controllers\Staff\ActivitySupportPlanController::class, 'store']);
         Route::get('/activity-support-plans/{plan}', [App\Http\Controllers\Staff\ActivitySupportPlanController::class, 'show']);
-        Route::get('/activity-support-plans/{plan}/pdf', [App\Http\Controllers\Staff\ActivitySupportPlanController::class, 'pdf']);
+        Route::get('/activity-support-plans/{plan}/pdf', [App\Http\Controllers\Staff\ActivitySupportPlanController::class, 'pdf'])->middleware('throttle:export');
         Route::put('/activity-support-plans/{plan}', [App\Http\Controllers\Staff\ActivitySupportPlanController::class, 'update']);
         Route::delete('/activity-support-plans/{plan}', [App\Http\Controllers\Staff\ActivitySupportPlanController::class, 'destroy']);
         Route::post('/activity-support-plans/generate-ai/five-domains', [App\Http\Controllers\Staff\ActivitySupportPlanController::class, 'generateAiFiveDomains']);
@@ -606,8 +606,8 @@ Route::prefix('staff')
             Route::put('/reports/{freeSchoolReport}', [App\Http\Controllers\Staff\FreeSchoolReportController::class, 'updateReport']);
             Route::delete('/reports/{freeSchoolReport}', [App\Http\Controllers\Staff\FreeSchoolReportController::class, 'destroyReport']);
 
-            Route::get('/reports/{freeSchoolReport}/pdf', [App\Http\Controllers\Staff\FreeSchoolReportController::class, 'pdfReport']);
-            Route::get('/reports/batch/pdf', [App\Http\Controllers\Staff\FreeSchoolReportController::class, 'batchPdf']);
+            Route::get('/reports/{freeSchoolReport}/pdf', [App\Http\Controllers\Staff\FreeSchoolReportController::class, 'pdfReport'])->middleware('throttle:export');
+            Route::get('/reports/batch/pdf', [App\Http\Controllers\Staff\FreeSchoolReportController::class, 'batchPdf'])->middleware('throttle:export');
         });
 
         // --- スタッフ間チャット ---
