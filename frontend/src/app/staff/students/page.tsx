@@ -134,11 +134,11 @@ const GRADE_LABELS: Record<string, string> = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  active: '在籍', trial: '体験', short_term: '短期利用', waiting: '待機', withdrawn: '退所',
+  active: '在籍', trial: '体験', short_term: '短期利用', waiting: '待機', withdrawn: '退所', pre_withdrawal: '退所予定',
 };
 
 const STATUS_VARIANTS: Record<string, 'success' | 'warning' | 'danger' | 'default'> = {
-  active: 'success', trial: 'success', short_term: 'success', waiting: 'warning', withdrawn: 'danger',
+  active: 'success', trial: 'success', short_term: 'success', waiting: 'warning', withdrawn: 'danger', pre_withdrawal: 'warning',
 };
 
 const DAYS = [
@@ -406,6 +406,7 @@ export default function StudentsPage() {
           <option value="trial">体験</option>
           <option value="short_term">短期利用</option>
           <option value="waiting">待機</option>
+          <option value="pre_withdrawal">退所予定</option>
           <option value="withdrawn">退所</option>
         </select>
       </div>
@@ -713,6 +714,7 @@ function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel
           <option value="trial">体験</option>
           <option value="short_term">短期利用</option>
           <option value="waiting">待機</option>
+          <option value="pre_withdrawal">退所予定</option>
           <option value="withdrawn">退所</option>
         </select>
       </div>
