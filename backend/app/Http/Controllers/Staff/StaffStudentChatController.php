@@ -86,13 +86,17 @@ class StaffStudentChatController extends Controller
 
         $messages = $query->limit(100)->get();
 
-        // 送信者名を付加
+        // 送信者名と添付ファイル URL を付加
         $messages->each(function ($msg) {
             if ($msg->sender_type === 'staff') {
                 $msg->sender_name = \App\Models\User::where('id', $msg->sender_id)->value('full_name');
             } elseif ($msg->sender_type === 'student') {
                 $msg->sender_name = Student::where('id', $msg->sender_id)->value('student_name');
             }
+            // 添付ファイル (画像等) の公開 URL を付与してフロントで表示できるようにする
+            $msg->attachment_url = $msg->attachment_path
+                ? \Illuminate\Support\Facades\Storage::disk('public')->url($msg->attachment_path)
+                : null;
         });
 
         // スタッフが閲覧したので生徒メッセージを既読にする
@@ -119,15 +123,44 @@ class StaffStudentChatController extends Controller
         }
 
         $request->validate([
-            'message' => 'required|string|max:5000',
+            'message'    => 'required_without:attachment|nullable|string|max:5000',
+            'attachment' => 'nullable|file|max:3072', // 3MB (生徒チャットと同条件)
         ]);
 
-        $message = DB::transaction(function () use ($request, $user, $room) {
+        // 添付ファイル (画像等) の保存。生徒側 Student\ChatController と同じ
+        // 保存先・命名・教室別容量チェックに揃える。
+        $attachmentPath = null;
+        $attachmentName = null;
+        $attachmentSize = null;
+
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+
+            $room->loadMissing('student');
+            $classroomId = (int) ($room->student?->classroom_id ?? $room->classroom_id ?? 0);
+
+            $storage = app(\App\Services\ChatAttachmentStorage::class);
+            if ($classroomId && ! $storage->canUpload($classroomId, (int) $file->getSize())) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $storage->quotaMessage($classroomId),
+                ], 422);
+            }
+
+            $attachmentPath = $file->store('student_chat_attachments', 'public');
+            $attachmentName = $file->getClientOriginalName();
+            $attachmentSize = $file->getSize();
+        }
+
+        $message = DB::transaction(function () use ($request, $user, $room, $attachmentPath, $attachmentName, $attachmentSize) {
             $msg = StudentChatMessage::create([
-                'room_id'     => $room->id,
-                'sender_id'   => $user->id,
-                'sender_type' => 'staff',
-                'message'     => $request->message,
+                'room_id'                  => $room->id,
+                'sender_id'                => $user->id,
+                'sender_type'              => 'staff',
+                'message'                  => $request->message ?? '',
+                'attachment_path'          => $attachmentPath,
+                'attachment_original_name' => $attachmentName,
+                'attachment_size'          => $attachmentSize,
             ]);
 
             $room->update(['last_message_at' => now()]);
@@ -139,7 +172,9 @@ class StaffStudentChatController extends Controller
         try {
             $notificationService = app(NotificationService::class);
             $senderName = $user->full_name ?? 'スタッフ';
-            $messagePreview = mb_substr($request->message, 0, 50);
+            $messagePreview = $request->filled('message')
+                ? mb_substr($request->message, 0, 50)
+                : '添付ファイルが送信されました';
             $frontendUrl = rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/');
 
             $room->loadMissing('student');

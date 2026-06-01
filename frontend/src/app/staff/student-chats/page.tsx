@@ -53,9 +53,17 @@ interface StudentChatMessage {
   sender_name: string;
   message: string;
   attachment_url: string | null;
-  attachment_name: string | null;
+  attachment_path: string | null;
+  attachment_original_name: string | null;
+  attachment_size: number | null;
   is_read: boolean;
   created_at: string;
+}
+
+// 添付が画像か判定 (拡張子ベース)
+function isImageAttachment(name: string | null): boolean {
+  if (!name) return false;
+  return /\.(png|jpe?g|gif|webp|heic|heif|bmp|svg)$/i.test(name);
 }
 
 export default function StudentChatsPage() {
@@ -176,7 +184,9 @@ export default function StudentChatsPage() {
     const trimmed = message.trim();
     if (!trimmed && !attachment) return;
     const formData = new FormData();
-    formData.append('message', trimmed || (attachment?.name ?? ''));
+    // 添付のみの場合でもファイル名を本文に入れない (画像が「ファイル名のテキスト」
+    // として送られてしまう不具合の修正)。本文は入力テキストのみ。
+    if (trimmed) formData.append('message', trimmed);
     if (attachment) formData.append('attachment', attachment);
     sendMutation.mutate(formData);
   }, [message, attachment, sendMutation]);
@@ -391,20 +401,38 @@ export default function StudentChatsPage() {
                                 : 'bg-[var(--neutral-background-1)] text-[var(--neutral-foreground-1)] border border-[var(--neutral-stroke-2)]'
                             )}
                           >
-                            {nl(msg.message)}
+                            {msg.message && nl(msg.message)}
                             {msg.attachment_url && (
-                              <a
-                                href={msg.attachment_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={cn(
-                                  'mt-1 flex items-center gap-1 text-xs underline',
-                                  isStaff ? 'text-blue-100' : 'text-[var(--brand-80)]'
-                                )}
-                              >
-                                <MaterialIcon name="attach_file" size={12} />
-                                {msg.attachment_name || '添付ファイル'}
-                              </a>
+                              isImageAttachment(msg.attachment_original_name) ? (
+                                // 画像はインライン表示。タップで原寸を別タブで開く
+                                <a
+                                  href={msg.attachment_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={cn('block', msg.message ? 'mt-2' : '')}
+                                >
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={msg.attachment_url}
+                                    alt={msg.attachment_original_name || '画像'}
+                                    className="max-h-[260px] rounded-lg border border-black/10 object-contain"
+                                    loading="lazy"
+                                  />
+                                </a>
+                              ) : (
+                                <a
+                                  href={msg.attachment_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={cn(
+                                    'mt-1 flex items-center gap-1 text-xs underline',
+                                    isStaff ? 'text-blue-100' : 'text-[var(--brand-80)]'
+                                  )}
+                                >
+                                  <MaterialIcon name="attach_file" size={12} />
+                                  {msg.attachment_original_name || '添付ファイル'}
+                                </a>
+                              )
                             )}
                           </div>
                           <div className={`flex items-center gap-1 mt-0.5 ${isStaff ? 'justify-end' : ''}`}>
