@@ -509,21 +509,33 @@ export default function BugReportsPage() {
                   </div>
                 )}
 
-                {/* Reporter: 対応済み確認依頼中の自分の報告を解決済みにできる */}
+                {/* Reporter: 対応済み確認依頼中の自分の報告を解決済み / 未対応のどちらにも変更できる */}
                 {!isAdmin && detail.reporter?.id === user?.id && detail.status === 'in_progress' && (
                   <div className="border-t border-[var(--neutral-stroke-2)] pt-3">
                     <p className="text-xs text-[var(--neutral-foreground-3)] mb-2">
-                      修正が反映されていることを確認したら、下のボタンで解決済みに変更できます。
+                      修正が反映されているか確認してください。直っていれば「解決済み」、
+                      まだ直っていなければ「未対応に戻す」で再対応を依頼できます。
                     </p>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => statusMutation.mutate('resolved')}
-                      isLoading={statusMutation.isPending}
-                      leftIcon={<MaterialIcon name="check_circle" size={16} />}
-                    >
-                      解決済みにする
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => statusMutation.mutate('resolved')}
+                        isLoading={statusMutation.isPending}
+                        leftIcon={<MaterialIcon name="check_circle" size={16} />}
+                      >
+                        解決済みにする
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => statusMutation.mutate('open')}
+                        isLoading={statusMutation.isPending}
+                        leftIcon={<MaterialIcon name="undo" size={16} />}
+                      >
+                        未対応に戻す
+                      </Button>
+                    </div>
                   </div>
                 )}
 

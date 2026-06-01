@@ -87,8 +87,10 @@ class BugReport_ReporterResolvePermissionTest extends TestCase
         $this->assertEquals('open', $report->fresh()->status);
     }
 
-    public function test_reporter_cannot_reopen_own_report(): void
+    public function test_reporter_can_reopen_in_progress_own_report(): void
     {
+        // 確認依頼中(in_progress) → 未対応(open) への差し戻しは報告者本人に許可。
+        // (修正が反映されていなかった場合に再対応を依頼できるようにするため)
         $c = $this->makeClassroom();
         $reporter = $this->makeStaff($c);
         $report = BugReport::create([
@@ -102,8 +104,28 @@ class BugReport_ReporterResolvePermissionTest extends TestCase
         $response = $this->actingAs($reporter, 'sanctum')
             ->patchJson("/api/staff/bug-reports/{$report->id}/status", ['status' => 'open']);
 
+        $response->assertStatus(200);
+        $this->assertEquals('open', $report->fresh()->status);
+    }
+
+    public function test_reporter_cannot_reopen_already_open_report(): void
+    {
+        // in_progress 以外（例: open）からの操作は報告者には許可しない。
+        $c = $this->makeClassroom();
+        $reporter = $this->makeStaff($c);
+        $report = BugReport::create([
+            'reporter_id' => $reporter->id,
+            'page_url' => 'https://kiduri.xyz/x',
+            'description' => 'bug',
+            'status' => 'open',
+            'priority' => 'normal',
+        ]);
+
+        $response = $this->actingAs($reporter, 'sanctum')
+            ->patchJson("/api/staff/bug-reports/{$report->id}/status", ['status' => 'open']);
+
         $response->assertStatus(403);
-        $this->assertEquals('in_progress', $report->fresh()->status);
+        $this->assertEquals('open', $report->fresh()->status);
     }
 
     public function test_non_reporter_staff_cannot_change_status(): void

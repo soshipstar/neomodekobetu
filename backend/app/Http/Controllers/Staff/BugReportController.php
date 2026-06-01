@@ -152,7 +152,10 @@ class BugReportController extends Controller
     /**
      * ステータス変更
      * - 管理者 (master / company_admin): 全ステータスに変更可
-     * - 報告者本人: in_progress（対応済み確認依頼中）→ resolved への変更のみ可
+     * - 報告者本人: in_progress（対応済み確認依頼中）から resolved（解決済み）
+     *   または open（未対応）のどちらにも変更可。
+     *   修正が確認できたら「解決済み」、まだ直っていなければ「未対応」に
+     *   差し戻して再対応を依頼できる。
      */
     public function updateStatus(Request $request, BugReport $bugReport): JsonResponse
     {
@@ -168,12 +171,13 @@ class BugReportController extends Controller
             'status' => 'required|string|in:open,in_progress,resolved',
         ]);
 
-        // 報告者本人は in_progress → resolved の確認完了操作のみ許可
+        // 報告者本人は「対応済み確認依頼中(in_progress)」の報告に対してのみ操作でき、
+        // そこから「解決済み(resolved)」または「未対応(open)」へ移動できる。
         if (!$isAdmin) {
-            if ($bugReport->status !== 'in_progress' || $validated['status'] !== 'resolved') {
+            if ($bugReport->status !== 'in_progress' || !in_array($validated['status'], ['resolved', 'open'], true)) {
                 return response()->json([
                     'success' => false,
-                    'message' => '報告者は対応済み確認依頼中の報告を解決済みにする操作のみ行えます。',
+                    'message' => '報告者は対応済み確認依頼中の報告を、解決済みまたは未対応に変更する操作のみ行えます。',
                 ], 403);
             }
         }
