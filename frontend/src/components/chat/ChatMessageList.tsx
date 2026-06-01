@@ -12,10 +12,54 @@ interface ChatMessageListProps {
 export function ChatMessageList({ messages, currentUserId }: ChatMessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const prevRoomKeyRef = useRef<string | null>(null);
 
-  // Auto-scroll to bottom on new messages
+  // 最下部へスクロールする共通処理。
+  // behavior='auto' なら即時ジャンプ (初回表示用)、'smooth' なら新着用。
+  const scrollToBottom = (behavior: ScrollBehavior) => {
+    bottomRef.current?.scrollIntoView({ behavior, block: 'end' });
+  };
+
+  // メッセージ集合が変わったら最下部へ。
+  // バグ: チャット履歴を開いた直後、画像添付の読み込み完了で高さが伸び、
+  //       smooth スクロールが途中で止まり「最新が見えない」ことがあった
+  //       (画像がキャッシュ済みか否かで再現が変わる=「人/時による」)。
+  // 対策:
+  //   - 別ルームを開いた初回や件数が変わった瞬間は即時ジャンプを複数回行う
+  //     (レイアウト確定後にも当てる)。
+  //   - 添付画像の load 完了 (= 高さ変化) でも最下部へ再スクロールする。
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // ルーム切替や初回ロードかどうかを「先頭メッセージID+件数」で判定
+    const first = messages[0];
+    const roomKey = first ? `${first.id}:${messages.length}` : `empty:${messages.length}`;
+    const isInitialForRoom = prevRoomKeyRef.current === null
+      || prevRoomKeyRef.current.split(':')[0] !== roomKey.split(':')[0];
+    prevRoomKeyRef.current = roomKey;
+
+    // 即時で当てたあと、レイアウト/フォント確定後にもう一度当てる
+    scrollToBottom('auto');
+    const raf = requestAnimationFrame(() => scrollToBottom('auto'));
+    const t = setTimeout(() => scrollToBottom(isInitialForRoom ? 'auto' : 'smooth'), 120);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(t);
+    };
+  }, [messages]);
+
+  // 添付画像の読み込み完了で高さが変わったら最下部へ再スクロール。
+  // (初回表示時に画像が後から読み込まれて途中で止まる問題への保険)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const imgs = Array.from(container.querySelectorAll('img'));
+    if (imgs.length === 0) return;
+
+    const onLoad = () => scrollToBottom('auto');
+    imgs.forEach((img) => {
+      if (!img.complete) img.addEventListener('load', onLoad);
+    });
+    return () => imgs.forEach((img) => img.removeEventListener('load', onLoad));
   }, [messages]);
 
   if (messages.length === 0) {
