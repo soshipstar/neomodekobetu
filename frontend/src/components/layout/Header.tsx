@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUiStore } from '@/stores/uiStore';
 import { useAuth } from '@/hooks/useAuth';
 import { NotificationBell } from './NotificationBell';
+import { BillingSystemLink } from './BillingSystemLink';
 import { ClassroomSwitcher } from './ClassroomSwitcher';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { getInitials } from '@/lib/utils';
@@ -58,6 +59,8 @@ export function Header() {
 
       {/* Right side */}
       <div className="flex items-center gap-2">
+        {/* 国保連請求システム (account.kiduri.xyz) へ SSO 遷移。職員・管理者のみ表示 */}
+        <BillingSystemLink />
         <NotificationBell />
 
         {/* User menu */}
