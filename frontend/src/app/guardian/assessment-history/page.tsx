@@ -251,10 +251,20 @@ export default function GuardianAssessmentHistoryPage() {
                     }
                   >
                     <div className="flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <h3 className="text-base font-semibold text-[var(--neutral-foreground-1)]">
                           {item.period_name}
                         </h3>
+                        {/* 要望: 見出しの段階で「要確認」等を表示し、開かなくても
+                            操作が必要なことが一目で分かるようにする (確認漏れ防止)。
+                            - 事業所アセスメントが提出済みで未確認 → 要確認
+                            - 保護者アセスメントが未提出 → 記入のお願い */}
+                        {item.staff_submitted && !item.staff_guardian_confirmed && (
+                          <Badge variant="danger" dot>要確認</Badge>
+                        )}
+                        {!item.guardian_submitted && (
+                          <Badge variant="warning" dot>保護者記入をお願いします</Badge>
+                        )}
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--neutral-foreground-3)]">
                         <span className="inline-flex items-center gap-1">
