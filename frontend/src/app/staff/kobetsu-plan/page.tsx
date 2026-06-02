@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { cn, formatDate, formatDateTime } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -79,6 +79,39 @@ interface PlanFullData {
   staff_signature: string;
   signature_status: string;
   details: SupportPlanDetail[];
+}
+
+interface PlanMeeting {
+  id: number;
+  meeting_date: string | null;
+  attendees: string | null;
+  discussion: string | null;
+  creator?: { id: number; full_name: string } | null;
+}
+
+interface ProposalSnapshotDetail {
+  sort_order?: number;
+  category?: string;
+  sub_category?: string;
+  current_status?: string;
+  goal?: string;
+  support_content?: string;
+  achievement_date?: string | null;
+  staff_organization?: string;
+  notes?: string;
+}
+
+interface ProposalSnapshot {
+  created_date?: string | null;
+  life_intention?: string | null;
+  overall_policy?: string | null;
+  long_term_goal?: string | null;
+  long_term_goal_date?: string | null;
+  short_term_goal?: string | null;
+  short_term_goal_date?: string | null;
+  manager_name?: string | null;
+  consent_name?: string | null;
+  details?: ProposalSnapshotDetail[];
 }
 
 interface PlanForm {
@@ -191,6 +224,13 @@ export default function KobetsuPlanPage() {
   // Existing signature images (loaded from backend for read-only display)
   const [existingStaffSig, setExistingStaffSig] = useState<string | undefined>(undefined);
   const [existingGuardianSig, setExistingGuardianSig] = useState<string | undefined>(undefined);
+
+  // 原案スナップショット / 保護者コメント / 個別支援会議 議事録
+  const [proposalSnapshot, setProposalSnapshot] = useState<ProposalSnapshot | null>(null);
+  const [proposalSnapshotAt, setProposalSnapshotAt] = useState<string | null>(null);
+  const [guardianReviewComment, setGuardianReviewComment] = useState<string | null>(null);
+  const [guardianReviewCommentAt, setGuardianReviewCommentAt] = useState<string | null>(null);
+  const [meetings, setMeetings] = useState<PlanMeeting[]>([]);
 
   // ------ Data fetching ------
 
@@ -307,6 +347,43 @@ export default function KobetsuPlanPage() {
     onError: () => toast.error('署名の保存に失敗しました'),
   });
 
+  // ------ 個別支援会議 議事録 ------
+  const reloadMeetings = useCallback(async (planId: number) => {
+    try {
+      const res = await api.get<{ data: PlanMeeting[] }>(`/api/staff/support-plans/${planId}/meetings`);
+      setMeetings(Array.isArray(res.data.data) ? res.data.data : []);
+    } catch {
+      /* 取得失敗時は既存表示を維持 */
+    }
+  }, []);
+
+  const saveMeetingMutation = useMutation({
+    mutationFn: async (m: { id?: number; meeting_date: string; attendees: string; discussion: string }) => {
+      if (!editingPlanId) throw new Error('計画が選択されていません');
+      const payload = { meeting_date: m.meeting_date || null, attendees: m.attendees, discussion: m.discussion };
+      if (m.id) return api.put(`/api/staff/support-plans/${editingPlanId}/meetings/${m.id}`, payload);
+      return api.post(`/api/staff/support-plans/${editingPlanId}/meetings`, payload);
+    },
+    onSuccess: () => {
+      toast.success('議事録を保存しました');
+      if (editingPlanId) reloadMeetings(editingPlanId);
+    },
+    onError: (e: { response?: { data?: { message?: string } } }) =>
+      toast.error(e?.response?.data?.message || '議事録の保存に失敗しました'),
+  });
+
+  const deleteMeetingMutation = useMutation({
+    mutationFn: (id: number) => {
+      if (!editingPlanId) throw new Error('計画が選択されていません');
+      return api.delete(`/api/staff/support-plans/${editingPlanId}/meetings/${id}`);
+    },
+    onSuccess: () => {
+      toast.success('議事録を削除しました');
+      if (editingPlanId) reloadMeetings(editingPlanId);
+    },
+    onError: () => toast.error('議事録の削除に失敗しました'),
+  });
+
   // ------ Handlers ------
 
   const openCreate = () => {
@@ -348,6 +425,12 @@ export default function KobetsuPlanPage() {
       // Load existing signature images
       setExistingStaffSig(p.staff_signature || undefined);
       setExistingGuardianSig(p.guardian_signature || undefined);
+      // 原案スナップショット・保護者コメント・議事録を取り込む
+      setProposalSnapshot(p.proposal_snapshot || null);
+      setProposalSnapshotAt(p.proposal_snapshot_at || null);
+      setGuardianReviewComment(p.guardian_review_comment || null);
+      setGuardianReviewCommentAt(p.guardian_review_comment_at || null);
+      setMeetings(Array.isArray(p.meetings) ? p.meetings : []);
       // Track if plan is official (read-only)
       setIsReadOnly(p.is_official === true || p.status === 'official');
       setView('editor');
@@ -1124,6 +1207,22 @@ export default function KobetsuPlanPage() {
           </Card>
 
           {/* ============================================================= */}
+          {/* Section D2: 原案・保護者コメント・個別支援会議 議事録 (既存計画のみ) */}
+          {/* ============================================================= */}
+          {editingPlanId && (
+            <ProposalAndMeetingPanel
+              snapshot={proposalSnapshot}
+              snapshotAt={proposalSnapshotAt}
+              guardianComment={guardianReviewComment}
+              guardianCommentAt={guardianReviewCommentAt}
+              meetings={meetings}
+              onSaveMeeting={(m) => saveMeetingMutation.mutate(m)}
+              onDeleteMeeting={(id) => deleteMeetingMutation.mutate(id)}
+              saving={saveMeetingMutation.isPending}
+            />
+          )}
+
+          {/* ============================================================= */}
           {/* Section E: Action Buttons (sticky) */}
           {/* ============================================================= */}
           <div className="sticky bottom-0 z-30 -mx-4 px-4 py-3 bg-[var(--neutral-background-1)] border-t border-[var(--neutral-stroke-2)] shadow-[0_-2px_8px_rgba(0,0,0,0.08)]">
@@ -1414,5 +1513,233 @@ export default function KobetsuPlanPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// 原案・保護者コメント・個別支援会議 議事録 パネル
+// ---------------------------------------------------------------------------
+
+function ProposalAndMeetingPanel({
+  snapshot,
+  snapshotAt,
+  guardianComment,
+  guardianCommentAt,
+  meetings,
+  onSaveMeeting,
+  onDeleteMeeting,
+  saving,
+}: {
+  snapshot: ProposalSnapshot | null;
+  snapshotAt: string | null;
+  guardianComment: string | null;
+  guardianCommentAt: string | null;
+  meetings: PlanMeeting[];
+  onSaveMeeting: (m: { id?: number; meeting_date: string; attendees: string; discussion: string }) => void;
+  onDeleteMeeting: (id: number) => void;
+  saving: boolean;
+}) {
+  const [showProposal, setShowProposal] = useState(false);
+  const [editing, setEditing] = useState<{ id?: number; meeting_date: string; attendees: string; discussion: string } | null>(null);
+
+  const startNew = () =>
+    setEditing({ meeting_date: new Date().toISOString().split('T')[0], attendees: '', discussion: '' });
+  const startEdit = (m: PlanMeeting) =>
+    setEditing({ id: m.id, meeting_date: m.meeting_date ?? '', attendees: m.attendees ?? '', discussion: m.discussion ?? '' });
+
+  const inputCls =
+    'block w-full rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm focus:border-[var(--brand-80)] focus:outline-none';
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>原案・保護者コメント・個別支援会議</CardTitle>
+      </CardHeader>
+      <CardBody>
+        <div className="space-y-5">
+          {/* 個別支援会議 議事録 */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <h4 className="flex items-center gap-1.5 text-sm font-semibold text-[var(--neutral-foreground-1)]">
+                <MaterialIcon name="groups" size={16} />
+                個別支援会議 議事録
+              </h4>
+              {!editing && (
+                <Button type="button" variant="outline" size="sm" leftIcon={<MaterialIcon name="add" size={14} />} onClick={startNew}>
+                  議事録を追加
+                </Button>
+              )}
+            </div>
+            <p className="mb-3 text-xs text-[var(--neutral-foreground-4)]">
+              原案を保護者に提示する前に行う会議の記録です（会議日・出席者・協議内容）。
+            </p>
+
+            {editing && (
+              <div className="mb-3 space-y-2 rounded-lg border border-[var(--brand-80)]/40 bg-[var(--brand-160)]/20 p-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-3)]">会議日</label>
+                  <input
+                    type="date"
+                    className={inputCls}
+                    value={editing.meeting_date}
+                    onChange={(e) => setEditing({ ...editing, meeting_date: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-3)]">出席者</label>
+                  <input
+                    type="text"
+                    className={inputCls}
+                    placeholder="例: 児童発達支援管理責任者 ○○、保育士 ○○、相談支援専門員 ○○"
+                    value={editing.attendees}
+                    onChange={(e) => setEditing({ ...editing, attendees: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-3)]">協議内容</label>
+                  <textarea
+                    className={inputCls}
+                    rows={5}
+                    placeholder="原案についての議論・確認事項・方針などを記入"
+                    value={editing.discussion}
+                    onChange={(e) => setEditing({ ...editing, discussion: e.target.value })}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    isLoading={saving}
+                    onClick={() => {
+                      onSaveMeeting(editing);
+                      setEditing(null);
+                    }}
+                  >
+                    保存
+                  </Button>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(null)}>
+                    キャンセル
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {meetings.length === 0 && !editing ? (
+              <p className="rounded-md bg-[var(--neutral-background-3)] px-3 py-2 text-xs text-[var(--neutral-foreground-4)]">
+                議事録はまだありません。
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {meetings.map((m) => (
+                  <div key={m.id} className="rounded-lg border border-[var(--neutral-stroke-2)] p-3">
+                    <div className="mb-1 flex items-center justify-between">
+                      <span className="text-sm font-semibold text-[var(--neutral-foreground-1)]">
+                        {m.meeting_date ? formatDate(m.meeting_date) : '(会議日未設定)'}
+                      </span>
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => startEdit(m)}
+                          className="rounded p-1 text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-3)]"
+                          title="編集"
+                        >
+                          <MaterialIcon name="edit" size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { if (confirm('この議事録を削除しますか？')) onDeleteMeeting(m.id); }}
+                          className="rounded p-1 text-[var(--status-danger-fg)] hover:bg-[var(--status-danger-bg)]"
+                          title="削除"
+                        >
+                          <MaterialIcon name="delete" size={14} />
+                        </button>
+                      </div>
+                    </div>
+                    {m.attendees && (
+                      <p className="text-xs text-[var(--neutral-foreground-3)]">出席者: {m.attendees}</p>
+                    )}
+                    {m.discussion && (
+                      <p className="mt-1 whitespace-pre-wrap text-sm text-[var(--neutral-foreground-2)]">{m.discussion}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 保護者コメント (原案に対するコメント) */}
+          <div className="border-t border-[var(--neutral-stroke-2)] pt-4">
+            <h4 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-[var(--neutral-foreground-1)]">
+              <MaterialIcon name="comment" size={16} />
+              保護者コメント（原案へのご意見）
+            </h4>
+            {guardianComment ? (
+              <div className="rounded-lg border border-[var(--brand-80)]/30 bg-[var(--brand-160)]/20 p-3">
+                <p className="whitespace-pre-wrap text-sm text-[var(--neutral-foreground-1)]">{guardianComment}</p>
+                {guardianCommentAt && (
+                  <p className="mt-2 text-xs text-[var(--neutral-foreground-4)]">
+                    受信日時: {formatDateTime(guardianCommentAt)}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="rounded-md bg-[var(--neutral-background-3)] px-3 py-2 text-xs text-[var(--neutral-foreground-4)]">
+                保護者からのコメントはまだありません。
+              </p>
+            )}
+          </div>
+
+          {/* 原案スナップショット (保護者提示時点) */}
+          <div className="border-t border-[var(--neutral-stroke-2)] pt-4">
+            <button
+              type="button"
+              onClick={() => setShowProposal((v) => !v)}
+              className="flex w-full items-center justify-between text-left"
+            >
+              <h4 className="flex items-center gap-1.5 text-sm font-semibold text-[var(--neutral-foreground-1)]">
+                <MaterialIcon name="history_edu" size={16} />
+                原案（保護者へ提示した時点の内容）
+              </h4>
+              <MaterialIcon name={showProposal ? 'expand_less' : 'expand_more'} size={18} className="text-[var(--neutral-foreground-3)]" />
+            </button>
+            {!snapshot ? (
+              <p className="mt-2 rounded-md bg-[var(--neutral-background-3)] px-3 py-2 text-xs text-[var(--neutral-foreground-4)]">
+                原案はまだ保存されていません。保護者へ「確認依頼」を送信した時点の内容がここに保存されます。
+              </p>
+            ) : (
+              showProposal && (
+                <div className="mt-2 space-y-3 rounded-lg border border-[var(--neutral-stroke-2)] p-3 text-sm">
+                  {snapshotAt && (
+                    <p className="text-xs text-[var(--neutral-foreground-4)]">保存日時(保護者提示時): {formatDateTime(snapshotAt)}</p>
+                  )}
+                  {snapshot.long_term_goal && (
+                    <div><span className="font-semibold">長期目標:</span> <span className="whitespace-pre-wrap">{snapshot.long_term_goal}</span></div>
+                  )}
+                  {snapshot.short_term_goal && (
+                    <div><span className="font-semibold">短期目標:</span> <span className="whitespace-pre-wrap">{snapshot.short_term_goal}</span></div>
+                  )}
+                  {snapshot.overall_policy && (
+                    <div><span className="font-semibold">総合的な支援方針:</span> <span className="whitespace-pre-wrap">{snapshot.overall_policy}</span></div>
+                  )}
+                  {snapshot.details && snapshot.details.length > 0 && (
+                    <div className="space-y-1">
+                      <span className="font-semibold">支援項目:</span>
+                      {snapshot.details.map((d, i) => (
+                        <div key={i} className="rounded bg-[var(--neutral-background-3)] px-2 py-1.5 text-xs">
+                          <span className="font-medium">{d.category || d.sub_category || `項目${i + 1}`}</span>
+                          {d.goal && <span className="whitespace-pre-wrap"> / 目標: {d.goal}</span>}
+                          {d.support_content && <span className="whitespace-pre-wrap"> / 内容: {d.support_content}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            )}
+          </div>
+        </div>
+      </CardBody>
+    </Card>
   );
 }

@@ -48,12 +48,16 @@ class IndividualSupportPlan extends Model
         'is_hidden',
         'source_monitoring_id',
         'basis_generated_at',
+        'proposal_snapshot',
+        'proposal_snapshot_at',
     ];
 
     protected function casts(): array
     {
         return [
             'created_date' => 'date:Y-m-d',
+            'proposal_snapshot' => 'array',
+            'proposal_snapshot_at' => 'datetime',
             'consent_date' => 'date:Y-m-d',
             'is_draft' => 'boolean',
             'is_official' => 'boolean',
@@ -96,6 +100,12 @@ class IndividualSupportPlan extends Model
     public function monitoringRecords(): HasMany
     {
         return $this->hasMany(MonitoringRecord::class, 'plan_id');
+    }
+
+    /** @return HasMany<SupportPlanMeeting> 個別支援会議 議事録 */
+    public function meetings(): HasMany
+    {
+        return $this->hasMany(SupportPlanMeeting::class, 'plan_id');
     }
 
     /** @return BelongsTo<User, self> */
