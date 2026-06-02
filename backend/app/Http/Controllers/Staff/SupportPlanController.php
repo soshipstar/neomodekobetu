@@ -38,7 +38,14 @@ class SupportPlanController extends Controller
      */
     public function show(Request $request, IndividualSupportPlan $plan): JsonResponse
     {
-        $plan->load(['student', 'details' => fn ($q) => $q->orderBy('sort_order'), 'creator:id,full_name']);
+        // 原案(proposal_snapshot)・保護者コメント・個別支援会議 議事録も一緒に返す
+        $plan->load([
+            'student',
+            'details' => fn ($q) => $q->orderBy('sort_order'),
+            'creator:id,full_name',
+            'meetings' => fn ($q) => $q->orderByDesc('meeting_date')->orderByDesc('id'),
+            'meetings.creator:id,full_name',
+        ]);
 
         if ($plan->student) {
             $this->authorizeClassroom($request->user(), $plan->student);
@@ -848,16 +855,61 @@ class SupportPlanController extends Controller
             ], 422);
         }
 
-        $plan->update([
+        $update = [
             'status'   => 'submitted',
             'is_draft' => false,
-        ]);
+        ];
+
+        // 原案スナップショット: 保護者へ初めて確認依頼した時点の内容を保存する。
+        // 本案に確定・編集した後も「保護者が見た原案」を参照できるようにするため。
+        // 既に保存済み(再送)の場合は上書きしない (最初の提示内容を保持)。
+        if (empty($plan->proposal_snapshot)) {
+            $plan->loadMissing('details');
+            $update['proposal_snapshot'] = $this->buildProposalSnapshot($plan);
+            $update['proposal_snapshot_at'] = now();
+        }
+
+        $plan->update($update);
 
         return response()->json([
             'success' => true,
             'data'    => $plan->fresh('details'),
             'message' => '確認依頼を送信しました。',
         ]);
+    }
+
+    /**
+     * 原案スナップショット(本体 + 明細)を構築する。
+     */
+    private function buildProposalSnapshot(IndividualSupportPlan $plan): array
+    {
+        return [
+            'created_date'          => optional($plan->created_date)->toDateString(),
+            'life_intention'        => $plan->life_intention,
+            'overall_policy'        => $plan->overall_policy,
+            'long_term_goal'        => $plan->long_term_goal,
+            'long_term_goal_date'   => optional($plan->long_term_goal_date)->toDateString(),
+            'short_term_goal'       => $plan->short_term_goal,
+            'short_term_goal_date'  => optional($plan->short_term_goal_date)->toDateString(),
+            'manager_name'          => $plan->manager_name,
+            'consent_name'          => $plan->consent_name,
+            'details'               => $plan->details
+                ->sortBy('sort_order')
+                ->map(fn ($d) => [
+                    'sort_order'      => $d->sort_order,
+                    'category'        => $d->category,
+                    'domain'          => $d->domain,
+                    'sub_category'    => $d->sub_category,
+                    'current_status'  => $d->current_status,
+                    'goal'            => $d->goal,
+                    'support_content' => $d->support_content,
+                    'achievement_date' => optional($d->achievement_date)->toDateString(),
+                    'staff_organization' => $d->staff_organization,
+                    'notes'           => $d->notes,
+                ])
+                ->values()
+                ->all(),
+        ];
     }
 
     /**

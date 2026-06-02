@@ -399,6 +399,11 @@ Route::prefix('staff')
         Route::post('/support-plans/{plan}/request-signature', [App\Http\Controllers\Staff\SupportPlanController::class, 'requestSignature']);
         Route::get('/support-plans/{plan}/basis', [App\Http\Controllers\Staff\SupportPlanController::class, 'basis']);
         Route::post('/support-plans/{plan}/generate-basis', [App\Http\Controllers\Staff\SupportPlanController::class, 'generateBasis']);
+        // 個別支援会議 議事録 (原案を保護者に提示する前の会議録。各計画に紐づく)
+        Route::get('/support-plans/{plan}/meetings', [App\Http\Controllers\Staff\SupportPlanMeetingController::class, 'index']);
+        Route::post('/support-plans/{plan}/meetings', [App\Http\Controllers\Staff\SupportPlanMeetingController::class, 'store']);
+        Route::put('/support-plans/{plan}/meetings/{meeting}', [App\Http\Controllers\Staff\SupportPlanMeetingController::class, 'update']);
+        Route::delete('/support-plans/{plan}/meetings/{meeting}', [App\Http\Controllers\Staff\SupportPlanMeetingController::class, 'destroy']);
         Route::post('/students/{student}/generate-wish', [App\Http\Controllers\Staff\SupportPlanController::class, 'generateWishFromInterview']);
 
         // --- モニタリング ---
