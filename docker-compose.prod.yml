@@ -85,7 +85,9 @@ services:
     restart: always
     mem_limit: 256m
     memswap_limit: 384m
-    command: php artisan queue:work redis --tries=3 --timeout=90
+    # default に加えて ai キューも処理する (AI 生成ジョブは ->onQueue('ai'))。
+    # --timeout は AI 生成ジョブ (timeout=180) を中断しないよう 200 にする。
+    command: php artisan queue:work redis --queue=ai,default --tries=3 --timeout=200
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
