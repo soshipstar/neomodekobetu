@@ -16,6 +16,7 @@ class Student extends Model
     protected $fillable = [
         'classroom_id',
         'student_name',
+        'student_name_kana',
         'username',
         'password_hash',
         'birth_date',
