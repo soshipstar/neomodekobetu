@@ -596,16 +596,23 @@ const PROFILE_SECTIONS: SectionDef[] = [
       { key: 'hobbies', label: '趣味・好きなこと', type: 'textarea' },
       { key: 'personality', label: '性格', type: 'textarea' },
       { key: 'strengths', label: '得意なこと', type: 'textarea' },
-      { key: 'weaknesses', label: '苦手なこと', type: 'textarea' },
+      { key: 'weaknesses', label: '苦手なこと・苦手なもの', type: 'textarea' },
+      // 要望追加: こだわり（拘り）
+      { key: 'obsessions', label: 'こだわり（拘り）', type: 'textarea', placeholder: '順番・物の配置・特定の手順など、こだわりがあること' },
     ],
   },
   {
-    key: 'communication', title: 'コミュニケーション手段',
+    key: 'communication', title: 'コミュニケーション・対人関係',
     fields: [
+      // 要望追加: 会話の様子
+      { key: 'conversation', label: '会話の様子', type: 'textarea', placeholder: '会話の成立度合い・話し方・話題の傾向など' },
       { key: 'to_others_method', label: '本人から相手に伝えるとき', type: 'text', placeholder: 'ことば（文章）/ ことば（単語）/ ジェスチャー / 写真・絵カード' },
       { key: 'to_others_example', label: '具体的なやりとり例（→相手）', type: 'textarea' },
       { key: 'from_others_method', label: '相手から本人に伝えるとき', type: 'text', placeholder: 'ことば（文章）/ ことば（単語）/ ジェスチャー / 写真・絵カード' },
       { key: 'from_others_example', label: '具体的なやりとり例（←相手）', type: 'textarea' },
+      // 要望追加: 対人関係（記述）。社会生活タブの「対人関係」は自立度の選択式のため、
+      // ここでは様子を文章で記録できるようにする。
+      { key: 'interpersonal_desc', label: '対人関係の様子', type: 'textarea', placeholder: '大人・同年代との関わり方、距離感、関わりの傾向など' },
       { key: 'friend_interaction', label: '友だちとのやりとり・関わり方', type: 'textarea' },
     ],
   },
@@ -636,10 +643,23 @@ const CONSIDERATION_SECTIONS: SectionDef[] = [
   {
     key: 'behavior', title: '行動面',
     fields: [
+      // 要望追加: パニックの有無 (有無を一目で把握できる選択式)
+      { key: 'panic_presence', label: 'パニックの有無', type: 'select', options: ['無', '有'] },
       { key: 'panic_causes', label: '混乱・かんしゃく・パニックの原因になりやすいこと', type: 'textarea' },
       { key: 'behavior_tendencies', label: '表現・行動（どのような傾向があるか）', type: 'textarea' },
       { key: 'coping', label: '対処方法', type: 'textarea' },
       { key: 'prevention', label: '予防の方法', type: 'textarea' },
+    ],
+  },
+  {
+    key: 'medical_visit', title: '通院・服薬',
+    fields: [
+      // 要望追加: 通院 (有無・通院先・頻度) と服薬 (配慮事項タブにもまとめて記録)
+      { key: 'hospital_visit', label: '通院の有無', type: 'select', options: ['無', '有'] },
+      { key: 'hospital_name', label: '通院先（病院・診療科）', type: 'text', placeholder: '○○病院 小児科 / ○○クリニック 等' },
+      { key: 'hospital_frequency', label: '通院頻度', type: 'text', placeholder: '月1回 / 2か月に1回 等' },
+      { key: 'medication_presence', label: '服薬の有無', type: 'select', options: ['無', '有'] },
+      { key: 'medication_detail', label: '服薬内容・服用方法', type: 'textarea', placeholder: '薬品名・用法用量・服用のタイミング・管理方法など' },
     ],
   },
 ];
