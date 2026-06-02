@@ -13,6 +13,36 @@ import { useToast } from '@/components/ui/Toast';
 import Link from 'next/link';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
+/**
+ * 非同期 AI 生成: タスクを登録し、完了までポーリングして結果を返す。
+ * 外出先のモバイル回線で長時間リクエストが切れても、結果はサーバに保存され
+ * 後続のポーリングで受け取れるため「書き出せない」事象を防ぐ。
+ */
+async function runAiTask<T = Record<string, unknown>>(
+  type: string,
+  input: Record<string, unknown>,
+): Promise<T> {
+  const enqueue = await api.post<{ success: boolean; data: { task_id: number } }>(
+    '/api/staff/ai-tasks',
+    { type, ...input },
+  );
+  const taskId = enqueue.data?.data?.task_id;
+  if (!taskId) throw new Error('タスクの登録に失敗しました');
+
+  // 最大 ~4 分 (2.5秒 x 96) ポーリング。タブを閉じても結果は保存される。
+  for (let i = 0; i < 96; i++) {
+    await new Promise((r) => setTimeout(r, 2500));
+    const res = await api.get<{
+      success: boolean;
+      data: { status: string; result: T | null; error: string | null };
+    }>(`/api/staff/ai-tasks/${taskId}`);
+    const d = res.data?.data;
+    if (d?.status === 'completed') return (d.result ?? {}) as T;
+    if (d?.status === 'failed') throw new Error(d.error || 'AI生成に失敗しました');
+  }
+  throw new Error('AI生成がタイムアウトしました。しばらくしてから再度お試しください。');
+}
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -609,8 +639,9 @@ function SupportPlanFormModal({
     }
     setAiGeneratingFiveDomains(true);
     try {
-      const res = await api.post<{ success: boolean; data: { five_domains_consideration?: string; other_notes?: string } }>(
-        '/api/staff/activity-support-plans/generate-ai/five-domains',
+      // 非同期タスク化: 外出先のモバイル回線で長時間リクエストが切れても結果が消えない
+      const data = await runAiTask<{ five_domains_consideration?: string; other_notes?: string }>(
+        'activity_five_domains',
         {
           activity_name: form.activity_name,
           activity_purpose: form.activity_purpose,
@@ -620,9 +651,9 @@ function SupportPlanFormModal({
           target_grade: form.target_grade.join(','),
         }
       );
-      if (res.data.success && res.data.data) {
-        const fd = res.data.data.five_domains_consideration;
-        const on = res.data.data.other_notes;
+      {
+        const fd = data.five_domains_consideration;
+        const on = data.other_notes;
         if (fd) {
           const formatted = typeof fd === 'object' ? formatDomainObject(fd) : String(fd);
           if (!form.five_domains_consideration.trim() || confirm('既存の「五領域への配慮」を上書きしますか？')) {
@@ -637,8 +668,8 @@ function SupportPlanFormModal({
         }
         toast.success('AIによる生成が完了しました');
       }
-    } catch {
-      toast.error('AI生成に失敗しました');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'AI生成に失敗しました');
     } finally {
       setAiGeneratingFiveDomains(false);
     }
@@ -656,8 +687,9 @@ function SupportPlanFormModal({
     }
     setAiGeneratingSchedule(true);
     try {
-      const res = await api.post<{ success: boolean; data: { activity_content?: string; other_notes?: string } }>(
-        '/api/staff/activity-support-plans/generate-ai/schedule-content',
+      // 非同期タスク化: 外出先のモバイル回線で長時間リクエストが切れても結果が消えない
+      const data = await runAiTask<{ activity_content?: string; other_notes?: string }>(
+        'activity_schedule_content',
         {
           activity_name: form.activity_name,
           activity_purpose: form.activity_purpose,
@@ -666,9 +698,9 @@ function SupportPlanFormModal({
           target_grade: form.target_grade.join(','),
         }
       );
-      if (res.data.success && res.data.data) {
-        const ac = res.data.data.activity_content;
-        const on = res.data.data.other_notes;
+      {
+        const ac = data.activity_content;
+        const on = data.other_notes;
         if (ac) {
           const formatted = typeof ac === 'object' ? extractStringFromObject(ac) : String(ac);
           if (!form.activity_content.trim() || confirm('既存の「活動の内容」を上書きしますか？')) {
@@ -683,8 +715,8 @@ function SupportPlanFormModal({
         }
         toast.success('AIによる活動内容の生成が完了しました');
       }
-    } catch {
-      toast.error('AI生成に失敗しました');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'AI生成に失敗しました');
     } finally {
       setAiGeneratingSchedule(false);
     }

@@ -632,6 +632,11 @@ Route::prefix('staff')
         Route::post('/activity-support-plans/generate-ai/five-domains', [App\Http\Controllers\Staff\ActivitySupportPlanController::class, 'generateAiFiveDomains']);
         Route::post('/activity-support-plans/generate-ai/schedule-content', [App\Http\Controllers\Staff\ActivitySupportPlanController::class, 'generateAiScheduleContent']);
 
+        // --- 非同期 AI 生成タスク (外出先のモバイル回線で長時間リクエストが切れて
+        //     支援案を書き出せない問題への対策。キューで実行→ポーリングで結果取得) ---
+        Route::post('/ai-tasks', [App\Http\Controllers\Staff\AiGenerationTaskController::class, 'store']);
+        Route::get('/ai-tasks/{task}', [App\Http\Controllers\Staff\AiGenerationTaskController::class, 'show']);
+
         // --- フリースクール用報告書 ---
         //  利用者登録 + 出席日一覧 + 報告書 AI 生成/編集/PDF + 期間一括 PDF
         Route::prefix('free-school')->group(function () {
