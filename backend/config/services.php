@@ -42,4 +42,10 @@ return [
         'key' => env('EXTERNAL_API_KEY'),
     ],
 
+    // 外部システム kiduriacount（国保連請求システム）への SSO 用サーバ間共有シークレット。
+    // kiduriacount 側の KIDURI2026_SSO_SECRET と一致させること。
+    'kiduriacount' => [
+        'sso_secret' => env('KIDURIACOUNT_SSO_SECRET'),
+    ],
+
 ];

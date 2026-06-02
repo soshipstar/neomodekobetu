@@ -58,6 +58,15 @@ Route::prefix('auth')->group(function () {
     });
 });
 
+// ==========================================================================
+// SSO（外部システム kiduriacount = 国保連請求システム への連携）
+// ticket: ログイン済みユーザーが請求システムへ遷移する際の使い捨てチケット発行
+// verify: kiduriacount からサーバ間で呼ばれチケットを検証（共有シークレット）
+// ==========================================================================
+Route::post('/sso/ticket', [App\Http\Controllers\Auth\SsoController::class, 'ticket'])
+    ->middleware('auth:sanctum');
+Route::post('/sso/verify', [App\Http\Controllers\Auth\SsoController::class, 'verify']);
+
 // --- 教室切り替え（全認証ユーザー共通） ---
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my-classrooms', [App\Http\Controllers\ClassroomSwitchController::class, 'myClassrooms']);
