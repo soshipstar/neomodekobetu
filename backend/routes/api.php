@@ -104,6 +104,8 @@ Route::prefix('admin')
         // --- 企業管理（マスター管理者専用） ---
         Route::apiResource('companies', App\Http\Controllers\Admin\CompanyController::class);
         Route::post('/companies/{company}/assign-classrooms', [App\Http\Controllers\Admin\CompanyController::class, 'assignClassrooms']);
+        // 国保連請求システム連携を企業単位で切替 (配下の全事業所へ一括適用)
+        Route::post('/companies/{company}/billing-system', [App\Http\Controllers\Admin\CompanyController::class, 'setBillingSystem']);
 
         // ユーザー管理
         Route::apiResource('users', App\Http\Controllers\Admin\UserController::class);

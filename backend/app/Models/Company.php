@@ -19,6 +19,7 @@ class Company extends Model
         'code',
         'description',
         'is_active',
+        'billing_system_enabled',
         // Cashier Billable 標準カラム（テスト/シーダーから手動設定するため fillable）
         'stripe_id',
         'pm_type',
@@ -48,6 +49,7 @@ class Company extends Model
     {
         return [
             'is_active' => 'boolean',
+            'billing_system_enabled' => 'boolean',
             'is_custom_pricing' => 'boolean',
             'tax_inclusive' => 'boolean',
             'cancel_at_period_end' => 'boolean',

@@ -186,4 +186,38 @@ class CompanyController extends Controller
             'message' => '教室を割り当てました。',
         ]);
     }
+
+    /**
+     * 国保連請求システム(kiduriacount)連携を企業単位で有効/無効にする。
+     *
+     * 企業のフラグを更新し、その企業に紐づくすべての事業所(classrooms)へ一括適用する。
+     * 実際の判定(ヘッダの「請求システム」表示・SSOチケット発行)は
+     * classrooms.billing_system_enabled を参照するため、配下の全教室に反映する。
+     */
+    public function setBillingSystem(Request $request, Company $company): JsonResponse
+    {
+        if ($deny = $this->requireMaster($request)) return $deny;
+
+        $validated = $request->validate([
+            'billing_system_enabled' => 'required|boolean',
+        ]);
+        $enabled = (bool) $validated['billing_system_enabled'];
+
+        DB::transaction(function () use ($company, $enabled) {
+            $company->update(['billing_system_enabled' => $enabled]);
+            // 配下の全事業所へ一括適用
+            Classroom::where('company_id', $company->id)
+                ->update(['billing_system_enabled' => $enabled]);
+        });
+
+        $count = Classroom::where('company_id', $company->id)->count();
+
+        return response()->json([
+            'success' => true,
+            'data'    => ['billing_system_enabled' => $enabled, 'applied_classrooms' => $count],
+            'message' => $enabled
+                ? "請求システム連携を有効にし、紐づく {$count} 事業所へ適用しました。"
+                : "請求システム連携を無効にし、紐づく {$count} 事業所へ適用しました。",
+        ]);
+    }
 }

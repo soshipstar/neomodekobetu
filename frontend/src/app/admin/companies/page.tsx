@@ -18,6 +18,7 @@ interface Company {
   code: string | null;
   description: string | null;
   is_active: boolean;
+  billing_system_enabled: boolean;
   classrooms_count: number;
   users_count: number;
 }
@@ -98,6 +99,27 @@ export default function CompaniesPage() {
     }
   };
 
+  // 国保連請求システム連携を企業単位で切替 (紐づく全事業所へ一括適用)
+  const handleToggleBilling = async (c: Company) => {
+    const next = !c.billing_system_enabled;
+    if (!confirm(
+      `企業「${c.name}」の国保連請求システム連携を${next ? '有効' : '無効'}にします。\n\n` +
+      `この企業に紐づくすべての事業所(${c.classrooms_count}件)に適用されます。\n` +
+      `${next ? '有効にすると、対象事業所の職員・管理者のメニューに「請求システム」が表示されます。' : ''}\n\n続行しますか？`,
+    )) return;
+    try {
+      const res = await api.post<{ message?: string }>(
+        `/api/admin/companies/${c.id}/billing-system`,
+        { billing_system_enabled: next },
+      );
+      toast.success(res.data?.message || '請求システム連携の設定を変更しました');
+      fetchCompanies();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || '変更に失敗しました';
+      toast.error(msg);
+    }
+  };
+
   if (!isMaster) {
     return (
       <div className="mx-auto max-w-4xl p-4">
@@ -152,6 +174,7 @@ export default function CompaniesPage() {
                       <h3 className="font-medium text-[var(--neutral-foreground-1)]">{c.name}</h3>
                       {c.code && <Badge variant="default">{c.code}</Badge>}
                       {!c.is_active && <Badge variant="danger">無効</Badge>}
+                      {c.billing_system_enabled && <Badge variant="success">請求システム連携: 利用中</Badge>}
                     </div>
                     {c.description && (
                       <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">{c.description}</p>
@@ -168,6 +191,15 @@ export default function CompaniesPage() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleToggleBilling(c)}
+                      title="国保連請求システム(kiduriacount)連携を企業単位で切替 (紐づく全事業所へ適用)"
+                    >
+                      <MaterialIcon name="receipt_long" size={14} className="mr-1" />
+                      {c.billing_system_enabled ? '請求連携: ON' : '請求連携: OFF'}
+                    </Button>
                     <Button size="sm" variant="outline" onClick={() => setAssigningCompany(c)}>
                       <MaterialIcon name="apartment" size={14} className="mr-1" />
                       教室割当
