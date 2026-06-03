@@ -89,6 +89,13 @@ interface PlanMeeting {
   creator?: { id: number; full_name: string } | null;
 }
 
+interface RevisionAnnotation {
+  field: string;
+  type: 'added' | 'removed';
+  text: string;
+  reason?: string;
+}
+
 interface ProposalSnapshotDetail {
   sort_order?: number;
   category?: string;
@@ -231,6 +238,8 @@ export default function KobetsuPlanPage() {
   const [guardianReviewComment, setGuardianReviewComment] = useState<string | null>(null);
   const [guardianReviewCommentAt, setGuardianReviewCommentAt] = useState<string | null>(null);
   const [meetings, setMeetings] = useState<PlanMeeting[]>([]);
+  const [revisionAnnotations, setRevisionAnnotations] = useState<RevisionAnnotation[]>([]);
+  const [revisionGeneratedAt, setRevisionGeneratedAt] = useState<string | null>(null);
 
   // ------ Data fetching ------
 
@@ -347,6 +356,8 @@ export default function KobetsuPlanPage() {
     onError: () => toast.error('署名の保存に失敗しました'),
   });
 
+  const [generatingRevised, setGeneratingRevised] = useState(false);
+
   // ------ 個別支援会議 議事録 ------
   const reloadMeetings = useCallback(async (planId: number) => {
     try {
@@ -431,6 +442,8 @@ export default function KobetsuPlanPage() {
       setGuardianReviewComment(p.guardian_review_comment || null);
       setGuardianReviewCommentAt(p.guardian_review_comment_at || null);
       setMeetings(Array.isArray(p.meetings) ? p.meetings : []);
+      setRevisionAnnotations(Array.isArray(p.revision_annotations) ? p.revision_annotations : []);
+      setRevisionGeneratedAt(p.revision_generated_at || null);
       // Track if plan is official (read-only)
       setIsReadOnly(p.is_official === true || p.status === 'official');
       setView('editor');
@@ -438,6 +451,33 @@ export default function KobetsuPlanPage() {
       toast.error('計画の読み込みに失敗しました');
     }
   }, [toast]);
+
+  // ------ 本案下書きの AI 生成 (原案 + 保護者コメント + 議事録 を反映) ------
+  const handleGenerateRevisedDraft = useCallback(async () => {
+    if (!editingPlanId) return;
+    if (!confirm(
+      '保護者コメントと個別支援会議の議事録を反映して、本案の下書きを作成します。\n\n' +
+      '・原案をベースに一部を追加/削除する形で更新します(全面書き換えはしません)。\n' +
+      '・現在の入力内容は上書きされます。原案からの変更点は注釈で確認できます。\n\n' +
+      '続行しますか？',
+    )) return;
+    setGeneratingRevised(true);
+    try {
+      const res = await api.post<{ success: boolean; annotations?: RevisionAnnotation[]; message?: string }>(
+        `/api/staff/support-plans/${editingPlanId}/generate-revised-draft`,
+      );
+      if (res.data.success) {
+        toast.success(res.data.message || '本案の下書きを作成しました');
+        // 反映後の内容・注釈を読み直す
+        await openEdit(editingPlanId);
+      }
+    } catch (e) {
+      const err = e as { response?: { data?: { message?: string } } };
+      toast.error(err?.response?.data?.message || '本案下書きの生成に失敗しました');
+    } finally {
+      setGeneratingRevised(false);
+    }
+  }, [editingPlanId, toast, openEdit]);
 
   // Auto-open from URL params (e.g. from pending-tasks)
   const autoOpenRef = useRef(false);
@@ -1219,6 +1259,11 @@ export default function KobetsuPlanPage() {
               onSaveMeeting={(m) => saveMeetingMutation.mutate(m)}
               onDeleteMeeting={(id) => deleteMeetingMutation.mutate(id)}
               saving={saveMeetingMutation.isPending}
+              annotations={revisionAnnotations}
+              revisionGeneratedAt={revisionGeneratedAt}
+              canGenerateRevised={!isReadOnly && !!proposalSnapshot}
+              generatingRevised={generatingRevised}
+              onGenerateRevised={handleGenerateRevisedDraft}
             />
           )}
 
@@ -1529,6 +1574,11 @@ function ProposalAndMeetingPanel({
   onSaveMeeting,
   onDeleteMeeting,
   saving,
+  annotations,
+  revisionGeneratedAt,
+  canGenerateRevised,
+  generatingRevised,
+  onGenerateRevised,
 }: {
   snapshot: ProposalSnapshot | null;
   snapshotAt: string | null;
@@ -1538,6 +1588,11 @@ function ProposalAndMeetingPanel({
   onSaveMeeting: (m: { id?: number; meeting_date: string; attendees: string; discussion: string }) => void;
   onDeleteMeeting: (id: number) => void;
   saving: boolean;
+  annotations: RevisionAnnotation[];
+  revisionGeneratedAt: string | null;
+  canGenerateRevised: boolean;
+  generatingRevised: boolean;
+  onGenerateRevised: () => void;
 }) {
   const [showProposal, setShowProposal] = useState(false);
   const [editing, setEditing] = useState<{ id?: number; meeting_date: string; attendees: string; discussion: string } | null>(null);
@@ -1557,6 +1612,70 @@ function ProposalAndMeetingPanel({
       </CardHeader>
       <CardBody>
         <div className="space-y-5">
+          {/* 本案下書きの AI 生成 (原案 + 保護者コメント + 議事録 を反映) */}
+          <div className="rounded-lg border border-[var(--brand-80)]/40 bg-[var(--brand-160)]/20 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h4 className="flex items-center gap-1.5 text-sm font-semibold text-[var(--neutral-foreground-1)]">
+                  <MaterialIcon name="auto_awesome" size={16} />
+                  本案の下書きを AI 生成
+                </h4>
+                <p className="mt-0.5 text-xs text-[var(--neutral-foreground-3)]">
+                  原案に保護者コメントと議事録を反映し、一部の追加/削除で本案の下書きを作ります（全面書き換えはしません）。
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                leftIcon={<MaterialIcon name="auto_awesome" size={16} />}
+                isLoading={generatingRevised}
+                disabled={!canGenerateRevised}
+                onClick={onGenerateRevised}
+              >
+                本案下書きを生成
+              </Button>
+            </div>
+            {!canGenerateRevised && (
+              <p className="mt-2 text-xs text-[var(--neutral-foreground-4)]">
+                ※ 原案が未保存、または確定済みのため生成できません（先に保護者へ「確認依頼」を送信してください）。
+              </p>
+            )}
+            {annotations.length > 0 && (
+              <div className="mt-3 rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] p-2">
+                <p className="mb-1 text-xs font-semibold text-[var(--neutral-foreground-2)]">
+                  原案からの変更点（注釈）
+                  {revisionGeneratedAt && (
+                    <span className="ml-2 font-normal text-[var(--neutral-foreground-4)]">
+                      生成: {formatDateTime(revisionGeneratedAt)}
+                    </span>
+                  )}
+                </p>
+                <ul className="space-y-1">
+                  {annotations.map((a, i) => (
+                    <li key={i} className="text-xs">
+                      <span
+                        className={cn(
+                          'mr-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-bold',
+                          a.type === 'added'
+                            ? 'bg-[var(--status-success-bg)] text-[var(--status-success-fg)]'
+                            : 'bg-[var(--status-danger-bg)] text-[var(--status-danger-fg)]',
+                        )}
+                      >
+                        {a.type === 'added' ? '追加' : '削除'}
+                      </span>
+                      <span className="text-[var(--neutral-foreground-4)]">[{a.field}]</span>{' '}
+                      <span className="whitespace-pre-wrap text-[var(--neutral-foreground-1)]">{a.text}</span>
+                      {a.reason && (
+                        <span className="text-[var(--neutral-foreground-4)]">（理由: {a.reason}）</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
           {/* 個別支援会議 議事録 */}
           <div>
             <div className="mb-2 flex items-center justify-between">

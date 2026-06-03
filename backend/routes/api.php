@@ -398,6 +398,8 @@ Route::prefix('staff')
         Route::put('/support-plans/{plan}', [App\Http\Controllers\Staff\SupportPlanController::class, 'update']);
         Route::delete('/support-plans/{plan}', [App\Http\Controllers\Staff\SupportPlanController::class, 'destroy']);
         Route::post('/support-plans/{plan}/generate-ai', [App\Http\Controllers\Staff\SupportPlanController::class, 'generateAi']);
+        // 原案+保護者コメント+議事録 を反映した本案下書きを AI 生成 (一部追加/削除・変更点注釈付き)
+        Route::post('/support-plans/{plan}/generate-revised-draft', [App\Http\Controllers\Staff\SupportPlanController::class, 'generateRevisedDraft']);
         Route::post('/support-plans/{plan}/sign', [App\Http\Controllers\Staff\SupportPlanController::class, 'sign']);
         Route::get('/support-plans/{plan}/pdf', [App\Http\Controllers\Staff\SupportPlanController::class, 'pdf'])->middleware('throttle:export');
         Route::get('/support-plans/{plan}/export', [App\Http\Controllers\Staff\SupportPlanController::class, 'export'])->middleware('throttle:export');

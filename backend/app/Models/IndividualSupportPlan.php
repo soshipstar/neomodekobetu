@@ -50,6 +50,8 @@ class IndividualSupportPlan extends Model
         'basis_generated_at',
         'proposal_snapshot',
         'proposal_snapshot_at',
+        'revision_annotations',
+        'revision_generated_at',
     ];
 
     protected function casts(): array
@@ -58,6 +60,8 @@ class IndividualSupportPlan extends Model
             'created_date' => 'date:Y-m-d',
             'proposal_snapshot' => 'array',
             'proposal_snapshot_at' => 'datetime',
+            'revision_annotations' => 'array',
+            'revision_generated_at' => 'datetime',
             'consent_date' => 'date:Y-m-d',
             'is_draft' => 'boolean',
             'is_official' => 'boolean',

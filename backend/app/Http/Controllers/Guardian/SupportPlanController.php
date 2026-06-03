@@ -34,6 +34,10 @@ class SupportPlanController extends Controller
 
     /**
      * 支援計画書に対してレビューコメントを送信
+     *
+     * 要望: 本案が確定(official)するまでは保護者がコメントを追記できる
+     *       (上書きせず、これまでのコメントに追記していく)。
+     *       本案確定後は追記不可。
      */
     public function review(Request $request, IndividualSupportPlan $plan): JsonResponse
     {
@@ -45,12 +49,26 @@ class SupportPlanController extends Controller
             return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
         }
 
-        $request->validate([
-            'comment' => 'present|nullable|string|max:2000',
+        // 本案(official)確定後はコメントを追記できない
+        if ($plan->status === 'official' || $plan->is_official) {
+            return response()->json([
+                'success' => false,
+                'message' => 'この計画は確定済みのため、コメントを追記できません。',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'comment' => 'required|string|max:2000',
         ]);
 
+        // 既存コメントに追記する (日時付きの見出しで区切る)。
+        $stamp = now()->format('Y/n/j H:i');
+        $entry = "【{$stamp}】\n" . trim($validated['comment']);
+        $existing = trim((string) $plan->guardian_review_comment);
+        $merged = $existing === '' ? $entry : ($existing . "\n\n" . $entry);
+
         $plan->update([
-            'guardian_review_comment'    => $request->comment,
+            'guardian_review_comment'    => $merged,
             'guardian_review_comment_at' => now(),
         ]);
 
