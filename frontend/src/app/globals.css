@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Material Symbols (Outlined) をセルフホストする。
+   従来は Google Fonts CDN (fonts.googleapis.com) から読み込んでいたが、
+   一部拠点(てらこや等)のネットワークが CDN をブロックしており、
+   フォント未読込でアイコンが「文字(アイコン名)」のまま表示される不具合が出ていた。
+   material-symbols パッケージ同梱の woff2 を自前配信して外部依存を排除する。
+   .material-symbols-outlined クラスと可変フォント(FILL/wght/GRAD/opsz)を提供するため、
+   既存の MaterialIcon コンポーネントは変更不要。 */
+@import "material-symbols/outlined.css";
+
 /* =========================================================================
    Fluent 2 Design System Tokens
    ========================================================================= */

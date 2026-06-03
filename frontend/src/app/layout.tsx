@@ -54,7 +54,9 @@ export default function RootLayout({
             180x180 が標準サイズで、他サイズは iOS が縮小/拡大して使う。 */}
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
+        {/* Material Symbols は globals.css でセルフホスト import するため、
+            Google Fonts CDN への外部 <link> は廃止 (CDN ブロック環境での
+            アイコン文字化け対策)。 */}
       </head>
       <body className={`${notoSansJp.variable} font-sans antialiased`}>
         <Providers>{children}</Providers>
