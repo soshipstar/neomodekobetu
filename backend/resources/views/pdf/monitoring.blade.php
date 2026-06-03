@@ -183,6 +183,14 @@
                 <td class="label-cell">長期目標達成度</td>
                 <td class="content-cell">{{ $record->long_term_goal_achievement ?? '（未評価）' }}</td>
             </tr>
+            <tr>
+                <td class="label-cell">短期目標コメント</td>
+                <td class="content-cell" colspan="3">{!! nl2br(e($record->short_term_goal_comment ?: '（未記入）')) !!}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">長期目標コメント</td>
+                <td class="content-cell" colspan="3">{!! nl2br(e($record->long_term_goal_comment ?: '（未記入）')) !!}</td>
+            </tr>
         </table>
     </div>
 
@@ -207,8 +215,17 @@
             </thead>
             <tbody>
                 @foreach ($details as $detail)
+                @php
+                    // 領域名は plan_detail の sub_category(例: 運動・感覚) を優先。
+                    // 無ければ category、最後に保存値 domain にフォールバック。
+                    // (domain には category(本人支援) や空が入っているレコードがあるため)
+                    $areaLabel = $detail->planDetail->sub_category
+                        ?? $detail->planDetail->category
+                        ?? $detail->domain
+                        ?? '';
+                @endphp
                 <tr>
-                    <td style="font-weight: bold;">{{ $detail->domain }}</td>
+                    <td style="font-weight: bold;">{{ $areaLabel ?: '（領域未設定）' }}</td>
                     <td style="text-align: center;">{{ $detail->achievement_level ?? '未評価' }}</td>
                     <td>{!! nl2br(e($detail->comment ?: '')) !!}</td>
                     <td>{!! nl2br(e($detail->next_action ?: '')) !!}</td>

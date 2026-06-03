@@ -325,7 +325,11 @@ class MonitoringController extends Controller
      */
     public function pdf(Request $request, MonitoringRecord $monitoring)
     {
-        $monitoring->load(['student.classroom', 'details', 'plan.details', 'creator']);
+        // details.planDetail も読み込む。明細の「領域」は本来 plan_detail の
+        // sub_category(例: 運動・感覚) を表示すべきだが、保存値(domain)が
+        // category(本人支援) や空になっているレコードがあるため、PDF では
+        // planDetail から正しい領域を解決する。
+        $monitoring->load(['student.classroom', 'details.planDetail', 'plan.details', 'creator']);
 
         if ($monitoring->student) {
             $this->authorizeClassroom($request->user(), $monitoring->student);

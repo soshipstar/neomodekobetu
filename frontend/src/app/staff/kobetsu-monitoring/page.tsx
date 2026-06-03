@@ -224,7 +224,10 @@ export default function KobetsuMonitoringPage() {
         plan_detail_id: pd.id,
         achievement_level: detailsMap[pd.id]?.achievement_level ?? '',
         comment: detailsMap[pd.id]?.comment ?? '',
-        domain: pd.category ?? pd.domain ?? '',
+        // 領域は sub_category(例: 運動・感覚) を保存する。
+        // 以前は category(本人支援) を入れており、PDF で領域が全て「本人支援」に
+        // なってしまっていた (バグ報告)。sub_category→category→domain の順で解決。
+        domain: pd.sub_category ?? pd.category ?? pd.domain ?? '',
         sort_order: idx,
       }));
 
