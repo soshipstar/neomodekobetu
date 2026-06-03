@@ -19,6 +19,7 @@ export interface User {
     id: number;
     classroom_name: string;
     logo_path: string | null;
+    billing_system_enabled?: boolean;
   };
 }
 

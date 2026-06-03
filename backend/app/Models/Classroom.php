@@ -22,6 +22,7 @@ class Classroom extends Model
         'settings',
         'is_active',
         'vacancy_widget_token',
+        'billing_system_enabled',
     ];
 
     protected function casts(): array
@@ -29,6 +30,7 @@ class Classroom extends Model
         return [
             'settings' => 'array',
             'is_active' => 'boolean',
+            'billing_system_enabled' => 'boolean',
         ];
     }
 

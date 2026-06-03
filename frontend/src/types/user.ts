@@ -57,6 +57,7 @@ export interface Classroom {
   logo_path: string | null;
   settings: Record<string, unknown>;
   is_active: boolean;
+  billing_system_enabled?: boolean;
   created_at: string;
   updated_at: string;
 }

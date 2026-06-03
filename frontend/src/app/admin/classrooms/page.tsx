@@ -63,6 +63,18 @@ export default function ClassroomsPage() {
     onError: (err: unknown) => toast.error(formatApiError(err, '変更に失敗しました')),
   });
 
+  // 国保連請求システム(kiduriacount)連携を事業所単位で有効/無効にする
+  const toggleBillingMutation = useMutation({
+    mutationFn: async ({ id, billing_system_enabled }: { id: number; billing_system_enabled: boolean }) => {
+      await api.put(`/api/admin/classrooms/${id}`, { billing_system_enabled });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'classrooms'] });
+      toast.success('請求システム連携の設定を変更しました');
+    },
+    onError: (err: unknown) => toast.error(formatApiError(err, '変更に失敗しました')),
+  });
+
   const createMutation = useMutation({
     mutationFn: async (data: ClassroomFormData) => {
       await api.post('/api/admin/classrooms', data);
@@ -133,6 +145,25 @@ export default function ClassroomsPage() {
         >
           <Badge variant={c.is_active ? 'success' : 'default'}>
             {c.is_active ? '有効' : '無効'}
+          </Badge>
+        </button>
+      ),
+    },
+    {
+      key: 'billing_system_enabled',
+      label: '請求システム連携',
+      render: (c) => (
+        <button
+          onClick={() => {
+            const next = !c.billing_system_enabled;
+            if (confirm(`${c.classroom_name}の請求システム連携を${next ? '有効' : '無効'}にしますか？\n\n有効にすると、この事業所の職員・管理者のメニューに「請求システム」が表示されます。`))
+              toggleBillingMutation.mutate({ id: c.id, billing_system_enabled: next });
+          }}
+          className="cursor-pointer"
+          title="国保連請求システム(kiduriacount)連携の使用可否"
+        >
+          <Badge variant={c.billing_system_enabled ? 'success' : 'default'}>
+            {c.billing_system_enabled ? '利用する' : '利用しない'}
           </Badge>
         </button>
       ),

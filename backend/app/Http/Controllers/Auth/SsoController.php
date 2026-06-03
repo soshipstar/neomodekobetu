@@ -43,6 +43,17 @@ class SsoController extends Controller
             ], 403);
         }
 
+        // 事業所単位の利用可否チェック。マスター管理者が事業所ごとに有効化する。
+        // 所属事業所(classroom)で billing_system_enabled=false の場合は利用不可。
+        // (マスター管理者は事業所に属さない運用もあるため、classroom が無い場合は許可)
+        $user->loadMissing('classroom');
+        if ($user->classroom && ! $user->classroom->billing_system_enabled) {
+            return response()->json([
+                'success' => false,
+                'message' => 'この事業所では請求システム連携が有効になっていません。',
+            ], 403);
+        }
+
         $ticket = Str::random(64);
         Cache::put(self::TICKET_PREFIX.$ticket, $user->id, self::TICKET_TTL_SECONDS);
 

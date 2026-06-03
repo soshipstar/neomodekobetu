@@ -28,6 +28,12 @@ export function BillingSystemLink() {
     return null;
   }
 
+  // 事業所単位の利用可否。所属事業所で請求システム連携が有効な場合のみ表示する。
+  // (マスター管理者など事業所未所属の場合は従来どおり表示)
+  if (user.classroom && user.classroom.billing_system_enabled === false) {
+    return null;
+  }
+
   const handleClick = async () => {
     if (loading) return;
     setLoading(true);

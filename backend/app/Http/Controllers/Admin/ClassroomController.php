@@ -87,6 +87,8 @@ class ClassroomController extends Controller
             'logo'           => 'nullable|image|mimes:png,jpg,jpeg|max:2048',
             'settings'       => 'nullable|array',
             'is_active'      => 'boolean',
+            // 国保連請求システム(kiduriacount)連携をこの事業所で使うか
+            'billing_system_enabled' => 'boolean',
         ]);
 
         if ($request->hasFile('logo')) {
@@ -134,6 +136,8 @@ class ClassroomController extends Controller
             'logo'           => 'nullable|image|mimes:png,jpg,jpeg|max:2048',
             'settings'       => 'nullable|array',
             'is_active'      => 'boolean',
+            // 国保連請求システム(kiduriacount)連携をこの事業所で使うか
+            'billing_system_enabled' => 'boolean',
         ]);
 
         if ($request->hasFile('logo')) {
