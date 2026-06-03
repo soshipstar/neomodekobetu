@@ -493,6 +493,172 @@ class SupportPlanController extends Controller
     }
 
     /**
+     * 原案 + 保護者コメント + 個別支援会議議事録 を反映して「本案の下書き」を AI 生成する。
+     *
+     * 要望:
+     *  - 原案(proposal_snapshot)をベースに、保護者コメントと議事録の内容を反映する。
+     *  - 原案を全面的に書き換えず、一部の「削除・追加」にとどめる。
+     *  - 原案からの変更点を注釈として確認できるようにする。
+     *  - AI は GPT-5.4 (mini ではない) を使用。
+     *
+     * 動作: AI から「項目ごとの改訂後テキスト + 変更点(追加/削除と理由)」を受け取り、
+     *       計画本体・明細を改訂後テキストで更新し、revision_annotations に変更点を保存する。
+     *       (本案として確定はせず、status は draft のまま = 下書き)。
+     */
+    public function generateRevisedDraft(Request $request, IndividualSupportPlan $plan): JsonResponse
+    {
+        $this->authorizeClassroom($request->user(), $plan->student);
+        $plan->load(['details', 'meetings']);
+
+        // 原案(保護者へ確認依頼した時点のスナップショット)が必須。
+        $base = $plan->proposal_snapshot;
+        if (empty($base)) {
+            return response()->json([
+                'success' => false,
+                'message' => '原案が保存されていません。先に保護者へ「確認依頼」を送信して原案を確定してください。',
+            ], 422);
+        }
+
+        // 本案確定後は再生成しない。
+        if ($plan->status === 'official' || $plan->is_official) {
+            return response()->json([
+                'success' => false,
+                'message' => 'この計画は確定済みのため、本案下書きの再生成はできません。',
+            ], 422);
+        }
+
+        $guardianComment = trim((string) $plan->guardian_review_comment);
+        $meetingsText = $plan->meetings
+            ->map(function ($m) {
+                $d = $m->meeting_date ? $m->meeting_date->format('Y-m-d') : '(日付未設定)';
+                return "■会議日: {$d}\n出席者: " . trim((string) $m->attendees)
+                    . "\n協議内容: " . trim((string) $m->discussion);
+            })
+            ->implode("\n\n");
+
+        if ($guardianComment === '' && trim($meetingsText) === '') {
+            return response()->json([
+                'success' => false,
+                'message' => '保護者コメントと議事録のいずれも無いため、反映する内容がありません。',
+            ], 422);
+        }
+
+        // 原案を JSON 文字列にして AI に渡す (AI が編集対象を厳密に把握できるように)。
+        $baseJson = json_encode($base, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+        $systemPrompt = 'あなたは児童発達支援の専門家です。提示された「個別支援計画の原案」を土台に、'
+            . '「保護者コメント」と「個別支援会議の議事録」で出た意見・指摘のみを反映して本案の下書きを作成します。'
+            . '【最重要】原案を全面的に書き換えてはいけません。原案の文章は可能な限りそのまま残し、'
+            . '保護者コメント・議事録で明確に求められた箇所だけを「一部追加」または「一部削除」してください。'
+            . '指摘が無い項目・文は一字一句そのまま保持してください。'
+            . '各項目について、改訂後の全文と、原案からの変更点(追加した文・削除した文とその理由)を必ず示してください。'
+            . '必ず指定された JSON 形式のみで出力してください。';
+
+        $userPrompt = "【原案(JSON)】\n{$baseJson}\n\n"
+            . "【保護者コメント】\n" . ($guardianComment !== '' ? $guardianComment : '(なし)') . "\n\n"
+            . "【個別支援会議の議事録】\n" . (trim($meetingsText) !== '' ? $meetingsText : '(なし)') . "\n\n"
+            . "上記の保護者コメントと議事録の内容を、原案に対して『一部削除・一部追加』の形で反映し、本案の下書きを作成してください。\n"
+            . "原案に無い新しい論点を勝手に創作しないこと。コメント・議事録に基づく変更のみ行うこと。\n"
+            . "変更が不要な項目は原案の値をそのまま revised に入れ、changes は空配列にしてください。\n\n"
+            . "以下の JSON 形式で出力してください:\n"
+            . "{\n"
+            . "  \"revised\": {\n"
+            . "    \"life_intention\": \"改訂後の全文\",\n"
+            . "    \"overall_policy\": \"改訂後の全文\",\n"
+            . "    \"long_term_goal\": \"改訂後の全文\",\n"
+            . "    \"short_term_goal\": \"改訂後の全文\",\n"
+            . "    \"details\": [ {\"category\":\"...\",\"sub_category\":\"...\",\"goal\":\"改訂後の全文\",\"support_content\":\"改訂後の全文\"} ]\n"
+            . "  },\n"
+            . "  \"annotations\": [\n"
+            . "    {\"field\": \"long_term_goal | short_term_goal | overall_policy | life_intention | detail:<sub_category>\", \"type\": \"added | removed\", \"text\": \"追加または削除した文\", \"reason\": \"保護者コメント/議事録のどの指摘に基づくか\"}\n"
+            . "  ]\n"
+            . "}\n\n"
+            . "details は原案と同じ項目数・同じ category/sub_category の並びを維持してください。";
+
+        try {
+            $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
+            if (empty($apiKey)) {
+                return response()->json(['success' => false, 'message' => 'OpenAI APIキーが設定されていません。'], 422);
+            }
+
+            $client = \OpenAI::client($apiKey);
+            $response = $client->chat()->create([
+                'model'    => 'gpt-5.4-2026-03-05', // フル版 (mini ではない)
+                'messages' => [
+                    ['role' => 'system', 'content' => $systemPrompt],
+                    ['role' => 'user', 'content' => $userPrompt],
+                ],
+                'response_format'       => ['type' => 'json_object'],
+                'temperature'           => 0.3, // 原案を保持するため低め
+                'max_completion_tokens' => 4000,
+            ]);
+
+            $result = json_decode($response->choices[0]->message->content, true) ?? [];
+            $revised = $result['revised'] ?? [];
+            $annotations = $result['annotations'] ?? [];
+
+            // 計画本体・明細を改訂後テキストで更新 (status は draft のまま = 本案の下書き)。
+            DB::transaction(function () use ($plan, $revised, $annotations) {
+                $plan->update([
+                    'life_intention'        => $revised['life_intention'] ?? $plan->life_intention,
+                    'overall_policy'        => $revised['overall_policy'] ?? $plan->overall_policy,
+                    'long_term_goal'        => $revised['long_term_goal'] ?? $plan->long_term_goal,
+                    'short_term_goal'       => $revised['short_term_goal'] ?? $plan->short_term_goal,
+                    'status'                => 'draft',
+                    'is_draft'              => true,
+                    'is_official'           => false,
+                    'revision_annotations'  => $annotations,
+                    'revision_generated_at' => now(),
+                ]);
+
+                // 明細: sub_category をキーに改訂後テキストをマージ (項目の増減はしない)。
+                if (! empty($revised['details']) && is_array($revised['details'])) {
+                    foreach ($revised['details'] as $rd) {
+                        $sub = $rd['sub_category'] ?? null;
+                        $cat = $rd['category'] ?? null;
+                        if (! $sub && ! $cat) {
+                            continue;
+                        }
+                        $detail = $plan->details->first(function ($d) use ($sub, $cat) {
+                            return ($sub && $d->sub_category === $sub) || (! $sub && $cat && $d->category === $cat);
+                        });
+                        if ($detail) {
+                            $detail->update([
+                                'goal'            => $rd['goal'] ?? $detail->goal,
+                                'support_content' => $rd['support_content'] ?? $detail->support_content,
+                            ]);
+                        }
+                    }
+                }
+            });
+
+            try {
+                \App\Models\AiGenerationLog::create([
+                    'user_id'           => $request->user()->id,
+                    'generation_type'   => 'support_plan_revised_draft',
+                    'model'             => 'gpt-5.4-2026-03-05',
+                    'prompt_tokens'     => $response->usage->promptTokens ?? null,
+                    'completion_tokens' => $response->usage->completionTokens ?? null,
+                ]);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('AI log failed: ' . $e->getMessage());
+            }
+
+            return response()->json([
+                'success'     => true,
+                'data'        => $plan->fresh('details'),
+                'annotations' => $annotations,
+                'message'     => '保護者コメントと議事録を反映した本案の下書きを作成しました。原案からの変更点を確認してください。',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'AI生成中にエラーが発生しました: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * 電子署名を保存
      */
     public function sign(Request $request, IndividualSupportPlan $plan): JsonResponse
