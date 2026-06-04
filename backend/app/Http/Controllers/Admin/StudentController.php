@@ -42,12 +42,43 @@ class StudentController extends Controller
             $query->where('student_name', 'like', "%{$request->search}%");
         }
 
-        $students = $query->orderBy('student_name')->paginate($request->integer('per_page', 50));
+        // 並び替え: sort=kana(既定=ふりがな/あいうえお順) / grade(学年順)。dir=asc|desc。
+        $dir = strtolower((string) $request->input('dir', 'asc')) === 'desc' ? 'desc' : 'asc';
+        if ($request->input('sort') === 'grade') {
+            $query->orderByRaw(self::gradeOrderSql() . " {$dir}")
+                  ->orderBy('student_name_kana')
+                  ->orderBy('student_name');
+        } else {
+            // ふりがな優先で50音順 (未設定は漢字氏名でフォールバック)
+            $query->orderBy('student_name_kana', $dir)
+                  ->orderBy('student_name', $dir);
+        }
+
+        $students = $query->paginate($request->integer('per_page', 50));
 
         return response()->json([
             'success' => true,
             'data'    => $students,
         ]);
+    }
+
+    /**
+     * 学年(grade_level)を正しい序列で並べるための SQL CASE 式。
+     * grade_level は文字列のため辞書順では未就学→小→中→高 にならない。
+     * (orderByRaw 用。固定文字列のみで動的入力は含まないため安全)
+     */
+    private static function gradeOrderSql(): string
+    {
+        return "CASE grade_level
+            WHEN 'preschool' THEN 0
+            WHEN 'elementary' THEN 1
+            WHEN 'elementary_1' THEN 1 WHEN 'elementary_2' THEN 2 WHEN 'elementary_3' THEN 3
+            WHEN 'elementary_4' THEN 4 WHEN 'elementary_5' THEN 5 WHEN 'elementary_6' THEN 6
+            WHEN 'junior_high' THEN 7
+            WHEN 'junior_high_1' THEN 7 WHEN 'junior_high_2' THEN 8 WHEN 'junior_high_3' THEN 9
+            WHEN 'high_school' THEN 10
+            WHEN 'high_school_1' THEN 10 WHEN 'high_school_2' THEN 11 WHEN 'high_school_3' THEN 12
+            ELSE 99 END";
     }
 
     /**

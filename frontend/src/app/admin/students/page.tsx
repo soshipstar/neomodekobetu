@@ -49,14 +49,23 @@ export default function AdminStudentsPage() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [copySource, setCopySource] = useState<Student | null>(null);
   const [linkedTarget, setLinkedTarget] = useState<Student | null>(null);
+  // 並び替え: kana(既定=あいうえお順) / grade(学年順)。サーバ側で全件ソート。
+  const [sort, setSort] = useState<'kana' | 'grade'>('kana');
+  const [dir, setDir] = useState<'asc' | 'desc'>('asc');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: students, meta, isLoading, goToPage } = usePagination<Student>({
     endpoint: '/api/admin/students',
     queryKey: ['admin', 'students'],
-    params: { search: debouncedSearch || undefined },
+    params: { search: debouncedSearch || undefined, sort, dir },
   });
+
+  // Table の列キー(student_name/grade_level)を API の sort 値(kana/grade)へ変換
+  const handleSort = (key: string, direction: 'asc' | 'desc') => {
+    setSort(key === 'grade_level' ? 'grade' : 'kana');
+    setDir(direction);
+  };
 
   const executeMutation = useMutation({
     mutationFn: () => api.post('/api/admin/students/grade-promotion/execute'),
@@ -103,7 +112,7 @@ export default function AdminStudentsPage() {
       ),
     },
     { key: 'classroom', label: '事業所', render: (s) => s.classroom?.classroom_name || '-' },
-    { key: 'grade_level', label: '学年', render: (s) => gradeLabels[s.grade_level || ''] || s.grade_level || '-' },
+    { key: 'grade_level', label: '学年', sortable: true, render: (s) => gradeLabels[s.grade_level || ''] || s.grade_level || '-' },
     {
       key: 'status',
       label: 'ステータス',
@@ -161,6 +170,7 @@ export default function AdminStudentsPage() {
           columns={columns}
           data={students}
           keyExtractor={(item) => item.id}
+          onSort={handleSort}
           currentPage={meta?.current_page}
           totalPages={meta?.last_page}
           onPageChange={goToPage}

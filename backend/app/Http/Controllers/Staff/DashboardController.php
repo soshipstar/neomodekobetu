@@ -607,6 +607,24 @@ class DashboardController extends Controller
             }
         }
 
+        // 参加予定者を「学年(未就学→小→中→高) → ふりがな(あいうえお)順」で整列する。
+        // タブレット/スタッフダッシュボードの並びを統一 (ふりがな未設定は漢字氏名でフォールバック)。
+        $ids = array_keys($results);
+        if (!empty($ids)) {
+            $kanaMap = Student::whereIn('id', $ids)->pluck('student_name_kana', 'id')->all();
+            $groupRank = ['未就学' => 0, '小学生' => 1, '中学生' => 2, '高校生' => 3];
+            uasort($results, function ($a, $b) use ($kanaMap, $groupRank) {
+                $ga = $groupRank[$a['grade_group']] ?? 9;
+                $gb = $groupRank[$b['grade_group']] ?? 9;
+                if ($ga !== $gb) {
+                    return $ga <=> $gb;
+                }
+                $ka = $kanaMap[$a['id']] ?? $a['name'];
+                $kb = $kanaMap[$b['id']] ?? $b['name'];
+                return strcmp((string) $ka, (string) $kb);
+            });
+        }
+
         return response()->json([
             'success' => true,
             'data'    => [
