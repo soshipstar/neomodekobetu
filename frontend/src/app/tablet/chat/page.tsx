@@ -99,6 +99,11 @@ export default function TabletChatPage() {
   const [draft, setDraft] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // 一斉送信(送迎通知)モーダル
+  const [broadcastOpen, setBroadcastOpen] = useState(false);
+  const [broadcastAction, setBroadcastAction] = useState<'departure' | 'arrival'>('departure');
+  const [broadcastBody, setBroadcastBody] = useState('');
+
   const { data: rooms = [], isLoading: roomsLoading } = useQuery<ChatRoomItem[]>({
     queryKey: ['tablet', 'chat', 'rooms'],
     queryFn: async () => {
@@ -138,6 +143,33 @@ export default function TabletChatPage() {
     onError: (err: unknown) => {
       const e = err as { response?: { data?: { message?: string } } };
       toast.error(e?.response?.data?.message || '送信に失敗しました');
+    },
+  });
+
+  // 一斉送信(送迎通知): 当該教室の全保護者ルームへ quick-broadcast。
+  // 送迎時に位置情報などを一斉に送るための機能 (BE は既存の
+  // /api/tablet/chat/quick-broadcast = ChatController::quickBroadcast を再利用)。
+  const broadcastMutation = useMutation({
+    mutationFn: async () => {
+      const roomIds = rooms.map((r) => r.id);
+      if (roomIds.length === 0) throw new Error('送信先の保護者チャットがありません');
+      return api.post('/api/tablet/chat/quick-broadcast', {
+        action: broadcastAction,
+        room_ids: roomIds,
+        custom_body: broadcastBody.trim() || undefined,
+      });
+    },
+    onSuccess: (res) => {
+      const msg = (res.data as { message?: string })?.message;
+      toast.success(msg || '一斉送信しました');
+      setBroadcastOpen(false);
+      setBroadcastBody('');
+      queryClient.invalidateQueries({ queryKey: ['tablet', 'chat', 'rooms'] });
+      if (activeRoomId) queryClient.invalidateQueries({ queryKey: ['tablet', 'chat', 'messages', activeRoomId] });
+    },
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(e?.response?.data?.message || e?.message || '一斉送信に失敗しました');
     },
   });
 
@@ -182,8 +214,21 @@ export default function TabletChatPage() {
       <aside
         className={`flex-shrink-0 overflow-y-auto rounded-xl bg-white shadow-md sm:w-[280px] ${activeRoomId ? 'hidden sm:block' : 'block flex-1'}`}
       >
-        <div className="border-b border-[var(--neutral-stroke-2)] px-3 py-2 text-sm font-bold text-[var(--neutral-foreground-1)]">
-          保護者チャット ({rooms.length}件)
+        <div className="flex items-center justify-between gap-2 border-b border-[var(--neutral-stroke-2)] px-3 py-2">
+          <span className="text-sm font-bold text-[var(--neutral-foreground-1)]">
+            保護者チャット ({rooms.length}件)
+          </span>
+          {rooms.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setBroadcastOpen(true)}
+              className="flex items-center gap-1 rounded-md bg-[var(--brand-80)] px-2.5 py-1.5 text-xs font-bold text-white hover:bg-blue-700"
+              title="全保護者へ一斉送信(送迎通知など)"
+            >
+              <MaterialIcon name="campaign" size={16} />
+              一斉送信
+            </button>
+          )}
         </div>
         {roomsLoading ? (
           <p className="p-4 text-sm text-[var(--neutral-foreground-4)]">読み込み中...</p>
@@ -394,6 +439,67 @@ export default function TabletChatPage() {
           </div>
         )}
       </main>
+
+      {/* 一斉送信(送迎通知)モーダル */}
+      {broadcastOpen && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setBroadcastOpen(false)} />
+          <div className="relative w-full max-w-md rounded-xl bg-white p-5 shadow-2xl">
+            <h3 className="mb-1 text-lg font-bold text-[var(--neutral-foreground-1)]">保護者へ一斉送信</h3>
+            <p className="mb-4 text-sm text-[var(--neutral-foreground-3)]">
+              この教室の全保護者チャット（{rooms.length}件）に一斉送信します。送迎時の連絡などにご利用ください。
+            </p>
+
+            <div className="mb-3">
+              <label className="mb-1 block text-sm font-bold text-[var(--neutral-foreground-2)]">種類</label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setBroadcastAction('departure')}
+                  className={`flex-1 rounded-lg border-2 px-3 py-2 text-sm font-bold ${broadcastAction === 'departure' ? 'border-[var(--brand-80)] bg-[var(--brand-160)] text-[var(--brand-60)]' : 'border-[var(--neutral-stroke-2)] text-[var(--neutral-foreground-3)]'}`}
+                >
+                  出発（これから帰ります）
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBroadcastAction('arrival')}
+                  className={`flex-1 rounded-lg border-2 px-3 py-2 text-sm font-bold ${broadcastAction === 'arrival' ? 'border-[var(--brand-80)] bg-[var(--brand-160)] text-[var(--brand-60)]' : 'border-[var(--neutral-stroke-2)] text-[var(--neutral-foreground-3)]'}`}
+                >
+                  到着
+                </button>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="mb-1 block text-sm font-bold text-[var(--neutral-foreground-2)]">
+                本文（任意・空欄なら定型文を送信）
+              </label>
+              <textarea
+                value={broadcastBody}
+                onChange={(e) => setBroadcastBody(e.target.value)}
+                rows={3}
+                placeholder="例: 〇〇付近を通過中です。あと10分ほどで到着します。"
+                className="w-full rounded-lg border-2 border-[var(--neutral-stroke-1)] p-3 text-sm focus:border-[var(--brand-80)] focus:outline-none"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setBroadcastOpen(false)}>キャンセル</Button>
+              <Button
+                onClick={() => {
+                  if (confirm(`全保護者（${rooms.length}件）に一斉送信します。よろしいですか？`)) {
+                    broadcastMutation.mutate();
+                  }
+                }}
+                isLoading={broadcastMutation.isPending}
+                leftIcon={<MaterialIcon name="campaign" size={16} />}
+              >
+                一斉送信する
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
