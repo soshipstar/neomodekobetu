@@ -56,7 +56,7 @@ class ApiAnomalyDetectionService
             ->where('created_at', '>=', now()->subHour())
             ->whereNotNull('user_id')
             ->groupBy('user_id')
-            ->having('cnt', '>=', $max)
+            ->havingRaw('COUNT(*) >= ?', [$max])
             ->get();
 
         return $rows->map(fn ($r) => [
@@ -77,7 +77,7 @@ class ApiAnomalyDetectionService
             ->where('status_code', 403)
             ->whereNotNull('user_id')
             ->groupBy('user_id')
-            ->having('cnt', '>=', $max)
+            ->havingRaw('COUNT(*) >= ?', [$max])
             ->get();
 
         return $rows->map(fn ($r) => [
@@ -102,7 +102,7 @@ class ApiAnomalyDetectionService
                   ->orWhere('path', 'like', '%export%');
             })
             ->groupBy('user_id')
-            ->having('cnt', '>=', $max)
+            ->havingRaw('COUNT(*) >= ?', [$max])
             ->get();
 
         return $rows->map(fn ($r) => [
@@ -123,7 +123,7 @@ class ApiAnomalyDetectionService
             ->where('status_code', 404)
             ->whereNotNull('user_id')
             ->groupBy('user_id')
-            ->having('cnt', '>=', $max)
+            ->havingRaw('COUNT(*) >= ?', [$max])
             ->get();
 
         return $rows->map(fn ($r) => [

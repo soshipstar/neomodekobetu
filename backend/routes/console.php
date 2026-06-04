@@ -49,8 +49,10 @@ Schedule::command('agent-payouts:calculate')
 
 // 解決済みエラーログの自動削除 - 3日経過したものを毎日午前4時に削除
 Schedule::call(function () {
+    // error_logs には updated_at 列が無い (created_at のみ)。
+    // 解決済みログを作成から3日経過で削除する。
     $deleted = \App\Models\ErrorLog::where('is_resolved', true)
-        ->where('updated_at', '<', now()->subDays(3))
+        ->where('created_at', '<', now()->subDays(3))
         ->delete();
     if ($deleted > 0) {
         \Illuminate\Support\Facades\Log::info("Deleted {$deleted} resolved error logs older than 3 days");
