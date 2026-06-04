@@ -446,6 +446,28 @@ export default function ManualPage() {
         </div>
       </div>
 
+      {/* 重要: 私有物での操作禁止に関する注意喚起（個人情報保護） */}
+      <div
+        role="alert"
+        className="rounded-lg border-2 border-[var(--status-danger-fg)] bg-[rgba(var(--status-danger-rgb,217,48,37),0.08)] p-4"
+      >
+        <div className="flex items-start gap-3">
+          <MaterialIcon name="warning" size={24} className="mt-0.5 shrink-0 text-[var(--status-danger-fg)]" />
+          <div className="space-y-1.5">
+            <p className="text-base font-bold text-[var(--status-danger-fg)]">
+              ご利用にあたっての重要なお願い（必ずお読みください）
+            </p>
+            <p className="text-sm font-medium text-[var(--neutral-foreground-1)]">
+              管理者・スタッフは、私有物（個人所有のスマートフォン・PC・タブレット等）で本システムを操作しないでください。
+            </p>
+            <p className="text-sm text-[var(--neutral-foreground-2)]">
+              個人情報保護の観点から、私有物によるログインによって情報が漏洩した際には、当方は一切の責任を負いません。
+              業務での利用は、必ず事業所が貸与・管理する端末で行ってください。
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Table of contents */}
       <Card>
         <CardBody>
