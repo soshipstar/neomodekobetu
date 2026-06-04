@@ -20,6 +20,7 @@ interface TabletAccount {
   password_plain: string | null;
   classroom_id: number;
   classroom?: { id: number; classroom_name: string } | null;
+  classrooms?: { id: number; classroom_name: string }[];
   is_active: boolean;
   last_login_at: string | null;
   created_at: string;
@@ -34,7 +35,11 @@ export default function AdminTabletAccountsPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const [modalOpen, setModalOpen] = useState(false);
-  const [form, setForm] = useState({ username: '', full_name: '', password: '', classroom_id: '' });
+  // classroom_ids: ① 複数事業所対応。主事業所(classroom_id)以外に表示できる教室。
+  const [form, setForm] = useState({ username: '', full_name: '', password: '', classroom_id: '', classroom_ids: [] as number[] });
+  // ① 既存アカウントの事業所編集モーダル
+  const [editAccount, setEditAccount] = useState<TabletAccount | null>(null);
+  const [editForm, setEditForm] = useState({ classroom_id: '', classroom_ids: [] as number[] });
 
   // タブレットアカウント一覧
   const { data: accounts = [], isLoading } = useQuery({
@@ -61,21 +66,38 @@ export default function AdminTabletAccountsPage() {
       full_name: '',
       password: '',
       classroom_id: classrooms[0] ? String(classrooms[0].id) : '',
+      classroom_ids: [],
     });
     setModalOpen(true);
+  };
+
+  // ① 既存アカウントの事業所編集モーダルを開く
+  const openEditModal = (a: TabletAccount) => {
+    const ids = (a.classrooms && a.classrooms.length > 0)
+      ? a.classrooms.map((c) => c.id)
+      : [a.classroom_id];
+    setEditAccount(a);
+    setEditForm({
+      classroom_id: String(a.classroom_id),
+      classroom_ids: ids.filter((id) => id !== a.classroom_id),
+    });
   };
 
   const createMutation = useMutation({
     mutationFn: (data: typeof form) =>
       api.post('/api/admin/tablet-accounts', {
-        ...data,
+        username: data.username,
+        full_name: data.full_name,
+        password: data.password,
         classroom_id: Number(data.classroom_id),
+        // 主事業所 + 追加事業所をピボットへ同期
+        classroom_ids: Array.from(new Set([Number(data.classroom_id), ...data.classroom_ids])),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'tablet-accounts'] });
       toast.success('タブレットアカウントを作成しました');
       setModalOpen(false);
-      setForm({ username: '', full_name: '', password: '', classroom_id: '' });
+      setForm({ username: '', full_name: '', password: '', classroom_id: '', classroom_ids: [] });
     },
     onError: (err: unknown) => {
       const e = err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } };
@@ -85,6 +107,30 @@ export default function AdminTabletAccountsPage() {
         toast.error(Array.isArray(first) ? first[0] : String(first));
       } else {
         toast.error(e?.response?.data?.message || '作成に失敗しました');
+      }
+    },
+  });
+
+  // ① 既存アカウントの事業所(複数)を更新
+  const editClassroomsMutation = useMutation({
+    mutationFn: ({ id, classroom_id, classroom_ids }: { id: number; classroom_id: number; classroom_ids: number[] }) =>
+      api.put(`/api/admin/tablet-accounts/${id}`, {
+        classroom_id,
+        classroom_ids: Array.from(new Set([classroom_id, ...classroom_ids])),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'tablet-accounts'] });
+      toast.success('事業所を更新しました');
+      setEditAccount(null);
+    },
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } };
+      const errors = e?.response?.data?.errors;
+      if (errors) {
+        const first = Object.values(errors)[0];
+        toast.error(Array.isArray(first) ? first[0] : String(first));
+      } else {
+        toast.error(e?.response?.data?.message || '更新に失敗しました');
       }
     },
   });
@@ -159,7 +205,28 @@ export default function AdminTabletAccountsPage() {
         )
       ),
     },
-    { key: 'classroom_name', label: '事業所', render: (a) => a.classroom?.classroom_name || '-' },
+    {
+      key: 'classroom_name',
+      label: '事業所',
+      render: (a) => {
+        // ① 複数事業所: 主事業所を先頭に、追加事業所をバッジ表示
+        const list = (a.classrooms && a.classrooms.length > 0) ? a.classrooms : (a.classroom ? [a.classroom] : []);
+        if (list.length === 0) return '-';
+        return (
+          <div className="flex flex-wrap gap-1">
+            {list.map((c) => (
+              <span
+                key={c.id}
+                className={`rounded px-1.5 py-0.5 text-xs ${c.id === a.classroom_id ? 'border border-[var(--brand-80)] font-medium text-[var(--brand-80)]' : 'bg-[var(--neutral-background-3)] text-[var(--neutral-foreground-2)]'}`}
+                title={c.id === a.classroom_id ? '主事業所(現在表示中)' : '表示可能'}
+              >
+                {c.classroom_name}
+              </span>
+            ))}
+          </div>
+        );
+      },
+    },
     {
       key: 'is_active',
       label: 'ステータス',
@@ -179,6 +246,14 @@ export default function AdminTabletAccountsPage() {
       label: '操作',
       render: (a) => (
         <div className="flex flex-wrap gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => openEditModal(a)}
+            leftIcon={<MaterialIcon name="domain" size={14} />}
+          >
+            事業所編集
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -275,6 +350,38 @@ export default function AdminTabletAccountsPage() {
               </p>
             )}
           </div>
+          {/* ① 複数事業所対応: 主事業所以外に表示できる教室を選択 (タブレットの教室切替に出る) */}
+          {classrooms.filter((c) => String(c.id) !== form.classroom_id).length > 0 && (
+            <div>
+              <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">
+                追加で表示できる事業所（任意）
+              </label>
+              <p className="mb-2 text-xs text-[var(--neutral-foreground-3)]">
+                選択した事業所はタブレットの「教室切替」から表示できます。
+              </p>
+              <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-[var(--neutral-stroke-1)] p-2">
+                {classrooms
+                  .filter((c) => String(c.id) !== form.classroom_id)
+                  .map((c) => (
+                    <label key={c.id} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm hover:bg-[var(--neutral-background-3)]">
+                      <input
+                        type="checkbox"
+                        checked={form.classroom_ids.includes(c.id)}
+                        onChange={(e) =>
+                          setForm({
+                            ...form,
+                            classroom_ids: e.target.checked
+                              ? [...form.classroom_ids, c.id]
+                              : form.classroom_ids.filter((id) => id !== c.id),
+                          })
+                        }
+                      />
+                      <span className="text-[var(--neutral-foreground-1)]">{c.classroom_name}</span>
+                    </label>
+                  ))}
+              </div>
+            </div>
+          )}
           <Input
             label="表示名"
             value={form.full_name}
@@ -301,6 +408,89 @@ export default function AdminTabletAccountsPage() {
             <Button type="submit" isLoading={createMutation.isPending}>作成</Button>
           </div>
         </form>
+      </Modal>
+
+      {/* ① 既存タブレットアカウントの事業所(複数)編集 */}
+      <Modal
+        isOpen={!!editAccount}
+        onClose={() => setEditAccount(null)}
+        title={editAccount ? `事業所の編集 - ${editAccount.full_name}` : '事業所の編集'}
+      >
+        {editAccount && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!editForm.classroom_id) {
+                toast.error('主事業所を選択してください');
+                return;
+              }
+              editClassroomsMutation.mutate({
+                id: editAccount.id,
+                classroom_id: Number(editForm.classroom_id),
+                classroom_ids: editForm.classroom_ids,
+              });
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">主事業所（現在表示）*</label>
+              <select
+                value={editForm.classroom_id}
+                onChange={(e) =>
+                  setEditForm({
+                    classroom_id: e.target.value,
+                    // 主事業所に選ばれた教室は追加リストから外す
+                    classroom_ids: editForm.classroom_ids.filter((id) => String(id) !== e.target.value),
+                  })
+                }
+                className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+                required
+              >
+                <option value="">選択してください</option>
+                {classrooms.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.classroom_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {classrooms.filter((c) => String(c.id) !== editForm.classroom_id).length > 0 && (
+              <div>
+                <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">
+                  追加で表示できる事業所（任意）
+                </label>
+                <p className="mb-2 text-xs text-[var(--neutral-foreground-3)]">
+                  選択した事業所はタブレットの「教室切替」から表示できます。
+                </p>
+                <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-[var(--neutral-stroke-1)] p-2">
+                  {classrooms
+                    .filter((c) => String(c.id) !== editForm.classroom_id)
+                    .map((c) => (
+                      <label key={c.id} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm hover:bg-[var(--neutral-background-3)]">
+                        <input
+                          type="checkbox"
+                          checked={editForm.classroom_ids.includes(c.id)}
+                          onChange={(e) =>
+                            setEditForm({
+                              ...editForm,
+                              classroom_ids: e.target.checked
+                                ? [...editForm.classroom_ids, c.id]
+                                : editForm.classroom_ids.filter((id) => id !== c.id),
+                            })
+                          }
+                        />
+                        <span className="text-[var(--neutral-foreground-1)]">{c.classroom_name}</span>
+                      </label>
+                    ))}
+                </div>
+              </div>
+            )}
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="secondary" type="button" onClick={() => setEditAccount(null)}>キャンセル</Button>
+              <Button type="submit" isLoading={editClassroomsMutation.isPending}>保存</Button>
+            </div>
+          </form>
+        )}
       </Modal>
     </div>
   );

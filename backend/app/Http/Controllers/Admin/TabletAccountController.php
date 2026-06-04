@@ -40,6 +40,31 @@ class TabletAccountController extends Controller
     }
 
     /**
+     * ① 複数事業所対応: classroom_ids[] を検証して同期用の ID 配列に正規化する。
+     *
+     * - 主教室 (primaryId = users.classroom_id) は必ず含める
+     *   (switchableClassroomIds は pivot ∪ classroom_id だが、表示・整合性のため pivot にも含める)
+     * - 各 ID は操作者の管理範囲 (manageableIds) 内であること
+     *
+     * 権限外の教室 ID が含まれる場合は null を返す (コール側で 403)。
+     *
+     * @param  array<int>  $ids
+     * @param  array<int>  $manageableIds
+     * @return array<int>|null
+     */
+    private function resolveClassroomIds(array $ids, int $primaryId, array $manageableIds): ?array
+    {
+        $ids = array_values(array_unique(array_map('intval', array_merge($ids, [$primaryId]))));
+        foreach ($ids as $cid) {
+            if (! in_array($cid, $manageableIds, true)) {
+                return null;
+            }
+        }
+
+        return $ids;
+    }
+
+    /**
      * タブレットアカウント一覧を取得
      */
     public function index(Request $request): JsonResponse
@@ -48,7 +73,7 @@ class TabletAccountController extends Controller
         $manageableIds = $this->manageableClassroomIds($user);
 
         $query = User::where('user_type', 'tablet')
-            ->with('classroom:id,classroom_name');
+            ->with(['classroom:id,classroom_name', 'classrooms:id,classroom_name']);
 
         if ($user->is_master) {
             if ($request->filled('classroom_id')) {
@@ -79,10 +104,12 @@ class TabletAccountController extends Controller
         $user = $request->user();
 
         $validated = $request->validate([
-            'classroom_id' => 'required|exists:classrooms,id',
-            'username'     => 'required|string|max:100|unique:users,username',
-            'password'     => 'required|string|min:6',
-            'full_name'    => 'required|string|max:100',
+            'classroom_id'    => 'required|exists:classrooms,id',
+            'classroom_ids'   => 'sometimes|array',
+            'classroom_ids.*' => 'integer|exists:classrooms,id',
+            'username'        => 'required|string|max:100|unique:users,username',
+            'password'        => 'required|string|min:6',
+            'full_name'       => 'required|string|max:100',
         ]);
 
         // 認可: 指定された classroom_id が自分の管理範囲か検証
@@ -93,6 +120,22 @@ class TabletAccountController extends Controller
                 'success' => false,
                 'message' => '指定した教室にタブレットアカウントを作成する権限がありません。',
             ], 403);
+        }
+
+        // ① 複数事業所対応: 追加教室も管理範囲内か検証 (作成前にチェックして 403 を返す)
+        $syncIds = null;
+        if ($request->has('classroom_ids')) {
+            $syncIds = $this->resolveClassroomIds(
+                $validated['classroom_ids'] ?? [],
+                (int) $validated['classroom_id'],
+                $manageableIds
+            );
+            if ($syncIds === null) {
+                return response()->json([
+                    'success' => false,
+                    'message' => '指定した教室の一部に作成権限がありません。',
+                ], 403);
+            }
         }
 
         $account = User::create([
@@ -106,11 +149,16 @@ class TabletAccountController extends Controller
             'user_type'      => 'tablet',
             'is_active'      => true,
         ]);
+        // ① 複数事業所対応: classroom_user ピボットを同期 (主教室含む)
+        if ($syncIds !== null) {
+            $account->classrooms()->sync($syncIds);
+        }
+
         $account->makeVisible('password_plain');
 
         return response()->json([
             'success' => true,
-            'data'    => $account->load('classroom:id,classroom_name'),
+            'data'    => $account->load(['classroom:id,classroom_name', 'classrooms:id,classroom_name']),
             'message' => 'タブレットアカウントを作成しました。',
         ], 201);
     }
@@ -131,10 +179,12 @@ class TabletAccountController extends Controller
         }
 
         $validated = $request->validate([
-            'classroom_id' => 'sometimes|exists:classrooms,id',
-            'full_name'    => 'sometimes|string|max:100',
-            'password'     => 'nullable|string|min:6',
-            'is_active'    => 'sometimes|boolean',
+            'classroom_id'    => 'sometimes|exists:classrooms,id',
+            'classroom_ids'   => 'sometimes|array',
+            'classroom_ids.*' => 'integer|exists:classrooms,id',
+            'full_name'       => 'sometimes|string|max:100',
+            'password'        => 'nullable|string|min:6',
+            'is_active'       => 'sometimes|boolean',
         ]);
 
         // classroom_id を変更する場合も管理範囲チェック
@@ -146,6 +196,24 @@ class TabletAccountController extends Controller
             ], 403);
         }
 
+        // ① 複数事業所対応: classroom_ids[] が指定された場合は管理範囲を検証
+        // (主教室は更新後の classroom_id、未指定なら現在の classroom_id)
+        $syncIds = null;
+        if ($request->has('classroom_ids')) {
+            $primaryId = (int) ($validated['classroom_id'] ?? $account->classroom_id);
+            $syncIds = $this->resolveClassroomIds(
+                $validated['classroom_ids'] ?? [],
+                $primaryId,
+                $manageableIds
+            );
+            if ($syncIds === null) {
+                return response()->json([
+                    'success' => false,
+                    'message' => '指定した教室の一部に変更権限がありません。',
+                ], 403);
+            }
+        }
+
         if (isset($validated['password'])) {
             // B137-bis: 平文を保持して管理者が表示・コピーできるようにする
             $validated['password_plain'] = $validated['password'];
@@ -154,9 +222,17 @@ class TabletAccountController extends Controller
             unset($validated['password']);
         }
 
+        // classroom_ids はカラムではないため update() の対象から除外
+        unset($validated['classroom_ids']);
+
         $account->update($validated);
 
-        $fresh = $account->fresh('classroom:id,classroom_name');
+        // ① 複数事業所対応: classroom_user ピボットを同期 (主教室含む)
+        if ($syncIds !== null) {
+            $account->classrooms()->sync($syncIds);
+        }
+
+        $fresh = $account->fresh(['classroom:id,classroom_name', 'classrooms:id,classroom_name']);
         if ($fresh) {
             $fresh->makeVisible('password_plain');
         }
