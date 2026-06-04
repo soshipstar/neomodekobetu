@@ -67,6 +67,11 @@ Route::post('/sso/ticket', [App\Http\Controllers\Auth\SsoController::class, 'tic
     ->middleware('auth:sanctum');
 Route::post('/sso/verify', [App\Http\Controllers\Auth\SsoController::class, 'verify']);
 
+// 国保連請求システム(kiduriacount)へのデータ提供（サーバ間・共有シークレット）。
+// students: 在籍児童＋保護者 / attendance: 連絡帳由来の利用日＋到着帰宅由来の利用時間
+Route::post('/sync/students', [App\Http\Controllers\External\SyncExportController::class, 'students']);
+Route::post('/sync/attendance', [App\Http\Controllers\External\SyncExportController::class, 'attendance']);
+
 // --- 教室切り替え（全認証ユーザー共通） ---
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my-classrooms', [App\Http\Controllers\ClassroomSwitchController::class, 'myClassrooms']);
