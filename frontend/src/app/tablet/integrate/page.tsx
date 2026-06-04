@@ -22,6 +22,12 @@ import Link from 'next/link';
  *   - 既存「保存する」(下書き保存) は残す
  */
 
+interface NotePhoto {
+  id: number;
+  url: string;
+  file_size?: number | null;
+}
+
 interface Participant {
   id: number;                // = student_id
   student_name: string;
@@ -30,6 +36,7 @@ interface Participant {
   integrated_content: string | null;
   is_sent: boolean;
   sent_at?: string | null;    // 拡張: BE が返してくれれば表示
+  photos?: NotePhoto[];       // 連絡帳に添付された写真 (送信後も閲覧可能に)
 }
 
 interface IntegrateData {
@@ -209,6 +216,28 @@ function TabletIntegratePage() {
               <div className="rounded-lg border-l-4 border-blue-500 bg-[var(--neutral-background-3)] p-4">
                 <div className="mb-1 text-base text-[var(--neutral-foreground-3)]">活動記録:</div>
                 <div className="whitespace-pre-wrap text-lg">{participant.notes}</div>
+              </div>
+            )}
+
+            {/* 連絡帳に添付された写真 (送信後もタブレットで確認できるように) */}
+            {participant.photos && participant.photos.length > 0 && (
+              <div>
+                <div className="mb-2 text-base text-[var(--neutral-foreground-3)]">
+                  添付写真 ({participant.photos.length}枚):
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {participant.photos.map((photo) => (
+                    <a key={photo.id} href={photo.url} target="_blank" rel="noopener noreferrer" className="block">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={photo.url}
+                        alt="連絡帳の写真"
+                        className="h-32 w-32 rounded-lg border-2 border-[var(--neutral-stroke-2)] object-cover"
+                        loading="lazy"
+                      />
+                    </a>
+                  ))}
+                </div>
               </div>
             )}
 

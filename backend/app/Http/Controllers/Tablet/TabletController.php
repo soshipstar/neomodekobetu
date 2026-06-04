@@ -561,7 +561,10 @@ class TabletController extends Controller
 
         $activity->load([
             'studentRecords.student:id,student_name',
-            'integratedNotes',
+            // 連絡帳に添付された写真もロードする (タブレットで送信後の写真が
+            // 見られなかった不具合の修正)。ClassroomPhoto は $appends=['url'] で
+            // 公開URLを自動付与する。
+            'integratedNotes.photos',
         ]);
 
         $participants = $activity->studentRecords->map(function ($sr) use ($activity) {
@@ -573,6 +576,14 @@ class TabletController extends Controller
                 'integrated_id'       => $integratedNote?->id,
                 'integrated_content'  => $integratedNote?->integrated_content,
                 'is_sent'             => $integratedNote?->is_sent ?? false,
+                // 添付写真 (id / url / サイズ)。無ければ空配列。
+                'photos'              => $integratedNote
+                    ? $integratedNote->photos->map(fn ($p) => [
+                        'id'   => $p->id,
+                        'url'  => $p->url,
+                        'file_size' => $p->file_size,
+                    ])->values()
+                    : [],
             ];
         });
 
