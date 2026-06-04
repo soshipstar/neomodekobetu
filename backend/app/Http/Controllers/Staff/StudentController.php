@@ -244,7 +244,7 @@ class StudentController extends Controller
     {
         $this->authorizeClassroom($request->user(), $student);
 
-        $validated = $request->validate([
+        $rules = [
             'student_name'           => 'nullable|string|max:255',
             'student_name_kana'      => 'nullable|string|max:255',
             'birth_date'             => 'nullable|date',
@@ -273,7 +273,39 @@ class StudentController extends Controller
             'desired_saturday'       => 'nullable|boolean',
             'desired_sunday'         => 'nullable|boolean',
             'waiting_notes'          => 'nullable|string|max:1000',
-        ]);
+        ];
+
+        // === 一時計測 (生徒更新422の原因フィールド特定用) ===
+        // バリデーション失敗時に「失敗フィールド + 実際の送信値(型つき)」を
+        // error_logs に記録してから通常どおり 422 を返す (挙動は不変)。
+        // 原因特定後にこの try/catch は撤去する。
+        try {
+            $validated = $request->validate($rules);
+        } catch (\Illuminate\Validation\ValidationException $ve) {
+            try {
+                $typed = [];
+                foreach ($request->all() as $k => $v) {
+                    if ($k === 'password') { $typed[$k] = $v === null ? 'null' : '***'; continue; }
+                    $typed[$k] = gettype($v) . ':' . (is_scalar($v) ? (string) $v : json_encode($v, JSON_UNESCAPED_UNICODE));
+                }
+                \App\Models\ErrorLog::create([
+                    'level'           => 'warning',
+                    'message'         => '[STUDENT_UPDATE_422] student_id=' . $student->id
+                        . ' errors=' . json_encode($ve->errors(), JSON_UNESCAPED_UNICODE)
+                        . ' payload=' . mb_substr(json_encode($typed, JSON_UNESCAPED_UNICODE), 0, 1500),
+                    'exception_class' => 'TempInstrumentation',
+                    'file'            => __FILE__,
+                    'line'            => __LINE__,
+                    'url'             => $request->fullUrl(),
+                    'method'          => $request->method(),
+                    'user_id'         => $request->user()?->id,
+                    'ip_address'      => $request->ip(),
+                ]);
+            } catch (\Throwable $logErr) {
+                // 計測の失敗は無視
+            }
+            throw $ve; // 通常どおり 422 を返す
+        }
 
         // 学年再計算
         $birthDate = $validated['birth_date'] ?? $student->birth_date;
