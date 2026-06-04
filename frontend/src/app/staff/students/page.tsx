@@ -133,6 +133,16 @@ const GRADE_LABELS: Record<string, string> = {
   high_school_1: '高校1年生', high_school_2: '高校2年生', high_school_3: '高校3年生',
 };
 
+// 学年ソート用の序列 (grade_level 文字列は辞書順では正しく並ばないため数値化する)
+const GRADE_ORDER: Record<string, number> = {
+  preschool: 0,
+  elementary: 1, // legacy default
+  elementary_1: 1, elementary_2: 2, elementary_3: 3,
+  elementary_4: 4, elementary_5: 5, elementary_6: 6,
+  junior_high_1: 7, junior_high_2: 8, junior_high_3: 9,
+  high_school_1: 10, high_school_2: 11, high_school_3: 12,
+};
+
 const STATUS_LABELS: Record<string, string> = {
   active: '在籍', trial: '体験', short_term: '短期利用', waiting: '待機', withdrawn: '退所', pre_withdrawal: '退所予定',
 };
@@ -172,7 +182,8 @@ export default function StudentsPage() {
   const [statusFilter, setStatusFilter] = useState('active');
   const debouncedSearch = useDebounce(search, 300);
 
-  const [sortKey, setSortKey] = useState<string>('id');
+  // 既定は「在籍のみ」を「ふりがな(あいうえお)順」で表示。学年順にも切替可能。
+  const [sortKey, setSortKey] = useState<string>('student_name_kana');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
   const [createModal, setCreateModal] = useState(false);
@@ -314,6 +325,11 @@ export default function StudentsPage() {
       switch (sortKey) {
         case 'id': va = a.id; vb = b.id; break;
         case 'student_name': va = a.student_name; vb = b.student_name; break;
+        case 'student_name_kana':
+          // ふりがな優先で50音順。未設定は漢字氏名でフォールバック。
+          va = a.student_name_kana || a.student_name || '';
+          vb = b.student_name_kana || b.student_name || '';
+          break;
         case 'birth_date': va = a.birth_date; vb = b.birth_date; break;
         case 'age': {
           const now = Date.now();
@@ -321,7 +337,11 @@ export default function StudentsPage() {
           vb = b.birth_date ? now - new Date(b.birth_date).getTime() : 0;
           break;
         }
-        case 'grade_level': va = a.grade_level; vb = b.grade_level; break;
+        case 'grade_level':
+          // 学年序列で数値ソート (preschool→小→中→高)。同学年内はふりがな順。
+          va = GRADE_ORDER[a.grade_level ?? ''] ?? -1;
+          vb = GRADE_ORDER[b.grade_level ?? ''] ?? -1;
+          break;
         case 'guardian': va = a.guardian?.full_name ?? ''; vb = b.guardian?.full_name ?? ''; break;
         case 'status': va = a.status; vb = b.status; break;
         case 'created_at': va = a.created_at; vb = b.created_at; break;
@@ -423,7 +443,7 @@ export default function StudentsPage() {
               <tr className="border-b border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)]">
                 {([
                   ['id', 'ID'],
-                  ['student_name', '生徒名'],
+                  ['student_name_kana', '生徒名'],
                   ['birth_date', '生年月日'],
                   ['age', '年齢'],
                   ['grade_level', '学年'],
