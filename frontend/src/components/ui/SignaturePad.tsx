@@ -223,7 +223,25 @@ class CanvasDrawer {
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.fillStyle = '#ffffff';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
+
+    // 署名画像のアスペクト比を保持して中央に収める(contain)。
+    // 以前はキャンバス全面に引き伸ばしていたため、保存→再表示や
+    // インライン/モーダルでキャンバス比率が異なると署名の縦横比が崩れていた。
+    const cw = this.canvas.width;
+    const ch = this.canvas.height;
+    const iw = img.naturalWidth || img.width || cw;
+    const ih = img.naturalHeight || img.height || ch;
+    if (iw > 0 && ih > 0) {
+      const scale = Math.min(cw / iw, ch / ih);
+      const dw = iw * scale;
+      const dh = ih * scale;
+      const dx = (cw - dw) / 2;
+      const dy = (ch - dh) / 2;
+      this.ctx.drawImage(img, dx, dy, dw, dh);
+    } else {
+      this.ctx.drawImage(img, 0, 0, cw, ch);
+    }
+
     this.ctx.restore();
     this.hasDrawn = true;
     this.saveState();
