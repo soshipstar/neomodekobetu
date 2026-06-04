@@ -76,6 +76,10 @@ class SupportPlanController extends Controller
             'consent_name'       => 'nullable|string|max:255',
             'manager_name'       => 'nullable|string|max:255',
             'status'             => 'nullable|string|in:draft,submitted,official',
+            // 下書き保存でも署名を保持できるようにする (確定=official とは別)。
+            // 署名を描いて「下書き保存」した際に署名が消える不具合への対応。
+            'staff_signature'    => 'nullable|string',
+            'guardian_signature' => 'nullable|string',
             'details'            => 'nullable|array',
             'details.*.domain'             => 'nullable|string',
             'details.*.current_status'     => 'nullable|string',
@@ -132,6 +136,11 @@ class SupportPlanController extends Controller
                 'manager_name'        => $managerName,
                 'status'              => $validated['status'] ?? 'draft',
                 'is_official'         => ($validated['status'] ?? 'draft') === 'official',
+                // 下書き保存でも署名を保持する (署名消失バグ対応)
+                'staff_signature'        => $validated['staff_signature'] ?? null,
+                'staff_signature_date'   => !empty($validated['staff_signature']) ? now()->toDateString() : null,
+                'guardian_signature'     => $validated['guardian_signature'] ?? null,
+                'guardian_signature_date' => !empty($validated['guardian_signature']) ? now()->toDateString() : null,
                 'created_by'          => $request->user()->id,
             ]);
 
@@ -191,6 +200,9 @@ class SupportPlanController extends Controller
             'consent_name'       => 'sometimes|nullable|string|max:255',
             'manager_name'       => 'sometimes|nullable|string|max:255',
             'status'             => 'sometimes|nullable|string|in:draft,submitted,official',
+            // 下書き保存でも署名を保持できるようにする (署名消失バグ対応)
+            'staff_signature'    => 'sometimes|nullable|string',
+            'guardian_signature' => 'sometimes|nullable|string',
             'details'            => 'sometimes|nullable|array',
             'details.*.domain'             => 'nullable|string',
             'details.*.current_status'     => 'nullable|string',
@@ -225,6 +237,15 @@ class SupportPlanController extends Controller
 
             if (isset($updateData['status'])) {
                 $updateData['is_official'] = $updateData['status'] === 'official';
+            }
+
+            // 署名が送られてきた場合は署名日も更新する (下書き保存での署名保持)。
+            // 空文字/未送信のときはここでは触らない (誤って消さない)。
+            if (! empty($updateData['staff_signature'])) {
+                $updateData['staff_signature_date'] = now()->toDateString();
+            }
+            if (! empty($updateData['guardian_signature'])) {
+                $updateData['guardian_signature_date'] = now()->toDateString();
             }
 
             // Map consent_name / manager_name (frontend sends consent_name)

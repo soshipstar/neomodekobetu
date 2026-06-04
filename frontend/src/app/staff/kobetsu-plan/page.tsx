@@ -274,7 +274,9 @@ export default function KobetsuPlanPage() {
   // ------ Mutations ------
 
   // Map form fields to API fields (legacy compat: life_intention, consent_name, manager_name)
-  const formToApi = (data: PlanForm) => ({
+  // 署名(任意)はフォーム項目ではないので別型で受け、そのまま透過する。
+  type SavePayload = PlanForm & { staff_signature?: string; guardian_signature?: string };
+  const formToApi = (data: SavePayload) => ({
     ...data,
     life_intention: data.guardian_wish,
     consent_name: data.manager_name,
@@ -282,7 +284,7 @@ export default function KobetsuPlanPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: PlanForm) =>
+    mutationFn: (data: SavePayload) =>
       api.post(`/api/staff/students/${selectedStudentId}/support-plans`, formToApi(data)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'support-plans', 'individual'] });
@@ -293,7 +295,7 @@ export default function KobetsuPlanPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, ...data }: PlanForm & { id: number }) =>
+    mutationFn: ({ id, ...data }: SavePayload & { id: number }) =>
       api.put(`/api/staff/support-plans/${id}`, formToApi(data)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'support-plans', 'individual'] });
@@ -496,10 +498,21 @@ export default function KobetsuPlanPage() {
 
   const handleSaveDraft = (e: React.FormEvent) => {
     e.preventDefault();
+    // 下書き保存でも署名(新規描画 or 既存)を保存する。
+    // 以前は署名がペイロードに含まれず、署名を描いて下書き保存すると消えていた。
+    const hasNewStaffSig = staffSigRef.current && !staffSigRef.current.isEmpty();
+    const staffSignature = hasNewStaffSig ? staffSigRef.current!.toDataURL() : existingStaffSig;
+    const hasNewGuardianSig = guardianSigRef.current && !guardianSigRef.current.isEmpty();
+    const guardianSignature = hasNewGuardianSig ? guardianSigRef.current!.toDataURL() : existingGuardianSig;
+
+    const sigPayload: { staff_signature?: string; guardian_signature?: string } = {};
+    if (staffSignature) sigPayload.staff_signature = staffSignature;
+    if (guardianSignature) sigPayload.guardian_signature = guardianSignature;
+
     if (editingPlanId) {
-      updateMutation.mutate({ id: editingPlanId, ...form });
+      updateMutation.mutate({ id: editingPlanId, ...form, ...sigPayload });
     } else {
-      createMutation.mutate(form);
+      createMutation.mutate({ ...form, ...sigPayload });
     }
   };
 
