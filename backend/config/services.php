@@ -36,6 +36,9 @@ return [
         // 既定で GPT-5.4 通常版を使用 (旧: gpt-5.4-mini)。
         // 必要に応じて .env の OPENAI_MODEL で上書き可能。
         'model'   => env('OPENAI_MODEL', 'gpt-5.4-2026-03-05'),
+        // ベクトル埋め込み用モデル。vector_embeddings.embedding は vector(1536) のため
+        // 1536 次元を返す text-embedding-3-small を既定とする。
+        'embedding_model' => env('OPENAI_EMBEDDING_MODEL', 'text-embedding-3-small'),
     ],
 
     'external_api' => [

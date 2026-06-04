@@ -179,6 +179,29 @@ class AiGenerationService
         return $content;
     }
 
+    /**
+     * テキストからベクトル埋め込み (float配列) を生成する。
+     *
+     * vector_embeddings.embedding は vector(1536) のため、1536次元を返す
+     * text-embedding-3-small (config: services.openai.embedding_model) を使用する。
+     * EmbeddingService::embed() / VectorSearchService から呼ばれる。
+     *
+     * @param  string  $text
+     * @return array<int, float>  埋め込みベクトル
+     */
+    public function generateEmbedding(string $text): array
+    {
+        $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
+        $client = \OpenAI::client($apiKey);
+
+        $response = $client->embeddings()->create([
+            'model' => config('services.openai.embedding_model', 'text-embedding-3-small'),
+            'input' => $text,
+        ]);
+
+        return $response->embeddings[0]->embedding;
+    }
+
     // =========================================================================
     // Private helpers
     // =========================================================================
