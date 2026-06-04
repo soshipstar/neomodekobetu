@@ -616,8 +616,9 @@ function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel
       return;
     }
     if (studentId) {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-      window.open(`${backendUrl}/staff/student-login-print/${studentId}`, '_blank', 'width=800,height=600');
+      // フロントの印刷ページを同一オリジンで開く。
+      // (以前はバックエンドURLを直接開いて 404/認証エラーになっていた)
+      window.open(`/staff/student-login-print/${studentId}`, '_blank', 'width=800,height=600');
     }
   };
 
