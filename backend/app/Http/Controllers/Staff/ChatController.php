@@ -49,7 +49,8 @@ class ChatController extends Controller
 
         $rooms = ChatRoom::forUser($user)
             ->with([
-                'student:id,student_name,classroom_id,grade_level',
+                // status: タブレット等で退所生徒の保護者を既定非表示にするため
+                'student:id,student_name,classroom_id,grade_level,status',
                 'guardian:id,full_name',
             ])
             ->withCount([

@@ -57,7 +57,8 @@ class StaffGuardianController extends Controller
         $user = $request->user();
         $classroomId = $user->classroom_id;
 
-        $query = User::guardian()->with('students:id,student_name,guardian_id');
+        // status も含める: 在籍(退所以外)の生徒に紐づくかでフィルタするため
+        $query = User::guardian()->with('students:id,student_name,guardian_id,status');
 
         if ($classroomId) {
             $query->whereIn('classroom_id', $user->accessibleClassroomIds());

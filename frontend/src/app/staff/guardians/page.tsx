@@ -26,7 +26,7 @@ interface Guardian {
   email: string | null;
   password_plain: string | null;
   is_active: boolean;
-  students: { id: number; student_name: string }[];
+  students: { id: number; student_name: string; status?: string }[];
   last_login_at: string | null;
   created_at: string;
 }
@@ -79,15 +79,17 @@ export default function GuardiansPage() {
     },
   });
 
-  // 紐づき生徒の有無で client-side フィルタリング
+  // 「在籍生徒に紐づくか」で client-side フィルタリング。
+  // 在籍 = 退所(withdrawn)以外の生徒が1人以上いること。
+  // → 既定は在籍生徒のいる保護者のみ表示。退所のみ/生徒なしの保護者は「すべて」で表示。
+  const hasActiveStudent = (g: Guardian) => g.students.some((s) => s.status !== 'withdrawn');
   const guardians = allGuardians.filter((g) => {
     if (linkFilter === 'all') return true;
-    const hasStudents = g.students.length > 0;
-    return linkFilter === 'with' ? hasStudents : !hasStudents;
+    return linkFilter === 'with' ? hasActiveStudent(g) : !hasActiveStudent(g);
   });
 
   // 集計値 (タブの件数表示用)
-  const withCount = allGuardians.filter((g) => g.students.length > 0).length;
+  const withCount = allGuardians.filter(hasActiveStudent).length;
   const withoutCount = allGuardians.length - withCount;
 
   // Save mutation (create: only full_name + email; edit: full_name + username + email + password)
@@ -190,8 +192,8 @@ export default function GuardiansPage() {
       {/* 紐づき生徒フィルタ (デフォルトは「利用中」= 生徒がいる保護者のみ) */}
       <div className="flex flex-wrap items-center gap-1.5">
         {([
-          { key: 'with',    label: `利用中の生徒あり`,  count: withCount,    desc: '紐づく生徒がいる保護者のみ' },
-          { key: 'without', label: `紐づく生徒なし`,    count: withoutCount, desc: '退所/登録準備中などで生徒がいない保護者' },
+          { key: 'with',    label: `在籍生徒あり`,      count: withCount,    desc: '在籍中(退所以外)の生徒に紐づく保護者のみ' },
+          { key: 'without', label: `在籍生徒なし`,      count: withoutCount, desc: '退所済みの生徒のみ、または紐づく生徒がいない保護者' },
           { key: 'all',     label: `すべて`,            count: allGuardians.length, desc: '上記すべて表示' },
         ] as const).map((opt) => (
           <button

@@ -14,7 +14,7 @@ interface ChatRoomItem {
   id: number;
   student_id: number;
   guardian_id: number | null;
-  student?: { id: number; student_name: string; grade_level?: string };
+  student?: { id: number; student_name: string; grade_level?: string; status?: string };
   guardian?: { id: number; full_name: string } | null;
   last_message?: string | { message: string; message_type?: string; sender_type?: string } | null;
   last_message_at?: string | null;
@@ -103,6 +103,8 @@ export default function TabletChatPage() {
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   const [broadcastAction, setBroadcastAction] = useState<'departure' | 'arrival'>('departure');
   const [broadcastBody, setBroadcastBody] = useState('');
+  // 既定は在籍生徒の保護者のみ表示。退所生徒の保護者は「すべて表示」で表示する。
+  const [showAllRooms, setShowAllRooms] = useState(false);
 
   const { data: rooms = [], isLoading: roomsLoading } = useQuery<ChatRoomItem[]>({
     queryKey: ['tablet', 'chat', 'rooms'],
@@ -114,6 +116,12 @@ export default function TabletChatPage() {
     // 一覧側のバッジが追従するように定期 refetch する (messages と同じ 5 秒)。
     refetchInterval: 5000,
   });
+
+  // 在籍フィルタ: 既定は退所生徒の保護者を非表示。showAllRooms で全件表示。
+  const withdrawnCount = rooms.filter((r) => r.student?.status === 'withdrawn').length;
+  const visibleRooms = showAllRooms
+    ? rooms
+    : rooms.filter((r) => r.student?.status !== 'withdrawn');
 
   const { data: messages = [], isLoading: msgsLoading } = useQuery<ChatMessage[]>({
     queryKey: ['tablet', 'chat', 'messages', activeRoomId],
@@ -151,7 +159,8 @@ export default function TabletChatPage() {
   // /api/tablet/chat/quick-broadcast = ChatController::quickBroadcast を再利用)。
   const broadcastMutation = useMutation({
     mutationFn: async () => {
-      const roomIds = rooms.map((r) => r.id);
+      // 表示中(在籍フィルタ適用後)の保護者にのみ一斉送信する
+      const roomIds = visibleRooms.map((r) => r.id);
       if (roomIds.length === 0) throw new Error('送信先の保護者チャットがありません');
       return api.post('/api/tablet/chat/quick-broadcast', {
         action: broadcastAction,
@@ -216,9 +225,9 @@ export default function TabletChatPage() {
       >
         <div className="flex items-center justify-between gap-2 border-b border-[var(--neutral-stroke-2)] px-3 py-2">
           <span className="text-sm font-bold text-[var(--neutral-foreground-1)]">
-            保護者チャット ({rooms.length}件)
+            保護者チャット ({visibleRooms.length}件)
           </span>
-          {rooms.length > 0 && (
+          {visibleRooms.length > 0 && (
             <button
               type="button"
               onClick={() => setBroadcastOpen(true)}
@@ -230,15 +239,28 @@ export default function TabletChatPage() {
             </button>
           )}
         </div>
+        {/* 在籍/すべて 切替: 退所生徒の保護者を表示するか */}
+        {withdrawnCount > 0 && (
+          <button
+            type="button"
+            onClick={() => setShowAllRooms((v) => !v)}
+            className="flex w-full items-center gap-1 border-b border-[var(--neutral-stroke-2)] px-3 py-1.5 text-left text-xs text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-3)]"
+          >
+            <MaterialIcon name={showAllRooms ? 'visibility_off' : 'visibility'} size={14} />
+            {showAllRooms
+              ? `在籍のみ表示に戻す (退所 ${withdrawnCount}件を隠す)`
+              : `すべて表示 (退所生徒の保護者 ${withdrawnCount}件も表示)`}
+          </button>
+        )}
         {roomsLoading ? (
           <p className="p-4 text-sm text-[var(--neutral-foreground-4)]">読み込み中...</p>
-        ) : rooms.length === 0 ? (
+        ) : visibleRooms.length === 0 ? (
           <p className="p-4 text-sm text-[var(--neutral-foreground-4)]">
             この教室の保護者チャットはまだありません
           </p>
         ) : (
           <ul className="divide-y divide-[var(--neutral-stroke-3)]">
-            {rooms.map((room) => {
+            {visibleRooms.map((room) => {
               const lastMsgText = typeof room.last_message === 'string'
                 ? room.last_message
                 : room.last_message?.message || '';
