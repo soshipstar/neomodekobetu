@@ -20,6 +20,22 @@ use Illuminate\Support\Facades\Log;
 class RenrakuchoController extends Controller
 {
     /**
+     * LEAK-007 修正: DailyRecord へのアクセス権限を record.classroom_id で直接判定する。
+     * 旧実装は record.staff.classroom_id を間接参照していたため、staff が null/退職した
+     * レコードはチェックをすり抜けていた。
+     */
+    private function authorizeDailyRecordAccess(Request $request, DailyRecord $record, string $action = 'アクセス'): void
+    {
+        $user = $request->user();
+        if (!$user) {
+            abort(401);
+        }
+        if (!in_array((int) $record->classroom_id, $user->switchableClassroomIds(), true)) {
+            abort(403, "この活動を{$action}する権限がありません。");
+        }
+    }
+
+    /**
      * Legacy domain1/domain2 fields to new 5-domain schema mapping helper.
      * When the frontend sends domain1/domain1_content/domain2/domain2_content (legacy form),
      * this maps them to the corresponding 5-domain column.
@@ -249,6 +265,11 @@ class RenrakuchoController extends Controller
             'students.*.strengths.*'               => 'nullable|integer|min:0|max:10',
             // サービス種別固有データ (就労 A/B / 移行)
             'students.*.service_type_data'         => 'nullable|array',
+            // 領域別の目標引用 { domain_key: { quoted, goal_snapshot } } + 短期/長期コメント
+            // (2026-05-17 追加 — kiduri2026 仕様統一)
+            'students.*.domain_goal_quotes'         => 'nullable|array',
+            'students.*.short_term_goal_comment'    => 'nullable|string|max:2000',
+            'students.*.long_term_goal_comment'     => 'nullable|string|max:2000',
         ]);
 
         try {
@@ -278,6 +299,9 @@ class RenrakuchoController extends Controller
                         'notes'                    => $studentData['notes'] ?? null,
                         'strengths'                => $this->sanitizeStrengths($studentData['strengths'] ?? null, $serviceType),
                         'service_type_data'        => $this->sanitizeServiceTypeData($studentData['service_type_data'] ?? null, $serviceType),
+                        'domain_goal_quotes'       => $studentData['domain_goal_quotes'] ?? null,
+                        'short_term_goal_comment'  => $studentData['short_term_goal_comment'] ?? null,
+                        'long_term_goal_comment'   => $studentData['long_term_goal_comment'] ?? null,
                     ]);
                 }
 
@@ -315,14 +339,7 @@ class RenrakuchoController extends Controller
      */
     public function update(Request $request, DailyRecord $record): JsonResponse
     {
-        // 権限チェック
-        $user = $request->user();
-        if ($user->classroom_id) {
-            $staffClassroom = $record->staff->classroom_id ?? null;
-            if (!in_array($staffClassroom, $user->switchableClassroomIds(), true)) {
-                return response()->json(['success' => false, 'message' => 'この活動を更新する権限がありません。'], 403);
-            }
-        }
+        $this->authorizeDailyRecordAccess($request, $record, '更新');
 
         $validated = $request->validate([
             'activity_name'     => 'sometimes|required|string|max:255',
@@ -346,6 +363,10 @@ class RenrakuchoController extends Controller
             'students.*.strengths.*'               => 'nullable|integer|min:0|max:10',
             // サービス種別固有データ
             'students.*.service_type_data'         => 'nullable|array',
+            // 領域別の目標引用 + 短期/長期コメント (2026-05-17 追加 — kiduri2026 仕様統一)
+            'students.*.domain_goal_quotes'         => 'nullable|array',
+            'students.*.short_term_goal_comment'    => 'nullable|string|max:2000',
+            'students.*.long_term_goal_comment'     => 'nullable|string|max:2000',
         ]);
 
         $serviceType = $this->classroomServiceType($record->classroom_id);
@@ -370,6 +391,9 @@ class RenrakuchoController extends Controller
                         'notes'                    => $studentData['notes'] ?? null,
                         'strengths'                => $this->sanitizeStrengths($studentData['strengths'] ?? null, $serviceType),
                         'service_type_data'        => $this->sanitizeServiceTypeData($studentData['service_type_data'] ?? null, $serviceType),
+                        'domain_goal_quotes'       => $studentData['domain_goal_quotes'] ?? null,
+                        'short_term_goal_comment'  => $studentData['short_term_goal_comment'] ?? null,
+                        'long_term_goal_comment'   => $studentData['long_term_goal_comment'] ?? null,
                     ]);
                 }
             }
@@ -387,6 +411,7 @@ class RenrakuchoController extends Controller
      */
     public function studentRecords(Request $request, DailyRecord $record): JsonResponse
     {
+        $this->authorizeDailyRecordAccess($request, $record, '閲覧');
         $records = $record->studentRecords()
             ->with('student:id,student_name')
             ->get();
@@ -402,6 +427,8 @@ class RenrakuchoController extends Controller
      */
     public function storeStudentRecords(Request $request, DailyRecord $record): JsonResponse
     {
+        $this->authorizeDailyRecordAccess($request, $record, '更新');
+
         $validated = $request->validate([
             'student_id'               => 'required|exists:students,id',
             'health_life'              => 'nullable|string',
@@ -413,6 +440,10 @@ class RenrakuchoController extends Controller
             'strengths'                => 'nullable|array',
             'strengths.*'              => 'nullable|integer|min:0|max:10',
             'service_type_data'        => 'nullable|array',
+            // 領域別の目標引用 + 短期/長期コメント (2026-05-17 追加 — kiduri2026 仕様統一)
+            'domain_goal_quotes'       => 'nullable|array',
+            'short_term_goal_comment'  => 'nullable|string|max:2000',
+            'long_term_goal_comment'   => 'nullable|string|max:2000',
         ]);
 
         $serviceType = $this->classroomServiceType($record->classroom_id);
@@ -430,6 +461,9 @@ class RenrakuchoController extends Controller
                 'notes'                    => $validated['notes'] ?? null,
                 'strengths'                => $this->sanitizeStrengths($validated['strengths'] ?? null, $serviceType),
                 'service_type_data'        => $this->sanitizeServiceTypeData($validated['service_type_data'] ?? null, $serviceType),
+                'domain_goal_quotes'       => $validated['domain_goal_quotes'] ?? null,
+                'short_term_goal_comment'  => $validated['short_term_goal_comment'] ?? null,
+                'long_term_goal_comment'   => $validated['long_term_goal_comment'] ?? null,
             ]
         );
 
@@ -444,13 +478,7 @@ class RenrakuchoController extends Controller
      */
     public function destroyStudentRecord(Request $request, DailyRecord $record, int $studentId): JsonResponse
     {
-        $user = $request->user();
-        if ($user->classroom_id) {
-            $staffClassroom = $record->staff->classroom_id ?? null;
-            if (!in_array($staffClassroom, $user->switchableClassroomIds(), true)) {
-                return response()->json(['success' => false, 'message' => 'この記録を削除する権限がありません。'], 403);
-            }
-        }
+        $this->authorizeDailyRecordAccess($request, $record, '削除');
 
         $studentRecord = $record->studentRecords()->where('student_id', $studentId)->first();
         if (!$studentRecord) {
@@ -470,17 +498,118 @@ class RenrakuchoController extends Controller
     }
 
     /**
+     * 生徒の有効な個別支援計画 (最新の is_official=true) の領域別目標を返す。
+     *
+     * support_plan_details テーブルから domain ごとの goal を抽出し、
+     * domain_key (health_life など) 形式に正規化して返却する。
+     *
+     * 実データ調査 (kiduri2026 / care-bridge 共通):
+     *   support_plan_details.domain は「本人支援 / 家族支援 / 地域支援」のいずれか、
+     *   または旧データでは直接「健康・生活」「運動・感覚」等が入る。
+     *   五領域は sub_category の括弧書き (例: 「生活習慣（健康・生活）」
+     *   「学習（認知・行動）」「コミュニケーション（言語・コミュニケーション）」
+     *   「対人関係（人間関係・社会性）」) に埋め込まれている。
+     *
+     * 返却例:
+     * {
+     *   plan_id: 12,
+     *   created_date: "2026-04-01",
+     *   is_official: true,
+     *   domains: {
+     *     health_life: "集団指示を最後まで聞き取れる",
+     *     motor_sensory: null,
+     *     cognitive_behavior: "...",
+     *     language_communication: "...",
+     *     social_relations: "..."
+     *   },
+     *   short_term_goal: "...",
+     *   long_term_goal:  "..."
+     * }
+     */
+    public function activeSupportPlanGoals(Request $request, int $studentId): JsonResponse
+    {
+        $student = \App\Models\Student::find($studentId);
+        if (! $student) {
+            return response()->json(['success' => false, 'message' => '生徒が見つかりません。'], 404);
+        }
+
+        $plan = \App\Models\IndividualSupportPlan::where('student_id', $studentId)
+            ->where(function ($q) {
+                $q->where('is_official', true)
+                    ->orWhere(function ($qq) {
+                        // is_official=false でも is_draft=false なら可
+                        $qq->where('is_official', false)->where('is_draft', false);
+                    });
+            })
+            ->orderByDesc('is_official')
+            ->orderByDesc('created_date')
+            ->with('details')
+            ->first();
+
+        if (! $plan) {
+            return response()->json([
+                'success' => true,
+                'data'    => null,
+            ]);
+        }
+
+        // 五領域ラベル → 内部 key のマップ
+        $domainLabelToKey = [
+            '健康・生活'             => 'health_life',
+            '運動・感覚'             => 'motor_sensory',
+            '認知・行動'             => 'cognitive_behavior',
+            '言語・コミュニケーション' => 'language_communication',
+            '人間関係・社会性'       => 'social_relations',
+        ];
+
+        $domains = [
+            'health_life'            => null,
+            'motor_sensory'          => null,
+            'cognitive_behavior'     => null,
+            'language_communication' => null,
+            'social_relations'       => null,
+        ];
+
+        // domain で取れなければ sub_category の括弧内から領域名を抽出。
+        // domain が直接「健康・生活」のような旧データも互換維持。
+        foreach ($plan->details as $detail) {
+            if (empty($detail->goal)) continue;
+
+            $key = $domainLabelToKey[$detail->domain] ?? null;
+
+            if (! $key && ! empty($detail->sub_category)) {
+                if (preg_match('/[（(]([^）)]+)[）)]/u', (string) $detail->sub_category, $m)) {
+                    $key = $domainLabelToKey[$m[1]] ?? null;
+                }
+                if (! $key) {
+                    $key = $domainLabelToKey[$detail->sub_category] ?? null;
+                }
+            }
+
+            if ($key && array_key_exists($key, $domains) && empty($domains[$key])) {
+                $domains[$key] = $detail->goal;
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'plan_id'         => $plan->id,
+                'created_date'    => $plan->created_date,
+                'is_official'     => (bool) $plan->is_official,
+                'domains'         => $domains,
+                'short_term_goal' => $plan->short_term_goal,
+                'long_term_goal'  => $plan->long_term_goal,
+            ],
+        ]);
+    }
+
+    /**
      * 活動記録を削除
      */
     public function destroy(Request $request, DailyRecord $record): JsonResponse
     {
-        $user = $request->user();
-        if ($user->classroom_id) {
-            $staffClassroom = $record->staff->classroom_id ?? null;
-            if (!in_array($staffClassroom, $user->switchableClassroomIds(), true)) {
-                return response()->json(['success' => false, 'message' => 'この活動を削除する権限がありません。'], 403);
-            }
-        }
+        $this->authorizeDailyRecordAccess($request, $record, '削除');
 
         DB::transaction(function () use ($record) {
             $record->studentRecords()->delete();
@@ -500,13 +629,7 @@ class RenrakuchoController extends Controller
      */
     public function saveDraft(Request $request, DailyRecord $record): JsonResponse
     {
-        $user = $request->user();
-        if ($user->classroom_id) {
-            $staffClassroom = $record->staff->classroom_id ?? null;
-            if (!in_array($staffClassroom, $user->switchableClassroomIds(), true)) {
-                return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-            }
-        }
+        $this->authorizeDailyRecordAccess($request, $record);
 
         $validated = $request->validate([
             'notes'              => 'required|array',
@@ -534,9 +657,17 @@ class RenrakuchoController extends Controller
                     continue;
                 }
 
+                // AISI R5: スタッフが下書きを編集したら ai_review_status を 'modified' に。
+                // AI 補助なしの新規入力 (existing が無い & 純手書き) は ai_assisted=false を維持。
+                $review = $existing && $existing->ai_assisted
+                    ? ['ai_review_status' => 'modified',
+                       'ai_reviewed_by'   => $request->user()?->id,
+                       'ai_reviewed_at'   => now()]
+                    : [];
+
                 IntegratedNote::updateOrCreate(
                     ['daily_record_id' => $record->id, 'student_id' => $studentId],
-                    ['integrated_content' => $content, 'is_sent' => false]
+                    array_merge(['integrated_content' => $content, 'is_sent' => false], $review)
                 );
                 $savedCount++;
             }
@@ -555,13 +686,7 @@ class RenrakuchoController extends Controller
      */
     public function regenerateIntegrated(Request $request, DailyRecord $record): JsonResponse
     {
-        $user = $request->user();
-        if ($user->classroom_id) {
-            $staffClassroom = $record->staff->classroom_id ?? null;
-            if (!in_array($staffClassroom, $user->switchableClassroomIds(), true)) {
-                return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-            }
-        }
+        $this->authorizeDailyRecordAccess($request, $record);
 
         // Delete unsent integrated notes only
         IntegratedNote::where('daily_record_id', $record->id)
@@ -580,13 +705,7 @@ class RenrakuchoController extends Controller
      */
     public function viewIntegrated(Request $request, DailyRecord $record): JsonResponse
     {
-        $user = $request->user();
-        if ($user->classroom_id) {
-            $staffClassroom = $record->staff->classroom_id ?? null;
-            if (!in_array($staffClassroom, $user->switchableClassroomIds(), true)) {
-                return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-            }
-        }
+        $this->authorizeDailyRecordAccess($request, $record);
 
         $notes = IntegratedNote::where('daily_record_id', $record->id)
             ->with(['student:id,student_name,grade_level', 'photos'])
@@ -625,13 +744,7 @@ class RenrakuchoController extends Controller
      */
     public function sendToGuardians(Request $request, DailyRecord $record): JsonResponse
     {
-        $user = $request->user();
-        if ($user->classroom_id) {
-            $staffClassroom = $record->staff->classroom_id ?? null;
-            if (!in_array($staffClassroom, $user->switchableClassroomIds(), true)) {
-                return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-            }
-        }
+        $this->authorizeDailyRecordAccess($request, $record);
 
         $validated = $request->validate([
             'notes'               => 'required|array|min:1',
@@ -754,6 +867,8 @@ class RenrakuchoController extends Controller
      */
     public function generateIntegrated(Request $request, DailyRecord $record): JsonResponse
     {
+        $this->authorizeDailyRecordAccess($request, $record);
+
         $validated = $request->validate([
             'student_id' => 'required|exists:students,id',
         ]);
@@ -789,19 +904,60 @@ class RenrakuchoController extends Controller
         }
 
         $student = \App\Models\Student::find($validated['student_id']);
+
+        // AISI R1 + R2 + R4 + R10 (2026-05-17): プロンプト保護レイヤを初期化
+        $sanitizer = new \App\Services\AiPromptSanitizer();
+        $masker = new \App\Services\AiIdentityMasker();
+        if ($student) {
+            $masker->register((string) $student->student_name, 'student');
+            if ($student->classroom_id) {
+                $student->loadMissing('classroom');
+                if ($student->classroom?->classroom_name) {
+                    $masker->register((string) $student->classroom->classroom_name, 'classroom');
+                }
+            }
+            $student->loadMissing('guardian');
+            if ($student->guardian?->full_name) {
+                $masker->register((string) $student->guardian->full_name, 'guardian');
+            }
+        }
+
+        // 仮名化済表示名 (AI へ送る名前)
+        $studentName = $student
+            ? ($masker->placeholderFor((string) $student->student_name) ?: '対象児童 A')
+            : '本人';
+
+        // 自由記述部分を集めて高リスク文脈を検出 (R10)
+        $rawNotes = $studentRecord->notes ?? '';
         $domainText = implode("\n", $domains);
-        $activityName = $record->activity_name;
-        $commonActivity = $record->common_activity ?? '';
-        $notes = $studentRecord->notes ?? '';
+        $triage = (new \App\Services\AiSafetyTriage())->containsHighRiskContent($rawNotes . "\n" . $domainText);
+        if ($triage['detected']) {
+            (new \App\Services\AiSafetyTriage())->notifyDetection(
+                $triage,
+                $request->user()?->id,
+                $student?->id,
+                'renrakucho.generate_integrated',
+            );
+        }
+
+        // マスク済の表示用テキストを準備
+        $activityName = $masker->mask((string) $record->activity_name);
+        $commonActivity = $masker->mask((string) ($record->common_activity ?? ''));
+        $notes = $masker->mask($rawNotes);
+        $domainText = $masker->mask($domainText);
 
         // Build prompt matching legacy style (chatgpt.php generateIntegratedNote)
         $prompt = "あなたは個別支援教育の専門家です。以下の情報を元に、保護者に送る連絡帳として自然で読みやすい1つの文章にまとめてください。\n\n";
+
+        // 対象児童名 (placeholder) を明示。AI 出力で「お子様」「子ども」ではなく
+        // 本人または上記の児童名で表現させるため。
+        $prompt .= "【対象児童】\n{$studentName}\n\n";
 
         // Support plan info (matching legacy)
         if ($record->support_plan_id) {
             $supportPlan = DB::table('activity_support_plans')->find($record->support_plan_id);
             if ($supportPlan) {
-                $prompt .= "【支援案（事前計画）】\n";
+                $prompt .= "【活動案（事前計画）】\n";
                 if (!empty($supportPlan->activity_purpose)) {
                     $prompt .= "・活動の目的: {$supportPlan->activity_purpose}\n";
                 }
@@ -822,53 +978,119 @@ class RenrakuchoController extends Controller
         $prompt .= "【本日の活動内容】\n{$commonActivity}\n\n";
 
         if (!empty($notes)) {
-            $prompt .= "【本日の様子】\n{$notes}\n\n";
+            // 自由記述はデリミタ wrap でデータ部として扱わせる (プロンプトインジェクション緩和)
+            $prompt .= "【本日の様子】\n" . $sanitizer->wrap($notes, 'NOTES') . "\n\n";
         }
 
-        $prompt .= "【気になったこと】\n{$domainText}\n\n";
+        // 領域別目標の引用 (2026-05-17 追加 — kiduri2026 仕様統一)
+        // 形式: { domain_key: { quoted: true, goal_snapshot: "..." } }
+        $quotedGoals = [];
+        if (! empty($studentRecord->domain_goal_quotes) && is_array($studentRecord->domain_goal_quotes)) {
+            $domainLabels = [
+                'health_life'            => '健康・生活',
+                'motor_sensory'          => '運動・感覚',
+                'cognitive_behavior'     => '認知・行動',
+                'language_communication' => '言語・コミュニケーション',
+                'social_relations'       => '人間関係・社会性',
+            ];
+            foreach ($studentRecord->domain_goal_quotes as $domainKey => $entry) {
+                if (! is_array($entry)) continue;
+                $quoted = (bool) ($entry['quoted'] ?? false);
+                $snapshot = trim((string) ($entry['goal_snapshot'] ?? ''));
+                if ($quoted && $snapshot !== '' && isset($domainLabels[$domainKey])) {
+                    $quotedGoals[] = "・【{$domainLabels[$domainKey]}】の目標: {$snapshot}";
+                }
+            }
+        }
+        if (! empty($quotedGoals)) {
+            $prompt .= "【個別支援計画から引用する目標】\n" . implode("\n", $quotedGoals) . "\n\n";
+        }
+
+        // 短期・長期目標に対するコメント (個別メモの上に表示される項目)
+        $overallComments = [];
+        if (! empty($studentRecord->short_term_goal_comment)) {
+            $overallComments[] = "・短期目標について: {$studentRecord->short_term_goal_comment}";
+        }
+        if (! empty($studentRecord->long_term_goal_comment)) {
+            $overallComments[] = "・長期目標について: {$studentRecord->long_term_goal_comment}";
+        }
+        if (! empty($overallComments)) {
+            $prompt .= "【個別支援計画の短期/長期目標に関する所感】\n" . implode("\n", $overallComments) . "\n\n";
+        }
+
+        // 領域別の自由記述もデリミタ wrap (R1)
+        $prompt .= "【気になったこと】\n" . $sanitizer->wrap($domainText, 'DOMAIN_NOTES') . "\n\n";
 
         $prompt .= "上記の情報を、保護者が読みやすいように、敬体（です・ます調）で1つの自然な文章にまとめてください。";
         if ($record->support_plan_id) {
-            $prompt .= "支援案の目的や配慮事項を踏まえつつ、実際の活動の様子を中心に記述してください。";
+            $prompt .= "活動案の目的や配慮事項を踏まえつつ、実際の活動の様子を中心に記述してください。";
         }
         $prompt .= "箇条書きではなく、文章として流れるように記述してください。\n\n";
         $prompt .= "【重要な指示】\n";
         $prompt .= "・ポジティブで前向きな表現を使用してください。\n";
         $prompt .= "・「しかし」「ですが」「気になった点」などのネガティブな接続詞や表現は避けてください。\n";
         $prompt .= "・課題や改善点は「次のステップとして」「さらに成長するために」「これから挑戦できること」など、成長の機会として前向きに表現してください。\n";
-        $prompt .= "・子どもの頑張りや成長、良かった点を中心に記述してください。\n";
+        $prompt .= "・本人 ({$studentName}) の頑張りや成長、良かった点を中心に記述してください。\n";
+        $prompt .= "・対象児童を指す表現は「本人」または上記の児童名 ({$studentName}) を使用し、「子ども」「お子様」は使わないでください。\n";
+        $prompt .= "・他の児童に言及する場合は「友だち」と表記してください (「友達」は使わない)。\n";
+        $prompt .= "・呼び方は「保護者」で統一してください (「保護者様」は使わない)。\n";
+        if (! empty($quotedGoals)) {
+            $prompt .= "・上記の【個別支援計画から引用する目標】が提示されている場合は、それぞれの目標に向けた成長や取り組みを文章中で必ず言及してください。\n";
+        }
         $prompt .= "・保護者が読んで嬉しくなるような、温かく励みになる文章にしてください。";
 
         try {
-            $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
-            if (empty($apiKey)) {
-                return response()->json(['success' => false, 'message' => 'OpenAI APIキーが未設定です。'], 422);
-            }
-
-            $client = \OpenAI::client($apiKey);
+            // AISI R6: OpenAiClientFactory 経由で organization / ZDR を反映
+            $client = \App\Services\OpenAiClientFactory::make();
             $response = $client->chat()->create([
-                'model'    => config('services.openai.model_renrakucho'),
+                'model'    => config('services.openai.model', 'gpt-5.4-mini-2026-03-17'),
                 'messages' => [
-                    ['role' => 'system', 'content' => 'あなたは個別支援教育の経験豊富な教員です。保護者に向けて温かく丁寧で、前向きでポジティブな連絡帳を書きます。子どもの良い面や成長を見つけ、課題も成長の機会として前向きに伝えます。「しかし」「ですが」などのネガティブな接続詞は使わず、常にポジティブな表現を心がけます。'],
+                    [
+                        'role' => 'system',
+                        // AISI R4: 共通規律句 (Sanitizer のセキュリティ規律 + ハルシネーション抑制 + 呼称規律)
+                        'content' => \App\Services\AiPromptDirectives::systemBase($sanitizer)
+                            . 'あなたは個別支援教育の経験豊富な教員です。保護者に向けて温かく丁寧で、前向きでポジティブな連絡帳を書きます。本人の良い面や成長を見つけ、課題も成長の機会として前向きに伝えます。「しかし」「ですが」などのネガティブな接続詞は使わず、常にポジティブな表現を心がけます。',
+                    ],
                     ['role' => 'user', 'content' => $prompt],
                 ],
                 'temperature' => 0.7,
                 'max_completion_tokens' => 1000,
             ]);
 
-            $content = $response->choices[0]->message->content ?? '';
+            $maskedContent = $response->choices[0]->message->content ?? '';
 
-            if (empty($content)) {
+            if (empty($maskedContent)) {
                 throw new \Exception('AI応答が空です');
             }
 
-            // プロンプトで与えた 5 領域ラベル（【健康・生活】等）が AI 出力に残ることがあるため除去
-            $content = $this->stripDomainLabels($content);
+            // AISI R1: system 情報の漏洩検出 + サニタイズ
+            $maskedContent = $sanitizer->postProcess($maskedContent, [
+                'generation_type' => 'renrakucho_integrated',
+                'record_id'       => $record->id,
+                'student_id'      => $validated['student_id'],
+            ]);
 
-            // Save draft integrated note
+            // プロンプトで与えた 5 領域ラベル（【健康・生活】等）が AI 出力に残ることがあるため除去
+            $maskedContent = $this->stripDomainLabels($maskedContent);
+
+            // AISI R2: 呼出元への戻り値だけ実名に復元 (DB にも実名で保存される)
+            $content = $masker->unmask($maskedContent);
+
+            // AISI R10: 高リスク検出時は冒頭に安全相談バナーを挿入
+            if ($triage['detected']) {
+                $banner = (new \App\Services\AiSafetyTriage())->safetyBanner($triage['categories']);
+                $content = $banner . $content;
+            }
+
+            // Save draft integrated note (AISI R5: AI 関与情報を併せて記録)
             IntegratedNote::updateOrCreate(
                 ['daily_record_id' => $record->id, 'student_id' => $validated['student_id']],
-                ['integrated_content' => $content, 'is_sent' => false]
+                [
+                    'integrated_content' => $content,
+                    'is_sent'            => false,
+                    'ai_assisted'        => true,
+                    'ai_review_status'   => 'pending',  // 職員レビュー前
+                ]
             );
 
             // ヒヤリハット検出: 統合文と元の観察記録を追加プロンプトで分析し、
@@ -934,6 +1156,8 @@ class RenrakuchoController extends Controller
      */
     public function suggestPhotos(Request $request, DailyRecord $record): JsonResponse
     {
+        $this->authorizeDailyRecordAccess($request, $record);
+
         $validated = $request->validate([
             'student_id' => 'required|integer|exists:students,id',
         ]);
@@ -1004,7 +1228,7 @@ class RenrakuchoController extends Controller
                 . "- 少しでも不安・危険・事故リスクを示唆する記述があれば detected=true";
 
             $response = $client->chat()->create([
-                'model' => config('services.openai.model_renrakucho'),
+                'model' => 'gpt-5.4-mini-2026-03-17',
                 'messages' => [
                     ['role' => 'system', 'content' => 'あなたは児童安全管理の専門家です。厳密な JSON のみで応答します。'],
                     ['role' => 'user', 'content' => $detectPrompt],

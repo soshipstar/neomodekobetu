@@ -18,11 +18,18 @@ class StudentRecord extends Model
         'notes',
         'strengths',
         'service_type_data',
+        // 領域別の目標引用設定 (2026-05-17 追加 — kiduri2026 仕様統一)
+        // 形式: { domain_key: { quoted: bool, goal_snapshot: string|null } }
+        'domain_goal_quotes',
+        // 個別支援計画の短期・長期目標に対するコメント (2026-05-17 追加)
+        'short_term_goal_comment',
+        'long_term_goal_comment',
     ];
 
     protected $casts = [
-        'strengths'         => 'array',
-        'service_type_data' => 'array',
+        'strengths'          => 'array',
+        'service_type_data'  => 'array',
+        'domain_goal_quotes' => 'array',
     ];
 
     /**

@@ -60,6 +60,25 @@ interface StudentRecord {
   notes: string | null;
   strengths: Record<string, number> | null;
   service_type_data: ServiceTypeData | null;
+  // 領域別の目標引用設定 (2026-05-17 追加 — kiduri2026 仕様統一)
+  domain_goal_quotes: Record<string, { quoted: boolean; goal_snapshot: string | null }> | null;
+  // 個別支援計画の短期・長期目標に対するコメント
+  short_term_goal_comment: string | null;
+  long_term_goal_comment: string | null;
+}
+
+/**
+ * 個別支援計画の領域別目標 (新エンドポイント /api/staff/renrakucho/student-goals/{student})。
+ * 各 domain key に対する goal は support_plan_details から正規化して取得した文字列。
+ * goal が登録されていない領域は null。
+ */
+interface PlanGoals {
+  plan_id: number;
+  created_date: string | null;
+  is_official: boolean;
+  domains: Record<string, string | null>;
+  short_term_goal: string | null;
+  long_term_goal: string | null;
 }
 
 /**
@@ -187,8 +206,23 @@ export default function RenrakuchoPage() {
   const [studentFormData, setStudentFormData] = useState<Record<string, string>>({});
   // 強み(才能)チェック スコア (0-10)
   const [studentStrengths, setStudentStrengths] = useState<Record<string, number>>({});
+  // 現在の評価 (過去の集計平均) — 編集中の生徒について、各強み項目の "現在の評価値" を
+  // 参照表示するためのベースライン。変更がなければそのまま、変化があった項目だけ
+  // 今日の入力を動かせばよい、という UX のために二重バー表示する。
+  const [currentStrengths, setCurrentStrengths] = useState<Record<string, number>>({});
+  const [isLoadingCurrentStrengths, setIsLoadingCurrentStrengths] = useState(false);
   // サービス種別固有データ (就労: 工賃/出退勤/作業内容、就移: 実習/求職/マナー評価)
   const [studentServiceTypeData, setStudentServiceTypeData] = useState<ServiceTypeData>({});
+  // 領域別の目標引用 (2026-05-17 追加 — kiduri2026 仕様統一)
+  // 形式: { domain_key: { quoted, goal_snapshot } }
+  // quoted=true の領域だけ AI プロンプトに引用される。
+  const [domainGoalQuotes, setDomainGoalQuotes] = useState<Record<string, { quoted: boolean; goal_snapshot: string | null }>>({});
+  // 個別支援計画の短期・長期目標に対する overall コメント
+  const [shortTermComment, setShortTermComment] = useState('');
+  const [longTermComment, setLongTermComment] = useState('');
+  // 編集中の生徒の個別支援計画の領域別目標 (引用候補)
+  const [planGoals, setPlanGoals] = useState<PlanGoals | null>(null);
+  const [isLoadingPlanGoals, setIsLoadingPlanGoals] = useState(false);
   const [isSavingStudent, setIsSavingStudent] = useState(false);
 
   // --- Add student to activity ---
@@ -270,7 +304,14 @@ export default function RenrakuchoPage() {
   // =========================================================================
 
   const handleDeleteActivity = async (activityId: number) => {
-    if (!window.confirm('この活動を削除してもよろしいですか？')) return;
+    // 送信済みの統合ノートがある活動は、削除すると保護者画面の履歴からも消えるため、
+    // sent_count に応じて警告メッセージを分岐させる。
+    const activity = activities.find((a) => a.id === activityId);
+    const sentCount = activity?.sent_count ?? 0;
+    const message = sentCount > 0
+      ? `この活動には ${sentCount}件の送信済み連絡帳があります。\n\n削除すると以下が全て失われます:\n・5領域の生徒記録すべて\n・統合ノート (送信済み含む)\n・保護者画面の連絡帳履歴\n\n本当に削除しますか？ (この操作は取り消せません)`
+      : 'この活動を削除してもよろしいですか？\n関連する生徒記録もすべて削除されます。';
+    if (!window.confirm(message)) return;
     try {
       await api.delete(`/api/staff/renrakucho/${activityId}`);
       toast.success('活動を削除しました');
@@ -290,6 +331,10 @@ export default function RenrakuchoPage() {
     setStudentFormData({});
     setStudentStrengths({});
     setStudentServiceTypeData({});
+    setDomainGoalQuotes({});
+    setShortTermComment('');
+    setLongTermComment('');
+    setPlanGoals(null);
     setShowAddStudent(false);
     setIsLoadingRecords(true);
     try {
@@ -309,6 +354,82 @@ export default function RenrakuchoPage() {
     }
   };
 
+  /**
+   * 「現在の評価」(過去の集計平均) を取得して参照バーに反映する。
+   * 直近 3 ヶ月の overall_average をベースラインとする (各 trend.label => overall_average)。
+   * 既存値が無い strength キーは現在値 (整数化) で pre-fill し、
+   * 「変更がなければそのまま」= 現在値のまま保存される運用を成立させる。
+   */
+  const loadCurrentStrengths = useCallback(async (studentId: number) => {
+    setCurrentStrengths({});
+    setIsLoadingCurrentStrengths(true);
+    try {
+      const res = await api.get(`/api/staff/students/${studentId}/strengths-summary`);
+      const trends: Array<{ label: string; overall_average?: number }> = res.data?.data?.trends ?? [];
+      const map: Record<string, number> = {};
+      for (const t of trends) {
+        if (typeof t.overall_average === 'number') {
+          map[t.label] = t.overall_average;
+        }
+      }
+      setCurrentStrengths(map);
+      setStudentStrengths((prev) => {
+        const next: Record<string, number> = { ...prev };
+        for (const [label, v] of Object.entries(map)) {
+          if (next[label] === undefined || next[label] === null) {
+            next[label] = Math.round(v);
+          }
+        }
+        return next;
+      });
+    } catch {
+      setCurrentStrengths({});
+    } finally {
+      setIsLoadingCurrentStrengths(false);
+    }
+  }, []);
+
+  /**
+   * 個別支援計画の領域別目標を取得する (引用元として表示するため)。
+   * 取得後は state にキャッシュし、各領域 textarea 下の「この目標を引用」ボタンで参照する。
+   * - data === null の場合は計画自体が未登録 (5領域全て「登録されていません」と表示)
+   * - 個別の domains[key] が null の場合はその領域だけ「登録されていません」表示
+   */
+  const loadPlanGoals = useCallback(async (studentId: number) => {
+    setPlanGoals(null);
+    setIsLoadingPlanGoals(true);
+    try {
+      const res = await api.get(`/api/staff/renrakucho/student-goals/${studentId}`);
+      const data = res.data?.data as PlanGoals | null;
+      setPlanGoals(data ?? null);
+    } catch {
+      setPlanGoals(null);
+    } finally {
+      setIsLoadingPlanGoals(false);
+    }
+  }, []);
+
+  /**
+   * 「この目標を引用」ボタンの動作:
+   * 1. 対応する domain の textarea (studentFormData[domain]) の末尾に
+   *    「【支援計画の目標】<目標>」を改行付きで追記する
+   * 2. domainGoalQuotes[domain] を { quoted: true, goal_snapshot: <現時点の目標文> } に更新
+   *    これにより保存時に goal_snapshot が永続化され、後で個別支援計画が更新されても残る
+   */
+  const handleQuoteDomainGoal = (domainKey: string) => {
+    const goal = planGoals?.domains?.[domainKey];
+    if (!goal) return;
+    setStudentFormData((prev) => {
+      const current = prev[domainKey] || '';
+      const sep = current && !current.endsWith('\n') ? '\n' : '';
+      return { ...prev, [domainKey]: `${current}${sep}【支援計画の目標】\n${goal}` };
+    });
+    setDomainGoalQuotes((prev) => ({
+      ...prev,
+      [domainKey]: { quoted: true, goal_snapshot: goal },
+    }));
+  };
+
   const handleSelectStudent = (rec: StudentRecord) => {
     setEditingStudentId(rec.student_id);
     setStudentFormData({
@@ -321,6 +442,11 @@ export default function RenrakuchoPage() {
     });
     setStudentStrengths(rec.strengths ?? {});
     setStudentServiceTypeData(rec.service_type_data ?? {});
+    setDomainGoalQuotes(rec.domain_goal_quotes ?? {});
+    setShortTermComment(rec.short_term_goal_comment ?? '');
+    setLongTermComment(rec.long_term_goal_comment ?? '');
+    loadCurrentStrengths(rec.student_id);
+    loadPlanGoals(rec.student_id);
   };
 
   const handleAddStudent = (student: Student) => {
@@ -338,6 +464,9 @@ export default function RenrakuchoPage() {
       notes: null,
       strengths: null,
       service_type_data: null,
+      domain_goal_quotes: null,
+      short_term_goal_comment: null,
+      long_term_goal_comment: null,
     };
     setStudentRecords((prev) => [...prev, newRec]);
     setShowAddStudent(false);
@@ -353,6 +482,12 @@ export default function RenrakuchoPage() {
     });
     setStudentStrengths({});
     setStudentServiceTypeData({});
+    setDomainGoalQuotes({});
+    setShortTermComment('');
+    setLongTermComment('');
+    // 新規生徒追加時も「現在の評価」と「個別支援計画の領域別目標」を取得する
+    loadCurrentStrengths(student.id);
+    loadPlanGoals(student.id);
   };
 
   const handleSaveStudentRecord = async () => {
@@ -364,6 +499,10 @@ export default function RenrakuchoPage() {
         ...studentFormData,
         strengths: studentStrengths,
         service_type_data: studentServiceTypeData,
+        // 領域別目標引用 + 短期/長期コメント (2026-05-17 追加 — kiduri2026 仕様統一)
+        domain_goal_quotes: domainGoalQuotes,
+        short_term_goal_comment: shortTermComment || null,
+        long_term_goal_comment: longTermComment || null,
       });
       toast.success('保存しました');
       const res = await api.get(`/api/staff/renrakucho/${editingActivity.id}/student-records`);
@@ -389,6 +528,10 @@ export default function RenrakuchoPage() {
         setStudentFormData({});
         setStudentStrengths({});
         setStudentServiceTypeData({});
+        setDomainGoalQuotes({});
+        setShortTermComment('');
+        setLongTermComment('');
+        setPlanGoals(null);
       }
       fetchActivities(true);
     } catch {
@@ -796,7 +939,9 @@ export default function RenrakuchoPage() {
                   </div>
                 </div>
 
-                {/* Action buttons */}
+                {/* Action buttons
+                    統合 (統合・送信) ボタンは編集パネルの右上に移動済み。
+                    一覧では「編集 / 送信済み閲覧 (任意) / 削除」のみに整理する。 */}
                 <div className="flex items-center gap-1 shrink-0">
                   <Button
                     variant="subtle"
@@ -805,15 +950,6 @@ export default function RenrakuchoPage() {
                     onClick={() => handleOpenActivity(activity)}
                   >
                     <MaterialIcon name="edit" size={16} />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    title="統合・送信"
-                    onClick={() => handleOpenSendModal(activity.id)}
-                  >
-                    <MaterialIcon name="send" size={16} className="mr-1" />
-                    <span className="text-xs">統合</span>
                   </Button>
                   {activity.sent_count > 0 && (
                     <Button
@@ -1009,9 +1145,22 @@ export default function RenrakuchoPage() {
                 {editingActivity.activity_name} - 生徒記録
               </div>
             </CardTitle>
-            <Button variant="ghost" size="sm" onClick={() => setEditingActivity(null)}>
-              閉じる
-            </Button>
+            {/* 統合ボタンは編集モーダルの右上 (閉じるの隣) に配置する。
+                一覧の操作列からは外して、編集 → 統合 → 送信 のフローを直線的にする。 */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="primary"
+                size="sm"
+                title="統合・送信"
+                onClick={() => handleOpenSendModal(editingActivity.id)}
+                leftIcon={<MaterialIcon name="send" size={14} />}
+              >
+                統合
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setEditingActivity(null)}>
+                閉じる
+              </Button>
+            </div>
           </CardHeader>
           <CardBody>
             {isLoadingRecords ? (
@@ -1115,59 +1264,139 @@ export default function RenrakuchoPage() {
                         の記録
                       </p>
 
-                      {/* 5 domain textareas */}
-                      {DOMAIN_KEYS.map((key) => (
-                        <div key={key}>
-                          <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-2)]">
-                            {DOMAIN_LABELS[key]}
-                          </label>
-                          <textarea
-                            rows={2}
-                            value={studentFormData[key] || ''}
-                            onChange={(e) => {
-                              setStudentFormData((prev) => ({ ...prev, [key]: e.target.value }));
-                              e.target.style.height = 'auto';
-                              e.target.style.height = e.target.scrollHeight + 'px';
-                            }}
-                            ref={(el) => {
-                              if (el) {
-                                el.style.height = 'auto';
-                                el.style.height = el.scrollHeight + 'px';
-                              }
-                            }}
-                            placeholder={`${DOMAIN_LABELS[key]}の観察記録...`}
-                            className="block w-full resize-none overflow-hidden rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] placeholder-[var(--neutral-foreground-4)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
-                          />
-                        </div>
-                      ))}
+                      {/* 5 domain textareas + 個別支援計画の領域別目標の引用 (2026-05-17) */}
+                      {DOMAIN_KEYS.map((key) => {
+                        const goal = planGoals?.domains?.[key] ?? null;
+                        const quoted = !!domainGoalQuotes[key]?.quoted;
+                        return (
+                          <div key={key}>
+                            <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-2)]">
+                              {DOMAIN_LABELS[key]}
+                            </label>
+                            <textarea
+                              rows={2}
+                              value={studentFormData[key] || ''}
+                              onChange={(e) => {
+                                setStudentFormData((prev) => ({ ...prev, [key]: e.target.value }));
+                                e.target.style.height = 'auto';
+                                e.target.style.height = e.target.scrollHeight + 'px';
+                              }}
+                              ref={(el) => {
+                                if (el) {
+                                  el.style.height = 'auto';
+                                  el.style.height = el.scrollHeight + 'px';
+                                }
+                              }}
+                              placeholder={`${DOMAIN_LABELS[key]}の観察記録...`}
+                              className="block w-full resize-none overflow-hidden rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] placeholder-[var(--neutral-foreground-4)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+                            />
+                            {/* 個別支援計画の該当領域の目標を引用するボタン */}
+                            <div className="mt-1 flex items-start gap-2 text-[11px] text-[var(--neutral-foreground-3)]">
+                              {isLoadingPlanGoals ? (
+                                <span className="text-[var(--neutral-foreground-4)]">支援計画の目標を読み込み中…</span>
+                              ) : goal ? (
+                                <>
+                                  <span className="flex-1 leading-snug">
+                                    <span className="font-semibold text-[var(--neutral-foreground-2)]">支援計画の目標:</span> {goal}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleQuoteDomainGoal(key)}
+                                    className="shrink-0 rounded border border-[var(--brand-80)] bg-[var(--brand-160)] px-2 py-0.5 text-[10px] font-semibold text-[var(--brand-80)] hover:bg-[var(--brand-150)]"
+                                  >
+                                    この目標を引用
+                                  </button>
+                                  {quoted && (
+                                    <span className="shrink-0 text-[10px] font-bold text-[var(--status-success-fg)]">
+                                      ✓ 引用済み
+                                    </span>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="text-[var(--neutral-foreground-4)]">
+                                  この領域の目標は個別支援計画に登録されていません。
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
 
-                      {/* 強み（才能）チェック (サービス種別ごとに項目が変わる) */}
+                      {/* 強み（才能）チェック (サービス種別ごとに項目が変わる)
+                          各項目を2行構成にする:
+                            上段 (現在の評価): 過去の集計平均を読み取り専用で表示。
+                            下段 (今日の入力): 編集可能。デフォルトは前回値で初期化済み。
+                          「変更がなければそのまま、変化があった項目のみバーを動かす」
+                          という運用を説明文で明示する。 */}
                       <div className="rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] p-3">
-                        <p className="mb-2 text-xs font-semibold text-[var(--neutral-foreground-2)]">
-                          強み（才能）チェック
+                        <div className="mb-2 flex items-baseline justify-between">
+                          <p className="text-xs font-semibold text-[var(--neutral-foreground-2)]">
+                            強み（才能）チェック
+                          </p>
+                          {isLoadingCurrentStrengths && (
+                            <span className="text-[10px] text-[var(--neutral-foreground-4)]">過去の評価を読み込み中…</span>
+                          )}
+                        </div>
+                        <p className="mb-3 rounded border-l-2 border-[var(--brand-80)] bg-[var(--brand-160)] px-2 py-1 text-[11px] leading-snug text-[var(--neutral-foreground-2)]">
+                          上のバーは <strong>現在の評価</strong> (これまでの記録から算出された平均値) です。
+                          変更がなければ <strong>下のバーはそのまま</strong> で構いません。
+                          今日の活動で <strong>変化があった項目だけ</strong> 下のバーを動かしてください。
                         </p>
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           {strengthKeys.map((key) => {
                             const score = studentStrengths[key] ?? 0;
+                            const current = currentStrengths[key];
+                            const hasCurrent = typeof current === 'number';
+                            const diff = hasCurrent ? Math.round((score - current) * 10) / 10 : null;
                             return (
-                              <div key={key} className="flex items-center gap-3">
-                                <span className="w-32 shrink-0 text-xs text-[var(--neutral-foreground-2)]">
-                                  {key}
-                                </span>
-                                <input
-                                  type="range"
-                                  min={0}
-                                  max={10}
-                                  value={score}
-                                  onChange={(e) => {
-                                    const v = parseInt(e.target.value, 10);
-                                    setStudentStrengths((prev) => ({ ...prev, [key]: v }));
-                                  }}
-                                  className="flex-1"
-                                />
-                                <span className="w-7 text-center text-xs font-bold text-[var(--neutral-foreground-1)]">
-                                  {score}
-                                </span>
+                              <div key={key} className="space-y-0.5">
+                                <div className="flex items-baseline justify-between">
+                                  <span className="text-xs font-medium text-[var(--neutral-foreground-2)]">
+                                    {key}
+                                  </span>
+                                  {hasCurrent && diff !== null && diff !== 0 && (
+                                    <span className={`text-[10px] font-bold ${diff > 0 ? 'text-[var(--status-success-fg)]' : 'text-[var(--status-danger-fg)]'}`}>
+                                      {diff > 0 ? '+' : ''}{diff}
+                                    </span>
+                                  )}
+                                </div>
+                                {/* 現在の評価 (読み取り専用 / 参考表示) */}
+                                <div className="flex items-center gap-2">
+                                  <span className="w-12 shrink-0 text-[10px] text-[var(--neutral-foreground-4)]">現在</span>
+                                  <input
+                                    type="range"
+                                    min={0}
+                                    max={10}
+                                    step={0.1}
+                                    value={hasCurrent ? current : 0}
+                                    readOnly
+                                    disabled
+                                    aria-label={`${key} の現在の評価`}
+                                    className="flex-1 opacity-70 cursor-not-allowed accent-[var(--neutral-foreground-3)]"
+                                  />
+                                  <span className="w-10 text-right text-[10px] text-[var(--neutral-foreground-3)]">
+                                    {hasCurrent ? current.toFixed(1) : '—'}
+                                  </span>
+                                </div>
+                                {/* 今日の入力 (編集可能) */}
+                                <div className="flex items-center gap-2">
+                                  <span className="w-12 shrink-0 text-[10px] font-bold text-[var(--brand-80)]">今日</span>
+                                  <input
+                                    type="range"
+                                    min={0}
+                                    max={10}
+                                    value={score}
+                                    onChange={(e) => {
+                                      const v = parseInt(e.target.value, 10);
+                                      setStudentStrengths((prev) => ({ ...prev, [key]: v }));
+                                    }}
+                                    aria-label={`${key} の今日の評価`}
+                                    className="flex-1 accent-[var(--brand-80)]"
+                                  />
+                                  <span className="w-10 text-right text-xs font-bold text-[var(--neutral-foreground-1)]">
+                                    {score}
+                                  </span>
+                                </div>
                               </div>
                             );
                           })}
@@ -1271,6 +1500,46 @@ export default function RenrakuchoPage() {
                               </span>
                             </div>
                           </div>
+                        </div>
+                      )}
+
+                      {/* 個別支援計画の短期・長期目標に関するコメント (2026-05-17)
+                          目標が登録されていればセクション全体を表示。
+                          AI 統合プロンプトの「【個別支援計画の短期/長期目標に関する所感】」
+                          として組み込まれる。 */}
+                      {(planGoals?.short_term_goal || planGoals?.long_term_goal) && (
+                        <div className="rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] p-3">
+                          <p className="mb-2 text-xs font-semibold text-[var(--neutral-foreground-2)]">
+                            個別支援計画の短期・長期目標に関するコメント
+                          </p>
+                          {planGoals?.short_term_goal && (
+                            <div className="mb-3 space-y-1">
+                              <p className="text-[11px] leading-snug text-[var(--neutral-foreground-3)]">
+                                <span className="font-semibold text-[var(--neutral-foreground-2)]">短期目標:</span> {planGoals.short_term_goal}
+                              </p>
+                              <textarea
+                                rows={2}
+                                value={shortTermComment}
+                                onChange={(e) => setShortTermComment(e.target.value)}
+                                placeholder="短期目標に関する所感やコメント..."
+                                className="block w-full resize-none rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] placeholder-[var(--neutral-foreground-4)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+                              />
+                            </div>
+                          )}
+                          {planGoals?.long_term_goal && (
+                            <div className="space-y-1">
+                              <p className="text-[11px] leading-snug text-[var(--neutral-foreground-3)]">
+                                <span className="font-semibold text-[var(--neutral-foreground-2)]">長期目標:</span> {planGoals.long_term_goal}
+                              </p>
+                              <textarea
+                                rows={2}
+                                value={longTermComment}
+                                onChange={(e) => setLongTermComment(e.target.value)}
+                                placeholder="長期目標に関する所感やコメント..."
+                                className="block w-full resize-none rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] placeholder-[var(--neutral-foreground-4)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+                              />
+                            </div>
+                          )}
                         </div>
                       )}
 
