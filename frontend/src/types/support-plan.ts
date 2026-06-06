@@ -46,6 +46,19 @@ export interface SupportPlan {
   guardian_signature_image: string | null;
   staff_signature_image: string | null;
   staff_signer_name: string | null;
+  // 保護者からのレビューコメント (本案作成の際に参照)
+  guardian_review_comment: string | null;
+  guardian_review_comment_at: string | null;
+  // 原案 / 本案 分離 (2026-05-17 追加)
+  draft_life_intention: string | null;
+  draft_overall_policy: string | null;
+  draft_long_term_goal: string | null;
+  draft_short_term_goal: string | null;
+  draft_saved_at: string | null;
+  official_saved_at: string | null;
+  // 原案→本案 の変更説明 (AI 生成、印刷物には含めない)
+  revision_notes: string | null;
+  revision_notes_generated_at: string | null;
   created_at: string;
   updated_at: string;
   student?: Student;
@@ -58,6 +71,21 @@ export interface SupportPlan {
     job_search_plan?: string;
     practical_training_plan?: string;
   } | null;
+}
+
+/**
+ * 個別支援計画に紐付ける担当者会議録 (meetings テーブルの subset)。
+ * 原案画面 + 本案画面で参照表示する。
+ */
+export interface PlanMeeting {
+  id: number;
+  meeting_date: string | null;
+  title: string | null;
+  attendees: string | null;
+  agenda: string | null;
+  decisions: string | null;
+  next_actions: string | null;
+  notes: string | null;
 }
 
 export interface PlanDetail {

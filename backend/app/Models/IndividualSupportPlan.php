@@ -55,6 +55,17 @@ class IndividualSupportPlan extends Model
         'plan_period_end',
         'next_monitoring_due_date',
         'next_plan_due_date',
+        // 原案 / 本案 分離 (2026-05-17 追加)
+        // draft_xxx = 原案テキスト本体。既存 life_intention 等は本案として運用。
+        'draft_life_intention',
+        'draft_overall_policy',
+        'draft_long_term_goal',
+        'draft_short_term_goal',
+        'draft_saved_at',
+        'official_saved_at',
+        // 原案→本案の変更説明 (AI 自動生成、印刷物には含めない)
+        'revision_notes',
+        'revision_notes_generated_at',
     ];
 
     protected function casts(): array
@@ -79,6 +90,10 @@ class IndividualSupportPlan extends Model
             'guardian_confirmed_at' => 'datetime',
             'basis_generated_at' => 'datetime',
             'service_type_data' => 'array',
+            // 原案/本案 分離フィールド
+            'draft_saved_at'              => 'datetime',
+            'official_saved_at'           => 'datetime',
+            'revision_notes_generated_at' => 'datetime',
         ];
     }
 

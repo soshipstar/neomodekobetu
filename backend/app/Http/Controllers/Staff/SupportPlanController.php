@@ -63,6 +63,11 @@ class SupportPlanController extends Controller
             'overall_policy'     => 'nullable|string',
             'long_term_goal'     => 'nullable|string',
             'short_term_goal'    => 'nullable|string',
+            // 原案テキスト (2026-05-17 追加 — 原案/本案 分離)
+            'draft_life_intention'  => 'nullable|string',
+            'draft_overall_policy'  => 'nullable|string',
+            'draft_long_term_goal'  => 'nullable|string',
+            'draft_short_term_goal' => 'nullable|string',
             'long_term_goal_date'  => 'nullable|date',
             'short_term_goal_date' => 'nullable|date',
             'consent_date'       => 'nullable|date',
@@ -133,6 +138,11 @@ class SupportPlanController extends Controller
                 'overall_policy'      => $validated['overall_policy'] ?? null,
                 'long_term_goal'      => $validated['long_term_goal'] ?? null,
                 'short_term_goal'     => $validated['short_term_goal'] ?? null,
+                // 原案テキスト (2026-05-17 — 原案/本案 分離)
+                'draft_life_intention'  => $validated['draft_life_intention'] ?? null,
+                'draft_overall_policy'  => $validated['draft_overall_policy'] ?? null,
+                'draft_long_term_goal'  => $validated['draft_long_term_goal'] ?? null,
+                'draft_short_term_goal' => $validated['draft_short_term_goal'] ?? null,
                 'long_term_goal_date' => $validated['long_term_goal_date'] ?? null,
                 'short_term_goal_date' => $validated['short_term_goal_date'] ?? null,
                 'consent_date'        => $validated['consent_date'] ?? null,
@@ -203,6 +213,11 @@ class SupportPlanController extends Controller
             'overall_policy'     => 'sometimes|nullable|string',
             'long_term_goal'     => 'sometimes|nullable|string',
             'short_term_goal'    => 'sometimes|nullable|string',
+            // 原案テキスト (2026-05-17 追加 — 原案/本案 分離)
+            'draft_life_intention'  => 'sometimes|nullable|string',
+            'draft_overall_policy'  => 'sometimes|nullable|string',
+            'draft_long_term_goal'  => 'sometimes|nullable|string',
+            'draft_short_term_goal' => 'sometimes|nullable|string',
             'long_term_goal_date'  => 'sometimes|nullable|date',
             'short_term_goal_date' => 'sometimes|nullable|date',
             'consent_date'       => 'sometimes|nullable|date',
@@ -430,18 +445,16 @@ class SupportPlanController extends Controller
         // 5. GPTプロンプト構築（旧システム準拠）
         // ===================================================================
         try {
-            $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
-            if (empty($apiKey)) {
-                return response()->json(['success' => false, 'message' => 'OpenAI APIキーが設定されていません。'], 422);
-            }
-
-            $client = \OpenAI::client($apiKey);
+            // AISI R1/R4/R6 (2026-05-17): Sanitizer + 共通規律句 + OpenAiClientFactory
+            $sanitizer = new \App\Services\AiPromptSanitizer();
+            $client = \App\Services\OpenAiClientFactory::make();
             $response = $client->chat()->create([
-                'model'    => config('services.openai.model_plan'),
+                'model'    => config('services.openai.model', 'gpt-5.4-mini-2026-03-17'),
                 'messages' => [
                     [
                         'role'    => 'system',
-                        'content' => 'あなたは児童発達支援の専門家です。個別支援計画書を作成する際は、具体的で実践可能な支援内容を詳細に記述してください。抽象的な表現は避け、現場のスタッフが実際に使用できる具体的な手順、頻度、環境設定、段階的なアプローチを含めてください。',
+                        'content' => \App\Services\AiPromptDirectives::systemBase($sanitizer)
+                            . 'あなたは児童発達支援の専門家です。個別支援計画書を作成する際は、具体的で実践可能な支援内容を詳細に記述してください。抽象的な表現は避け、現場のスタッフが実際に使用できる具体的な手順、頻度、環境設定、段階的なアプローチを含めてください。',
                     ],
                     [
                         'role'    => 'user',
@@ -501,7 +514,7 @@ class SupportPlanController extends Controller
                 \App\Models\AiGenerationLog::create([
                     'user_id'           => $request->user()->id,
                     'generation_type'   => 'support_plan_edit',
-                    'model'             => config('services.openai.model_plan'),
+                    'model'             => 'gpt-5.4-mini-2026-03-17',
                     'prompt_tokens'     => $response->usage->promptTokens ?? null,
                     'completion_tokens' => $response->usage->completionTokens ?? null,
                 ]);
@@ -767,13 +780,16 @@ class SupportPlanController extends Controller
                 return response()->json(['success' => false, 'message' => 'OpenAI APIキーが設定されていません。'], 422);
             }
 
-            $client = \OpenAI::client($apiKey);
+            // AISI R1/R4/R6 (2026-05-17): Sanitizer + 共通規律句 + OpenAiClientFactory
+            $sanitizer = new \App\Services\AiPromptSanitizer();
+            $client = \App\Services\OpenAiClientFactory::make();
             $response = $client->chat()->create([
-                'model'    => config('services.openai.model_plan'),
+                'model'    => config('services.openai.model', 'gpt-5.4-mini-2026-03-17'),
                 'messages' => [
                     [
                         'role'    => 'system',
-                        'content' => 'あなたは児童発達支援施設の児童発達支援管理責任者です。個別支援計画書の作成を支援します。具体的で実践可能な支援内容を詳細に記述してください。',
+                        'content' => \App\Services\AiPromptDirectives::systemBase($sanitizer)
+                            . 'あなたは児童発達支援施設の児童発達支援管理責任者です。個別支援計画書の作成を支援します。具体的で実践可能な支援内容を詳細に記述してください。',
                     ],
                     [
                         'role'    => 'user',
@@ -829,7 +845,7 @@ class SupportPlanController extends Controller
                 \App\Models\AiGenerationLog::create([
                     'user_id'           => $request->user()->id,
                     'generation_type'   => 'support_plan_new',
-                    'model'             => config('services.openai.model_plan'),
+                    'model'             => 'gpt-5.4-mini-2026-03-17',
                     'prompt_tokens'     => $response->usage->promptTokens ?? null,
                     'completion_tokens' => $response->usage->completionTokens ?? null,
                 ]);
@@ -849,6 +865,291 @@ class SupportPlanController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'AI生成中にエラーが発生しました: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * 原案 (draft_xxx) のみを保存する。
+     *
+     * 原案画面の「保存」ボタンから呼ばれる。本案フィールド (life_intention 等) は
+     * 触らない。原案と本案は同一レコード内で並存させる構造のため、これは
+     * draft_xxx カラムだけの軽量な部分更新。
+     *
+     * 入力:
+     *  - draft_life_intention / draft_overall_policy / draft_long_term_goal / draft_short_term_goal
+     * 出力:
+     *  - { success, data: 更新後の plan (details 含む), message }
+     *
+     * (2026-05-17 追加 — 原案/本案 分離)
+     */
+    public function saveDraft(Request $request, IndividualSupportPlan $plan): JsonResponse
+    {
+        $plan->load('student');
+        if ($plan->student) {
+            $this->authorizeClassroom($request->user(), $plan->student);
+        }
+
+        $validated = $request->validate([
+            'draft_life_intention'  => 'nullable|string',
+            'draft_overall_policy'  => 'nullable|string',
+            'draft_long_term_goal'  => 'nullable|string',
+            'draft_short_term_goal' => 'nullable|string',
+        ]);
+
+        $plan->update(array_merge($validated, [
+            'draft_saved_at' => now(),
+        ]));
+
+        return response()->json([
+            'success' => true,
+            'data'    => $plan->fresh(['details', 'student']),
+            'message' => '原案を保存しました。',
+        ]);
+    }
+
+    /**
+     * 本案 (= 既存フィールド life_intention 等) を保存する。
+     *
+     * 本案画面の「保存」ボタンから呼ばれる。原案 draft_xxx は触らない
+     * (両方を残しておく)。official_saved_at を更新する。
+     *
+     * AI による revision_notes (原案からの変更説明) はここでは触らない。
+     * UI 側で別途「変更説明を AI 生成」ボタンを押した時に generateRevisionNotes が
+     * 呼ばれる設計とすることで、本案保存とは独立して再生成できる。
+     *
+     * 細目 (details = 五領域目標) も本案にのみ紐付ける運用なので、details も
+     * 既存の update() と同様にここで保存できるようにする。
+     *
+     * (2026-05-17 追加 — 原案/本案 分離)
+     */
+    public function saveOfficial(Request $request, IndividualSupportPlan $plan): JsonResponse
+    {
+        $plan->load('student');
+        if ($plan->student) {
+            $this->authorizeClassroom($request->user(), $plan->student);
+        }
+
+        $validated = $request->validate([
+            'life_intention'  => 'nullable|string',
+            'overall_policy'  => 'nullable|string',
+            'long_term_goal'  => 'nullable|string',
+            'short_term_goal' => 'nullable|string',
+            'long_term_goal_date'  => 'nullable|date',
+            'short_term_goal_date' => 'nullable|date',
+            'details'         => 'nullable|array',
+            'details.*.domain'          => 'nullable|string',
+            'details.*.current_status'  => 'nullable|string',
+            'details.*.goal'            => 'nullable|string',
+            'details.*.support_content' => 'nullable|string',
+            'details.*.sub_category'    => 'nullable|string',
+            'details.*.notes'           => 'nullable|string',
+        ]);
+
+        DB::transaction(function () use ($plan, $validated) {
+            $planUpdate = collect($validated)->except('details')->toArray();
+            $planUpdate['official_saved_at'] = now();
+            $plan->update($planUpdate);
+
+            if (isset($validated['details'])) {
+                // 既存 details を入れ替え (本案は最新のみ保持)
+                $plan->details()->delete();
+                foreach ($validated['details'] as $index => $d) {
+                    if (empty($d['goal']) && empty($d['support_content']) && empty($d['current_status'])) {
+                        continue;
+                    }
+                    SupportPlanDetail::create([
+                        'plan_id'         => $plan->id,
+                        'sort_order'      => $index,
+                        'domain'          => $d['domain'] ?? '',
+                        'current_status'  => $d['current_status'] ?? '',
+                        'goal'            => $d['goal'] ?? '',
+                        'support_content' => $d['support_content'] ?? '',
+                        'sub_category'    => $d['sub_category'] ?? null,
+                        'notes'           => $d['notes'] ?? null,
+                    ]);
+                }
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'data'    => $plan->fresh(['details', 'student']),
+            'message' => '本案を保存しました。',
+        ]);
+    }
+
+    /**
+     * 個別支援計画に関連する会議録 (meeting_requests) を返す。
+     *
+     * care-bridge では「担当者会議」は MeetingRequest + MeetingNote として管理されており、
+     *  - MeetingRequest.related_plan_id == この plan に直接紐付くもの 優先
+     *  - MeetingRequest.student_id == この生徒に紐付く すべて (会議記録のソースとして)
+     * を最新の confirmed_date で 20 件まで返す。
+     *
+     * フロントの DraftPlanEditor は { meeting_date, title, attendees, agenda,
+     * decisions, next_actions, notes } の形を期待しているので、MeetingRequest の
+     * 列を読みやすい形にマップする。
+     *
+     * (2026-05-17 追加 — 原案/本案 分離)
+     */
+    public function meetings(Request $request, IndividualSupportPlan $plan): JsonResponse
+    {
+        $plan->load('student');
+        if ($plan->student) {
+            $this->authorizeClassroom($request->user(), $plan->student);
+        }
+
+        $rows = collect();
+        try {
+            $rows = \App\Models\MeetingRequest::query()
+                ->where(function ($q) use ($plan) {
+                    $q->where('related_plan_id', $plan->id)
+                      ->orWhere('student_id', $plan->student_id);
+                })
+                ->with([
+                    'student:id,student_name',
+                    'guardian:id,full_name',
+                    'staff:id,full_name',
+                ])
+                ->orderByDesc('confirmed_date')
+                ->orderByDesc('created_at')
+                ->limit(20)
+                ->get();
+        } catch (\Throwable $e) {
+            Log::warning('SupportPlan::meetings query failed', [
+                'plan_id' => $plan->id,
+                'error'   => $e->getMessage(),
+            ]);
+        }
+
+        $items = $rows->map(function ($m) {
+            $attendees = collect([
+                $m->staff?->full_name    ? 'スタッフ: ' . $m->staff->full_name        : null,
+                $m->guardian?->full_name ? '保護者: '   . $m->guardian->full_name     : null,
+                $m->student?->student_name ? '本人: '   . $m->student->student_name   : null,
+            ])->filter()->implode(' / ');
+
+            return [
+                'id'           => $m->id,
+                'meeting_date' => optional($m->confirmed_date)->toDateString(),
+                'title'        => $m->purpose,
+                'attendees'    => $attendees ?: null,
+                'agenda'       => $m->purpose_detail,
+                'decisions'    => null,             // care-bridge schema には専用列なし
+                'next_actions' => null,             // 同上
+                'notes'        => $m->meeting_notes,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data'    => $items,
+        ]);
+    }
+
+    /**
+     * 原案 (draft_xxx) と本案 (既存フィールド) の差分を AI に分析させ、
+     * 「原案からどう変えたか」の説明文を生成して revision_notes に保存する。
+     *
+     * モデル: gpt-5.4-mini-2026-03-17 (他の AI 呼び出しと共通)
+     *
+     * 出力: 200〜500 文字程度の日本語説明文。
+     * 印刷物 (PDF/export) では出力しない方針。
+     *
+     * (2026-05-17 追加 — 原案/本案 分離)
+     */
+    public function generateRevisionNotes(Request $request, IndividualSupportPlan $plan): JsonResponse
+    {
+        $plan->load('student');
+        if ($plan->student) {
+            $this->authorizeClassroom($request->user(), $plan->student);
+        }
+
+        $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
+        if (empty($apiKey)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'OpenAI API キーが設定されていません。',
+            ], 422);
+        }
+
+        $sections = [
+            ['label' => '本人/保護者の意向', 'draft' => (string) $plan->draft_life_intention,  'official' => (string) $plan->life_intention],
+            ['label' => '総合的な支援方針', 'draft' => (string) $plan->draft_overall_policy,  'official' => (string) $plan->overall_policy],
+            ['label' => '長期目標',         'draft' => (string) $plan->draft_long_term_goal,  'official' => (string) $plan->long_term_goal],
+            ['label' => '短期目標',         'draft' => (string) $plan->draft_short_term_goal, 'official' => (string) $plan->short_term_goal],
+        ];
+
+        // 原案・本案の双方が空ならスキップ
+        $allEmpty = collect($sections)->every(fn ($s) => trim($s['draft']) === '' && trim($s['official']) === '');
+        if ($allEmpty) {
+            return response()->json([
+                'success' => false,
+                'message' => '原案と本案の双方が空のため、変更説明を生成できません。',
+            ], 422);
+        }
+
+        $prompt = "以下は個別支援計画の「原案」と「本案」のテキスト対比です。\n";
+        $prompt .= "本案は原案に対してスタッフが加筆・修正したものです。\n";
+        $prompt .= "**原案から本案へ何が変わったか** を、スタッフが内部で確認するためのコメントとして 200〜500 文字程度で日本語で簡潔にまとめてください。\n";
+        $prompt .= "- 大幅な改定はしない前提なので、差分の趣旨 (どこを補足したか / どこを表現を整えたか / どこを保護者意見を反映したか) を中心に書く\n";
+        $prompt .= "- 変更がない項目は「変更なし」と一言だけ書く\n";
+        $prompt .= "- 「本人」「保護者」という呼称を使う (「お子様」「保護者様」は使わない)\n";
+        $prompt .= "- 印刷物には含めないため、敬体ではなく簡潔な常体でも構わない\n\n";
+
+        foreach ($sections as $s) {
+            $draftText    = trim($s['draft'])    === '' ? '(空)' : $s['draft'];
+            $officialText = trim($s['official']) === '' ? '(空)' : $s['official'];
+            $prompt .= "■ {$s['label']}\n";
+            $prompt .= "【原案】\n{$draftText}\n";
+            $prompt .= "【本案】\n{$officialText}\n\n";
+        }
+
+        try {
+            // AISI R1/R4/R6 (2026-05-17): Sanitizer + 共通規律句 + OpenAiClientFactory
+            $sanitizer = new \App\Services\AiPromptSanitizer();
+            $client = \App\Services\OpenAiClientFactory::make();
+            $response = $client->chat()->create([
+                'model'    => config('services.openai.model', 'gpt-5.4-mini-2026-03-17'),
+                'messages' => [
+                    [
+                        'role' => 'system',
+                        'content' => \App\Services\AiPromptDirectives::systemBase($sanitizer)
+                            . 'あなたは個別支援計画の編集を補助するアシスタントです。原案と本案を field-by-field で対比し、スタッフ向けに「何を変えたか」を要約します。事実に基づき、推測は避け、差分が無い場合は「変更なし」と書きます。',
+                    ],
+                    ['role' => 'user', 'content' => $prompt],
+                ],
+                'temperature' => 0.4,
+                'max_completion_tokens' => 800,
+            ]);
+
+            $content = trim($response->choices[0]->message->content ?? '');
+            if ($content === '') {
+                throw new \Exception('AI 応答が空でした');
+            }
+
+            $plan->update([
+                'revision_notes'              => $content,
+                'revision_notes_generated_at' => now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data'    => [
+                    'revision_notes'              => $plan->revision_notes,
+                    'revision_notes_generated_at' => $plan->revision_notes_generated_at,
+                ],
+                'message' => '変更説明を生成しました。',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('SupportPlan::generateRevisionNotes failed', [
+                'plan_id' => $plan->id,
+                'error'   => $e->getMessage(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'AI 生成に失敗しました: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -1114,7 +1415,7 @@ class SupportPlanController extends Controller
         $prompt .= "- 保護者に分かりやすい丁寧な言葉で説明してください\n";
         $prompt .= "- 保護者・スタッフからのアセスメントの内容を踏まえた説明をしてください\n";
         $prompt .= "- 計画の目標がどのように本人・家族の願いを反映しているか説明してください\n";
-        $prompt .= "- お子様の強みや成長の可能性についても触れてください\n";
+        $prompt .= "- 本人の強みや成長の可能性についても触れてください\n";
         $prompt .= "- 600〜1000文字程度でまとめてください\n\n";
 
         $prompt .= "【生徒名】\n" . $studentName . "\n\n";
@@ -1173,13 +1474,16 @@ class SupportPlanController extends Controller
                 return response()->json(['success' => false, 'message' => 'OpenAI APIキーが設定されていません。'], 422);
             }
 
-            $client = \OpenAI::client($apiKey);
+            // AISI R1/R4/R6 (2026-05-17): Sanitizer + 共通規律句 + OpenAiClientFactory
+            $sanitizer = new \App\Services\AiPromptSanitizer();
+            $client = \App\Services\OpenAiClientFactory::make();
             $response = $client->chat()->create([
-                'model'    => config('services.openai.model_plan'),
+                'model'    => config('services.openai.model', 'gpt-5.4-mini-2026-03-17'),
                 'messages' => [
                     [
                         'role'    => 'system',
-                        'content' => 'あなたは児童発達支援・放課後等デイサービスの専門家です。保護者に対して丁寧で分かりやすい説明を行います。',
+                        'content' => \App\Services\AiPromptDirectives::systemBase($sanitizer)
+                            . 'あなたは児童発達支援・放課後等デイサービスの専門家です。保護者に対して丁寧で分かりやすい説明を行います。',
                     ],
                     [
                         'role'    => 'user',
@@ -1202,7 +1506,7 @@ class SupportPlanController extends Controller
             try {
                 \App\Models\AiGenerationLog::create([
                     'user_id'       => $request->user()->id,
-                    'model'         => config('services.openai.model_plan'),
+                    'model'         => 'gpt-5.4-mini-2026-03-17',
                     'prompt_type'   => 'basis',
                     'input_tokens'  => $response->usage->promptTokens ?? null,
                     'output_tokens' => $response->usage->completionTokens ?? null,
@@ -1260,9 +1564,26 @@ class SupportPlanController extends Controller
             $wishesText .= $interview->child_wish . "\n\n";
         }
 
+        // AISI R2/R10 (2026-05-17): 面談記録は児童の言葉そのものを扱うため、自傷念慮検出を優先
+        $triage = new \App\Services\AiSafetyTriage();
+        $triageResult = $triage->containsHighRiskContent((string) $wishesText);
+        if ($triageResult['detected']) {
+            $triage->notifyDetection(
+                $triageResult,
+                $request->user()?->id,
+                $student->id,
+                'support_plan.generate_wish_from_interview',
+            );
+        }
+        // 児童名を仮名化したうえでプロンプトに含める
+        $wishMasker = new \App\Services\AiIdentityMasker();
+        $wishMasker->register((string) $student->student_name, 'student');
+        $studentLabel = $wishMasker->placeholderFor((string) $student->student_name) ?: '対象児童 A';
+        $maskedWishesText = $wishMasker->mask((string) $wishesText);
+
         $prompt = "あなたは発達支援・特別支援教育の専門スタッフです。以下は生徒との面談記録から抜粋した「児童の願い」です。これらの内容を整理・統合して、個別支援計画に記載する「本人の願い」として200〜300文字程度でまとめてください。\n\n";
-        $prompt .= "【生徒名】\n" . $student->student_name . "\n\n";
-        $prompt .= "【面談記録からの「児童の願い」】\n" . $wishesText . "\n";
+        $prompt .= "【生徒名】\n" . $studentLabel . "\n\n";
+        $prompt .= "【面談記録からの「児童の願い」】\n" . $maskedWishesText . "\n";
         $prompt .= "【作成の指針】\n";
         $prompt .= "- 複数の面談記録がある場合は、共通するテーマや一貫した願いを中心にまとめる\n";
         $prompt .= "- 児童の言葉や表現をできるだけ活かしながら、読みやすく整理する\n";
@@ -1278,13 +1599,16 @@ class SupportPlanController extends Controller
                 return response()->json(['success' => false, 'message' => 'OpenAI APIキーが設定されていません。'], 422);
             }
 
-            $client = \OpenAI::client($apiKey);
+            // AISI R1/R4/R6 (2026-05-17): Sanitizer + 共通規律句 + OpenAiClientFactory
+            $sanitizer = new \App\Services\AiPromptSanitizer();
+            $client = \App\Services\OpenAiClientFactory::make();
             $response = $client->chat()->create([
-                'model'    => config('services.openai.model_plan'),
+                'model'    => config('services.openai.model', 'gpt-5.4-mini-2026-03-17'),
                 'messages' => [
                     [
                         'role'    => 'system',
-                        'content' => 'あなたは発達支援・特別支援教育の専門スタッフです。',
+                        'content' => \App\Services\AiPromptDirectives::systemBase($sanitizer)
+                            . 'あなたは発達支援・特別支援教育の専門スタッフです。',
                     ],
                     [
                         'role'    => 'user',
@@ -1297,11 +1621,23 @@ class SupportPlanController extends Controller
 
             $generatedWish = trim($response->choices[0]->message->content);
 
+            // AISI R1: 漏洩検出 + サニタイズ
+            $generatedWish = $sanitizer->postProcess($generatedWish, [
+                'generation_type' => 'wish_from_interview',
+                'student_id'      => $student->id,
+            ]);
+            // AISI R2: 実名復元 (担当職員が読む業務記録としての可読性確保)
+            $generatedWish = $wishMasker->unmask($generatedWish);
+            // AISI R10: 高リスク検出時は冒頭に相談窓口バナーを挿入
+            if ($triageResult['detected']) {
+                $generatedWish = $triage->safetyBanner($triageResult['categories']) . $generatedWish;
+            }
+
             // ログ保存
             try {
                 \App\Models\AiGenerationLog::create([
                     'user_id'       => $request->user()->id,
-                    'model'         => config('services.openai.model_plan'),
+                    'model'         => 'gpt-5.4-mini-2026-03-17',
                     'prompt_type'   => 'wish_from_interview',
                     'input_tokens'  => $response->usage->promptTokens ?? null,
                     'output_tokens' => $response->usage->completionTokens ?? null,
