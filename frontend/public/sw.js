@@ -2,7 +2,10 @@
  * Service Worker for CARE-BRIDGE - 個別支援連絡帳システム PWA
  */
 
-const CACHE_VERSION = 'care-bridge-cache-v2';
+// バージョン番号を上げると activate 時に古いキャッシュが全削除される。
+// 古い _next/static チャンクや古い HTML を強制的に破棄したいときにインクリメントする。
+// v4: PNG アイコン + 新 manifest.json + PwaInstallPrompt 投入
+const CACHE_VERSION = 'care-bridge-cache-v4';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const OFFLINE_URL = '/offline.html';

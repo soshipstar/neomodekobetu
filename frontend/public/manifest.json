@@ -5,97 +5,42 @@
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#2563eb",
-  "orientation": "portrait-primary",
+  "theme_color": "#14a898",
+  "orientation": "any",
   "scope": "/",
   "lang": "ja",
   "icons": [
-    {
-      "src": "/assets/icons/icon-72x72.svg",
-      "sizes": "72x72",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/assets/icons/icon-96x96.svg",
-      "sizes": "96x96",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/assets/icons/icon-128x128.svg",
-      "sizes": "128x128",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/assets/icons/icon-144x144.svg",
-      "sizes": "144x144",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/assets/icons/icon-152x152.svg",
-      "sizes": "152x152",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/assets/icons/icon-192x192.svg",
-      "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/assets/icons/icon-384x384.svg",
-      "sizes": "384x384",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/assets/icons/icon-512x512.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
+    { "src": "/assets/icons/icon-72x72.png",   "sizes": "72x72",   "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icons/icon-96x96.png",   "sizes": "96x96",   "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icons/icon-128x128.png", "sizes": "128x128", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icons/icon-144x144.png", "sizes": "144x144", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icons/icon-152x152.png", "sizes": "152x152", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icons/icon-180x180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icons/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/assets/icons/icon-384x384.png", "sizes": "384x384", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icons/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
   "shortcuts": [
     {
-      "name": "チャット",
-      "short_name": "チャット",
-      "description": "チャットを開く",
-      "url": "/guardian/chat",
-      "icons": [{ "src": "/assets/icons/icon-96x96.svg", "sizes": "96x96" }]
+      "name": "出欠確認 (タブレット)",
+      "short_name": "出欠",
+      "description": "タブレットで出欠確認を開く",
+      "url": "/tablet/attendance",
+      "icons": [{ "src": "/assets/icons/icon-96x96.png", "sizes": "96x96", "type": "image/png" }]
     },
     {
-      "name": "連絡帳",
-      "short_name": "連絡帳",
-      "description": "連絡帳を確認する",
+      "name": "ダッシュボード",
+      "short_name": "ダッシュボード",
+      "description": "スタッフ画面を開く",
+      "url": "/staff/dashboard",
+      "icons": [{ "src": "/assets/icons/icon-96x96.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "保護者ホーム",
+      "short_name": "保護者",
+      "description": "保護者画面を開く",
       "url": "/guardian/dashboard",
-      "icons": [{ "src": "/assets/icons/icon-96x96.svg", "sizes": "96x96" }]
-    },
-    {
-      "name": "アセスメント",
-      "short_name": "アセスメント",
-      "description": "アセスメントを開く",
-      "url": "/guardian/assessment",
-      "icons": [{ "src": "/assets/icons/icon-96x96.svg", "sizes": "96x96" }]
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/assets/icons/icon-512x512.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "form_factor": "narrow",
-      "label": "CARE-BRIDGE ホーム画面"
-    },
-    {
-      "src": "/assets/icons/icon-512x512.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "form_factor": "wide",
-      "label": "CARE-BRIDGE ダッシュボード"
+      "icons": [{ "src": "/assets/icons/icon-96x96.png", "sizes": "96x96", "type": "image/png" }]
     }
   ],
   "categories": ["education", "productivity"]
