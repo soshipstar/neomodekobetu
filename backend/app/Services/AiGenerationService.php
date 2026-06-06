@@ -28,30 +28,33 @@ class AiGenerationService
 
         $startTime = microtime(true);
 
+        $systemPrompt = '障害児通所支援の個別支援計画書を作成する専門家AIアシスタントです。'
+            . '日本の児童福祉法に基づく放課後等デイサービスの計画を作成します。'
+            . 'JSON形式で回答してください。';
+        $temperature = 0.7;
+        $maxTokens = 4000;
+
         $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
             'model' => config('services.openai.model', 'gpt-5.4-2026-03-05'),
             'messages' => [
-                [
-                    'role' => 'system',
-                    'content' => '障害児通所支援の個別支援計画書を作成する専門家AIアシスタントです。'
-                        . '日本の児童福祉法に基づく放課後等デイサービスの計画を作成します。'
-                        . 'JSON形式で回答してください。',
-                ],
-                [
-                    'role' => 'user',
-                    'content' => $prompt,
-                ],
+                ['role' => 'system', 'content' => $systemPrompt],
+                ['role' => 'user', 'content' => $prompt],
             ],
             'response_format' => ['type' => 'json_object'],
-            'temperature' => 0.7,
-            'max_completion_tokens' => 4000,
+            'temperature' => $temperature,
+            'max_completion_tokens' => $maxTokens,
         ]);
 
         $durationMs = (int) ((microtime(true) - $startTime) * 1000);
         $content = json_decode($response->choices[0]->message->content, true) ?? [];
 
         // ログにはマスク済(=外部送信したのと同じ)入出力を保存し、実名をログに残さない。
-        $this->logGeneration('support_plan', $response, $prompt, $content, $durationMs);
+        $this->logGeneration('support_plan', $response, $prompt, $content, $durationMs, [
+            'temperature' => $temperature,
+            'max_tokens' => $maxTokens,
+            'system_prompt' => $systemPrompt,
+            'parameters' => ['response_format' => 'json_object', 'referenced' => ['student_id' => $student->id]],
+        ]);
 
         // 呼び出し側(職員の下書き)へ返すときだけ実名へ復元する。
         return $masker->unmaskArray($content);
@@ -73,29 +76,36 @@ class AiGenerationService
 
         $startTime = microtime(true);
 
+        $systemPrompt = '障害児通所支援のモニタリング報告書を作成する専門家AIアシスタントです。'
+            . '支援計画の達成度を評価し、今後の方針を提案します。'
+            . 'JSON形式で回答してください。';
+        $temperature = 0.7;
+        $maxTokens = 3000;
+
         $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
             'model' => config('services.openai.model', 'gpt-5.4-2026-03-05'),
             'messages' => [
-                [
-                    'role' => 'system',
-                    'content' => '障害児通所支援のモニタリング報告書を作成する専門家AIアシスタントです。'
-                        . '支援計画の達成度を評価し、今後の方針を提案します。'
-                        . 'JSON形式で回答してください。',
-                ],
-                [
-                    'role' => 'user',
-                    'content' => $prompt,
-                ],
+                ['role' => 'system', 'content' => $systemPrompt],
+                ['role' => 'user', 'content' => $prompt],
             ],
             'response_format' => ['type' => 'json_object'],
-            'temperature' => 0.7,
-            'max_completion_tokens' => 3000,
+            'temperature' => $temperature,
+            'max_completion_tokens' => $maxTokens,
         ]);
 
         $durationMs = (int) ((microtime(true) - $startTime) * 1000);
         $content = json_decode($response->choices[0]->message->content, true) ?? [];
 
-        $this->logGeneration('monitoring_report', $response, $prompt, $content, $durationMs);
+        $this->logGeneration('monitoring_report', $response, $prompt, $content, $durationMs, [
+            'temperature' => $temperature,
+            'max_tokens' => $maxTokens,
+            'system_prompt' => $systemPrompt,
+            'parameters' => ['response_format' => 'json_object', 'referenced' => [
+                'student_id' => $record->student_id,
+                'plan_id' => $record->plan_id,
+                'monitoring_record_id' => $record->id,
+            ]],
+        ]);
 
         return $masker->unmaskArray($content);
     }
@@ -116,29 +126,34 @@ class AiGenerationService
 
         $startTime = microtime(true);
 
+        $systemPrompt = '放課後等デイサービスの教室だよりを作成するAIアシスタントです。'
+            . '保護者向けに明るく温かい文体で作成してください。'
+            . 'JSON形式で回答してください。';
+        $temperature = 0.8;
+        $maxTokens = 3000;
+
         $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
             'model' => config('services.openai.model', 'gpt-5.4-2026-03-05'),
             'messages' => [
-                [
-                    'role' => 'system',
-                    'content' => '放課後等デイサービスの教室だよりを作成するAIアシスタントです。'
-                        . '保護者向けに明るく温かい文体で作成してください。'
-                        . 'JSON形式で回答してください。',
-                ],
-                [
-                    'role' => 'user',
-                    'content' => $prompt,
-                ],
+                ['role' => 'system', 'content' => $systemPrompt],
+                ['role' => 'user', 'content' => $prompt],
             ],
             'response_format' => ['type' => 'json_object'],
-            'temperature' => 0.8,
-            'max_completion_tokens' => 3000,
+            'temperature' => $temperature,
+            'max_completion_tokens' => $maxTokens,
         ]);
 
         $durationMs = (int) ((microtime(true) - $startTime) * 1000);
         $content = json_decode($response->choices[0]->message->content, true) ?? [];
 
-        $this->logGeneration('newsletter', $response, $prompt, $content, $durationMs);
+        $this->logGeneration('newsletter', $response, $prompt, $content, $durationMs, [
+            'temperature' => $temperature,
+            'max_tokens' => $maxTokens,
+            'system_prompt' => $systemPrompt,
+            'parameters' => ['response_format' => 'json_object', 'referenced' => [
+                'classroom_id' => $classroom->id, 'year' => $year, 'month' => $month,
+            ]],
+        ]);
 
         return $content;
     }
@@ -157,31 +172,34 @@ class AiGenerationService
 
         $startTime = microtime(true);
 
+        $systemPrompt = '放課後等デイサービスの事業所における自己評価結果（別紙3）を作成するAIアシスタントです。'
+            . '保護者評価と従業者評価の集計結果から、事業所の強みと弱みを分析してください。'
+            . 'JSON形式で回答してください。';
+        $temperature = 0.7;
+        $maxTokens = 3000;
+
         $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY"));
         $client = \OpenAI::client($apiKey);
         $response = $client->chat()->create([
             'model' => config('services.openai.model', 'gpt-5.4-2026-03-05'),
             'messages' => [
-                [
-                    'role' => 'system',
-                    'content' => '放課後等デイサービスの事業所における自己評価結果（別紙3）を作成するAIアシスタントです。'
-                        . '保護者評価と従業者評価の集計結果から、事業所の強みと弱みを分析してください。'
-                        . 'JSON形式で回答してください。',
-                ],
-                [
-                    'role' => 'user',
-                    'content' => $prompt,
-                ],
+                ['role' => 'system', 'content' => $systemPrompt],
+                ['role' => 'user', 'content' => $prompt],
             ],
             'response_format' => ['type' => 'json_object'],
-            'temperature' => 0.7,
-            'max_completion_tokens' => 3000,
+            'temperature' => $temperature,
+            'max_completion_tokens' => $maxTokens,
         ]);
 
         $durationMs = (int) ((microtime(true) - $startTime) * 1000);
         $content = json_decode($response->choices[0]->message->content, true) ?? [];
 
-        $this->logGeneration('self_evaluation_summary', $response, $prompt, $content, $durationMs);
+        $this->logGeneration('self_evaluation_summary', $response, $prompt, $content, $durationMs, [
+            'temperature' => $temperature,
+            'max_tokens' => $maxTokens,
+            'system_prompt' => $systemPrompt,
+            'parameters' => ['response_format' => 'json_object', 'referenced' => ['classroom_name' => $classroomName]],
+        ]);
 
         return $content;
     }
@@ -390,13 +408,29 @@ PROMPT;
         return implode("\n", $lines);
     }
 
-    private function logGeneration(string $type, object $response, string $prompt, array $output, int $durationMs): void
+    /**
+     * 生成ログを記録する (観点10 検証可能性)。
+     *
+     * @param  array{temperature?:float,max_tokens?:int,system_prompt?:string,parameters?:array}  $meta
+     */
+    private function logGeneration(string $type, object $response, string $prompt, array $output, int $durationMs, array $meta = []): void
     {
         try {
+            // finish_reason 等の応答メタも parameters に保存し再現性を高める
+            $parameters = $meta['parameters'] ?? [];
+            $finishReason = $response->choices[0]->finishReason ?? null;
+            if ($finishReason) {
+                $parameters['finish_reason'] = $finishReason;
+            }
+
             AiGenerationLog::create([
                 'user_id' => Auth::id(),
                 'generation_type' => $type,
                 'model' => $response->model ?? config('services.openai.model', 'gpt-5.4-2026-03-05'),
+                'temperature' => $meta['temperature'] ?? null,
+                'max_tokens' => $meta['max_tokens'] ?? null,
+                'system_prompt' => $meta['system_prompt'] ?? null,
+                'parameters' => $parameters ?: null,
                 'prompt_tokens' => $response->usage->promptTokens ?? 0,
                 'completion_tokens' => $response->usage->completionTokens ?? 0,
                 'input_data' => ['prompt' => mb_substr($prompt, 0, 5000)],

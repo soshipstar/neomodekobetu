@@ -39,6 +39,13 @@ class EmbeddingService
         $vector = $this->embed($text);
         $vectorString = '[' . implode(',', $vector) . ']';
 
+        // 観点10 検証可能性 / 観点9 データ品質: 使用した埋め込みモデルと生成時刻を
+        // メタデータに記録し、再現性・鮮度管理を可能にする。
+        $metadata = array_merge($metadata, [
+            'embedding_model' => config('services.openai.embedding_model', 'text-embedding-3-small'),
+            'embedded_at' => now()->toIso8601String(),
+        ]);
+
         // Upsert: update existing embedding or create new one
         $embedding = VectorEmbedding::updateOrCreate(
             [

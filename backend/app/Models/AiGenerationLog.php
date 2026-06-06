@@ -13,6 +13,10 @@ class AiGenerationLog extends Model
         'user_id',
         'generation_type',
         'model',
+        'temperature',
+        'max_tokens',
+        'system_prompt',
+        'parameters',
         'prompt_tokens',
         'completion_tokens',
         'input_data',
@@ -23,6 +27,9 @@ class AiGenerationLog extends Model
     protected function casts(): array
     {
         return [
+            'temperature' => 'float',
+            'max_tokens' => 'integer',
+            'parameters' => 'array',
             'prompt_tokens' => 'integer',
             'completion_tokens' => 'integer',
             'input_data' => 'array',
