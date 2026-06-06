@@ -19,6 +19,15 @@ Route::post('/client-errors', [App\Http\Controllers\ClientErrorController::class
     ->middleware('throttle:60,1');
 
 // ==========================================================================
+// 4.0 規約・プライバシーポリシー・AI 利用方針 (Public, 同意未取得でも閲覧可能)
+//      AISI ヘルスケア AI セーフティ評価観点ガイド v1.0 R3a (2026-05-17)
+// ==========================================================================
+Route::prefix('legal')->group(function () {
+    Route::get('/{type}/{version?}', [App\Http\Controllers\Api\ConsentController::class, 'legal'])
+        ->where(['type' => 'privacy_policy|terms|ai_usage', 'version' => 'v[0-9.]+']);
+});
+
+// ==========================================================================
 // 4.1 認証 API (Public)
 // ==========================================================================
 Route::prefix('auth')->group(function () {
@@ -32,10 +41,16 @@ Route::prefix('auth')->group(function () {
     Route::post('/password/reset', [App\Http\Controllers\Auth\AuthController::class, 'resetPassword']);
 });
 
-// --- 教室切り替え（全認証ユーザー共通） ---
+// --- 教室切り替え + 同意取得 (全認証ユーザー共通) ---
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my-classrooms', [App\Http\Controllers\ClassroomSwitchController::class, 'myClassrooms']);
     Route::post('/switch-classroom', [App\Http\Controllers\ClassroomSwitchController::class, 'switch']);
+
+    // 同意状態の取得・付与・撤回 (AISI R3a)
+    Route::get('/me/consents', [App\Http\Controllers\Api\ConsentController::class, 'show']);
+    Route::post('/me/consents', [App\Http\Controllers\Api\ConsentController::class, 'store']);
+    Route::delete('/me/consents/{type}', [App\Http\Controllers\Api\ConsentController::class, 'revoke'])
+        ->where('type', 'privacy_policy|terms|ai_usage|child_ai_consent');
 });
 
 // ==========================================================================
@@ -303,11 +318,11 @@ Route::prefix('staff')
         Route::get('/students/{student}/support-plans', [App\Http\Controllers\Staff\SupportPlanController::class, 'index']);
         Route::post('/students/{student}/support-plans', [App\Http\Controllers\Staff\SupportPlanController::class, 'store']);
         Route::put('/students/{student}/support-plans/{plan}', [App\Http\Controllers\Staff\SupportPlanController::class, 'updateNested']); // (#31,39) nested alias
-        Route::post('/students/{student}/support-plans/ai-generate', [App\Http\Controllers\Staff\SupportPlanController::class, 'generateAiForStudent']); // (#32)
+        Route::post('/students/{student}/support-plans/ai-generate', [App\Http\Controllers\Staff\SupportPlanController::class, 'generateAiForStudent'])->middleware('ai_consent'); // (#32)
         Route::get('/support-plans/{plan}', [App\Http\Controllers\Staff\SupportPlanController::class, 'show']);
         Route::put('/support-plans/{plan}', [App\Http\Controllers\Staff\SupportPlanController::class, 'update']);
         Route::delete('/support-plans/{plan}', [App\Http\Controllers\Staff\SupportPlanController::class, 'destroy']);
-        Route::post('/support-plans/{plan}/generate-ai', [App\Http\Controllers\Staff\SupportPlanController::class, 'generateAi']);
+        Route::post('/support-plans/{plan}/generate-ai', [App\Http\Controllers\Staff\SupportPlanController::class, 'generateAi'])->middleware('ai_consent');
         Route::post('/support-plans/{plan}/sign', [App\Http\Controllers\Staff\SupportPlanController::class, 'sign']);
         Route::get('/support-plans/{plan}/pdf', [App\Http\Controllers\Staff\SupportPlanController::class, 'pdf']);
         Route::get('/support-plans/{plan}/export', [App\Http\Controllers\Staff\SupportPlanController::class, 'export']);
@@ -315,8 +330,13 @@ Route::prefix('staff')
         Route::post('/support-plans/{plan}/make-official', [App\Http\Controllers\Staff\SupportPlanController::class, 'makeOfficial']);
         Route::post('/support-plans/{plan}/request-signature', [App\Http\Controllers\Staff\SupportPlanController::class, 'requestSignature']);
         Route::get('/support-plans/{plan}/basis', [App\Http\Controllers\Staff\SupportPlanController::class, 'basis']);
-        Route::post('/support-plans/{plan}/generate-basis', [App\Http\Controllers\Staff\SupportPlanController::class, 'generateBasis']);
-        Route::post('/students/{student}/generate-wish', [App\Http\Controllers\Staff\SupportPlanController::class, 'generateWishFromInterview']);
+        Route::post('/support-plans/{plan}/generate-basis', [App\Http\Controllers\Staff\SupportPlanController::class, 'generateBasis'])->middleware('ai_consent');
+        // 原案 / 本案 分離 (2026-05-17 追加)
+        Route::put('/support-plans/{plan}/save-draft', [App\Http\Controllers\Staff\SupportPlanController::class, 'saveDraft']);
+        Route::put('/support-plans/{plan}/save-official', [App\Http\Controllers\Staff\SupportPlanController::class, 'saveOfficial']);
+        Route::get('/support-plans/{plan}/meetings', [App\Http\Controllers\Staff\SupportPlanController::class, 'meetings']);
+        Route::post('/support-plans/{plan}/generate-revision-notes', [App\Http\Controllers\Staff\SupportPlanController::class, 'generateRevisionNotes'])->middleware('ai_consent');
+        Route::post('/students/{student}/generate-wish', [App\Http\Controllers\Staff\SupportPlanController::class, 'generateWishFromInterview'])->middleware('ai_consent');
 
         // --- モニタリング ---
         Route::get('/students/{student}/monitoring', [App\Http\Controllers\Staff\MonitoringController::class, 'index']);
@@ -326,7 +346,7 @@ Route::prefix('staff')
         Route::delete('/monitoring/{monitoring}', [App\Http\Controllers\Staff\MonitoringController::class, 'destroy']);
         Route::post('/monitoring/{monitoring}/sign', [App\Http\Controllers\Staff\MonitoringController::class, 'sign']);
         Route::post('/monitoring/generate', [App\Http\Controllers\Staff\MonitoringController::class, 'generate']);
-        Route::post('/monitoring/{monitoring}/generate-ai', [App\Http\Controllers\Staff\MonitoringController::class, 'generateAi']);
+        Route::post('/monitoring/{monitoring}/generate-ai', [App\Http\Controllers\Staff\MonitoringController::class, 'generateAi'])->middleware('ai_consent');
         Route::get('/monitoring/{monitoring}/pdf', [App\Http\Controllers\Staff\MonitoringController::class, 'pdf']);
 
         // --- アセスメント ---
@@ -346,11 +366,13 @@ Route::prefix('staff')
         Route::post('/renrakucho/{record}/student-records', [App\Http\Controllers\Staff\RenrakuchoController::class, 'storeStudentRecords']);
         Route::delete('/renrakucho/{record}/student-records/{student}', [App\Http\Controllers\Staff\RenrakuchoController::class, 'destroyStudentRecord']);
         Route::post('/renrakucho/{record}/send-to-guardians', [App\Http\Controllers\Staff\RenrakuchoController::class, 'sendToGuardians']);
-        Route::post('/renrakucho/{record}/generate-integrated', [App\Http\Controllers\Staff\RenrakuchoController::class, 'generateIntegrated']);
+        Route::post('/renrakucho/{record}/generate-integrated', [App\Http\Controllers\Staff\RenrakuchoController::class, 'generateIntegrated'])->middleware('ai_consent');
         Route::post('/renrakucho/{record}/save-draft', [App\Http\Controllers\Staff\RenrakuchoController::class, 'saveDraft']);
         Route::post('/renrakucho/{record}/regenerate-integrated', [App\Http\Controllers\Staff\RenrakuchoController::class, 'regenerateIntegrated']);
         Route::get('/renrakucho/{record}/view-integrated', [App\Http\Controllers\Staff\RenrakuchoController::class, 'viewIntegrated']);
         Route::get('/renrakucho/{record}/photos/suggest', [App\Http\Controllers\Staff\RenrakuchoController::class, 'suggestPhotos']);
+        // 領域別目標の引用元として、生徒の有効な個別支援計画の領域別目標を取得 (2026-05-17)
+        Route::get('/renrakucho/student-goals/{student}', [App\Http\Controllers\Staff\RenrakuchoController::class, 'activeSupportPlanGoals']);
 
         // 事業所写真ライブラリ
         Route::get('/classroom-photos', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'index']);
@@ -379,7 +401,7 @@ Route::prefix('staff')
         Route::get('/newsletter-settings', [App\Http\Controllers\Staff\NewsletterSettingController::class, 'show']);
         Route::put('/newsletter-settings', [App\Http\Controllers\Staff\NewsletterSettingController::class, 'update']);
         Route::apiResource('newsletters', App\Http\Controllers\Staff\NewsletterController::class);
-        Route::post('/newsletters/{newsletter}/generate-ai', [App\Http\Controllers\Staff\NewsletterController::class, 'generateAi']);
+        Route::post('/newsletters/{newsletter}/generate-ai', [App\Http\Controllers\Staff\NewsletterController::class, 'generateAi'])->middleware('ai_consent');
         Route::post('/newsletters/{newsletter}/generate-all', [App\Http\Controllers\Staff\NewsletterController::class, 'generateAll']);
         Route::post('/newsletters/{newsletter}/publish', [App\Http\Controllers\Staff\NewsletterController::class, 'publish']);
         Route::get('/newsletters/{newsletter}/pdf', [App\Http\Controllers\Staff\NewsletterController::class, 'pdf']);
@@ -558,13 +580,6 @@ Route::prefix('staff')
         Route::delete('/job-placements/{placement}',      [App\Http\Controllers\Staff\TransitionSupportController::class, 'destroyPlacement']);
         Route::post  ('/job-placements/{placement}/contacts', [App\Http\Controllers\Staff\TransitionSupportController::class, 'storeContact']);
 
-        // --- 国保連請求 ---
-        Route::get('/billing/summary',   [App\Http\Controllers\Staff\BillingController::class, 'summary']);
-        Route::get('/billing/csv',       [App\Http\Controllers\Staff\BillingController::class, 'downloadCsv']);
-        Route::get('/billing/provision-record', [App\Http\Controllers\Staff\BillingController::class, 'provisionRecordPdf']);
-        Route::get('/billing/validate',  [App\Http\Controllers\Staff\BillingController::class, 'validateForWamNet']);
-        Route::get('/billing/wam-net-zip', [App\Http\Controllers\Staff\BillingController::class, 'downloadWamNetZip']);
-
         // --- 作業マニュアル ---
         Route::get   ('/work-manuals',           [App\Http\Controllers\Staff\WorkManualController::class, 'index']);
         Route::post  ('/work-manuals',           [App\Http\Controllers\Staff\WorkManualController::class, 'store']);
@@ -580,7 +595,7 @@ Route::prefix('staff')
         Route::post('/bulk-register/parse', [App\Http\Controllers\Staff\BulkRegisterController::class, 'parse']);
         Route::post('/bulk-register/execute', [App\Http\Controllers\Staff\BulkRegisterController::class, 'execute']);
 
-        // --- 支援案（活動支援計画） ---
+        // --- 活動案（活動支援計画） ---
         Route::get('/activity-support-plans', [App\Http\Controllers\Staff\ActivitySupportPlanController::class, 'index']);
         Route::get('/activity-support-plans/past', [App\Http\Controllers\Staff\ActivitySupportPlanController::class, 'pastPlans']);
         Route::post('/activity-support-plans', [App\Http\Controllers\Staff\ActivitySupportPlanController::class, 'store']);
@@ -588,8 +603,8 @@ Route::prefix('staff')
         Route::get('/activity-support-plans/{plan}/pdf', [App\Http\Controllers\Staff\ActivitySupportPlanController::class, 'pdf']);
         Route::put('/activity-support-plans/{plan}', [App\Http\Controllers\Staff\ActivitySupportPlanController::class, 'update']);
         Route::delete('/activity-support-plans/{plan}', [App\Http\Controllers\Staff\ActivitySupportPlanController::class, 'destroy']);
-        Route::post('/activity-support-plans/generate-ai/five-domains', [App\Http\Controllers\Staff\ActivitySupportPlanController::class, 'generateAiFiveDomains']);
-        Route::post('/activity-support-plans/generate-ai/schedule-content', [App\Http\Controllers\Staff\ActivitySupportPlanController::class, 'generateAiScheduleContent']);
+        Route::post('/activity-support-plans/generate-ai/five-domains', [App\Http\Controllers\Staff\ActivitySupportPlanController::class, 'generateAiFiveDomains'])->middleware('ai_consent');
+        Route::post('/activity-support-plans/generate-ai/schedule-content', [App\Http\Controllers\Staff\ActivitySupportPlanController::class, 'generateAiScheduleContent'])->middleware('ai_consent');
 
         // --- スタッフ間チャット ---
         Route::prefix('staff-chat')->group(function () {
@@ -757,9 +772,19 @@ Route::prefix('tablet')
     ->middleware(['auth:sanctum', 'user_type:tablet,staff,admin'])
     ->group(function () {
         Route::get('/students', [App\Http\Controllers\Tablet\TabletController::class, 'students']);
+        Route::get('/today-students', [App\Http\Controllers\Tablet\TabletController::class, 'todayStudents']); // 本日の利用予定+出欠状況
         Route::post('/students/{student}/check-in', [App\Http\Controllers\Tablet\TabletController::class, 'checkIn']); // (#33)
         Route::post('/students/{student}/check-out', [App\Http\Controllers\Tablet\TabletController::class, 'checkOut']); // (#34)
         Route::get('/present-students', [App\Http\Controllers\Tablet\TabletController::class, 'presentStudents']); // (#35)
+
+        // 保護者チャット (Staff\ChatController を流用)
+        // タブレットでも自教室の保護者-スタッフチャットを閲覧・投稿できるようにする
+        Route::prefix('chat')->group(function () {
+            Route::get('/rooms', [App\Http\Controllers\Staff\ChatController::class, 'rooms']);
+            Route::get('/rooms/{room}/messages', [App\Http\Controllers\Staff\ChatController::class, 'messages']);
+            Route::post('/rooms/{room}/messages', [App\Http\Controllers\Staff\ChatController::class, 'sendMessage']);
+            Route::post('/rooms/{room}/read', [App\Http\Controllers\Staff\ChatController::class, 'markRead']);
+        });
         Route::get('/activity-options', [App\Http\Controllers\Tablet\TabletController::class, 'activityOptions']); // (#36)
         Route::get('/activity-records', [App\Http\Controllers\Tablet\TabletController::class, 'activityRecords']); // (#37)
         Route::post('/activity-records', [App\Http\Controllers\Tablet\TabletController::class, 'storeActivity']); // (#38)
@@ -787,7 +812,7 @@ Route::prefix('tablet')
 // 4.7 AI / ベクトル検索 API (auth:sanctum)
 // ==========================================================================
 Route::prefix('ai')
-    ->middleware(['auth:sanctum'])
+    ->middleware(['auth:sanctum', 'ai_consent'])
     ->group(function () {
         Route::post('/generate/support-plan', [App\Http\Controllers\Api\AiGenerationController::class, 'generateSupportPlan']);
         Route::post('/generate/monitoring', [App\Http\Controllers\Api\AiGenerationController::class, 'generateMonitoring']);
@@ -834,6 +859,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/push/vapid-key', [App\Http\Controllers\Api\PushSubscriptionController::class, 'vapidPublicKey']);
     Route::post('/push/subscribe', [App\Http\Controllers\Api\PushSubscriptionController::class, 'subscribe']);
     Route::post('/push/unsubscribe', [App\Http\Controllers\Api\PushSubscriptionController::class, 'unsubscribe']);
+    Route::post('/push/test', [App\Http\Controllers\Api\PushSubscriptionController::class, 'test']); // 自己診断用
 
     // --- 通知カテゴリ設定 ---
     Route::get('/notification-preferences', [App\Http\Controllers\Api\NotificationPreferenceController::class, 'show']);
