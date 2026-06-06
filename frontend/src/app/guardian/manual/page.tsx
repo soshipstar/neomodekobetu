@@ -63,7 +63,7 @@ const sections: ManualSection[] = [
     content: (
       <div className="space-y-3">
         <p className="text-sm leading-relaxed text-[var(--neutral-foreground-2)]">
-          ダッシュボードはログイン後に最初に表示されるホーム画面です。お子様に関する重要な情報がまとめて表示されます。
+          ダッシュボードはログイン後に最初に表示されるホーム画面です。本人に関する重要な情報がまとめて表示されます。
         </p>
         <ul className="ml-4 list-disc space-y-1.5 text-sm text-[var(--neutral-foreground-2)]">
           <li><strong>未確認の連絡帳</strong> - 確認が必要な活動記録の件数</li>
@@ -84,16 +84,16 @@ const sections: ManualSection[] = [
     content: (
       <div className="space-y-3">
         <p className="text-sm leading-relaxed text-[var(--neutral-foreground-2)]">
-          お子様が教室で活動した日には、スタッフが活動内容を記録し、保護者の皆様にお届けしています。
+          本人が教室で活動した日には、スタッフが活動内容を記録し、保護者の皆様にお届けしています。
         </p>
         <h4 className="text-sm font-semibold text-[var(--neutral-foreground-1)]">活動記録に含まれる内容</h4>
         <ul className="ml-4 list-disc space-y-1.5 text-sm text-[var(--neutral-foreground-2)]">
           <li><strong>その日の活動内容</strong> - どんな活動をしたか</li>
-          <li><strong>お子様の様子</strong> - 活動中の表情や反応、頑張ったこと</li>
+          <li><strong>本人の様子</strong> - 活動中の表情や反応、頑張ったこと</li>
           <li><strong>スタッフからのコメント</strong> - 気づいたことや成長のポイント</li>
         </ul>
         <HighlightBox variant="success">
-          <strong>なぜ日々の記録が大切なのか：</strong>日々の小さな変化や成長を記録することで、お子様の
+          <strong>なぜ日々の記録が大切なのか：</strong>日々の小さな変化や成長を記録することで、本人の
           <strong>得意なこと・苦手なこと・興味のあること</strong>が見えてきます。
           この積み重ねが、次の支援目標を決める際の大切な根拠となります。
         </HighlightBox>
@@ -107,7 +107,7 @@ const sections: ManualSection[] = [
     content: (
       <div className="space-y-3">
         <p className="text-sm leading-relaxed text-[var(--neutral-foreground-2)]">
-          スタッフとリアルタイムでメッセージのやり取りができます。お子様のことで気になることがあれば、いつでもご相談いただけます。
+          スタッフとリアルタイムでメッセージのやり取りができます。本人のことで気になることがあれば、いつでもご相談いただけます。
         </p>
         <ul className="ml-4 list-disc space-y-1.5 text-sm text-[var(--neutral-foreground-2)]">
           <li><strong>テキストメッセージ</strong> - スタッフとの文字でのやり取り</li>
@@ -115,7 +115,7 @@ const sections: ManualSection[] = [
           <li><strong>既読表示</strong> - メッセージが読まれたか確認可能</li>
         </ul>
         <HighlightBox variant="info">
-          <strong>ポイント：</strong>チャットはお子様ごとにスタッフとの個別ルームが用意されています。
+          <strong>ポイント：</strong>チャットは本人ごとにスタッフとの個別ルームが用意されています。
           欠席連絡やちょっとした相談にもご活用ください。
         </HighlightBox>
       </div>
@@ -129,19 +129,19 @@ const sections: ManualSection[] = [
       <div className="space-y-3">
         <p className="text-sm leading-relaxed text-[var(--neutral-foreground-2)]">
           「アセスメント」は、<strong>保護者とスタッフの情報共有</strong>のための大切な書類です。
-          お子様の家庭での様子と教室での様子を共有し、一貫した支援を行うために作成します。
+          本人の家庭での様子と教室での様子を共有し、一貫した支援を行うために作成します。
         </p>
         <div className="space-y-2">
           <div className="rounded-lg border border-[var(--neutral-stroke-2)] p-3">
             <h5 className="text-sm font-semibold text-[var(--brand-70)]">保護者アセスメント（保護者の皆様が記入）</h5>
             <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
-              家庭でのお子様の様子、最近の変化、気になること、教室への要望などを記入していただきます。
+              家庭での本人の様子、最近の変化、気になること、教室への要望などを記入していただきます。
             </p>
           </div>
           <div className="rounded-lg border border-[var(--neutral-stroke-2)] p-3">
             <h5 className="text-sm font-semibold text-[var(--brand-80)]">スタッフアセスメント（スタッフが作成）</h5>
             <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
-              日々の活動記録をもとに、教室でのお子様の様子、成長したポイント、今後の支援の方向性などをまとめます。
+              日々の活動記録をもとに、教室での本人の様子、成長したポイント、今後の支援の方向性などをまとめます。
             </p>
           </div>
         </div>
@@ -159,7 +159,7 @@ const sections: ManualSection[] = [
     content: (
       <div className="space-y-3">
         <p className="text-sm leading-relaxed text-[var(--neutral-foreground-2)]">
-          個別支援計画書は、お子様一人ひとりに合わせた<strong>支援の目標と具体的な内容</strong>を定めた書類です。
+          個別支援計画書は、本人一人ひとりに合わせた<strong>支援の目標と具体的な内容</strong>を定めた書類です。
           法律で定められた重要な書類であり、6か月ごとに見直しを行います。
         </p>
         <h4 className="text-sm font-semibold text-[var(--neutral-foreground-1)]">計画書の内容</h4>
@@ -171,7 +171,7 @@ const sections: ManualSection[] = [
         <HighlightBox variant="warning">
           <strong>根拠に基づいた目標設定：</strong>個別支援計画の目標は、<strong>日々の活動記録</strong>と
           <strong>アセスメント</strong>の内容を分析して設定します。
-          「なんとなく」ではなく、実際の様子や変化を根拠として、お子様に合った現実的で達成可能な目標を立てています。
+          「なんとなく」ではなく、実際の様子や変化を根拠として、本人に合った現実的で達成可能な目標を立てています。
         </HighlightBox>
         <h4 className="text-sm font-semibold text-[var(--neutral-foreground-1)]">モニタリング（経過観察）</h4>
         <p className="text-sm text-[var(--neutral-foreground-2)]">
@@ -228,7 +228,7 @@ const sections: ManualSection[] = [
         </div>
         <HighlightBox variant="success">
           <strong>このサイクルのポイント：</strong>日々の記録 → アセスメント → 支援計画 という流れにより、
-          <strong>「今のお子様の姿」に基づいた支援</strong>を行うことができます。
+          <strong>「今の本人の姿」に基づいた支援</strong>を行うことができます。
         </HighlightBox>
       </div>
     ),
@@ -240,13 +240,13 @@ const sections: ManualSection[] = [
     content: (
       <div className="space-y-3">
         <p className="text-sm leading-relaxed text-[var(--neutral-foreground-2)]">
-          お子様のより良い支援のために、以下のご協力をお願いいたします。
+          本人のより良い支援のために、以下のご協力をお願いいたします。
         </p>
         <div className="space-y-2">
           {[
             {
               title: '活動記録の確認',
-              description: '送信された活動記録をご確認ください。お子様の教室での様子がわかります。気になることがあればお気軽にご連絡ください。',
+              description: '送信された活動記録をご確認ください。本人の教室での様子がわかります。気になることがあればお気軽にご連絡ください。',
             },
             {
               title: 'アセスメントへの記入',
@@ -258,7 +258,7 @@ const sections: ManualSection[] = [
             },
             {
               title: '何でもご相談ください',
-              description: 'お子様のことで気になることがあれば、いつでもチャットやお電話でご相談ください。一緒にお子様の成長を支えていきましょう。',
+              description: '本人のことで気になることがあれば、いつでもチャットやお電話でご相談ください。一緒に本人の成長を支えていきましょう。',
             },
           ].map((item) => (
             <div
@@ -279,7 +279,7 @@ const sections: ManualSection[] = [
         </div>
         <HighlightBox variant="info">
           <strong>コミュニケーションを大切に：</strong>このシステムを通じて、保護者の皆様とスタッフが情報を共有し、
-          <strong>お子様を中心とした支援チーム</strong>として一緒に歩んでいければと思います。
+          <strong>本人を中心とした支援チーム</strong>として一緒に歩んでいければと思います。
           ご不明な点がございましたら、お気軽にお問い合わせください。
         </HighlightBox>
       </div>
@@ -344,11 +344,11 @@ export default function GuardianManualPage() {
             <MaterialIcon name="menu_book" size={20} className="mt-0.5 text-[var(--brand-80)]" />
             <div className="text-sm leading-relaxed text-[var(--neutral-foreground-2)]">
               <p>
-                この連絡帳システムは、お子様の日々の活動記録と成長を、保護者の皆様とスタッフが一緒に見守り、
+                この連絡帳システムは、本人の日々の活動記録と成長を、保護者の皆様とスタッフが一緒に見守り、
                 <strong>根拠に基づいた支援目標</strong>を設定するために開発されました。
               </p>
               <p className="mt-2">
-                日々の記録を積み重ねることで、お子様一人ひとりに合った支援計画を作成し、
+                日々の記録を積み重ねることで、本人一人ひとりに合った支援計画を作成し、
                 より良い成長をサポートしていきます。
               </p>
             </div>

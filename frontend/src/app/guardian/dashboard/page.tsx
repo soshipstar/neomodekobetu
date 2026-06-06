@@ -1014,7 +1014,7 @@ export default function GuardianDashboardPage() {
           <Card>
             <CardBody>
               <h2 className="mb-1 text-base font-semibold text-[var(--neutral-foreground-1)]">
-                お子様の情報が登録されていません
+                本人の情報が登録されていません
               </h2>
               <p className="text-sm text-[var(--neutral-foreground-3)]">管理者にお問い合わせください。</p>
             </CardBody>

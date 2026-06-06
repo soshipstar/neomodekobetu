@@ -157,7 +157,7 @@ export default function GuardianAssessmentHistoryPage() {
         <Card>
           <CardBody>
             <div className="py-8 text-center text-sm text-[var(--neutral-foreground-3)]">
-              お子様の情報が登録されていません。管理者にお問い合わせください。
+              本人の情報が登録されていません。管理者にお問い合わせください。
             </div>
           </CardBody>
         </Card>
@@ -169,7 +169,7 @@ export default function GuardianAssessmentHistoryPage() {
               {/* Student selector */}
               <div className="flex-1">
                 <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-1)]">
-                  お子様を選択
+                  本人を選択
                 </label>
                 <select
                   value={activeStudentId}

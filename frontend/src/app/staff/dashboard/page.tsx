@@ -674,7 +674,7 @@ export default function StaffDashboardPage() {
               <div className="flex items-center gap-2">
                 <Link href="/staff/support-plans">
                   <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="edit_square" size={16} className="h-4 w-4" />}>
-                    支援案管理
+                    活動案管理
                   </Button>
                 </Link>
                 <Link href={`/staff/activities/new?date=${selectedDate}`}>

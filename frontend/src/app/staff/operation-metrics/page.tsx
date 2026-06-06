@@ -19,6 +19,7 @@ interface MonthlyMetrics {
   total_usage_days: number;
   avg_daily_users: number;
   utilization: number;
+  /** 国保連請求 撤去のため常に空配列。型互換のため残置。 */
   over_cap_students: { student_id: number; student_name: string; days: number; cap: number }[];
   trend_6_months: { year_month: string; opening_days: number; total_usage: number; avg_daily_users: number; utilization: number }[];
   minimum_capacity_recommended: number;
@@ -84,7 +85,9 @@ export default function OperationMetricsPage() {
             <KpiCard label="1 日平均利用者" value={`${data.avg_daily_users} 名`} />
           </div>
 
-          <div className="grid gap-3 lg:grid-cols-2">
+          {/* 国保連請求 機能撤去に伴い、月利用日数上限超過カード (受給者証連動) は削除。
+              定員と在籍状況のみシングルカード表示にする。 */}
+          <div className="grid gap-3">
             <Card>
               <CardHeader><CardTitle>定員と在籍状況</CardTitle></CardHeader>
               <CardBody>
@@ -98,34 +101,6 @@ export default function OperationMetricsPage() {
                   <div className="mt-3 rounded border border-[var(--status-warning-fg)]/30 bg-[var(--status-warning-bg)] p-2 text-xs text-[var(--status-warning-fg)]">
                     定員が未設定です。事業所マスタで設定すると稼働率が算出されます。
                   </div>
-                )}
-              </CardBody>
-            </Card>
-
-            <Card>
-              <CardHeader><CardTitle>{terms.client_plural}の月利用日数上限超過</CardTitle></CardHeader>
-              <CardBody>
-                {data.over_cap_students.length === 0 ? (
-                  <p className="text-sm text-[var(--neutral-foreground-4)]">超過している{terms.client_plural}はいません。</p>
-                ) : (
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-[var(--neutral-stroke-2)] text-xs text-[var(--neutral-foreground-3)]">
-                        <th className="px-2 py-1 text-left">{terms.client}</th>
-                        <th className="px-2 py-1 text-right">利用日数</th>
-                        <th className="px-2 py-1 text-right">上限</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.over_cap_students.map((s) => (
-                        <tr key={s.student_id} className="border-b border-[var(--neutral-stroke-3)]">
-                          <td className="px-2 py-1">{s.student_name}</td>
-                          <td className="px-2 py-1 text-right text-[var(--status-danger-fg)] font-bold">{s.days} 日</td>
-                          <td className="px-2 py-1 text-right">{s.cap} 日</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
                 )}
               </CardBody>
             </Card>

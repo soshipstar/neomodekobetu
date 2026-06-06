@@ -39,7 +39,7 @@ export default function GuardianChatListPage() {
       <div className="relative">
         <MaterialIcon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
         <Input
-          placeholder="お子様の名前で検索..."
+          placeholder="本人の名前で検索..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="h-9 pl-10 text-sm sm:h-10 sm:text-base"

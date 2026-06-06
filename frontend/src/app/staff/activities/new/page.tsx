@@ -281,14 +281,14 @@ export default function NewActivityPage() {
           {/* Support Plan Selector */}
           <div>
             <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-1)]">
-              支援案から作成（任意）
+              活動案から作成（任意）
             </label>
             <select
               value={selectedPlanId ?? ''}
               onChange={(e) => handleSelectPlan(e.target.value)}
               className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
             >
-              <option value="">支援案を選択しない（手動入力）</option>
+              <option value="">活動案を選択しない（手動入力）</option>
               {supportPlans
                 .filter((plan: any) => plan.activity_date && plan.activity_date.startsWith(dateParam))
                 .map((plan: any) => (
@@ -298,7 +298,7 @@ export default function NewActivityPage() {
               ))}
             </select>
             <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">
-              支援案を選択すると、活動名と内容が自動入力されます
+              活動案を選択すると、活動名と内容が自動入力されます
             </p>
           </div>
 

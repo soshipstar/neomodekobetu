@@ -16,7 +16,7 @@ import { formatDate } from '@/lib/utils';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 const absenceFormSchema = z.object({
-  student_id: z.number({ error: 'お子様を選択してください' }),
+  student_id: z.number({ error: '本人を選択してください' }),
   absence_date: z.string().min(1, '日付を入力してください'),
   reason: z.string().min(1, '理由を入力してください'),
   makeup_request: z.boolean().optional(),
@@ -157,7 +157,7 @@ export default function AbsenceNotificationPage() {
         <CardBody>
           <form onSubmit={handleSubmit((data) => mutation.mutate(data))} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">お子様</label>
+              <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">本人</label>
               <select
                 {...register('student_id', { valueAsNumber: true })}
                 className="block w-full rounded-lg border border-[var(--neutral-stroke-1)] bg-white px-3 py-2 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-80)]/20"

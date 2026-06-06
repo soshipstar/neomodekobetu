@@ -494,7 +494,7 @@ export default function MeetingsPage() {
                       onChange={(e) => setHearingNotes(e.target.value)}
                       className={textareaCls}
                       rows={5}
-                      placeholder="例: 家では着替えが一人でできるようになった。学校では友達とのトラブルが減ってきた。本人は算数が得意になりたいと言っている。家庭では食事のマナーを身につけさせたい..."
+                      placeholder="例: 家では着替えが一人でできるようになった。学校では友だちとのトラブルが減ってきた。本人は算数が得意になりたいと言っている。家庭では食事のマナーを身につけさせたい..."
                     />
                     <div className="mt-2 flex justify-end">
                       <Button size="sm" variant="primary"

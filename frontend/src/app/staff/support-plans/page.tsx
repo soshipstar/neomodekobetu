@@ -140,7 +140,7 @@ export default function SupportPlansPage() {
     mutationFn: (id: number) => api.delete(`/api/staff/activity-support-plans/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', 'activity-support-plans'] });
-      toast.success('支援案を削除しました');
+      toast.success('活動案を削除しました');
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || '削除に失敗しました');
@@ -148,7 +148,7 @@ export default function SupportPlansPage() {
   });
 
   const handleDelete = (plan: SupportPlan) => {
-    const msg = `この支援案を削除しますか？${plan.usage_count && plan.usage_count > 0 ? `\n\n注意: この支援案は${plan.usage_count}回使用されています。` : ''}`;
+    const msg = `この活動案を削除しますか？${plan.usage_count && plan.usage_count > 0 ? `\n\n注意: この活動案は${plan.usage_count}回使用されています。` : ''}`;
     if (confirm(msg)) {
       deleteMutation.mutate(plan.id);
     }
@@ -189,10 +189,10 @@ export default function SupportPlansPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">支援案一覧</h1>
+        <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">活動案一覧</h1>
         <div className="flex flex-wrap gap-2">
           <Button onClick={handleCreate} leftIcon={<MaterialIcon name="add" size={16} />}>
-            新しい支援案を作成
+            新しい活動案を作成
           </Button>
           <Link href="/staff/daily-routines">
             <Button variant="outline" leftIcon={<MaterialIcon name="schedule" size={16} />}>
@@ -216,7 +216,7 @@ export default function SupportPlansPage() {
         <CardBody>
           <div className="flex items-center gap-2 mb-4">
             <MaterialIcon name="search" size={16} className="text-[var(--neutral-foreground-3)]" />
-            <span className="text-sm font-semibold text-[var(--neutral-foreground-2)]">支援案を検索</span>
+            <span className="text-sm font-semibold text-[var(--neutral-foreground-2)]">活動案を検索</span>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
@@ -267,8 +267,8 @@ export default function SupportPlansPage() {
         <Card>
           <CardBody>
             <div className="py-12 text-center text-[var(--neutral-foreground-4)]">
-              <h2 className="text-lg font-semibold mb-2">支援案が登録されていません</h2>
-              <p className="text-sm">「新しい支援案を作成」ボタンから支援案を作成してください。</p>
+              <h2 className="text-lg font-semibold mb-2">活動案が登録されていません</h2>
+              <p className="text-sm">「新しい活動案を作成」ボタンから活動案を作成してください。</p>
             </div>
           </CardBody>
         </Card>
@@ -530,10 +530,10 @@ function SupportPlanFormModal({
 
       if (isEdit) {
         await api.put(`/api/staff/activity-support-plans/${plan!.id}`, payload);
-        toast.success('支援案を更新しました');
+        toast.success('活動案を更新しました');
       } else {
         await api.post('/api/staff/activity-support-plans', payload);
-        toast.success('支援案を作成しました');
+        toast.success('活動案を作成しました');
       }
       onSaved();
     } catch (err: any) {
@@ -702,7 +702,7 @@ function SupportPlanFormModal({
       setScheduleItems(pastPlan.activity_schedule);
     }
     setCopyModalOpen(false);
-    toast.success('支援案の内容を引用しました。活動予定日を設定して保存してください。');
+    toast.success('活動案の内容を引用しました。活動予定日を設定して保存してください。');
   };
 
   // Toggle helpers
@@ -722,7 +722,7 @@ function SupportPlanFormModal({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[var(--neutral-stroke-2)] px-6 py-4">
           <h2 className="text-lg font-bold text-[var(--neutral-foreground-1)]">
-            {isEdit ? '支援案編集' : '支援案作成'}
+            {isEdit ? '活動案編集' : '活動案作成'}
           </h2>
           <button onClick={onClose} className="rounded-md p-1 hover:bg-[var(--neutral-background-3)]">
             <MaterialIcon name="close" size={20} className="text-[var(--neutral-foreground-3)]" />
@@ -732,14 +732,14 @@ function SupportPlanFormModal({
         <div className="px-6 py-5 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
           {/* Info box */}
           <div className="rounded-lg border-l-4 border-[var(--brand-80)] bg-[var(--brand-160)] px-4 py-3 text-sm text-[var(--neutral-foreground-2)]">
-            支援案は活動日専用の事前計画です。連絡帳作成時に、その日の支援案が自動的に利用可能になります。
+            活動案は活動日専用の事前計画です。連絡帳作成時に、その日の活動案が自動的に利用可能になります。
           </div>
 
           {/* Copy from past button */}
           {!isEdit && (
             <div className="text-center">
               <Button variant="outline" onClick={() => setCopyModalOpen(true)} leftIcon={<MaterialIcon name="content_copy" size={16} className="h-4 w-4" />}>
-                過去の支援案を引用する
+                過去の活動案を引用する
               </Button>
             </div>
           )}
@@ -751,7 +751,7 @@ function SupportPlanFormModal({
               value={form.activity_date}
               onChange={(e) => setForm((p) => ({ ...p, activity_date: e.target.value }))}
             />
-            <HelpText>この支援案を使用する活動の予定日を選択してください</HelpText>
+            <HelpText>この活動案を使用する活動の予定日を選択してください</HelpText>
           </FieldGroup>
 
           {/* Activity name */}
@@ -1067,7 +1067,7 @@ function SupportPlanFormModal({
                 </label>
               ))}
             </div>
-            <HelpText>この支援案を実施する曜日を選択してください（複数選択可）</HelpText>
+            <HelpText>この活動案を実施する曜日を選択してください（複数選択可）</HelpText>
           </FieldGroup>
 
           {/* Five domains consideration */}
@@ -1184,7 +1184,7 @@ function CopyFromPastModal({
     <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/50 p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="w-full max-w-3xl bg-[var(--neutral-background-1)] rounded-xl shadow-xl my-8 max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between border-b border-[var(--neutral-stroke-2)] px-6 py-4 shrink-0">
-          <h2 className="text-lg font-bold">過去の支援案を選択</h2>
+          <h2 className="text-lg font-bold">過去の活動案を選択</h2>
           <button onClick={onClose} className="rounded-md p-1 hover:bg-[var(--neutral-background-3)]">
             <MaterialIcon name="close" size={20} />
           </button>
@@ -1259,7 +1259,7 @@ function CopyFromPastModal({
           {isLoading ? (
             <SkeletonList items={3} />
           ) : filtered.length === 0 ? (
-            <p className="text-center text-sm text-[var(--neutral-foreground-4)] py-6">該当する支援案がありません</p>
+            <p className="text-center text-sm text-[var(--neutral-foreground-4)] py-6">該当する活動案がありません</p>
           ) : viewMode === 'date' ? (
             sortedDates.map((date) => (
               <div key={date} className="mb-4">
@@ -1273,7 +1273,7 @@ function CopyFromPastModal({
             ))
           ) : (
             <>
-              <div className="text-sm text-[var(--neutral-foreground-3)] mb-2">全 {filtered.length} 件の支援案</div>
+              <div className="text-sm text-[var(--neutral-foreground-3)] mb-2">全 {filtered.length} 件の活動案</div>
               {filtered.map((p) => (
                 <PastPlanCard key={p.id} plan={p} onCopy={onCopy} showDate />
               ))}
@@ -1317,7 +1317,7 @@ function PastPlanCard({
             </p>
           )}
         </div>
-        <Button size="sm" onClick={() => onCopy(plan)}>この支援案を引用</Button>
+        <Button size="sm" onClick={() => onCopy(plan)}>この活動案を引用</Button>
       </div>
     </div>
   );

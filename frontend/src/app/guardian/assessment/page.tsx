@@ -202,7 +202,7 @@ export default function GuardianAssessmentPage() {
         <Card>
           <CardBody>
             <label className="mb-2 block text-sm font-medium text-[var(--neutral-foreground-2)]">
-              お子様を選択
+              本人を選択
             </label>
             <select
               value={activeStudentId}
@@ -298,7 +298,7 @@ export default function GuardianAssessmentPage() {
             <SectionHeader icon={<MaterialIcon name="favorite" size={16} className="h-4 w-4" />} title="本人の願い" color="var(--status-danger-fg)" />
             <div className="mb-4 ml-6">
               <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">
-                お子様が望んでいること、なりたい姿
+                本人が望んでいること、なりたい姿
               </label>
               {canEdit ? (
                 <textarea
@@ -306,7 +306,7 @@ export default function GuardianAssessmentPage() {
                   rows={3}
                   value={form.student_wish}
                   onChange={(e) => setForm({ ...form, student_wish: e.target.value })}
-                  placeholder="お子様の願いを記入してください..."
+                  placeholder="本人の願いを記入してください..."
                 />
               ) : (
                 <ViewBox text={form.student_wish} />

@@ -127,16 +127,6 @@ export default function StudentDetailPage() {
 // 基本情報（編集可能）
 // ---------------------------------------------------------------------------
 
-function disabilityCategoryLabel(value: string | null | undefined): string {
-  return ({
-    intellectual: '知的',
-    physical:     '身体',
-    mental:       '精神',
-    developmental: '発達',
-    dual:         '重複',
-  } as Record<string, string>)[value ?? ''] ?? (value || '-');
-}
-
 function StudentInfo({ studentId, student }: { studentId: number; student: Student }) {
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -154,16 +144,6 @@ function StudentInfo({ studentId, student }: { studentId: number; student: Stude
     contract_end_date: toDateStr(student.contract_end_date),
     usage_limit_date: toDateStr(student.usage_limit_date),
     notes: (student as any).notes || '',
-    // Phase D: 国保連請求情報 (全種別共通)
-    beneficiary_number: student.beneficiary_number ?? '',
-    municipality_code: student.municipality_code ?? '',
-    disability_category: student.disability_category ?? '',
-    disability_grade: student.disability_grade ?? '',
-    monthly_copay_cap: student.monthly_copay_cap ?? 0,
-    copay_management_provider: student.copay_management_provider ?? '',
-    certificate_issued_date: toDateStr(student.certificate_issued_date),
-    certificate_expiry_date: toDateStr(student.certificate_expiry_date),
-    monthly_usage_days_cap: student.monthly_usage_days_cap ?? 23,
     // Phase A: 工賃計算 (就労 A/B のみ)
     wage_calculation_type: student.wage_calculation_type ?? '',
     hourly_rate: student.hourly_rate ?? 0,
@@ -260,49 +240,6 @@ function StudentInfo({ studentId, student }: { studentId: number; student: Stude
                 <dd className="mt-1 text-sm text-[var(--neutral-foreground-1)] whitespace-pre-wrap">{(student as any).notes}</dd>
               </div>
             )}
-          </dl>
-
-          {/* === 受給者証 / 国保連請求情報 (全種別共通) === */}
-          <h3 className="mt-6 mb-2 border-b border-[var(--neutral-stroke-2)] pb-1 text-sm font-semibold text-[var(--brand-70)]">
-            受給者証・請求情報
-          </h3>
-          <dl className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <dt className="text-xs font-medium text-[var(--neutral-foreground-3)]">受給者証番号</dt>
-              <dd className="mt-1 font-mono text-sm">{student.beneficiary_number || '未登録'}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium text-[var(--neutral-foreground-3)]">支給市町村コード</dt>
-              <dd className="mt-1 font-mono text-sm">{student.municipality_code || '-'}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium text-[var(--neutral-foreground-3)]">障害種別</dt>
-              <dd className="mt-1 text-sm">{disabilityCategoryLabel(student.disability_category)}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium text-[var(--neutral-foreground-3)]">障害支援区分</dt>
-              <dd className="mt-1 text-sm">{student.disability_grade || '-'}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium text-[var(--neutral-foreground-3)]">月額負担上限額</dt>
-              <dd className="mt-1 text-sm">{student.monthly_copay_cap ? `¥${student.monthly_copay_cap.toLocaleString()}` : '-'}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium text-[var(--neutral-foreground-3)]">上限管理事業所</dt>
-              <dd className="mt-1 text-sm">{student.copay_management_provider || '-'}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium text-[var(--neutral-foreground-3)]">受給者証 発行日</dt>
-              <dd className="mt-1 text-sm">{student.certificate_issued_date ? formatDate(student.certificate_issued_date) : '-'}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium text-[var(--neutral-foreground-3)]">受給者証 有効期限</dt>
-              <dd className="mt-1 text-sm">{student.certificate_expiry_date ? formatDate(student.certificate_expiry_date) : '-'}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium text-[var(--neutral-foreground-3)]">月利用日数上限</dt>
-              <dd className="mt-1 text-sm">{student.monthly_usage_days_cap ? `${student.monthly_usage_days_cap} 日` : '-'}</dd>
-            </div>
           </dl>
 
           {/* === 就労 A/B のみ: 工賃計算 === */}
@@ -418,111 +355,6 @@ function StudentInfo({ studentId, student }: { studentId: number; student: Stude
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
             />
-          </div>
-
-          {/* === 受給者証・請求情報 (全種別共通) === */}
-          <div className="border-t border-[var(--neutral-stroke-2)] pt-4">
-            <h3 className="mb-3 text-sm font-semibold text-[var(--brand-70)]">受給者証・請求情報</h3>
-            <div className="space-y-3">
-              <Input
-                label="受給者証番号 (10桁)"
-                value={form.beneficiary_number}
-                onChange={(e) => setForm({ ...form, beneficiary_number: e.target.value })}
-                placeholder="1410012345"
-                maxLength={20}
-              />
-              <Input
-                label="支給市町村コード (6桁)"
-                value={form.municipality_code}
-                onChange={(e) => setForm({ ...form, municipality_code: e.target.value })}
-                placeholder="141305"
-                maxLength={10}
-              />
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">障害種別</label>
-                  <select
-                    className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm"
-                    value={form.disability_category}
-                    onChange={(e) => setForm({ ...form, disability_category: e.target.value })}
-                  >
-                    <option value="">選択</option>
-                    <option value="intellectual">知的</option>
-                    <option value="physical">身体</option>
-                    <option value="mental">精神</option>
-                    <option value="developmental">発達</option>
-                    <option value="dual">重複</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">障害支援区分</label>
-                  <select
-                    className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm"
-                    value={form.disability_grade}
-                    onChange={(e) => setForm({ ...form, disability_grade: e.target.value })}
-                  >
-                    <option value="">未設定</option>
-                    <option value="区分1">区分1</option>
-                    <option value="区分2">区分2</option>
-                    <option value="区分3">区分3</option>
-                    <option value="区分4">区分4</option>
-                    <option value="区分5">区分5</option>
-                    <option value="区分6">区分6</option>
-                    <option value="非該当">非該当</option>
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">月額負担上限額 (円)</label>
-                  <select
-                    className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm"
-                    value={form.monthly_copay_cap}
-                    onChange={(e) => setForm({ ...form, monthly_copay_cap: Number(e.target.value) })}
-                  >
-                    <option value={0}>0 円 (生活保護)</option>
-                    <option value={4600}>4,600 円 (低所得)</option>
-                    <option value={9300}>9,300 円 (一般1)</option>
-                    <option value={37200}>37,200 円 (一般2)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">上限管理事業所</label>
-                  <select
-                    className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm"
-                    value={form.copay_management_provider}
-                    onChange={(e) => setForm({ ...form, copay_management_provider: e.target.value })}
-                  >
-                    <option value="">未設定</option>
-                    <option value="自事業所">自事業所</option>
-                    <option value="別事業所">別事業所</option>
-                    <option value="上限管理対象外">上限管理対象外</option>
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Input
-                  label="受給者証 発行日"
-                  type="date"
-                  value={form.certificate_issued_date}
-                  onChange={(e) => setForm({ ...form, certificate_issued_date: e.target.value })}
-                />
-                <Input
-                  label="受給者証 有効期限"
-                  type="date"
-                  value={form.certificate_expiry_date}
-                  onChange={(e) => setForm({ ...form, certificate_expiry_date: e.target.value })}
-                />
-              </div>
-              <Input
-                label="月利用日数上限 (日)"
-                type="number"
-                min={0}
-                max={31}
-                value={form.monthly_usage_days_cap}
-                onChange={(e) => setForm({ ...form, monthly_usage_days_cap: Number(e.target.value) })}
-              />
-            </div>
           </div>
 
           {/* === 就労 A/B のみ: 工賃計算 === */}
@@ -848,7 +680,7 @@ const PROFILE_SECTIONS: SectionDef[] = [
       { key: 'to_others_example', label: '具体的なやりとり例（→相手）', type: 'textarea' },
       { key: 'from_others_method', label: '相手から本人に伝えるとき', type: 'text', placeholder: 'ことば（文章）/ ことば（単語）/ ジェスチャー / 写真・絵カード' },
       { key: 'from_others_example', label: '具体的なやりとり例（←相手）', type: 'textarea' },
-      { key: 'friend_interaction', label: '友達とのやりとり・関わり方', type: 'textarea' },
+      { key: 'friend_interaction', label: '友だちとのやりとり・関わり方', type: 'textarea' },
     ],
   },
 ];

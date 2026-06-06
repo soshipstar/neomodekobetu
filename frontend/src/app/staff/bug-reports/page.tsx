@@ -148,6 +148,7 @@ export default function BugReportsPage() {
       queryClient.invalidateQueries({ queryKey: ['bug-reports'] });
       toast.success('ステータスを更新しました');
     },
+    onError: (err: unknown) => toast.error(describeSubmitError(err, 'ステータス更新')),
   });
 
   // Auto-fill current URL
@@ -448,15 +449,20 @@ export default function BugReportsPage() {
                   </div>
                 )}
 
-                {/* Admin: Status Change */}
-                {isAdmin && (
+                {/* Status Change:
+                    - 管理者 (master / company_admin) は全ての報告を遷移可
+                    - 報告者本人は自分の報告を自由に遷移可 (open / in_progress / resolved)
+                    旧仕様では「報告者は in_progress → resolved のみ」に縛り、通常管理者
+                    (user_type=admin だが is_master=false) は自分の報告ですら status='open'
+                    から動かせなかった。バックエンドの認可と同じ条件で UI を出す。 */}
+                {(isAdmin || detail.reporter?.id === user?.id) && (
                   <div className="flex items-center gap-2 border-t border-[var(--neutral-stroke-2)] pt-3 flex-wrap">
                     <span className="text-xs text-[var(--neutral-foreground-3)]">ステータス:</span>
                     {['open', 'in_progress', 'resolved'].map((s) => (
                       <button
                         key={s}
                         onClick={() => statusMutation.mutate(s)}
-                        disabled={detail.status === s}
+                        disabled={detail.status === s || statusMutation.isPending}
                         className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                           detail.status === s
                             ? 'bg-purple-600 text-white'
@@ -466,24 +472,6 @@ export default function BugReportsPage() {
                         {STATUS_MAP[s]?.label || s}
                       </button>
                     ))}
-                  </div>
-                )}
-
-                {/* Reporter: 対応済み確認依頼中の自分の報告を解決済みにできる */}
-                {!isAdmin && detail.reporter?.id === user?.id && detail.status === 'in_progress' && (
-                  <div className="border-t border-[var(--neutral-stroke-2)] pt-3">
-                    <p className="text-xs text-[var(--neutral-foreground-3)] mb-2">
-                      修正が反映されていることを確認したら、下のボタンで解決済みに変更できます。
-                    </p>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => statusMutation.mutate('resolved')}
-                      isLoading={statusMutation.isPending}
-                      leftIcon={<MaterialIcon name="check_circle" size={16} />}
-                    >
-                      解決済みにする
-                    </Button>
                   </div>
                 )}
 

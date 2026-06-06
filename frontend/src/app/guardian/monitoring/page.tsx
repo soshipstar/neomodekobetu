@@ -241,7 +241,7 @@ export default function GuardianMonitoringPage() {
                     {/* Basic info */}
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                       <div className="rounded-lg bg-[var(--neutral-background-3)] p-3">
-                        <p className="text-xs font-medium text-[var(--neutral-foreground-3)]">お子様のお名前</p>
+                        <p className="text-xs font-medium text-[var(--neutral-foreground-3)]">本人のお名前</p>
                         <p className="text-sm font-medium text-[var(--neutral-foreground-1)]">{record.student_name || record.student?.student_name}</p>
                       </div>
                       <div className="rounded-lg bg-[var(--neutral-background-3)] p-3">
