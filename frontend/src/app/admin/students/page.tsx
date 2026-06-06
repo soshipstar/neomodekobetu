@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { usePagination } from '@/hooks/usePagination';
 import { useDebounce } from '@/hooks/useDebounce';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -42,6 +42,57 @@ interface GradeChange {
   new_grade: string;
 }
 
+/**
+ * 管理者から生徒を新規登録する際の最低限のフォーム。
+ * backend Admin\StudentController::store の必須は classroom_id + student_name のみ。
+ * username/password 未指定は backend 側で自動採番される。
+ * 詳細プロフィール (契約・工賃・希望スケジュール等) は staff/students 編集側で入れる。
+ */
+interface AdminCreateStudentForm {
+  classroom_id: string;
+  student_name: string;
+  birth_date: string;
+  grade_level: string;
+  guardian_id: string;
+  status: string;
+  username: string;
+  password: string;
+}
+
+const emptyCreateForm: AdminCreateStudentForm = {
+  classroom_id: '',
+  student_name: '',
+  birth_date: '',
+  grade_level: '',
+  guardian_id: '',
+  status: 'active',
+  username: '',
+  password: '',
+};
+
+const GRADE_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: '', label: '(未設定)' },
+  { value: 'preschool', label: '未就学' },
+  { value: 'elementary_1', label: '小学1年' },
+  { value: 'elementary_2', label: '小学2年' },
+  { value: 'elementary_3', label: '小学3年' },
+  { value: 'elementary_4', label: '小学4年' },
+  { value: 'elementary_5', label: '小学5年' },
+  { value: 'elementary_6', label: '小学6年' },
+  { value: 'junior_high_1', label: '中学1年' },
+  { value: 'junior_high_2', label: '中学2年' },
+  { value: 'junior_high_3', label: '中学3年' },
+  { value: 'high_school_1', label: '高校1年' },
+  { value: 'high_school_2', label: '高校2年' },
+  { value: 'high_school_3', label: '高校3年' },
+];
+
+const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: 'active', label: '在籍' },
+  { value: 'waiting', label: '待機' },
+  { value: 'withdrawn', label: '退所' },
+];
+
 export default function AdminStudentsPage() {
   const { terms, serviceType } = useWorkspace();
   const [search, setSearch] = useState('');
@@ -51,8 +102,87 @@ export default function AdminStudentsPage() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [copySource, setCopySource] = useState<Student | null>(null);
   const [linkedTarget, setLinkedTarget] = useState<Student | null>(null);
+  // 新規生徒登録 Modal (admin/students.php と同等 — 旧アプリでは admin/staff 両方で登録可)
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState<AdminCreateStudentForm>(emptyCreateForm);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  /**
+   * 登録 Modal で表示する選択肢:
+   * - classrooms: ユーザーがアクセスできる教室のみ (admin 一覧 API が classroom フィルタ済)
+   * - guardians: 保護者プルダウン
+   *
+   * Modal 表示時のみ enabled にして初回ロードを抑える。
+   */
+  const { data: createClassrooms = [] } = useQuery({
+    queryKey: ['admin', 'students', 'create-form', 'classrooms'],
+    queryFn: async () => {
+      const res = await api.get<{ data: Array<{ id: number; classroom_name: string }> }>(
+        '/api/admin/classrooms',
+      );
+      return Array.isArray(res.data?.data) ? res.data.data : [];
+    },
+    enabled: createOpen,
+  });
+
+  const { data: createGuardians = [] } = useQuery({
+    queryKey: ['admin', 'students', 'create-form', 'guardians'],
+    queryFn: async () => {
+      // 保護者は staff endpoint 経由で取得 (admin 専用エンドポイントは未提供)。
+      const res = await api.get<{ data: Array<{ id: number; full_name: string }> }>(
+        '/api/staff/students/guardians',
+      );
+      return Array.isArray(res.data?.data) ? res.data.data : [];
+    },
+    enabled: createOpen,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (form: AdminCreateStudentForm) => {
+      const payload: Record<string, unknown> = {
+        classroom_id: Number(form.classroom_id),
+        student_name: form.student_name,
+        status: form.status || 'active',
+      };
+      if (form.birth_date) payload.birth_date = form.birth_date;
+      if (form.grade_level) payload.grade_level = form.grade_level;
+      if (form.guardian_id) payload.guardian_id = Number(form.guardian_id);
+      if (form.username) payload.username = form.username;
+      if (form.password) payload.password = form.password;
+      const res = await api.post('/api/admin/students', payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast(`${terms.client}を登録しました`, 'success');
+      setCreateOpen(false);
+      setCreateForm(emptyCreateForm);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'students'] });
+    },
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+        || '登録に失敗しました';
+      toast(msg, 'error');
+    },
+  });
+
+  const handleOpenCreate = () => {
+    setCreateForm(emptyCreateForm);
+    setCreateOpen(true);
+  };
+
+  const handleSubmitCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createForm.classroom_id) {
+      toast('事業所を選択してください', 'error');
+      return;
+    }
+    if (!createForm.student_name.trim()) {
+      toast(`${terms.client}名を入力してください`, 'error');
+      return;
+    }
+    createMutation.mutate(createForm);
+  };
 
   const { data: students, meta, isLoading, goToPage } = usePagination<Student>({
     endpoint: '/api/admin/students',
@@ -149,12 +279,18 @@ export default function AdminStudentsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">{terms.client_plural}管理 (管理者)</h1>
-        {/* 学年更新は放デイのみ意味を持つ機能 */}
-        {serviceType === 'after_school' && (
-          <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="school" size={16} />} onClick={handleOpenPromotion}>
-            学年更新
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* 学年更新は放デイのみ意味を持つ機能 */}
+          {serviceType === 'after_school' && (
+            <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="school" size={16} />} onClick={handleOpenPromotion}>
+              学年更新
+            </Button>
+          )}
+          {/* 新規登録 (旧アプリ admin/students.php と同等 — 管理者でも登録できる必要がある) */}
+          <Button variant="primary" size="sm" leftIcon={<MaterialIcon name="add" size={16} />} onClick={handleOpenCreate}>
+            新規{terms.client}登録
           </Button>
-        )}
+        </div>
       </div>
 
       <div className="relative">
@@ -248,6 +384,139 @@ export default function AdminStudentsPage() {
           onSynced={() => queryClient.invalidateQueries({ queryKey: ['admin', 'students'] })}
         />
       )}
+
+      {/* 新規登録モーダル (旧アプリ admin/students.php の登録UIに相当)
+          backend: POST /api/admin/students (Admin\StudentController::store)
+          必須は classroom_id + student_name のみ。username/password 未指定は自動採番。
+          詳細プロフィール (契約・工賃等) は登録後に staff/students 編集モーダルで設定。 */}
+      <Modal
+        isOpen={createOpen}
+        onClose={() => { if (!createMutation.isPending) setCreateOpen(false); }}
+        title={`新規${terms.client}登録`}
+        size="md"
+      >
+        <form onSubmit={handleSubmitCreate} className="space-y-4">
+          {/* 事業所 (必須) */}
+          <div>
+            <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">
+              事業所 <span className="text-[var(--status-danger-fg)]">*</span>
+            </label>
+            <select
+              value={createForm.classroom_id}
+              onChange={(e) => setCreateForm((f) => ({ ...f, classroom_id: e.target.value }))}
+              className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+              required
+            >
+              <option value="">事業所を選択...</option>
+              {createClassrooms.map((c) => (
+                <option key={c.id} value={c.id}>{c.classroom_name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 生徒名 (必須) */}
+          <Input
+            label={`${terms.client}名 *`}
+            value={createForm.student_name}
+            onChange={(e) => setCreateForm((f) => ({ ...f, student_name: e.target.value }))}
+            placeholder={`${terms.client}の氏名`}
+            required
+          />
+
+          {/* 生年月日 / 学年 */}
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="生年月日"
+              type="date"
+              value={createForm.birth_date}
+              onChange={(e) => setCreateForm((f) => ({ ...f, birth_date: e.target.value }))}
+            />
+            <div>
+              <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">学年</label>
+              <select
+                value={createForm.grade_level}
+                onChange={(e) => setCreateForm((f) => ({ ...f, grade_level: e.target.value }))}
+                className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+              >
+                {GRADE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* 保護者 / ステータス */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">{terms.guardian}</label>
+              <select
+                value={createForm.guardian_id}
+                onChange={(e) => setCreateForm((f) => ({ ...f, guardian_id: e.target.value }))}
+                className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+              >
+                <option value="">(未設定)</option>
+                {createGuardians.map((g) => (
+                  <option key={g.id} value={g.id}>{g.full_name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">ステータス</label>
+              <select
+                value={createForm.status}
+                onChange={(e) => setCreateForm((f) => ({ ...f, status: e.target.value }))}
+                className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+              >
+                {STATUS_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* ユーザー名 / パスワード (未指定なら自動採番) */}
+          <div className="rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] p-3">
+            <p className="mb-2 text-xs text-[var(--neutral-foreground-3)]">
+              ユーザー名・パスワードは未入力で登録すると自動で採番されます (例: student_001)。
+              後で {terms.client} 詳細編集画面から変更できます。
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                label="ユーザー名"
+                value={createForm.username}
+                onChange={(e) => setCreateForm((f) => ({ ...f, username: e.target.value }))}
+                placeholder="(自動採番)"
+              />
+              <Input
+                label="パスワード"
+                type="text"
+                value={createForm.password}
+                onChange={(e) => setCreateForm((f) => ({ ...f, password: e.target.value }))}
+                placeholder="(自動生成)"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setCreateOpen(false)}
+              disabled={createMutation.isPending}
+            >
+              キャンセル
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              isLoading={createMutation.isPending}
+              leftIcon={<MaterialIcon name="save" size={16} />}
+            >
+              登録する
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
