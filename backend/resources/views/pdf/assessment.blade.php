@@ -308,6 +308,10 @@
 
     <div class="footer">
         出力日時: {{ now()->format('Y/m/d H:i') }} | {{ $period->period_name ?? '' }}
+        {{-- AISI ヘルスケア AI セーフティ評価観点ガイド v1.0 R4 (2026-05-17): V4 ハイリスク利用への対処 --}}
+        <div style="margin-top: 4px; font-size: 9px; color: #666;">
+            {{ \App\Services\AiPromptDirectives::medicalDisclaimerFooter() }}
+        </div>
     </div>
 </body>
 </html>
