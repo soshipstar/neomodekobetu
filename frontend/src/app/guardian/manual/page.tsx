@@ -283,6 +283,35 @@ const sections: ManualSection[] = [
       </div>
     ),
   },
+  {
+    id: 'ai-usage',
+    icon: <MaterialIcon name="smart_toy" size={20} />,
+    title: 'AI（人工知能）の利用について',
+    content: (
+      <div className="space-y-3">
+        <p className="text-sm leading-relaxed text-[var(--neutral-foreground-2)]">
+          本システムでは、個別支援計画・連絡帳・おたより等の<strong>書類作成の下書き支援</strong>として、
+          生成AIを利用することがあります。AIは作成の補助であり、<strong>医療上の診断や治療の判断には使用しません</strong>。
+        </p>
+        <div className="space-y-2">
+          {[
+            { title: '必ず職員が確認します', description: 'AIが作成するのは下書き（素案）です。内容は必ず事業所の職員が確認・修正したうえで、正式な書類としてお届けします。' },
+            { title: '個人情報の保護', description: 'AIに文章作成を依頼する際は、お子様・保護者のお名前などを伏せた（仮名化した）うえで処理し、実名等が外部にそのまま送られないようにしています。' },
+            { title: '学習には使われません', description: 'AIの提供事業者は業務委託先であり、お預かりした情報がAIの学習に使われることはありません。' },
+          ].map((item) => (
+            <div key={item.title} className="border-b border-[var(--neutral-stroke-3)] pb-2 last:border-b-0 last:pb-0">
+              <p className="text-sm font-semibold text-[var(--neutral-foreground-1)]">{item.title}</p>
+              <p className="mt-0.5 text-xs text-[var(--neutral-foreground-3)]">{item.description}</p>
+            </div>
+          ))}
+        </div>
+        <HighlightBox variant="info">
+          詳しい取り扱いは<strong>利用規約および別途定めるプライバシーポリシー</strong>に従います。
+          ご不明な点は事業所までお気軽にお問い合わせください。
+        </HighlightBox>
+      </div>
+    ),
+  },
 ];
 
 export default function GuardianManualPage() {
