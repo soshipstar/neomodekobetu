@@ -13,6 +13,7 @@ import { nl } from '@/lib/utils';
 import { format } from 'date-fns';
 import { SignaturePad, type SignaturePadRef } from '@/components/ui/SignaturePad';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { AiNotice } from '@/components/ui/AiNotice';
 import { StudentSortableList, type StudentRow } from '@/components/staff/StudentSortableList';
 
 // ---------------------------------------------------------------------------
@@ -570,6 +571,7 @@ export default function KobetsuMonitoringPage() {
                 </Button>
               )}
             </div>
+            {!isReadOnly && <AiNotice className="mb-4" />}
 
             {/* Progress bar */}
             {generateProgress.visible && (

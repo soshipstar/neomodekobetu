@@ -11,6 +11,7 @@ import { Skeleton, SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { format } from 'date-fns';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { AiNotice } from '@/components/ui/AiNotice';
 import { StudentSortableList, type StudentRow } from '@/components/staff/StudentSortableList';
 
 // ---------------------------------------------------------------------------
@@ -392,6 +393,7 @@ export default function AssessmentStaffPage() {
                               AI生成
                             </Button>
                           </div>
+                          <AiNotice />
 
                           {/* Goals */}
                           <div>

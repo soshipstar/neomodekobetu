@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
+import { AiNotice } from '@/components/ui/AiNotice';
 import { useVoiceInput } from '../useVoiceInput';
 import Link from 'next/link';
 
@@ -192,6 +193,8 @@ function TabletIntegratePage() {
           <li>続きを書きたい場合は「下書き保存」してから後で再開できます。</li>
         </ol>
       </div>
+
+      <AiNotice className="mt-3" />
 
       {/* 各生徒のカード */}
       {data.participants.map((participant) => {

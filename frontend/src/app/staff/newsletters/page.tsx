@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { format } from 'date-fns';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { AiNotice } from '@/components/ui/AiNotice';
 import { PhotoPickerModal, type PhotoOption } from '@/components/photos/PhotoPickerModal';
 
 // ---------------------------------------------------------------------------
@@ -380,6 +381,7 @@ export default function NewslettersPage() {
                   AIで通信を生成
                 </Button>
               </div>
+              <AiNotice className="mt-2" />
             </div>
           )}
 

@@ -11,6 +11,7 @@ import { Modal } from '@/components/ui/Modal';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { AiNotice } from '@/components/ui/AiNotice';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -1300,6 +1301,7 @@ function SelfEvaluationView({
           )}
         </div>
       </div>
+      {isAdmin && <AiNotice className="mb-4" />}
 
       {/* 強み */}
       <Card className="mb-4">
