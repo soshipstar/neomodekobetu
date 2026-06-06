@@ -782,6 +782,12 @@ class RenrakuchoController extends Controller
 
         $student = \App\Models\Student::find($validated['student_id']);
         $studentName = $student?->student_name ?? '本人';
+
+        // 観点5 プライバシー保護: 外部AIへ送る前に児童・保護者の氏名を仮名化する。
+        $masker = $student
+            ? \App\Support\PiiMasker::forStudent($student)
+            : new \App\Support\PiiMasker();
+
         $domainText = implode("\n", $domains);
         $activityName = $record->activity_name;
         $commonActivity = $record->common_activity ?? '';
@@ -896,8 +902,9 @@ class RenrakuchoController extends Controller
                 // 連絡帳は文章が短く軽量タスクなので mini で十分 (運用コスト最適化、現場要望)
 'model'    => 'gpt-5.4-mini-2026-03-17',
                 'messages' => [
-                    ['role' => 'system', 'content' => 'あなたは個別支援教育の経験豊富な教員です。保護者に向けて温かく丁寧で、前向きでポジティブな連絡帳を書きます。本人の良い面や成長を見つけ、課題も成長の機会として前向きに伝えます。「しかし」「ですが」などのネガティブな接続詞は使わず、常にポジティブな表現を心がけます。連絡帳の対象児童を指すときは「本人」または児童名を使い、「子ども」「お子様」という言葉は使いません。他の児童は「友だち」と表記し、「友達」「保護者様」も使いません。'],
-                    ['role' => 'user', 'content' => $prompt],
+                    ['role' => 'system', 'content' => 'あなたは個別支援教育の経験豊富な教員です。保護者に向けて温かく丁寧で、前向きでポジティブな連絡帳を書きます。本人の良い面や成長を見つけ、課題も成長の機会として前向きに伝えます。「しかし」「ですが」などのネガティブな接続詞は使わず、常にポジティブな表現を心がけます。連絡帳の対象児童を指すときは「本人」または児童名を使い、「子ども」「お子様」という言葉は使いません。他の児童は「友だち」と表記し、「友達」「保護者様」も使いません。入力された観察記録に書かれている事実のみに基づいて記述し、入力に無い活動・出来事・所見を創作しないでください。'],
+                    // 観点5: 児童・保護者の実名を仮名化したプロンプトを送る。
+                    ['role' => 'user', 'content' => $masker->mask($prompt)],
                 ],
                 'temperature' => 0.7,
                 'max_completion_tokens' => 1000,
@@ -912,15 +919,19 @@ class RenrakuchoController extends Controller
             // プロンプトで与えた 5 領域ラベル（【健康・生活】等）が AI 出力に残ることがあるため除去
             $content = $this->stripDomainLabels($content);
 
+            // ヒヤリハット検出は仮名(プレースホルダ)のまま行う。
+            // ここで実名へ復元してしまうと detectHiyariHattoCandidate が
+            // 再び実名を外部AIへ送信してしまうため、復元前に実行する。
+            $hiyariCandidate = $this->detectHiyariHattoCandidate($client, $student, $record, $domainText, $notes, $content, $masker);
+
+            // 仮名を実名へ復元してから保存・返却する (連絡帳は職員・保護者が読む下書きのため)
+            $content = $masker->unmask($content);
+
             // Save draft integrated note
             IntegratedNote::updateOrCreate(
                 ['daily_record_id' => $record->id, 'student_id' => $validated['student_id']],
                 ['integrated_content' => $content, 'is_sent' => false]
             );
-
-            // ヒヤリハット検出: 統合文と元の観察記録を追加プロンプトで分析し、
-            // ヒヤリハットに値する内容があれば構造化された候補データを返す
-            $hiyariCandidate = $this->detectHiyariHattoCandidate($client, $student, $record, $domainText, $notes, $content);
 
             return response()->json([
                 'success' => true,
@@ -1021,6 +1032,7 @@ class RenrakuchoController extends Controller
         string $domainText,
         string $notes,
         string $integratedContent,
+        ?\App\Support\PiiMasker $masker = null,
     ): ?array {
         try {
             $studentName = $student?->student_name ?? '';
@@ -1055,7 +1067,9 @@ class RenrakuchoController extends Controller
                 'model' => 'gpt-5.4-mini-2026-03-17',
                 'messages' => [
                     ['role' => 'system', 'content' => 'あなたは児童安全管理の専門家です。厳密な JSON のみで応答します。'],
-                    ['role' => 'user', 'content' => $detectPrompt],
+                    // 観点5: 児童・保護者の実名を仮名化してから送信する。
+                    // (integratedContent は既に仮名。studentName/domainText/notes をここで仮名化)
+                    ['role' => 'user', 'content' => $masker ? $masker->mask($detectPrompt) : $detectPrompt],
                 ],
                 'temperature' => 0.2,
                 'max_completion_tokens' => 500,
@@ -1070,7 +1084,7 @@ class RenrakuchoController extends Controller
                 return null;
             }
 
-            return [
+            $candidate = [
                 'detected' => true,
                 'reason' => $parsed['reason'] ?? '',
                 'severity' => in_array($parsed['severity'] ?? '', ['low', 'medium', 'high'], true)
@@ -1081,6 +1095,9 @@ class RenrakuchoController extends Controller
                 'immediate_response' => (string) ($parsed['immediate_response'] ?? ''),
                 'prevention_measures' => (string) ($parsed['prevention_measures'] ?? ''),
             ];
+
+            // 仮名を実名へ復元 (職員が確認・登録する候補データのため)
+            return $masker ? $masker->unmaskArray($candidate) : $candidate;
         } catch (\Throwable $e) {
             \Log::warning('Hiyari hatto detection failed: ' . $e->getMessage());
             return null;

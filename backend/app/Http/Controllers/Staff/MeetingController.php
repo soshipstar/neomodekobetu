@@ -371,6 +371,9 @@ class MeetingController extends Controller
 
         $student = Student::findOrFail($studentId);
 
+        // 観点5 プライバシー保護: 外部AIへ送る前に児童・保護者の氏名を仮名化する。
+        $masker = \App\Support\PiiMasker::forStudent($student);
+
         try {
             $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
             if (empty($apiKey)) {
@@ -402,7 +405,14 @@ class MeetingController extends Controller
 
             $response = $client->chat()->create([
                 'model'    => $aiModel,
-                'messages' => [['role' => 'user', 'content' => $prompt]],
+                'messages' => [
+                    [
+                        'role'    => 'system',
+                        'content' => '入力された情報のみに基づいて作成し、入力に無い事実を創作しないでください。情報が不足する項目は推測で補わず該当項目を null にしてください。',
+                    ],
+                    // 観点5: 児童・保護者の実名を仮名化したプロンプトを送る。
+                    ['role' => 'user', 'content' => $masker->mask($prompt)],
+                ],
                 'response_format'       => ['type' => 'json_object'],
                 'temperature'           => 0.5,
                 'max_completion_tokens' => 3000,
@@ -417,6 +427,11 @@ class MeetingController extends Controller
             if (json_last_error() !== JSON_ERROR_NONE) {
                 Log::error('OpenAI assessment guardian parse failed', ['response' => $content]);
                 throw new \Exception('AI応答のパースに失敗しました。');
+            }
+
+            // 仮名を実名へ復元 (職員が使う下書きのため)
+            if (is_array($data)) {
+                $data = $masker->unmaskArray($data);
             }
 
             // アセスメントに保存
