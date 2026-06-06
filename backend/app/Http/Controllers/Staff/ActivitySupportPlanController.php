@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Log;
 class ActivitySupportPlanController extends Controller
 {
     /**
-     * 支援案一覧を取得
+     * 活動案一覧を取得
      */
     public function index(Request $request): JsonResponse
     {
@@ -76,7 +76,7 @@ class ActivitySupportPlanController extends Controller
     }
 
     /**
-     * 支援案の詳細を取得（1件）
+     * 活動案の詳細を取得（1件）
      */
     public function show(Request $request, ActivitySupportPlan $plan): JsonResponse
     {
@@ -93,7 +93,7 @@ class ActivitySupportPlanController extends Controller
     }
 
     /**
-     * 支援案を新規作成
+     * 活動案を新規作成
      */
     public function store(Request $request): JsonResponse
     {
@@ -123,12 +123,12 @@ class ActivitySupportPlanController extends Controller
         return response()->json([
             'success' => true,
             'data' => $plan,
-            'message' => '支援案を作成しました。',
+            'message' => '活動案を作成しました。',
         ], 201);
     }
 
     /**
-     * 支援案を更新
+     * 活動案を更新
      */
     public function update(Request $request, ActivitySupportPlan $plan): JsonResponse
     {
@@ -158,12 +158,12 @@ class ActivitySupportPlanController extends Controller
         return response()->json([
             'success' => true,
             'data' => $plan->fresh(),
-            'message' => '支援案を更新しました。',
+            'message' => '活動案を更新しました。',
         ]);
     }
 
     /**
-     * 支援案を削除
+     * 活動案を削除
      */
     public function destroy(Request $request, ActivitySupportPlan $plan): JsonResponse
     {
@@ -178,7 +178,7 @@ class ActivitySupportPlanController extends Controller
         if ($usageCount > 0) {
             return response()->json([
                 'success' => false,
-                'message' => "この支援案は既に活動で{$usageCount}回使用されているため削除できません。",
+                'message' => "この活動案は既に活動で{$usageCount}回使用されているため削除できません。",
             ], 422);
         }
 
@@ -186,12 +186,12 @@ class ActivitySupportPlanController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => '支援案を削除しました。',
+            'message' => '活動案を削除しました。',
         ]);
     }
 
     /**
-     * 過去の支援案を取得（引用用）
+     * 過去の活動案を取得（引用用）
      */
     public function pastPlans(Request $request): JsonResponse
     {
@@ -229,7 +229,7 @@ class ActivitySupportPlanController extends Controller
     }
 
     /**
-     * 支援案をPDF出力
+     * 活動案をPDF出力
      */
     public function pdf(Request $request, ActivitySupportPlan $plan)
     {
@@ -326,14 +326,16 @@ class ActivitySupportPlanController extends Controller
         try {
             $startTime = microtime(true);
 
-            $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
-            $client = \OpenAI::client($apiKey);
+            // AISI R1/R4/R6 (2026-05-17): Sanitizer + 共通規律句 + OpenAiClientFactory
+            $sanitizer = new \App\Services\AiPromptSanitizer();
+            $client = \App\Services\OpenAiClientFactory::make();
             $response = $client->chat()->create([
-                'model' => config('services.openai.model_plan'),
+                'model' => config('services.openai.model', 'gpt-5.4-mini-2026-03-17'),
                 'messages' => [
                     [
                         'role' => 'system',
-                        'content' => '放課後等デイサービスの支援案を作成する専門家AIアシスタントです。JSON形式で回答してください。',
+                        'content' => \App\Services\AiPromptDirectives::systemBase($sanitizer)
+                            . '放課後等デイサービスの活動案を作成する専門家AIアシスタントです。JSON形式で回答してください。',
                     ],
                     [
                         'role' => 'user',
@@ -431,7 +433,7 @@ class ActivitySupportPlanController extends Controller
         $prompt .= "3. 以下の構成で記載してください：\n\n";
         $prompt .= "■ 詳細な活動の流れ\n\n";
         $prompt .= "【活動1: ○○】（○○分）\n";
-        $prompt .= "・導入：子どもたちへの声かけ、準備\n";
+        $prompt .= "・導入：本人たちへの声かけ、準備\n";
         $prompt .= "・展開：具体的な活動内容\n";
         $prompt .= "・スタッフの役割と配置\n\n";
         $prompt .= "【活動2: ○○】（○○分）\n";
@@ -440,26 +442,28 @@ class ActivitySupportPlanController extends Controller
         $prompt .= "- 活動に必要な物品リスト\n\n";
         $prompt .= "4. 「毎日の支援」はルーティーン活動なので、簡潔に記載\n";
         $prompt .= "5. 「主活動」はメインの活動なので、詳細に記載\n";
-        $prompt .= "6. 子どもの発達段階に合わせた声かけの例を含める\n";
+        $prompt .= "6. 本人の発達段階に合わせた声かけの例を含める\n";
         $prompt .= "7. 活動の切り替え時の工夫も記載\n\n";
         $prompt .= "【その他（other_notes）の作成ガイドライン】\n";
         $prompt .= "以下の内容を記載してください：\n";
         $prompt .= "- 安全面での注意点\n";
-        $prompt .= "- 個別支援が必要な子どもへの配慮\n";
+        $prompt .= "- 個別支援が必要な本人への配慮\n";
         $prompt .= "- 活動中の見守りポイント\n\n";
         $prompt .= "出力は日本語で、実用的で具体的な内容にしてください。";
 
         try {
             $startTime = microtime(true);
 
-            $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
-            $client = \OpenAI::client($apiKey);
+            // AISI R1/R4/R6 (2026-05-17): Sanitizer + 共通規律句 + OpenAiClientFactory
+            $sanitizer = new \App\Services\AiPromptSanitizer();
+            $client = \App\Services\OpenAiClientFactory::make();
             $response = $client->chat()->create([
-                'model' => config('services.openai.model_plan'),
+                'model' => config('services.openai.model', 'gpt-5.4-mini-2026-03-17'),
                 'messages' => [
                     [
                         'role' => 'system',
-                        'content' => '放課後等デイサービスの活動計画を作成する専門家AIアシスタントです。JSON形式で回答してください。',
+                        'content' => \App\Services\AiPromptDirectives::systemBase($sanitizer)
+                            . '放課後等デイサービスの活動計画を作成する専門家AIアシスタントです。JSON形式で回答してください。',
                     ],
                     [
                         'role' => 'user',
@@ -494,7 +498,7 @@ class ActivitySupportPlanController extends Controller
             AiGenerationLog::create([
                 'user_id' => Auth::id(),
                 'generation_type' => $type,
-                'model' => $response->model ?? config('services.openai.model', config('services.openai.model_plan')),
+                'model' => $response->model ?? config('services.openai.model', 'gpt-5.4-mini-2026-03-17'),
                 'prompt_tokens' => $response->usage->promptTokens ?? 0,
                 'completion_tokens' => $response->usage->completionTokens ?? 0,
                 'input_data' => ['prompt' => mb_substr($prompt, 0, 5000)],

@@ -112,12 +112,15 @@ class AiGenerationController extends Controller
             . ServiceTypeRegistry::aiServiceFocus($serviceType);
 
         try {
-            $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
-                'model'    => config('services.openai.model_plan'),
+            // AISI R1/R4/R6 (2026-05-17): Sanitizer + 共通規律句 + OpenAiClientFactory
+            $sanitizer = new \App\Services\AiPromptSanitizer();
+            $client = \App\Services\OpenAiClientFactory::make();
+            $response = $client->chat()->create([
+                'model'    => config('services.openai.model', 'gpt-5.4-mini-2026-03-17'),
                 'messages' => [
                     [
                         'role'    => 'system',
-                        'content' => $systemPrompt,
+                        'content' => \App\Services\AiPromptDirectives::systemBase($sanitizer) . $systemPrompt,
                     ],
                     [
                         'role'    => 'user',
@@ -154,7 +157,7 @@ class AiGenerationController extends Controller
             // 生成ログ保存
             AiGenerationLog::create([
                 'user_id'      => $request->user()->id,
-                'model'        => config('services.openai.model_plan'),
+                'model'        => 'gpt-5.4-mini-2026-03-17',
                 'prompt_type'  => 'support_plan',
                 'input_tokens' => $response->usage->promptTokens ?? null,
                 'output_tokens' => $response->usage->completionTokens ?? null,
@@ -247,12 +250,15 @@ class AiGenerationController extends Controller
             . ServiceTypeRegistry::aiServiceFocus($serviceType);
 
         try {
-            $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
-                'model'    => config('services.openai.model_monitoring'),
+            // AISI R1/R4/R6 (2026-05-17): Sanitizer + 共通規律句 + OpenAiClientFactory
+            $sanitizer = new \App\Services\AiPromptSanitizer();
+            $client = \App\Services\OpenAiClientFactory::make();
+            $response = $client->chat()->create([
+                'model'    => config('services.openai.model', 'gpt-5.4-mini-2026-03-17'),
                 'messages' => [
                     [
                         'role'    => 'system',
-                        'content' => $systemPrompt,
+                        'content' => \App\Services\AiPromptDirectives::systemBase($sanitizer) . $systemPrompt,
                     ],
                     [
                         'role'    => 'user',
@@ -277,7 +283,7 @@ class AiGenerationController extends Controller
 
             AiGenerationLog::create([
                 'user_id'      => $request->user()->id,
-                'model'        => config('services.openai.model_monitoring'),
+                'model'        => 'gpt-5.4-mini-2026-03-17',
                 'prompt_type'  => 'monitoring',
                 'input_tokens' => $response->usage->promptTokens ?? null,
                 'output_tokens' => $response->usage->completionTokens ?? null,
@@ -326,12 +332,16 @@ class AiGenerationController extends Controller
         $terms       = ServiceTypeRegistry::terms($serviceType);
 
         try {
-            $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
-                'model'    => config('services.openai.model_newsletter'),
+            // AISI R1/R4/R6 (2026-05-17): Sanitizer + 共通規律句 + OpenAiClientFactory
+            $sanitizer = new \App\Services\AiPromptSanitizer();
+            $client = \App\Services\OpenAiClientFactory::make();
+            $response = $client->chat()->create([
+                'model'    => config('services.openai.model', 'gpt-5.4-mini-2026-03-17'),
                 'messages' => [
                     [
                         'role'    => 'system',
-                        'content' => "{$terms['facility_role']}のスタッフとして、{$terms['guardian']}向けのお便りの文章を作成します。"
+                        'content' => \App\Services\AiPromptDirectives::systemBase($sanitizer)
+                            . "{$terms['facility_role']}のスタッフとして、{$terms['guardian']}向けのお便りの文章を作成します。"
                             . "温かみがあり丁寧な表現を心がけてください。",
                     ],
                     [
@@ -351,7 +361,7 @@ class AiGenerationController extends Controller
 
             AiGenerationLog::create([
                 'user_id'      => $request->user()->id,
-                'model'        => config('services.openai.model_newsletter'),
+                'model'        => 'gpt-5.4-mini-2026-03-17',
                 'prompt_type'  => 'newsletter',
                 'input_tokens' => $response->usage->promptTokens ?? null,
                 'output_tokens' => $response->usage->completionTokens ?? null,

@@ -17,6 +17,21 @@ use Illuminate\Http\Request;
 class NewsletterController extends Controller
 {
     /**
+     * お便りが現在のユーザーのアクセス可能教室に属することを保証する。
+     * 別教室のお便りを ID 推測で閲覧・編集・削除する cross-classroom leak の防御。
+     */
+    private function authorizeNewsletterAccess(Request $request, Newsletter $newsletter): void
+    {
+        $user = $request->user();
+        if (!$user) {
+            abort(401);
+        }
+        if (!in_array((int) $newsletter->classroom_id, $user->switchableClassroomIds(), true)) {
+            abort(403, 'このお便りへのアクセス権限がありません。');
+        }
+    }
+
+    /**
      * お便り一覧を取得
      */
     public function index(Request $request): JsonResponse
@@ -25,9 +40,8 @@ class NewsletterController extends Controller
 
         $query = Newsletter::with('creator:id,full_name');
 
-        if ($user->classroom_id) {
-            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
-        }
+        // LEAK-006: classroom_id=null ユーザでも必ずスコープを適用する (空配列なら結果も空)
+        $query->whereIn('classroom_id', $user->accessibleClassroomIds());
 
         if ($request->filled('is_published')) {
             $query->where('is_published', $request->boolean('is_published'));
@@ -91,8 +105,9 @@ class NewsletterController extends Controller
     /**
      * お便り詳細を取得
      */
-    public function show(Newsletter $newsletter): JsonResponse
+    public function show(Request $request, Newsletter $newsletter): JsonResponse
     {
+        $this->authorizeNewsletterAccess($request, $newsletter);
         $newsletter->load('creator:id,full_name');
 
         return response()->json([
@@ -106,6 +121,8 @@ class NewsletterController extends Controller
      */
     public function update(Request $request, Newsletter $newsletter): JsonResponse
     {
+        $this->authorizeNewsletterAccess($request, $newsletter);
+
         $validated = $request->validate(array_merge([
             'title'             => 'sometimes|required|string|max:255',
             'greeting'          => 'nullable|string',
@@ -132,8 +149,10 @@ class NewsletterController extends Controller
     /**
      * お便りを削除
      */
-    public function destroy(Newsletter $newsletter): JsonResponse
+    public function destroy(Request $request, Newsletter $newsletter): JsonResponse
     {
+        $this->authorizeNewsletterAccess($request, $newsletter);
+
         if ($newsletter->is_published) {
             return response()->json([
                 'success' => false,
@@ -158,6 +177,8 @@ class NewsletterController extends Controller
      */
     public function generateAi(Request $request, Newsletter $newsletter): JsonResponse
     {
+        $this->authorizeNewsletterAccess($request, $newsletter);
+
         $request->validate([
             'section' => 'required|string|in:greeting,event_details,weekly_reports,event_results,others,weekly_intro,elementary_report,junior_report,event_calendar,requests',
             'context' => 'nullable|string',
@@ -183,6 +204,8 @@ class NewsletterController extends Controller
      */
     public function generateAll(Request $request, Newsletter $newsletter): JsonResponse
     {
+        $this->authorizeNewsletterAccess($request, $newsletter);
+
         $context = $request->input('context', '');
         $settings = $this->getSettings($newsletter->classroom_id);
 
@@ -258,7 +281,7 @@ class NewsletterController extends Controller
         $scheduleEnd = $newsletter->schedule_end_date
             ?? Carbon::create($year, $month, 1)->endOfMonth();
 
-        // 支援案データを取得
+        // 活動案データを取得
         $supportPlans = $classroomId
             ? ActivitySupportPlan::where('classroom_id', $classroomId)
                 ->orderBy('day_of_week')
@@ -296,7 +319,7 @@ class NewsletterController extends Controller
 
 【要件】
 - {$month}月の季節感を盛り込む
-- 保護者への感謝と子どもたちの成長への期待を伝える
+- 保護者への感謝と本人たちの成長への期待を伝える
 - 150〜200文字程度
 - 「です・ます」調で温かく丁寧な表現
 - 施設名「{$classroomName}」を冒頭で使用{$customInstructions}{$contextSuffix}
@@ -359,7 +382,7 @@ PROMPT;
                 $text = $this->callAi($prompt); break;
 
             // -----------------------------------------------------------------
-            // 活動の様子（報告期間の連絡帳＋通常支援案ベース）
+            // 活動の様子（報告期間の連絡帳＋通常活動案ベース）
             // -----------------------------------------------------------------
             case 'weekly_reports':
                 $dailyRecords = $classroomId
@@ -391,22 +414,22 @@ PROMPT;
 【報告期間の活動記録】
 {$activitySummary}
 
-【関連する支援案（通常活動）】
+【関連する活動案（通常活動）】
 {$planInfo}
 
 【要件】
-- 活動内容と子どもたちの様子を具体的に伝える
+- 活動内容と本人たちの様子を具体的に伝える
 - 保護者が読んで嬉しくなるような温かい文章
 - 500〜800文字程度
 - 「です・ます」調で丁寧な表現
-- 支援案の目的・ねらいを踏まえた記述{$customInstructions}{$contextSuffix}
+- 活動案の目的・ねらいを踏まえた記述{$customInstructions}{$contextSuffix}
 
 文章のみを出力してください。
 PROMPT;
                 $text = $this->callAi($prompt); break;
 
             // -----------------------------------------------------------------
-            // 曜日別活動紹介（支援案を曜日別にグループ化）
+            // 曜日別活動紹介（活動案を曜日別にグループ化）
             // -----------------------------------------------------------------
             case 'weekly_intro':
                 $dayMapping = ['monday' => '月', 'tuesday' => '火', 'wednesday' => '水', 'thursday' => '木', 'friday' => '金', 'saturday' => '土', 'sunday' => '日'];
@@ -433,12 +456,12 @@ PROMPT;
                 }
 
                 if (empty($plansList)) {
-                    $text = "曜日別活動紹介の支援案データがありません。"; break;
+                    $text = "曜日別活動紹介の活動案データがありません。"; break;
                 }
 
                 $prompt = <<<PROMPT
 あなたは{$classroomName}の施設通信を作成しています。
-以下の曜日別の支援案（活動計画）を、「まだその曜日に参加していない生徒と保護者」に向けて、参加したくなるような魅力的な紹介文を作成してください。
+以下の曜日別の活動案（活動計画）を、「まだその曜日に参加していない生徒と保護者」に向けて、参加したくなるような魅力的な紹介文を作成してください。
 
 {$plansList}
 
@@ -455,7 +478,7 @@ PROMPT;
                 $text = $this->callAi($prompt); break;
 
             // -----------------------------------------------------------------
-            // 行事の結果報告（報告期間の過去イベント＋イベント支援案）
+            // 行事の結果報告（報告期間の過去イベント＋イベント活動案）
             // -----------------------------------------------------------------
             case 'event_results':
                 $pastEvents = $classroomId
@@ -490,12 +513,12 @@ PROMPT;
 【報告期間の行事】
 {$eventList}
 
-【イベント関連の支援案】
+【イベント関連の活動案】
 {$eventPlanInfo}
 
 【要件】
 - 各行事について200〜300文字程度で報告
-- 子どもたちの反応や成長を具体的に
+- 本人たちの反応や成長を具体的に
 - 保護者への感謝を忘れずに
 - 「です・ます」調で温かい表現{$customInstructions}{$contextSuffix}
 
@@ -541,12 +564,12 @@ PROMPT;
 【期間中の活動記録（連絡帳より）】
 {$activitySummary}
 
-【関連する支援案】
+【関連する活動案】
 {$planInfo}
 
 【要件】
-- {$gradeLabel}の子どもたちがどのような活動に取り組んだかをまとめる
-- 子どもたちの様子、成長、楽しんでいるエピソードを具体的に
+- {$gradeLabel}の本人たちがどのような活動に取り組んだかをまとめる
+- 本人たちの様子、成長、楽しんでいるエピソードを具体的に
 - 保護者が読んで嬉しくなるような温かい文章
 - 300〜500字程度
 - 「です・ます」調で丁寧な表現
@@ -741,13 +764,16 @@ PROMPT;
             if (!$apiKey) {
                 return 'OpenAI APIキーが設定されていません。';
             }
-            $client = \OpenAI::client($apiKey);
+            // AISI R1/R4/R6 (2026-05-17): Sanitizer + 共通規律句 + OpenAiClientFactory
+            $sanitizer = new \App\Services\AiPromptSanitizer();
+            $client = \App\Services\OpenAiClientFactory::make();
             $response = $client->chat()->create([
-                'model'    => config('services.openai.model_newsletter'),
+                'model'    => config('services.openai.model', 'gpt-5.4-mini-2026-03-17'),
                 'messages' => [
                     [
                         'role'    => 'system',
-                        'content' => 'あなたは個別支援教育の経験豊富な教員です。保護者に向けて温かく丁寧で、参加したくなるような魅力的な文章を書きます。専門用語は避け、分かりやすい表現を心がけます。',
+                        'content' => \App\Services\AiPromptDirectives::systemBase($sanitizer)
+                            . 'あなたは個別支援教育の経験豊富な教員です。保護者に向けて温かく丁寧で、参加したくなるような魅力的な文章を書きます。専門用語は避け、分かりやすい表現を心がけます。',
                     ],
                     [
                         'role'    => 'user',
@@ -837,6 +863,8 @@ PROMPT;
      */
     public function publish(Request $request, Newsletter $newsletter): JsonResponse
     {
+        $this->authorizeNewsletterAccess($request, $newsletter);
+
         if (empty($newsletter->title) || empty($newsletter->greeting)) {
             return response()->json([
                 'success' => false,
@@ -882,6 +910,8 @@ PROMPT;
      */
     public function pdf(Request $request, Newsletter $newsletter)
     {
+        $this->authorizeNewsletterAccess($request, $newsletter);
+
         $newsletter->load(['classroom', 'creator:id,full_name']);
         $classroomId = $newsletter->classroom_id;
 
@@ -924,6 +954,8 @@ PROMPT;
      */
     public function word(Request $request, Newsletter $newsletter)
     {
+        $this->authorizeNewsletterAccess($request, $newsletter);
+
         $newsletter->load(['classroom', 'creator:id,full_name']);
 
         $html = view('word.newsletter', [

@@ -296,8 +296,12 @@ class AssessmentController extends Controller
                 ], 422);
             }
 
-            $client = \OpenAI::client($apiKey);
-            $aiModel = config('services.openai.model_assessment');
+            // AISI R1/R4/R6 (2026-05-17): Sanitizer + OpenAiClientFactory
+            // (本コントローラは複数の chat()->create を呼び出すため、
+            //  各 messages の system に AiPromptDirectives::systemBase($sanitizer) を付与する想定)
+            $sanitizer = new \App\Services\AiPromptSanitizer();
+            $client = \App\Services\OpenAiClientFactory::make();
+            $aiModel = config('services.openai.model', 'gpt-5.4-mini-2026-03-17');
             $totalInputTokens = 0;
             $totalOutputTokens = 0;
 
@@ -311,7 +315,7 @@ class AssessmentController extends Controller
                 . "■ 運動・感覚\n- 粗大運動（歩く、走る、跳ぶ等）、微細運動（書く、切る、つまむ等）の状況\n- 感覚過敏・鈍麻、協調性、身体の使い方の特徴\n- 改善が見られた点と今後強化すべき点\n\n"
                 . "■ 認知・行動\n- 注意集中、記憶、理解力、問題解決能力の実態\n- こだわりやパターン、衝動性、活動への取り組み方\n- 成長が見られた認知面と支援が必要な行動面\n\n"
                 . "■ 言語・コミュニケーション\n- 言語理解（指示理解、質問理解等）と言語表出（発語、文章構成等）\n- 非言語コミュニケーション（視線、ジェスチャー、表情等）\n- コミュニケーション意欲や手段の変化\n\n"
-                . "■ 人間関係・社会性\n- 他者への関心、対人距離、集団参加の様子\n- 感情表現、感情調整、共感性の発達\n- 友達関係、協調性、ルール理解の状況\n\n"
+                . "■ 人間関係・社会性\n- 他者への関心、対人距離、集団参加の様子\n- 感情表現、感情調整、共感性の発達\n- 友だち関係、協調性、ルール理解の状況\n\n"
                 . "**重要**: 以下のJSON形式のみを出力してください。各領域300文字程度で、観察事実に基づく具体的な内容を記述してください。\n"
                 . "{\n"
                 . "  \"health_life\": \"健康・生活の課題（300文字程度、具体的な観察事実と支援方針）\",\n"
@@ -324,6 +328,8 @@ class AssessmentController extends Controller
             $domainsResponse = $client->chat()->create([
                 'model'    => $aiModel,
                 'messages' => [
+                    // AISI R4: system 規律句を必ず先頭に置く (元のプロンプトは user 側のみ)
+                    ['role' => 'system', 'content' => \App\Services\AiPromptDirectives::systemBase($sanitizer)],
                     ['role' => 'user', 'content' => $domainsPrompt],
                 ],
                 'response_format'       => ['type' => 'json_object'],
@@ -367,6 +373,7 @@ class AssessmentController extends Controller
             $shortTermResponse = $client->chat()->create([
                 'model'    => $aiModel,
                 'messages' => [
+                    ['role' => 'system', 'content' => \App\Services\AiPromptDirectives::systemBase($sanitizer)],
                     ['role' => 'user', 'content' => $shortTermPrompt],
                 ],
                 'temperature'           => 0.6,
@@ -413,6 +420,7 @@ class AssessmentController extends Controller
             $longTermResponse = $client->chat()->create([
                 'model'    => $aiModel,
                 'messages' => [
+                    ['role' => 'system', 'content' => \App\Services\AiPromptDirectives::systemBase($sanitizer)],
                     ['role' => 'user', 'content' => $longTermPrompt],
                 ],
                 'temperature'           => 0.6,

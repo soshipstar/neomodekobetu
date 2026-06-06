@@ -21,6 +21,24 @@ use Illuminate\Support\Facades\Log;
 class MeetingController extends Controller
 {
     /**
+     * 面談リクエストが現在のユーザーのアクセス可能教室に属することを保証する。
+     * 別教室 (別企業) の面談を ID 推測でアクセスされる cross-classroom leak の防御。
+     *
+     * switchableClassroomIds() は staff の pivot 経由の複数教室所属も許容するため、
+     * accessibleClassroomIds() (現在アクティブ教室のみ) ではなくこちらを使う。
+     */
+    private function authorizeMeetingAccess(Request $request, MeetingRequest $meeting): void
+    {
+        $user = $request->user();
+        if (!$user) {
+            abort(401);
+        }
+        if (!in_array((int) $meeting->classroom_id, $user->switchableClassroomIds(), true)) {
+            abort(403, 'この面談へのアクセス権限がありません。');
+        }
+    }
+
+    /**
      * 面談リクエスト一覧を取得
      */
     public function index(Request $request): JsonResponse
@@ -33,9 +51,8 @@ class MeetingController extends Controller
             'staff:id,full_name',
         ]);
 
-        if ($user->classroom_id) {
-            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
-        }
+        // LEAK-006: classroom_id=null ユーザでも必ずスコープを適用する (空配列なら結果も空)
+        $query->whereIn('classroom_id', $user->accessibleClassroomIds());
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -183,8 +200,9 @@ class MeetingController extends Controller
     /**
      * 面談リクエスト詳細を取得
      */
-    public function show(MeetingRequest $meeting): JsonResponse
+    public function show(Request $request, MeetingRequest $meeting): JsonResponse
     {
+        $this->authorizeMeetingAccess($request, $meeting);
         $meeting->load(['student:id,student_name', 'guardian:id,full_name', 'staff:id,full_name']);
 
         return response()->json([
@@ -198,6 +216,8 @@ class MeetingController extends Controller
      */
     public function update(Request $request, MeetingRequest $meeting): JsonResponse
     {
+        $this->authorizeMeetingAccess($request, $meeting);
+
         $validated = $request->validate([
             'action'            => 'nullable|string|in:confirm,counter,cancel,complete,notify',
             'confirmed_date'    => 'nullable|date',
@@ -326,6 +346,8 @@ class MeetingController extends Controller
      */
     public function generateAssessment(Request $request, MeetingRequest $meeting): JsonResponse
     {
+        $this->authorizeMeetingAccess($request, $meeting);
+
         $validated = $request->validate([
             'hearing_notes' => 'required|string|min:10',
         ]);
@@ -377,17 +399,38 @@ class MeetingController extends Controller
                 return response()->json(['success' => false, 'message' => 'OpenAI APIキーが設定されていません。'], 422);
             }
 
-            $client = \OpenAI::client($apiKey);
-            $aiModel = config('services.openai.model_meeting');
+            // AISI R1/R2/R4/R6/R10 (2026-05-17): Sanitizer + Masker + Triage + OpenAiClientFactory
+            $sanitizer = new \App\Services\AiPromptSanitizer();
+            $masker = new \App\Services\AiIdentityMasker();
+            $masker->register((string) $student->student_name, 'student');
+            $client = \App\Services\OpenAiClientFactory::make();
+            $aiModel = config('services.openai.model', 'gpt-5.4-mini-2026-03-17');
+
+            // AISI R10: 面談ヒアリング内容は自傷念慮・虐待等の表現を含む可能性が特に高い経路。
+            // 入力時点で検出して master_admin_audit_logs に記録 (担当責任者通知の基礎)。
+            $triage = new \App\Services\AiSafetyTriage();
+            $triageResult = $triage->containsHighRiskContent((string) $validated['hearing_notes']);
+            if ($triageResult['detected']) {
+                $triage->notifyDetection(
+                    $triageResult,
+                    $request->user()?->id,
+                    $student->id,
+                    'meeting.generate_guardian_assessment',
+                );
+            }
+
+            // 仮名化済の表示名 (実名は OpenAI 米国に送らない)
+            $studentLabel = $masker->placeholderFor((string) $student->student_name) ?: '対象児童 A';
+            $maskedHearingNotes = $masker->mask((string) $validated['hearing_notes']);
 
             $prompt = "あなたは放課後等デイサービスの専門スタッフです。保護者面談で聞き取った内容を、保護者用アセスメント（個別支援計画の保護者記入欄）に適切な文章で整理してください。\n\n"
-                . "【生徒名】{$student->student_name}\n"
-                . "【面談目的】{$meeting->purpose}\n"
-                . "【面談ヒアリング内容】\n{$validated['hearing_notes']}\n\n"
+                . "【生徒名】{$studentLabel}\n"
+                . "【面談目的】" . $masker->mask((string) $meeting->purpose) . "\n"
+                . "【面談ヒアリング内容】\n" . $sanitizer->wrap($maskedHearingNotes, 'HEARING') . "\n\n"
                 . "以下のJSON形式で出力してください。各項目はヒアリング内容から読み取れる範囲で記入し、"
                 . "該当する情報がない項目はnullにしてください。文章は保護者の立場・口調（です・ます調）で書いてください。\n\n"
                 . "{\n"
-                . "  \"student_wish\": \"本人の願い（お子様が望んでいること、なりたい姿。200文字程度）\",\n"
+                . "  \"student_wish\": \"本人の願い（本人が望んでいること、なりたい姿。200文字程度）\",\n"
                 . "  \"home_challenges\": \"家庭での願い（家庭で気になっていること、取り組みたいこと。200文字程度）\",\n"
                 . "  \"short_term_goal\": \"短期目標6か月（具体的な目標。200文字程度）\",\n"
                 . "  \"long_term_goal\": \"長期目標1年以上（将来的な目標。200文字程度）\",\n"
@@ -401,7 +444,11 @@ class MeetingController extends Controller
 
             $response = $client->chat()->create([
                 'model'    => $aiModel,
-                'messages' => [['role' => 'user', 'content' => $prompt]],
+                'messages' => [
+                    // AISI R4: system 規律句を必ず先頭に置く (元コードは user のみだった)
+                    ['role' => 'system', 'content' => \App\Services\AiPromptDirectives::systemBase($sanitizer)],
+                    ['role' => 'user', 'content' => $prompt],
+                ],
                 'response_format'       => ['type' => 'json_object'],
                 'temperature'           => 0.5,
                 'max_completion_tokens' => 3000,
@@ -411,6 +458,13 @@ class MeetingController extends Controller
             $outputTokens = $response->usage->completionTokens ?? 0;
 
             $content = $response->choices[0]->message->content;
+
+            // AISI R1: 漏洩検出 + サニタイズ (postProcess)
+            $content = $sanitizer->postProcess($content, [
+                'generation_type' => 'meeting_assessment',
+                'student_id'      => $student->id,
+            ]);
+
             $data = json_decode($content, true);
 
             if (json_last_error() !== JSON_ERROR_NONE) {
@@ -418,15 +472,25 @@ class MeetingController extends Controller
                 throw new \Exception('AI応答のパースに失敗しました。');
             }
 
-            // アセスメントに保存
+            // アセスメントに保存 (AISI R2: 保存前に unmask して実名に戻す)
+            // AISI R10: 高リスク検出時は student_wish の冒頭に相談窓口バナーを挿入
+            $banner = $triageResult['detected']
+                ? $triage->safetyBanner($triageResult['categories'])
+                : '';
+
             $updateData = [];
             $fields = ['student_wish', 'home_challenges', 'short_term_goal', 'long_term_goal',
                 'domain_health_life', 'domain_motor_sensory', 'domain_cognitive_behavior',
                 'domain_language_communication', 'domain_social_relations', 'other_challenges'];
             foreach ($fields as $field) {
                 if (!empty($data[$field])) {
-                    $updateData[$field] = $data[$field];
+                    // 実名復元してから保存 (担当職員が読む業務記録としての可読性確保)
+                    $updateData[$field] = $masker->unmask((string) $data[$field]);
                 }
+            }
+            // 高リスク検出時、最初の編集対象フィールドの先頭にバナーを差し込む
+            if ($banner !== '' && ! empty($updateData['student_wish'])) {
+                $updateData['student_wish'] = $banner . $updateData['student_wish'];
             }
 
             $targetEntry->update($updateData);

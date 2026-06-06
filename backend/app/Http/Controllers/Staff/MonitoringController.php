@@ -469,7 +469,9 @@ class MonitoringController extends Controller
                     continue;
                 }
 
-                $client = \OpenAI::client($apiKey);
+                // AISI R1/R4/R6 (2026-05-17): Sanitizer + OpenAiClientFactory
+                $sanitizer = new \App\Services\AiPromptSanitizer();
+                $client = \App\Services\OpenAiClientFactory::make();
 
                 $prompt = "あなたは児童発達支援施設の児童発達支援管理責任者です。\n"
                     . "以下の支援目標に対して、過去6ヶ月間の連絡帳記録（{$recordCount}件）を分析し、モニタリング評価を行ってください。\n\n"
@@ -479,7 +481,7 @@ class MonitoringController extends Controller
                     . "【支援内容（施設での取り組み）】\n{$supportContent}\n\n"
                     . "【過去6ヶ月間の連絡帳記録（この分野に関する記録）】\n{$recordsText}\n\n"
                     . "【評価の観点】\n"
-                    . "1. 上記の連絡帳記録から、支援目標に対する子どもの取り組みや変化を読み取ってください\n"
+                    . "1. 上記の連絡帳記録から、支援目標に対する本人の取り組みや変化を読み取ってください\n"
                     . "2. 具体的なエピソードや行動を踏まえて評価してください\n"
                     . "3. 支援内容が適切に実施されているか、効果が出ているかを判断してください\n\n"
                     . "【出力形式】\n"
@@ -488,11 +490,12 @@ class MonitoringController extends Controller
                     . "\"monitoring_comment\": \"評価コメント（150〜200字程度。連絡帳の記録を踏まえた具体的な評価と、今後の支援の方向性を含める）\"}";
 
                 $response = $client->chat()->create([
-                    'model'    => config('services.openai.model_monitoring'),
+                    'model'    => config('services.openai.model', 'gpt-5.4-mini-2026-03-17'),
                     'messages' => [
                         [
                             'role'    => 'system',
-                            'content' => 'あなたは個別支援教育の経験豊富な児童発達支援管理責任者です。'
+                            'content' => \App\Services\AiPromptDirectives::systemBase($sanitizer)
+                                . 'あなたは個別支援教育の経験豊富な児童発達支援管理責任者です。'
                                 . 'モニタリング評価を専門的かつ保護者にも分かりやすく行います。'
                                 . '指定された形式でのみ回答してください。',
                         ],
