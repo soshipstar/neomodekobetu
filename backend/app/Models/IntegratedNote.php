@@ -16,6 +16,11 @@ class IntegratedNote extends Model
         'sent_at',
         'guardian_confirmed',
         'guardian_confirmed_at',
+        // AISI R5 (2026-05-17): AI 関与情報 (HITL + 透明性)
+        'ai_assisted',
+        'ai_review_status',
+        'ai_reviewed_by',
+        'ai_reviewed_at',
     ];
 
     protected function casts(): array
@@ -25,6 +30,8 @@ class IntegratedNote extends Model
             'sent_at' => 'datetime',
             'guardian_confirmed' => 'boolean',
             'guardian_confirmed_at' => 'datetime',
+            'ai_assisted' => 'boolean',
+            'ai_reviewed_at' => 'datetime',
         ];
     }
 

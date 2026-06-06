@@ -29,6 +29,9 @@ interface NoteItem {
   sent_at: string;
   guardian_confirmed: boolean;
   guardian_confirmed_at: string | null;
+  // AISI R5 (2026-05-17): AI 関与情報 (透明性表示用)
+  ai_assisted: boolean | null;
+  ai_review_status: 'pending' | 'reviewed' | 'modified' | 'rejected' | null;
   record_date: string;
   activity_name: string | null;
   common_activity: string | null;
@@ -169,7 +172,7 @@ export default function CommunicationLogsPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {students.length > 1 && (
               <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-3)]">お子様</label>
+                <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-3)]">本人</label>
                 <select
                   value={studentId}
                   onChange={(e) => setStudentId(e.target.value)}
@@ -378,6 +381,17 @@ export default function CommunicationLogsPage() {
                     <div className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--neutral-foreground-2)]">
                       {nl(note.integrated_content)}
                     </div>
+
+                    {/* AISI R5 (2026-05-17): AI 関与表示 — 透明性のため保護者にも開示。
+                        ai_assisted=true の note のみ、AI による下書きを職員が確認した旨を注記。 */}
+                    {note.ai_assisted && (
+                      <div className="mt-2 flex items-start gap-1.5 rounded-md border border-[var(--brand-160)] bg-[var(--brand-160)] px-2 py-1 text-[11px] leading-snug text-[var(--brand-80)]">
+                        <MaterialIcon name="auto_awesome" size={14} className="mt-0.5 shrink-0" />
+                        <span>
+                          この文章は、職員が AI による下書きを参考に作成・確認した内容です。
+                        </span>
+                      </div>
+                    )}
 
                     {/* Confirmation */}
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--neutral-stroke-2)] pt-3">

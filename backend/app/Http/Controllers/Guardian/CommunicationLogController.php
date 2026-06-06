@@ -87,6 +87,9 @@ class CommunicationLogController extends Controller
                 'integrated_notes.sent_at',
                 'integrated_notes.guardian_confirmed',
                 'integrated_notes.guardian_confirmed_at',
+                // AISI R5 (2026-05-17): AI 関与情報を保護者画面でも開示
+                'integrated_notes.ai_assisted',
+                'integrated_notes.ai_review_status',
                 'daily_records.record_date',
                 'daily_records.activity_name',
                 'daily_records.common_activity',
