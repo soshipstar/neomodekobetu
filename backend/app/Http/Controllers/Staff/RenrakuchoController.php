@@ -631,6 +631,8 @@ class RenrakuchoController extends Controller
             'notes.*.content'     => 'required|string',
             'notes.*.photo_ids'   => 'nullable|array',
             'notes.*.photo_ids.*' => 'integer|exists:classroom_photos,id',
+            // 職員が添付候補を意図的に全て外した場合 true。サーバ側自動添付を抑止する。
+            'notes.*.photos_cleared' => 'nullable|boolean',
         ]);
 
         $sentCount = 0;
@@ -676,10 +678,21 @@ class RenrakuchoController extends Controller
                     $integratedNote = $note;
                 }
 
-                // 添付写真を連絡帳にリンク (参照のみ)
-                if (!empty($noteData['photo_ids'])) {
-                    // 指定された写真が同じ事業所のものか確認して attach
-                    $validPhotoIds = \App\Models\ClassroomPhoto::whereIn('id', $noteData['photo_ids'])
+                // 添付写真を決定する。
+                //  1) FE が photo_ids を明示指定 → それを使う
+                //  2) 未指定 かつ「職員が意図的に全削除」(photos_cleared) でない →
+                //     サーバ側で日付・教室・生徒タグの一致する写真を自動添付する。
+                // 背景: 写真添付がFEステート任せのため、古いタブ/モーダル開閉タイミングで
+                //       photo_ids が空のまま送信され添付漏れする不具合 (てらこやプラスで発生)。
+                //       クライアント状態に依存しない恒久対策としてサーバ側で補完する。
+                $photoIds = $noteData['photo_ids'] ?? [];
+                if (empty($photoIds) && empty($noteData['photos_cleared'])) {
+                    $photoIds = $this->matchingPhotoIdsForStudent($record, $studentId);
+                }
+
+                if (!empty($photoIds)) {
+                    // 指定/補完された写真が同じ事業所のものか確認して attach
+                    $validPhotoIds = \App\Models\ClassroomPhoto::whereIn('id', $photoIds)
                         ->where('classroom_id', $record->classroom_id)
                         ->pluck('id')
                         ->all();
@@ -738,6 +751,23 @@ class RenrakuchoController extends Controller
             'message' => "{$sentCount}件の連絡帳を保護者に送信しました。",
             'sent_count' => $sentCount,
         ]);
+    }
+
+    /**
+     * 写真自動添付のサーバ側フォールバック。
+     * suggestPhotos と同条件 (教室一致・activity_date = record_date・生徒タグ) で
+     * 一致する写真IDを新しい順に返す。FE が photo_ids を送れなかった場合に使用する。
+     *
+     * @return array<int, int>
+     */
+    private function matchingPhotoIdsForStudent(DailyRecord $record, int $studentId): array
+    {
+        return \App\Models\ClassroomPhoto::where('classroom_id', $record->classroom_id)
+            ->whereDate('activity_date', $record->record_date)
+            ->whereHas('students', fn ($q) => $q->where('students.id', $studentId))
+            ->orderByDesc('created_at')
+            ->pluck('id')
+            ->all();
     }
 
     /**

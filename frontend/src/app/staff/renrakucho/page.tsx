@@ -719,11 +719,19 @@ export default function RenrakuchoPage() {
 
     // setState は非同期なのでローカルでマージした写真マップで payload を作る
     const effectivePhotos: typeof sendPhotos = { ...sendPhotos, ...freshPhotos };
-    const notesArray = sendingPairs.map(([studentId, content]) => ({
-      student_id: Number(studentId),
-      content,
-      photo_ids: (effectivePhotos[Number(studentId)] || []).map((p) => p.id),
-    }));
+    const notesArray = sendingPairs.map(([studentId, content]) => {
+      const sid = Number(studentId);
+      const photos = effectivePhotos[sid];
+      return {
+        student_id: sid,
+        content,
+        photo_ids: (photos || []).map((p) => p.id),
+        // 職員が候補を意図的に全て外した場合 (= 空配列が明示的に存在) は true。
+        // サーバ側の自動添付フォールバックを抑止し「外した」意思を尊重する。
+        // undefined (一度も写真を見ていない) は false → サーバ側で自動添付させる。
+        photos_cleared: Array.isArray(photos) && photos.length === 0,
+      };
+    });
 
     // R8: 保護者送信は取り消し不可のため、送信前に必ず確認ダイアログを表示する。
     // 「途中保存」と「保護者に送信」の押し間違い対策。
