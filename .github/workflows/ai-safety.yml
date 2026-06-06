@@ -1,0 +1,110 @@
+# AISI ヘルスケア AI セーフティ評価観点ガイド v1.0 R12 (2026-05-17)
+#
+# AI 安全性テスト (R1〜R10 の helper / migration / trait) を PR 時に自動実行する。
+# 主目的:
+#  - V10 検証可能性 / 4.5 プロダクト検証 (定量評価) の自動化
+#  - モデルや helper コード変更時の回帰検知
+#
+# 実行対象:
+#  - backend/tests/Feature/AIS001_PromptInjectionTest.php (R1)
+#  - backend/tests/Feature/AIS002_IdentityMaskingTest.php (R2)
+#  - backend/tests/Feature/AIS003_SafetyTriageTest.php   (R10)
+#  - backend/tests/Feature/AIS004_HashChainTest.php       (R9)
+#
+# OpenAI API キーは GitHub Secrets に登録 (CI からの実呼出は通常行わないが、
+# Moderation API のスモークテスト等を将来追加する場合に備える)。
+
+name: AI Safety Tests
+
+on:
+  pull_request:
+    paths:
+      - 'backend/app/Services/AiPromptSanitizer.php'
+      - 'backend/app/Services/AiIdentityMasker.php'
+      - 'backend/app/Services/AiPromptDirectives.php'
+      - 'backend/app/Services/AiSafetyTriage.php'
+      - 'backend/app/Services/AiGenerationService.php'
+      - 'backend/app/Services/OpenAiClientFactory.php'
+      - 'backend/app/Models/Concerns/HashChainable.php'
+      - 'backend/app/Models/AuditLog.php'
+      - 'backend/app/Models/AiGenerationLog.php'
+      - 'backend/tests/Feature/AIS00*.php'
+      - 'backend/composer.json'
+  push:
+    branches: [main]
+    paths:
+      - 'backend/app/Services/Ai*.php'
+      - 'backend/tests/Feature/AIS00*.php'
+  workflow_dispatch:
+
+jobs:
+  ai-safety-tests:
+    name: Run R1/R2/R9/R10/R12 unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, json, sqlite3, openssl
+          coverage: none
+          tools: composer:v2
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: backend/vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        working-directory: backend
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Prepare .env
+        working-directory: backend
+        run: |
+          test -f .env || cp .env.example .env
+          php artisan key:generate --ansi
+
+      - name: Run AI Safety test suite (composer script)
+        working-directory: backend
+        run: composer test:ai-safety
+
+      - name: Static analysis (Pint)
+        working-directory: backend
+        run: ./vendor/bin/pint --test app/Services/Ai*.php app/Models/Concerns/HashChainable.php
+
+  hash-chain-verify:
+    name: Audit log hash-chain trait sanity
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, json, sqlite3, openssl
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies
+        working-directory: backend
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Prepare .env
+        working-directory: backend
+        run: |
+          test -f .env || cp .env.example .env
+          php artisan key:generate --ansi
+
+      - name: Run hash chain unit tests only
+        working-directory: backend
+        run: php artisan test --filter=AIS004_HashChainTest

@@ -53,6 +53,15 @@
         ],
         "post-create-project-cmd": [
             "@php artisan key:generate --ansi"
+        ],
+        "test:ai-safety": [
+            "@php artisan test --filter=AIS00"
+        ],
+        "test:hash-chain": [
+            "@php artisan audit-logs:verify-chain"
+        ],
+        "test:all": [
+            "@php artisan test"
         ]
     },
     "extra": {
