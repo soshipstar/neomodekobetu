@@ -12,6 +12,14 @@ use Illuminate\Support\Facades\Log;
 class AiGenerationService
 {
     /**
+     * ハルシネーション抑制の共通指示 (観点2 偽誤情報の出力・誘導の防止)。
+     * 全生成のシステムプロンプトに付与する。
+     */
+    private const NO_FABRICATION_CLAUSE = '重要: 入力された情報のみに基づいて作成し、'
+        . '入力に無い事実（架空の所見・数値・氏名・エピソード・固有名詞等）を創作しないでください。'
+        . '情報が不足して判断できない項目は、推測で補わず空欄または「要確認」と記載してください。';
+
+    /**
      * Generate individual support plan content using GPT-5.
      *
      * @param  Student  $student
@@ -30,7 +38,8 @@ class AiGenerationService
 
         $systemPrompt = '障害児通所支援の個別支援計画書を作成する専門家AIアシスタントです。'
             . '日本の児童福祉法に基づく放課後等デイサービスの計画を作成します。'
-            . 'JSON形式で回答してください。';
+            . 'JSON形式で回答してください。'
+            . self::NO_FABRICATION_CLAUSE;
         $temperature = 0.7;
         $maxTokens = 4000;
 
@@ -78,7 +87,8 @@ class AiGenerationService
 
         $systemPrompt = '障害児通所支援のモニタリング報告書を作成する専門家AIアシスタントです。'
             . '支援計画の達成度を評価し、今後の方針を提案します。'
-            . 'JSON形式で回答してください。';
+            . 'JSON形式で回答してください。'
+            . self::NO_FABRICATION_CLAUSE;
         $temperature = 0.7;
         $maxTokens = 3000;
 
@@ -128,7 +138,8 @@ class AiGenerationService
 
         $systemPrompt = '放課後等デイサービスの教室だよりを作成するAIアシスタントです。'
             . '保護者向けに明るく温かい文体で作成してください。'
-            . 'JSON形式で回答してください。';
+            . 'JSON形式で回答してください。'
+            . self::NO_FABRICATION_CLAUSE;
         $temperature = 0.8;
         $maxTokens = 3000;
 
@@ -174,7 +185,8 @@ class AiGenerationService
 
         $systemPrompt = '放課後等デイサービスの事業所における自己評価結果（別紙3）を作成するAIアシスタントです。'
             . '保護者評価と従業者評価の集計結果から、事業所の強みと弱みを分析してください。'
-            . 'JSON形式で回答してください。';
+            . 'JSON形式で回答してください。'
+            . self::NO_FABRICATION_CLAUSE;
         $temperature = 0.7;
         $maxTokens = 3000;
 
