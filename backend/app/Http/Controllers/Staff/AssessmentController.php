@@ -297,6 +297,9 @@ class AssessmentController extends Controller
             }
 
             $client = \OpenAI::client($apiKey);
+            // 観点5 プライバシー保護: 外部AIへ送る前に児童・保護者の氏名を仮名化する。
+            // 中間生成物(domains/short/long)は仮名のまま連鎖させ、最終結果のみ復元する。
+            $masker = \App\Support\PiiMasker::forStudent($student);
             // スタッフアセスメントは個別支援計画書のベースになる重要な分析。
             // 5 か月分の連絡帳記録を入力に 5 領域 + 短期目標 + 長期目標を生成する
             // 長文タスクなので通常版で品質確保。他箇所と日付を 2026-03-17 に統一。
@@ -327,7 +330,7 @@ class AssessmentController extends Controller
             $domainsResponse = $client->chat()->create([
                 'model'    => $aiModel,
                 'messages' => [
-                    ['role' => 'user', 'content' => $domainsPrompt],
+                    ['role' => 'user', 'content' => $masker->mask($domainsPrompt)],
                 ],
                 'response_format'       => ['type' => 'json_object'],
                 'temperature'           => 0.6,
@@ -370,7 +373,7 @@ class AssessmentController extends Controller
             $shortTermResponse = $client->chat()->create([
                 'model'    => $aiModel,
                 'messages' => [
-                    ['role' => 'user', 'content' => $shortTermPrompt],
+                    ['role' => 'user', 'content' => $masker->mask($shortTermPrompt)],
                 ],
                 'temperature'           => 0.6,
                 'max_completion_tokens' => 800,
@@ -416,7 +419,7 @@ class AssessmentController extends Controller
             $longTermResponse = $client->chat()->create([
                 'model'    => $aiModel,
                 'messages' => [
-                    ['role' => 'user', 'content' => $longTermPrompt],
+                    ['role' => 'user', 'content' => $masker->mask($longTermPrompt)],
                 ],
                 'temperature'           => 0.6,
                 'max_completion_tokens' => 900,
@@ -450,6 +453,9 @@ class AssessmentController extends Controller
                 'language_communication' => $domainsData['language_communication'] ?? '',
                 'social_relations'       => $domainsData['social_relations'] ?? '',
             ];
+
+            // 仮名を実名へ復元してから返す (職員が使う下書きのため)
+            $result = $masker->unmaskArray($result);
 
             return response()->json([
                 'success'      => true,

@@ -356,6 +356,8 @@ class MonitoringController extends Controller
 
         $monitoring->load(['plan.details', 'student']);
         $student = $monitoring->student;
+        // 観点5 プライバシー保護: 外部AIへ送る前に児童・保護者の氏名を仮名化する。
+        $masker = \App\Support\PiiMasker::forStudent($student);
         $planDetails = $monitoring->plan->details;
 
         if ($planDetails->isEmpty()) {
@@ -468,11 +470,12 @@ class MonitoringController extends Controller
                             'role'    => 'system',
                             'content' => 'あなたは個別支援教育の経験豊富な児童発達支援管理責任者です。'
                                 . 'モニタリング評価を専門的かつ保護者にも分かりやすく行います。'
-                                . '指定された形式でのみ回答してください。',
+                                . '指定された形式でのみ回答してください。'
+                                . '入力された情報のみに基づいて評価し、入力に無い事実を創作しないでください。',
                         ],
                         [
                             'role'    => 'user',
-                            'content' => $prompt,
+                            'content' => $masker->mask($prompt),
                         ],
                     ],
                     'response_format'       => ['type' => 'json_object'],
@@ -486,6 +489,10 @@ class MonitoringController extends Controller
                 }
 
                 $result = json_decode($content, true);
+                // 仮名を実名へ復元 (職員が使う下書きのため)
+                if (is_array($result)) {
+                    $result = $masker->unmaskArray($result);
+                }
                 $generatedEvaluations[$detail->id] = [
                     'achievement_status'  => $result['achievement_status'] ?? '',
                     'monitoring_comment'  => $result['monitoring_comment'] ?? $content,

@@ -421,17 +421,20 @@ class SupportPlanController extends Controller
                 return response()->json(['success' => false, 'message' => 'OpenAI APIキーが設定されていません。'], 422);
             }
 
+            // 観点5 プライバシー保護: 外部AIへ送る前に児童・保護者の氏名を仮名化する。
+            $masker = \App\Support\PiiMasker::forStudent($student);
             $client = \OpenAI::client($apiKey);
             $response = $client->chat()->create([
                 'model'    => 'gpt-5.4-2026-03-05',
                 'messages' => [
                     [
                         'role'    => 'system',
-                        'content' => 'あなたは児童発達支援の専門家です。個別支援計画書を作成する際は、具体的で実践可能な支援内容を詳細に記述してください。抽象的な表現は避け、現場のスタッフが実際に使用できる具体的な手順、頻度、環境設定、段階的なアプローチを含めてください。',
+                        'content' => 'あなたは児童発達支援の専門家です。個別支援計画書を作成する際は、具体的で実践可能な支援内容を詳細に記述してください。抽象的な表現は避け、現場のスタッフが実際に使用できる具体的な手順、頻度、環境設定、段階的なアプローチを含めてください。'
+                            . '入力された情報のみに基づいて作成し、入力に無い事実を創作しないでください。情報が不足する項目は推測で補わず空欄または「要確認」と記載してください。',
                     ],
                     [
                         'role'    => 'user',
-                        'content' => "以下の情報をもとに個別支援計画書を作成してください。\n\n"
+                        'content' => $masker->mask("以下の情報をもとに個別支援計画書を作成してください。\n\n"
                             . "【児童名】{$student->student_name}\n"
                             . "【教室】" . ($student->classroom->classroom_name ?? '') . "\n\n"
                             . $guardianText
@@ -471,7 +474,7 @@ class SupportPlanController extends Controller
                             . "- 【重要】五領域については、必ず施設内で実施できる支援内容を記述してください。家庭での取り組みは含めないでください\n"
                             . "- 支援内容は具体的な手順、頻度、使用する道具・環境、段階的なアプローチを含めてください\n"
                             . "- 抽象的な表現ではなく、実際に現場で実践できる具体的な内容を記述してください\n"
-                            . "- 【重要】長期目標・短期目標・支援目標には「1年後には」「半年後には」「○ヶ月後」「いつまでに」などの期間を含めた表現は絶対に使用しないでください",
+                            . "- 【重要】長期目標・短期目標・支援目標には「1年後には」「半年後には」「○ヶ月後」「いつまでに」などの期間を含めた表現は絶対に使用しないでください"),
                     ],
                 ],
                 'response_format'       => ['type' => 'json_object'],
@@ -481,6 +484,10 @@ class SupportPlanController extends Controller
 
             $content = $response->choices[0]->message->content;
             $result = json_decode($content, true);
+            // 仮名を実名へ復元 (職員が使う下書きのため)
+            if (is_array($result)) {
+                $result = $masker->unmaskArray($result);
+            }
 
             // ログ保存（fillable と一致させる）
             try {
@@ -531,6 +538,9 @@ class SupportPlanController extends Controller
         $this->authorizeClassroom($request->user(), $plan->student);
         $plan->load(['details', 'meetings']);
 
+        // 観点5 プライバシー保護: 外部AIへ送る前に児童・保護者の氏名を仮名化する。
+        $masker = \App\Support\PiiMasker::forStudent($plan->student);
+
         // 原案(保護者へ確認依頼した時点のスナップショット)が必須。
         $base = $plan->proposal_snapshot;
         if (empty($base)) {
@@ -575,7 +585,7 @@ class SupportPlanController extends Controller
             . '各項目について、改訂後の全文と、原案からの変更点(追加した文・削除した文とその理由)を必ず示してください。'
             . '必ず指定された JSON 形式のみで出力してください。';
 
-        $userPrompt = "【原案(JSON)】\n{$baseJson}\n\n"
+        $userPrompt = $masker->mask("【原案(JSON)】\n{$baseJson}\n\n"
             . "【保護者コメント】\n" . ($guardianComment !== '' ? $guardianComment : '(なし)') . "\n\n"
             . "【個別支援会議の議事録】\n" . (trim($meetingsText) !== '' ? $meetingsText : '(なし)') . "\n\n"
             . "上記の保護者コメントと議事録の内容を、原案に対して『一部削除・一部追加』の形で反映し、本案の下書きを作成してください。\n"
@@ -594,7 +604,7 @@ class SupportPlanController extends Controller
             . "    {\"field\": \"long_term_goal | short_term_goal | overall_policy | life_intention | detail:<sub_category>\", \"type\": \"added | removed\", \"text\": \"追加または削除した文\", \"reason\": \"保護者コメント/議事録のどの指摘に基づくか\"}\n"
             . "  ]\n"
             . "}\n\n"
-            . "details は原案と同じ項目数・同じ category/sub_category の並びを維持してください。";
+            . "details は原案と同じ項目数・同じ category/sub_category の並びを維持してください。");
 
         try {
             $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
@@ -615,6 +625,8 @@ class SupportPlanController extends Controller
             ]);
 
             $result = json_decode($response->choices[0]->message->content, true) ?? [];
+            // 仮名を実名へ復元してから計画へ反映する
+            $result = $masker->unmaskArray($result);
             $revised = $result['revised'] ?? [];
             $annotations = $result['annotations'] ?? [];
 
@@ -919,17 +931,20 @@ class SupportPlanController extends Controller
                 return response()->json(['success' => false, 'message' => 'OpenAI APIキーが設定されていません。'], 422);
             }
 
+            // 観点5 プライバシー保護: 外部AIへ送る前に児童・保護者の氏名を仮名化する。
+            $masker = \App\Support\PiiMasker::forStudent($student);
             $client = \OpenAI::client($apiKey);
             $response = $client->chat()->create([
                 'model'    => 'gpt-5.4-2026-03-05',
                 'messages' => [
                     [
                         'role'    => 'system',
-                        'content' => 'あなたは児童発達支援施設の児童発達支援管理責任者です。個別支援計画書の作成を支援します。具体的で実践可能な支援内容を詳細に記述してください。',
+                        'content' => 'あなたは児童発達支援施設の児童発達支援管理責任者です。個別支援計画書の作成を支援します。具体的で実践可能な支援内容を詳細に記述してください。'
+                            . '入力された情報のみに基づいて作成し、入力に無い事実を創作しないでください。情報が不足する項目は推測で補わず空欄または「要確認」と記載してください。',
                     ],
                     [
                         'role'    => 'user',
-                        'content' => "以下の情報をもとに新規の個別支援計画書をJSON形式で作成してください。\n\n"
+                        'content' => $masker->mask("以下の情報をもとに新規の個別支援計画書をJSON形式で作成してください。\n\n"
                             . "【児童名】{$student->student_name}\n"
                             . "【面談記録（直近5件）】\n" . ($interviewText ?: '（記録なし）') . "\n\n"
                             . "【連絡帳記録（直近20件・5領域）】\n" . ($recordsText ?: '（記録なし）') . "\n\n"
@@ -952,7 +967,7 @@ class SupportPlanController extends Controller
                             . "【注意事項】\n"
                             . "- 必ず有効な JSON オブジェクトで出力してください（配列ではなくオブジェクト）\n"
                             . "- 各 support_content は施設内で実施可能な具体的な手順・頻度・環境設定を含め150文字以上で記述\n"
-                            . "- 長期目標・短期目標・支援目標には「○ヶ月後」「いつまでに」など期間表現は使わない",
+                            . "- 長期目標・短期目標・支援目標には「○ヶ月後」「いつまでに」など期間表現は使わない"),
                     ],
                 ],
                 'response_format'       => ['type' => 'json_object'],
@@ -962,6 +977,10 @@ class SupportPlanController extends Controller
 
             $content = $response->choices[0]->message->content ?? '';
             $result = json_decode($content, true);
+            // 仮名を実名へ復元 (職員が使う下書きのため)
+            if (is_array($result)) {
+                $result = $masker->unmaskArray($result);
+            }
 
             // フロント側は object (life_intention/details 等) を期待。
             // 配列が返ってきた / decode 失敗 / 想定キー欠損なら 502 で明示的に失敗扱いにする。
@@ -1329,6 +1348,9 @@ class SupportPlanController extends Controller
         $plan->load('student');
         $this->authorizeClassroom($request->user(), $plan->student);
 
+        // 観点5 プライバシー保護: 外部AIへ送る前に児童・保護者の氏名を仮名化する。
+        $masker = \App\Support\PiiMasker::forStudent($plan->student);
+
         $studentId = $plan->student_id;
         $studentName = $plan->student_name ?: $plan->student->student_name;
         $planDate = $plan->created_date;
@@ -1438,18 +1460,20 @@ class SupportPlanController extends Controller
                 'messages' => [
                     [
                         'role'    => 'system',
-                        'content' => 'あなたは児童発達支援・放課後等デイサービスの専門家です。保護者に対して丁寧で分かりやすい説明を行います。',
+                        'content' => 'あなたは児童発達支援・放課後等デイサービスの専門家です。保護者に対して丁寧で分かりやすい説明を行います。'
+                            . '入力された情報のみに基づいて作成し、入力に無い事実を創作しないでください。',
                     ],
                     [
                         'role'    => 'user',
-                        'content' => $prompt,
+                        'content' => $masker->mask($prompt),
                     ],
                 ],
                 'temperature'           => 0.7,
                 'max_completion_tokens' => 2000,
             ]);
 
-            $basisContent = $response->choices[0]->message->content;
+            // 出力(下書き)は職員が使うため、仮名を実名へ復元する
+            $basisContent = $masker->unmask($response->choices[0]->message->content ?? '');
 
             // データベースに保存
             $plan->update([
@@ -1493,6 +1517,9 @@ class SupportPlanController extends Controller
     public function generateWishFromInterview(Request $request, Student $student): JsonResponse
     {
         $this->authorizeClassroom($request->user(), $student);
+
+        // 観点5 プライバシー保護: 外部AIへ送る前に児童・保護者の氏名を仮名化する。
+        $masker = \App\Support\PiiMasker::forStudent($student);
 
         // 6か月以内の面談記録を取得（児童の願いがあるもの）
         $sixMonthsAgo = now()->subMonths(6)->toDateString();
@@ -1543,18 +1570,20 @@ class SupportPlanController extends Controller
                 'messages' => [
                     [
                         'role'    => 'system',
-                        'content' => 'あなたは発達支援・特別支援教育の専門スタッフです。',
+                        'content' => 'あなたは発達支援・特別支援教育の専門スタッフです。'
+                            . '入力された情報のみに基づいて作成し、入力に無い事実を創作しないでください。',
                     ],
                     [
                         'role'    => 'user',
-                        'content' => $prompt,
+                        'content' => $masker->mask($prompt),
                     ],
                 ],
                 'temperature'           => 0.7,
                 'max_completion_tokens' => 600,
             ]);
 
-            $generatedWish = trim($response->choices[0]->message->content);
+            // 出力(下書き)は職員が使うため、仮名を実名へ復元する
+            $generatedWish = $masker->unmask(trim($response->choices[0]->message->content ?? ''));
 
             // ログ保存
             try {
