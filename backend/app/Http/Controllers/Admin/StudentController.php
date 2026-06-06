@@ -52,14 +52,28 @@ class StudentController extends Controller
 
     /**
      * 生徒を新規作成
+     *
+     * 認可:
+     * - マスター管理者: 全教室に登録可 (admin 管理コンテキストでは cross-company を許容)
+     * - 非マスター: switchableClassroomIds() に含まれる教室にのみ登録可
+     *   (同企業内の教室は OK、他企業は 403)
+     *
+     * 児童 1 名 = 教室 1 つ = Student レコード 1 つ。複数教室にまたがる場合は
+     * copy-to-classroom (person_id 共有) を経由する。これにより「登録時に
+     * 意図せず他施設に所属させる」事故を防ぐ。
      */
     public function store(Request $request): JsonResponse
     {
+        $user = $request->user();
+        $isMaster = $user->user_type === 'admin' && $user->is_master;
+
+        // 登録のハードルを下げるため、最低限 classroom_id + student_name のみ必須。
+        // username / password / 生年月日 等は未入力なら自動補完して登録できる。
         $validated = $request->validate([
             'classroom_id'         => 'required|exists:classrooms,id',
             'student_name'         => 'required|string|max:255',
-            'username'             => 'required|string|max:100|unique:students',
-            'password'             => 'required|string|min:4',
+            'username'             => 'nullable|string|max:100|unique:students',
+            'password'             => 'nullable|string|min:4',
             'birth_date'           => 'nullable|date',
             'grade_level'          => 'nullable|string|max:50',
             'guardian_id'          => 'nullable|exists:users,id',
@@ -76,6 +90,24 @@ class StudentController extends Controller
             'contract_end_date'    => 'nullable|date|after_or_equal:contract_start_date',
             'usage_limit_date'     => 'nullable|date',
         ]);
+
+        // 非マスターは自分が switch 可能な教室にしか登録できない
+        if (!$isMaster && !in_array((int) $validated['classroom_id'], $user->switchableClassroomIds(), true)) {
+            return response()->json([
+                'success' => false,
+                'message' => '指定した教室への登録権限がありません。',
+            ], 403);
+        }
+
+        // username / password が未指定なら自動採番する。
+        // 例: student_001, student_002, ... (既存と衝突しない最小番号)
+        if (empty($validated['username'])) {
+            $validated['username'] = $this->generateUniqueStudentUsername();
+        }
+        if (empty($validated['password'])) {
+            // 8 文字の英数字 (混同しやすい O/0/I/1 などは除外)
+            $validated['password'] = $this->generateRandomPassword(8);
+        }
 
         $validated['password_hash'] = Hash::make($validated['password']);
         unset($validated['password']);
@@ -112,9 +144,23 @@ class StudentController extends Controller
 
     /**
      * 生徒を更新
+     *
+     * 認可: 元の所属教室・変更先の教室の両方について、ユーザーの
+     *       switchableClassroomIds() に含まれること (マスターは除外)。
      */
     public function update(Request $request, Student $student): JsonResponse
     {
+        $user = $request->user();
+        $isMaster = $user->user_type === 'admin' && $user->is_master;
+
+        // 既存所属教室への変更権限チェック
+        if (!$isMaster && !in_array((int) $student->classroom_id, $user->switchableClassroomIds(), true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'この生徒の更新権限がありません。',
+            ], 403);
+        }
+
         $validated = $request->validate([
             'classroom_id'         => 'sometimes|required|exists:classrooms,id',
             'student_name'         => 'sometimes|required|string|max:255',
@@ -136,6 +182,15 @@ class StudentController extends Controller
             'contract_end_date'    => 'nullable|date|after_or_equal:contract_start_date',
             'usage_limit_date'     => 'nullable|date',
         ]);
+
+        // 移動先教室への登録権限チェック (classroom_id を変更する場合)
+        if (!$isMaster && isset($validated['classroom_id']) &&
+            !in_array((int) $validated['classroom_id'], $user->switchableClassroomIds(), true)) {
+            return response()->json([
+                'success' => false,
+                'message' => '指定した移動先教室への権限がありません。',
+            ], 403);
+        }
 
         if (! empty($validated['password'])) {
             $validated['password_hash'] = Hash::make($validated['password']);
@@ -242,7 +297,12 @@ class StudentController extends Controller
      * 同一人物としてリンクされている他教室の Student レコードを返す。
      *
      * person_id が同じ Student を self を除いて返す。
-     * 非マスター管理者には自身の accessibleClassroomIds() に入っているものだけ見せる。
+     *
+     * 認可:
+     *  - 必ず source 教室と同企業のレコードのみを返す (defense in depth)。
+     *    copyToClassroom() が同企業制約を強制しているはずだが、過去の不正データや
+     *    別経路で異企業の person_id 共有が発生していた場合に備える。
+     *  - 非マスター管理者には自身の switchableClassroomIds() に入っているもののみ。
      */
     public function linkedStudents(Request $request, Student $student): JsonResponse
     {
@@ -259,13 +319,22 @@ class StudentController extends Controller
             ]);
         }
 
+        // source 教室の所属企業
+        $student->loadMissing('classroom:id,classroom_name,company_id');
+        $sourceCompanyId = $student->classroom?->company_id;
+
         $query = Student::with(['classroom:id,classroom_name,company_id'])
             ->where('person_id', $student->person_id)
             ->where('id', '!=', $student->id)
             ->orderBy('classroom_id');
 
+        // 同企業フィルタ (defense in depth): cross-company な person_id 共有レコードを表示しない
+        if ($sourceCompanyId !== null) {
+            $query->whereHas('classroom', fn ($q) => $q->where('company_id', $sourceCompanyId));
+        }
+
         if (!$isMaster) {
-            $accessible = $user->accessibleClassroomIds();
+            $accessible = $user->switchableClassroomIds();
             $query->whereIn('classroom_id', $accessible);
         }
 
@@ -426,5 +495,40 @@ class StudentController extends Controller
             'success' => true,
             'message' => '生徒を退所扱いにしました。',
         ]);
+    }
+
+    /**
+     * student_NNN 形式の重複しない username を生成する。
+     * 「個人情報の詳細を登録なしでスタート」する運用のため、未入力時の自動採番用。
+     */
+    private function generateUniqueStudentUsername(): string
+    {
+        $last = Student::where('username', 'like', 'student_%')
+            ->orderByRaw("CAST(SUBSTRING(username FROM 'student_([0-9]+)') AS INTEGER) DESC NULLS LAST")
+            ->value('username');
+
+        $next = 1;
+        if ($last && preg_match('/student_(\d+)/', $last, $m)) {
+            $next = (int) $m[1] + 1;
+        }
+        $username = 'student_' . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
+        while (Student::where('username', $username)->exists()) {
+            $next++;
+            $username = 'student_' . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
+        }
+        return $username;
+    }
+
+    /**
+     * ランダムなパスワードを生成 (混同しやすい 0/O/1/I を除外)。
+     */
+    private function generateRandomPassword(int $length = 8): string
+    {
+        $chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        $password = '';
+        for ($i = 0; $i < $length; $i++) {
+            $password .= $chars[random_int(0, strlen($chars) - 1)];
+        }
+        return $password;
     }
 }

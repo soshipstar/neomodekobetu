@@ -91,11 +91,6 @@ class ClassroomController extends Controller
             'is_active'      => 'boolean',
             'capacity'       => 'nullable|integer|min:0|max:999',
             'opening_days_per_month' => 'nullable|integer|min:0|max:31',
-            // WAM-NET
-            'wam_office_code'          => 'nullable|string|size:10|regex:/^\d{10}$/',
-            'prefecture_code'          => 'nullable|string|size:2|regex:/^\d{2}$/',
-            'wam_service_code_default' => 'nullable|string|size:6|regex:/^\d{6}$/',
-            'wam_unit_price_yen'       => 'nullable|integer|min:10|max:20',
         ]);
 
         if ($request->hasFile('logo')) {
@@ -151,19 +146,7 @@ class ClassroomController extends Controller
             'is_active'      => 'boolean',
             'capacity'       => 'nullable|integer|min:0|max:999',
             'opening_days_per_month' => 'nullable|integer|min:0|max:31',
-            // WAM-NET
-            'wam_office_code'          => 'nullable|string|size:10|regex:/^\d{10}$/',
-            'prefecture_code'          => 'nullable|string|size:2|regex:/^\d{2}$/',
-            'wam_service_code_default' => 'nullable|string|size:6|regex:/^\d{6}$/',
-            'wam_unit_price_yen'       => 'nullable|integer|min:10|max:20',
         ]);
-
-        // 空文字を null に変換 (zod が "" を送ってくる場合)
-        foreach (['wam_office_code', 'prefecture_code', 'wam_service_code_default'] as $key) {
-            if (array_key_exists($key, $validated) && $validated[$key] === '') {
-                $validated[$key] = null;
-            }
-        }
 
         // 既存レコードへの service_type 変更は破壊的 (集計・領域・強みキーが変わる)。
         // 完全には禁止しないが、null を渡された場合は既存値を維持する。

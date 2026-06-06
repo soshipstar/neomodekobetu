@@ -20,9 +20,8 @@ class StaffEventController extends Controller
 
         $query = Event::with('classroom:id,classroom_name');
 
-        if ($classroomId) {
-            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
-        }
+        // LEAK-006: classroom_id=null ユーザでも必ずスコープを適用する (空配列なら結果も空)
+        $query->whereIn('classroom_id', $user->accessibleClassroomIds());
 
         // month パラメータ: "YYYY-MM" or separate month/year
         if ($request->filled('month')) {

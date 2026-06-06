@@ -124,18 +124,149 @@ class TabletController extends Controller
     }
 
     /**
+     * 本日の利用者一覧 (= スタッフ画面の dashboard/attendance 相当)。
+     *
+     * その日に「来所予定」「振替予定」「追加利用」のいずれかに該当する生徒を返す。
+     * 各エントリは:
+     *  - 出欠状況 (is_absent)
+     *  - 到着済か (is_checked_in)、退所済か (is_checked_out)、到着時刻 (check_in_time)
+     *  - 種別 (regular / makeup / additional)
+     *  - 学年区分 (grade_group)
+     * を含む。タブレットの出欠確認画面で誰に出欠連絡が必要かを一覧する用途。
+     */
+    public function todayStudents(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $classroomId = $user->classroom_id;
+        $accessibleIds = $classroomId ? [$classroomId] : [];
+        $date = \Carbon\Carbon::parse($request->query('date', \Carbon\Carbon::today()->toDateString()));
+        $dayColumn = 'scheduled_' . strtolower($date->format('l'));
+
+        $gradeGroupMap = function ($gradeLevel): string {
+            if ($gradeLevel === null) return '未就学';
+            $gl = (string) $gradeLevel;
+            if (str_starts_with($gl, 'preschool')) return '未就学';
+            if (str_starts_with($gl, 'elementary')) return '小学生';
+            if (str_starts_with($gl, 'junior_high')) return '中学生';
+            if (str_starts_with($gl, 'high_school')) return '高校生';
+            return 'その他';
+        };
+
+        $results = [];
+
+        // 通常通所
+        $regularStudents = Student::whereIn('classroom_id', $accessibleIds)
+            ->where('status', 'active')
+            ->where($dayColumn, true)
+            ->get(['id', 'student_name', 'grade_level']);
+        foreach ($regularStudents as $s) {
+            $results[$s->id] = [
+                'id'          => $s->id,
+                'name'        => $s->student_name,
+                'grade_level' => $s->grade_level,
+                'grade_group' => $gradeGroupMap($s->grade_level),
+                'type'        => 'regular',
+                'is_absent'   => false,
+            ];
+        }
+
+        // 振替 (approved)
+        try {
+            $makeup = \App\Models\AbsenceNotification::whereHas('student', function ($q) use ($accessibleIds) {
+                $q->whereIn('classroom_id', $accessibleIds)->where('is_active', true);
+            })
+                ->where('makeup_status', 'approved')
+                ->whereDate('makeup_request_date', $date)
+                ->with('student:id,student_name,grade_level')
+                ->get();
+            foreach ($makeup as $m) {
+                if ($m->student && !isset($results[$m->student->id])) {
+                    $results[$m->student->id] = [
+                        'id'          => $m->student->id,
+                        'name'        => $m->student->student_name,
+                        'grade_level' => $m->student->grade_level,
+                        'grade_group' => $gradeGroupMap($m->student->grade_level),
+                        'type'        => 'makeup',
+                        'is_absent'   => false,
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            // 振替が無くてもエラーにしない
+        }
+
+        // 加算利用 (additional_usages)
+        try {
+            $additional = DB::table('additional_usages')
+                ->join('students', 'additional_usages.student_id', '=', 'students.id')
+                ->whereIn('students.classroom_id', $accessibleIds)
+                ->where('students.is_active', true)
+                ->whereDate('additional_usages.usage_date', $date)
+                ->select('students.id', 'students.student_name', 'students.grade_level')
+                ->get();
+            foreach ($additional as $s) {
+                if (!isset($results[$s->id])) {
+                    $results[$s->id] = [
+                        'id'          => $s->id,
+                        'name'        => $s->student_name,
+                        'grade_level' => $s->grade_level,
+                        'grade_group' => $gradeGroupMap($s->grade_level),
+                        'type'        => 'additional',
+                        'is_absent'   => false,
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            // additional_usages テーブルが無い環境はスキップ
+        }
+
+        // 欠席フラグ
+        if (!empty($results)) {
+            $absentIds = \App\Models\AbsenceNotification::whereIn('student_id', array_keys($results))
+                ->whereDate('absence_date', $date)
+                ->pluck('student_id')
+                ->toArray();
+            foreach ($absentIds as $sid) {
+                if (isset($results[$sid])) {
+                    $results[$sid]['is_absent'] = true;
+                }
+            }
+        }
+
+        // 出欠記録 (attendance_records) を結合
+        $attendance = DB::table('attendance_records')
+            ->whereIn('student_id', array_keys($results) ?: [0])
+            ->whereDate('record_date', $date)
+            ->get(['student_id', 'check_in_time', 'check_out_time']);
+        foreach ($attendance as $a) {
+            if (isset($results[$a->student_id])) {
+                $results[$a->student_id]['is_checked_in']  = $a->check_in_time !== null;
+                $results[$a->student_id]['is_checked_out'] = $a->check_out_time !== null;
+                $results[$a->student_id]['check_in_time']  = $a->check_in_time;
+                $results[$a->student_id]['check_out_time'] = $a->check_out_time;
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => array_values($results),
+            'date'    => $date->toDateString(),
+        ]);
+    }
+
+    /**
      * 教室に所属する生徒一覧を取得
      */
     public function students(Request $request): JsonResponse
     {
         $user = $request->user();
-        $accessibleIds = $user->accessibleClassroomIds();
+        // tablet も /staff/* と同様に「現在 workspace 切替中の教室」のみを対象にする。
+        // (マスターに対する accessibleClassroomIds() の全教室返却を回避)
+        $classroomId = $user->classroom_id;
+        $accessibleIds = $classroomId ? [$classroomId] : [];
 
-        $query = Student::where('status', 'active');
-
-        if ($user->classroom_id) {
-            $query->whereIn('classroom_id', $accessibleIds);
-        }
+        $query = Student::where('status', 'active')
+            ->whereIn('classroom_id', $accessibleIds);
 
         $students = $query->orderBy('student_name')
             ->get(['id', 'student_name', 'classroom_id', 'grade_level']);
@@ -389,7 +520,7 @@ class TabletController extends Controller
     }
 
     /**
-     * 指定日の支援案一覧を取得
+     * 指定日の活動案一覧を取得
      */
     public function supportPlans(Request $request): JsonResponse
     {

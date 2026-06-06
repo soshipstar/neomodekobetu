@@ -76,8 +76,11 @@ class PendingTaskController extends Controller
             ->where('is_active', true)
             ->whereHas('guardian');
 
+        // 生徒の所属教室 (students.classroom_id) でスコープする。
+        // guardian.classroom_id を使うと、保護者が別教室に登録されている場合に
+        // 別教室の生徒タスクが混入する (cross-classroom contamination, LEAK-005)。
         if ($accessibleIds) {
-            $query->whereHas('guardian', fn ($q) => $q->whereIn('classroom_id', $accessibleIds));
+            $query->whereIn('classroom_id', $accessibleIds);
         }
 
         $students = $query->with(['supportPlans' => function ($q) {
@@ -367,8 +370,9 @@ class PendingTaskController extends Controller
             ->whereHas('guardian')
             ->whereHas('supportPlans', fn ($q) => $q->where('is_draft', false));
 
+        // 生徒の所属教室 (students.classroom_id) でスコープする (LEAK-005 対策、getPlanTasks と同方針)
         if ($accessibleIds) {
-            $query->whereHas('guardian', fn ($q) => $q->whereIn('classroom_id', $accessibleIds));
+            $query->whereIn('classroom_id', $accessibleIds);
         }
 
         $students = $query->with(['monitoringRecords' => function ($q) {

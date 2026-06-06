@@ -17,6 +17,23 @@ use Illuminate\Support\Facades\DB;
 class StaffSubmissionController extends Controller
 {
     /**
+     * 提出物リクエストが現在のユーザーのアクセス可能教室に属する生徒のものか保証する。
+     * 別教室の生徒・保護者個人情報への ID 推測アクセスを防ぐ。
+     */
+    private function authorizeSubmissionAccess(Request $request, SubmissionRequest $submissionRequest): void
+    {
+        $user = $request->user();
+        if (!$user) {
+            abort(401);
+        }
+        $submissionRequest->loadMissing('student:id,classroom_id');
+        $studentClassroomId = $submissionRequest->student?->classroom_id;
+        if (!$studentClassroomId || !in_array((int) $studentClassroomId, $user->switchableClassroomIds(), true)) {
+            abort(403, 'この提出物へのアクセス権限がありません。');
+        }
+    }
+
+    /**
      * 提出物一覧を取得
      */
     public function index(Request $request): JsonResponse
@@ -102,6 +119,7 @@ class StaffSubmissionController extends Controller
      */
     public function show(Request $request, SubmissionRequest $submissionRequest): JsonResponse
     {
+        $this->authorizeSubmissionAccess($request, $submissionRequest);
         $submissionRequest->load(['student:id,student_name', 'guardian:id,full_name', 'creator:id,full_name']);
 
         return response()->json([
@@ -196,6 +214,8 @@ class StaffSubmissionController extends Controller
      */
     public function update(Request $request, SubmissionRequest $submissionRequest): JsonResponse
     {
+        $this->authorizeSubmissionAccess($request, $submissionRequest);
+
         $validated = $request->validate([
             'title'          => 'sometimes|string|max:255',
             'description'    => 'nullable|string|max:2000',
@@ -229,6 +249,8 @@ class StaffSubmissionController extends Controller
      */
     public function destroy(Request $request, SubmissionRequest $submissionRequest): JsonResponse
     {
+        $this->authorizeSubmissionAccess($request, $submissionRequest);
+
         $submissionRequest->delete();
 
         return response()->json([
@@ -242,6 +264,8 @@ class StaffSubmissionController extends Controller
      */
     public function students(Request $request, SubmissionRequest $submissionRequest): JsonResponse
     {
+        $this->authorizeSubmissionAccess($request, $submissionRequest);
+
         // 同じ提出物リクエストのタイトルで関連する生徒を取得
         $students = \App\Models\Student::whereHas('submissionRequests', function ($q) use ($submissionRequest) {
             $q->where('title', $submissionRequest->title)

@@ -172,9 +172,18 @@ class WageController extends Controller
         return response()->json(['data' => $record->fresh()]);
     }
 
+    /**
+     * 工賃期間 (WagePeriod) のアクセス制御。
+     * LEAK-008 対策: switchableClassroomIds() で照合し、複数教室所属の staff にも対応。
+     * (旧コードは $user->classroom_id 単体比較で、pivot 経由の補助教室にアクセスできなかった)
+     */
     private function authorize(Request $request, WagePeriod $period): void
     {
-        if ($period->classroom_id !== $request->user()->classroom_id) {
+        $user = $request->user();
+        if (!$user) {
+            abort(401);
+        }
+        if (!in_array((int) $period->classroom_id, $user->switchableClassroomIds(), true)) {
             abort(403, '他事業所の工賃台帳にはアクセスできません。');
         }
     }

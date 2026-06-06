@@ -40,16 +40,53 @@ class HolidayController extends Controller
 
     /**
      * 休日を登録
+     *
+     * 認可:
+     *  - 非マスター: classroom_id をリクエスト値より優先せず、必ず自身の現在教室で登録する
+     *    (フロントが classroom_id を送らない/誤って他教室を送るケースを安全側に倒す)
+     *  - マスター: classroom_id 必須。switchableClassroomIds() に含まれる教室のみ許可
+     *    (cross-company の意図しない登録を防ぐ)
      */
     public function store(Request $request): JsonResponse
     {
+        $user = $request->user();
+
         $validated = $request->validate([
-            'classroom_id' => 'required|exists:classrooms,id',
+            'classroom_id' => 'nullable|integer|exists:classrooms,id',
             'holiday_date' => 'required|date',
             'holiday_name' => 'required|string|max:100',
         ]);
 
-        $holiday = Holiday::create($validated);
+        if ($user->is_master) {
+            $classroomId = $validated['classroom_id'] ?? $user->classroom_id;
+            if (!$classroomId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => '教室を指定してください。',
+                ], 422);
+            }
+            if (!in_array((int) $classroomId, $user->switchableClassroomIds(), true)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'この教室へのアクセス権限がありません。',
+                ], 403);
+            }
+        } else {
+            // 非マスターはリクエスト値を信用せず、自分の現在教室で固定する
+            $classroomId = $user->classroom_id;
+            if (!$classroomId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => '所属教室が未設定のため休日を登録できません。',
+                ], 422);
+            }
+        }
+
+        $holiday = Holiday::create([
+            'classroom_id' => $classroomId,
+            'holiday_date' => $validated['holiday_date'],
+            'holiday_name' => $validated['holiday_name'],
+        ]);
 
         return response()->json([
             'success' => true,

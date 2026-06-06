@@ -20,9 +20,9 @@ class SchoolHolidayActivityController extends Controller
 
         $query = SchoolHolidayActivity::with('classroom:id,classroom_name');
 
-        if ($classroomId) {
-            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
-        }
+        // LEAK-006: classroom_id が null でも必ずスコープを適用する (空配列なら結果も空)。
+        // 旧コードは if ($classroomId) で classroom_id=null ユーザーに全件返却していた。
+        $query->whereIn('classroom_id', $user->accessibleClassroomIds());
 
         if ($request->filled('month')) {
             $query->whereMonth('activity_date', $request->month);

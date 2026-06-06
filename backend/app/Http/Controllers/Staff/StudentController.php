@@ -25,10 +25,14 @@ class StudentController extends Controller
 
         $query = Student::query()->with('guardian:id,full_name,email');
 
-        // 主教室 + classroom_user ピボットで所属する全教室を対象にする
-        if ($user->classroom_id) {
-            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
-        }
+        // /staff/* コンテキストでは「現在 workspace 切替中の教室」のみを対象にする。
+        // accessibleClassroomIds() はマスターに対して全教室を返すため、就労 workspace に
+        // 切替えた際に放デイの生徒が表示される cross-classroom leak の原因になっていた。
+        // 児童は 1 教室に 1 レコード固定。他教室で同一人物を扱う場合は person_id 経由の
+        // 複製レコードを別途参照する (Admin\StudentController::copyToClassroom 経由)。
+        $classroomId = $user->classroom_id;
+        $accessibleIds = $classroomId ? [$classroomId] : [];
+        $query->whereIn('classroom_id', $accessibleIds);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -82,9 +86,11 @@ class StudentController extends Controller
     {
         $user = $request->user();
 
+        // 登録のハードルを下げるため、個人情報は student_name 以外すべて任意。
+        // 生年月日・契約日等は後から「利用者詳細」画面で追記できる。
         $validated = $request->validate([
             'student_name'           => 'required|string|max:255',
-            'birth_date'             => 'required|date',
+            'birth_date'             => 'nullable|date',
             'grade_adjustment'       => 'nullable|integer|min:-2|max:2',
             'guardian_id'            => 'nullable|exists:users,id',
             'support_start_date'     => 'nullable|date',
@@ -121,16 +127,6 @@ class StudentController extends Controller
             'piece_rate_amount'      => 'nullable|numeric|min:0|max:9999',
             'paid_leave_days'        => 'nullable|numeric|min:0|max:40',
             'employment_status'      => 'nullable|string|in:full_time,part_time,trainee',
-            // Phase D: 国保連請求
-            'beneficiary_number'         => 'nullable|string|max:20',
-            'municipality_code'          => 'nullable|string|max:10',
-            'disability_category'        => 'nullable|string|in:intellectual,physical,mental,developmental,dual',
-            'disability_grade'           => 'nullable|string|max:30',
-            'monthly_copay_cap'          => 'nullable|integer|min:0|max:99999999',
-            'copay_management_provider'  => 'nullable|string|max:50',
-            'certificate_issued_date'    => 'nullable|date',
-            'certificate_expiry_date'    => 'nullable|date',
-            'monthly_usage_days_cap'     => 'nullable|integer|min:0|max:31',
         ]);
 
         $status = $validated['status'] ?? 'active';
@@ -236,16 +232,6 @@ class StudentController extends Controller
             'piece_rate_amount'      => 'nullable|numeric|min:0|max:9999',
             'paid_leave_days'        => 'nullable|numeric|min:0|max:40',
             'employment_status'      => 'nullable|string|in:full_time,part_time,trainee',
-            // Phase D: 国保連請求
-            'beneficiary_number'         => 'nullable|string|max:20',
-            'municipality_code'          => 'nullable|string|max:10',
-            'disability_category'        => 'nullable|string|in:intellectual,physical,mental,developmental,dual',
-            'disability_grade'           => 'nullable|string|max:30',
-            'monthly_copay_cap'          => 'nullable|integer|min:0|max:99999999',
-            'copay_management_provider'  => 'nullable|string|max:50',
-            'certificate_issued_date'    => 'nullable|date',
-            'certificate_expiry_date'    => 'nullable|date',
-            'monthly_usage_days_cap'     => 'nullable|integer|min:0|max:31',
             'notes'                  => 'nullable|string|max:5000',
         ]);
 

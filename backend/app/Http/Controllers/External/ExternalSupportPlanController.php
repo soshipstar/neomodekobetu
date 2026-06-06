@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 class ExternalSupportPlanController extends Controller
 {
     /**
-     * 外部サイト向け支援案一覧API
+     * 外部サイト向け活動案一覧API
      *
      * GET /api/external/support-plans?classroom_id=2&date=2026-04-06
      * GET /api/external/support-plans?classroom_id=2&day_of_week=月

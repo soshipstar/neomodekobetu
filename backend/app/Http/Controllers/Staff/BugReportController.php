@@ -151,8 +151,14 @@ class BugReportController extends Controller
 
     /**
      * ステータス変更
-     * - 管理者 (master / company_admin): 全ステータスに変更可
-     * - 報告者本人: in_progress（対応済み確認依頼中）→ resolved への変更のみ可
+     * - 管理者 (master / company_admin): 全ての報告について全ステータスに変更可
+     * - 報告者本人: 自分の報告は自由に遷移可 (open / in_progress / resolved いずれも)
+     *
+     * 旧仕様では「報告者は in_progress → resolved のみ」に縛っていたが、
+     * 通常管理者 (user_type=admin だが is_master=false, is_company_admin=false) が
+     * 自分で報告した不具合のステータスすら動かせない UX 不整合があったため、
+     * 「自分の報告は自分で管理できる」方針に揃える。
+     * 他人の報告に対するステータス変更は引き続き管理者専用。
      */
     public function updateStatus(Request $request, BugReport $bugReport): JsonResponse
     {
@@ -167,16 +173,6 @@ class BugReportController extends Controller
         $validated = $request->validate([
             'status' => 'required|string|in:open,in_progress,resolved',
         ]);
-
-        // 報告者本人は in_progress → resolved の確認完了操作のみ許可
-        if (!$isAdmin) {
-            if ($bugReport->status !== 'in_progress' || $validated['status'] !== 'resolved') {
-                return response()->json([
-                    'success' => false,
-                    'message' => '報告者は対応済み確認依頼中の報告を解決済みにする操作のみ行えます。',
-                ], 403);
-            }
-        }
 
         $oldStatus = $bugReport->status;
         $bugReport->update(['status' => $validated['status']]);

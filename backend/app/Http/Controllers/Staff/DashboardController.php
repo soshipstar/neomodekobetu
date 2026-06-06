@@ -24,7 +24,9 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $classroomId = $user->classroom_id;
-        $accessibleIds = $user->accessibleClassroomIds();
+        // /staff/* コンテキストでは「現在 workspace 切替中の教室」のみを対象にする。
+        // (cross-classroom leak 対策 — calendar()/summary() と同方針)
+        $accessibleIds = $classroomId ? [$classroomId] : [];
         $today = Carbon::today();
 
         // --- 未読チャット数 ---
@@ -100,7 +102,10 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $classroomId = $user->classroom_id;
-        $accessibleIds = $user->accessibleClassroomIds();
+        // /staff/* コンテキストでは「現在 workspace 切替中の教室」のみを対象にする。
+        // マスター管理者でも accessibleClassroomIds() の "全教室" を使ってしまうと、
+        // 別教室で作成した活動・連絡帳などが切替先の dashboard に漏れる (cross-classroom leak)。
+        $accessibleIds = $classroomId ? [$classroomId] : [];
         $today = Carbon::today();
 
         // --- 未読チャット（ルーム別詳細付き） ---
@@ -195,10 +200,15 @@ class DashboardController extends Controller
         }
 
         // --- 未提出ドキュメント ---
+        // アクセス可能な教室に所属する生徒の未提出依頼を集計する。
+        // 過去のリファクタで $students 変数が消えたまま参照が残っており、
+        // 常に Undefined variable 例外で catch されて 0 件扱いになっていた。
         $unsubmittedDocuments = 0;
         try {
             $unsubmittedDocuments = DB::table('submission_requests')
-                ->whereIn('student_id', $students)
+                ->whereIn('student_id', function ($q) use ($accessibleIds) {
+                    $q->select('id')->from('students')->whereIn('classroom_id', $accessibleIds);
+                })
                 ->where('is_completed', false)
                 ->count();
         } catch (\Exception $e) {
@@ -250,7 +260,10 @@ class DashboardController extends Controller
     public function calendar(Request $request): JsonResponse
     {
         $classroomId = $request->user()->classroom_id;
-        $accessibleIds = $request->user()->accessibleClassroomIds();
+        // /staff/* コンテキストでは「現在 workspace 切替中の教室」のみを対象にする。
+        // accessibleClassroomIds() はマスターに対して全教室を返すため、就労Aの活動が
+        // 切替先の就労Bダッシュボードに混ざるという cross-classroom leak の原因になる。
+        $accessibleIds = $classroomId ? [$classroomId] : [];
         $year = (int) $request->query('year', Carbon::now()->year);
         $month = (int) $request->query('month', Carbon::now()->month);
 
@@ -340,7 +353,9 @@ class DashboardController extends Controller
     public function attendance(Request $request): JsonResponse
     {
         $classroomId = $request->user()->classroom_id;
-        $accessibleIds = $request->user()->accessibleClassroomIds();
+        // /staff/* コンテキストでは「現在 workspace 切替中の教室」のみを対象にする。
+        // (cross-classroom leak 対策 — calendar()/summary()/index() と同方針)
+        $accessibleIds = $classroomId ? [$classroomId] : [];
         $date = Carbon::parse($request->query('date', Carbon::today()->toDateString()));
         $dayColumn = 'scheduled_' . strtolower($date->format('l'));
 

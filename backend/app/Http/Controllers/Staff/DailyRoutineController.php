@@ -20,9 +20,8 @@ class DailyRoutineController extends Controller
 
         $query = DailyRoutine::query();
 
-        if ($classroomId) {
-            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
-        }
+        // LEAK-006: classroom_id=null ユーザでも必ずスコープを適用する (空配列なら結果も空)
+        $query->whereIn('classroom_id', $user->accessibleClassroomIds());
 
         $query->where('is_active', true);
 
