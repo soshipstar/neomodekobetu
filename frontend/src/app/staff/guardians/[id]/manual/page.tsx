@@ -94,7 +94,7 @@ export default function GuardianManualPage() {
                 <td style={{ padding: '6px 12px', fontSize: '12pt' }}>{guardian.full_name}</td>
               </tr>
               <tr>
-                <td style={{ padding: '6px 12px', fontWeight: 'bold', color: '#444' }}>お子様</td>
+                <td style={{ padding: '6px 12px', fontWeight: 'bold', color: '#444' }}>本人</td>
                 <td style={{ padding: '6px 12px', fontSize: '12pt' }}>
                   {guardian.students?.map((s) => s.student_name).join('、') || '（未設定）'}
                 </td>
@@ -156,9 +156,9 @@ export default function GuardianManualPage() {
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
             {[
-              { title: '📒 連絡帳の確認', desc: 'お子様の日々の活動記録を確認できます' },
-              { title: '📊 個別支援計画', desc: 'お子様の支援計画を確認・署名できます' },
-              { title: '🤝 アセスメント入力', desc: '家庭でのお子様の様子をお知らせください' },
+              { title: '📒 連絡帳の確認', desc: '本人の日々の活動記録を確認できます' },
+              { title: '📊 個別支援計画', desc: '本人の支援計画を確認・署名できます' },
+              { title: '🤝 アセスメント入力', desc: '家庭での本人の様子をお知らせください' },
               { title: '💬 チャット', desc: 'スタッフとメッセージのやり取りができます' },
             ].map((f) => (
               <div key={f.title} style={{ border: '1px solid #ddd', borderRadius: '8px', padding: '12px' }}>
@@ -179,8 +179,8 @@ export default function GuardianManualPage() {
             <p style={{ color: '#555', marginBottom: '8px' }}>A. スタッフにお声がけください。新しいパスワードを発行いたします。</p>
             <p style={{ fontWeight: 'bold', marginBottom: '2px' }}>Q. スマートフォンでも利用できますか？</p>
             <p style={{ color: '#555', marginBottom: '8px' }}>A. はい。スマートフォン・タブレット・パソコンのブラウザからご利用いただけます。</p>
-            <p style={{ fontWeight: 'bold', marginBottom: '2px' }}>Q. 複数の子どもがいる場合は？</p>
-            <p style={{ color: '#555', marginBottom: '8px' }}>A. 1つのアカウントでお子様全員の情報をご確認いただけます。</p>
+            <p style={{ fontWeight: 'bold', marginBottom: '2px' }}>Q. 複数の本人がいる場合は？</p>
+            <p style={{ color: '#555', marginBottom: '8px' }}>A. 1つのアカウントで本人全員の情報をご確認いただけます。</p>
           </div>
         </div>
 

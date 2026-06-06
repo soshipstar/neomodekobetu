@@ -174,11 +174,6 @@ export const classroomSchema = z.object({
   address: z.string().optional(),
   phone: z.string().optional(),
   capacity: z.string().regex(/^\d*$/, '半角数字で入力してください').optional().or(z.literal('')),
-  // WAM-NET 国保連請求
-  wam_office_code: z.string().regex(/^(\d{10})?$/, '事業所番号は半角数字 10 桁です').optional().or(z.literal('')),
-  prefecture_code: z.string().regex(/^(\d{2})?$/, '都道府県コードは半角数字 2 桁です').optional().or(z.literal('')),
-  wam_service_code_default: z.string().regex(/^(\d{6})?$/, 'サービスコードは半角数字 6 桁です').optional().or(z.literal('')),
-  wam_unit_price_yen: z.string().regex(/^\d*$/, '半角数字で入力してください').optional().or(z.literal('')),
 });
 
 export type ClassroomFormData = z.infer<typeof classroomSchema>;

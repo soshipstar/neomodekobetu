@@ -12,6 +12,7 @@ import { useToast } from '@/components/ui/Toast';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { StudentPicker } from '@/components/staff/StudentPicker';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -20,6 +21,9 @@ import { MaterialIcon } from '@/components/ui/MaterialIcon';
 interface Student {
   id: number;
   student_name: string;
+  grade_level?: string | null;
+  status?: string | null;
+  updated_at?: string | null;
 }
 
 interface GuardianEntry {
@@ -170,32 +174,16 @@ export default function AssessmentGuardianViewPage() {
         </Link>
       </div>
 
-      {/* Student selector */}
-      <Card>
-        <CardBody>
-          <label className="mb-2 block text-sm font-medium text-[var(--neutral-foreground-2)]">
-            生徒を選択 <span className="text-[var(--status-danger-fg)]">*</span>
-          </label>
-          {loadingStudents ? (
-            <Skeleton className="h-10 w-full rounded-lg" />
-          ) : (
-            <select
-              className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
-              value={selectedStudentId ?? ''}
-              onChange={(e) => {
-                const id = e.target.value ? Number(e.target.value) : null;
-                setSelectedStudentId(id);
-                setSelectedPeriodId(null);
-              }}
-            >
-              <option value="">-- 生徒を選択してください --</option>
-              {students.map((s) => (
-                <option key={s.id} value={s.id}>{s.student_name}</option>
-              ))}
-            </select>
-          )}
-        </CardBody>
-      </Card>
+      {/* Student selector — フィルタ可能なリスト UI に統一 (旧 <select> から置換) */}
+      <StudentPicker
+        students={students}
+        selectedStudentId={selectedStudentId}
+        onSelect={(id) => {
+          setSelectedStudentId(id);
+          setSelectedPeriodId(null);
+        }}
+        isLoading={loadingStudents}
+      />
 
       {/* Period selector & filter */}
       {selectedStudentId && (
@@ -303,7 +291,7 @@ export default function AssessmentGuardianViewPage() {
           <SectionCard
             icon={<MaterialIcon name="favorite" size={16} className="h-4 w-4" />}
             title="本人の願い"
-            subtitle="お子様が望んでいること、なりたい姿"
+            subtitle="本人が望んでいること、なりたい姿"
             color="var(--status-danger-fg)"
           >
             <ViewBox text={guardianEntry.student_wish} />

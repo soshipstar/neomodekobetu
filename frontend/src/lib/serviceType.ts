@@ -160,7 +160,7 @@ export function termsFor(serviceType: ServiceType | string | null | undefined): 
 }
 
 /**
- * 個別支援計画/活動支援案の「対象グループ」キー一覧。
+ * 個別支援計画/活動案の「対象グループ」キー一覧。
  * 放デイは学年区分、就労 A/B は年齢層、就移は訓練段階で分ける。
  *
  * バックエンドの target_grade カラムは varchar なので、ここで定めた key を
@@ -239,7 +239,7 @@ export const SAMPLE_ROUTINES_BY_SERVICE: Record<ServiceType, readonly SampleRout
     { name: '朝の会・健康観察',  content: '出席確認、健康チェック、本日の予定を共有。体調や気持ちを聞き取り、必要に応じて個別フォロー。', time: '15' },
     { name: '宿題・課題学習',    content: '学校の宿題に取り組む。集中が難しい場合は短い時間に区切って休憩を挟みながら支援する。', time: '45' },
     { name: 'おやつの時間',      content: 'アレルギー確認のうえおやつを提供。食事マナーや会話のやりとりを楽しむ場とする。', time: '20' },
-    { name: '集団・自由遊び',    content: 'ボードゲームや創作活動などを通して友達との関わり方を支援。一人遊びの希望も尊重する。', time: '60' },
+    { name: '集団・自由遊び',    content: 'ボードゲームや創作活動などを通して友だちとの関わり方を支援。一人遊びの希望も尊重する。', time: '60' },
     { name: '帰りの会・振り返り', content: '本日できたこと・楽しかったことを共有。明日の予定を確認し気持ちよく送り出す。', time: '15' },
   ],
   employment_a: [

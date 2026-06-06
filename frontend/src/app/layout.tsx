@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Noto_Sans_JP } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
+import { PwaInstallPrompt } from '@/components/pwa/PwaInstallPrompt';
 
 const notoSansJp = Noto_Sans_JP({
   variable: '--font-noto-sans-jp',
@@ -55,7 +56,11 @@ export default function RootLayout({
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
       </head>
       <body className={`${notoSansJp.variable} font-sans antialiased`}>
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          {/* PWA インストール誘導 + 通知許可案内 (HTTPS + 未 dismiss 時のみ表示) */}
+          <PwaInstallPrompt />
+        </Providers>
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -67,10 +72,28 @@ export default function RootLayout({
                   navigator.serviceWorker.register('/sw.js')
                     .then(function(registration) {
                       console.log('ServiceWorker registered:', registration.scope);
+                      // 起動直後にサーバ上の sw.js と差分があるか確認し、定期的にも更新を確認する。
+                      // これによりデプロイ後ユーザがリロードしなくても新SWが取得される。
+                      try { registration.update(); } catch (e) {}
+                      setInterval(function() {
+                        try { registration.update(); } catch (e) {}
+                      }, 60 * 1000);
                     })
                     .catch(function(error) {
                       console.log('ServiceWorker registration failed:', error);
                     });
+
+                  // 新しい SW が controller を取得した瞬間にページを 1 回だけリロードする。
+                  // 古い _next/static チャンクや古い HTML キャッシュが残っている場合の自動復旧。
+                  // 初回登録 (controller が元々 null) ではリロードしない。
+                  var __cb_hadController = !!navigator.serviceWorker.controller;
+                  var __cb_refreshing = false;
+                  navigator.serviceWorker.addEventListener('controllerchange', function() {
+                    if (!__cb_hadController) { __cb_hadController = true; return; }
+                    if (__cb_refreshing) return;
+                    __cb_refreshing = true;
+                    window.location.reload();
+                  });
                 });
               } else if ('serviceWorker' in navigator) {
                 // 開発時は既存登録を解除しキャッシュを削除（リロード後に有効）

@@ -51,16 +51,6 @@ export interface Student {
   piece_rate_amount: string | number | null;
   paid_leave_days: string | number | null;
   employment_status: string | null;
-  // Phase D: 国保連請求
-  beneficiary_number: string | null;
-  municipality_code: string | null;
-  disability_category: string | null;
-  disability_grade: string | null;
-  monthly_copay_cap: number | null;
-  copay_management_provider: string | null;
-  certificate_issued_date: string | null;
-  certificate_expiry_date: string | null;
-  monthly_usage_days_cap: number | null;
   last_login_at: string | null;
   created_at: string;
   updated_at: string;
@@ -74,10 +64,6 @@ export interface Classroom {
   service_type: string; // ServiceType (lib/serviceType.ts)。後方互換のため string 受け
   capacity?: number | null;
   opening_days_per_month?: number | null;
-  wam_office_code?: string | null;
-  prefecture_code?: string | null;
-  wam_service_code_default?: string | null;
-  wam_unit_price_yen?: number | null;
   company_id: number | null;
   company_name: string | null;
   address: string | null;

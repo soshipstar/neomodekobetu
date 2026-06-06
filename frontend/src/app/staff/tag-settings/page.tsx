@@ -105,11 +105,11 @@ export default function TagSettingsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">タグ設定</h1>
-          <p className="text-sm text-[var(--neutral-foreground-3)]">支援案に使用するタグをカスタマイズできます</p>
+          <p className="text-sm text-[var(--neutral-foreground-3)]">活動案に使用するタグをカスタマイズできます</p>
         </div>
         <Link href="/staff/support-plans">
           <Button variant="secondary" leftIcon={<MaterialIcon name="arrow_back" size={16} />}>
-            支援案一覧へ
+            活動案一覧へ
           </Button>
         </Link>
       </div>
@@ -121,7 +121,7 @@ export default function TagSettingsPage() {
 
         <div className="px-4 pb-2">
           <div className="rounded-md border-l-4 border-blue-500 bg-[var(--brand-160)] p-3 text-sm text-[var(--neutral-foreground-2)] dark:bg-blue-950/30">
-            支援案作成時に選択できるタグを設定します。<br />
+            活動案作成時に選択できるタグを設定します。<br />
             タグは教室ごとに設定でき、活動の分類に使用されます。
           </div>
         </div>

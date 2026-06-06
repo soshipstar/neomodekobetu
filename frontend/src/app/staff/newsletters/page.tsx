@@ -365,10 +365,10 @@ export default function NewslettersPage() {
                 <div>
                   <p className="text-sm font-medium text-[var(--brand-100)]">
                     <MaterialIcon name="auto_awesome" size={16} className="inline mr-1" />
-                    支援案ベースの一括AI生成
+                    活動案ベースの一括AI生成
                   </p>
                   <p className="text-xs text-[var(--neutral-foreground-3)] mt-0.5">
-                    支援案・活動記録・イベント情報をもとに全セクションを自動生成します（1〜2分）
+                    活動案・活動記録・イベント情報をもとに全セクションを自動生成します（1〜2分）
                   </p>
                 </div>
                 <Button

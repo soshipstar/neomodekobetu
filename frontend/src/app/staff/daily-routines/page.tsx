@@ -170,7 +170,7 @@ export default function DailyRoutinesPage() {
             毎日の支援設定
           </h1>
           <p className="mt-1 text-sm text-[var(--neutral-foreground-3)]">
-            ルーティーン活動を登録して支援案作成時に引用できます
+            ルーティーン活動を登録して活動案作成時に引用できます
           </p>
         </div>
         <Button
@@ -191,7 +191,7 @@ export default function DailyRoutinesPage() {
         <div className="mx-4 mb-4 rounded-none border-l-4 border-[var(--status-info-fg)] bg-[var(--status-info-bg)] p-4 text-sm text-[var(--neutral-foreground-2)]">
           毎日行うルーティーン活動を最大10個まで登録できます。
           <br />
-          登録した内容は、支援案作成時に「毎日の支援を引用」から簡単に追加できます。
+          登録した内容は、活動案作成時に「毎日の支援を引用」から簡単に追加できます。
         </div>
 
         {isLoading || !initialized ? (

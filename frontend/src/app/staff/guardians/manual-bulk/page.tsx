@@ -38,7 +38,7 @@ function GuardianManualSheet({ guardian, loginUrl, today }: { guardian: Guardian
               <td style={{ padding: '6px 12px', fontSize: '12pt' }}>{guardian.full_name}</td>
             </tr>
             <tr>
-              <td style={{ padding: '6px 12px', fontWeight: 'bold', color: '#444' }}>お子様</td>
+              <td style={{ padding: '6px 12px', fontWeight: 'bold', color: '#444' }}>本人</td>
               <td style={{ padding: '6px 12px', fontSize: '12pt' }}>
                 {guardian.students?.map((s) => s.student_name).join('、') || '（未設定）'}
               </td>

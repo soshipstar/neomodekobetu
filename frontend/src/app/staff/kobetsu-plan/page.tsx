@@ -16,6 +16,7 @@ import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import Link from 'next/link';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import type { ServiceType } from '@/lib/serviceType';
+import { StudentPicker } from '@/components/staff/StudentPicker';
 
 // ---------------------------------------------------------------------------
 // Text normalizer
@@ -32,6 +33,9 @@ function nl(text: string | null | undefined): string {
 interface Student {
   id: number;
   student_name: string;
+  grade_level?: string | null;
+  status?: string | null;
+  updated_at?: string | null;
 }
 
 type PlanStatus = 'draft' | 'proposal' | 'official';
@@ -1364,28 +1368,13 @@ export default function KobetsuPlanPage() {
         </CardBody>
       </Card>
 
-      {/* Student selector */}
-      <Card>
-        <CardBody>
-          <label className={labelClass}>生徒を選択</label>
-          {loadingStudents ? (
-            <SkeletonList items={1} />
-          ) : (
-            <select
-              className={selectClass}
-              value={selectedStudentId ?? ''}
-              onChange={(e) => setSelectedStudentId(e.target.value ? Number(e.target.value) : null)}
-            >
-              <option value="">-- 生徒を選択してください --</option>
-              {students.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.student_name}
-                </option>
-              ))}
-            </select>
-          )}
-        </CardBody>
-      </Card>
+      {/* Student selector — フィルタ可能なリスト UI に統一 */}
+      <StudentPicker
+        students={students}
+        selectedStudentId={selectedStudentId}
+        onSelect={(id) => setSelectedStudentId(id)}
+        isLoading={loadingStudents}
+      />
 
       {/* Plan list */}
       {selectedStudentId && (

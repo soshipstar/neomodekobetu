@@ -13,6 +13,7 @@ import { nl } from '@/lib/utils';
 import { format } from 'date-fns';
 import { SignaturePad, type SignaturePadRef } from '@/components/ui/SignaturePad';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { StudentPicker } from '@/components/staff/StudentPicker';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -22,6 +23,9 @@ interface Student {
   id: number;
   student_name: string;
   support_plan_start_type?: string;
+  grade_level?: string | null;
+  status?: string | null;
+  updated_at?: string | null;
 }
 
 interface PlanDetail {
@@ -404,48 +408,39 @@ export default function KobetsuMonitoringPage() {
         </div>
       </div>
 
-      {/* Student & Plan Selection */}
-      <Card>
-        <CardBody>
-          <div className="flex flex-wrap gap-5">
-            <div className="min-w-[200px] flex-1">
-              <label className="mb-2 block text-sm font-semibold text-[var(--neutral-foreground-2)]">生徒を選択 *</label>
-              <select
-                className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
-                value={selectedStudentId ?? ''}
-                onChange={(e) => handleStudentChange(e.target.value ? Number(e.target.value) : null)}
-              >
-                <option value="">-- 生徒を選択してください --</option>
-                {students.map((s) => (
-                  <option key={s.id} value={s.id}>{s.student_name}</option>
-                ))}
-              </select>
-            </div>
+      {/* Student selector — フィルタ可能なリスト UI に統一 */}
+      <StudentPicker
+        students={students}
+        selectedStudentId={selectedStudentId}
+        onSelect={(id) => handleStudentChange(id)}
+      />
 
-            {selectedStudentId && studentPlans.length > 0 && (
-              <div className="min-w-[200px] flex-1">
-                <label className="mb-2 block text-sm font-semibold text-[var(--neutral-foreground-2)]">個別支援計画書を選択 *</label>
-                <select
-                  className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
-                  value={selectedPlanId ?? ''}
-                  onChange={(e) => handlePlanChange(e.target.value ? Number(e.target.value) : null)}
-                >
-                  <option value="">-- 計画書を選択してください --</option>
-                  {studentPlans.map((p) => {
-                    const plan = p as PlanOption & { is_official?: boolean; is_draft?: boolean; status?: string };
-                    const label = plan.is_official ? '(提出済)' : plan.status === 'draft' || plan.is_draft ? '(下書き)' : '';
-                    return (
-                      <option key={p.id} value={p.id}>
-                        {format(new Date(p.created_date), 'yyyy年MM月dd日')} 作成 {label}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-            )}
-          </div>
-        </CardBody>
-      </Card>
+      {/* Plan selector (student 選択後のみ表示) */}
+      {selectedStudentId && studentPlans.length > 0 && (
+        <Card>
+          <CardBody>
+            <label className="mb-2 block text-sm font-semibold text-[var(--neutral-foreground-2)]">
+              個別支援計画書を選択 <span className="text-[var(--status-danger-fg)]">*</span>
+            </label>
+            <select
+              className="block w-full rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]"
+              value={selectedPlanId ?? ''}
+              onChange={(e) => handlePlanChange(e.target.value ? Number(e.target.value) : null)}
+            >
+              <option value="">-- 計画書を選択してください --</option>
+              {studentPlans.map((p) => {
+                const plan = p as PlanOption & { is_official?: boolean; is_draft?: boolean; status?: string };
+                const label = plan.is_official ? '(提出済)' : plan.status === 'draft' || plan.is_draft ? '(下書き)' : '';
+                return (
+                  <option key={p.id} value={p.id}>
+                    {format(new Date(p.created_date), 'yyyy年MM月dd日')} 作成 {label}
+                  </option>
+                );
+              })}
+            </select>
+          </CardBody>
+        </Card>
+      )}
 
       {selectedPlanId && planData ? (
         <>

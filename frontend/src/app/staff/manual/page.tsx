@@ -27,11 +27,11 @@ const afterSchoolSections: ManualSection[] = [
         <p>
           「ケアブリッジ」は、放課後等デイサービスの個別支援に特化した統合管理システムです。
           日々の活動記録、個別支援計画、保護者連絡、職員間コミュニケーションを一元管理し、
-          子どもたち一人ひとりの成長の軌跡を綴ります。
+          本人たち一人ひとりの成長の軌跡を綴ります。
         </p>
         <p>
           名前の由来：「軌」は成長の軌跡、「綴」は記録を綴ること。
-          子どもたちの成長の軌跡を丁寧に綴っていくという想いを込めています。
+          本人たちの成長の軌跡を丁寧に綴っていくという想いを込めています。
         </p>
       </div>
     ),
@@ -272,7 +272,7 @@ const afterSchoolSections: ManualSection[] = [
           <div className="rounded-lg bg-[var(--neutral-background-2)] p-4">
             <p className="mb-2 font-medium text-[var(--brand-80)]">保護者側の記入</p>
             <ul className="ml-4 list-disc space-y-1 text-sm text-[var(--neutral-foreground-2)]">
-              <li>保護者から見た子どもの様子</li>
+              <li>保護者から見た本人の様子</li>
               <li>家庭での変化や困りごと</li>
               <li>スタッフが確認ボタンで確認処理</li>
             </ul>
@@ -423,7 +423,6 @@ const employmentSections: ManualSection[] = [
           <li><strong>工賃管理</strong> — 時給制 / 出来高制を自動計算し、月次工賃台帳を作成</li>
           <li><strong>個別支援計画</strong> — 6 領域 (健康/日常/対人/コミュニケーション/就労スキル/行動特性) で目標設定</li>
           <li><strong>連絡帳</strong> — 強み (才能) チェック 10 項目で利用者の成長を可視化</li>
-          <li><strong>請求業務</strong> — 国保連提出データ (CSV / ZIP) を自動生成</li>
         </ul>
       </div>
     ),
@@ -498,28 +497,6 @@ const employmentSections: ManualSection[] = [
     ),
   },
   {
-    id: 'billing',
-    icon: <MaterialIcon name="receipt_long" size={16} />,
-    title: '国保連請求業務',
-    content: (
-      <div className="space-y-3">
-        <p>月次の国保連請求は「国保連請求」画面 (/staff/billing) から行います。</p>
-        <h4 className="mt-3 font-semibold">提出までの流れ</h4>
-        <ol className="ml-4 list-decimal space-y-2">
-          <li><strong>事業所マスタの確認</strong> — 事業所番号 (10桁) / 都道府県コード (2桁) / 主使用サービスコード (6桁) が設定されているか確認</li>
-          <li><strong>利用者マスタの確認</strong> — 全員に受給者証番号・支給市町村コード・障害支援区分・月額負担上限が登録されているか確認</li>
-          <li><strong>対象月を選択 → 「国保連提出データ (ZIP)」</strong> — 請求書情報 / 明細書情報 / 実績記録票情報の 3 ファイルが Shift-JIS で生成されます</li>
-          <li><strong>国保連オンライン送信ソフトに取り込み</strong> — 通常 10 日前後に提出します</li>
-          <li><strong>不備があれば翌月再提出</strong> — エラー連絡があれば該当利用者の情報を修正してから再生成</li>
-        </ol>
-        <p className="mt-3 text-xs text-[var(--neutral-foreground-3)]">
-          ※ 加算管理 (送迎・食事・福祉専門職員配置加算 等) は現バージョンでは未対応。
-          手動で送信ソフト側で追加するか、加算なしの基本単位で提出してください。
-        </p>
-      </div>
-    ),
-  },
-  {
     id: 'work-manuals',
     icon: <MaterialIcon name="menu_book" size={16} />,
     title: '作業マニュアル機能',
@@ -547,7 +524,6 @@ const employmentSections: ManualSection[] = [
           <li><strong>稼働率</strong> — 1 日平均利用者数 ÷ 定員。70% 以上が目安、90% 超は加算条件</li>
           <li><strong>開所日数</strong> — 月の営業日数</li>
           <li><strong>延べ利用日数</strong> — 利用者 × 出勤日の合計</li>
-          <li><strong>月利用日数上限超過</strong> — 受給者証の上限 (通常 23 日) を超えた利用者を警告</li>
           <li><strong>6 ヶ月稼働率推移</strong> — 経営判断や行政指導前の参考に</li>
         </ul>
       </div>
@@ -576,8 +552,6 @@ const employmentSections: ManualSection[] = [
       <div className="space-y-3">
         <h4 className="font-semibold">Q. 工賃計算で「未集計」と出る</h4>
         <p>利用者詳細画面で「計算方式」(時給/出来高/固定) と「時給」または「出来高単価」が設定されているか確認してください。</p>
-        <h4 className="font-semibold">Q. 国保連 CSV ダウンロードボタンが押せない</h4>
-        <p>事業所番号 (10桁) または受給者証番号が未設定の利用者がいる可能性があります。画面上部の警告メッセージを確認してください。</p>
         <h4 className="font-semibold">Q. A型と B型の違いは何ですか?</h4>
         <p>A型は <strong>雇用契約あり / 最低賃金保証</strong>、B型は <strong>雇用契約なし / 工賃のみ</strong> です。本システムでは事業所のサービス種別設定で自動的に画面表記が切り替わります。</p>
         <h4 className="font-semibold">Q. 平均工賃を確認したい</h4>
@@ -725,21 +699,6 @@ const transitionSections: ManualSection[] = [
     ),
   },
   {
-    id: 'billing-transition',
-    icon: <MaterialIcon name="receipt_long" size={16} />,
-    title: '国保連請求業務',
-    content: (
-      <div className="space-y-3">
-        <p>就労継続と同じく、月次で国保連へ請求します。「国保連請求」画面 (/staff/billing) から CSV を生成。</p>
-        <p>就労移行は <strong>サービスコード 14XXXX</strong> 系を使います。事業所マスタで主使用サービスコードを設定してください。</p>
-        <p className="text-xs text-[var(--neutral-foreground-3)]">
-          ※ 就職実績による <strong>就労移行支援体制加算</strong> など加算が多いサービス種別です。
-          加算の追加は送信ソフト側で行うか、別途設定が必要です。
-        </p>
-      </div>
-    ),
-  },
-  {
     id: 'faq-transition',
     icon: <MaterialIcon name="help" size={16} />,
     title: 'よくある質問',
@@ -752,7 +711,7 @@ const transitionSections: ManualSection[] = [
         <h4 className="font-semibold">Q. 就職後の定着率を計算したい</h4>
         <p>「就労移行支援」画面の「就職後定着」タブで「在籍中」「離職」を確認できます。比率は年次レポートで自動算出予定。</p>
         <h4 className="font-semibold">Q. 利用期限を超えても利用継続するには?</h4>
-        <p>市町村の支給決定で 1 年延長可能 (最大 3 年)。受給者証の有効期限を更新してから利用期限を伸ばしてください。</p>
+        <p>市町村の支給決定で 1 年延長可能 (最大 3 年)。</p>
       </div>
     ),
   },
