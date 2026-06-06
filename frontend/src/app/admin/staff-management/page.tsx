@@ -60,7 +60,11 @@ export default function StaffManagementPage() {
   const { user: authUser } = useAuthStore();
   const isCompanyAdmin = authUser?.user_type === 'admin' && !!authUser?.is_company_admin;
   const isMaster = authUser?.user_type === 'admin' && !!authUser?.is_master;
-  const canSelectType = isCompanyAdmin;
+  // 種別変更 (スタッフ↔通常管理者) と所属教室変更は
+  // 旧アプリ staff_accounts_save.php と同じく マスター + 企業管理者 のみ可。
+  // 旧 `canSelectType = isCompanyAdmin` ではマスター管理者でも UI が出ず、
+  // 「種別変更が反映しない」「所属教室が変更できない」というバグになっていた。
+  const canSelectType = isMaster || isCompanyAdmin;
   const queryClient = useQueryClient();
   const toast = useToast();
   const [search, setSearch] = useState('');
@@ -103,6 +107,10 @@ export default function StaffManagementPage() {
         };
         if (data.password) payload.password = data.password;
         if (data.classroom_id) payload.classroom_id = Number(data.classroom_id);
+        // 種別 (スタッフ↔通常管理者) もマスター/企業管理者なら送信。
+        // backend は権限が無い場合は user_type を無視する (StaffManagementController::update)。
+        // 旧: payload に含めず → 「種別変更が反映しない」バグの原因だった。
+        if (canSelectType) payload.user_type = data.user_type;
         return api.put(`/api/admin/staff/${data.id}`, payload);
       }
       const payload: Record<string, unknown> = {
@@ -120,8 +128,11 @@ export default function StaffManagementPage() {
       toast.success(editingStaff ? 'スタッフ情報を更新しました' : 'スタッフを登録しました');
       closeModal();
     },
-    onError: () => {
-      toast.error('保存に失敗しました');
+    onError: (err: unknown) => {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+        || '保存に失敗しました';
+      toast.error(msg);
     },
   });
 

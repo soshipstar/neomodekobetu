@@ -177,6 +177,14 @@ class StaffManagementController extends Controller
 
     /**
      * スタッフ情報を更新（配置・役職など）
+     *
+     * 旧アプリ整合性 (staff_accounts_save.php / staff_management_save.php):
+     *  - email / full_name / is_active / password の更新は誰でも可
+     *  - classroom_id の変更: マスター + 企業管理者のみ (旧 staff_accounts_save.php)
+     *  - user_type の変更 (スタッフ↔通常管理者): マスター + 企業管理者のみ
+     *    (旧アプリでは `convert_to_admin` 専用 action だったが、care-bridge では
+     *     編集画面の「種別」セレクタから直接変更できる UI に統合)
+     *  - is_master の変更は不可 (専用 master 設定経路でのみ)
      */
     public function update(Request $request, User $user): JsonResponse
     {
@@ -184,12 +192,47 @@ class StaffManagementController extends Controller
             return response()->json(['success' => false, 'message' => 'マスター管理者は編集できません。'], 403);
         }
 
+        $authUser = $request->user();
+        $authIsMaster = $authUser->user_type === 'admin' && $authUser->is_master;
+        $authIsCompanyAdmin = $authUser->user_type === 'admin' && $authUser->is_company_admin;
+        $canChangeRoleOrClassroom = $authIsMaster || $authIsCompanyAdmin;
+
         $validated = $request->validate([
             'classroom_id' => 'nullable|exists:classrooms,id',
             'full_name'    => 'sometimes|required|string|max:255',
             'email'        => 'nullable|email|max:255',
             'is_active'    => 'boolean',
+            'password'     => 'nullable|string|min:6',
+            'user_type'    => 'nullable|string|in:staff,admin',
         ]);
+
+        // 権限変更・教室変更はマスター/企業管理者のみ。それ以外は無視して落とす。
+        if (! $canChangeRoleOrClassroom) {
+            unset($validated['classroom_id'], $validated['user_type']);
+        }
+
+        // 企業管理者: 教室変更先は自企業内でなければならない
+        if ($authIsCompanyAdmin && !empty($validated['classroom_id'])) {
+            $myCompanyId = $authUser->classroom?->company_id;
+            $target = Classroom::find($validated['classroom_id']);
+            if (! $target || $target->company_id !== $myCompanyId) {
+                throw ValidationException::withMessages([
+                    'classroom_id' => ['自企業内の教室のみ選択できます。'],
+                ]);
+            }
+        }
+
+        // パスワードは平文で来るので Hash 化、未指定なら触らない
+        if (! empty($validated['password'])) {
+            $validated['password'] = Hash::make($validated['password']);
+        } else {
+            unset($validated['password']);
+        }
+
+        // 権限変更は user_type のみ。is_master は触らない (専用経路でのみ昇格)
+        // また企業管理者を一般 admin/staff に降格させる際は is_company_admin を外す等の
+        // 副作用が必要だが、UI には企業管理者編集メニューを露出していないため、
+        // ここでは触れず admin/staff の単純変換にとどめる。
 
         $user->update($validated);
 
@@ -201,7 +244,19 @@ class StaffManagementController extends Controller
     }
 
     /**
-     * スタッフを削除（論理削除）
+     * スタッフを削除
+     *
+     * 旧アプリ (staff_accounts_save.php / staff_management_save.php) は
+     *   DELETE FROM users WHERE id = ? AND user_type = 'staff'
+     * の物理削除。これにより同じ username / email を再利用可能にしていた。
+     *
+     * care-bridge では参照整合性 (chat_rooms.staff_id, daily_records.staff_id 等)
+     * のため、安全側として「論理削除 + username / email を解放」する。
+     *  - is_active = false
+     *  - email     = null            (再利用可)
+     *  - username  = "deleted__{id}__{元の username}"  (一意制約を逃しつつ参照可)
+     *
+     * これにより削除後に同じメールアドレス・ユーザー名で再登録できる。
      */
     public function destroy(User $user): JsonResponse
     {
@@ -209,11 +264,21 @@ class StaffManagementController extends Controller
             return response()->json(['success' => false, 'message' => 'マスター管理者は削除できません。'], 403);
         }
 
-        $user->update(['is_active' => false]);
+        // username に "deleted__<id>__" prefix を付けて一意制約から解放
+        // (50 文字制限内に収まるよう、元の username を切り詰める)
+        $prefix = 'deleted__' . $user->id . '__';
+        $remaining = max(0, 50 - strlen($prefix));
+        $newUsername = $prefix . substr($user->username, 0, $remaining);
+
+        $user->update([
+            'is_active' => false,
+            'email'     => null,
+            'username'  => $newUsername,
+        ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'スタッフを無効にしました。',
+            'message' => 'スタッフを削除しました。',
         ]);
     }
 }
