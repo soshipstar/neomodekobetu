@@ -394,6 +394,12 @@ class SupportPlanController extends Controller
             return implode(' / ', $parts);
         })->implode("\n");
 
+        // 観点7 説明可能性: AIが参照した連絡帳の期間(最古〜最新)を算出し、
+        // 応答 sources に含める。職員が「何を根拠に生成したか」を確認できるようにする。
+        $recordsPeriod = self::dateRange(
+            $records->map(fn ($r) => $r->dailyRecord?->record_date)->all()
+        );
+
         // ===================================================================
         // 4. 前回の支援計画
         // ===================================================================
@@ -509,6 +515,7 @@ class SupportPlanController extends Controller
                     'assessment'  => !empty($guardianText) || !empty($staffText),
                     'monitoring' => !empty($monitoringText),
                     'records'    => $records->count(),
+                    'records_period' => $recordsPeriod, // 観点7: 参照した連絡帳の期間 {from,to}|null
                     'prev_plan'  => !empty($prevPlanText),
                 ],
             ]);
@@ -518,6 +525,36 @@ class SupportPlanController extends Controller
                 'message' => 'AI生成中にエラーが発生しました: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * 観点7 説明可能性: 日付値の配列から参照期間(最古〜最新)を算出する。
+     *
+     * 各値は日付文字列 / Carbon / null を許容し、先頭10文字(YYYY-MM-DD)へ正規化する。
+     * 有効な日付が無ければ null を返す。
+     *
+     * @param  array<int, mixed>  $dates
+     * @return array{from: string, to: string}|null
+     */
+    public static function dateRange(array $dates): ?array
+    {
+        $normalized = [];
+        foreach ($dates as $d) {
+            if ($d === null || $d === '') {
+                continue;
+            }
+            $day = substr((string) $d, 0, 10);
+            if ($day !== '') {
+                $normalized[] = $day;
+            }
+        }
+
+        if ($normalized === []) {
+            return null;
+        }
+
+        sort($normalized); // YYYY-MM-DD は辞書順=日付順
+        return ['from' => $normalized[0], 'to' => $normalized[count($normalized) - 1]];
     }
 
     /**

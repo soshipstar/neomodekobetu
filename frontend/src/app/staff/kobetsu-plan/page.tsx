@@ -220,6 +220,14 @@ export default function KobetsuPlanPage() {
   const [form, setForm] = useState<PlanForm>(emptyForm());
   const [generating, setGenerating] = useState(false);
   const [generatingWish, setGeneratingWish] = useState(false);
+  // 観点7 説明可能性: AI生成が参照したデータ(連絡帳の件数・期間など)の表示用。
+  const [aiSources, setAiSources] = useState<{
+    assessment?: boolean;
+    monitoring?: boolean;
+    records?: number;
+    records_period?: { from: string; to: string } | null;
+    prev_plan?: boolean;
+  } | null>(null);
 
   // Detail editing modal state
   const [editingDetailIdx, setEditingDetailIdx] = useState<number | null>(null);
@@ -563,11 +571,14 @@ export default function KobetsuPlanPage() {
         ? `/api/staff/support-plans/${editingPlanId}/generate-ai`
         : `/api/staff/students/${selectedStudentId}/support-plans/ai-generate`;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const res = await api.post<{ data: any }>(
+      const res = await api.post<{ data: any; sources?: typeof aiSources }>(
         endpoint,
         { student_id: selectedStudentId }
       );
       const aiData = res.data.data;
+      // 観点7: 生成根拠(参照した連絡帳の件数・期間等)を保持して表示する。
+      // (既存計画の編集=generate-ai 経路のみ sources を返す)
+      setAiSources(res.data.sources ?? null);
       setForm((prev) => ({
         ...prev,
         guardian_wish: aiData.life_intention || prev.guardian_wish,
@@ -1385,6 +1396,24 @@ export default function KobetsuPlanPage() {
                 </>
               )}
             </div>
+            {aiSources && (
+              <p className="mt-2 flex items-start gap-1 text-xs text-[var(--neutral-foreground-3)]">
+                <MaterialIcon name="info" size={14} className="mt-0.5 shrink-0 text-[var(--brand-80)]" />
+                <span>
+                  AI生成の参照データ:
+                  {typeof aiSources.records === 'number' && aiSources.records > 0 ? (
+                    <>
+                      {' '}連絡帳{aiSources.records}件
+                      {aiSources.records_period &&
+                        `（${aiSources.records_period.from.replace(/-/g, '/')}〜${aiSources.records_period.to.replace(/-/g, '/')}）`}
+                    </>
+                  ) : null}
+                  {aiSources.monitoring ? '・最新モニタリング' : ''}
+                  {aiSources.prev_plan ? '・前回の支援計画' : ''}
+                  {aiSources.assessment ? '・アセスメント' : ''}
+                </span>
+              </p>
+            )}
           </div>
         </form>
         </fieldset>
