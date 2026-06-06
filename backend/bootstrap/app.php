@@ -31,6 +31,17 @@ return Application::configure(basePath: dirname(__DIR__))
                 });
         },
     )
+    ->withSchedule(function (Illuminate\Console\Scheduling\Schedule $schedule) {
+        // AISI ヘルスケア AI セーフティ評価観点ガイド v1.0 R8 (2026-05-17):
+        //  - V5 プライバシー保護 / 表 3-6 ⑤ データの保存期間管理・定期削除
+        //  - V10 検証可能性 / 表 3-11 ⑤ 監査証跡の保持期間管理
+        // 各ログテーブルの保持期間ポリシー (デフォルト: ai/audit/master=5年, error=1年) を日次で適用。
+        // 実行時に master_admin_audit_logs に削除アクションを記録する。
+        $schedule->command('logs:purge')
+            ->dailyAt('03:00')
+            ->withoutOverlapping()
+            ->onOneServer();
+    })
     ->booted(function (Application $app) {
         // Model Observers の登録
         \App\Models\ChatMessage::observe(\App\Observers\ChatMessageObserver::class);
@@ -48,6 +59,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'user_type' => \App\Http\Middleware\CheckUserType::class,
             'classroom_access' => \App\Http\Middleware\CheckClassroomAccess::class,
             'external_api_key' => \App\Http\Middleware\VerifyExternalApiKey::class,
+            // AISI R3b: AI 生成ルート前段の同意チェック (2026-05-17)
+            'ai_consent' => \App\Http\Middleware\RequireAiConsent::class,
         ]);
 
         // API レート制限（ダッシュボードのポーリング等を考慮して余裕を持たせる）
