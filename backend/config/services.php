@@ -39,6 +39,23 @@ return [
         // ベクトル埋め込み用モデル。vector_embeddings.embedding は vector(1536) のため
         // 1536 次元を返す text-embedding-3-small を既定とする。
         'embedding_model' => env('OPENAI_EMBEDDING_MODEL', 'text-embedding-3-small'),
+
+        // --- データ取扱いの確定状態を記録するコンプライアンス設定 ---
+        // AIセーフティ ガイドライン 観点5(プライバシー保護)/観点10(検証可能性)対応。
+        // OpenAI API は既定で送信データを学習に使用しないが、要配慮個人情報を扱うため
+        // ZDR(ゼロデータ保持)契約・DPA(データ処理契約)の締結状態を運用で確定し、ここに記録する。
+        // 詳細・確認手順: docs/ai-data-handling.md を参照。
+        // (※これらは「確定状態の記録」であり、AI実行の挙動は変えない)
+        'data_processing' => [
+            // API 経由のデータがモデル学習に使われない設定であること (既定 true)
+            'training_opt_out'    => env('OPENAI_TRAINING_OPT_OUT', true),
+            // ZDR(ゼロデータ保持)が適用されていること (要 OpenAI への申請・確認)
+            'zero_data_retention' => env('OPENAI_ZERO_DATA_RETENTION', false),
+            // DPA(データ処理契約)を締結済みであること
+            'dpa_signed'          => env('OPENAI_DPA_SIGNED', false),
+            // 直近に確認した日付 (YYYY-MM-DD)
+            'reviewed_at'         => env('OPENAI_DATA_POLICY_REVIEWED_AT', null),
+        ],
     ],
 
     'external_api' => [
