@@ -54,31 +54,8 @@ class OperationMetricsService
         $capacity = $classroom->capacity ?? 0;
         $utilization = $capacity > 0 ? round(($avgDailyUsers / $capacity) * 100, 1) : 0;
 
-        // 利用者ごとの月利用日数を集計 (上限超過チェック)
-        $perStudent = StudentRecord::query()
-            ->selectRaw('student_id, COUNT(*) as days')
-            ->whereHas('dailyRecord', function ($q) use ($classroomId, $from, $to) {
-                $q->where('classroom_id', $classroomId)
-                    ->whereBetween('record_date', [$from->toDateString(), $to->toDateString()]);
-            })
-            ->groupBy('student_id')
-            ->get();
-
-        // 月利用日数上限超過の利用者
+        // 月利用日数上限超過の利用者 (国保連請求の月利用日数上限を撤去したため空配列のまま)
         $overCapStudents = [];
-        foreach ($perStudent as $row) {
-            $student = Student::find($row->student_id);
-            if (! $student) continue;
-            $cap = $student->monthly_usage_days_cap ?? null;
-            if ($cap && $row->days > $cap) {
-                $overCapStudents[] = [
-                    'student_id'   => $student->id,
-                    'student_name' => $student->student_name,
-                    'days'         => $row->days,
-                    'cap'          => $cap,
-                ];
-            }
-        }
 
         // 過去 6 ヶ月の推移
         $trend = [];

@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>支援案 - {{ $plan->activity_name }}</title>
+    <title>活動案 - {{ $plan->activity_name }}</title>
     <style>
         @page { size: A4 portrait; margin: 10mm; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -135,7 +135,7 @@
 <body>
 
     <div class="header">
-        <h1>活動支援案</h1>
+        <h1>活動案</h1>
         <div class="header-sub">放課後等デイサービス 活動計画書</div>
     </div>
 

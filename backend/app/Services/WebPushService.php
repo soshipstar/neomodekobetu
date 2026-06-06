@@ -57,8 +57,8 @@ class WebPushService
         $payload = json_encode([
             'title' => $title,
             'body' => $body,
-            'icon' => '/assets/icons/icon-192x192.svg',
-            'badge' => '/assets/icons/icon-72x72.svg',
+            'icon' => '/assets/icons/icon-192x192.png',
+            'badge' => '/assets/icons/icon-72x72.png',
             'url' => $url ?? '/',
         ], JSON_UNESCAPED_UNICODE);
 

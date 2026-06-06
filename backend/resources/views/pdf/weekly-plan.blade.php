@@ -355,7 +355,7 @@
         </tr>
         <tr>
             <td>
-                <div class="parent-comment">お子様の様子やコメントをご記入ください</div>
+                <div class="parent-comment">本人の様子やコメントをご記入ください</div>
             </td>
             <td class="parent-sign">
                 確認印・サイン

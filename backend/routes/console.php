@@ -39,10 +39,12 @@ Schedule::command('agent-payouts:calculate')
     ->withoutOverlapping()
     ->onOneServer();
 
-// 解決済みエラーログの自動削除 - 3日経過したものを毎日午前4時に削除
+// 解決済みエラーログの自動削除 - 作成から3日経過したものを毎日午前4時に削除
+// error_logs テーブルは created_at のみで updated_at を持たないため (ErrorLog::$timestamps = false)、
+// created_at を判定基準にする。
 Schedule::call(function () {
     $deleted = \App\Models\ErrorLog::where('is_resolved', true)
-        ->where('updated_at', '<', now()->subDays(3))
+        ->where('created_at', '<', now()->subDays(3))
         ->delete();
     if ($deleted > 0) {
         \Illuminate\Support\Facades\Log::info("Deleted {$deleted} resolved error logs older than 3 days");

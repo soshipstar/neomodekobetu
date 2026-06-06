@@ -4,9 +4,12 @@ namespace Tests\Feature;
 
 use App\Models\Classroom;
 use App\Models\Company;
+use App\Models\ErrorLog;
+use App\Models\Student;
 use App\Models\User;
 use App\Services\WebPushService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
@@ -122,5 +125,110 @@ class ER001_ErrorLogsFixTest extends TestCase
         $service = new WebPushService();
         $sent = $service->sendToUser(1, 'タイトル', '本文');
         $this->assertEquals(0, $sent);
+    }
+
+    // =========================================================================
+    // D. error_logs クリーンアップが updated_at 不在で落ちる
+    //    routes/console.php の毎日 04:00 タスクが SQLSTATE[42703]
+    //    "Undefined column: updated_at" で繰り返し失敗していた。
+    //    ErrorLog は $timestamps = false で created_at しか持たないため、
+    //    クリーンアップ判定は created_at で行う。
+    // =========================================================================
+
+    public function test_error_logs_cleanup_query_uses_existing_column(): void
+    {
+        // 4日前の解決済みエラー
+        $old = ErrorLog::create([
+            'level'       => 'error',
+            'message'     => '古い解決済み',
+            'is_resolved' => true,
+            'created_at'  => now()->subDays(4),
+        ]);
+        // 1日前の解決済みエラー (削除されてはならない)
+        $recent = ErrorLog::create([
+            'level'       => 'error',
+            'message'     => '新しい解決済み',
+            'is_resolved' => true,
+            'created_at'  => now()->subDay(),
+        ]);
+        // 4日前の未解決エラー (削除されてはならない)
+        $unresolved = ErrorLog::create([
+            'level'       => 'error',
+            'message'     => '古い未解決',
+            'is_resolved' => false,
+            'created_at'  => now()->subDays(4),
+        ]);
+
+        // routes/console.php のクリーンアップと同一クエリ
+        $deleted = ErrorLog::where('is_resolved', true)
+            ->where('created_at', '<', now()->subDays(3))
+            ->delete();
+
+        $this->assertSame(1, $deleted);
+        $this->assertNull(ErrorLog::find($old->id));
+        $this->assertNotNull(ErrorLog::find($recent->id));
+        $this->assertNotNull(ErrorLog::find($unresolved->id));
+    }
+
+    // =========================================================================
+    // E. DashboardController.summary() で $students 未定義
+    //    /api/staff/dashboard/summary 呼び出し時に
+    //    "Undefined variable $students" で例外 → catch で 0 件扱い。
+    //    accessibleIds 経由のサブクエリで実際の件数が返るようにする。
+    // =========================================================================
+
+    public function test_dashboard_summary_counts_unsubmitted_documents_per_accessible_classroom(): void
+    {
+        $s = $this->setupStaffContext();
+        $other = Classroom::create([
+            'classroom_name' => '別校',
+            'company_id' => $s['company']->id,
+            'is_active' => true,
+        ]);
+
+        $studentMine = Student::create([
+            'classroom_id' => $s['classroom']->id,
+            'student_name' => '担当生徒',
+            'is_active'    => true,
+        ]);
+        $studentOther = Student::create([
+            'classroom_id' => $other->id,
+            'student_name' => '他校生徒',
+            'is_active'    => true,
+        ]);
+
+        // 担当教室の未提出 1件
+        DB::table('submission_requests')->insert([
+            'student_id'   => $studentMine->id,
+            'created_by'   => $s['staff']->id,
+            'title'        => '未提出書類',
+            'is_completed' => false,
+            'created_at'   => now(),
+            'updated_at'   => now(),
+        ]);
+        // 担当教室の提出済 1件 (カウントされない)
+        DB::table('submission_requests')->insert([
+            'student_id'   => $studentMine->id,
+            'created_by'   => $s['staff']->id,
+            'title'        => '提出済書類',
+            'is_completed' => true,
+            'created_at'   => now(),
+            'updated_at'   => now(),
+        ]);
+        // 別教室の未提出 1件 (アクセス権限なしでカウントされない)
+        DB::table('submission_requests')->insert([
+            'student_id'   => $studentOther->id,
+            'created_by'   => $s['staff']->id,
+            'title'        => '他校未提出',
+            'is_completed' => false,
+            'created_at'   => now(),
+            'updated_at'   => now(),
+        ]);
+
+        $response = $this->actingAs($s['staff'], 'sanctum')
+            ->getJson('/api/staff/dashboard/summary');
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('data.unsubmitted_documents', 1);
     }
 }
