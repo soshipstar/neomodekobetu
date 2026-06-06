@@ -69,7 +69,11 @@ class FreeSchoolReportAiService
             ->orderByDesc('created_date')
             ->first();
 
-        $prompt = $this->buildPrompt($student, $record, $style, $integrated, $studentRecord, $supportPlan, $individualPlan);
+        // 観点5 プライバシー保護: 外部AIへ送る前に児童・保護者の氏名を仮名化する。
+        $masker = \App\Support\PiiMasker::forStudent($student);
+        $prompt = $masker->mask(
+            $this->buildPrompt($student, $record, $style, $integrated, $studentRecord, $supportPlan, $individualPlan)
+        );
 
         $client = \OpenAI::client($apiKey);
 
@@ -100,11 +104,12 @@ class FreeSchoolReportAiService
             $decoded = json_decode($raw, true);
             if (!is_array($decoded)) $decoded = [];
 
+            // 出力(下書き)は職員が使うため、仮名を実名へ復元して返す。
             return [
-                'activity_summary'      => trim((string) ($decoded['activity_summary'] ?? '')),
-                'support_consideration' => trim((string) ($decoded['support_consideration'] ?? '')),
-                'child_observation'     => trim((string) ($decoded['child_observation'] ?? '')),
-                'evaluation_and_next'   => trim((string) ($decoded['evaluation_and_next'] ?? '')),
+                'activity_summary'      => $masker->unmask(trim((string) ($decoded['activity_summary'] ?? ''))),
+                'support_consideration' => $masker->unmask(trim((string) ($decoded['support_consideration'] ?? ''))),
+                'child_observation'     => $masker->unmask(trim((string) ($decoded['child_observation'] ?? ''))),
+                'evaluation_and_next'   => $masker->unmask(trim((string) ($decoded['evaluation_and_next'] ?? ''))),
             ];
         } catch (\Throwable $e) {
             Log::error('FreeSchoolReportAiService::generate failed', [

@@ -6,6 +6,7 @@ use App\Models\AiGenerationLog;
 use App\Models\Classroom;
 use App\Models\MonitoringRecord;
 use App\Models\Student;
+use App\Support\PiiMasker;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 class AiGenerationService
@@ -21,7 +22,9 @@ class AiGenerationService
     {
         $student->load(['classroom', 'guardian', 'dailyRecords.studentRecords', 'supportPlans.details']);
 
-        $prompt = $this->buildSupportPlanPrompt($student, $context);
+        // 観点5 プライバシー保護: 外部AIへ送る前に児童・保護者の氏名を仮名化する。
+        $masker = PiiMasker::forStudent($student);
+        $prompt = $masker->mask($this->buildSupportPlanPrompt($student, $context));
 
         $startTime = microtime(true);
 
@@ -47,9 +50,11 @@ class AiGenerationService
         $durationMs = (int) ((microtime(true) - $startTime) * 1000);
         $content = json_decode($response->choices[0]->message->content, true) ?? [];
 
+        // ログにはマスク済(=外部送信したのと同じ)入出力を保存し、実名をログに残さない。
         $this->logGeneration('support_plan', $response, $prompt, $content, $durationMs);
 
-        return $content;
+        // 呼び出し側(職員の下書き)へ返すときだけ実名へ復元する。
+        return $masker->unmaskArray($content);
     }
 
     /**
@@ -62,7 +67,9 @@ class AiGenerationService
     {
         $record->load(['plan.details', 'student.dailyRecords.studentRecords']);
 
-        $prompt = $this->buildMonitoringPrompt($record);
+        // 観点5 プライバシー保護: 外部AIへ送る前に児童・保護者の氏名を仮名化する。
+        $masker = $record->student ? PiiMasker::forStudent($record->student) : new PiiMasker();
+        $prompt = $masker->mask($this->buildMonitoringPrompt($record));
 
         $startTime = microtime(true);
 
@@ -90,7 +97,7 @@ class AiGenerationService
 
         $this->logGeneration('monitoring_report', $response, $prompt, $content, $durationMs);
 
-        return $content;
+        return $masker->unmaskArray($content);
     }
 
     /**

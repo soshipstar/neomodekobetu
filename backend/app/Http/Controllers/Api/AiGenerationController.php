@@ -71,6 +71,25 @@ class AiGenerationController extends Controller
             return "[{$p->created_date}]\n{$details}";
         })->implode("\n\n");
 
+        // 観点5 プライバシー保護: 外部AIへ送る前に児童・保護者の氏名を仮名化する。
+        $masker = \App\Support\PiiMasker::forStudent($student);
+        $userContent = $masker->mask(
+            "以下の情報をもとに、個別支援計画書の内容を生成してください。\n\n"
+            . "【児童名】{$student->student_name}\n\n"
+            . "【面接記録】\n{$interviewText}\n\n"
+            . "【連絡帳記録】\n{$recordsText}\n\n"
+            . "【過去の支援計画書】\n{$pastPlanText}\n\n"
+            . ($validated['context'] ? "【追加情報】\n{$validated['context']}\n\n" : '')
+            . "以下を含むJSONを出力してください:\n"
+            . "{\n"
+            . "  \"life_intention\": \"本人の生活に対する意向\",\n"
+            . "  \"overall_policy\": \"総合的な援助の方針\",\n"
+            . "  \"long_term_goal\": \"長期目標\",\n"
+            . "  \"short_term_goal\": \"短期目標\",\n"
+            . "  \"details\": [{\"category\": \"分野\", \"sub_category\": \"サブ分野\", \"support_goal\": \"目標\", \"support_content\": \"支援内容\"}]\n"
+            . "}"
+        );
+
         try {
             $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
                 'model'    => 'gpt-5.4-2026-03-05',
@@ -81,20 +100,7 @@ class AiGenerationController extends Controller
                     ],
                     [
                         'role'    => 'user',
-                        'content' => "以下の情報をもとに、個別支援計画書の内容を生成してください。\n\n"
-                            . "【児童名】{$student->student_name}\n\n"
-                            . "【面接記録】\n{$interviewText}\n\n"
-                            . "【連絡帳記録】\n{$recordsText}\n\n"
-                            . "【過去の支援計画書】\n{$pastPlanText}\n\n"
-                            . ($validated['context'] ? "【追加情報】\n{$validated['context']}\n\n" : '')
-                            . "以下を含むJSONを出力してください:\n"
-                            . "{\n"
-                            . "  \"life_intention\": \"本人の生活に対する意向\",\n"
-                            . "  \"overall_policy\": \"総合的な援助の方針\",\n"
-                            . "  \"long_term_goal\": \"長期目標\",\n"
-                            . "  \"short_term_goal\": \"短期目標\",\n"
-                            . "  \"details\": [{\"category\": \"分野\", \"sub_category\": \"サブ分野\", \"support_goal\": \"目標\", \"support_content\": \"支援内容\"}]\n"
-                            . "}",
+                        'content' => $userContent,
                     ],
                 ],
                 'temperature'           => 0.5,
@@ -120,9 +126,12 @@ class AiGenerationController extends Controller
                 'student_id'   => $student->id,
             ]);
 
+            // 出力(下書き)は職員が使うため、仮名を実名へ復元して返す。
+            $data = is_array($result) ? $masker->unmaskArray($result) : $masker->unmask((string) $content);
+
             return response()->json([
                 'success' => true,
-                'data'    => $result ?? $content,
+                'data'    => $data,
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -179,6 +188,16 @@ class AiGenerationController extends Controller
 
         $detailsText = $details->map(fn ($d) => "- [{$d->category}/{$d->sub_category}] 目標: {$d->support_goal} / 内容: {$d->support_content}")->implode("\n");
 
+        // 観点5 プライバシー保護: 外部AIへ送る前に児童・保護者の氏名を仮名化する。
+        $masker = \App\Support\PiiMasker::forStudent($student);
+        $userContent = $masker->mask(
+            "【児童名】{$student->student_name}\n\n"
+            . "【計画の目標・支援内容】\n{$detailsText}\n\n"
+            . "【過去6ヶ月の記録】\n{$recordsText}\n\n"
+            . "各目標に対して評価してください。出力形式:\n"
+            . "{\"evaluations\": {\"<detail_id>\": {\"achievement_status\": \"達成/進行中/未着手/継続中/見直し必要\", \"monitoring_comment\": \"150〜200字の評価\"}, ...}}"
+        );
+
         try {
             $apiKey = config("services.openai.api_key", env("OPENAI_API_KEY")); $client = \OpenAI::client($apiKey); $response = $client->chat()->create([
                 'model'    => 'gpt-5.4-2026-03-05',
@@ -189,11 +208,7 @@ class AiGenerationController extends Controller
                     ],
                     [
                         'role'    => 'user',
-                        'content' => "【児童名】{$student->student_name}\n\n"
-                            . "【計画の目標・支援内容】\n{$detailsText}\n\n"
-                            . "【過去6ヶ月の記録】\n{$recordsText}\n\n"
-                            . "各目標に対して評価してください。出力形式:\n"
-                            . "{\"evaluations\": {\"<detail_id>\": {\"achievement_status\": \"達成/進行中/未着手/継続中/見直し必要\", \"monitoring_comment\": \"150〜200字の評価\"}, ...}}",
+                        'content' => $userContent,
                     ],
                 ],
                 'temperature'           => 0.5,
@@ -216,9 +231,11 @@ class AiGenerationController extends Controller
                 'student_id'   => $student->id,
             ]);
 
+            $data = is_array($result) ? $masker->unmaskArray($result) : $masker->unmask((string) $content);
+
             return response()->json([
                 'success' => true,
-                'data'    => $result ?? $content,
+                'data'    => $data,
             ]);
         } catch (\Exception $e) {
             return response()->json([

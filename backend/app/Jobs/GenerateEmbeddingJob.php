@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\IndividualSupportPlan;
 use App\Models\MonitoringRecord;
 use App\Services\EmbeddingService;
+use App\Support\PiiMasker;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -85,7 +86,11 @@ class GenerateEmbeddingJob implements ShouldQueue
             $parts[] = "領域「{$detail->domain}」: 現状「{$detail->current_status}」 目標「{$detail->goal}」 支援内容「{$detail->support_content}」";
         }
 
-        $text = implode("\n", $parts);
+        // 観点5 プライバシー保護: 埋め込み生成のため外部AIへ送る前に氏名を仮名化する。
+        // 識別は metadata.student_id で可能なため、氏名は類似検索に不要。
+        $text = $plan->student
+            ? PiiMasker::forStudent($plan->student)->mask(implode("\n", $parts))
+            : implode("\n", $parts);
 
         $metadata = [
             'student_id' => $plan->student_id,
@@ -114,7 +119,10 @@ class GenerateEmbeddingJob implements ShouldQueue
             $parts[] = "領域「{$detail->domain}」: 達成度「{$detail->achievement}」 所見「{$detail->comment}」";
         }
 
-        $text = implode("\n", $parts);
+        // 観点5 プライバシー保護: 外部AIへ送る前に氏名を仮名化する (識別は student_id)。
+        $text = $record->student
+            ? PiiMasker::forStudent($record->student)->mask(implode("\n", $parts))
+            : implode("\n", $parts);
 
         $metadata = [
             'student_id' => $record->student_id,
