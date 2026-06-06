@@ -80,7 +80,7 @@ python migrate_mysql_to_pg.py
 | student_interviews | student_interviews | |
 | work_diaries | work_diaries | |
 
-### Step 3: 支援案データ移行 (メインスクリプトで未対応)
+### Step 3: 活動案データ移行 (メインスクリプトで未対応)
 
 ```bash
 python migrate_support_plans.py
@@ -231,7 +231,7 @@ docker compose exec backend php artisan migrate --force
 # 3. メインデータ移行
 python migrate_mysql_to_pg.py
 
-# 4. 支援案データ移行
+# 4. 活動案データ移行
 python migrate_support_plans.py
 
 # 5. 移行後修正SQL実行

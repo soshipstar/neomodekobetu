@@ -144,7 +144,7 @@ class DemoDataSeeder extends Seeder
                 'classroom_id' => $classroom1->id,
                 'student_name' => $student1->student_name,
                 'created_date' => '2026-01-15',
-                'life_intention' => 'お友達と仲良く遊びたい。楽しく過ごしたい。',
+                'life_intention' => 'お友だちと仲良く遊びたい。楽しく過ごしたい。',
                 'overall_policy' => 'コミュニケーション能力の向上と社会性の発達を支援する。',
                 'long_term_goal' => '自分の気持ちを言葉で伝えることができるようになる。',
                 'short_term_goal' => 'スタッフの声かけで順番を待つことができる。',
@@ -186,8 +186,8 @@ class DemoDataSeeder extends Seeder
                 ],
                 [
                     'domain' => '人間関係・社会性',
-                    'current_status' => '自分から友達に関わることは少ない。',
-                    'goal' => 'スタッフと一緒に友達の遊びに参加できる。',
+                    'current_status' => '自分から友だちに関わることは少ない。',
+                    'goal' => 'スタッフと一緒に友だちの遊びに参加できる。',
                     'support_content' => '少人数のグループ活動を設定し、成功体験を積む。',
                     'sort_order' => 4,
                 ],
@@ -257,7 +257,7 @@ class DemoDataSeeder extends Seeder
                     'motor_sensory' => 'バランスボールに挑戦した。',
                     'cognitive_behavior' => '10分間集中して取り組めた。',
                     'language_communication' => '「やりたい」と伝えられた。',
-                    'social_relations' => 'お友達の様子を見ていた。',
+                    'social_relations' => 'お友だちの様子を見ていた。',
                     'notes' => null,
                 ]
             );
