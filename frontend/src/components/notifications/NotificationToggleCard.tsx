@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { useToast } from '@/components/ui/Toast';
 import { usePushSubscription } from '@/hooks/usePushSubscription';
+import api from '@/lib/api';
 
 /**
  * Web Push 通知の ON/OFF トグルカード。
@@ -25,6 +26,36 @@ export function NotificationToggleCard() {
     disable,
   } = usePushSubscription();
   const [busy, setBusy] = useState(false);
+  const [testing, setTesting] = useState(false);
+
+  /**
+   * 自分の subscription にテスト通知を送り、配信成功数とサーバ側のメッセージを
+   * トーストで表示する。配信失敗時はサーバが warning ログを出すので運用側で追跡可能。
+   */
+  const handleSendTest = async () => {
+    setTesting(true);
+    try {
+      const res = await api.post<{
+        success: boolean;
+        message: string;
+        sent: number;
+        subscriptions: number;
+      }>('/api/push/test');
+      const data = res.data;
+      if (data.success) {
+        toast.success(data.message);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+        ?? 'テスト通知の送信に失敗しました';
+      toast.error(message);
+    } finally {
+      setTesting(false);
+    }
+  };
 
   const handleEnable = async () => {
     setBusy(true);
@@ -115,15 +146,27 @@ export function NotificationToggleCard() {
                   </p>
                 </div>
                 {subscribed ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDisable}
-                    isLoading={loading || busy}
-                    leftIcon={<MaterialIcon name="notifications_off" size={16} />}
-                  >
-                    通知を無効にする
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSendTest}
+                      isLoading={testing}
+                      leftIcon={<MaterialIcon name="campaign" size={16} />}
+                      title="自分宛にテスト通知を送信"
+                    >
+                      テスト通知を送る
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDisable}
+                      isLoading={loading || busy}
+                      leftIcon={<MaterialIcon name="notifications_off" size={16} />}
+                    >
+                      無効にする
+                    </Button>
+                  </div>
                 ) : (
                   <Button
                     variant="primary"

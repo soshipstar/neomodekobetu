@@ -64,7 +64,7 @@ function TabletActivityEditPage() {
     },
   });
 
-  // 支援案取得
+  // 活動案取得
   const { data: supportPlans = [] } = useQuery({
     queryKey: ['tablet', 'support-plans', recordDate],
     queryFn: async () => {
@@ -97,7 +97,7 @@ function TabletActivityEditPage() {
     }
   }, [existingActivity]);
 
-  // 支援案選択時
+  // 活動案選択時
   const handlePlanChange = (planId: string) => {
     setSelectedPlanId(planId);
     if (planId === '') {
@@ -173,16 +173,16 @@ function TabletActivityEditPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="rounded-xl bg-white p-6 shadow-md space-y-8">
-        {/* 支援案選択 */}
+        {/* 活動案選択 */}
         {supportPlans.length > 0 ? (
           <div>
-            <label className="mb-3 block text-xl font-bold">支援案を選択 (任意)</label>
+            <label className="mb-3 block text-xl font-bold">活動案を選択 (任意)</label>
             <select
               value={selectedPlanId}
               onChange={(e) => handlePlanChange(e.target.value)}
               className="w-full rounded-lg border-2 border-[var(--neutral-stroke-1)] p-5 text-xl focus:border-[var(--brand-80)] focus:outline-none"
             >
-              <option value="">支援案を選択しない（手動入力）</option>
+              <option value="">活動案を選択しない（手動入力）</option>
               {supportPlans.map((plan) => (
                 <option key={plan.id} value={plan.id}>
                   {plan.activity_name}
@@ -193,7 +193,7 @@ function TabletActivityEditPage() {
 
             {showPlanDetails && planDetails && (
               <div className="mt-4 rounded-lg border-l-4 border-[var(--brand-90)] bg-[var(--neutral-background-3)] p-5">
-                <h3 className="mb-3 text-xl font-bold text-[var(--brand-60)]">選択した支援案の内容</h3>
+                <h3 className="mb-3 text-xl font-bold text-[var(--brand-60)]">選択した活動案の内容</h3>
                 {planDetails.activity_purpose && (
                   <div className="mb-3 text-lg">
                     <strong className="text-[var(--brand-60)]">活動の目的:</strong><br />
@@ -223,7 +223,7 @@ function TabletActivityEditPage() {
           </div>
         ) : (
           <div className="rounded-lg border-l-4 border-orange-400 bg-orange-50 p-5 text-lg">
-            この日（{recordDate}）の支援案がまだ作成されていません。
+            この日（{recordDate}）の活動案がまだ作成されていません。
           </div>
         )}
 

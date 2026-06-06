@@ -91,28 +91,35 @@ export default function TabletHomePage() {
   return (
     <div className="space-y-6">
       {/* カレンダー */}
-      <div className="rounded-xl bg-white p-6 shadow-md">
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      <div className="rounded-xl bg-white p-4 shadow-md sm:p-6">
+        {/* ヘッダ: 月送り (左) + 年月 (中央) + 新規 (右)。狭い端末では 2 段に折り返す */}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setCalendarMonth(subMonths(calendarMonth, 1))}
-              className="rounded-lg bg-[var(--brand-80)] px-6 py-3 text-2xl font-bold text-white hover:bg-blue-700"
+              className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--brand-80)] text-white hover:bg-blue-700"
+              aria-label="前の月"
             >
               ◀
             </button>
-            <span className="text-2xl font-bold">{calYear}年{calMonth}月</span>
+            <span className="min-w-[120px] text-center text-xl font-bold sm:text-2xl">
+              {calYear}年{calMonth}月
+            </span>
             <button
               onClick={() => setCalendarMonth(addMonths(calendarMonth, 1))}
-              className="rounded-lg bg-[var(--brand-80)] px-6 py-3 text-2xl font-bold text-white hover:bg-blue-700"
+              className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--brand-80)] text-white hover:bg-blue-700"
+              aria-label="次の月"
             >
               ▶
             </button>
           </div>
           <Link
             href={`/tablet/activity/edit?date=${selectedDateStr}`}
-            className="rounded-lg bg-green-600 px-6 py-3 text-xl font-bold text-white hover:bg-green-700"
+            className="flex items-center gap-1 rounded-lg bg-green-600 px-4 py-2 text-base font-bold text-white hover:bg-green-700 sm:text-lg"
+            title="新しい活動を追加"
           >
-            + 新しい活動を追加
+            <span className="text-xl">＋</span>
+            <span>活動追加</span>
           </Link>
         </div>
 
