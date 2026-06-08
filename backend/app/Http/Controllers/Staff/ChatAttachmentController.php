@@ -96,8 +96,32 @@ class ChatAttachmentController extends Controller
             );
         }
 
-        // 容量を空けやすいよう大きい順
-        $attachments = $items->sortByDesc('size')->values();
+        // 一斉送信は1つの物理ファイルを複数チャットにリンクするため、attachment_path
+        // 単位で集約して「1ファイル=1行」にする。サイズは1回だけ計上(容量バーと一致)。
+        $attachments = $items
+            ->groupBy('path')
+            ->map(function ($group) {
+                $first = $group->first();
+                return [
+                    'key'             => $first['path'],
+                    'source'          => $first['source'],
+                    'name'            => $first['name'],
+                    'size'            => (int) $first['size'],
+                    'mime'            => $first['mime'],
+                    'uploaded_at'     => $group->min('uploaded_at'),
+                    'uploader_name'   => $first['uploader_name'],
+                    'url'             => $first['url'],
+                    'is_shared_photo' => $first['is_shared_photo'],
+                    // グループ内が全て送信取消なら取消表示
+                    'is_deleted'      => $group->every(fn ($i) => $i['is_deleted']),
+                    'link_count'      => $group->count(),
+                    'rooms'           => $group->pluck('room_label')->filter()->unique()->values()->take(8)->all(),
+                    // 削除時に消す全参照(メッセージ)。
+                    'refs'            => $group->map(fn ($i) => ['source' => $i['source'], 'id' => $i['id']])->values()->all(),
+                ];
+            })
+            ->sortByDesc('size')
+            ->values();
 
         return response()->json([
             'success' => true,
@@ -260,6 +284,7 @@ class ChatAttachmentController extends Controller
         return [
             'source'         => $source,
             'id'             => (int) $row->id,
+            'path'           => $path, // グループ化キー (一斉送信は複数メッセージで同一)
             'name'           => $row->name ?: basename($path),
             'size'           => (int) $row->size,
             'mime'           => $row->mime,

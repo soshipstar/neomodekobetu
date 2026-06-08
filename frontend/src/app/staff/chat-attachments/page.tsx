@@ -13,19 +13,26 @@ import { ChatStorageBar } from '@/components/chat/ChatStorageBar';
 
 type Source = 'guardian' | 'student' | 'staff';
 
-interface Attachment {
+interface AttachmentRef {
   source: Source;
   id: number;
+}
+
+// attachment_path 単位で集約された1ファイル。一斉送信は複数チャットを link_count/refs で束ねる。
+interface Attachment {
+  key: string;
+  source: Source;
   name: string;
   size: number;
   mime: string | null;
   uploaded_at: string | null;
   uploader_name: string | null;
-  room_label: string | null;
-  sender_type: string | null;
+  rooms: string[];
   url: string;
   is_deleted: boolean;
   is_shared_photo: boolean;
+  link_count: number;
+  refs: AttachmentRef[];
 }
 
 interface Summary {
@@ -53,7 +60,7 @@ const fmtDate = (iso: string | null): string => {
 const isImage = (a: Attachment): boolean =>
   (a.mime?.startsWith('image/') ?? false) || /\.(png|jpe?g|gif|webp|heic)$/i.test(a.name);
 
-const keyOf = (a: Pick<Attachment, 'source' | 'id'>): string => `${a.source}:${a.id}`;
+const keyOf = (a: Attachment): string => a.key;
 
 export default function ChatAttachmentsPage() {
   const { toast } = useToast();
@@ -131,9 +138,10 @@ export default function ChatAttachmentsPage() {
     }
     setDeleting(true);
     try {
+      // 集約された各ファイルの全参照(チャット)をまとめて削除する。
       const items = attachments
         .filter((a) => selected.has(keyOf(a)))
-        .map((a) => ({ source: a.source, id: a.id }));
+        .flatMap((a) => a.refs);
       const res = await api.post<{ data: { deleted_count: number; freed_bytes: number; summary: Summary } }>(
         '/api/staff/chat/attachments/delete',
         { classroom_id: classroomId, items },
@@ -235,14 +243,19 @@ export default function ChatAttachmentsPage() {
                             <MaterialIcon name={isImage(a) ? 'image' : 'description'} size={18} className="shrink-0" />
                             <span className="break-all">{a.name}</span>
                           </a>
-                          <div className="mt-0.5 flex gap-1">
+                          <div className="mt-0.5 flex flex-wrap gap-1">
+                            {a.link_count > 1 && <Badge variant="info">一斉送信 {a.link_count}件にリンク</Badge>}
                             {a.is_shared_photo && <Badge variant="warning">写真ライブラリ共有</Badge>}
                             {a.is_deleted && <Badge variant="default">送信取消済</Badge>}
                           </div>
                         </td>
                         <td className="p-2">
                           <span className="whitespace-nowrap">{SOURCE_LABEL[a.source]}</span>
-                          {a.room_label && <div className="text-xs text-[var(--neutral-foreground-3)]">{a.room_label}</div>}
+                          {a.rooms.length > 0 && (
+                            <div className="text-xs text-[var(--neutral-foreground-3)]">
+                              {a.rooms.slice(0, 2).join('、')}{a.rooms.length > 2 ? ` 他${a.rooms.length - 2}件` : ''}
+                            </div>
+                          )}
                         </td>
                         <td className="p-2 whitespace-nowrap">{a.uploader_name ?? '—'}</td>
                         <td className="p-2 text-right whitespace-nowrap">{fmtSize(a.size)}</td>
