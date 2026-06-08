@@ -94,6 +94,15 @@ export default function AdminStudentsPage() {
     }
   };
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => api.delete(`/api/admin/students/${id}/permanent`),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'students'] });
+      toast((res.data as { message?: string })?.message || '生徒を削除しました', 'success');
+    },
+    onError: () => toast('削除に失敗しました', 'error'),
+  });
+
   const columns: Column<Student>[] = [
     {
       key: 'student_name',
@@ -144,6 +153,24 @@ export default function AdminStudentsPage() {
               同期
             </Button>
           )}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-red-600"
+            onClick={() => {
+              if (window.confirm(
+                `「${s.student_name}」を完全に削除します。\n\n` +
+                'この生徒に紐づくチャット・連絡帳・支援計画・モニタリング・面談などの記録もすべて削除され、元に戻せません。\n\n' +
+                '本当に削除しますか？'
+              )) {
+                deleteMutation.mutate(s.id);
+              }
+            }}
+            leftIcon={<MaterialIcon name="delete" size={14} />}
+            title="この生徒と関連データを完全に削除します（元に戻せません）"
+          >
+            削除
+          </Button>
         </div>
       ),
     },

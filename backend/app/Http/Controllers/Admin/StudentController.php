@@ -9,6 +9,7 @@ use App\Models\Student;
 use App\Services\StudentHelperService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -538,6 +539,29 @@ class StudentController extends Controller
         return response()->json([
             'success' => true,
             'message' => '生徒を退所扱いにしました。',
+        ]);
+    }
+
+    /**
+     * 生徒を完全に削除する (誤登録・重複・テストデータの整理用)。
+     *
+     * 退所(destroy)とは別物。関連データは FK で処理される:
+     *  - CASCADE(23テーブル): チャット/連絡帳/支援計画/モニタリング/アセスメント/面談 等を削除
+     *  - SET NULL(4テーブル): facility_evaluations / hiyari_hatto_records / weekly_plans 等は
+     *    student_id を NULL にして記録自体は残す
+     * 取り消し不可。FE で強い確認を経て呼ぶ。
+     */
+    public function forceDestroy(Student $student): JsonResponse
+    {
+        $name = $student->student_name;
+
+        DB::transaction(function () use ($student) {
+            $student->delete(); // FK の CASCADE / SET NULL で関連データを処理
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => "「{$name}」を完全に削除しました(関連するチャット・記録・計画等も削除されました)。",
         ]);
     }
 

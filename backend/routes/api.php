@@ -128,6 +128,8 @@ Route::prefix('admin')
         // 同一人物としてリンクされている他教室のレコード取得・同期
         Route::get('/students/{student}/linked', [App\Http\Controllers\Admin\StudentController::class, 'linkedStudents']);
         Route::post('/students/{student}/sync-linked', [App\Http\Controllers\Admin\StudentController::class, 'syncLinked']);
+        // 生徒の完全削除 (退所=apiResource の destroy とは別。関連データも削除し取り消し不可)。
+        Route::delete('/students/{student}/permanent', [App\Http\Controllers\Admin\StudentController::class, 'forceDestroy']);
         Route::apiResource('students', App\Http\Controllers\Admin\StudentController::class);
 
         // システム設定
