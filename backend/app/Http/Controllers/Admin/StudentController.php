@@ -396,9 +396,11 @@ class StudentController extends Controller
      * このレコードの身元情報（氏名・生年月日・学年・保護者など）を同期する。
      *
      * 同期する: student_name, birth_date, grade_level, grade_adjustment,
-     *          guardian_id, notes, hide_initial_monitoring
+     *          notes, hide_initial_monitoring
      *
      * 同期しない（各教室で独立管理する）:
+     * - guardian_id (各教室の保護者紐づけは独立管理。同期で別家庭の保護者へ
+     *   越境上書きされる事故を防ぐため対象外。複製時に引き継いだ値を維持する)
      * - classroom_id, username, password, status, is_active
      * - scheduled_* (教室ごとのスケジュール)
      * - support_start_date, assessment_initial_date, support_plan_start_type
@@ -423,12 +425,12 @@ class StudentController extends Controller
             $query->whereIn('classroom_id', $user->accessibleClassroomIds());
         }
 
+        // guardian_id は意図的に同期しない (越境上書き防止。上記コメント参照)。
         $payload = [
             'student_name'            => $student->student_name,
             'birth_date'              => $student->birth_date,
             'grade_level'             => $student->grade_level,
             'grade_adjustment'        => $student->grade_adjustment,
-            'guardian_id'             => $student->guardian_id,
             'notes'                   => $student->notes,
             'hide_initial_monitoring' => $student->hide_initial_monitoring,
         ];
