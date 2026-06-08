@@ -714,6 +714,10 @@ function BroadcastModal({
 
   const selectAll = () => setSelectedRoomIds(new Set(rooms.map((r) => r.id)));
   const selectNone = () => setSelectedRoomIds(new Set());
+  // 在籍中(is_active=true。退所・待機を除く)の保護者のみを選択する。
+  const selectActive = () =>
+    setSelectedRoomIds(new Set(rooms.filter((r) => r.student?.is_active).map((r) => r.id)));
+  const activeCount = rooms.filter((r) => r.student?.is_active).length;
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -735,7 +739,8 @@ function BroadcastModal({
           <div className="mb-1 flex items-center justify-between">
             <label className="text-sm font-medium text-[var(--neutral-foreground-2)]">送信先を選択</label>
             <div className="flex gap-2">
-              <button onClick={selectAll} className="text-xs text-[var(--brand-80)] hover:underline">全選択</button>
+              <button onClick={selectAll} className="text-xs text-[var(--brand-80)] hover:underline">全保護者({rooms.length})</button>
+              <button onClick={selectActive} className="text-xs text-[var(--brand-80)] hover:underline">在籍中のみ({activeCount})</button>
               <button onClick={selectNone} className="text-xs text-[var(--neutral-foreground-4)] hover:underline">全解除</button>
             </div>
           </div>
@@ -753,6 +758,17 @@ function BroadcastModal({
                 </span>
                 {room.guardian?.full_name && (
                   <span className="text-xs text-[var(--neutral-foreground-4)]">({room.guardian.full_name})</span>
+                )}
+                {room.student && !room.student.is_active && (
+                  <span className="ml-auto shrink-0 rounded bg-[var(--neutral-background-4)] px-1.5 py-0.5 text-[10px] text-[var(--neutral-foreground-3)]">
+                    {room.student.status === 'withdrawn'
+                      ? '退所'
+                      : room.student.status === 'waiting'
+                        ? '待機'
+                        : room.student.status === 'pre_withdrawal'
+                          ? '退所予定'
+                          : '在籍外'}
+                  </span>
                 )}
               </label>
             ))}

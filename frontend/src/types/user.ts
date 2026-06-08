@@ -18,7 +18,7 @@ export interface User {
 }
 
 export type GradeLevel = 'preschool' | 'elementary' | 'middle' | 'high' | 'other';
-export type StudentStatus = 'trial' | 'active' | 'short_term' | 'withdrawn' | 'waiting';
+export type StudentStatus = 'trial' | 'active' | 'short_term' | 'withdrawn' | 'waiting' | 'pre_withdrawal';
 
 export interface Student {
   id: number;
@@ -30,6 +30,7 @@ export interface Student {
   guardian_id: number | null;
   person_id: string | null;
   status: StudentStatus;
+  is_active: boolean;
   scheduled_monday: boolean;
   scheduled_tuesday: boolean;
   scheduled_wednesday: boolean;
