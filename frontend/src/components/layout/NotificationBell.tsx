@@ -43,7 +43,7 @@ export function NotificationBell() {
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-1 w-80 rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] shadow-[var(--shadow-16)] z-50">
+        <div className="absolute right-0 top-full mt-1 w-80 max-sm:fixed max-sm:inset-x-2 max-sm:top-14 max-sm:mt-0 max-sm:w-auto rounded-lg border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] shadow-[var(--shadow-16)] z-50">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-[var(--neutral-stroke-2)] px-4 py-2.5">
             <h3 className="text-sm font-semibold text-[var(--neutral-foreground-1)]">通知</h3>
