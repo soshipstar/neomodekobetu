@@ -548,6 +548,10 @@ export default function StaffChatPage() {
       {/* Modals */}
       <MeetingModal
         isOpen={meetingModal} onClose={() => setMeetingModal(false)}
+        recipient={activeRoom
+          ? `${activeRoom.student?.student_name ?? `ID:${activeRoom.student_id}`}さん`
+            + (activeRoom.guardian?.full_name ? `（保護者: ${activeRoom.guardian.full_name}様）` : '')
+          : ''}
         purpose={meetingPurpose} setPurpose={setMeetingPurpose}
         detail={meetingDetail} setDetail={setMeetingDetail}
         dates={meetingDates} setDates={setMeetingDates}
@@ -589,10 +593,11 @@ export default function StaffChatPage() {
 // ---------------------------------------------------------------------------
 
 function MeetingModal({
-  isOpen, onClose, purpose, setPurpose, detail, setDetail,
+  isOpen, onClose, recipient, purpose, setPurpose, detail, setDetail,
   dates, setDates, onSubmit, isSending,
 }: {
   isOpen: boolean; onClose: () => void;
+  recipient: string;
   purpose: string; setPurpose: (v: string) => void;
   detail: string; setDetail: (v: string) => void;
   dates: string[]; setDates: (v: string[]) => void;
@@ -606,6 +611,11 @@ function MeetingModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="面談予約" size="md">
       <div className="space-y-4">
+        {recipient && (
+          <div className="rounded-md border border-[var(--brand-130)] bg-[var(--brand-160)] px-3 py-2 text-sm text-[var(--brand-50)]">
+            <span className="font-medium">宛先:</span> {recipient}
+          </div>
+        )}
         <div>
           <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">目的 *</label>
           <input value={purpose} onChange={(e) => setPurpose(e.target.value)}
