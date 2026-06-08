@@ -286,7 +286,29 @@ class MeetingController extends Controller
                     $room->update(['last_message_at' => now()]);
                 }
             } elseif ($action === 'cancel') {
+                // 確定済み面談のキャンセルかどうかを記録 (保護者は確定と認識しているため通知する)。
+                $wasConfirmed = $meeting->status === 'confirmed';
+                $confirmedDate = $meeting->confirmed_date;
+
                 $meeting->update(['status' => 'cancelled']);
+
+                if ($wasConfirmed) {
+                    $room = ChatRoom::where('student_id', $meeting->student_id)
+                        ->where('guardian_id', $meeting->guardian_id)->first();
+                    if ($room) {
+                        $dateStr = $confirmedDate ? Carbon::parse($confirmedDate)->format($dateFormat) : '';
+                        ChatMessage::create([
+                            'room_id'      => $room->id,
+                            'sender_type'  => 'staff',
+                            'sender_id'    => $user->id,
+                            'message_type' => 'text',
+                            'message'      => "【面談がキャンセルされました】\n\n面談目的：{$meeting->purpose}\n"
+                                . ($dateStr !== '' ? "キャンセルされた日時：{$dateStr}\n" : '')
+                                . "\nご不便をおかけし申し訳ありません。日程は改めて調整させていただきます。",
+                        ]);
+                        $room->update(['last_message_at' => now()]);
+                    }
+                }
             } elseif ($action === 'complete') {
                 $meeting->update([
                     'is_completed' => true,

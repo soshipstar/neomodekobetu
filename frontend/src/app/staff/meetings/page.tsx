@@ -461,6 +461,13 @@ export default function MeetingsPage() {
                     {m.is_completed && (
                       <Badge variant="success">完了済み</Badge>
                     )}
+                    {!m.is_completed && (
+                      <Button variant="ghost" size="sm" className="text-red-600" leftIcon={<MaterialIcon name="event_busy" size={16} />}
+                        onClick={() => { if (confirm('確定済みの面談をキャンセルします。保護者にもチャットで通知されます。よろしいですか？')) updateMutation.mutate({ action: 'cancel' }); }}
+                        isLoading={updateMutation.isPending}>
+                        面談をキャンセル
+                      </Button>
+                    )}
                   </div>
 
                   {/* Meeting notes edit */}
