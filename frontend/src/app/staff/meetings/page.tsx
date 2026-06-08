@@ -41,8 +41,7 @@ interface MeetingRequest {
   created_at: string;
 }
 
-interface Student { id: number; student_name: string; }
-interface Guardian { id: number; full_name: string; }
+interface Student { id: number; student_name: string; guardian_id: number | null; guardian?: { id: number; full_name: string }; }
 
 const STATUS_MAP: Record<string, { label: string; variant: 'success' | 'danger' | 'info' | 'warning' | 'default' }> = {
   pending: { label: '回答待ち', variant: 'warning' },
@@ -97,11 +96,9 @@ export default function MeetingsPage() {
     enabled: showCreate,
   });
 
-  const { data: guardians = [] } = useQuery({
-    queryKey: ['staff', 'guardians-list'],
-    queryFn: async () => { const res = await api.get<{ data: Guardian[] }>('/api/staff/students/guardians'); return Array.isArray(res.data.data) ? res.data.data : []; },
-    enabled: showCreate,
-  });
+  // 保護者は「選択した生徒に登録された保護者」を自動採用する。手動の保護者プルダウンは
+  // 別家庭の保護者を選べてしまい越境紐づけの原因になるため廃止 (2026-06-01 事故の再発防止)。
+  const selectedStudent = students.find((s) => String(s.id) === form.student_id);
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -265,18 +262,24 @@ export default function MeetingsPage() {
         <div className="space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">生徒 *</label>
-            <select value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value, guardian_id: '' })} className={selectCls}>
+            <select value={form.student_id} onChange={(e) => { const sid = e.target.value; const stu = students.find((s) => String(s.id) === sid); setForm({ ...form, student_id: sid, guardian_id: stu?.guardian_id ? String(stu.guardian_id) : '' }); }} className={selectCls}>
               <option value="">-- 生徒を選択 --</option>
               {students.map((s) => <option key={s.id} value={s.id}>{s.student_name}</option>)}
             </select>
           </div>
           {form.student_id && (
             <div>
-              <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">保護者 *</label>
-              <select value={form.guardian_id} onChange={(e) => setForm({ ...form, guardian_id: e.target.value })} className={selectCls}>
-                <option value="">-- 保護者を選択 --</option>
-                {guardians.map((g) => <option key={g.id} value={g.id}>{g.full_name}</option>)}
-              </select>
+              <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">保護者</label>
+              {selectedStudent?.guardian ? (
+                <p className="rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-3)] px-3 py-2 text-sm text-[var(--neutral-foreground-1)]">
+                  {selectedStudent.guardian.full_name}
+                  <span className="ml-1 text-xs text-[var(--neutral-foreground-4)]">(生徒に登録された保護者を自動設定)</span>
+                </p>
+              ) : (
+                <p className="rounded-md border border-[var(--status-danger-fg)] bg-[rgba(var(--status-danger-rgb,220,53,69),0.08)] px-3 py-2 text-xs text-[var(--status-danger-fg)]">
+                  この生徒には保護者が登録されていません。先に保護者を登録してください。
+                </p>
+              )}
             </div>
           )}
           <Input label="目的 *" value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })} />
