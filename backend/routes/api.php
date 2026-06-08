@@ -70,6 +70,7 @@ Route::post('/sso/verify', [App\Http\Controllers\Auth\SsoController::class, 'ver
 // 国保連請求システム(kiduriacount)へのデータ提供（サーバ間・共有シークレット）。
 // students: 在籍児童＋保護者 / attendance: 連絡帳由来の利用日＋到着帰宅由来の利用時間
 Route::post('/sync/students', [App\Http\Controllers\External\SyncExportController::class, 'students']);
+Route::post('/sync/classrooms', [App\Http\Controllers\External\SyncExportController::class, 'classrooms']);
 Route::post('/sync/attendance', [App\Http\Controllers\External\SyncExportController::class, 'attendance']);
 
 // --- 教室切り替え（全認証ユーザー共通） ---
@@ -354,6 +355,9 @@ Route::prefix('staff')
         // --- チャット ---
         Route::prefix('chat')->group(function () {
             Route::get('/storage-usage', [App\Http\Controllers\Staff\ChatController::class, 'storageUsage']);
+            // チャット添付ファイルの管理 (一覧 + 選択削除)。管理者・スタッフのみ (staff グループ)。
+            Route::get('/attachments', [App\Http\Controllers\Staff\ChatAttachmentController::class, 'index']);
+            Route::post('/attachments/delete', [App\Http\Controllers\Staff\ChatAttachmentController::class, 'bulkDelete']);
             Route::get('/rooms', [App\Http\Controllers\Staff\ChatController::class, 'rooms']);
             Route::get('/rooms/{room}/messages', [App\Http\Controllers\Staff\ChatController::class, 'messages']);
             Route::post('/rooms/{room}/messages', [App\Http\Controllers\Staff\ChatController::class, 'sendMessage']);

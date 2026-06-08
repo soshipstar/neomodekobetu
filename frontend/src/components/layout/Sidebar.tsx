@@ -69,6 +69,7 @@ const staffNav: NavItem[] = [
   { type: 'link', label: '待機児童管理', href: '/staff/waiting-list', icon: 'hourglass_top' },
   { type: 'link', label: 'ヒヤリハット', href: '/staff/hiyari-hatto', icon: 'report_problem' },
   { type: 'link', label: '写真ライブラリ', href: '/staff/classroom-photos', icon: 'photo_library' },
+  { type: 'link', label: 'チャット添付ファイル', href: '/staff/chat-attachments', icon: 'attach_file' },
   { type: 'link', label: '利用日一括変更', href: '/staff/additional-usage', icon: 'event_repeat' },
   { type: 'link', label: '学校休業日活動設定', href: '/staff/school-holiday-activities', icon: 'calendar_month' },
   { type: 'link', label: '休日設定', href: '/staff/holidays', icon: 'event_busy' },
