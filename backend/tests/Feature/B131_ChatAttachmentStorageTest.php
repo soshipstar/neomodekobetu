@@ -79,6 +79,7 @@ class B131_ChatAttachmentStorageTest extends TestCase
             'sender_type'     => 'guardian',
             'message_type'    => 'text',
             'message'         => 'a',
+            'attachment_path' => 'chat_attachments/b131_g.bin',
             'attachment_size' => 1_000_000, // 1MB
             'created_at'      => now(),
         ]);
@@ -94,6 +95,7 @@ class B131_ChatAttachmentStorageTest extends TestCase
             'sender_id'       => $student->id,
             'message_type'    => 'text',
             'message'         => 'b',
+            'attachment_path' => 'student_chat_attachments/b131_s.bin',
             'attachment_size' => 2_000_000, // 2MB
             'created_at'      => now(),
         ]);
@@ -112,6 +114,7 @@ class B131_ChatAttachmentStorageTest extends TestCase
                 'room_id'         => $staffRoomId,
                 'sender_id'       => $staff->id,
                 'message'         => 'c',
+                'attachment_path' => 'chat_attachments/b131_st.bin',
                 'attachment_size' => 3_000_000, // 3MB
                 'created_at'      => now(),
             ]);
@@ -156,6 +159,7 @@ class B131_ChatAttachmentStorageTest extends TestCase
             'sender_type'     => 'guardian',
             'message_type'    => 'text',
             'message'         => 'x',
+            'attachment_path' => 'chat_attachments/b131_other.bin',
             'attachment_size' => 100_000_000, // 100MB
             'created_at'      => now(),
         ]);
@@ -185,6 +189,7 @@ class B131_ChatAttachmentStorageTest extends TestCase
             'sender_id'       => $student->id,
             'message_type'    => 'text',
             'message'         => 'a',
+            'attachment_path' => 'student_chat_attachments/b131_boundary.bin',
             'attachment_size' => ChatAttachmentStorage::STORAGE_LIMIT_BYTES - 1_000_000,
             'created_at'      => now(),
         ]);
@@ -224,6 +229,7 @@ class B131_ChatAttachmentStorageTest extends TestCase
             'sender_id'       => $student->id,
             'message_type'    => 'text',
             'message'         => 'fill',
+            'attachment_path' => 'student_chat_attachments/b131_fill.bin',
             'attachment_size' => ChatAttachmentStorage::STORAGE_LIMIT_BYTES,
             'created_at'      => now(),
         ]);
@@ -290,6 +296,7 @@ class B131_ChatAttachmentStorageTest extends TestCase
             'sender_id'       => $student->id,
             'message_type'    => 'text',
             'message'         => 'a',
+            'attachment_path' => 'student_chat_attachments/b131_usage.bin',
             'attachment_size' => 50_000_000, // 50MB
             'created_at'      => now(),
         ]);
