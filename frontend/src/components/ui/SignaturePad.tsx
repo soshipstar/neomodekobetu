@@ -285,6 +285,11 @@ const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
     const drawerRef = useRef<CanvasDrawer | null>(null);
     const modalCanvasRef = useRef<HTMLCanvasElement>(null);
     const modalDrawerRef = useRef<CanvasDrawer | null>(null);
+    // 適用された署名データ(モーダルで書いた dataURL)を保持する。保存時は
+    // インライン canvas からの再取得ではなく、この“適用済みの署名そのもの”を返す。
+    // タブレットでインライン canvas の再取得が空白になり、署名済みなのに保存が空に
+    // なる不具合 (確定後に消える) を防ぐため。
+    const appliedDataURLRef = useRef<string | null>(initialValue ?? null);
 
     const [modalOpen, setModalOpen] = useState(false);
     const [hasContent, setHasContent] = useState(!!initialValue);
@@ -293,13 +298,16 @@ const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
       clear() {
         drawerRef.current?.clear();
         drawerRef.current?.drawGuideline();
+        appliedDataURLRef.current = null;
         setHasContent(false);
       },
       isEmpty() {
+        if (appliedDataURLRef.current) return false;
         return drawerRef.current?.isEmpty() ?? true;
       },
       toDataURL() {
-        return drawerRef.current?.toDataURL() ?? '';
+        // 適用済みの署名(モーダルで書いた dataURL)を優先して返す。
+        return appliedDataURLRef.current ?? (drawerRef.current?.toDataURL() ?? '');
       },
     }));
 
@@ -310,6 +318,11 @@ const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
       },
       [onChange]
     );
+
+    // 別レコード読込などで initialValue が変わったら適用済み署名も同期する。
+    useEffect(() => {
+      appliedDataURLRef.current = initialValue ?? null;
+    }, [initialValue]);
 
     // Initialize inline canvas
     useEffect(() => {
@@ -346,6 +359,7 @@ const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
     const handleClear = () => {
       drawerRef.current?.clear();
       drawerRef.current?.drawGuideline();
+      appliedDataURLRef.current = null;
       setHasContent(false);
       onChange?.(false);
     };
@@ -377,6 +391,8 @@ const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
     const applyModal = () => {
       if (!modalDrawerRef.current || modalDrawerRef.current.isEmpty()) return;
       const dataURL = modalDrawerRef.current.toDataURL();
+      // 保存対象は“適用した署名そのもの”を正とする (インライン canvas 依存を排除)。
+      appliedDataURLRef.current = dataURL;
       const img = new Image();
       img.onload = () => {
         drawerRef.current?.drawImage(img);
