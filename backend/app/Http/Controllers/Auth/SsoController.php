@@ -26,17 +26,17 @@ class SsoController extends Controller
 
     private const TICKET_TTL_SECONDS = 60;
 
-    /** 請求システムを利用できるユーザー種別（職員・管理者のみ） */
-    private const ALLOWED_USER_TYPES = ['admin', 'staff'];
-
     /**
      * 使い捨てチケットを発行する（auth:sanctum）。
+     * 請求システム（国保連請求）は要配慮個人情報を扱うため、管理者のみ利用可。
+     * 管理者（user_type='admin'）は通常管理者・企業管理者(is_company_admin)・
+     * マスター(is_master)を含む。スタッフ・保護者・生徒は利用不可。
      */
     public function ticket(Request $request): JsonResponse
     {
         $user = $request->user();
 
-        if (! in_array($user->user_type, self::ALLOWED_USER_TYPES, true)) {
+        if (! $user->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'このユーザーは請求システムを利用できません。',

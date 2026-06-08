@@ -14,8 +14,8 @@ const BILLING_URL =
 /**
  * 国保連請求システム (kiduriacount) へ SSO で遷移するヘッダボタン。
  *
- * - 表示対象は職員・管理者 (admin / staff) のみ。バックエンドの
- *   POST /api/sso/ticket も同じ user_type に制限されている。
+ * - 表示対象は管理者のみ (user_type==='admin'。通常管理者・企業管理者・マスターを含む)。
+ *   バックエンドの POST /api/sso/ticket も同じ権限に制限されている。
  * - クリックすると 60 秒有効の使い捨てチケットを取得し、請求システムの
  *   /sso/callback?ticket=... へリダイレクトする (kiduriacount 側でトークンに交換)。
  */
@@ -24,7 +24,8 @@ export function BillingSystemLink() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
-  if (!user || (user.user_type !== 'admin' && user.user_type !== 'staff')) {
+  // 管理者（通常・企業・マスター）のみ表示。スタッフ・保護者・生徒には表示しない。
+  if (!user || user.user_type !== 'admin') {
     return null;
   }
 
