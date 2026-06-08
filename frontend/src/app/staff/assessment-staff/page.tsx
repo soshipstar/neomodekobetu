@@ -495,6 +495,20 @@ export default function AssessmentStaffPage() {
                                   >
                                     提出
                                   </Button>
+                                  {/* 下書き段階でも紙で確認できるよう、保存してそのままPDF出力 */}
+                                  <Button
+                                    variant="outline"
+                                    leftIcon={<MaterialIcon name="download" size={16} />}
+                                    isLoading={saveMutation.isPending}
+                                    onClick={async () => {
+                                      try {
+                                        await saveMutation.mutateAsync({ periodId: period.id, action: 'save', ...form });
+                                        await handlePdfDownload(period.id, period.period_name);
+                                      } catch { /* 失敗時のtoastは各処理で表示 */ }
+                                    }}
+                                  >
+                                    下書き保存してPDF
+                                  </Button>
                                 </>
                               )}
                             </div>
