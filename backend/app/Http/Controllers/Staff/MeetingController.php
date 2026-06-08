@@ -76,6 +76,20 @@ class MeetingController extends Controller
 
         $user = $request->user();
 
+        // 整合性ガード (P0 越境防止): 指定された保護者が、対象生徒に登録済みの保護者と
+        // 一致することを必須にする。面談・チャットルームの guardian_id は生徒の真の保護者
+        // (students.guardian_id) と独立に保存されるため、ここで一致を強制しないと、別家庭の
+        // 保護者が誤って紐づき、その保護者が別生徒の面談・チャットを閲覧できてしまう
+        // (2026-06-01 の鈴木直→三島木英宏 誤紐づけの再発防止)。
+        $student = Student::find($validated['student_id']);
+        if (! $student || $student->guardian_id === null
+            || (int) $student->guardian_id !== (int) $validated['guardian_id']) {
+            return response()->json([
+                'success' => false,
+                'message' => '選択した保護者がこの生徒の登録保護者と一致しません。生徒に登録された保護者を選択してください。',
+            ], 422);
+        }
+
         $meeting = DB::transaction(function () use ($user, $validated) {
             $isDirectConfirm = !empty($validated['confirmed_date']);
 
