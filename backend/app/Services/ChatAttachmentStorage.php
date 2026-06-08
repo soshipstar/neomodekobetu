@@ -28,34 +28,56 @@ class ChatAttachmentStorage
      */
     public function classroomUsed(int $classroomId): int
     {
+        // 一斉送信(broadcast)は 1 つの物理ファイルを複数ルームのメッセージにリンクする
+        // (ChatController::broadcast は store() を 1 回だけ実行し同一 attachment_path を共有)。
+        // メッセージ行ごとに合算すると物理 1 ファイルがリンク数 N 倍に過大計上され、実ディスク
+        // 使用量と大きく乖離する。よって attachment_path 単位で重複排除して集計する。
+
         // 保護者⇔スタッフ (chat_messages → chat_rooms.student_id → students.classroom_id)
-        $guardianStaff = (int) DB::table('chat_messages')
-            ->join('chat_rooms', 'chat_rooms.id', '=', 'chat_messages.room_id')
-            ->join('students', 'students.id', '=', 'chat_rooms.student_id')
-            ->where('students.classroom_id', $classroomId)
-            ->whereNotNull('chat_messages.attachment_size')
-            ->sum('chat_messages.attachment_size');
+        $guardianStaff = $this->sumDistinctByPath(
+            DB::table('chat_messages as m')
+                ->join('chat_rooms as r', 'r.id', '=', 'm.room_id')
+                ->join('students as s', 's.id', '=', 'r.student_id')
+                ->where('s.classroom_id', $classroomId)
+        );
 
         // 生徒⇔スタッフ (student_chat_messages → student_chat_rooms → students.classroom_id)
-        $studentStaff = (int) DB::table('student_chat_messages')
-            ->join('student_chat_rooms', 'student_chat_rooms.id', '=', 'student_chat_messages.room_id')
-            ->join('students', 'students.id', '=', 'student_chat_rooms.student_id')
-            ->where('students.classroom_id', $classroomId)
-            ->whereNotNull('student_chat_messages.attachment_size')
-            ->sum('student_chat_messages.attachment_size');
+        $studentStaff = $this->sumDistinctByPath(
+            DB::table('student_chat_messages as m')
+                ->join('student_chat_rooms as r', 'r.id', '=', 'm.room_id')
+                ->join('students as s', 's.id', '=', 'r.student_id')
+                ->where('s.classroom_id', $classroomId)
+        );
 
         // スタッフ間 (staff_chat_messages → staff_chat_rooms.classroom_id 直接)
         $staffOnly = 0;
         if (DB::getSchemaBuilder()->hasTable('staff_chat_messages')
             && DB::getSchemaBuilder()->hasTable('staff_chat_rooms')) {
-            $staffOnly = (int) DB::table('staff_chat_messages')
-                ->join('staff_chat_rooms', 'staff_chat_rooms.id', '=', 'staff_chat_messages.room_id')
-                ->where('staff_chat_rooms.classroom_id', $classroomId)
-                ->whereNotNull('staff_chat_messages.attachment_size')
-                ->sum('staff_chat_messages.attachment_size');
+            $staffOnly = $this->sumDistinctByPath(
+                DB::table('staff_chat_messages as m')
+                    ->join('staff_chat_rooms as r', 'r.id', '=', 'm.room_id')
+                    ->where('r.classroom_id', $classroomId)
+            );
         }
 
         return $guardianStaff + $studentStaff + $staffOnly;
+    }
+
+    /**
+     * 教室で絞り込み済みのメッセージクエリ(別名 m)について、attachment_path 単位で
+     * 重複排除した attachment_size の合計を返す。一斉送信の共有ファイルを二重計上しない。
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     */
+    private function sumDistinctByPath($query): int
+    {
+        $sub = $query
+            ->whereNotNull('m.attachment_path')
+            ->whereNotNull('m.attachment_size')
+            ->groupBy('m.attachment_path')
+            ->select('m.attachment_path', DB::raw('MAX(m.attachment_size) as sz'));
+
+        return (int) DB::query()->fromSub($sub, 't')->sum('sz');
     }
 
     /**
