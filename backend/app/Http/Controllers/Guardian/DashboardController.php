@@ -483,10 +483,10 @@ class DashboardController extends Controller
         $holidays = [];
         $holidayQuery = DB::table('holidays')
             ->whereRaw('EXTRACT(YEAR FROM holiday_date) = ?', [$year])
-            ->whereRaw('EXTRACT(MONTH FROM holiday_date) = ?', [$month]);
-        if (! empty($classroomIds)) {
-            $holidayQuery->whereIn('classroom_id', $classroomIds);
-        }
+            ->whereRaw('EXTRACT(MONTH FROM holiday_date) = ?', [$month])
+            // 在籍児童の教室で必ず絞り込む(空なら 0 件)。以前は空のとき未絞り込みで
+            // 全教室の祝日が漏れていた。
+            ->whereIn('classroom_id', $classroomIds);
         foreach ($holidayQuery->get() as $h) {
             $holidays[$h->holiday_date] = [
                 'name' => $h->holiday_name,
@@ -498,10 +498,10 @@ class DashboardController extends Controller
         $events = [];
         $eventQuery = DB::table('events')
             ->whereRaw('EXTRACT(YEAR FROM event_date) = ?', [$year])
-            ->whereRaw('EXTRACT(MONTH FROM event_date) = ?', [$month]);
-        if (! empty($classroomIds)) {
-            $eventQuery->whereIn('classroom_id', $classroomIds);
-        }
+            ->whereRaw('EXTRACT(MONTH FROM event_date) = ?', [$month])
+            // 在籍児童の教室で必ず絞り込む(空なら 0 件)。以前は空のとき未絞り込みで
+            // 全教室のイベント(デモ教室「かけはし」含む)が漏れて表示されていた。
+            ->whereIn('classroom_id', $classroomIds);
         foreach ($eventQuery->get() as $ev) {
             $events[$ev->event_date][] = [
                 'id' => $ev->id,
