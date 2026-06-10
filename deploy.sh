@@ -30,6 +30,33 @@ log()  { echo -e "\033[1;34m[deploy]\033[0m $1"; }
 ok()   { echo -e "\033[1;32m[done]\033[0m  $1"; }
 warn() { echo -e "\033[1;33m[warn]\033[0m  $1"; }
 
+# ------------------------------------------------------------------------------
+# 未コミット変更ガード
+# ------------------------------------------------------------------------------
+# Docker イメージは「作業ツリー」からビルドされるため、未コミットの変更がそのまま
+# 本番に乗る。過去に未コミットWIPが意図せず本番稼働する事故が起きたため、
+# ビルドに入るパス (backend/ frontend/ docker/) に未コミット変更があれば中断する。
+# どうしても作業ツリーのままデプロイしたい場合のみ --allow-dirty を付ける。
+check_clean_tree() {
+    cd "$PROJECT_DIR"
+    local dirty
+    dirty=$(git status --porcelain -- backend frontend docker 2>/dev/null)
+    if [ -n "$dirty" ]; then
+        if [ "$ALLOW_DIRTY" = "1" ]; then
+            warn "未コミットの変更がありますが --allow-dirty 指定のため続行します:"
+            echo "$dirty"
+        else
+            warn "ビルド対象 (backend/ frontend/ docker/) に未コミットの変更があります:"
+            echo "$dirty"
+            warn "未コミットの変更は『コミットされていないのに本番で稼働する』事故の原因になります。"
+            warn "コミット(または stash)してから再実行してください。"
+            warn "意図的に作業ツリーのままデプロイする場合のみ: ./deploy.sh <target> --allow-dirty"
+            exit 1
+        fi
+    fi
+    log "Deploying commit: $(git rev-parse --short HEAD) ($(git log -1 --format=%s | head -c 60))"
+}
+
 # git push & サーバー同期
 push_code() {
     log "Syncing code (git push → server reset)..."
@@ -105,6 +132,14 @@ run_migrate() {
 # メイン
 TARGET="${1:-all}"
 
+# --allow-dirty フラグ (位置は任意)
+ALLOW_DIRTY=0
+for arg in "$@"; do
+    if [ "$arg" = "--allow-dirty" ]; then
+        ALLOW_DIRTY=1
+    fi
+done
+
 # ローカルビルドの前提チェック
 if ! docker info >/dev/null 2>&1; then
     warn "Docker が起動していません。Docker Desktop を起動してください。"
@@ -113,14 +148,17 @@ fi
 
 case "$TARGET" in
     frontend)
+        check_clean_tree
         push_code
         deploy_frontend
         ;;
     backend)
+        check_clean_tree
         push_code
         deploy_backend
         ;;
     all)
+        check_clean_tree
         push_code
         deploy_frontend
         deploy_backend

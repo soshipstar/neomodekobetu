@@ -93,3 +93,6 @@ post_migration_fixes.sql
 # ============================================
 docker-compose.override.yml
 docker/nginx/default.worktree.conf
+# PDF用IPAフォントの実体 (本番イメージは Dockerfile 内で apt パッケージから生成するため
+# リポジトリ管理不要。ローカルの開発用実体は無視する)
+backend/storage/fonts/*.ttf
