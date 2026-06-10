@@ -20,13 +20,11 @@ class FacilityEvaluationController extends Controller
         // 評価期間を引き当てる。
         $classroomIds = $user->accessibleClassroomIds();
 
-        // 収集中の評価期間を取得（教室でフィルタ）
+        // 収集中の評価期間を取得（在籍児童の教室で必ずフィルタ。空なら 0 件）。
+        // 以前は空のとき未絞り込みで他教室の評価期間を引き当てて回答画面が出ていた。
         $periodQuery = DB::table('facility_evaluation_periods')
-            ->where('status', 'collecting');
-
-        if (! empty($classroomIds)) {
-            $periodQuery->whereIn('classroom_id', $classroomIds);
-        }
+            ->where('status', 'collecting')
+            ->whereIn('classroom_id', $classroomIds);
 
         $period = $periodQuery->orderByDesc('fiscal_year')->first();
 

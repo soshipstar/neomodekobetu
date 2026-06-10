@@ -19,11 +19,10 @@ class NewsletterController extends Controller
         $query = Newsletter::where('status', 'published');
 
         // R2: 保護者が複数教室の児童を持つ場合に対応するため、児童経由で取得した
-        // 教室IDの集合 (accessibleClassroomIds) で絞り込む。
+        // 教室IDの集合 (accessibleClassroomIds) で必ず絞り込む(空なら 0 件)。
+        // 以前は空のとき未絞り込みで全教室の公開お便りが漏れて閲覧できていた。
         $classroomIds = $user->accessibleClassroomIds();
-        if (! empty($classroomIds)) {
-            $query->whereIn('classroom_id', $classroomIds);
-        }
+        $query->whereIn('classroom_id', $classroomIds);
 
         $newsletters = $query->orderByDesc('published_at')
             ->paginate($request->integer('per_page', 20));
@@ -48,8 +47,10 @@ class NewsletterController extends Controller
 
         // R2: 保護者がアクセス可能な教室のお便りでなければ 403
         $user = $request->user();
+        // 在籍児童の教室のお便りのみ閲覧可(児童未紐付け=空なら一律 403)。
+        // 以前は空のときガードが素通りし、任意の公開お便りを ID 指定で閲覧できた。
         $classroomIds = $user->accessibleClassroomIds();
-        if (! empty($classroomIds) && ! in_array((int) $newsletter->classroom_id, $classroomIds, true)) {
+        if (! in_array((int) $newsletter->classroom_id, $classroomIds, true)) {
             return response()->json([
                 'success' => false,
                 'message' => 'このお便りを閲覧する権限がありません。',
