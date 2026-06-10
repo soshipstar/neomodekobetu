@@ -319,6 +319,15 @@ class TabletController extends Controller
             'student_ids.*'   => 'exists:students,id',
         ]);
 
+        // 越境防止(P0): 渡された生徒が当該タブレットの教室に属することを必須にする。
+        // 他教室の生徒IDを混ぜて連絡帳/活動記録を作成される事故を防ぐ。
+        $foreign = \App\Models\Student::whereIn('id', $validated['student_ids'])
+            ->where('classroom_id', '!=', $user->classroom_id)
+            ->exists();
+        if ($foreign) {
+            return response()->json(['success' => false, 'message' => '他の教室の生徒が含まれています。'], 422);
+        }
+
         $record = DB::transaction(function () use ($validated, $user) {
             $record = DailyRecord::create([
                 'classroom_id'    => $user->classroom_id,
@@ -716,6 +725,16 @@ class TabletController extends Controller
             'daily_record_id'    => 'required|exists:daily_records,id',
             'integrated_content' => 'required|string|max:5000',
         ]);
+
+        // 越境防止(P0): 生徒・日次記録ともに当該タブレットの教室に属することを必須にする。
+        // 他教室の生徒/記録に対して連絡帳を書き込まれる事故を防ぐ。
+        $studentOk = \App\Models\Student::where('id', $validated['student_id'])
+            ->where('classroom_id', $user->classroom_id)->exists();
+        $recordOk = DailyRecord::where('id', $validated['daily_record_id'])
+            ->where('classroom_id', $user->classroom_id)->exists();
+        if (! $studentOk || ! $recordOk) {
+            return response()->json(['success' => false, 'message' => '他の教室のデータは操作できません。'], 422);
+        }
 
         $note = IntegratedNote::updateOrCreate(
             [
