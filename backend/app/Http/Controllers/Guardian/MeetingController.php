@@ -37,8 +37,14 @@ class MeetingController extends Controller
     /**
      * 面談リクエスト詳細を取得
      */
-    public function show(MeetingRequest $meeting): JsonResponse
+    public function show(Request $request, MeetingRequest $meeting): JsonResponse
     {
+        // 越境防止(P0): 自分宛ての面談のみ閲覧可。任意の面談IDで他家庭の面談詳細
+        // (目的・記録・児童名)が取得できる IDOR を防ぐ。
+        if ($meeting->guardian_id !== $request->user()->id) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
         $meeting->load(['student:id,student_name', 'staff:id,full_name']);
 
         return response()->json([
