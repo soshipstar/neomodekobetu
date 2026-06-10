@@ -20,7 +20,7 @@ use Tests\TestCase;
  *
  * 差分カテゴリ: auth
  */
-class S008_TabletCrossClassroomWriteTest extends TestCase
+class AU018_TabletCrossClassroomWriteTest extends TestCase
 {
     use RefreshDatabase;
 

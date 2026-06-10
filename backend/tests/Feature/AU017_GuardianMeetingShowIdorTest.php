@@ -20,7 +20,7 @@ use Tests\TestCase;
  *
  * 差分カテゴリ: auth
  */
-class S007_GuardianMeetingShowIdorTest extends TestCase
+class AU017_GuardianMeetingShowIdorTest extends TestCase
 {
     use RefreshDatabase;
 

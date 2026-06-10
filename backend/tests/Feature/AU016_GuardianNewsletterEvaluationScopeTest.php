@@ -23,7 +23,7 @@ use Tests\TestCase;
  *
  * 差分カテゴリ: auth
  */
-class S001_GuardianNewsletterEvaluationScopeTest extends TestCase
+class AU016_GuardianNewsletterEvaluationScopeTest extends TestCase
 {
     use RefreshDatabase;
 
