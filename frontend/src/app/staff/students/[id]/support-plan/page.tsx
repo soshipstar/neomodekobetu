@@ -12,6 +12,7 @@ import { SkeletonCard } from '@/components/ui/Skeleton';
 import { PlanForm } from '@/components/support-plan/PlanForm';
 import { PlanPreview } from '@/components/support-plan/PlanPreview';
 import { AiGenerateButton } from '@/components/support-plan/AiGenerateButton';
+import { AbilitySummaryView } from '@/components/ability/AbilitySummaryView';
 import { formatDate } from '@/lib/utils';
 import { useToast } from '@/components/ui/Toast';
 import type { SupportPlan } from '@/types/support-plan';
@@ -147,6 +148,9 @@ export default function SupportPlanPage() {
           </CardBody>
         </Card>
       )}
+
+      {/* 評価状況の全体像(別添)— 能力評価トグルON教室のみ自己表示 */}
+      <AbilitySummaryView studentId={studentId} />
 
       {/* Create/Edit Modal */}
       <Modal
