@@ -120,5 +120,16 @@ return Application::configure(basePath: dirname(__DIR__))
                 return response()->json(['message' => 'Unauthenticated.'], 401);
             }
         });
+
+        // AuthorizationException を 403 JSON で返す (cross-classroom 認可ヘルパー用)。
+        // Controller::authorizeClassroomId() が投げる例外を統一フォーマットで返却する。
+        $exceptions->render(function (\Illuminate\Auth\Access\AuthorizationException $e, $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage() ?: 'このデータへのアクセス権限がありません。',
+                ], 403);
+            }
+        });
     })
     ->create();

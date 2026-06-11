@@ -610,11 +610,22 @@ class ChatController extends Controller
 
     /**
      * スタッフがルームにアクセスできるか確認
+     *
+     * 認可 (AUTH-03 修正): 旧実装は classroom_id が null のユーザーを
+     * 「全ルームアクセス可」と扱っていたため、null に設定されたタブレット/
+     * スタッフが全事業所の保護者チャットを読み書きできる漏洩があった。
+     * マスター管理者のみ全アクセス可とし、それ以外は所属事業所に限定する。
      */
     private function canAccessRoom($user, ChatRoom $room): bool
     {
+        // マスター管理者は全ルームアクセス可
+        if ($user->user_type === 'admin' && $user->is_master) {
+            return true;
+        }
+
+        // classroom_id を持たないユーザーは権限なし (null=全権限 の誤解釈を排除)
         if (! $user->classroom_id) {
-            return true; // admin without classroom can access all
+            return false;
         }
 
         $room->loadMissing('student');

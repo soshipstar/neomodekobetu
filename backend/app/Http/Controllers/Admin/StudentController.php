@@ -131,9 +131,14 @@ class StudentController extends Controller
 
     /**
      * 生徒詳細を取得
+     *
+     * 認可: 対象生徒の所属教室がユーザーの switchableClassroomIds() に
+     *       含まれること (マスターは除外)。AUTH-01 修正。
      */
-    public function show(Student $student): JsonResponse
+    public function show(Request $request, Student $student): JsonResponse
     {
+        $this->authorizeClassroomId($request->user(), $student->classroom_id, 'この生徒へのアクセス権限がありません。');
+
         $student->load(['classroom', 'guardian', 'supportPlans', 'monitoringRecords']);
 
         return response()->json([
@@ -486,9 +491,14 @@ class StudentController extends Controller
 
     /**
      * 生徒を削除（退所扱い）
+     *
+     * 認可: 対象生徒の所属教室がユーザーの switchableClassroomIds() に
+     *       含まれること (マスターは除外)。AUTH-01 修正。
      */
-    public function destroy(Student $student): JsonResponse
+    public function destroy(Request $request, Student $student): JsonResponse
     {
+        $this->authorizeClassroomId($request->user(), $student->classroom_id, 'この生徒の削除権限がありません。');
+
         $student->update(['status' => 'withdrawn']);
 
         return response()->json([

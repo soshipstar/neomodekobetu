@@ -811,8 +811,11 @@ Route::prefix('tablet')
 // ==========================================================================
 // 4.7 AI / ベクトル検索 API (auth:sanctum)
 // ==========================================================================
+// AUTH-04 修正: user_type:staff,admin を追加。旧構成は user_type チェックが
+// なく、guardian/student/tablet ロールでも (ai_consent さえ通れば) AI 生成を
+// 呼べて他児童データを抜き取れる漏洩があった。
 Route::prefix('ai')
-    ->middleware(['auth:sanctum', 'ai_consent'])
+    ->middleware(['auth:sanctum', 'user_type:staff,admin', 'ai_consent'])
     ->group(function () {
         Route::post('/generate/support-plan', [App\Http\Controllers\Api\AiGenerationController::class, 'generateSupportPlan']);
         Route::post('/generate/monitoring', [App\Http\Controllers\Api\AiGenerationController::class, 'generateMonitoring']);

@@ -45,6 +45,9 @@ class AiGenerationController extends Controller
 
         $student = Student::with(['interviews', 'dailyRecords.dailyRecord'])->findOrFail($validated['student_id']);
 
+        // AUTH-04 修正: 対象児童が自身のアクセス範囲の事業所に所属することを検証
+        $this->authorizeClassroomId($request->user(), $student->classroom_id, 'この児童の AI 生成権限がありません。');
+
         // 過去の面接記録
         $interviews = $student->interviews()
             ->orderByDesc('interview_date')
@@ -189,6 +192,13 @@ class AiGenerationController extends Controller
 
         $plan = IndividualSupportPlan::with('details')->findOrFail($validated['plan_id']);
         $student = Student::findOrFail($validated['student_id']);
+
+        // AUTH-04 修正: 対象児童が自身のアクセス範囲に所属することを検証。
+        // さらに plan が当該児童のものであることも確認 (パラメータ取り違え/改ざん防止)。
+        $this->authorizeClassroomId($request->user(), $student->classroom_id, 'この児童の AI 生成権限がありません。');
+        if ((int) $plan->student_id !== (int) $student->id) {
+            throw new \Illuminate\Auth\Access\AuthorizationException('指定した計画と児童が一致しません。');
+        }
 
         // 過去6ヶ月の連絡帳データ
         $sixMonthsAgo = now()->subMonths(6)->toDateString();
