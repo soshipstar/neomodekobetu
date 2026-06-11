@@ -15,6 +15,7 @@ import { ja } from 'date-fns/locale';
 import Link from 'next/link';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { HiyariHattoCandidateModal } from '@/components/staff/HiyariHattoCandidateModal';
+import { AbilityQuestionCard } from '@/components/ability/AbilityQuestionCard';
 import { useAuthStore } from '@/stores/authStore';
 
 // ---------------------------------------------------------------------------
@@ -1378,6 +1379,14 @@ export default function RenrakuchoPage() {
                           保存
                         </Button>
                       </div>
+
+                      {/* 能力評価の設問(教室トグルON時のみ自己表示。OFFなら何も出さない) */}
+                      {editingStudentId && (
+                        <AbilityQuestionCard
+                          studentId={editingStudentId}
+                          dailyRecordId={editingActivity?.id ?? null}
+                        />
+                      )}
                     </div>
                   ) : (
                     <div className="flex h-full items-center justify-center py-12 text-sm text-[var(--neutral-foreground-4)]">
