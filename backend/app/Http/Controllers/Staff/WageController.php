@@ -179,12 +179,8 @@ class WageController extends Controller
      */
     private function authorize(Request $request, WagePeriod $period): void
     {
-        $user = $request->user();
-        if (!$user) {
-            abort(401);
-        }
-        if (!in_array((int) $period->classroom_id, $user->switchableClassroomIds(), true)) {
-            abort(403, '他事業所の工賃台帳にはアクセスできません。');
-        }
+        // ARCH-AUTH 統一: switchableClassroomIds の直接 in_array をやめ統一基盤へ。
+        // (未認証は基底メソッドが AuthorizationException を投げ 403 になる)
+        $this->authorizeClassroomId($request->user(), (int) $period->classroom_id, '他事業所の工賃台帳にはアクセスできません。');
     }
 }

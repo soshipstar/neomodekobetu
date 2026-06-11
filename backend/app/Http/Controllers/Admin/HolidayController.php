@@ -100,10 +100,8 @@ class HolidayController extends Controller
      */
     public function destroy(Request $request, Holiday $holiday): JsonResponse
     {
-        $user = $request->user();
-        if (!$user->is_master && $holiday->classroom_id !== $user->classroom_id) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        // ARCH-AUTH 統一: classroom_id 完全一致比較 (複数所属で誤拒否) を統一基盤へ。
+        $this->authorizeClassroomId($request->user(), $holiday->classroom_id, 'アクセス権限がありません。');
 
         $holiday->delete();
 

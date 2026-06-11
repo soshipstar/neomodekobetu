@@ -53,6 +53,33 @@ class User extends Authenticatable
     }
 
     /**
+     * ARCH-AUTH-05: 特権フラグ (is_master / is_company_admin) の整合性ガード。
+     *
+     * is_master / is_company_admin は $fillable に含まれており、既存の正規フロー
+     * (マスターが Admin\AdminAccountController から管理者を作成する) では mass
+     * assignment で設定される。しかし将来 validation 漏れのあるエンドポイントが
+     * 追加された場合に、admin 以外のロール (staff / guardian / tablet 等) へ
+     * これらのフラグが立つと権限昇格になる。
+     *
+     * 保存時に「user_type が admin でないのに特権フラグが true」という不正な
+     * 組み合わせを検知して強制的に false へ補正する。これは正規フロー
+     * (user_type='admin' + is_master=true) を一切妨げず、不整合な昇格だけを防ぐ。
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (User $user) {
+            if ($user->user_type !== 'admin') {
+                if ($user->is_master) {
+                    $user->is_master = false;
+                }
+                if ($user->is_company_admin) {
+                    $user->is_company_admin = false;
+                }
+            }
+        });
+    }
+
+    /**
      * 指定カテゴリの通知が許可されているか判定する。
      * notification_preferences が null または該当キーが無ければデフォルトで有効。
      */

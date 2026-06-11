@@ -119,9 +119,7 @@ class AdditionalUsageController extends Controller
         ]);
 
         $student = Student::findOrFail($validated['student_id']);
-        if ($user->classroom_id && !in_array($student->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $student->classroom_id);
 
         $cancelledDates = [];
 
@@ -205,9 +203,7 @@ class AdditionalUsageController extends Controller
         ]);
 
         $student = Student::findOrFail($request->student_id);
-        if ($user->classroom_id && !in_array($student->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $student->classroom_id);
 
         // 追加利用日
         $additionalDates = AdditionalUsage::where('student_id', $student->id)

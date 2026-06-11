@@ -480,9 +480,7 @@ class TabletController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($activity->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $activity->classroom_id);
 
         $activity->load(['studentRecords.student:id,student_name', 'staff:id,full_name']);
 
@@ -595,9 +593,7 @@ class TabletController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($activity->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $activity->classroom_id);
 
         $validated = $request->validate([
             'activity_name'   => 'sometimes|string|max:255',
@@ -648,9 +644,7 @@ class TabletController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($activity->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $activity->classroom_id);
 
         DB::transaction(function () use ($activity) {
             $activity->studentRecords()->delete();
@@ -687,9 +681,7 @@ class TabletController extends Controller
 
         // 権限チェック
         $record = DailyRecord::findOrFail($validated['daily_record_id']);
-        if ($user->classroom_id && !in_array($record->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $record->classroom_id);
 
         $serviceType = $this->classroomServiceType($record->classroom_id);
         $studentRecord = StudentRecord::updateOrCreate(
@@ -740,9 +732,7 @@ class TabletController extends Controller
         ]);
 
         $record = DailyRecord::findOrFail($validated['daily_record_id']);
-        if ($user->classroom_id && !in_array($record->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $record->classroom_id);
 
         $serviceType = $this->classroomServiceType($record->classroom_id);
         DB::transaction(function () use ($record, $validated, $serviceType) {
@@ -783,9 +773,7 @@ class TabletController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($activity->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $activity->classroom_id);
 
         $activity->load([
             'studentRecords.student:id,student_name',
@@ -820,9 +808,7 @@ class TabletController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($activity->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $activity->classroom_id);
 
         $validated = $request->validate([
             'contents'              => 'required|array',

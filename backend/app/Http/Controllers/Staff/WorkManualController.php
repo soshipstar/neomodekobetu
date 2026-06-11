@@ -159,8 +159,8 @@ class WorkManualController extends Controller
 
     private function authorize(Request $request, WorkManual $manual): void
     {
-        if ($manual->classroom_id !== $request->user()->classroom_id) {
-            abort(403, '他事業所のマニュアルにはアクセスできません。');
-        }
+        // ARCH-AUTH 統一: classroom_id 完全一致比較 (複数所属で誤拒否 / null バイパス)
+        // を統一基盤 authorizeClassroomId に委譲する。
+        $this->authorizeClassroomId($request->user(), $manual->classroom_id, '他事業所のマニュアルにはアクセスできません。');
     }
 }

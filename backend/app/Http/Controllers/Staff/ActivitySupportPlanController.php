@@ -82,9 +82,7 @@ class ActivitySupportPlanController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($plan->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $plan->classroom_id);
 
         return response()->json([
             'success' => true,
@@ -134,9 +132,7 @@ class ActivitySupportPlanController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($plan->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $plan->classroom_id);
 
         $validated = $request->validate([
             'activity_name' => 'sometimes|string|max:255',
@@ -169,9 +165,7 @@ class ActivitySupportPlanController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($plan->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $plan->classroom_id);
 
         // 使用中かチェック（daily_recordsで使用されている場合）
         $usageCount = DailyRecord::where('support_plan_id', $plan->id)->count();
@@ -235,9 +229,7 @@ class ActivitySupportPlanController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($plan->classroom_id, $user->switchableClassroomIds(), true)) {
-            abort(403, 'アクセス権限がありません。');
-        }
+        $this->authorizeClassroomId($user, $plan->classroom_id, 'アクセス権限がありません。');
 
         $plan->load('staff:id,full_name');
 

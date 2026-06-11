@@ -105,9 +105,7 @@ class StudentInterviewController extends Controller
      */
     public function showSingle(Request $request, StudentInterview $interview): JsonResponse
     {
-        if ($request->user()->classroom_id && !in_array($interview->classroom_id, $request->user()->accessibleClassroomIds(), true)) {
-            abort(403);
-        }
+        $this->authorizeClassroomId($user, $interview->classroom_id);
         $interview->load(['student:id,student_name', 'interviewer:id,full_name']);
         return response()->json(['success' => true, 'data' => $interview]);
     }
@@ -117,9 +115,7 @@ class StudentInterviewController extends Controller
      */
     public function update(Request $request, StudentInterview $interview): JsonResponse
     {
-        if ($request->user()->classroom_id && !in_array($interview->classroom_id, $request->user()->accessibleClassroomIds(), true)) {
-            abort(403, 'アクセス権限がありません。');
-        }
+        $this->authorizeClassroomId($request->user(), $interview->classroom_id, 'アクセス権限がありません。');
 
         $validated = $request->validate([
             'interview_date'       => 'nullable|date',
@@ -148,9 +144,7 @@ class StudentInterviewController extends Controller
      */
     public function destroy(Request $request, StudentInterview $interview): JsonResponse
     {
-        if ($request->user()->classroom_id && !in_array($interview->classroom_id, $request->user()->accessibleClassroomIds(), true)) {
-            abort(403, 'アクセス権限がありません。');
-        }
+        $this->authorizeClassroomId($request->user(), $interview->classroom_id, 'アクセス権限がありません。');
 
         $interview->delete();
 
@@ -167,9 +161,7 @@ class StudentInterviewController extends Controller
     {
         $interview->load(['student', 'interviewer:id,full_name']);
 
-        if ($request->user()->classroom_id && !in_array($interview->classroom_id, $request->user()->accessibleClassroomIds(), true)) {
-            abort(403, 'アクセス権限がありません。');
-        }
+        $this->authorizeClassroomId($request->user(), $interview->classroom_id, 'アクセス権限がありません。');
 
         $filename = "student_interview_{$interview->id}.pdf";
 
@@ -181,8 +173,6 @@ class StudentInterviewController extends Controller
 
     private function authorizeClassroom($user, Student $student): void
     {
-        if ($user->classroom_id && !in_array($student->classroom_id, $user->switchableClassroomIds(), true)) {
-            abort(403, 'この生徒へのアクセス権限がありません。');
-        }
+        $this->authorizeClassroomId($user, $student->classroom_id, 'この生徒へのアクセス権限がありません。');
     }
 }

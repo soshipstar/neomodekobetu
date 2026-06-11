@@ -261,9 +261,7 @@ class ClassroomPhotoController extends Controller
 
     private function authorizeAccess(Request $request, ClassroomPhoto $photo): void
     {
-        $user = $request->user();
-        if (!in_array($photo->classroom_id, $user->switchableClassroomIds(), true)) {
-            abort(403, 'アクセス権限がありません。');
-        }
+        // ARCH-AUTH 統一: switchableClassroomIds の直接 in_array をやめ統一基盤へ。
+        $this->authorizeClassroomId($request->user(), $photo->classroom_id, 'アクセス権限がありません。');
     }
 }

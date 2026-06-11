@@ -16,9 +16,7 @@ class StudentAssessmentController extends Controller
     public function index(Request $request, Student $student): JsonResponse
     {
         $user = $request->user();
-        if ($user->classroom_id && !in_array($student->classroom_id, $user->switchableClassroomIds(), true)) {
-            abort(403, 'この生徒へのアクセス権限がありません。');
-        }
+        $this->authorizeClassroomId($user, $student->classroom_id, 'この生徒へのアクセス権限がありません。');
 
         $assessments = StudentAssessment::where('student_id', $student->id)
             ->orderBy('domain')
@@ -37,9 +35,7 @@ class StudentAssessmentController extends Controller
     public function store(Request $request, Student $student): JsonResponse
     {
         $user = $request->user();
-        if ($user->classroom_id && !in_array($student->classroom_id, $user->switchableClassroomIds(), true)) {
-            abort(403, 'この生徒へのアクセス権限がありません。');
-        }
+        $this->authorizeClassroomId($user, $student->classroom_id, 'この生徒へのアクセス権限がありません。');
 
         $validated = $request->validate([
             'domain' => 'required|string|max:50',

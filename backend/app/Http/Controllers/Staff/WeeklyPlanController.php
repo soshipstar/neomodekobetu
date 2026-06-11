@@ -169,9 +169,7 @@ class WeeklyPlanController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($plan->classroom_id, $user->switchableClassroomIds(), true)) {
-            abort(403, 'アクセス権限がありません。');
-        }
+        $this->authorizeClassroomId($user, $plan->classroom_id, 'アクセス権限がありません。');
 
         $plan->load(['creator:id,full_name', 'submissions']);
 

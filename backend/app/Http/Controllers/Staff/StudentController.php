@@ -319,9 +319,7 @@ class StudentController extends Controller
     public function strengthsSummary(Request $request, Student $student): JsonResponse
     {
         $user = $request->user();
-        if ($user->classroom_id && !in_array($student->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'この生徒へのアクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $student->classroom_id);
 
         $validated = $request->validate([
             'from' => 'nullable|date',
@@ -408,9 +406,6 @@ class StudentController extends Controller
 
     private function authorizeClassroom($user, Student $student): void
     {
-        if ($user->classroom_id
-            && !in_array($student->classroom_id, $user->switchableClassroomIds(), true)) {
-            abort(403, 'この生徒へのアクセス権限がありません。');
-        }
+        $this->authorizeClassroomId($user, $student->classroom_id, 'この生徒へのアクセス権限がありません。');
     }
 }

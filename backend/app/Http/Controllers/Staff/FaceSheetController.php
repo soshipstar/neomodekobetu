@@ -13,9 +13,7 @@ class FaceSheetController extends Controller
     public function show(Request $request, Student $student): JsonResponse
     {
         $user = $request->user();
-        if ($user->classroom_id && !in_array($student->classroom_id, $user->switchableClassroomIds(), true)) {
-            abort(403);
-        }
+        $this->authorizeClassroomId($user, $student->classroom_id);
 
         $sheet = StudentFaceSheet::where('student_id', $student->id)->first();
 
@@ -28,9 +26,7 @@ class FaceSheetController extends Controller
     public function store(Request $request, Student $student): JsonResponse
     {
         $user = $request->user();
-        if ($user->classroom_id && !in_array($student->classroom_id, $user->switchableClassroomIds(), true)) {
-            abort(403);
-        }
+        $this->authorizeClassroomId($user, $student->classroom_id);
 
         $validated = $request->validate([
             'daily_life' => 'nullable|array',

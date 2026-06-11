@@ -193,9 +193,7 @@ class UnsentRecordsController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($record->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $record->classroom_id);
 
         if ($record->is_sent) {
             return response()->json(['success' => false, 'message' => 'この記録は既に送信済みです。'], 422);

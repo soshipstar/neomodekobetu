@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller as BaseController;
 
 abstract class Controller extends BaseController
@@ -13,11 +14,18 @@ abstract class Controller extends BaseController
      * 含まれるかを検証する。含まれない場合は 403 (AuthorizationException) を投げる。
      *
      * 認可ポリシーの統一基盤 (放デイ cross-classroom データ分離):
-     *  - マスター管理者 (is_master) は全事業所アクセス可
+     *  - マスター管理者 (isMasterAdmin) は全事業所アクセス可
      *  - それ以外は switchableClassroomIds() に含まれる事業所のみ
      *  - classroom_id が null のユーザーは「権限なし」として扱う
      *    (旧実装では null を「全権限」と誤解釈する箇所が複数あり、
      *     cross-classroom 漏洩の温床になっていたため、ここで一律 deny にする)
+     *
+     * 【重要】事業所スコープの認可はこのメソッド (または canAccessClassroomId) を
+     * 唯一の入口とすること。コントローラ内で以下を直接書くことを禁止する:
+     *   - in_array(..., $user->switchableClassroomIds())
+     *   - in_array(..., $user->accessibleClassroomIds())  ← 認可には使わない (表示専用)
+     *   - $user->classroom_id && ...   ← null バイパスの温床
+     *   - $record->classroom_id !== $user->classroom_id   ← 複数所属で誤拒否
      *
      * @throws AuthorizationException
      */
@@ -28,7 +36,7 @@ abstract class Controller extends BaseController
         }
 
         // マスター管理者は全事業所アクセス可
-        if ($user->user_type === 'admin' && $user->is_master) {
+        if ($user->isMasterAdmin()) {
             return;
         }
 
@@ -59,5 +67,25 @@ abstract class Controller extends BaseController
         } catch (AuthorizationException) {
             return false;
         }
+    }
+
+    /**
+     * マスター管理者専用エンドポイントのガード。
+     * マスターでなければ 403 JsonResponse を返す。null が返れば通過。
+     *
+     * 用例:
+     *   if ($deny = $this->requireMaster($request)) return $deny;
+     *
+     * (ARCH-AUTH-02: is_master の直接参照を排し isMasterAdmin() に正典化する)
+     */
+    protected function requireMaster(\Illuminate\Http\Request $request): ?JsonResponse
+    {
+        if (! $request->user()?->isMasterAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'マスター管理者権限が必要です。',
+            ], 403);
+        }
+        return null;
     }
 }

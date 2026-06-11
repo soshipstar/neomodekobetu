@@ -75,9 +75,7 @@ class TagSettingController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($tag->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $tag->classroom_id);
 
         $validated = $request->validate([
             'tag_name'   => 'sometimes|string|max:50',
@@ -113,9 +111,7 @@ class TagSettingController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($tag->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $tag->classroom_id);
 
         $tag->delete();
 

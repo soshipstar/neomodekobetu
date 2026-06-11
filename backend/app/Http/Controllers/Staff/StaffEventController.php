@@ -115,9 +115,7 @@ class StaffEventController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($event->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $event->classroom_id);
 
         $validated = $request->validate([
             'title'             => 'nullable|string|max:255',
@@ -166,9 +164,7 @@ class StaffEventController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($event->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $event->classroom_id);
 
         $event->delete();
 
@@ -229,9 +225,7 @@ class StaffEventController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($event->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $event->classroom_id);
 
         $registrations = EventRegistration::where('event_id', $event->id)
             ->with([

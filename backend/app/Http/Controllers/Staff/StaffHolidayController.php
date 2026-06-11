@@ -191,9 +191,7 @@ class StaffHolidayController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($holiday->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $holiday->classroom_id);
 
         $holiday->delete();
 

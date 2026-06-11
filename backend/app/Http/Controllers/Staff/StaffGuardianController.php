@@ -97,9 +97,7 @@ class StaffGuardianController extends Controller
             return response()->json(['success' => false, 'message' => '保護者ではありません。'], 422);
         }
 
-        if ($user->classroom_id && !in_array($guardian->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $guardian->classroom_id);
 
         $guardian->load('students:id,student_name,guardian_id');
 
@@ -162,9 +160,7 @@ class StaffGuardianController extends Controller
             return response()->json(['success' => false, 'message' => '保護者ではありません。'], 422);
         }
 
-        if ($user->classroom_id && !in_array($guardian->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $guardian->classroom_id);
 
         $validated = $request->validate([
             'full_name' => 'sometimes|string|max:100',
@@ -214,9 +210,7 @@ class StaffGuardianController extends Controller
             return response()->json(['success' => false, 'message' => '保護者ではありません。'], 422);
         }
 
-        if ($user->classroom_id && !in_array($guardian->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $guardian->classroom_id);
 
         // 生徒との紐付けを解除（アクセス可能な教室全て）
         if ($user->classroom_id) {

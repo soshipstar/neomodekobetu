@@ -239,8 +239,7 @@ class TransitionSupportController extends Controller
 
     private function authorizeClassroom(Request $request, int $classroomId): void
     {
-        if ($classroomId !== $request->user()->classroom_id) {
-            abort(403, '他事業所のデータにはアクセスできません。');
-        }
+        // ARCH-AUTH 統一: classroom_id 完全一致比較 (複数所属で誤拒否) を統一基盤へ。
+        $this->authorizeClassroomId($request->user(), $classroomId, '他事業所のデータにはアクセスできません。');
     }
 }

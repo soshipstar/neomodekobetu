@@ -114,9 +114,7 @@ class SchoolHolidayActivityController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($activity->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $activity->classroom_id);
 
         $validated = $request->validate([
             'activity_date' => 'sometimes|date',
@@ -139,9 +137,7 @@ class SchoolHolidayActivityController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($activity->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $activity->classroom_id);
 
         $activity->delete();
 
@@ -158,9 +154,7 @@ class SchoolHolidayActivityController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($activity->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        $this->authorizeClassroomId($user, $activity->classroom_id);
 
         $validated = $request->validate([
             'student_ids'   => 'required|array',
