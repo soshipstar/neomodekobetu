@@ -37,6 +37,8 @@ return [
         // 全箇所で同じモデルを使用 (元の挙動と同じ)。
         // env OPENAI_MODEL で上書き可能。指定なければコード側のハードコード値が使われる。
         'model'   => env('OPENAI_MODEL', 'gpt-5.4-mini-2026-03-17'),
+        // ベクター検索用の埋め込みモデル (AI-07 修正)。
+        'embedding_model' => env('OPENAI_EMBEDDING_MODEL', 'text-embedding-3-small'),
 
         // AISI ヘルスケア AI セーフティ評価観点ガイド v1.0 R6 (2026-05-17)
         // OpenAI Enterprise + Zero Data Retention 契約用の設定。

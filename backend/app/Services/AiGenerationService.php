@@ -663,4 +663,46 @@ PROMPT;
             // 記録失敗は無視 (本処理は継続)
         }
     }
+
+    // =========================================================================
+    // ベクター検索用の埋め込み生成 (AI-07 修正)
+    // =========================================================================
+
+    /**
+     * テキストから埋め込みベクトルを生成する。
+     *
+     * EmbeddingService::embed() から呼ばれる。旧来このメソッドが未実装で、
+     * 支援計画承認時の GenerateEmbeddingJob が必ず BadMethodCallException で
+     * 失敗していた (AI-07)。OpenAI Embeddings API を呼ぶ実装を追加する。
+     *
+     * 注意 (AISI 観点5): 呼出側 (GenerateEmbeddingJob) で既に PiiMasker /
+     * AiIdentityMasker により氏名を仮名化済みのテキストを渡す前提。
+     * 識別は metadata.student_id で行うため、ベクトル本体に実名は不要。
+     *
+     * @return array<int, float> 浮動小数点ベクトル
+     * @throws \RuntimeException API 障害時
+     */
+    public function generateEmbedding(string $text): array
+    {
+        $text = trim($text);
+        if ($text === '') {
+            return [];
+        }
+
+        $client = OpenAiClientFactory::make();
+        $model = config('services.openai.embedding_model', 'text-embedding-3-small');
+
+        $response = $client->embeddings()->create([
+            'model' => $model,
+            'input' => $text,
+        ]);
+
+        $vector = $response->embeddings[0]->embedding ?? null;
+        if (! is_array($vector) || empty($vector)) {
+            throw new \RuntimeException('埋め込みベクトルの生成に失敗しました (空の応答)。');
+        }
+
+        // 念のため float にキャスト
+        return array_map(static fn ($v) => (float) $v, $vector);
+    }
 }

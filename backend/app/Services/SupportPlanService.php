@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Events\PlanStatusChanged;
-use App\Jobs\GenerateEmbeddingJob;
 use App\Models\IndividualSupportPlan;
 use App\Models\Student;
 use App\Models\SupportPlanDetail;
@@ -130,8 +129,10 @@ class SupportPlanService
 
         broadcast(new PlanStatusChanged($plan, 'approved'))->toOthers();
 
-        // Queue embedding generation for vector search
-        GenerateEmbeddingJob::dispatch('support_plan', $plan->id);
+        // AI-07 修正: embedding 生成のディスパッチは SupportPlanObserver::updated
+        // (is_official が立った時) に一本化する。ここで重ねてディスパッチすると
+        // 承認 1 回で GenerateEmbeddingJob が 2 件積まれる二重ディスパッチになる。
+        // (旧: GenerateEmbeddingJob::dispatch('support_plan', $plan->id); を削除)
 
         // Notify staff in the classroom
         $this->notificationService->notifyClassroom(
