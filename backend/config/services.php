@@ -68,4 +68,10 @@ return [
         'sso_secret' => env('KIDURIACOUNT_SSO_SECRET'),
     ],
 
+    // 外部システム mynameis（本人の主観自己評価, fesvol.xyz）からの主観プロフィール受信用
+    // サーバ間共有シークレット。mynameis 側の push 設定と一致させること。
+    'mynameis' => [
+        'shared_secret' => env('MYNAMEIS_SHARED_SECRET'),
+    ],
+
 ];

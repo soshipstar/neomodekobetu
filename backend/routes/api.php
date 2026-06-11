@@ -73,6 +73,9 @@ Route::post('/sync/students', [App\Http\Controllers\External\SyncExportControlle
 Route::post('/sync/classrooms', [App\Http\Controllers\External\SyncExportController::class, 'classrooms']);
 Route::post('/sync/attendance', [App\Http\Controllers\External\SyncExportController::class, 'attendance']);
 
+// mynameis(本人の主観自己評価, fesvol.xyz)からの主観プロフィール受信（サーバ間・共有シークレット）。
+Route::post('/external/mynameis/self-assessment', [App\Http\Controllers\External\MynameisSyncController::class, 'ingest']);
+
 // --- 教室切り替え（全認証ユーザー共通） ---
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my-classrooms', [App\Http\Controllers\ClassroomSwitchController::class, 'myClassrooms']);
@@ -475,6 +478,8 @@ Route::prefix('staff')
         // 評価状況の全体像(別添・閲覧用: レーダー+詳細表データ / PDF別添)
         Route::get('/ability/students/{student}/summary', [App\Http\Controllers\Staff\AbilityObservationController::class, 'summary']);
         Route::get('/ability/students/{student}/summary/pdf', [App\Http\Controllers\Staff\AbilityObservationController::class, 'summaryPdf']);
+        // mynameis(本人の主観自己評価)との紐づけ設定
+        Route::post('/ability/students/{student}/link-mynameis', [App\Http\Controllers\Staff\AbilityObservationController::class, 'linkMynameis']);
 
         // 事業所写真ライブラリ
         Route::get('/classroom-photos', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'index']);

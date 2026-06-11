@@ -201,6 +201,31 @@ class AbilityObservationController extends Controller
     }
 
     /**
+     * 児童に mynameis(本人の主観自己評価)ユーザーを紐づける(null で解除)。
+     */
+    public function linkMynameis(Request $request, Student $student): JsonResponse
+    {
+        if ($deny = $this->guard($request, $student)) {
+            return $deny;
+        }
+
+        $validated = $request->validate([
+            'mynameis_user_id' => 'nullable|integer|min:1',
+        ]);
+
+        $student->update([
+            'mynameis_user_id' => $validated['mynameis_user_id'] ?? null,
+            'mynameis_linked_at' => ($validated['mynameis_user_id'] ?? null) ? Carbon::now() : null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => ['mynameis_user_id' => $student->mynameis_user_id],
+            'message' => ($student->mynameis_user_id ? 'mynameis と紐づけました。' : '紐づけを解除しました。'),
+        ]);
+    }
+
+    /**
      * 認可: 児童の所属教室がアクセス可能 かつ 能力評価トグルが ON であること。
      * 不可なら JsonResponse を返し、OK なら null を返す。
      */
