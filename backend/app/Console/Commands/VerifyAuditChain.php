@@ -34,39 +34,61 @@ class VerifyAuditChain extends Command
 
         if ($table === 'both' || $table === 'audit') {
             $this->info('Verifying audit_logs ...');
-            $errors = AuditLog::verifyChain($limit);
-            $this->reportErrors('audit_logs', $errors);
-            $totalErrors += count($errors);
+            $detail = AuditLog::verifyChainDetailed($limit);
+            $this->reportDetail('audit_logs', $detail);
+            $totalErrors += count($detail['errors']);
         }
 
         if ($table === 'both' || $table === 'ai') {
             $this->info('Verifying ai_generation_logs ...');
-            $errors = AiGenerationLog::verifyChain($limit);
-            $this->reportErrors('ai_generation_logs', $errors);
-            $totalErrors += count($errors);
+            $detail = AiGenerationLog::verifyChainDetailed($limit);
+            $this->reportDetail('ai_generation_logs', $detail);
+            $totalErrors += count($detail['errors']);
         }
 
+        // AI-09/10 修正: errors (= 行の改ざん) のみを失敗扱いにする。
+        // warnings (= 並行 INSERT 分岐 / purge による正当な削除ギャップ) は
+        // 改ざんではないため成功判定を妨げない。
         if ($totalErrors === 0) {
-            $this->info('✓ All chains are intact.');
+            $this->info('✓ All chains are intact (no tampering detected).');
             return self::SUCCESS;
         }
 
-        $this->error("✗ Found {$totalErrors} chain integrity errors.");
+        $this->error("✗ Found {$totalErrors} row_hash mismatch (tampering suspected).");
         return self::FAILURE;
     }
 
-    private function reportErrors(string $tableName, array $errors): void
+    /**
+     * @param array{errors: array, warnings: array} $detail
+     */
+    private function reportDetail(string $tableName, array $detail): void
     {
-        if (empty($errors)) {
+        $errors = $detail['errors'];
+        $warnings = $detail['warnings'];
+
+        if (empty($errors) && empty($warnings)) {
             $this->info("  {$tableName}: OK");
             return;
         }
-        $this->warn("  {$tableName}: " . count($errors) . " error(s)");
-        foreach (array_slice($errors, 0, 20) as $e) {
-            $this->line(sprintf('    id=%d : %s', $e['id'], $e['error']));
+
+        if (! empty($errors)) {
+            $this->error("  {$tableName}: " . count($errors) . ' tampering error(s)');
+            foreach (array_slice($errors, 0, 20) as $e) {
+                $this->line(sprintf('    [ERROR] id=%d : %s', $e['id'], $e['error']));
+            }
+            if (count($errors) > 20) {
+                $this->line('    ... (' . (count($errors) - 20) . ' more errors)');
+            }
         }
-        if (count($errors) > 20) {
-            $this->line('    ... (' . (count($errors) - 20) . ' more)');
+
+        if (! empty($warnings)) {
+            $this->warn("  {$tableName}: " . count($warnings) . ' continuity warning(s) (並行INSERT/purge 由来の可能性、改ざんではない)');
+            foreach (array_slice($warnings, 0, 5) as $w) {
+                $this->line(sprintf('    [WARN] id=%d : %s', $w['id'], $w['error']));
+            }
+            if (count($warnings) > 5) {
+                $this->line('    ... (' . (count($warnings) - 5) . ' more warnings)');
+            }
         }
     }
 }

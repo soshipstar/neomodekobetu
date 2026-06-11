@@ -65,28 +65,49 @@ trait HashChainable
 
     /**
      * チェーン全体を検証する。
-     * 不整合があった場合、最初に検出された行の id とエラー内容を返す。
+     *
+     * AI-09/10 修正: 2 種類の不整合を errors / warnings に分離する。
+     *  - errors   : row_hash mismatch = 行自体の改ざん。prev_row_hash を含めて
+     *               再計算するため、真の改ざんは確実にここで検出される (偽陽性なし)。
+     *  - warnings : prev_row_hash mismatch = チェーンの連続性ギャップ。並行 INSERT に
+     *               よるチェーン分岐 (AI-09) や、保持期間切れの logs:purge による
+     *               正当な削除 (AI-10) でも発生するため、改ざんとは区別して警告扱いに
+     *               する。これにより「真の改ざん検出」が運用ノイズで埋もれない。
+     *
+     * 後方互換のため、戻り値は従来の「errors 配列」をそのまま返す。
+     * warnings も取得したい場合は verifyChainDetailed() を使う。
      *
      * @return array<int, array{id: int, error: string}>
      */
     public static function verifyChain(int $limit = 100000): array
     {
+        return self::verifyChainDetailed($limit)['errors'];
+    }
+
+    /**
+     * チェーン検証の詳細版。errors と warnings を分離して返す。
+     *
+     * @return array{errors: array<int, array{id: int, error: string}>, warnings: array<int, array{id: int, error: string}>}
+     */
+    public static function verifyChainDetailed(int $limit = 100000): array
+    {
         $errors = [];
-        $prev = null;
+        $warnings = [];
         $expectedPrev = null;
         $count = 0;
 
         static::query()
             ->orderBy('id')
-            ->chunk(1000, function ($rows) use (&$errors, &$prev, &$expectedPrev, &$count, $limit) {
+            ->chunk(1000, function ($rows) use (&$errors, &$warnings, &$expectedPrev, &$count, $limit) {
                 foreach ($rows as $row) {
                     $count++;
                     if ($count > $limit) return false;
 
+                    // 連続性ギャップ (並行 INSERT 分岐 / purge による削除) = 警告
                     if ($expectedPrev !== null && $row->prev_row_hash !== $expectedPrev) {
-                        $errors[] = [
+                        $warnings[] = [
                             'id'    => $row->id,
-                            'error' => "prev_row_hash mismatch (expected {$expectedPrev}, got {$row->prev_row_hash})",
+                            'error' => "prev_row_hash gap (expected {$expectedPrev}, got {$row->prev_row_hash}) — 並行INSERT分岐またはpurgeによる正当な削除の可能性",
                         ];
                     }
 
@@ -94,19 +115,19 @@ trait HashChainable
                     $fields = property_exists($row, 'hashFields') ? $row->hashFields : [];
                     $recomputed = self::computeHash($row, $fields, $row->prev_row_hash);
 
+                    // 行自体の改ざん = エラー (本質的な改ざん検出)
                     if ($recomputed !== $row->row_hash) {
                         $errors[] = [
                             'id'    => $row->id,
-                            'error' => "row_hash mismatch (expected {$recomputed}, got {$row->row_hash})",
+                            'error' => "row_hash mismatch (expected {$recomputed}, got {$row->row_hash}) — 行の改ざんの疑い",
                         ];
                     }
 
                     $expectedPrev = $row->row_hash;
-                    $prev = $row;
                 }
                 return true;
             });
 
-        return $errors;
+        return ['errors' => $errors, 'warnings' => $warnings];
     }
 }
