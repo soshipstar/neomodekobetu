@@ -469,6 +469,9 @@ Route::prefix('staff')
         Route::get('/ability/students/{student}/next-question', [App\Http\Controllers\Staff\AbilityObservationController::class, 'nextQuestion']);
         Route::get('/ability/students/{student}/observations', [App\Http\Controllers\Staff\AbilityObservationController::class, 'recent']);
         Route::post('/ability/observations', [App\Http\Controllers\Staff\AbilityObservationController::class, 'store']);
+        // 能力評価スコア(ルールエンジンによる再計算・最新スコア一覧)
+        Route::post('/ability/students/{student}/recompute-scores', [App\Http\Controllers\Staff\AbilityObservationController::class, 'recomputeScores']);
+        Route::get('/ability/students/{student}/scores', [App\Http\Controllers\Staff\AbilityObservationController::class, 'scores']);
 
         // 事業所写真ライブラリ
         Route::get('/classroom-photos', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'index']);

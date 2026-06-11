@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
 use App\Models\AbilityObservation;
+use App\Models\AbilityScore;
 use App\Models\AbilitySupportCode;
 use App\Models\Classroom;
 use App\Models\Student;
 use App\Services\AbilityQuestionService;
+use App\Services\AbilityScoringService;
 use App\Support\AbilityGrowthStage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,8 +26,10 @@ class AbilityObservationController extends Controller
     /** 結果の選択肢(評価表の「結果」: 完了/途中/拒否)。 */
     public const RESULTS = ['completed', 'partial', 'refused'];
 
-    public function __construct(private AbilityQuestionService $questions)
-    {
+    public function __construct(
+        private AbilityQuestionService $questions,
+        private AbilityScoringService $scoring,
+    ) {
     }
 
     /**
@@ -113,6 +117,47 @@ class AbilityObservationController extends Controller
             ->get();
 
         return response()->json(['success' => true, 'data' => $observations]);
+    }
+
+    /**
+     * 観察記録からスコアを再計算し、変化した項目を ability_scores に追記する。
+     */
+    public function recomputeScores(Request $request, Student $student): JsonResponse
+    {
+        if ($deny = $this->guard($request, $student)) {
+            return $deny;
+        }
+
+        $results = $this->scoring->scoreStudent($student);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'results' => $results,
+                'scored' => collect($results)->where('status', 'scored')->count(),
+                'needs_review' => collect($results)->where('needs_review', true)->count(),
+            ],
+            'message' => '能力評価スコアを更新しました。',
+        ]);
+    }
+
+    /**
+     * 児童の項目ごとの最新スコアを返す(全体像表示用)。
+     */
+    public function scores(Request $request, Student $student): JsonResponse
+    {
+        if ($deny = $this->guard($request, $student)) {
+            return $deny;
+        }
+
+        $latest = AbilityScore::where('student_id', $student->id)
+            ->with('item:item_id,name,domain')
+            ->orderByDesc('evaluated_on')->orderByDesc('id')
+            ->get()
+            ->unique('item_id')
+            ->values();
+
+        return response()->json(['success' => true, 'data' => $latest]);
     }
 
     /**
