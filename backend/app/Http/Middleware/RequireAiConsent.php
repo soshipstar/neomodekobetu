@@ -25,9 +25,15 @@ class RequireAiConsent
     {
         $user = $request->user();
 
-        // 認証されていない場合は通常の auth middleware に任せる (ここでは弾かない)
+        // AUTH-06 修正: 未認証ユーザーは防御的に 401 を返す。
+        // 通常は先行する auth:sanctum が弾くが、ミドルウェア順序の設定ミスや
+        // トークン期限切れのエッジケースで未認証リクエストがここに到達した場合に
+        // 同意チェックをスキップして通過させないため、明示的に拒否する。
         if (! $user) {
-            return $next($request);
+            return response()->json([
+                'success' => false,
+                'message' => '認証が必要です。',
+            ], 401);
         }
 
         // staff / admin は AI 利用方針への同意が必要 (規約 + プライバシー含む)

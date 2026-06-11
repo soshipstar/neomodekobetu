@@ -88,11 +88,12 @@ class CheckClassroomAccess
             return is_object($classroom) ? (int) $classroom->id : (int) $classroom;
         }
 
-        // 4. リクエストボディ/クエリパラメータから
-        if ($request->has('classroom_id')) {
-            return (int) $request->input('classroom_id');
-        }
-
+        // AUTH-11 修正: リクエストボディ/クエリの classroom_id からの解決を廃止。
+        // 旧実装は body に任意の classroom_id を入れればミドルウェアのチェックを
+        // 通過できてしまった (ユーザー申告値であり、リソースの実所属ではない)。
+        // body の classroom_id に対する認可はコントローラ側の責務 (store 等で
+        // authorizeClassroomId を呼ぶ) とし、ミドルウェアはルート/モデル
+        // バインディング由来の classroom_id のみを検証する。
         return null;
     }
 }

@@ -19,10 +19,10 @@ class AnalyticsController extends Controller
      */
     public function studentGrowth(Request $request, Student $student): JsonResponse
     {
-        $user = $request->user();
-        if ($user->classroom_id && $student->classroom_id !== $user->classroom_id) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        // AUTH-10 修正: classroom_id 完全一致のみで判定していたため、複数教室
+        // 所属スタッフが自教室以外の児童を参照すると誤って 403、null ユーザーは
+        // 全児童参照可だった。switchableClassroomIds() ベースに統一。
+        $this->authorizeClassroomId($request->user(), $student->classroom_id, 'アクセス権限がありません。');
 
         $months = $request->integer('months', 6);
         $startDate = now()->subMonths($months)->toDateString();

@@ -372,6 +372,11 @@ class StudentController extends Controller
         $user = $request->user();
         $isMaster = $user->user_type === 'admin' && $user->is_master;
 
+        // AUTH-07 修正: 同期元の児童への認可を追加 (非マスターは自身のアクセス範囲のみ)
+        if (! $isMaster) {
+            $this->authorizeClassroomId($user, $student->classroom_id, 'この児童の同期権限がありません。');
+        }
+
         if (empty($student->person_id)) {
             throw ValidationException::withMessages([
                 'person_id' => ['この児童は他の教室のレコードとリンクされていません。'],
@@ -381,9 +386,18 @@ class StudentController extends Controller
         $query = Student::where('person_id', $student->person_id)
             ->where('id', '!=', $student->id);
 
-        // 非マスターは自分がアクセスできる教室のレコードにだけ同期する
+        // AUTH-07 修正: 同企業制約を追加 (copyToClassroom と同じ defense in depth)。
+        // 異企業に同一 person_id が混在した場合でも、別企業のデータを上書きしない。
+        $student->loadMissing('classroom');
+        $sourceCompanyId = $student->classroom?->company_id;
+        if ($sourceCompanyId !== null) {
+            $query->whereHas('classroom', fn ($q) => $q->where('company_id', $sourceCompanyId));
+        }
+
+        // 非マスターは自分が switch できる教室のレコードにだけ同期する
+        // (旧: accessibleClassroomIds() は企業管理者だと単一教室しか返さず同期漏れ)
         if (!$isMaster) {
-            $query->whereIn('classroom_id', $user->accessibleClassroomIds());
+            $query->whereIn('classroom_id', $user->switchableClassroomIds());
         }
 
         $payload = [

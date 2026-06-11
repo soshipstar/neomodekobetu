@@ -23,9 +23,14 @@ class StaffChatController extends Controller
     public function staffList(Request $request): JsonResponse
     {
         $user = $request->user();
-        $accessibleIds = $user->accessibleClassroomIds();
 
-        $staff = User::whereIn('classroom_id', $accessibleIds)
+        // AUTH-12 修正: スタッフチャットの宛先は「現在アクティブな教室」の
+        // スタッフに限定する。accessibleClassroomIds() はマスター管理者の場合
+        // 全教室を返すため、全事業所のスタッフが宛先候補に並び誤送信・情報混入の
+        // リスクがあった。教室を跨いだチャットは想定しないため自教室のみ。
+        $classroomIds = $user->classroom_id ? [$user->classroom_id] : [];
+
+        $staff = User::whereIn('classroom_id', $classroomIds)
             ->where('id', '!=', $user->id)
             ->where('is_active', true)
             ->whereIn('user_type', ['staff', 'admin'])

@@ -119,10 +119,10 @@ class GuardianController extends Controller
             return response()->json(['success' => false, 'message' => '保護者ではありません。'], 422);
         }
 
-        $user = $request->user();
-        if (!$user->is_master && $guardian->classroom_id !== $user->classroom_id) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        // AUTH-08 修正: is_master のみ特例で classroom_id 完全一致を要求していたため、
+        // 企業管理者が自企業の別教室の保護者にアクセスできない (機能不足) 不整合が
+        // あった。switchableClassroomIds() ベースの authorizeClassroomId に統一。
+        $this->authorizeClassroomId($request->user(), $guardian->classroom_id, 'アクセス権限がありません。');
 
         $guardian->load([
             'classroom:id,classroom_name',
@@ -144,10 +144,10 @@ class GuardianController extends Controller
             return response()->json(['success' => false, 'message' => '保護者ではありません。'], 422);
         }
 
-        $user = $request->user();
-        if (!$user->is_master && $guardian->classroom_id !== $user->classroom_id) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        // AUTH-08 修正: is_master のみ特例で classroom_id 完全一致を要求していたため、
+        // 企業管理者が自企業の別教室の保護者にアクセスできない (機能不足) 不整合が
+        // あった。switchableClassroomIds() ベースの authorizeClassroomId に統一。
+        $this->authorizeClassroomId($request->user(), $guardian->classroom_id, 'アクセス権限がありません。');
 
         $validated = $request->validate([
             'classroom_id' => 'sometimes|exists:classrooms,id',
@@ -181,10 +181,10 @@ class GuardianController extends Controller
             return response()->json(['success' => false, 'message' => '保護者ではありません。'], 422);
         }
 
-        $user = $request->user();
-        if (!$user->is_master && $guardian->classroom_id !== $user->classroom_id) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        // AUTH-08 修正: is_master のみ特例で classroom_id 完全一致を要求していたため、
+        // 企業管理者が自企業の別教室の保護者にアクセスできない (機能不足) 不整合が
+        // あった。switchableClassroomIds() ベースの authorizeClassroomId に統一。
+        $this->authorizeClassroomId($request->user(), $guardian->classroom_id, 'アクセス権限がありません。');
 
         $guardian->update(['is_active' => false]);
 

@@ -284,9 +284,10 @@ class TabletController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($student->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        // AUTH-09 修正: classroom_id=null のタブレットアカウントでガードを
+        // 完全スキップしていた ($user->classroom_id && ... が false になる) ため、
+        // authorizeClassroomId で null=権限なしに統一する。
+        $this->authorizeClassroomId($user, $student->classroom_id, 'アクセス権限がありません。');
 
         $today = now()->toDateString();
 
@@ -326,9 +327,10 @@ class TabletController extends Controller
     {
         $user = $request->user();
 
-        if ($user->classroom_id && !in_array($student->classroom_id, $user->switchableClassroomIds(), true)) {
-            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
-        }
+        // AUTH-09 修正: classroom_id=null のタブレットアカウントでガードを
+        // 完全スキップしていた ($user->classroom_id && ... が false になる) ため、
+        // authorizeClassroomId で null=権限なしに統一する。
+        $this->authorizeClassroomId($user, $student->classroom_id, 'アクセス権限がありません。');
 
         $today = now()->toDateString();
 
