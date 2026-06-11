@@ -641,21 +641,33 @@ PROMPT;
      */
     public static function recordModerationFlag(array $result, array $context = []): void
     {
-        if (! $result['flagged']) return;
+        // AI-04 修正: fail-open を fail-warn に変更。Moderation API が
+        // 障害 (503/レート制限/タイムアウト) で落ちた場合、旧実装は flagged=false
+        // で素通りし何も記録しなかった。これでは有害判定をすり抜けたのか API が
+        // 落ちたのか区別できないため、error がある場合も監査ログに記録する。
+        $hasError = ! empty($result['error']);
+        if (! $result['flagged'] && ! $hasError) return;
 
-        Log::warning('AI output flagged by Moderation API', array_merge([
-            'categories' => $result['categories'],
-            'scores'     => $result['scores'],
-        ], $context));
+        $action = $result['flagged'] ? 'ai_moderation_flagged' : 'ai_moderation_unavailable';
+
+        Log::warning(
+            $result['flagged'] ? 'AI output flagged by Moderation API' : 'AI Moderation unavailable (fail-warn)',
+            array_merge([
+                'categories' => $result['categories'],
+                'scores'     => $result['scores'],
+                'error'      => $result['error'] ?? null,
+            ], $context)
+        );
 
         try {
             if (class_exists('\\App\\Models\\MasterAdminAuditLog')) {
                 \App\Models\MasterAdminAuditLog::create([
                     'master_user_id' => Auth::id(),
-                    'action'         => 'ai_moderation_flagged',
+                    'action'         => $action,
                     'context'        => array_merge([
                         'categories' => $result['categories'],
                         'scores'     => $result['scores'],
+                        'error'      => $result['error'] ?? null,
                     ], $context),
                 ]);
             }

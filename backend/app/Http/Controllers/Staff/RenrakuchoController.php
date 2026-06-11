@@ -1070,6 +1070,18 @@ class RenrakuchoController extends Controller
                 'student_id'      => $validated['student_id'],
             ]);
 
+            // AI-04 修正: 連絡帳は保護者に直接公開されるため、出力層フィルタとして
+            // Moderation API を適用する (コントローラ直書き経路の Moderation 省略を解消)。
+            // 仮名化済みの maskedContent を渡し、有害判定 or API 障害を監査ログに記録。
+            \App\Services\AiGenerationService::recordModerationFlag(
+                \App\Services\AiGenerationService::moderate($maskedContent),
+                [
+                    'generation_type' => 'renrakucho_integrated',
+                    'record_id'       => $record->id,
+                    'student_id'      => $validated['student_id'],
+                ]
+            );
+
             // プロンプトで与えた 5 領域ラベル（【健康・生活】等）が AI 出力に残ることがあるため除去
             $maskedContent = $this->stripDomainLabels($maskedContent);
 
