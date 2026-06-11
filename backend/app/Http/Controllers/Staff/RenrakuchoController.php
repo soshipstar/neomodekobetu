@@ -1109,14 +1109,27 @@ class RenrakuchoController extends Controller
             \Log::error("Generate integrated note error: " . $e->getMessage());
 
             // Fallback: simply combine domain observations (ラベル除去)
-            $integrated = "本日は「{$activityName}」の活動を行いました。\n\n" . $this->stripDomainLabels(implode("\n", $domains));
-            if ($notes) {
-                $integrated .= "\n\n{$notes}";
+            // AI-08 修正: $activityName / $notes は仮名化 (mask) 済みのため、
+            // 保護者向けの連絡帳に placeholder (「対象児童 A」) が混入しないよう
+            // unmask して実名に戻す。$domains は元の実名配列なのでそのまま使う。
+            $activityNameReal = $masker->unmask((string) $activityName);
+            $notesReal = $masker->unmask((string) $notes);
+
+            $integrated = "本日は「{$activityNameReal}」の活動を行いました。\n\n" . $this->stripDomainLabels(implode("\n", $domains));
+            if ($notesReal) {
+                $integrated .= "\n\n{$notesReal}";
             }
 
             IntegratedNote::updateOrCreate(
                 ['daily_record_id' => $record->id, 'student_id' => $validated['student_id']],
-                ['integrated_content' => $integrated, 'is_sent' => false]
+                [
+                    'integrated_content' => $integrated,
+                    'is_sent'            => false,
+                    // AI 接続エラー時の簡易統合のため、AI 補助ではあるが内容は
+                    // 観察記録のフォールバックである旨を pending として記録する。
+                    'ai_assisted'        => true,
+                    'ai_review_status'   => 'pending',
+                ]
             );
 
             return response()->json([
