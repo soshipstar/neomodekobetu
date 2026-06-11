@@ -37,6 +37,7 @@ class ClassroomSettingController extends Controller
                 'settings'       => $classroom->settings,
                 'logo_path'      => $classroom->logo_path,
                 'is_active'      => $classroom->is_active,
+                'ability_assessment_enabled' => $classroom->ability_assessment_enabled,
             ];
         });
 
@@ -60,6 +61,7 @@ class ClassroomSettingController extends Controller
             'settings'     => 'nullable|array',
             'address'      => 'nullable|string|max:500',
             'phone'        => 'nullable|string|max:20',
+            'ability_assessment_enabled' => 'sometimes|boolean',
         ]);
 
         // 通常管理者は自教室のみ
@@ -81,6 +83,9 @@ class ClassroomSettingController extends Controller
         }
         if (isset($validated['phone'])) {
             $updateData['phone'] = $validated['phone'];
+        }
+        if (array_key_exists('ability_assessment_enabled', $validated)) {
+            $updateData['ability_assessment_enabled'] = $validated['ability_assessment_enabled'];
         }
 
         $classroom->update($updateData);

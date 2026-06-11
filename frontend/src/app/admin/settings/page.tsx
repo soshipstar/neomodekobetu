@@ -18,6 +18,7 @@ interface ClassroomData {
   logo_path: string | null;
   settings: Record<string, string> | null;
   is_active: boolean;
+  ability_assessment_enabled: boolean;
 }
 
 export default function AdminSettingsPage() {
@@ -28,7 +29,8 @@ export default function AdminSettingsPage() {
     classroom_name: string;
     address: string;
     phone: string;
-  }>({ classroom_id: null, classroom_name: '', address: '', phone: '' });
+    ability_assessment_enabled: boolean;
+  }>({ classroom_id: null, classroom_name: '', address: '', phone: '', ability_assessment_enabled: false });
 
   const { data: classrooms = [], isLoading } = useQuery({
     queryKey: ['admin', 'classroom-settings'],
@@ -49,6 +51,7 @@ export default function AdminSettingsPage() {
         classroom_name: c.classroom_name,
         address: c.address || '',
         phone: c.phone || '',
+        ability_assessment_enabled: c.ability_assessment_enabled ?? false,
       });
     }
   }, [classrooms, form.classroom_id]);
@@ -59,6 +62,7 @@ export default function AdminSettingsPage() {
         classroom_id: data.classroom_id,
         address: data.address || null,
         phone: data.phone || null,
+        ability_assessment_enabled: data.ability_assessment_enabled,
       });
     },
     onSuccess: () => {
@@ -126,6 +130,22 @@ export default function AdminSettingsPage() {
             onChange={(e) => setForm({ ...form, phone: e.target.value })}
             placeholder="03-0000-0000"
           />
+          <div className="rounded-lg border border-[var(--neutral-stroke-2)] p-4">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                className="mt-1 h-4 w-4 accent-[var(--brand-background-1)]"
+                checked={form.ability_assessment_enabled}
+                onChange={(e) => setForm({ ...form, ability_assessment_enabled: e.target.checked })}
+              />
+              <span className="text-sm">
+                <span className="font-medium text-[var(--neutral-foreground-1)]">能力評価システムを使う</span>
+                <span className="mt-1 block text-[var(--neutral-foreground-3)]">
+                  個別支援計画の作成時に能力評価(発達段階別)を参考データとして使います。ONにすると、日々の活動記録の入力時に児童ごとの設問が表示されます。
+                </span>
+              </span>
+            </label>
+          </div>
           {currentClassroom.logo_path && (
             <div>
               <label className="mb-1 block text-sm font-medium text-[var(--neutral-foreground-2)]">教室ロゴ</label>
