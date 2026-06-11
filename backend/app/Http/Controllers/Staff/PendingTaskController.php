@@ -107,38 +107,51 @@ class PendingTaskController extends Controller
                     $nextPeriod = $this->getNextTargetPeriod($supportStartDate, 0);
                     $deadlineDate = $nextPeriod['start'] ?? now()->format('Y-m-d');
 
-                    // 同じ期間内の計画が既にあれば自動生成しない
-                    $existsForPeriod = IndividualSupportPlan::where('student_id', $student->id)
-                        ->where('is_hidden', false)
-                        ->exists();
-                    if ($existsForPeriod) {
+                    // LOGIC-05 修正: 重複自動生成の TOCTOU を防ぐ。旧実装は exists()
+                    // チェックと create() の間に隙間があり、ダッシュボードの同時リロードで
+                    // 同一児童に複数の空 draft 計画が積み上がっていた。lockForUpdate を
+                    // 伴う transaction で「存在チェック→生成」をアトミックにする。
+                    $autoPlan = \Illuminate\Support\Facades\DB::transaction(function () use ($student, $deadlineDate) {
+                        $existing = IndividualSupportPlan::where('student_id', $student->id)
+                            ->where('is_hidden', false)
+                            ->lockForUpdate()
+                            ->first();
+                        if ($existing) {
+                            return null; // 既存あり → 生成しない
+                        }
+
+                        // 空の支援計画を下書きで自動作成
+                        $plan = IndividualSupportPlan::create([
+                            'student_id'    => $student->id,
+                            'classroom_id'  => $student->classroom_id,
+                            'student_name'  => $student->student_name,
+                            'created_date'  => $deadlineDate,
+                            'status'        => 'draft',
+                            'is_draft'      => true,
+                            'is_official'   => false,
+                            'is_hidden'     => false,
+                        ]);
+
+                        // デフォルトの7行詳細を作成
+                        $defaultDetails = [
+                            ['domain' => '健康・生活', 'category' => '本人支援', 'sub_category' => '生活習慣（健康・生活）'],
+                            ['domain' => '言語・コミュニケーション', 'category' => '本人支援', 'sub_category' => 'コミュニケーション（言語・コミュニケーション）'],
+                            ['domain' => '人間関係・社会性', 'category' => '本人支援', 'sub_category' => '対人関係（人間関係・社会性）'],
+                            ['domain' => '運動・感覚', 'category' => '本人支援', 'sub_category' => '運動機能（運動・感覚）'],
+                            ['domain' => '認知・行動', 'category' => '本人支援', 'sub_category' => '学習面（認知・行動）'],
+                            ['domain' => '家族支援', 'category' => '家族支援', 'sub_category' => '保護者支援'],
+                            ['domain' => '地域支援', 'category' => '地域支援', 'sub_category' => '地域連携'],
+                        ];
+                        foreach ($defaultDetails as $i => $detail) {
+                            $plan->details()->create(array_merge($detail, ['sort_order' => $i]));
+                        }
+
+                        return $plan;
+                    });
+
+                    // 既存ありで生成しなかった場合は次の児童へ
+                    if ($autoPlan === null) {
                         continue;
-                    }
-
-                    // 空の支援計画を下書きで自動作成
-                    $autoPlan = IndividualSupportPlan::create([
-                        'student_id'    => $student->id,
-                        'classroom_id'  => $student->classroom_id,
-                        'student_name'  => $student->student_name,
-                        'created_date'  => $deadlineDate,
-                        'status'        => 'draft',
-                        'is_draft'      => true,
-                        'is_official'   => false,
-                        'is_hidden'     => false,
-                    ]);
-
-                    // デフォルトの7行詳細を作成
-                    $defaultDetails = [
-                        ['domain' => '健康・生活', 'category' => '本人支援', 'sub_category' => '生活習慣（健康・生活）'],
-                        ['domain' => '言語・コミュニケーション', 'category' => '本人支援', 'sub_category' => 'コミュニケーション（言語・コミュニケーション）'],
-                        ['domain' => '人間関係・社会性', 'category' => '本人支援', 'sub_category' => '対人関係（人間関係・社会性）'],
-                        ['domain' => '運動・感覚', 'category' => '本人支援', 'sub_category' => '運動機能（運動・感覚）'],
-                        ['domain' => '認知・行動', 'category' => '本人支援', 'sub_category' => '学習面（認知・行動）'],
-                        ['domain' => '家族支援', 'category' => '家族支援', 'sub_category' => '保護者支援'],
-                        ['domain' => '地域支援', 'category' => '地域支援', 'sub_category' => '地域連携'],
-                    ];
-                    foreach ($defaultDetails as $i => $detail) {
-                        $autoPlan->details()->create(array_merge($detail, ['sort_order' => $i]));
                     }
 
                     $result[] = [

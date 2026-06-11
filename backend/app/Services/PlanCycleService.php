@@ -39,9 +39,14 @@ class PlanCycleService
         $base = Carbon::parse($createdDate);
 
         // cycle_number: 既存の最新値 + 1 (既存がなければ 1)
+        // LOGIC-01 修正: 採番の TOCTOU 重複を防ぐため lockForUpdate で行ロックを取る。
+        // 本メソッドは DB::transaction() 内から呼ばれる前提 (呼び出し側で担保)。
+        // 並行作成時、後続トランザクションは先行のコミットまで max 取得を待ち、
+        // 同一 cycle_number の重複採番を防ぐ。
         if (empty($attributes['cycle_number'])) {
             $maxCycle = IndividualSupportPlan::where('student_id', $studentId)
                 ->whereNotNull('cycle_number')
+                ->lockForUpdate()
                 ->max('cycle_number');
             $attributes['cycle_number'] = ($maxCycle ?? 0) + 1;
         }

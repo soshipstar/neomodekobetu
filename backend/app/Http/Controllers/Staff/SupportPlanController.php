@@ -122,12 +122,16 @@ class SupportPlanController extends Controller
         $validated = $this->fillDefaultDates($validated);
 
         // Phase C: サイクル番号 / 期間 / 期日を自動算出
+        // LOGIC-01 修正: cycle_number の採番 (lockForUpdate) を transaction 内で
+        // 行うため、fillCycleFields の呼び出しを transaction 内へ移動する。
+        // 旧実装は transaction 外で採番していたため、並行作成で同一 cycle_number が
+        // 重複付与されるリスクがあった。
         $cycleService = app(\App\Services\PlanCycleService::class);
-        $cycleFields = $cycleService->fillCycleFields([
-            'created_date' => $validated['created_date'],
-        ], $student->id);
 
-        $plan = DB::transaction(function () use ($request, $student, $validated, $cycleFields) {
+        $plan = DB::transaction(function () use ($request, $student, $validated, $cycleService) {
+            $cycleFields = $cycleService->fillCycleFields([
+                'created_date' => $validated['created_date'],
+            ], $student->id);
             $managerName = $validated['manager_name'] ?? $validated['consent_name'] ?? null;
             $plan = IndividualSupportPlan::create([
                 'student_id'          => $student->id,
