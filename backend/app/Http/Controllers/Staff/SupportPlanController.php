@@ -547,6 +547,17 @@ class SupportPlanController extends Controller
     {
         $this->authorizeClassroom($request->user(), $plan->student);
 
+        // LOGIC-03 修正: 下書き (draft) 状態の計画への署名を拒否する。
+        // 旧実装は status を一切チェックせず、空の下書き計画でも署名 API を
+        // 直接呼べば is_official=true 化でき、状態機械 (draft→submitted→official)
+        // を飛び越せた。署名は計画内容が確定 (submitted 以上) してから行う。
+        if ($plan->status === 'draft') {
+            return response()->json([
+                'success' => false,
+                'message' => '下書き状態の計画には署名できません。先に保護者への確認依頼 (提出) を行ってください。',
+            ], 422);
+        }
+
         $request->validate([
             'staff_signature'      => 'required|string', // base64 image
             'staff_signer_name'    => 'required|string|max:255',

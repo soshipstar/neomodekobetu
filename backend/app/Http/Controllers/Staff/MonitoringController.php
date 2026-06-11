@@ -94,14 +94,21 @@ class MonitoringController extends Controller
             ->where('student_id', $student->id)
             ->firstOrFail();
 
-        // 同じ計画に対するモニタリングが既にある場合はエラー
+        // LOGIC-02 修正: 重複チェックを「同計画 + 同日付」に限定する。
+        // 旧実装は (student_id, plan_id) のみで判定していたため、1 つの
+        // 個別支援計画に対してモニタリングを 1 回しか作成できなかった。
+        // しかし障害福祉サービスでは 6 ヶ月ごとに複数回のモニタリングを
+        // 実施するのが通常であり、2 回目以降が記録不能になっていた
+        // (厚労省ガイドライン「6 ヶ月に 1 回以上のモニタリング」未達リスク)。
+        // 同一日付の二重登録のみを誤操作として弾く。
         $existingMonitoring = MonitoringRecord::where('student_id', $student->id)
             ->where('plan_id', $validated['plan_id'])
+            ->whereDate('monitoring_date', $validated['monitoring_date'])
             ->first();
         if ($existingMonitoring) {
             return response()->json([
                 'success' => false,
-                'message' => 'この計画に対するモニタリング表は既に存在します（ID: ' . $existingMonitoring->id . '）。既存のモニタリング表を編集してください。',
+                'message' => '同じ日付のモニタリング表が既に存在します（ID: ' . $existingMonitoring->id . '）。既存のモニタリング表を編集するか、別の日付で作成してください。',
             ], 422);
         }
 
