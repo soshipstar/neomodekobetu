@@ -367,6 +367,28 @@ class DashboardController extends Controller
             ->values()
             ->toArray();
 
+        // --- 児童の誕生日（所属教室の在籍児童。一覧では氏名を伏せマークのみ、クリックで誰か確認） ---
+        $birthDates = \App\Models\Student::whereIn('classroom_id', $accessibleIds)
+            ->where('is_active', true)
+            ->whereNotNull('birth_date')
+            ->get(['id', 'student_name', 'birth_date'])
+            ->filter(fn ($s) => (int) Carbon::parse($s->birth_date)->month === $month)
+            ->map(function ($s) use ($year, $month) {
+                $day = (int) Carbon::parse($s->birth_date)->day;
+                // 2/29 生まれは閏年でない表示年では 2/28 に丸める
+                if ($month === 2 && $day === 29 && ! Carbon::create($year, 1, 1)->isLeapYear()) {
+                    $day = 28;
+                }
+
+                return [
+                    'date'         => Carbon::create($year, $month, $day)->toDateString(),
+                    'student_id'   => $s->id,
+                    'student_name' => $s->student_name,
+                ];
+            })
+            ->values()
+            ->toArray();
+
         return response()->json([
             'success' => true,
             'data'    => [
@@ -375,6 +397,7 @@ class DashboardController extends Controller
                 'school_holiday_dates'   => $schoolHolidayDates,
                 'event_dates'            => $eventDates,
                 'meeting_dates'          => $meetingDates,
+                'birth_dates'            => $birthDates,
             ],
         ]);
     }

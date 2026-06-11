@@ -40,6 +40,7 @@ interface CalendarData {
   school_holiday_dates: string[];    // YYYY-MM-DD
   event_dates: { date: string; label: string; color: string }[];
   meeting_dates: MeetingInfo[] | string[];
+  birth_dates?: { date: string; student_id: number; student_name: string }[];
 }
 
 interface Activity {
@@ -371,6 +372,17 @@ export default function StaffDashboardPage() {
     return m;
   }, [calendar]);
 
+  // 誕生日マップ(日付→児童一覧)。一覧では氏名を伏せ、クリックで確認する。
+  const birthDateMap = useMemo(() => {
+    const m = new Map<string, { student_id: number; student_name: string }[]>();
+    (calendar.birth_dates ?? []).forEach((b) => {
+      const arr = m.get(b.date) || [];
+      arr.push({ student_id: b.student_id, student_name: b.student_name });
+      m.set(b.date, arr);
+    });
+    return m;
+  }, [calendar]);
+
   // Group attendance by grade
   const attendanceByGrade = useMemo(() => {
     const grouped: Record<string, AttendanceStudent[]> = {};
@@ -484,6 +496,7 @@ export default function StaffDashboardPage() {
                           const eventInfos = eventDateMap.get(dateStr);
                           const meetingInfos = meetingDateMap.get(dateStr);
                           const hasMeeting = !!meetingInfos && meetingInfos.length > 0;
+                          const birthdays = birthDateMap.get(dateStr);
                           const isSunday = di === 0;
                           const isSaturday = di === 6;
 
@@ -525,6 +538,16 @@ export default function StaffDashboardPage() {
                                   )}
                                   {isSchoolHoliday && !hasActivity && (
                                     <span className="h-1.5 w-1.5 rounded-full bg-orange-400" title="学校休業日" />
+                                  )}
+                                  {/* 誕生日マーク(氏名は出さない。クリックで誰か確認) */}
+                                  {birthdays && birthdays.length > 0 && (
+                                    <span
+                                      className="text-[10px] leading-none lg:text-xs cursor-pointer"
+                                      title="誕生日(クリックで確認)"
+                                      onClick={(e) => { e.stopPropagation(); setSelectedDate(dateStr); }}
+                                    >
+                                      🎂
+                                    </span>
                                   )}
                                 </div>
                                 {/* Meeting labels */}
@@ -576,9 +599,41 @@ export default function StaffDashboardPage() {
                 <span className="flex items-center gap-1">
                   <span className="inline-block h-3 w-3 rounded bg-[var(--status-danger-bg)] border border-[var(--status-danger-fg)]" /> 祝日
                 </span>
+                <span className="flex items-center gap-1">
+                  <span>🎂</span> 誕生日(クリックで確認)
+                </span>
               </div>
             </CardBody>
           </Card>
+
+          {/* ---------- Birthdays for selected date ---------- */}
+          {(() => {
+            const selectedBirthdays = birthDateMap.get(selectedDate);
+            if (!selectedBirthdays || selectedBirthdays.length === 0) return null;
+            return (
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    <span className="flex items-center gap-2">
+                      <span>🎂</span>{selectedDate.replace(/-/g, '/')} の誕生日
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardBody>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedBirthdays.map((b) => (
+                      <span
+                        key={b.student_id}
+                        className="rounded-full border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-2)] px-3 py-1 text-sm text-[var(--neutral-foreground-1)]"
+                      >
+                        {b.student_name} さん
+                      </span>
+                    ))}
+                  </div>
+                </CardBody>
+              </Card>
+            );
+          })()}
 
           {/* ---------- Events for selected date (immediately below calendar) ---------- */}
           {(() => {
