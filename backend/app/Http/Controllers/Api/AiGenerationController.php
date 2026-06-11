@@ -115,8 +115,19 @@ class AiGenerationController extends Controller
             . ServiceTypeRegistry::aiServiceFocus($serviceType);
 
         try {
-            // AISI R1/R4/R6 (2026-05-17): Sanitizer + 共通規律句 + OpenAiClientFactory
+            // AISI R1/R4/R6 (2026-05-17) + AUTH-05: Sanitizer + Masker + OpenAiClientFactory
             $sanitizer = new \App\Services\AiPromptSanitizer();
+            $masker = new \App\Services\AiIdentityMasker();
+            $masker->register((string) $student->student_name, 'student');
+            $student->loadMissing(['classroom', 'guardian']);
+            if ($student->classroom?->classroom_name) {
+                $masker->register((string) $student->classroom->classroom_name, 'classroom');
+            }
+            if ($student->guardian?->full_name) {
+                $masker->register((string) $student->guardian->full_name, 'guardian');
+            }
+            $studentLabel = $masker->placeholderFor((string) $student->student_name) ?: '対象児童 A';
+
             $client = \App\Services\OpenAiClientFactory::make();
             $response = $client->chat()->create([
                 'model'    => config('services.openai.model', 'gpt-5.4-mini-2026-03-17'),
@@ -128,12 +139,12 @@ class AiGenerationController extends Controller
                     [
                         'role'    => 'user',
                         'content' => "以下の情報をもとに、個別支援計画書の内容を生成してください。\n\n"
-                            . "【{$terms['client']}名】{$student->student_name}\n\n"
-                            . "【面接記録】\n{$interviewText}\n\n"
-                            . "【{$terms['diary']}記録】\n{$recordsText}\n\n"
-                            . "{$strengthsText}\n\n"
-                            . "【過去の支援計画書】\n{$pastPlanText}\n\n"
-                            . ($validated['context'] ? "【追加情報】\n{$validated['context']}\n\n" : '')
+                            . "【{$terms['client']}名】{$studentLabel}\n\n"
+                            . "【面接記録】\n" . $masker->mask((string) $interviewText) . "\n\n"
+                            . "【{$terms['diary']}記録】\n" . $masker->mask((string) $recordsText) . "\n\n"
+                            . $masker->mask((string) $strengthsText) . "\n\n"
+                            . "【過去の支援計画書】\n" . $masker->mask((string) $pastPlanText) . "\n\n"
+                            . ($validated['context'] ? "【追加情報】\n" . $masker->mask((string) $validated['context']) . "\n\n" : '')
                             . "以下を含むJSONを出力してください。details の各要素には任意で target_strength（強み項目名 / {$terms['diary']}の強みチェック10項目から選択）と target_strength_baseline (現在値 0-10) / target_strength_target (目標値 0-10) を含めることができます:\n"
                             . "{\n"
                             . "  \"life_intention\": \"本人の生活に対する意向\",\n"
@@ -149,6 +160,12 @@ class AiGenerationController extends Controller
             ]);
 
             $content = $response->choices[0]->message->content;
+            // AUTH-05 修正: 漏洩検出 + placeholder を実名に復元
+            $content = $sanitizer->postProcess((string) $content, [
+                'generation_type' => 'support_plan_api',
+                'student_id'      => $student->id,
+            ]);
+            $content = $masker->unmask($content);
 
             // Markdownコードブロックを除去
             if (preg_match('/```(?:json)?\s*([\s\S]*?)\s*```/', $content, $matches)) {
@@ -160,7 +177,7 @@ class AiGenerationController extends Controller
             // 生成ログ保存
             AiGenerationLog::create([
                 'user_id'      => $request->user()->id,
-                'model'        => 'gpt-5.4-mini-2026-03-17',
+                'model'        => config('services.openai.model', 'gpt-5.4-mini-2026-03-17'),
                 'prompt_type'  => 'support_plan',
                 'input_tokens' => $response->usage->promptTokens ?? null,
                 'output_tokens' => $response->usage->completionTokens ?? null,
@@ -260,8 +277,19 @@ class AiGenerationController extends Controller
             . ServiceTypeRegistry::aiServiceFocus($serviceType);
 
         try {
-            // AISI R1/R4/R6 (2026-05-17): Sanitizer + 共通規律句 + OpenAiClientFactory
+            // AISI R1/R4/R6 (2026-05-17) + AUTH-05: Sanitizer + Masker + OpenAiClientFactory
             $sanitizer = new \App\Services\AiPromptSanitizer();
+            $masker = new \App\Services\AiIdentityMasker();
+            $masker->register((string) $student->student_name, 'student');
+            $student->loadMissing(['classroom', 'guardian']);
+            if ($student->classroom?->classroom_name) {
+                $masker->register((string) $student->classroom->classroom_name, 'classroom');
+            }
+            if ($student->guardian?->full_name) {
+                $masker->register((string) $student->guardian->full_name, 'guardian');
+            }
+            $studentLabel = $masker->placeholderFor((string) $student->student_name) ?: '対象児童 A';
+
             $client = \App\Services\OpenAiClientFactory::make();
             $response = $client->chat()->create([
                 'model'    => config('services.openai.model', 'gpt-5.4-mini-2026-03-17'),
@@ -272,10 +300,10 @@ class AiGenerationController extends Controller
                     ],
                     [
                         'role'    => 'user',
-                        'content' => "【{$terms['client']}名】{$student->student_name}\n\n"
-                            . "【計画の目標・支援内容】\n{$detailsText}\n\n"
-                            . "【過去6ヶ月の記録】\n{$recordsText}\n\n"
-                            . "{$strengthsText}\n\n"
+                        'content' => "【{$terms['client']}名】{$studentLabel}\n\n"
+                            . "【計画の目標・支援内容】\n" . $masker->mask((string) $detailsText) . "\n\n"
+                            . "【過去6ヶ月の記録】\n" . $masker->mask((string) $recordsText) . "\n\n"
+                            . $masker->mask((string) $strengthsText) . "\n\n"
                             . "各目標に対して評価してください。指標 (target_strength) が設定されている目標は、強みチェックの推移を踏まえて達成状況を判断してください。出力形式:\n"
                             . "{\"evaluations\": {\"<detail_id>\": {\"achievement_status\": \"達成/進行中/未着手/継続中/見直し必要\", \"monitoring_comment\": \"150〜200字の評価\"}, ...}}",
                     ],
@@ -285,6 +313,12 @@ class AiGenerationController extends Controller
             ]);
 
             $content = $response->choices[0]->message->content;
+            // AUTH-05 修正: 漏洩検出 + placeholder を実名に復元
+            $content = $sanitizer->postProcess((string) $content, [
+                'generation_type' => 'monitoring_api',
+                'student_id'      => $student->id,
+            ]);
+            $content = $masker->unmask($content);
             if (preg_match('/```(?:json)?\s*([\s\S]*?)\s*```/', $content, $matches)) {
                 $content = trim($matches[1]);
             }
@@ -293,7 +327,7 @@ class AiGenerationController extends Controller
 
             AiGenerationLog::create([
                 'user_id'      => $request->user()->id,
-                'model'        => 'gpt-5.4-mini-2026-03-17',
+                'model'        => config('services.openai.model', 'gpt-5.4-mini-2026-03-17'),
                 'prompt_type'  => 'monitoring',
                 'input_tokens' => $response->usage->promptTokens ?? null,
                 'output_tokens' => $response->usage->completionTokens ?? null,

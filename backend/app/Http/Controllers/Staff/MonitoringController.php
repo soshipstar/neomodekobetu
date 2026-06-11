@@ -409,6 +409,19 @@ class MonitoringController extends Controller
 
         $generatedEvaluations = [];
 
+        // AUTH-05 修正: 児童名を仮名化してから OpenAI に送る。ループ全体で
+        // 1 つの Masker を共有し、児童名・教室名・保護者名を placeholder 化する。
+        $masker = new \App\Services\AiIdentityMasker();
+        $masker->register((string) $student->student_name, 'student');
+        $student->loadMissing(['classroom', 'guardian']);
+        if ($student->classroom?->classroom_name) {
+            $masker->register((string) $student->classroom->classroom_name, 'classroom');
+        }
+        if ($student->guardian?->full_name) {
+            $masker->register((string) $student->guardian->full_name, 'guardian');
+        }
+        $studentLabel = $masker->placeholderFor((string) $student->student_name) ?: '対象児童 A';
+
         // 特定の目標のみの場合はフィルタリング
         $targetDetails = $detailId
             ? $planDetails->where('id', $detailId)
@@ -473,13 +486,14 @@ class MonitoringController extends Controller
                 $sanitizer = new \App\Services\AiPromptSanitizer();
                 $client = \App\Services\OpenAiClientFactory::make();
 
+                // AUTH-05 修正: 児童名は placeholder、自由記述 (records) は mask 済みを使う
                 $prompt = "あなたは児童発達支援施設の児童発達支援管理責任者です。\n"
                     . "以下の支援目標に対して、過去6ヶ月間の連絡帳記録（{$recordCount}件）を分析し、モニタリング評価を行ってください。\n\n"
-                    . "【児童氏名】\n{$student->student_name}\n\n"
+                    . "【児童氏名】\n{$studentLabel}\n\n"
                     . "【支援目標の分野】\n{$category} > {$subCategory}\n\n"
-                    . "【支援目標】\n{$supportGoal}\n\n"
-                    . "【支援内容（施設での取り組み）】\n{$supportContent}\n\n"
-                    . "【過去6ヶ月間の連絡帳記録（この分野に関する記録）】\n{$recordsText}\n\n"
+                    . "【支援目標】\n" . $masker->mask((string) $supportGoal) . "\n\n"
+                    . "【支援内容（施設での取り組み）】\n" . $masker->mask((string) $supportContent) . "\n\n"
+                    . "【過去6ヶ月間の連絡帳記録（この分野に関する記録）】\n" . $sanitizer->wrap($masker->mask($recordsText), 'RECORDS') . "\n\n"
                     . "【評価の観点】\n"
                     . "1. 上記の連絡帳記録から、支援目標に対する本人の取り組みや変化を読み取ってください\n"
                     . "2. 具体的なエピソードや行動を踏まえて評価してください\n"
@@ -510,6 +524,12 @@ class MonitoringController extends Controller
                 ]);
 
                 $content = $response->choices[0]->message->content;
+                // AUTH-05 修正: 漏洩検出 + placeholder を実名に復元
+                $content = $sanitizer->postProcess((string) $content, [
+                    'generation_type' => 'monitoring_evaluation',
+                    'student_id'      => $student->id,
+                ]);
+                $content = $masker->unmask($content);
                 if (preg_match('/```(?:json)?\s*([\s\S]*?)\s*```/', $content, $matches)) {
                     $content = trim($matches[1]);
                 }

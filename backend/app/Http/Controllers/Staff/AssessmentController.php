@@ -305,10 +305,27 @@ class AssessmentController extends Controller
             $totalInputTokens = 0;
             $totalOutputTokens = 0;
 
+            // AUTH-05 修正: 児童名等を仮名化してから OpenAI へ送る。
+            // 3 つの chat 呼出 (domains/short/long) で共有し、最後にまとめて unmask する。
+            $masker = new \App\Services\AiIdentityMasker();
+            $masker->register((string) $student->student_name, 'student');
+            $student->loadMissing(['classroom', 'guardian']);
+            if ($student->classroom?->classroom_name) {
+                $masker->register((string) $student->classroom->classroom_name, 'classroom');
+            }
+            if ($student->guardian?->full_name) {
+                $masker->register((string) $student->guardian->full_name, 'guardian');
+            }
+            $studentLabel = $masker->placeholderFor((string) $student->student_name) ?: '対象児童 A';
+            $recordsSummary = $masker->mask((string) $recordsSummary);
+            $interviewSummary = $masker->mask((string) $interviewSummary);
+            $previousShortTermGoal = $previousShortTermGoal !== null ? $masker->mask((string) $previousShortTermGoal) : null;
+            $previousLongTermGoal = $previousLongTermGoal !== null ? $masker->mask((string) $previousLongTermGoal) : null;
+
             // === 1. 五領域の課題を生成（レガシー準拠） ===
             $domainsPrompt = "あなたは発達支援・特別支援教育の専門スタッフです。以下の生徒の直近5か月の連絡帳記録を詳細に分析し、今後6か月間の具体的な支援課題を各領域ごとに300文字程度でまとめてください。\n\n"
-                . "【生徒情報】\n名前: {$student->student_name}\n\n"
-                . "【直近5か月の連絡帳記録】\n{$recordsSummary}\n\n"
+                . "【生徒情報】\n名前: {$studentLabel}\n\n"
+                . "【直近5か月の連絡帳記録】\n" . $sanitizer->wrap($recordsSummary, 'RECORDS') . "\n\n"
                 . "【分析と課題作成の指針】\n"
                 . "以下の5つの領域について、記録から読み取れる具体的な事実を基に、今後6か月間で取り組むべき課題を300文字程度で詳細に記述してください。\n\n"
                 . "■ 健康・生活\n- 食事、排泄、睡眠、衛生管理、身だしなみ、安全意識などの実態\n- 観察された具体的な行動や変化\n- 今後の支援目標と具体的なアプローチ\n\n"
@@ -445,15 +462,16 @@ class AssessmentController extends Controller
                 Log::warning('Failed to log AI generation', ['error' => $e->getMessage()]);
             }
 
+            // AUTH-05 修正: 最終結果のみまとめて unmask (中間生成物は仮名のまま連鎖 = 再漏洩防止)
             $result = [
                 'student_wish'           => '',
-                'short_term_goal'        => $shortTermGoal,
-                'long_term_goal'         => $longTermGoal,
-                'health_life'            => $domainsData['health_life'] ?? '',
-                'motor_sensory'          => $domainsData['motor_sensory'] ?? '',
-                'cognitive_behavior'     => $domainsData['cognitive_behavior'] ?? '',
-                'language_communication' => $domainsData['language_communication'] ?? '',
-                'social_relations'       => $domainsData['social_relations'] ?? '',
+                'short_term_goal'        => $masker->unmask((string) $shortTermGoal),
+                'long_term_goal'         => $masker->unmask((string) $longTermGoal),
+                'health_life'            => $masker->unmask((string) ($domainsData['health_life'] ?? '')),
+                'motor_sensory'          => $masker->unmask((string) ($domainsData['motor_sensory'] ?? '')),
+                'cognitive_behavior'     => $masker->unmask((string) ($domainsData['cognitive_behavior'] ?? '')),
+                'language_communication' => $masker->unmask((string) ($domainsData['language_communication'] ?? '')),
+                'social_relations'       => $masker->unmask((string) ($domainsData['social_relations'] ?? '')),
             ];
 
             return response()->json([
