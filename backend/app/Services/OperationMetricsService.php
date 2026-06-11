@@ -33,10 +33,22 @@ class OperationMetricsService
             ->distinct('record_date')
             ->count('record_date');
 
-        // 在籍利用者数 (期間中に active で classroom に紐づいていた)
+        // 在籍利用者数 (LOGIC-09 修正: 集計対象月末時点での在籍数を算出)
+        // 旧実装は「今日時点」の is_active/status のスナップショットを返していたため、
+        // 過去月の帳票を後日確認すると、その後に退所/入所した分だけ在籍数がズレ、
+        // 延べ利用日数との整合が取れず実地指導で指摘されるリスクがあった。
+        // 「対象月末までに利用を開始し、対象月初時点でまだ退所していない」を在籍とする。
         $activeStudents = Student::where('classroom_id', $classroomId)
-            ->where('is_active', true)
-            ->where('status', 'active')
+            ->where(function ($q) use ($to) {
+                // 支援開始日が対象月末以前 (未設定は対象に含める=旧データ互換)
+                $q->whereNull('support_start_date')
+                  ->orWhereDate('support_start_date', '<=', $to->toDateString());
+            })
+            ->where(function ($q) use ($from) {
+                // 退所日が対象月初より後、または未退所
+                $q->whereNull('withdrawal_date')
+                  ->orWhereDate('withdrawal_date', '>=', $from->toDateString());
+            })
             ->count();
 
         // 延べ利用日数 (StudentRecord の件数)

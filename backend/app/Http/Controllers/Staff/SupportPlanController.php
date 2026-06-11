@@ -1229,12 +1229,25 @@ class SupportPlanController extends Controller
             ], 422);
         }
 
+        // LOGIC-04 修正: 「紙面サイン済み」確定で guardian_confirmed_at に
+        // API 呼び出し時刻 (now()) を入れていたため、保護者が実際に書面署名した
+        // 日付と電子記録の日時が乖離し、実地指導で「同意日時不一致」を指摘される
+        // リスクがあった。書面署名日をリクエストで受け取り、それを確認日時とする。
+        // 未指定時は計画の consent_date、それも無ければ今日の日付 (時刻 00:00) を
+        // 使い、「API を叩いた瞬間に同意した」かのような誤記録を避ける。
+        $validated = $request->validate([
+            'paper_sign_date' => 'nullable|date',
+        ]);
+        $signDate = $validated['paper_sign_date']
+            ?? ($plan->consent_date ? $plan->consent_date->toDateString() : now()->toDateString());
+
         $plan->update([
             'status'               => 'official',
             'is_official'          => true,
             'is_draft'             => false,
             'guardian_confirmed'    => true,
-            'guardian_confirmed_at' => now(),
+            'guardian_confirmed_at' => \Illuminate\Support\Carbon::parse($signDate)->startOfDay(),
+            'consent_date'          => $plan->consent_date ?? $signDate,
         ]);
 
         return response()->json([

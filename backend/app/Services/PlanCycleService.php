@@ -91,11 +91,29 @@ class PlanCycleService
         $today = Carbon::today();
         $cutoff = $today->copy()->addDays($daysAhead);
 
+        // LOGIC-06 修正: 「次期計画が既に作成済みの古い計画」を除外する。
+        // 旧実装は is_official=true かつ next_plan_due_date<=cutoff を全件返すため、
+        // 次期計画を作成済みでも古い計画の期日が拾われ、スタッフに「対応済みなのに
+        // 期限切れ通知が消えない」状態を生んでいた (通知疲れで本当の期限切れを見落とす)。
+        // 同一児童について、より新しい created_date の official 計画が存在する計画は
+        // 「既に次期へ移行済み」とみなして除外する。
+        $supersededExpr = function ($query) {
+            // 同じ student_id でより新しい official 計画が存在しないこと
+            $query->whereNotExists(function ($sub) {
+                $sub->selectRaw(1)
+                    ->from('individual_support_plans as newer')
+                    ->whereColumn('newer.student_id', 'individual_support_plans.student_id')
+                    ->where('newer.is_official', true)
+                    ->whereColumn('newer.created_date', '>', 'individual_support_plans.created_date');
+            });
+        };
+
         $plansDue = IndividualSupportPlan::query()
             ->where('classroom_id', $classroomId)
             ->where('is_official', true)
             ->whereNotNull('next_plan_due_date')
             ->whereDate('next_plan_due_date', '<=', $cutoff)
+            ->where($supersededExpr)
             ->orderBy('next_plan_due_date')
             ->with('student:id,student_name')
             ->get();
@@ -105,6 +123,7 @@ class PlanCycleService
             ->where('is_official', true)
             ->whereNotNull('next_monitoring_due_date')
             ->whereDate('next_monitoring_due_date', '<=', $cutoff)
+            ->where($supersededExpr)
             ->orderBy('next_monitoring_due_date')
             ->with('student:id,student_name')
             ->get();
