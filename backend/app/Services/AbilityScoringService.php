@@ -6,7 +6,7 @@ use App\Models\AbilityEvalItem;
 use App\Models\AbilityObservation;
 use App\Models\AbilityScore;
 use App\Models\Student;
-use App\Support\AbilityGrowthStage;
+use App\Support\AbilityToolScope;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -46,10 +46,10 @@ class AbilityScoringService
     {
         $asOf = $asOf ?? Carbon::now();
         $since = $asOf->copy()->subMonths(3)->startOfDay();
-        $axisId = AbilityGrowthStage::forStudent($student, $asOf);
 
-        $items = AbilityEvalItem::where('tool_id', AbilityQuestionService::TOOL)
-            ->orderBy('item_id')->pluck('item_id');
+        // 出題対象と同じ適用ツール(DEV/ADV、中学生以上はWRK/UNVも)を採点する
+        $items = AbilityEvalItem::whereIn('tool_id', AbilityToolScope::toolsFor($student, $asOf))
+            ->orderBy('item_id')->get(['item_id', 'tool_id']);
 
         // 直近3か月の観察を項目ごとに集める
         $byItem = AbilityObservation::where('student_id', $student->id)
@@ -58,9 +58,10 @@ class AbilityScoringService
             ->groupBy('item_id');
 
         $results = [];
-        foreach ($items as $itemId) {
-            $obs = $byItem->get($itemId, collect());
-            $results[] = $this->evaluateItem($student, $itemId, $axisId, $obs, $asOf);
+        foreach ($items as $item) {
+            $obs = $byItem->get($item->item_id, collect());
+            $axisId = AbilityToolScope::axisFor($student, $item->tool_id, $asOf);
+            $results[] = $this->evaluateItem($student, $item->item_id, $axisId, $obs, $asOf);
         }
 
         return $results;

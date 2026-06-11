@@ -10,7 +10,7 @@ use App\Models\Classroom;
 use App\Models\Student;
 use App\Services\AbilityQuestionService;
 use App\Services\AbilityScoringService;
-use App\Support\AbilityGrowthStage;
+use App\Support\AbilityToolScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -78,13 +78,15 @@ class AbilityObservationController extends Controller
             return $deny;
         }
 
-        // 成長段階軸・教室・日付はサーバ側で確定する(クライアントを信用しない)
+        // 評価軸・教室・日付はサーバ側で確定する(クライアントを信用しない)。
+        // 軸は項目のツール(DEV=成長段階/ADV=水準/WRK・UNV=時期)に応じて決める。
+        $toolId = \App\Models\AbilityEvalItem::where('item_id', $validated['item_id'])->value('tool_id');
         $observation = AbilityObservation::create([
             'classroom_id' => $student->classroom_id,
             'student_id' => $student->id,
             'daily_record_id' => $validated['daily_record_id'] ?? null,
             'item_id' => $validated['item_id'],
-            'axis_id' => AbilityGrowthStage::forStudent($student),
+            'axis_id' => AbilityToolScope::axisFor($student, $toolId ?? 'DEV'),
             'support_code' => $validated['support_code'] ?? null,
             'result' => $validated['result'] ?? null,
             'is_new_scene' => $validated['is_new_scene'] ?? false,

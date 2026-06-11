@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\Student;
 use App\Models\User;
 use App\Support\AbilityGrowthStage;
+use App\Support\AbilityToolScope;
 use Database\Seeders\AbilityEvalMasterSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -52,6 +53,25 @@ class AbilityObservationFlowTest extends TestCase
         $this->assertSame(7, $grade); // 中1
     }
 
+    public function test_tool_scope_expands_with_age(): void
+    {
+        // 小学生(S3): DEV+ADV のみ
+        $elem = new Student(['grade_level' => 'elementary_5']);
+        $this->assertSame(['DEV', 'ADV'], AbilityToolScope::toolsFor($elem));
+        $this->assertSame('S3', AbilityToolScope::axisFor($elem, 'DEV'));
+        $this->assertSame('L2', AbilityToolScope::axisFor($elem, 'ADV'));
+
+        // 中学生(S4): 就業WRK・大学UNV も追加。時期は中学期P1
+        $jh = new Student(['grade_level' => 'junior_high_2']);
+        $this->assertSame(['DEV', 'ADV', 'WRK', 'UNV'], AbilityToolScope::toolsFor($jh));
+        $this->assertSame('P1', AbilityToolScope::axisFor($jh, 'WRK'));
+
+        // 高校生(S6): 時期は高校期P2
+        $hs = new Student(['grade_level' => 'high_school_2']);
+        $this->assertSame(['DEV', 'ADV', 'WRK', 'UNV'], AbilityToolScope::toolsFor($hs));
+        $this->assertSame('P2', AbilityToolScope::axisFor($hs, 'UNV'));
+    }
+
     public function test_next_question_and_store_and_rotation(): void
     {
         $company = Company::create(['name' => '企業A']);
@@ -65,13 +85,14 @@ class AbilityObservationFlowTest extends TestCase
             'status' => 'active', 'is_active' => true,
         ]);
 
-        // 設問取得: DEV 項目・成長段階 S3 の到達目安が返る
+        // 設問取得: 小学生(S3)は DEV+ADV が対象。項目のツールに応じた軸の到達目安が返る
         $q = $this->actingAs($staff, 'sanctum')
             ->getJson("/api/staff/ability/students/{$student->id}/next-question");
         $q->assertStatus(200);
-        $q->assertJsonPath('data.question.axis_id', 'S3');
         $firstItem = $q->json('data.question.item_id');
-        $this->assertStringStartsWith('DEV-', $firstItem);
+        $this->assertMatchesRegularExpression('/^(DEV|ADV)-/', $firstItem);
+        $expectedAxis = str_starts_with($firstItem, 'ADV-') ? 'L2' : 'S3';
+        $this->assertSame($expectedAxis, $q->json('data.question.axis_id'));
         $this->assertNotEmpty($q->json('data.question.benchmark'));
         $this->assertSame(['completed', 'partial', 'refused'], $q->json('data.results'));
         $this->assertNotEmpty(collect($q->json('data.support_codes'))->firstWhere('code', 'SUP0'));
@@ -87,7 +108,7 @@ class AbilityObservationFlowTest extends TestCase
         ]);
         $store->assertStatus(201);
         $obs = AbilityObservation::first();
-        $this->assertSame('S3', $obs->axis_id);
+        $this->assertSame($expectedAxis, $obs->axis_id);
         $this->assertSame($room->id, $obs->classroom_id);
         $this->assertSame($staff->id, $obs->recorded_by);
 

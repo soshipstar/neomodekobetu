@@ -6,7 +6,7 @@ use App\Models\AbilityEvalBenchmark;
 use App\Models\AbilityEvalItem;
 use App\Models\AbilityObservation;
 use App\Models\Student;
-use App\Support\AbilityGrowthStage;
+use App\Support\AbilityToolScope;
 
 /**
  * 能力評価: 日々の設問を「成長段階に合わせて・完全ランダムでなく」選定する。
@@ -18,17 +18,16 @@ use App\Support\AbilityGrowthStage;
  */
 class AbilityQuestionService
 {
-    /** 対象ツール(発達段階別)。 */
-    public const TOOL = 'DEV';
-
     /**
      * 次に出題する評価項目を選ぶ。候補が無ければ null。
+     *
+     * 出題対象は児童ごとの適用ツール(DEV/ADV、中学生以上はWRK/UNVも)の全項目。
      *
      * @param  string|null  $excludeItemId  差し替え(別の設問にする)で除外する項目
      */
     public function nextItemFor(Student $student, ?string $excludeItemId = null): ?AbilityEvalItem
     {
-        $items = AbilityEvalItem::where('tool_id', self::TOOL)
+        $items = AbilityEvalItem::whereIn('tool_id', AbilityToolScope::toolsFor($student))
             ->orderBy('item_id')
             ->get();
 
@@ -76,8 +75,9 @@ class AbilityQuestionService
      */
     public function buildQuestion(Student $student, AbilityEvalItem $item): array
     {
-        $axisId = AbilityGrowthStage::forStudent($student);
+        $axisId = AbilityToolScope::axisFor($student, $item->tool_id);
 
+        // ADV は到達水準、WRK/UNV は時期の到達目安。WRK/UNV は到達目安が無い項目もあり null 可。
         $benchmark = AbilityEvalBenchmark::where('item_id', $item->item_id)
             ->where('axis_id', $axisId)
             ->value('benchmark');
