@@ -24,6 +24,8 @@ class Student extends Model
         'grade_adjustment',
         'guardian_id',
         'person_id',
+        'mynameis_user_id',
+        'mynameis_linked_at',
         'support_start_date',
         'assessment_initial_date',
         'support_plan_start_type',
@@ -63,6 +65,7 @@ class Student extends Model
     {
         return [
             'birth_date' => 'date:Y-m-d',
+            'mynameis_linked_at' => 'datetime',
             'support_start_date' => 'date:Y-m-d',
             'assessment_initial_date' => 'date:Y-m-d',
             'withdrawal_date' => 'date:Y-m-d',
