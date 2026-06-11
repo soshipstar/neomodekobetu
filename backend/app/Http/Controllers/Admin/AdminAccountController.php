@@ -13,18 +13,7 @@ use Illuminate\Validation\ValidationException;
 
 class AdminAccountController extends Controller
 {
-    /**
-     * マスター管理者 または 企業管理者 のみアクセス可能にする共通チェック。
-     * 企業管理者の場合は自企業の通常管理者のみ操作可能。
-     */
-    private function requireMaster(Request $request): ?JsonResponse
-    {
-        $user = $request->user();
-        if (!$user || $user->user_type !== 'admin' || !$user->is_master) {
-            return response()->json(['success' => false, 'message' => 'マスター管理者権限が必要です。'], 403);
-        }
-        return null;
-    }
+    // ARCH-AUTH-02: requireMaster は基底 Controller に集約済み (isMasterAdmin 判定で統一)。
 
     /**
      * フロントエンド向けに classroom / company の情報をフラットな属性として付与する。

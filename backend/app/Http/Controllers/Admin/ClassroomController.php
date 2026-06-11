@@ -12,20 +12,7 @@ use Illuminate\Validation\Rule;
 
 class ClassroomController extends Controller
 {
-    /**
-     * マスター管理者のみアクセス可能にする共通チェック
-     */
-    private function requireMaster(Request $request): ?JsonResponse
-    {
-        $user = $request->user();
-        if (!$user || $user->user_type !== 'admin' || !$user->is_master) {
-            return response()->json([
-                'success' => false,
-                'message' => 'マスター管理者権限が必要です。',
-            ], 403);
-        }
-        return null;
-    }
+    // ARCH-AUTH-02: requireMaster は基底 Controller に集約済み (isMasterAdmin 判定で統一)。
 
     /**
      * 教室一覧を取得

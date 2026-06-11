@@ -11,20 +11,7 @@ use Illuminate\Support\Facades\DB;
 
 class CompanyController extends Controller
 {
-    /**
-     * マスター管理者のみアクセス可能
-     */
-    private function requireMaster(Request $request): ?JsonResponse
-    {
-        $user = $request->user();
-        if (!$user || $user->user_type !== 'admin' || !$user->is_master) {
-            return response()->json([
-                'success' => false,
-                'message' => 'マスター管理者権限が必要です。',
-            ], 403);
-        }
-        return null;
-    }
+    // ARCH-AUTH-02: requireMaster は基底 Controller に集約済み (isMasterAdmin 判定で統一)。
 
     /**
      * 企業一覧
