@@ -472,6 +472,9 @@ Route::prefix('staff')
         // 能力評価スコア(ルールエンジンによる再計算・最新スコア一覧)
         Route::post('/ability/students/{student}/recompute-scores', [App\Http\Controllers\Staff\AbilityObservationController::class, 'recomputeScores']);
         Route::get('/ability/students/{student}/scores', [App\Http\Controllers\Staff\AbilityObservationController::class, 'scores']);
+        // 評価状況の全体像(別添・閲覧用: レーダー+詳細表データ / PDF別添)
+        Route::get('/ability/students/{student}/summary', [App\Http\Controllers\Staff\AbilityObservationController::class, 'summary']);
+        Route::get('/ability/students/{student}/summary/pdf', [App\Http\Controllers\Staff\AbilityObservationController::class, 'summaryPdf']);
 
         // 事業所写真ライブラリ
         Route::get('/classroom-photos', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'index']);

@@ -419,6 +419,17 @@ class SupportPlanController extends Controller
         }
 
         // ===================================================================
+        // 4.5 能力評価(客観スコア)— 事業所トグルON時のみ計画文言に反映する
+        // ===================================================================
+        $abilityText = '';
+        $hasAbility = false;
+        if ($student->classroom?->ability_assessment_enabled) {
+            $abilitySummary = (new \App\Services\AbilitySummaryService())->forStudent($student);
+            $abilityText = (new \App\Services\AbilitySummaryService())->toPromptText($abilitySummary);
+            $hasAbility = ! empty($abilitySummary['has_data']);
+        }
+
+        // ===================================================================
         // 5. GPTプロンプト構築（旧システム準拠）
         // ===================================================================
         try {
@@ -449,6 +460,7 @@ class SupportPlanController extends Controller
                             . $prevPlanText
                             . "【連絡帳記録（直近{$records->count()}件）】\n"
                             . ($recordsText ?: '（記録なし）') . "\n\n"
+                            . $abilityText
                             . "【重要な指示】\n"
                             . "- 【最重要】個別支援計画の短期目標・長期目標は、保護者アセスメントとスタッフアセスメントの短期目標・長期目標の文言を最大限考慮し、それらとの整合性・連続性を保ちながら作成してください\n"
                             . "- アセスメントで設定された目標を土台として、施設での具体的な支援場面に落とし込んだ目標を記述してください\n"
@@ -517,6 +529,7 @@ class SupportPlanController extends Controller
                     'records'    => $records->count(),
                     'records_period' => $recordsPeriod, // 観点7: 参照した連絡帳の期間 {from,to}|null
                     'prev_plan'  => !empty($prevPlanText),
+                    'ability_evaluation' => $hasAbility, // 能力評価スコアを計画文言へ反映したか
                 ],
             ]);
         } catch (\Exception $e) {

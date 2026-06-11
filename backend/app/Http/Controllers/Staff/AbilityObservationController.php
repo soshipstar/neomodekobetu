@@ -10,6 +10,7 @@ use App\Models\Classroom;
 use App\Models\Student;
 use App\Services\AbilityQuestionService;
 use App\Services\AbilityScoringService;
+use App\Services\AbilitySummaryService;
 use App\Support\AbilityToolScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,6 +30,7 @@ class AbilityObservationController extends Controller
     public function __construct(
         private AbilityQuestionService $questions,
         private AbilityScoringService $scoring,
+        private AbilitySummaryService $summary,
     ) {
     }
 
@@ -160,6 +162,42 @@ class AbilityObservationController extends Controller
             ->values();
 
         return response()->json(['success' => true, 'data' => $latest]);
+    }
+
+    /**
+     * 児童の「評価状況の全体像」(レーダー+詳細表)を返す。別添・閲覧用。
+     */
+    public function summary(Request $request, Student $student): JsonResponse
+    {
+        if ($deny = $this->guard($request, $student)) {
+            return $deny;
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $this->summary->forStudent($student),
+        ]);
+    }
+
+    /**
+     * 評価状況の全体像を PDF(別添)で出力する。
+     */
+    public function summaryPdf(Request $request, Student $student)
+    {
+        if ($deny = $this->guard($request, $student)) {
+            return $deny;
+        }
+
+        $student->loadMissing('classroom');
+        $summary = $this->summary->forStudent($student);
+        $filename = 'ability_summary_' . ($student->student_name ?? $student->id) . '.pdf';
+
+        return \App\Services\PuppeteerPdfService::download('pdf.ability-summary', [
+            'student' => $student,
+            'classroom' => $student->classroom,
+            'summary' => $summary,
+            'generatedOn' => Carbon::now()->toDateString(),
+        ], $filename, 'A4', false);
     }
 
     /**
