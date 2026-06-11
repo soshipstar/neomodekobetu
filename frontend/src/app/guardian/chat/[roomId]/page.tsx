@@ -9,6 +9,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { ChatMessageList } from '@/components/chat/ChatMessageList';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { ChatStorageBar } from '@/components/chat/ChatStorageBar';
+import { GuardianMeetingModalHost } from '@/components/meeting/GuardianMeetingModalHost';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
@@ -140,6 +141,8 @@ export default function GuardianChatRoomPage() {
 
   return (
     <div className="flex h-full flex-col sm:h-full">
+      {/* 面談予約をチャット内モーダルで確認(ページ遷移なし) */}
+      <GuardianMeetingModalHost />
       <div className="flex items-center gap-2 border-b border-[var(--neutral-stroke-2)] bg-white px-3 py-2 sm:gap-3 sm:px-4 sm:py-3">
         <Link href="/guardian/chat" className="rounded-lg p-1 text-[var(--neutral-foreground-4)] hover:text-[var(--neutral-foreground-3)] lg:hidden">
           <MaterialIcon name="arrow_back" size={20} />

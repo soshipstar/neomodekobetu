@@ -64,6 +64,7 @@ export function ChatBubble({ message, isMine }: ChatBubbleProps) {
   const deleteMessage = useChatStore((s) => s.deleteMessage);
   const toggleArchive = useChatStore((s) => s.toggleArchive);
   const apiPrefix = useChatStore((s) => s.apiPrefix);
+  const openMeetingModal = useChatStore((s) => s.openMeetingModal);
   const isGuardian = apiPrefix.includes('guardian');
 
   if (message.is_deleted) {
@@ -186,22 +187,32 @@ export function ChatBubble({ message, isMine }: ChatBubbleProps) {
             <MessageBody text={nl(message.message)} tone={isMine ? 'mine' : 'other'} />
 
             {/* Meeting action button */}
-            {message.meeting_request_id && (message.message_type === 'meeting_request' || message.message_type === 'meeting_counter' || message.message_type === 'meeting_confirmed') && (
-              <div className="mt-2">
-                <Link
-                  href={isGuardian ? `/guardian/meetings` : `/staff/meetings?meeting_id=${message.meeting_request_id}`}
-                  className={cn(
-                    'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors',
-                    message.message_type === 'meeting_confirmed'
-                      ? 'bg-green-600 text-white hover:bg-green-700'
-                      : 'bg-purple-600 text-white hover:bg-purple-700'
+            {message.meeting_request_id && (message.message_type === 'meeting_request' || message.message_type === 'meeting_counter' || message.message_type === 'meeting_confirmed') && (() => {
+              const meetingBtnClass = cn(
+                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors',
+                message.message_type === 'meeting_confirmed'
+                  ? 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-purple-600 text-white hover:bg-purple-700'
+              );
+              const label = message.message_type === 'meeting_confirmed' ? '確定内容を確認' : '面談予約を確認';
+              const meetingId = message.meeting_request_id as number;
+              return (
+                <div className="mt-2">
+                  {isGuardian ? (
+                    // 保護者はページ遷移せずチャット内モーダルで確認・応答できる
+                    <button type="button" className={meetingBtnClass} onClick={() => openMeetingModal(meetingId)}>
+                      <MaterialIcon name="event_available" size={14} />
+                      {label}
+                    </button>
+                  ) : (
+                    <Link href={`/staff/meetings?meeting_id=${meetingId}`} className={meetingBtnClass}>
+                      <MaterialIcon name="event_available" size={14} />
+                      {label}
+                    </Link>
                   )}
-                >
-                  <MaterialIcon name="event_available" size={14} />
-                  {message.message_type === 'meeting_confirmed' ? '確定内容を確認' : '面談予約を確認'}
-                </Link>
-              </div>
-            )}
+                </div>
+              );
+            })()}
 
             {/* Attachment */}
             {message.attachment_path && (

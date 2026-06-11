@@ -25,6 +25,11 @@ interface ChatState {
   fetchArchivedMessages: (roomId: number) => Promise<ChatMessage[]>;
   addMessage: (message: ChatMessage) => void;
   updateUnreadCount: (roomId: number, count: number) => void;
+
+  // 面談予約をチャット内モーダルで確認する(ページ遷移なし)。null で閉じる。
+  meetingModalId: number | null;
+  openMeetingModal: (meetingId: number) => void;
+  closeMeetingModal: () => void;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -199,4 +204,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
       unreadCounts: { ...state.unreadCounts, [roomId]: count },
     }));
   },
+
+  meetingModalId: null,
+  openMeetingModal: (meetingId: number) => set({ meetingModalId: meetingId }),
+  closeMeetingModal: () => set({ meetingModalId: null }),
 }));
