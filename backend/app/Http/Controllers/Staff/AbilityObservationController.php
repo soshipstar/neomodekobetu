@@ -1,0 +1,137 @@
+<?php
+
+namespace App\Http\Controllers\Staff;
+
+use App\Http\Controllers\Controller;
+use App\Models\AbilityObservation;
+use App\Models\AbilitySupportCode;
+use App\Models\Classroom;
+use App\Models\Student;
+use App\Services\AbilityQuestionService;
+use App\Support\AbilityGrowthStage;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+
+/**
+ * 能力評価 P2: 日々の活動記録から児童ごとに1問の設問へ回答し、観察記録を保存する。
+ *
+ * 対象は能力評価トグル(classrooms.ability_assessment_enabled)が ON の教室のみ。
+ * 児童の所属教室がスタッフのアクセス可能教室であることを必須にする(越境防止)。
+ */
+class AbilityObservationController extends Controller
+{
+    /** 結果の選択肢(評価表の「結果」: 完了/途中/拒否)。 */
+    public const RESULTS = ['completed', 'partial', 'refused'];
+
+    public function __construct(private AbilityQuestionService $questions)
+    {
+    }
+
+    /**
+     * 児童の次の設問を取得する。
+     */
+    public function nextQuestion(Request $request, Student $student): JsonResponse
+    {
+        if ($deny = $this->guard($request, $student)) {
+            return $deny;
+        }
+
+        $item = $this->questions->nextItemFor($student, $request->query('exclude_item_id'));
+        if (! $item) {
+            return response()->json(['success' => true, 'data' => null, 'message' => '出題できる項目がありません。']);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'question' => $this->questions->buildQuestion($student, $item),
+                'support_codes' => AbilitySupportCode::orderBy('sort_order')
+                    ->get(['code', 'content', 'score_band']),
+                'results' => self::RESULTS,
+            ],
+        ]);
+    }
+
+    /**
+     * 観察記録を保存する。
+     */
+    public function store(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'item_id' => 'required|exists:ability_eval_items,item_id',
+            'support_code' => 'nullable|exists:ability_support_codes,code',
+            'result' => 'nullable|in:' . implode(',', self::RESULTS),
+            'is_new_scene' => 'sometimes|boolean',
+            'behavior' => 'nullable|string|max:2000',
+            'daily_record_id' => 'nullable|exists:daily_records,id',
+            'observed_date' => 'nullable|date',
+        ]);
+
+        $student = Student::findOrFail($validated['student_id']);
+        if ($deny = $this->guard($request, $student)) {
+            return $deny;
+        }
+
+        // 成長段階軸・教室・日付はサーバ側で確定する(クライアントを信用しない)
+        $observation = AbilityObservation::create([
+            'classroom_id' => $student->classroom_id,
+            'student_id' => $student->id,
+            'daily_record_id' => $validated['daily_record_id'] ?? null,
+            'item_id' => $validated['item_id'],
+            'axis_id' => AbilityGrowthStage::forStudent($student),
+            'support_code' => $validated['support_code'] ?? null,
+            'result' => $validated['result'] ?? null,
+            'is_new_scene' => $validated['is_new_scene'] ?? false,
+            'behavior' => $validated['behavior'] ?? null,
+            'observed_date' => $validated['observed_date'] ?? Carbon::now()->toDateString(),
+            'recorded_by' => $request->user()->id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => $observation->load('item:item_id,name,domain', 'supportCode:code,content'),
+            'message' => '観察記録を保存しました。',
+        ], 201);
+    }
+
+    /**
+     * 児童の最近の観察記録を返す(履歴表示用)。
+     */
+    public function recent(Request $request, Student $student): JsonResponse
+    {
+        if ($deny = $this->guard($request, $student)) {
+            return $deny;
+        }
+
+        $observations = AbilityObservation::where('student_id', $student->id)
+            ->with('item:item_id,name,domain', 'supportCode:code,content')
+            ->orderByDesc('observed_date')
+            ->orderByDesc('id')
+            ->limit($request->integer('limit', 20))
+            ->get();
+
+        return response()->json(['success' => true, 'data' => $observations]);
+    }
+
+    /**
+     * 認可: 児童の所属教室がアクセス可能 かつ 能力評価トグルが ON であること。
+     * 不可なら JsonResponse を返し、OK なら null を返す。
+     */
+    private function guard(Request $request, Student $student): ?JsonResponse
+    {
+        $user = $request->user();
+
+        if (! $student->classroom_id || ! in_array($student->classroom_id, $user->accessibleClassroomIds(), true)) {
+            return response()->json(['success' => false, 'message' => 'この児童の能力評価を操作する権限がありません。'], 403);
+        }
+
+        $enabled = Classroom::whereKey($student->classroom_id)->value('ability_assessment_enabled');
+        if (! $enabled) {
+            return response()->json(['success' => false, 'message' => 'この事業所では能力評価システムが有効になっていません。'], 409);
+        }
+
+        return null;
+    }
+}

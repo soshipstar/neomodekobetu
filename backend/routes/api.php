@@ -465,6 +465,11 @@ Route::prefix('staff')
         Route::get('/renrakucho/{record}/view-integrated', [App\Http\Controllers\Staff\RenrakuchoController::class, 'viewIntegrated']);
         Route::get('/renrakucho/{record}/photos/suggest', [App\Http\Controllers\Staff\RenrakuchoController::class, 'suggestPhotos']);
 
+        // --- 能力評価 (日々の設問・観察記録) ---
+        Route::get('/ability/students/{student}/next-question', [App\Http\Controllers\Staff\AbilityObservationController::class, 'nextQuestion']);
+        Route::get('/ability/students/{student}/observations', [App\Http\Controllers\Staff\AbilityObservationController::class, 'recent']);
+        Route::post('/ability/observations', [App\Http\Controllers\Staff\AbilityObservationController::class, 'store']);
+
         // 事業所写真ライブラリ
         Route::get('/classroom-photos', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'index']);
         Route::get('/classroom-photos/storage-usage', [App\Http\Controllers\Staff\ClassroomPhotoController::class, 'storageUsage']);
