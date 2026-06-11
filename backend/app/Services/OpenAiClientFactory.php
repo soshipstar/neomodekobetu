@@ -59,6 +59,18 @@ class OpenAiClientFactory
             }
         }
 
+        // AI-11 修正: config('services.openai.timeout') を実際に反映する。
+        // 旧実装は timeout 設定が存在するのに OpenAI クライアントに渡しておらず、
+        // ライブラリ既定 (約 30 秒) のままで、大きな生成リクエスト (4000 token) や
+        // OpenAI 側の遅延でタイムアウトしユーザーがエラー画面に飛ばされていた。
+        $timeout = (int) config('services.openai.timeout', 60);
+        if ($timeout > 0 && class_exists('\\GuzzleHttp\\Client')) {
+            $factory = $factory->withHttpClient(new \GuzzleHttp\Client([
+                'timeout'         => $timeout,
+                'connect_timeout' => min(10, $timeout),
+            ]));
+        }
+
         return $factory->make();
     }
 

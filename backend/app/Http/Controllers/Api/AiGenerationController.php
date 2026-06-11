@@ -174,15 +174,19 @@ class AiGenerationController extends Controller
 
             $result = json_decode($content, true);
 
-            // 生成ログ保存
-            AiGenerationLog::create([
-                'user_id'      => $request->user()->id,
-                'model'        => config('services.openai.model', 'gpt-5.4-mini-2026-03-17'),
-                'prompt_type'  => 'support_plan',
-                'input_tokens' => $response->usage->promptTokens ?? null,
-                'output_tokens' => $response->usage->completionTokens ?? null,
-                'student_id'   => $student->id,
-            ]);
+            // 生成ログ保存 (AI-12 修正: ログ保存失敗は本処理を止めない)
+            try {
+                AiGenerationLog::create([
+                    'user_id'      => $request->user()->id,
+                    'model'        => config('services.openai.model', 'gpt-5.4-mini-2026-03-17'),
+                    'prompt_type'  => 'support_plan',
+                    'input_tokens' => $response->usage->promptTokens ?? null,
+                    'output_tokens' => $response->usage->completionTokens ?? null,
+                    'student_id'   => $student->id,
+                ]);
+            } catch (\Throwable $logError) {
+                \Illuminate\Support\Facades\Log::warning('AI generation log failed', ['error' => $logError->getMessage()]);
+            }
 
             return response()->json([
                 'success' => true,
@@ -325,14 +329,19 @@ class AiGenerationController extends Controller
 
             $result = json_decode($content, true);
 
-            AiGenerationLog::create([
-                'user_id'      => $request->user()->id,
-                'model'        => config('services.openai.model', 'gpt-5.4-mini-2026-03-17'),
-                'prompt_type'  => 'monitoring',
-                'input_tokens' => $response->usage->promptTokens ?? null,
-                'output_tokens' => $response->usage->completionTokens ?? null,
-                'student_id'   => $student->id,
-            ]);
+            // AI-12 修正: ログ保存失敗は本処理を止めない
+            try {
+                AiGenerationLog::create([
+                    'user_id'      => $request->user()->id,
+                    'model'        => config('services.openai.model', 'gpt-5.4-mini-2026-03-17'),
+                    'prompt_type'  => 'monitoring',
+                    'input_tokens' => $response->usage->promptTokens ?? null,
+                    'output_tokens' => $response->usage->completionTokens ?? null,
+                    'student_id'   => $student->id,
+                ]);
+            } catch (\Throwable $logError) {
+                \Illuminate\Support\Facades\Log::warning('AI generation log failed', ['error' => $logError->getMessage()]);
+            }
 
             return response()->json([
                 'success' => true,
@@ -403,13 +412,18 @@ class AiGenerationController extends Controller
 
             $generatedText = $response->choices[0]->message->content;
 
-            AiGenerationLog::create([
-                'user_id'      => $request->user()->id,
-                'model'        => 'gpt-5.4-mini-2026-03-17',
-                'prompt_type'  => 'newsletter',
-                'input_tokens' => $response->usage->promptTokens ?? null,
-                'output_tokens' => $response->usage->completionTokens ?? null,
-            ]);
+            // AI-12 修正: ログ保存失敗は本処理を止めない
+            try {
+                AiGenerationLog::create([
+                    'user_id'      => $request->user()->id,
+                    'model'        => config('services.openai.model', 'gpt-5.4-mini-2026-03-17'),
+                    'prompt_type'  => 'newsletter',
+                    'input_tokens' => $response->usage->promptTokens ?? null,
+                    'output_tokens' => $response->usage->completionTokens ?? null,
+                ]);
+            } catch (\Throwable $logError) {
+                \Illuminate\Support\Facades\Log::warning('AI generation log failed', ['error' => $logError->getMessage()]);
+            }
 
             return response()->json([
                 'success' => true,
