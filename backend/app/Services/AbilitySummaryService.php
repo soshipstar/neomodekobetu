@@ -6,6 +6,7 @@ use App\Models\AbilityEvalAxis;
 use App\Models\AbilityEvalItem;
 use App\Models\AbilityEvalScoreCriterion;
 use App\Models\AbilityScore;
+use App\Models\AbilitySubjectiveScore;
 use App\Models\Student;
 
 /**
@@ -34,7 +35,12 @@ class AbilitySummaryService
             ->unique('item_id');
 
         if ($latest->isEmpty()) {
-            return ['has_data' => false, 'domains' => [], 'radar' => [], 'counts' => ['scored' => 0, 'needs_review' => 0]];
+            return [
+                'has_data' => false, 'has_subjective' => false,
+                'mynameis_user_id' => $student->mynameis_user_id,
+                'domains' => [], 'radar' => [],
+                'counts' => ['scored' => 0, 'needs_review' => 0, 'subjective' => 0],
+            ];
         }
 
         $items = AbilityEvalItem::whereIn('item_id', $latest->pluck('item_id'))
@@ -42,9 +48,14 @@ class AbilitySummaryService
         $axes = AbilityEvalAxis::pluck('name', 'axis_id');
         $guardianWords = AbilityEvalScoreCriterion::pluck('guardian_words', 'score');
 
+        // mynameis 由来の主観自己評価(項目→1〜5)。客観(0〜10)と並べる。
+        $subjective = AbilitySubjectiveScore::where('student_id', $student->id)
+            ->pluck('response_value', 'item_id');
+
         // 項目を領域でまとめる
-        $rows = $latest->map(function ($s) use ($items, $axes, $guardianWords) {
+        $rows = $latest->map(function ($s) use ($items, $axes, $guardianWords, $subjective) {
             $item = $items->get($s->item_id);
+            $subjVal = $subjective[$s->item_id] ?? null;
 
             return [
                 'item_id' => $s->item_id,
@@ -56,29 +67,40 @@ class AbilitySummaryService
                 'axis_name' => $axes[$s->axis_id] ?? null,
                 'guardian_words' => $guardianWords[$s->score] ?? null,
                 'needs_review' => (bool) $s->needs_review,
+                // 主観(1〜5)と、客観0〜10へ正規化した値((v-1)/4*10)
+                'subjective' => $subjVal,
+                'subjective_norm' => $subjVal !== null ? round(($subjVal - 1) / 4 * 10, 1) : null,
                 'evaluated_on' => $s->evaluated_on instanceof \Illuminate\Support\Carbon
                     ? $s->evaluated_on->toDateString() : (string) $s->evaluated_on,
             ];
         });
 
         $domains = $rows->groupBy('domain')->map(function ($group, $domain) {
-            $scores = $group->pluck('score');
+            $subjNorms = $group->pluck('subjective_norm')->filter(fn ($v) => $v !== null);
 
             return [
                 'domain' => $domain,
                 'tool_id' => $group->first()['tool_id'],
-                'average' => round($scores->avg(), 1),
+                'average' => round($group->pluck('score')->avg(), 1),
+                'subjective_average' => $subjNorms->isNotEmpty() ? round($subjNorms->avg(), 1) : null,
                 'items' => $group->sortBy('item_id')->values()->all(),
             ];
         })->sortBy(fn ($d) => (self::TOOL_ORDER[$d['tool_id']] ?? 9) . '|' . $d['domain'])->values();
 
         return [
             'has_data' => true,
+            'has_subjective' => $subjective->isNotEmpty(),
+            'mynameis_user_id' => $student->mynameis_user_id,
             'domains' => $domains->all(),
-            'radar' => $domains->map(fn ($d) => ['domain' => $d['domain'], 'average' => $d['average']])->all(),
+            'radar' => $domains->map(fn ($d) => [
+                'domain' => $d['domain'],
+                'average' => $d['average'],
+                'subjective' => $d['subjective_average'],
+            ])->all(),
             'counts' => [
                 'scored' => $rows->count(),
                 'needs_review' => $rows->where('needs_review', true)->count(),
+                'subjective' => $subjective->count(),
             ],
         ];
     }

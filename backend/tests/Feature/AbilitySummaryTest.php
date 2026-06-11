@@ -79,6 +79,32 @@ class AbilitySummaryTest extends TestCase
         $this->assertNotEmpty($summary['radar']);
     }
 
+    public function test_summary_merges_subjective_from_mynameis(): void
+    {
+        $this->score('DEV-1-1', 'S3', 8);
+        // mynameis 由来の主観(1〜5)
+        \App\Models\AbilitySubjectiveScore::create([
+            'student_id' => $this->student->id, 'item_id' => 'DEV-1-1',
+            'response_value' => 5, 'source' => 'mynameis',
+        ]);
+
+        $summary = (new AbilitySummaryService())->forStudent($this->student);
+
+        $this->assertTrue($summary['has_subjective']);
+        $this->assertSame(1, $summary['counts']['subjective']);
+
+        $health = collect($summary['domains'])->firstWhere('domain', '健康・生活');
+        $item = collect($health['items'])->firstWhere('item_id', 'DEV-1-1');
+        $this->assertSame(5, $item['subjective']);
+        $this->assertSame(10.0, $item['subjective_norm']); // (5-1)/4*10
+        $this->assertSame(10.0, $health['subjective_average']);
+
+        // レーダーに主観系列が乗る
+        $radar = collect($summary['radar'])->firstWhere('domain', '健康・生活');
+        $this->assertSame(10.0, $radar['subjective']);
+        $this->assertSame(8.0, $radar['average']);
+    }
+
     public function test_prompt_text_includes_scores(): void
     {
         $this->score('DEV-1-1', 'S3', 8);

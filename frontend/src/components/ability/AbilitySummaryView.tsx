@@ -18,19 +18,24 @@ interface SummaryItem {
   axis_name: string | null;
   guardian_words: string | null;
   needs_review: boolean;
+  subjective: number | null;
+  subjective_norm: number | null;
   evaluated_on: string;
 }
 interface SummaryDomain {
   domain: string;
   tool_id: string;
   average: number;
+  subjective_average: number | null;
   items: SummaryItem[];
 }
 interface Summary {
   has_data: boolean;
+  has_subjective: boolean;
+  mynameis_user_id: number | null;
   domains: SummaryDomain[];
-  radar: { domain: string; average: number }[];
-  counts: { scored: number; needs_review: number };
+  radar: { domain: string; average: number; subjective: number | null }[];
+  counts: { scored: number; needs_review: number; subjective: number };
 }
 
 interface Props {
@@ -46,6 +51,7 @@ export function AbilitySummaryView({ studentId }: Props) {
   const toast = useToast();
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState(false);
+  const [linkInput, setLinkInput] = useState<string | null>(null);
 
   const queryKey = ['ability-summary', studentId];
   const { data, isLoading, error } = useQuery({
@@ -68,6 +74,23 @@ export function AbilitySummaryView({ studentId }: Props) {
       toast.success('能力評価スコアを更新しました');
     } catch {
       toast.error('スコア更新に失敗しました');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveLink = async () => {
+    const raw = (linkInput ?? '').trim();
+    setBusy(true);
+    try {
+      await api.post(`/api/staff/ability/students/${studentId}/link-mynameis`, {
+        mynameis_user_id: raw === '' ? null : Number(raw),
+      });
+      setLinkInput(null);
+      await queryClient.invalidateQueries({ queryKey });
+      toast.success('mynameis 連携を保存しました');
+    } catch {
+      toast.error('連携の保存に失敗しました');
     } finally {
       setBusy(false);
     }
@@ -115,6 +138,20 @@ export function AbilitySummaryView({ studentId }: Props) {
         </CardTitle>
       </CardHeader>
       <CardBody>
+        {/* mynameis(本人の主観自己評価)連携 */}
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md bg-[var(--neutral-background-2)] p-3 text-sm">
+          <MaterialIcon name="link" size={16} className="text-[var(--neutral-foreground-3)]" />
+          <span className="text-[var(--neutral-foreground-2)]">mynameis 連携(本人の主観自己評価)ユーザーID</span>
+          <input
+            type="number"
+            value={linkInput ?? (data?.mynameis_user_id != null ? String(data.mynameis_user_id) : '')}
+            onChange={(e) => setLinkInput(e.target.value)}
+            placeholder="未連携"
+            className="w-28 rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-2 py-1 text-sm focus:border-[var(--brand-80)] focus:outline-none"
+          />
+          <Button variant="secondary" size="sm" isLoading={busy} onClick={saveLink}>保存</Button>
+        </div>
+
         {isLoading ? (
           <p className="py-6 text-center text-sm text-[var(--neutral-foreground-4)]">読み込み中...</p>
         ) : !data?.has_data ? (
@@ -125,17 +162,21 @@ export function AbilitySummaryView({ studentId }: Props) {
           <div className="space-y-6">
             <p className="text-xs text-[var(--neutral-foreground-3)]">
               点数0〜10は個人内評価（他児比較ではなく過去の自分からの成長）。評価済み {data.counts.scored} 項目／
-              要確認 {data.counts.needs_review} 項目。
+              要確認 {data.counts.needs_review} 項目
+              {data.has_subjective && <>／本人の主観 {data.counts.subjective} 項目（青=支援者の客観・緑=本人の主観を0〜10に換算）</>}。
             </p>
 
-            {/* レーダー(領域平均) */}
+            {/* レーダー(領域平均: 客観 + 本人の主観) */}
             <div style={{ width: '100%', height: 320 }}>
               <ResponsiveContainer>
                 <RadarChart data={data.radar} outerRadius="75%">
                   <PolarGrid />
                   <PolarAngleAxis dataKey="domain" tick={{ fontSize: 11 }} />
                   <PolarRadiusAxis domain={[0, 10]} tick={{ fontSize: 10 }} />
-                  <Radar name="平均" dataKey="average" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.4} />
+                  <Radar name="客観(支援者)" dataKey="average" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.35} />
+                  {data.has_subjective && (
+                    <Radar name="主観(本人)" dataKey="subjective" stroke="#22c55e" fill="#22c55e" fillOpacity={0.25} />
+                  )}
                 </RadarChart>
               </ResponsiveContainer>
             </div>
@@ -152,7 +193,8 @@ export function AbilitySummaryView({ studentId }: Props) {
                     <tr className="text-left text-xs text-[var(--neutral-foreground-3)]">
                       <th className="py-1 pr-2">項目</th>
                       <th className="py-1 pr-2">段階・水準</th>
-                      <th className="py-1 pr-2 text-center">点数</th>
+                      <th className="py-1 pr-2 text-center">客観</th>
+                      <th className="py-1 pr-2 text-center">主観</th>
                       <th className="py-1">保護者向けのことば</th>
                     </tr>
                   </thead>
@@ -164,7 +206,8 @@ export function AbilitySummaryView({ studentId }: Props) {
                           {it.needs_review && <span className="ml-1 text-xs text-[var(--status-warning-fg)]">（要確認）</span>}
                         </td>
                         <td className="py-1 pr-2 text-[var(--neutral-foreground-3)]">{it.axis_name ?? ''}</td>
-                        <td className="py-1 pr-2 text-center font-semibold">{it.score}</td>
+                        <td className="py-1 pr-2 text-center font-semibold text-[#2563eb]">{it.score}</td>
+                        <td className="py-1 pr-2 text-center font-semibold text-[#16a34a]">{it.subjective ?? '—'}</td>
                         <td className="py-1 text-[var(--neutral-foreground-2)]">{it.guardian_words ?? ''}</td>
                       </tr>
                     ))}

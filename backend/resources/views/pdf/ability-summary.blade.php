@@ -57,7 +57,8 @@
                         <tr>
                             <th>項目</th>
                             <th>段階・水準</th>
-                            <th class="score">点数</th>
+                            <th class="score">客観</th>
+                            <th class="score">主観</th>
                             <th>保護者向けのことば</th>
                         </tr>
                     </thead>
@@ -67,6 +68,7 @@
                                 <td>{{ $it['item_name'] }}@if ($it['needs_review'])<span class="review">（要確認）</span>@endif</td>
                                 <td>{{ $it['axis_name'] ?? '' }}</td>
                                 <td class="score">{{ $it['score'] }}</td>
+                                <td class="score">{{ $it['subjective'] ?? '—' }}</td>
                                 <td>{{ $it['guardian_words'] ?? '' }}</td>
                             </tr>
                         @endforeach
