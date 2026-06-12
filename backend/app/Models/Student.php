@@ -25,6 +25,7 @@ class Student extends Model
         'guardian_id',
         'person_id',
         'mynameis_user_id',
+        'mynameis_member_code',
         'mynameis_linked_at',
         'support_start_date',
         'assessment_initial_date',
