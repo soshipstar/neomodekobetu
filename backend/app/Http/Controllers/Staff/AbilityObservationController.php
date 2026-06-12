@@ -223,11 +223,51 @@ class AbilityObservationController extends Controller
             'mynameis_linked_at' => $code ? Carbon::now() : null,
         ]);
 
+        // メンバーIDから mynameis の教室(組織)名を照会し、児童の教室名と一致するか確認する。
+        $verification = $code
+            ? $this->resolveMynameisClassroom($code, $student)
+            : ['organization_name' => null, 'matches' => null];
+
         return response()->json([
             'success' => true,
-            'data' => ['mynameis_member_code' => $student->mynameis_member_code],
+            'data' => [
+                'mynameis_member_code' => $student->mynameis_member_code,
+                'mynameis_classroom'   => $verification['organization_name'],
+                'classroom_matches'    => $verification['matches'],
+            ],
             'message' => ($student->mynameis_member_code ? 'mynameis メンバーIDと紐づけました。' : '紐づけを解除しました。'),
         ]);
+    }
+
+    /**
+     * mynameis にメンバーIDを照会し、組織(教室)名と、児童の教室名との一致可否を返す。
+     * 照会先未設定・通信失敗時は null(確認できず)を返す。
+     *
+     * @return array{organization_name: ?string, matches: ?bool}
+     */
+    private function resolveMynameisClassroom(string $code, Student $student): array
+    {
+        $url = config('services.mynameis.resolve_url');
+        $secret = config('services.mynameis.shared_secret');
+        if (! $url || ! $secret) {
+            return ['organization_name' => null, 'matches' => null];
+        }
+
+        try {
+            $res = \Illuminate\Support\Facades\Http::timeout(10)->acceptJson()
+                ->post($url, ['secret' => $secret, 'member_code' => $code]);
+            if (! $res->successful()) {
+                return ['organization_name' => null, 'matches' => null];
+            }
+            $orgName = $res->json('data.organization_name');
+            $student->loadMissing('classroom');
+            $matches = $orgName !== null && $student->classroom
+                && trim((string) $orgName) === trim((string) $student->classroom->classroom_name);
+
+            return ['organization_name' => $orgName, 'matches' => $matches];
+        } catch (\Throwable $e) {
+            return ['organization_name' => null, 'matches' => null];
+        }
     }
 
     /**

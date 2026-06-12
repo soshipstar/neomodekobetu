@@ -113,4 +113,45 @@ class MynameisSyncTest extends TestCase
             ->assertStatus(200);
         $this->assertNull(Student::find($this->student->id)->mynameis_member_code);
     }
+
+    private function makeStaff(): User
+    {
+        return User::create([
+            'username' => 'staff_rv_' . uniqid(), 'password' => bcrypt('p'), 'full_name' => 'スタッフ',
+            'user_type' => 'staff', 'classroom_id' => $this->room->id, 'is_active' => true,
+        ]);
+    }
+
+    private function fakeResolve(string $orgName): void
+    {
+        config(['services.mynameis.resolve_url' => 'https://fesvol.test/resolve']);
+        \Illuminate\Support\Facades\Http::fake([
+            '*' => \Illuminate\Support\Facades\Http::response([
+                'success' => true,
+                'data' => ['member_code' => 'ABC12345', 'organization_name' => $orgName, 'organization_prefix' => 'ABC'],
+            ], 200),
+        ]);
+    }
+
+    public function test_link_reports_classroom_match(): void
+    {
+        // mynameis の教室名が児童の教室名(事業所A)と一致 → matches=true
+        $this->fakeResolve('事業所A');
+        $this->actingAs($this->makeStaff(), 'sanctum')
+            ->postJson("/api/staff/ability/students/{$this->student->id}/link-mynameis", ['mynameis_member_code' => 'ABC12345'])
+            ->assertStatus(200)
+            ->assertJsonPath('data.mynameis_classroom', '事業所A')
+            ->assertJsonPath('data.classroom_matches', true);
+    }
+
+    public function test_link_warns_on_classroom_mismatch(): void
+    {
+        // mynameis の教室名が違う → matches=false(取り違え警告用)
+        $this->fakeResolve('別の教室');
+        $this->actingAs($this->makeStaff(), 'sanctum')
+            ->postJson("/api/staff/ability/students/{$this->student->id}/link-mynameis", ['mynameis_member_code' => 'ABC12345'])
+            ->assertStatus(200)
+            ->assertJsonPath('data.mynameis_classroom', '別の教室')
+            ->assertJsonPath('data.classroom_matches', false);
+    }
 }

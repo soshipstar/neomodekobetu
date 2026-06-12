@@ -83,12 +83,26 @@ export function AbilitySummaryView({ studentId }: Props) {
     const raw = (linkInput ?? '').trim().toUpperCase();
     setBusy(true);
     try {
-      await api.post(`/api/staff/ability/students/${studentId}/link-mynameis`, {
-        mynameis_member_code: raw === '' ? null : raw,
-      });
+      const res = await api.post<{ data: { mynameis_classroom: string | null; classroom_matches: boolean | null } }>(
+        `/api/staff/ability/students/${studentId}/link-mynameis`,
+        { mynameis_member_code: raw === '' ? null : raw },
+      );
       setLinkInput(null);
       await queryClient.invalidateQueries({ queryKey });
-      toast.success('mynameis 連携を保存しました');
+
+      const d = res.data?.data;
+      if (raw === '') {
+        toast.success('mynameis 連携を解除しました');
+      } else if (d?.mynameis_classroom) {
+        // mynameis の教室名と児童の教室名の一致を表示(取り違え防止)
+        if (d.classroom_matches) {
+          toast.success(`連携しました（mynameis教室: ${d.mynameis_classroom} ／ 教室一致）`);
+        } else {
+          toast.error(`連携しましたが教室名が一致しません（mynameis教室: ${d.mynameis_classroom}）。メンバーIDをご確認ください。`);
+        }
+      } else {
+        toast.success('mynameis 連携を保存しました（教室名は照会できませんでした）');
+      }
     } catch (err) {
       toast.error(formatApiError(err, '連携の保存に失敗しました'));
     } finally {

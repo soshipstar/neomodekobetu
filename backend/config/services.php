@@ -72,6 +72,8 @@ return [
     // サーバ間共有シークレット。mynameis 側の push 設定と一致させること。
     'mynameis' => [
         'shared_secret' => env('MYNAMEIS_SHARED_SECRET'),
+        // メンバーID(member_code)→教室(組織)名の照会先。教室名の一致確認に使う。
+        'resolve_url' => env('MYNAMEIS_RESOLVE_URL'),
     ],
 
 ];
