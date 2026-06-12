@@ -38,6 +38,7 @@ class GuardianClassroomScopeTest extends TestCase
             // 保護者の現在の選択事業所は A
             $guardianId = DB::table('users')->insertGetId([
                 'full_name' => 'テスト保護者',
+                'username' => 'g_' . uniqid(),
                 'email' => 'guardian_' . uniqid() . '@test.com',
                 'password' => bcrypt('password'),
                 'user_type' => 'guardian',
