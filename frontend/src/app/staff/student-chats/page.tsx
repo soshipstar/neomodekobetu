@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import api, { formatApiError } from '@/lib/api';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -147,7 +147,9 @@ export default function StudentChatsPage() {
       setMessage('');
       setAttachment(null);
     },
-    onError: () => toast.error('送信に失敗しました'),
+    // 失敗時は原因(容量超過・検証エラー・接続不可等)を表示する。一律「送信に失敗しました」では
+    // 容量超過なのか一時的な503なのか分からず、現場が対処できなかった。
+    onError: (err) => toast.error(formatApiError(err, '送信に失敗しました')),
   });
 
   // Broadcast mutation
@@ -194,8 +196,10 @@ export default function StudentChatsPage() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        alert('ファイルサイズは10MB以下にしてください');
+      // バックエンドの上限 (max:3072KB = 3MB) に合わせる。以前は 10MB 許可で、3〜10MB の
+      // 画像がフロントを通過してから 422 で弾かれ「送信に失敗しました」としか出ず原因不明だった。
+      if (file.size > 3 * 1024 * 1024) {
+        toast.error('ファイルサイズは3MB以下にしてください');
         return;
       }
       setAttachment(file);
