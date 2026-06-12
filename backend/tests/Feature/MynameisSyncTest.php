@@ -133,25 +133,36 @@ class MynameisSyncTest extends TestCase
         ]);
     }
 
-    public function test_link_reports_classroom_match(): void
+    public function test_link_allowed_when_classroom_matches(): void
     {
-        // mynameis の教室名が児童の教室名(事業所A)と一致 → matches=true
+        // mynameis の教室名が児童の教室名(事業所A)と一致 → 紐づけ成功・保存される
         $this->fakeResolve('事業所A');
         $this->actingAs($this->makeStaff(), 'sanctum')
-            ->postJson("/api/staff/ability/students/{$this->student->id}/link-mynameis", ['mynameis_member_code' => 'ABC12345'])
+            ->postJson("/api/staff/ability/students/{$this->student->id}/link-mynameis", ['mynameis_member_code' => 'NEW12345'])
             ->assertStatus(200)
-            ->assertJsonPath('data.mynameis_classroom', '事業所A')
             ->assertJsonPath('data.classroom_matches', true);
+        $this->assertSame('NEW12345', Student::find($this->student->id)->mynameis_member_code);
     }
 
-    public function test_link_warns_on_classroom_mismatch(): void
+    public function test_link_blocked_when_classroom_mismatches_and_not_saved(): void
     {
-        // mynameis の教室名が違う → matches=false(取り違え警告用)
+        // mynameis の教室名が違う → 422 で拒否し、保存されない(元のまま)
         $this->fakeResolve('別の教室');
         $this->actingAs($this->makeStaff(), 'sanctum')
-            ->postJson("/api/staff/ability/students/{$this->student->id}/link-mynameis", ['mynameis_member_code' => 'ABC12345'])
-            ->assertStatus(200)
-            ->assertJsonPath('data.mynameis_classroom', '別の教室')
-            ->assertJsonPath('data.classroom_matches', false);
+            ->postJson("/api/staff/ability/students/{$this->student->id}/link-mynameis", ['mynameis_member_code' => 'GDZ12345'])
+            ->assertStatus(422);
+        $this->assertSame('ABC12345', Student::find($this->student->id)->mynameis_member_code);
+    }
+
+    public function test_link_blocked_when_member_code_not_found(): void
+    {
+        config(['services.mynameis.resolve_url' => 'https://fesvol.test/resolve']);
+        \Illuminate\Support\Facades\Http::fake([
+            '*' => \Illuminate\Support\Facades\Http::response(['success' => false, 'message' => 'member not found'], 404),
+        ]);
+        $this->actingAs($this->makeStaff(), 'sanctum')
+            ->postJson("/api/staff/ability/students/{$this->student->id}/link-mynameis", ['mynameis_member_code' => 'NON12345'])
+            ->assertStatus(422);
+        $this->assertSame('ABC12345', Student::find($this->student->id)->mynameis_member_code);
     }
 }

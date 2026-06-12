@@ -218,55 +218,94 @@ class AbilityObservationController extends Controller
             : null;
         $code = ($code === '' ? null : $code);
 
-        $student->update([
-            'mynameis_member_code' => $code,
-            'mynameis_linked_at' => $code ? Carbon::now() : null,
-        ]);
+        // 解除はそのまま保存。
+        if ($code === null) {
+            $student->update(['mynameis_member_code' => null, 'mynameis_linked_at' => null]);
 
-        // メンバーIDから mynameis の教室(組織)名を照会し、児童の教室名と一致するか確認する。
-        $verification = $code
-            ? $this->resolveMynameisClassroom($code, $student)
-            : ['organization_name' => null, 'matches' => null];
+            return response()->json([
+                'success' => true,
+                'data' => ['mynameis_member_code' => null],
+                'message' => '紐づけを解除しました。',
+            ]);
+        }
+
+        // 紐づけ前に mynameis の教室名を照会し、児童の教室名と一致する場合のみ紐づける。
+        // 教室が異なる/メンバーID未存在/照会できない場合は紐づけを拒否する(保存しない)。
+        $check = $this->verifyMynameisClassroom($code, $student);
+        $student->loadMissing('classroom');
+        $ownClass = $student->classroom?->classroom_name;
+
+        if ($check['status'] === 'mismatch') {
+            return response()->json([
+                'success' => false,
+                'message' => "mynameis の教室「{$check['organization_name']}」が児童の教室「{$ownClass}」と異なるため紐づけできません。",
+            ], 422);
+        }
+        if ($check['status'] === 'not_found') {
+            return response()->json([
+                'success' => false,
+                'message' => "メンバーID「{$code}」が mynameis に見つかりません。",
+            ], 422);
+        }
+        if ($check['status'] === 'error') {
+            return response()->json([
+                'success' => false,
+                'message' => 'mynameis に照会できませんでした。時間をおいて再度お試しください。',
+            ], 503);
+        }
+
+        // 'ok'(教室一致) または 'unconfigured'(照会先未設定=検証不可だが許可) のみ保存。
+        $student->update(['mynameis_member_code' => $code, 'mynameis_linked_at' => Carbon::now()]);
 
         return response()->json([
             'success' => true,
             'data' => [
                 'mynameis_member_code' => $student->mynameis_member_code,
-                'mynameis_classroom'   => $verification['organization_name'],
-                'classroom_matches'    => $verification['matches'],
+                'mynameis_classroom'   => $check['organization_name'],
+                'classroom_matches'    => $check['status'] === 'ok' ? true : null,
             ],
-            'message' => ($student->mynameis_member_code ? 'mynameis メンバーIDと紐づけました。' : '紐づけを解除しました。'),
+            'message' => 'mynameis メンバーIDと紐づけました。',
         ]);
     }
 
     /**
-     * mynameis にメンバーIDを照会し、組織(教室)名と、児童の教室名との一致可否を返す。
-     * 照会先未設定・通信失敗時は null(確認できず)を返す。
+     * mynameis にメンバーIDを照会し、教室一致の判定状態を返す。
      *
-     * @return array{organization_name: ?string, matches: ?bool}
+     * status: ok(教室一致) / mismatch(教室不一致) / not_found(ID未存在) /
+     *         error(照会不可) / unconfigured(照会先未設定)。
+     *
+     * @return array{status: string, organization_name: ?string}
      */
-    private function resolveMynameisClassroom(string $code, Student $student): array
+    private function verifyMynameisClassroom(string $code, Student $student): array
     {
         $url = config('services.mynameis.resolve_url');
         $secret = config('services.mynameis.shared_secret');
         if (! $url || ! $secret) {
-            return ['organization_name' => null, 'matches' => null];
+            return ['status' => 'unconfigured', 'organization_name' => null];
         }
 
         try {
             $res = \Illuminate\Support\Facades\Http::timeout(10)->acceptJson()
                 ->post($url, ['secret' => $secret, 'member_code' => $code]);
+
+            if ($res->status() === 404) {
+                return ['status' => 'not_found', 'organization_name' => null];
+            }
             if (! $res->successful()) {
-                return ['organization_name' => null, 'matches' => null];
+                return ['status' => 'error', 'organization_name' => null];
             }
             $orgName = $res->json('data.organization_name');
+            if ($orgName === null) {
+                return ['status' => 'error', 'organization_name' => null];
+            }
+
             $student->loadMissing('classroom');
-            $matches = $orgName !== null && $student->classroom
+            $matches = $student->classroom
                 && trim((string) $orgName) === trim((string) $student->classroom->classroom_name);
 
-            return ['organization_name' => $orgName, 'matches' => $matches];
+            return ['status' => $matches ? 'ok' : 'mismatch', 'organization_name' => $orgName];
         } catch (\Throwable $e) {
-            return ['organization_name' => null, 'matches' => null];
+            return ['status' => 'error', 'organization_name' => null];
         }
     }
 
