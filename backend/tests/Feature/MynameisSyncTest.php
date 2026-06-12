@@ -39,7 +39,8 @@ class MynameisSyncTest extends TestCase
         ]);
         $this->student = Student::create([
             'student_name' => '児A', 'classroom_id' => $this->room->id, 'grade_level' => 'elementary_5',
-            'status' => 'active', 'is_active' => true, 'mynameis_user_id' => 555,
+            'status' => 'active', 'is_active' => true,
+            'mynameis_member_code' => 'ABC12345', 'mynameis_user_id' => 555,
         ]);
     }
 
@@ -53,21 +54,22 @@ class MynameisSyncTest extends TestCase
         $res->assertStatus(401);
     }
 
-    public function test_ingest_unlinked_user_returns_404(): void
+    public function test_ingest_unlinked_member_code_returns_404(): void
     {
         $res = $this->postJson('/api/external/mynameis/self-assessment', [
             'secret' => 'test-secret',
-            'mynameis_user_id' => 999, // 紐づいていない
+            'member_codes' => ['ZZZ99999'], // どの児童にも紐づいていない
             'items' => [['item_code' => 'DEV-1-1', 'value' => 4]],
         ]);
         $res->assertStatus(404);
     }
 
-    public function test_ingest_upserts_subjective_scores_and_skips_unknown_items(): void
+    public function test_ingest_matches_by_member_code_and_user_id_fallback(): void
     {
+        // メンバーIDで突合(小文字でも大文字に正規化)
         $res = $this->postJson('/api/external/mynameis/self-assessment', [
             'secret' => 'test-secret',
-            'mynameis_user_id' => 555,
+            'member_codes' => ['abc12345'],
             'items' => [
                 ['item_code' => 'DEV-1-1', 'value' => 3, 'axis_code' => 'S3', 'responded_at' => '2026-06-01T10:00:00Z'],
                 ['item_code' => 'DEV-1-2', 'value' => 5],
@@ -81,7 +83,7 @@ class MynameisSyncTest extends TestCase
             ->where('item_id', 'DEV-1-1')->value('response_value'));
         $this->assertSame(2, AbilitySubjectiveScore::where('student_id', $this->student->id)->count());
 
-        // 再送は最新値で上書き(追記ではない)
+        // 後方互換: member_code 無しでも mynameis_user_id で突合できる。再送は上書き。
         $this->postJson('/api/external/mynameis/self-assessment', [
             'secret' => 'test-secret',
             'mynameis_user_id' => 555,
@@ -99,15 +101,16 @@ class MynameisSyncTest extends TestCase
             'user_type' => 'staff', 'classroom_id' => $this->room->id, 'is_active' => true,
         ]);
 
+        // メンバーIDで紐づけ(小文字入力は大文字に正規化)
         $this->actingAs($staff, 'sanctum')
-            ->postJson("/api/staff/ability/students/{$this->student->id}/link-mynameis", ['mynameis_user_id' => 777])
+            ->postJson("/api/staff/ability/students/{$this->student->id}/link-mynameis", ['mynameis_member_code' => 'xyz12345'])
             ->assertStatus(200);
-        $this->assertSame(777, Student::find($this->student->id)->mynameis_user_id);
+        $this->assertSame('XYZ12345', Student::find($this->student->id)->mynameis_member_code);
 
         // 解除
         $this->actingAs($staff, 'sanctum')
-            ->postJson("/api/staff/ability/students/{$this->student->id}/link-mynameis", ['mynameis_user_id' => null])
+            ->postJson("/api/staff/ability/students/{$this->student->id}/link-mynameis", ['mynameis_member_code' => null])
             ->assertStatus(200);
-        $this->assertNull(Student::find($this->student->id)->mynameis_user_id);
+        $this->assertNull(Student::find($this->student->id)->mynameis_member_code);
     }
 }

@@ -201,7 +201,7 @@ class AbilityObservationController extends Controller
     }
 
     /**
-     * 児童に mynameis(本人の主観自己評価)ユーザーを紐づける(null で解除)。
+     * 児童に mynameis のメンバーID(member_code, 例 ABC12345)を紐づける(空で解除)。
      */
     public function linkMynameis(Request $request, Student $student): JsonResponse
     {
@@ -210,18 +210,23 @@ class AbilityObservationController extends Controller
         }
 
         $validated = $request->validate([
-            'mynameis_user_id' => 'nullable|integer|min:1',
+            'mynameis_member_code' => 'nullable|string|max:16',
         ]);
 
+        $code = isset($validated['mynameis_member_code'])
+            ? strtoupper(trim($validated['mynameis_member_code']))
+            : null;
+        $code = ($code === '' ? null : $code);
+
         $student->update([
-            'mynameis_user_id' => $validated['mynameis_user_id'] ?? null,
-            'mynameis_linked_at' => ($validated['mynameis_user_id'] ?? null) ? Carbon::now() : null,
+            'mynameis_member_code' => $code,
+            'mynameis_linked_at' => $code ? Carbon::now() : null,
         ]);
 
         return response()->json([
             'success' => true,
-            'data' => ['mynameis_user_id' => $student->mynameis_user_id],
-            'message' => ($student->mynameis_user_id ? 'mynameis と紐づけました。' : '紐づけを解除しました。'),
+            'data' => ['mynameis_member_code' => $student->mynameis_member_code],
+            'message' => ($student->mynameis_member_code ? 'mynameis メンバーIDと紐づけました。' : '紐づけを解除しました。'),
         ]);
     }
 

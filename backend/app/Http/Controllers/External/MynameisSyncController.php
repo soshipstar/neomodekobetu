@@ -27,7 +27,9 @@ class MynameisSyncController extends Controller
     {
         $validated = $request->validate([
             'secret'           => 'required|string',
-            'mynameis_user_id' => 'required|integer',
+            'mynameis_user_id' => 'nullable|integer',
+            'member_codes'     => 'nullable|array',
+            'member_codes.*'   => 'string|max:16',
             'items'                 => 'required|array|min:1',
             'items.*.item_code'     => 'required|string',
             'items.*.value'         => 'required|integer|min:1|max:5',
@@ -41,8 +43,20 @@ class MynameisSyncController extends Controller
             return response()->json(['success' => false, 'message' => '認証に失敗しました。'], 401);
         }
 
-        // 紐づく児童を特定(kiduri 側がマッピングを保持)
-        $student = Student::where('mynameis_user_id', $validated['mynameis_user_id'])->first();
+        // 紐づく児童を特定(kiduri 側がマッピングを保持)。
+        // メンバーID(member_code)優先、後方互換で mynameis_user_id も予備に使う。
+        $codes = collect($validated['member_codes'] ?? [])
+            ->map(fn ($c) => strtoupper(trim((string) $c)))
+            ->filter()
+            ->values();
+
+        $student = null;
+        if ($codes->isNotEmpty()) {
+            $student = Student::whereIn('mynameis_member_code', $codes->all())->first();
+        }
+        if (! $student && ! empty($validated['mynameis_user_id'])) {
+            $student = Student::where('mynameis_user_id', $validated['mynameis_user_id'])->first();
+        }
         if (! $student) {
             return response()->json(['success' => false, 'message' => '紐づく児童が見つかりません。'], 404);
         }

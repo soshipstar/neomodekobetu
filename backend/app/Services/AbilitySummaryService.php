@@ -37,7 +37,7 @@ class AbilitySummaryService
         if ($latest->isEmpty()) {
             return [
                 'has_data' => false, 'has_subjective' => false,
-                'mynameis_user_id' => $student->mynameis_user_id,
+                'mynameis_member_code' => $student->mynameis_member_code,
                 'domains' => [], 'radar' => [],
                 'counts' => ['scored' => 0, 'needs_review' => 0, 'subjective' => 0],
             ];
@@ -90,7 +90,7 @@ class AbilitySummaryService
         return [
             'has_data' => true,
             'has_subjective' => $subjective->isNotEmpty(),
-            'mynameis_user_id' => $student->mynameis_user_id,
+            'mynameis_member_code' => $student->mynameis_member_code,
             'domains' => $domains->all(),
             'radar' => $domains->map(fn ($d) => [
                 'domain' => $d['domain'],

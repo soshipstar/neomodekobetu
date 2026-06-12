@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
 } from 'recharts';
-import api from '@/lib/api';
+import api, { formatApiError } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
@@ -32,7 +32,7 @@ interface SummaryDomain {
 interface Summary {
   has_data: boolean;
   has_subjective: boolean;
-  mynameis_user_id: number | null;
+  mynameis_member_code: string | null;
   domains: SummaryDomain[];
   radar: { domain: string; average: number; subjective: number | null }[];
   counts: { scored: number; needs_review: number; subjective: number };
@@ -80,17 +80,17 @@ export function AbilitySummaryView({ studentId }: Props) {
   };
 
   const saveLink = async () => {
-    const raw = (linkInput ?? '').trim();
+    const raw = (linkInput ?? '').trim().toUpperCase();
     setBusy(true);
     try {
       await api.post(`/api/staff/ability/students/${studentId}/link-mynameis`, {
-        mynameis_user_id: raw === '' ? null : Number(raw),
+        mynameis_member_code: raw === '' ? null : raw,
       });
       setLinkInput(null);
       await queryClient.invalidateQueries({ queryKey });
       toast.success('mynameis 連携を保存しました');
-    } catch {
-      toast.error('連携の保存に失敗しました');
+    } catch (err) {
+      toast.error(formatApiError(err, '連携の保存に失敗しました'));
     } finally {
       setBusy(false);
     }
@@ -141,13 +141,14 @@ export function AbilitySummaryView({ studentId }: Props) {
         {/* mynameis(本人の主観自己評価)連携 */}
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md bg-[var(--neutral-background-2)] p-3 text-sm">
           <MaterialIcon name="link" size={16} className="text-[var(--neutral-foreground-3)]" />
-          <span className="text-[var(--neutral-foreground-2)]">mynameis 連携(本人の主観自己評価)ユーザーID</span>
+          <span className="text-[var(--neutral-foreground-2)]">mynameis 連携(本人の主観自己評価)メンバーID</span>
           <input
-            type="number"
-            value={linkInput ?? (data?.mynameis_user_id != null ? String(data.mynameis_user_id) : '')}
+            type="text"
+            value={linkInput ?? (data?.mynameis_member_code ?? '')}
             onChange={(e) => setLinkInput(e.target.value)}
-            placeholder="未連携"
-            className="w-28 rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-2 py-1 text-sm focus:border-[var(--brand-80)] focus:outline-none"
+            placeholder="例 ABC12345"
+            maxLength={16}
+            className="w-32 rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-2 py-1 text-sm uppercase focus:border-[var(--brand-80)] focus:outline-none"
           />
           <Button variant="secondary" size="sm" isLoading={busy} onClick={saveLink}>保存</Button>
         </div>
