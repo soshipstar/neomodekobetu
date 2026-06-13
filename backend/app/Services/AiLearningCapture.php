@@ -96,6 +96,7 @@ class AiLearningCapture
         string $editorRole = 'staff',
         ?int $generationEventId = null,
         array $annotations = [],
+        ?int $programCategoryId = null,
     ): int {
         try {
             if (! $this->consent->canUseForLearning($student)) {
@@ -142,6 +143,7 @@ class AiLearningCapture
                     'subj_grade_level' => $dims['grade_level'],
                     'subj_gender' => $dims['gender'],
                     'support_category' => $this->supportCategoryFromKey((string) $key),
+                    'program_category_id' => $programCategoryId,
                 ]);
 
                 foreach ($this->annotationsForKey($annByField, (string) $key) as $a) {

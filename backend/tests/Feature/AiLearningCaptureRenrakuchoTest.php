@@ -91,6 +91,33 @@ class AiLearningCaptureRenrakuchoTest extends TestCase
         $this->assertSame('送信時に最終調整した連絡帳文', $sentRev->after_text);
     }
 
+    public function test_revision_carries_program_category(): void
+    {
+        $this->grantFullConsent();
+        // 活動(daily_record)が gross_motor に分類済みとする
+        $cat = \App\Models\ProgramCategory::create([
+            'domain' => 'motor_sensory', 'code' => 'gross_motor', 'label_ja' => '粗大運動',
+            'is_seeded' => true, 'status' => 'active', 'sort_order' => 10,
+        ]);
+        \App\Models\ProgramClassification::create([
+            'classifiable_type' => 'daily_record', 'classifiable_id' => $this->record->id,
+            'program_category_id' => $cat->id, 'method' => 'rule', 'is_primary' => true,
+        ]);
+        IntegratedNote::create([
+            'daily_record_id' => $this->record->id, 'student_id' => $this->student->id,
+            'integrated_content' => 'AI下書き', 'is_sent' => false,
+        ]);
+
+        $this->actingAs($this->staff, 'sanctum')->postJson("/api/staff/renrakucho/{$this->record->id}/save-draft", [
+            'notes' => [['student_id' => $this->student->id, 'content' => '職員が直した文']],
+        ])->assertStatus(200);
+
+        // 連絡帳の修正イベントに実施プログラム分類が付与される(プログラム別分析の次元)
+        $rev = AiRevisionEvent::where('document_type', 'integrated_note')->first();
+        $this->assertNotNull($rev);
+        $this->assertSame($cat->id, $rev->program_category_id);
+    }
+
     public function test_no_capture_without_consent(): void
     {
         IntegratedNote::create([

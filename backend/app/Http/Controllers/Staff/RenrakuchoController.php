@@ -556,7 +556,7 @@ class RenrakuchoController extends Controller
             }
         });
 
-        $this->captureNoteRevisions($revisions, 'save_draft', $user->id);
+        $this->captureNoteRevisions($revisions, 'save_draft', $user->id, $this->recordProgramCategoryId($record));
 
         return response()->json([
             'success' => true,
@@ -571,7 +571,7 @@ class RenrakuchoController extends Controller
      *
      * @param  array<int,array{student_id:int,note_id:int,before:string,after:string}>  $revisions
      */
-    private function captureNoteRevisions(array $revisions, string $editKind, ?int $userId): void
+    private function captureNoteRevisions(array $revisions, string $editKind, ?int $userId, ?int $programCategoryId = null): void
     {
         $capture = app(\App\Services\AiLearningCapture::class);
         foreach ($revisions as $rev) {
@@ -593,8 +593,18 @@ class RenrakuchoController extends Controller
                 editorUserId: $userId,
                 editorRole: 'staff',
                 generationEventId: $genEventId,
+                programCategoryId: $programCategoryId,
             );
         }
+    }
+
+    /** 連絡帳(活動=daily_record)の確定プログラム分類IDを返す(分析次元用)。 */
+    private function recordProgramCategoryId(DailyRecord $record): ?int
+    {
+        return \App\Models\ProgramClassification::where('classifiable_type', 'daily_record')
+            ->where('classifiable_id', $record->id)->where('is_primary', true)
+            ->orderByRaw("case method when 'manual' then 0 when 'embedding' then 1 else 2 end")
+            ->value('program_category_id');
     }
 
     /**
@@ -780,7 +790,7 @@ class RenrakuchoController extends Controller
         });
 
         // AI学習基盤(S3): 送信時の最終文を人間修正として蓄積(学習同意=AND がある場合のみ)。
-        $this->captureNoteRevisions($revisions, 'publish', $user->id);
+        $this->captureNoteRevisions($revisions, 'publish', $user->id, $this->recordProgramCategoryId($record));
 
         // 保護者に通知を送信
         try {
