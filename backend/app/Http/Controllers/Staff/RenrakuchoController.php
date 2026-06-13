@@ -507,8 +507,9 @@ class RenrakuchoController extends Controller
         ]);
 
         $savedCount = 0;
+        $revisions = []; // AI学習基盤(S3): 連絡帳統合文の修正(AI下書き→人間)を後で記録するため収集
 
-        DB::transaction(function () use ($record, $validated, &$savedCount) {
+        DB::transaction(function () use ($record, $validated, &$savedCount, &$revisions) {
             foreach ($validated['notes'] as $noteData) {
                 $studentId = $noteData['student_id'];
                 $content = trim((string) ($noteData['content'] ?? ''));
@@ -526,19 +527,57 @@ class RenrakuchoController extends Controller
                     continue;
                 }
 
-                IntegratedNote::updateOrCreate(
+                $note = IntegratedNote::updateOrCreate(
                     ['daily_record_id' => $record->id, 'student_id' => $studentId],
                     ['integrated_content' => $content, 'is_sent' => false]
                 );
+                $revisions[] = [
+                    'student_id' => $studentId, 'note_id' => $note->id,
+                    'before' => (string) ($existing?->integrated_content ?? ''), 'after' => $content,
+                ];
                 $savedCount++;
             }
         });
+
+        $this->captureNoteRevisions($revisions, 'save_draft', $user->id);
 
         return response()->json([
             'success' => true,
             'message' => "{$savedCount}件の統合内容を途中保存しました。",
             'saved_count' => $savedCount,
         ]);
+    }
+
+    /**
+     * AI学習基盤(S3): 連絡帳統合文(integrated_note)の人間修正をセクション単位で蓄積する。
+     * 各 revision = ['student_id','note_id','before','after']。学習同意=AND がある場合のみ記録される。
+     *
+     * @param  array<int,array{student_id:int,note_id:int,before:string,after:string}>  $revisions
+     */
+    private function captureNoteRevisions(array $revisions, string $editKind, ?int $userId): void
+    {
+        $capture = app(\App\Services\AiLearningCapture::class);
+        foreach ($revisions as $rev) {
+            $student = \App\Models\Student::find($rev['student_id']);
+            if (! $student) {
+                continue;
+            }
+            $genEventId = \App\Models\AiGenerationEvent::where('document_type', 'integrated_note')
+                ->where('document_id', $rev['note_id'])->max('id');
+            $capture->recordSectionRevisions(
+                student: $student,
+                documentType: 'integrated_note',
+                documentId: $rev['note_id'],
+                sections: \App\Services\AiLearningCapture::pairSections(
+                    ['integrated_content' => $rev['before']],
+                    ['integrated_content' => $rev['after']],
+                ),
+                editKind: $editKind,
+                editorUserId: $userId,
+                editorRole: 'staff',
+                generationEventId: $genEventId,
+            );
+        }
     }
 
     /**
@@ -636,8 +675,9 @@ class RenrakuchoController extends Controller
         ]);
 
         $sentCount = 0;
+        $revisions = []; // AI学習基盤(S3): 送信時の最終文(AI下書き→人間)を後で記録するため収集
 
-        DB::transaction(function () use ($record, $validated, &$sentCount) {
+        DB::transaction(function () use ($record, $validated, &$sentCount, &$revisions) {
             foreach ($validated['notes'] as $noteData) {
                 $studentId = $noteData['student_id'];
                 $content = trim($noteData['content']);
@@ -654,6 +694,7 @@ class RenrakuchoController extends Controller
                 $existing = IntegratedNote::where('daily_record_id', $record->id)
                     ->where('student_id', $studentId)
                     ->first();
+                $beforeContent = (string) ($existing?->integrated_content ?? '');
 
                 if ($existing) {
                     if ($existing->is_sent) {
@@ -677,6 +718,11 @@ class RenrakuchoController extends Controller
                     $integratedNoteId = $note->id;
                     $integratedNote = $note;
                 }
+
+                $revisions[] = [
+                    'student_id' => $studentId, 'note_id' => $integratedNoteId,
+                    'before' => $beforeContent, 'after' => $content,
+                ];
 
                 // 添付写真を決定する。
                 //  1) FE が photo_ids を明示指定 → それを使う
@@ -715,6 +761,9 @@ class RenrakuchoController extends Controller
                 $sentCount++;
             }
         });
+
+        // AI学習基盤(S3): 送信時の最終文を人間修正として蓄積(学習同意=AND がある場合のみ)。
+        $this->captureNoteRevisions($revisions, 'publish', $user->id);
 
         // 保護者に通知を送信
         try {
@@ -958,9 +1007,22 @@ class RenrakuchoController extends Controller
             $content = $masker->unmask($content);
 
             // Save draft integrated note
-            IntegratedNote::updateOrCreate(
+            $note = IntegratedNote::updateOrCreate(
                 ['daily_record_id' => $record->id, 'student_id' => $validated['student_id']],
                 ['integrated_content' => $content, 'is_sent' => false]
+            );
+
+            // AI学習基盤(S3): 生成イベントを蓄積(施設の集計同意がある場合のみ・payloadはマスク保存)。
+            app(\App\Services\AiLearningCapture::class)->recordGeneration(
+                student: $student,
+                documentType: 'integrated_note',
+                documentId: $note->id,
+                generationType: 'renrakucho_integrated',
+                model: 'gpt-5.4-mini-2026-03-17',
+                payload: ['integrated_content' => $content],
+                sources: ['daily_record_id' => $record->id],
+                masker: $masker,
+                userId: $request->user()->id,
             );
 
             return response()->json([
