@@ -65,10 +65,11 @@ class AiLearningCapture
                 'sources_used' => $sources,
                 'generated_payload' => $masker->maskArray($payload),
                 'pii_masked' => true,
+                // 生成イベントは施設の集計同意のみがゲート。要配慮属性(性別)は児童の学習同意が
+                // 無いため乗せない(修正イベント側=canUseForLearning でのみ保持)。
                 'subj_cohort' => $dims['cohort'],
                 'subj_growth_stage' => $dims['growth_stage'],
                 'subj_grade_level' => $dims['grade_level'],
-                'subj_gender' => $dims['gender'],
             ]);
         } catch (\Throwable $e) {
             Log::warning('AiLearningCapture.recordGeneration failed: '.$e->getMessage());
@@ -199,23 +200,63 @@ class AiLearningCapture
         ];
     }
 
-    /**
-     * section_key から支援区分(5領域)を導出する。
-     * 'detail:<sub>:<field>' → <sub> / 5領域キー直 → そのキー / それ以外 → null。
-     */
-    private function supportCategoryFromKey(string $key): ?string
-    {
-        $fiveDomains = ['health_life', 'motor_sensory', 'cognitive_behavior', 'language_communication', 'social_relations'];
-        if (str_starts_with($key, 'detail:')) {
-            $parts = explode(':', $key);
+    /** 本人支援5領域コード。 */
+    public const FIVE_DOMAINS = ['health_life', 'motor_sensory', 'cognitive_behavior', 'language_communication', 'social_relations'];
 
-            return isset($parts[1]) && $parts[1] !== '' ? mb_substr($parts[1], 0, 40) : null;
-        }
-        if (in_array($key, $fiveDomains, true)) {
-            return $key;
+    /**
+     * テキストに含まれる語から5領域コードを検出する。なければ null。
+     * 自由入力(区分ラベル)から実名等を除いて統制コードへ落とすのに使う。
+     */
+    public static function detectDomainCode(string $text): ?string
+    {
+        $map = [
+            'health_life' => ['健康', '生活', '身辺', '食事', '排泄', '睡眠'],
+            'motor_sensory' => ['運動', '感覚', '身体'],
+            'cognitive_behavior' => ['認知', '行動', '学習'],
+            'language_communication' => ['言語', 'コミュニケーション', 'ことば', '発語'],
+            'social_relations' => ['人間関係', '社会性', '社会', '対人'],
+        ];
+        foreach ($map as $code => $keywords) {
+            foreach ($keywords as $kw) {
+                if (mb_strpos($text, $kw) !== false) {
+                    return $code;
+                }
+            }
         }
 
         return null;
+    }
+
+    /**
+     * section_key の detail サブトークンを安全化する(★実名混入防止)。
+     * 5領域が検出できれば領域コード、できなければ決定的ハッシュ(sub_xxxxxxxx)。
+     * 決定的なので同一subは常に同一トークン=before/afterのマッチングは保たれる。
+     * コントローラの planSectionTexts 等で section_key 構築時に用いる。
+     */
+    public static function safeSectionSub(?string $sub): string
+    {
+        $sub = trim((string) $sub);
+        if ($sub === '') {
+            return 'unknown';
+        }
+
+        return self::detectDomainCode($sub) ?? ('sub_'.substr(sha1($sub), 0, 8));
+    }
+
+    /**
+     * section_key から支援区分(5領域)を導出する。section_key は safeSectionSub 済の前提。
+     * 'detail:<token>:<field>' の token / 5領域キー直 が5領域コードなら返す。それ以外 null。
+     * これにより support_category は常に統制コードのみ(自由入力=実名は入らない)。
+     */
+    private function supportCategoryFromKey(string $key): ?string
+    {
+        if (str_starts_with($key, 'detail:')) {
+            $token = explode(':', $key)[1] ?? '';
+
+            return in_array($token, self::FIVE_DOMAINS, true) ? $token : null;
+        }
+
+        return in_array($key, self::FIVE_DOMAINS, true) ? $key : null;
     }
 
     /** 0.0(無変更)〜1.0(全置換)。短文中心のため similar_text を採用。 */
@@ -243,9 +284,15 @@ class AiLearningCapture
         $byField = [];
         foreach ($annotations as $a) {
             $field = is_array($a) ? ($a['field'] ?? null) : null;
-            if (is_string($field) && $field !== '') {
-                $byField[$field][] = $a;
+            if (! is_string($field) || $field === '') {
+                continue;
             }
+            // 'detail:<sub>' は section_key と同じ安全トークンへ正規化してから突き合わせる。
+            if (str_starts_with($field, 'detail:')) {
+                $sub = explode(':', substr($field, strlen('detail:')))[0] ?? '';
+                $field = 'detail:'.self::safeSectionSub($sub);
+            }
+            $byField[$field][] = $a;
         }
 
         return $byField;

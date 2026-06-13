@@ -88,9 +88,9 @@ class AiLearningCaptureMonitoringTest extends TestCase
         $this->assertSame('改訂した総合所見(集団活動で役割を担えた)', $overall->after_text);
         $this->assertSame('save_draft', $overall->edit_kind);
 
-        // 明細(domain別)のコメント修正が記録される
+        // 明細(domain別)のコメント修正が記録される(domainは5領域コードへ正規化される)
         $detail = AiRevisionEvent::where('document_id', $this->monitoring->id)
-            ->where('section_key', 'detail:健康・生活:comment')->first();
+            ->where('section_key', 'detail:health_life:comment')->first();
         $this->assertNotNull($detail);
         $this->assertSame('初期のコメント', $detail->before_text);
         $this->assertSame('改訂したコメント(自分で着替えられた)', $detail->after_text);

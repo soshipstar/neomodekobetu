@@ -1224,7 +1224,8 @@ class SupportPlanController extends Controller
             'short_term_goal' => (string) ($plan->short_term_goal ?? ''),
         ];
         foreach ($plan->details as $d) {
-            $sub = $d->sub_category ?: $d->category ?: ('idx'.$d->sort_order);
+            // ★実名混入防止: 自由入力の sub_category を5領域コード/ハッシュへ正規化してから key 化。
+            $sub = \App\Services\AiLearningCapture::safeSectionSub($d->sub_category ?: $d->category ?: ('idx'.$d->sort_order));
             $sections["detail:{$sub}:goal"] = (string) ($d->goal ?? '');
             $sections["detail:{$sub}:support_content"] = (string) ($d->support_content ?? '');
         }
@@ -1247,7 +1248,7 @@ class SupportPlanController extends Controller
             'short_term_goal' => (string) ($snapshot['short_term_goal'] ?? ''),
         ];
         foreach (($snapshot['details'] ?? []) as $i => $d) {
-            $sub = $d['sub_category'] ?? $d['category'] ?? ('idx'.($d['sort_order'] ?? $i));
+            $sub = \App\Services\AiLearningCapture::safeSectionSub($d['sub_category'] ?? $d['category'] ?? ('idx'.($d['sort_order'] ?? $i)));
             $sections["detail:{$sub}:goal"] = (string) ($d['goal'] ?? '');
             $sections["detail:{$sub}:support_content"] = (string) ($d['support_content'] ?? '');
         }

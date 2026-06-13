@@ -134,17 +134,18 @@ class AiLearningCaptureTest extends TestCase
         $this->student->update(['grade_level' => 'elementary_5', 'gender' => 'male']);
         $this->grantLearning();
 
+        // section_key はコントローラで5領域コードへ正規化済みの形を渡す(実名混入防止)
         $this->capture->recordSectionRevisions($this->student->refresh(), 'support_plan', 7, [
-            'detail:生活習慣（健康・生活）:support_content' => ['旧の支援内容', '新の支援内容'],
+            'detail:health_life:support_content' => ['旧の支援内容', '新の支援内容'],
             'long_term_goal' => ['旧目標', '新目標'],
         ]);
 
-        $detail = AiRevisionEvent::where('section_key', 'detail:生活習慣（健康・生活）:support_content')->first();
+        $detail = AiRevisionEvent::where('section_key', 'detail:health_life:support_content')->first();
         $this->assertSame('elementary', $detail->subj_cohort);
         $this->assertSame('S3', $detail->subj_growth_stage);
         $this->assertSame('elementary_5', $detail->subj_grade_level);
         $this->assertSame('male', $detail->subj_gender);
-        $this->assertSame('生活習慣（健康・生活）', $detail->support_category);
+        $this->assertSame('health_life', $detail->support_category);
 
         // 本体項目(detail以外)は support_category なし
         $ltg = AiRevisionEvent::where('section_key', 'long_term_goal')->first();
@@ -157,10 +158,11 @@ class AiLearningCaptureTest extends TestCase
         $this->grantLearning();
         $this->capture->recordSectionRevisions($this->student, 'support_plan', 7, [
             'long_term_goal' => ['旧', '新'],
-            'detail:生活習慣:goal' => ['旧目標', '新目標'],
+            'detail:health_life:goal' => ['旧目標', '新目標'],
         ], editKind: 'revised_draft', editorRole: 'ai_revision', annotations: [
             ['field' => 'long_term_goal', 'type' => 'added', 'text' => '...', 'reason' => '保護者の要望'],
-            ['field' => 'detail:生活習慣', 'type' => 'removed', 'text' => '...', 'reason' => '議事録'],
+            // AI注釈の field は自由ラベル(detail:健康・生活)。section_key と同じ5領域コードへ正規化されて紐づく
+            ['field' => 'detail:健康・生活', 'type' => 'removed', 'text' => '...', 'reason' => '議事録'],
         ]);
 
         $ltg = AiRevisionEvent::where('section_key', 'long_term_goal')->first();
@@ -171,8 +173,8 @@ class AiLearningCaptureTest extends TestCase
         // source_ref に自由記述本文(実名混入の恐れ)を残さない
         $this->assertArrayNotHasKey('reason', $reason->source_ref);
 
-        // detail:生活習慣 という field は detail:生活習慣:goal セクションへ前方一致で紐づく
-        $detail = AiRevisionEvent::where('section_key', 'detail:生活習慣:goal')->first();
+        // detail:健康・生活 という field は detail:health_life:goal セクションへ正規化+前方一致で紐づく
+        $detail = AiRevisionEvent::where('section_key', 'detail:health_life:goal')->first();
         $this->assertSame('removed', AiEditReason::where('ai_revision_event_id', $detail->id)->first()->source_ref['annotation_type']);
     }
 

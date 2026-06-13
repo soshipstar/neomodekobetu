@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AiGenerationEvent;
 use App\Models\AiRevisionEvent;
 use App\Models\Classroom;
 use App\Models\Company;
@@ -9,6 +10,7 @@ use App\Models\Student;
 use App\Models\User;
 use App\Services\AiLearningCapture;
 use App\Services\ConsentService;
+use Database\Seeders\ConsentDefinitionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -82,5 +84,57 @@ class A007_NoPlaintextPiiInRevisionTest extends TestCase
         $this->assertNotNull($reasonRow);
         $this->assertStringNotContainsString($name, (string) $reasonRow->source_ref);
         $this->assertStringNotContainsString($guardianName, (string) $reasonRow->source_ref);
+    }
+
+    public function test_section_key_and_support_category_have_no_plaintext_pii(): void
+    {
+        $this->seed(ConsentDefinitionSeeder::class);
+        $company = Company::create(['name' => '企業A']);
+        $room = Classroom::create(['classroom_name' => '事業所A', 'company_id' => $company->id, 'is_active' => true]);
+        $student = Student::create(['student_name' => '山田太郎', 'classroom_id' => $room->id, 'status' => 'active', 'is_active' => true]);
+        $consent = new ConsentService();
+        $consent->recordCompanyConsent($company, true);
+        $consent->recordStudentConsent($student, true);
+
+        $name = '山田太郎';
+        // 職員が区分(sub_category)欄に実名を入れてしまった場合でも、section_key 構築は安全化される。
+        $safeSub = AiLearningCapture::safeSectionSub("{$name}の生活習慣");
+        $this->assertStringNotContainsString($name, $safeSub);
+        $this->assertSame('health_life', $safeSub); // 5領域が検出され実名は剥がれる
+
+        $key = "detail:{$safeSub}:support_content";
+        (new AiLearningCapture($consent))->recordSectionRevisions($student, 'support_plan', 1, [
+            $key => ["{$name}は着替えに支援が必要", "{$name}は自分で着替えられた"],
+        ]);
+
+        $raw = DB::table('ai_revision_events')->where('section_key', $key)->first();
+        $this->assertNotNull($raw);
+        // 非暗号化列(section_key/support_category)に実名が無い
+        $this->assertStringNotContainsString($name, (string) $raw->section_key);
+        $this->assertStringNotContainsString($name, (string) $raw->support_category);
+        $this->assertSame('health_life', $raw->support_category);
+    }
+
+    public function test_generation_event_omits_gender_without_child_consent(): void
+    {
+        $this->seed(ConsentDefinitionSeeder::class);
+        $company = Company::create(['name' => '企業A']);
+        $room = Classroom::create(['classroom_name' => '事業所A', 'company_id' => $company->id, 'is_active' => true]);
+        $student = Student::create(['student_name' => '児A', 'classroom_id' => $room->id, 'gender' => 'female', 'status' => 'active', 'is_active' => true]);
+        $consent = new ConsentService();
+        $capture = new AiLearningCapture($consent);
+
+        // 施設の集計同意のみ(児童の学習同意なし) → 生成イベントは記録されるが性別は乗せない
+        $consent->recordCompanyConsent($company, true);
+        $gen = $capture->recordGeneration($student, 'support_plan', 1, 'support_plan_edit', 'gpt', ['x' => 'y']);
+        $this->assertNotNull($gen);
+        $this->assertNull($gen->subj_gender); // ★要配慮属性は児童同意なしでは保存しない
+        $this->assertSame('other', $gen->subj_cohort); // 学年由来の非要配慮次元は保存される
+
+        // 児童も学習同意 → 修正イベントには性別が乗る(canUseForLearning ゲート通過)
+        $consent->recordStudentConsent($student, true);
+        $capture->recordSectionRevisions($student->refresh(), 'support_plan', 1, ['long_term_goal' => ['旧', '新']]);
+        $rev = AiRevisionEvent::where('section_key', 'long_term_goal')->first();
+        $this->assertSame('female', $rev->subj_gender);
     }
 }

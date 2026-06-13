@@ -302,7 +302,8 @@ class MonitoringController extends Controller
             'long_term_goal_comment' => (string) ($monitoring->long_term_goal_comment ?? ''),
         ];
         foreach ($monitoring->details as $d) {
-            $key = $d->domain ?: ('detail_'.$d->sort_order);
+            // ★実名混入防止: 自由入力の domain を5領域コード/ハッシュへ正規化してから key 化。
+            $key = \App\Services\AiLearningCapture::safeSectionSub($d->domain ?: ('detail_'.$d->sort_order));
             $sections["detail:{$key}:comment"] = (string) ($d->comment ?? '');
             $sections["detail:{$key}:next_action"] = (string) ($d->next_action ?? '');
         }
