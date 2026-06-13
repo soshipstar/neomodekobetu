@@ -154,6 +154,24 @@ class AiLearningCapture
         }
     }
 
+    /**
+     * before/after の2マップを section_key => [before, after] へ突き合わせる(両者のキーの和集合)。
+     * 各コントローラのセクション抽出結果を recordSectionRevisions に渡す前段に使う共有ヘルパ。
+     *
+     * @param  array<string,string>  $before
+     * @param  array<string,string>  $after
+     * @return array<string,array{0:string,1:string}>
+     */
+    public static function pairSections(array $before, array $after): array
+    {
+        $pairs = [];
+        foreach (array_keys($before + $after) as $key) {
+            $pairs[$key] = [$before[$key] ?? '', $after[$key] ?? ''];
+        }
+
+        return $pairs;
+    }
+
     /** 0.0(無変更)〜1.0(全置換)。短文中心のため similar_text を採用。 */
     private function changeRatio(string $before, string $after): float
     {

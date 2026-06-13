@@ -217,6 +217,10 @@ class MonitoringController extends Controller
             'details.*.sort_order'           => 'nullable|integer',
         ]);
 
+        // AI学習基盤(S3): 修正前のセクション本文を控える(学習同意がある場合のみ後で記録)。
+        $monitoring->loadMissing('details', 'student.classroom');
+        $beforeSections = $this->monitoringSectionTexts($monitoring);
+
         DB::transaction(function () use ($monitoring, $validated) {
             $updateData = collect($validated)->except('details')->toArray();
 
@@ -261,11 +265,49 @@ class MonitoringController extends Controller
             ? 'モニタリング表を下書き保存しました。（保護者には非公開）'
             : 'モニタリング表を提出しました。（保護者にも公開）';
 
+        // AI学習基盤(S3): 修正後と突き合わせ、変更セクションを蓄積(学習同意=AND がある場合のみ)。
+        $fresh = $monitoring->fresh(['details', 'student.classroom']);
+        $genEventId = \App\Models\AiGenerationEvent::where('document_type', 'monitoring')
+            ->where('document_id', $monitoring->id)->max('id');
+        app(\App\Services\AiLearningCapture::class)->recordSectionRevisions(
+            student: $fresh->student,
+            documentType: 'monitoring',
+            documentId: $monitoring->id,
+            sections: \App\Services\AiLearningCapture::pairSections($beforeSections, $this->monitoringSectionTexts($fresh)),
+            editKind: $fresh->is_official ? 'official' : 'save_draft',
+            editorUserId: $request->user()->id,
+            editorRole: 'staff',
+            generationEventId: $genEventId,
+        );
+
         return response()->json([
             'success' => true,
-            'data'    => $monitoring->fresh('details'),
+            'data'    => $fresh,
             'message' => $message,
         ]);
+    }
+
+    /**
+     * AI学習基盤(S3): モニタリングの学習対象セクション(散文)を section_key => テキスト へ平坦化する。
+     * 本体の所見/目標コメントと、明細(domain別)のコメント・次の手立てを対象にする。
+     * 達成状況などの区分値はノイズになるため学習対象外。
+     *
+     * @return array<string,string>
+     */
+    private function monitoringSectionTexts(MonitoringRecord $monitoring): array
+    {
+        $sections = [
+            'overall_comment' => (string) ($monitoring->overall_comment ?? ''),
+            'short_term_goal_comment' => (string) ($monitoring->short_term_goal_comment ?? ''),
+            'long_term_goal_comment' => (string) ($monitoring->long_term_goal_comment ?? ''),
+        ];
+        foreach ($monitoring->details as $d) {
+            $key = $d->domain ?: ('detail_'.$d->sort_order);
+            $sections["detail:{$key}:comment"] = (string) ($d->comment ?? '');
+            $sections["detail:{$key}:next_action"] = (string) ($d->next_action ?? '');
+        }
+
+        return $sections;
     }
 
     /**
@@ -504,6 +546,30 @@ class MonitoringController extends Controller
                 ];
             }
         }
+
+        // AI学習基盤(S3): 生成イベントを蓄積(施設の集計同意がある場合のみ・payloadはマスク保存)。
+        $log = null;
+        try {
+            $log = \App\Models\AiGenerationLog::create([
+                'user_id'         => $request->user()->id,
+                'generation_type' => 'monitoring_evaluation',
+                'model'           => 'gpt-5.4-2026-03-05',
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('AI log failed: ' . $e->getMessage());
+        }
+        app(\App\Services\AiLearningCapture::class)->recordGeneration(
+            student: $student,
+            documentType: 'monitoring',
+            documentId: $monitoring->id,
+            generationType: 'monitoring_evaluation',
+            model: 'gpt-5.4-2026-03-05',
+            payload: $generatedEvaluations,
+            sources: ['detail_id' => $detailId, 'plan_id' => $monitoring->plan_id],
+            aiGenerationLogId: $log?->id,
+            masker: $masker,
+            userId: $request->user()->id,
+        );
 
         return response()->json([
             'success' => true,
