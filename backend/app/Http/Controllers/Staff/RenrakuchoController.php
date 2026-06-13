@@ -182,6 +182,14 @@ class RenrakuchoController extends Controller
             throw $e;
         }
 
+        // AI学習基盤(S4b): 活動(実施プログラム)を自動分類して蓄積(活動メタ。同意ゲート対象外)。
+        app(\App\Services\ProgramClassifier::class)->classifyAndStore(
+            'daily_record',
+            $record->id,
+            trim($validated['activity_name'].' '.($validated['common_activity'] ?? '')),
+            $request->user()->company_id,
+        );
+
         return response()->json([
             'success' => true,
             'data'    => $record->load('studentRecords'),
@@ -248,6 +256,15 @@ class RenrakuchoController extends Controller
                 }
             }
         });
+
+        // AI学習基盤(S4b): 活動名/内容が変わり得るので再分類(人手分類があれば尊重される)。
+        $fresh = $record->fresh();
+        app(\App\Services\ProgramClassifier::class)->classifyAndStore(
+            'daily_record',
+            $record->id,
+            trim((string) $fresh->activity_name.' '.(string) $fresh->common_activity),
+            $user->company_id,
+        );
 
         return response()->json([
             'success' => true,
