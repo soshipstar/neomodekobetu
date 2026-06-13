@@ -111,6 +111,26 @@ class PiiMasker
     }
 
     /**
+     * 配列(ネスト含む)内の文字列値を再帰的にマスクする。
+     * AI生成文の控え(ai_generation_events.generated_payload 等)を実名のまま保存しないために使う。
+     *
+     * @param  array<mixed>  $data
+     * @return array<mixed>
+     */
+    public function maskArray(array $data): array
+    {
+        foreach ($data as $key => $value) {
+            if (is_string($value)) {
+                $data[$key] = $this->mask($value);
+            } elseif (is_array($value)) {
+                $data[$key] = $this->maskArray($value);
+            }
+        }
+
+        return $data;
+    }
+
+    /**
      * 配列(ネスト含む)内の文字列値を再帰的に復元する。
      *
      * @param  array<mixed>  $data

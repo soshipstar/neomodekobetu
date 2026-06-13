@@ -232,6 +232,10 @@ class SupportPlanController extends Controller
             }
         }
 
+        // AI学習基盤(S2): 修正前のセクション本文を控える(学習同意がある場合のみ後で記録)。
+        $plan->loadMissing('details', 'student.classroom');
+        $beforeSections = $this->planSectionTexts($plan);
+
         DB::transaction(function () use ($plan, $validated) {
             $updateData = collect($validated)->except('details')->toArray();
 
@@ -286,9 +290,29 @@ class SupportPlanController extends Controller
             }
         });
 
+        // AI学習基盤(S2): 修正後と突き合わせ、変更セクションを蓄積(学習同意=AND がある場合のみ)。
+        $fresh = $plan->fresh(['details', 'student.classroom']);
+        $editKind = match ($fresh->status) {
+            'official' => 'official',
+            'submitted' => 'submit',
+            default => 'save_draft',
+        };
+        $genEventId = \App\Models\AiGenerationEvent::where('document_type', 'support_plan')
+            ->where('document_id', $plan->id)->max('id');
+        app(\App\Services\AiLearningCapture::class)->recordSectionRevisions(
+            student: $fresh->student,
+            documentType: 'support_plan',
+            documentId: $plan->id,
+            sections: $this->pairSections($beforeSections, $this->planSectionTexts($fresh)),
+            editKind: $editKind,
+            editorUserId: $request->user()->id,
+            editorRole: 'staff',
+            generationEventId: $genEventId,
+        );
+
         return response()->json([
             'success' => true,
-            'data'    => $plan->fresh('details'),
+            'data'    => $fresh,
             'message' => '個別支援計画書を更新しました。',
         ]);
     }
@@ -508,8 +532,9 @@ class SupportPlanController extends Controller
             }
 
             // ログ保存（fillable と一致させる）
+            $log = null;
             try {
-                \App\Models\AiGenerationLog::create([
+                $log = \App\Models\AiGenerationLog::create([
                     'user_id'           => $request->user()->id,
                     'generation_type'   => 'support_plan_edit',
                     'model'             => 'gpt-5.4-2026-03-05',
@@ -520,17 +545,33 @@ class SupportPlanController extends Controller
                 \Illuminate\Support\Facades\Log::warning('AI log failed: ' . $e->getMessage());
             }
 
+            $sources = [
+                'assessment'  => !empty($guardianText) || !empty($staffText),
+                'monitoring' => !empty($monitoringText),
+                'records'    => $records->count(),
+                'records_period' => $recordsPeriod, // 観点7: 参照した連絡帳の期間 {from,to}|null
+                'prev_plan'  => !empty($prevPlanText),
+                'ability_evaluation' => $hasAbility, // 能力評価スコアを計画文言へ反映したか
+            ];
+
+            // AI学習基盤(S2): 生成イベントを蓄積(施設の集計同意がある場合のみ・payloadはマスク保存)。
+            app(\App\Services\AiLearningCapture::class)->recordGeneration(
+                student: $student,
+                documentType: 'support_plan',
+                documentId: $plan->id,
+                generationType: 'support_plan_edit',
+                model: 'gpt-5.4-2026-03-05',
+                payload: is_array($result) ? $result : [],
+                sources: $sources,
+                aiGenerationLogId: $log?->id,
+                masker: $masker,
+                userId: $request->user()->id,
+            );
+
             return response()->json([
                 'success'      => true,
                 'data'         => $result ?? [],
-                'sources'      => [
-                    'assessment'  => !empty($guardianText) || !empty($staffText),
-                    'monitoring' => !empty($monitoringText),
-                    'records'    => $records->count(),
-                    'records_period' => $recordsPeriod, // 観点7: 参照した連絡帳の期間 {from,to}|null
-                    'prev_plan'  => !empty($prevPlanText),
-                    'ability_evaluation' => $hasAbility, // 能力評価スコアを計画文言へ反映したか
-                ],
+                'sources'      => $sources,
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -715,8 +756,9 @@ class SupportPlanController extends Controller
                 }
             });
 
+            $log = null;
             try {
-                \App\Models\AiGenerationLog::create([
+                $log = \App\Models\AiGenerationLog::create([
                     'user_id'           => $request->user()->id,
                     'generation_type'   => 'support_plan_revised_draft',
                     'model'             => 'gpt-5.4-2026-03-05',
@@ -726,6 +768,38 @@ class SupportPlanController extends Controller
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::warning('AI log failed: ' . $e->getMessage());
             }
+
+            // AI学習基盤(S2): 原案→AI改訂を蓄積。注釈(annotations)は理由(ai_annotation)として紐づける。
+            $capture = app(\App\Services\AiLearningCapture::class);
+            $genEvent = $capture->recordGeneration(
+                student: $plan->student,
+                documentType: 'support_plan',
+                documentId: $plan->id,
+                generationType: 'support_plan_revised_draft',
+                model: 'gpt-5.4-2026-03-05',
+                payload: is_array($revised) ? $revised : [],
+                sources: [
+                    'guardian_comment' => $guardianComment !== '',
+                    'meetings' => $plan->meetings->count(),
+                ],
+                aiGenerationLogId: $log?->id,
+                masker: $masker,
+                userId: $request->user()->id,
+            );
+            $capture->recordSectionRevisions(
+                student: $plan->student,
+                documentType: 'support_plan',
+                documentId: $plan->id,
+                sections: $this->pairSections(
+                    $this->snapshotSectionTexts($base),
+                    $this->snapshotSectionTexts(is_array($revised) ? $revised : [])
+                ),
+                editKind: 'revised_draft',
+                editorUserId: $request->user()->id,
+                editorRole: 'ai_revision',
+                generationEventId: $genEvent?->id,
+                annotations: is_array($annotations) ? $annotations : [],
+            );
 
             return response()->json([
                 'success'     => true,
@@ -1132,6 +1206,70 @@ class SupportPlanController extends Controller
             'data'    => $plan->fresh('details'),
             'message' => '確認依頼を送信しました。',
         ]);
+    }
+
+    /**
+     * AI学習基盤(S2): 計画の本文セクションを section_key => テキスト の形で平坦化する。
+     * 本体4項目と、明細(sub_category 別)の goal / support_content を対象にする。
+     * 修正イベント(before/after)の比較単位に使う。
+     *
+     * @return array<string,string>
+     */
+    private function planSectionTexts(IndividualSupportPlan $plan): array
+    {
+        $sections = [
+            'life_intention' => (string) ($plan->life_intention ?? ''),
+            'overall_policy' => (string) ($plan->overall_policy ?? ''),
+            'long_term_goal' => (string) ($plan->long_term_goal ?? ''),
+            'short_term_goal' => (string) ($plan->short_term_goal ?? ''),
+        ];
+        foreach ($plan->details as $d) {
+            $sub = $d->sub_category ?: $d->category ?: ('idx'.$d->sort_order);
+            $sections["detail:{$sub}:goal"] = (string) ($d->goal ?? '');
+            $sections["detail:{$sub}:support_content"] = (string) ($d->support_content ?? '');
+        }
+
+        return $sections;
+    }
+
+    /**
+     * AI学習基盤(S2): proposal_snapshot 配列を planSectionTexts と同じキー体系へ平坦化する。
+     *
+     * @param  array<string,mixed>  $snapshot
+     * @return array<string,string>
+     */
+    private function snapshotSectionTexts(array $snapshot): array
+    {
+        $sections = [
+            'life_intention' => (string) ($snapshot['life_intention'] ?? ''),
+            'overall_policy' => (string) ($snapshot['overall_policy'] ?? ''),
+            'long_term_goal' => (string) ($snapshot['long_term_goal'] ?? ''),
+            'short_term_goal' => (string) ($snapshot['short_term_goal'] ?? ''),
+        ];
+        foreach (($snapshot['details'] ?? []) as $i => $d) {
+            $sub = $d['sub_category'] ?? $d['category'] ?? ('idx'.($d['sort_order'] ?? $i));
+            $sections["detail:{$sub}:goal"] = (string) ($d['goal'] ?? '');
+            $sections["detail:{$sub}:support_content"] = (string) ($d['support_content'] ?? '');
+        }
+
+        return $sections;
+    }
+
+    /**
+     * AI学習基盤(S2): before/after の2マップを section_key => [before, after] へ突き合わせる。
+     *
+     * @param  array<string,string>  $before
+     * @param  array<string,string>  $after
+     * @return array<string,array{0:string,1:string}>
+     */
+    private function pairSections(array $before, array $after): array
+    {
+        $pairs = [];
+        foreach (array_keys($before + $after) as $key) {
+            $pairs[$key] = [$before[$key] ?? '', $after[$key] ?? ''];
+        }
+
+        return $pairs;
     }
 
     /**
