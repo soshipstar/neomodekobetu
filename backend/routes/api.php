@@ -476,6 +476,11 @@ Route::prefix('staff')
         Route::get('/renrakucho/{record}/view-integrated', [App\Http\Controllers\Staff\RenrakuchoController::class, 'viewIntegrated']);
         Route::get('/renrakucho/{record}/photos/suggest', [App\Http\Controllers\Staff\RenrakuchoController::class, 'suggestPhotos']);
 
+        // --- AI学習基盤: 実施プログラム分類(閲覧・訂正) ---
+        Route::get('/program-categories', [App\Http\Controllers\Staff\ProgramClassificationController::class, 'categories']);
+        Route::get('/renrakucho/{record}/program-classification', [App\Http\Controllers\Staff\ProgramClassificationController::class, 'show']);
+        Route::put('/renrakucho/{record}/program-classification', [App\Http\Controllers\Staff\ProgramClassificationController::class, 'update']);
+
         // --- 能力評価 (日々の設問・観察記録) ---
         Route::get('/ability/students/{student}/next-question', [App\Http\Controllers\Staff\AbilityObservationController::class, 'nextQuestion']);
         Route::get('/ability/students/{student}/observations', [App\Http\Controllers\Staff\AbilityObservationController::class, 'recent']);
