@@ -49,6 +49,7 @@ class AiLearningCapture
                 return null;
             }
             $masker ??= PiiMasker::forStudent($student);
+            $dims = $this->subjectDimensions($student);
 
             return AiGenerationEvent::create([
                 'ai_generation_log_id' => $aiGenerationLogId,
@@ -64,6 +65,10 @@ class AiLearningCapture
                 'sources_used' => $sources,
                 'generated_payload' => $masker->maskArray($payload),
                 'pii_masked' => true,
+                'subj_cohort' => $dims['cohort'],
+                'subj_growth_stage' => $dims['growth_stage'],
+                'subj_grade_level' => $dims['grade_level'],
+                'subj_gender' => $dims['gender'],
             ]);
         } catch (\Throwable $e) {
             Log::warning('AiLearningCapture.recordGeneration failed: '.$e->getMessage());
@@ -98,6 +103,7 @@ class AiLearningCapture
             $student->loadMissing('classroom');
             $companyId = $student->classroom?->company_id;
             $annByField = $this->indexAnnotations($annotations);
+            $dims = $this->subjectDimensions($student);
 
             $count = 0;
             foreach ($sections as $key => $pair) {
@@ -130,6 +136,11 @@ class AiLearningCapture
                     'editor_user_id' => $editorUserId,
                     'editor_role' => $editorRole,
                     'sensitivity' => 'raw',
+                    'subj_cohort' => $dims['cohort'],
+                    'subj_growth_stage' => $dims['growth_stage'],
+                    'subj_grade_level' => $dims['grade_level'],
+                    'subj_gender' => $dims['gender'],
+                    'support_category' => $this->supportCategoryFromKey((string) $key),
                 ]);
 
                 foreach ($this->annotationsForKey($annByField, (string) $key) as $a) {
@@ -170,6 +181,41 @@ class AiLearningCapture
         }
 
         return $pairs;
+    }
+
+    /**
+     * 記録時点の分析次元(コホート/成長段階/学年/性別)を児童から算出する(S4a)。
+     * 履歴正確性のためイベントごとに凍結保存する。
+     *
+     * @return array{cohort:string,growth_stage:string,grade_level:?string,gender:?string}
+     */
+    private function subjectDimensions(Student $student): array
+    {
+        return [
+            'cohort' => \App\Support\StudentCohort::forStudent($student),
+            'growth_stage' => \App\Support\AbilityGrowthStage::forStudent($student),
+            'grade_level' => $student->grade_level,
+            'gender' => $student->gender,
+        ];
+    }
+
+    /**
+     * section_key から支援区分(5領域)を導出する。
+     * 'detail:<sub>:<field>' → <sub> / 5領域キー直 → そのキー / それ以外 → null。
+     */
+    private function supportCategoryFromKey(string $key): ?string
+    {
+        $fiveDomains = ['health_life', 'motor_sensory', 'cognitive_behavior', 'language_communication', 'social_relations'];
+        if (str_starts_with($key, 'detail:')) {
+            $parts = explode(':', $key);
+
+            return isset($parts[1]) && $parts[1] !== '' ? mb_substr($parts[1], 0, 40) : null;
+        }
+        if (in_array($key, $fiveDomains, true)) {
+            return $key;
+        }
+
+        return null;
     }
 
     /** 0.0(無変更)〜1.0(全置換)。短文中心のため similar_text を採用。 */

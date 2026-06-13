@@ -128,6 +128,30 @@ class AiLearningCaptureTest extends TestCase
         $this->assertSame(1.0, $op->change_ratio);
     }
 
+    public function test_revision_captures_subject_dimensions(): void
+    {
+        // 学年・性別を持つ児童(小5=コホートelementary, 成長段階S3)
+        $this->student->update(['grade_level' => 'elementary_5', 'gender' => 'male']);
+        $this->grantLearning();
+
+        $this->capture->recordSectionRevisions($this->student->refresh(), 'support_plan', 7, [
+            'detail:生活習慣（健康・生活）:support_content' => ['旧の支援内容', '新の支援内容'],
+            'long_term_goal' => ['旧目標', '新目標'],
+        ]);
+
+        $detail = AiRevisionEvent::where('section_key', 'detail:生活習慣（健康・生活）:support_content')->first();
+        $this->assertSame('elementary', $detail->subj_cohort);
+        $this->assertSame('S3', $detail->subj_growth_stage);
+        $this->assertSame('elementary_5', $detail->subj_grade_level);
+        $this->assertSame('male', $detail->subj_gender);
+        $this->assertSame('生活習慣（健康・生活）', $detail->support_category);
+
+        // 本体項目(detail以外)は support_category なし
+        $ltg = AiRevisionEvent::where('section_key', 'long_term_goal')->first();
+        $this->assertSame('elementary', $ltg->subj_cohort);
+        $this->assertNull($ltg->support_category);
+    }
+
     public function test_revision_links_annotations_as_reasons(): void
     {
         $this->grantLearning();
