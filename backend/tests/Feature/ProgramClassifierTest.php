@@ -82,6 +82,23 @@ class ProgramClassifierTest extends TestCase
         $this->assertSame('manual', ProgramClassification::where('classifiable_id', 100)->first()->method);
     }
 
+    public function test_usage_count_is_diff_updated(): void
+    {
+        $sensory = ProgramCategory::where('code', 'sensory')->value('id');
+        $gross = ProgramCategory::where('code', 'gross_motor')->value('id');
+
+        // 同一カテゴリへ2回再分類 → usage_count は1のまま(過剰加算しない)
+        $this->svc->classifyAndStore('daily_record', 200, '水遊び 感覚遊び', $this->company->id);
+        $this->svc->classifyAndStore('daily_record', 200, '感覚遊び 粘土', $this->company->id);
+        $this->assertSame('sensory', $this->codeOf(\App\Models\ProgramClassification::where('classifiable_id', 200)->first()->program_category_id));
+        $this->assertSame(1, ProgramCategory::whereKey($sensory)->value('usage_count'));
+
+        // 別カテゴリへ訂正 → 旧-1 / 新+1
+        $this->svc->setManual('daily_record', 200, $gross, $this->staff->id);
+        $this->assertSame(0, ProgramCategory::whereKey($sensory)->value('usage_count'));
+        $this->assertSame(1, ProgramCategory::whereKey($gross)->value('usage_count'));
+    }
+
     public function test_renrakucho_store_auto_classifies_activity(): void
     {
         $student = Student::create(['student_name' => '児A', 'classroom_id' => $this->room->id, 'status' => 'active', 'is_active' => true]);

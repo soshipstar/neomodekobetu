@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ProgramCategory;
 use App\Models\ProgramClassification;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -27,6 +28,8 @@ class ProgramClassifier
             return null;
         }
 
+        // 決定的順序: 法人固有(company_id有り)を先に → sort_order → id。
+        // これにより同点時は先頭(=法人固有→sort_order小)が安定して選ばれ、結果が再現的になる。
         $cats = ProgramCategory::where('status', 'active')
             ->where(function ($q) use ($companyId) {
                 $q->whereNull('company_id');
@@ -34,6 +37,9 @@ class ProgramClassifier
                     $q->orWhere('company_id', $companyId);
                 }
             })
+            ->orderByRaw('company_id is null')
+            ->orderBy('sort_order')
+            ->orderBy('id')
             ->get();
 
         $best = null;
@@ -45,8 +51,8 @@ class ProgramClassifier
                     $hits++;
                 }
             }
-            // 同点は法人固有を優先(company_id 有り)
-            if ($hits > $bestScore || ($hits === $bestScore && $hits > 0 && $cat->company_id && ! ($best?->company_id))) {
+            // 厳密に多い場合のみ更新。同点は決定的順序の先着が残る(法人固有優先)。
+            if ($hits > $bestScore) {
                 $bestScore = $hits;
                 $best = $cat;
             }
@@ -69,32 +75,37 @@ class ProgramClassifier
     public function classifyAndStore(string $type, int $id, string $text, ?int $companyId = null): ?ProgramClassification
     {
         try {
-            $hasManual = ProgramClassification::where('classifiable_type', $type)
-                ->where('classifiable_id', $id)->where('method', 'manual')->exists();
-            if ($hasManual) {
-                return null;
-            }
-
             $res = $this->classify($text, $companyId);
             if (! $res) {
                 return null;
             }
 
-            // 既存の自動分類(rule/embedding)を置換して1件(primary)にする
-            ProgramClassification::where('classifiable_type', $type)->where('classifiable_id', $id)
-                ->whereIn('method', ['rule', 'embedding'])->delete();
+            // TOCTOU回避: 既存行をロックしてから manual 判定・置換・作成を一括で行う。
+            return DB::transaction(function () use ($type, $id, $res) {
+                $rows = ProgramClassification::where('classifiable_type', $type)
+                    ->where('classifiable_id', $id)->lockForUpdate()->get();
 
-            $pc = ProgramClassification::create([
-                'classifiable_type' => $type,
-                'classifiable_id' => $id,
-                'program_category_id' => $res['program_category_id'],
-                'method' => 'rule',
-                'confidence' => $res['confidence'],
-                'is_primary' => true,
-            ]);
-            ProgramCategory::whereKey($res['program_category_id'])->increment('usage_count');
+                if ($rows->firstWhere('method', 'manual')) {
+                    return null; // 人手分類を尊重(自動上書きしない)
+                }
 
-            return $pc;
+                $prevCatId = optional($rows->firstWhere('is_primary', true) ?? $rows->first())->program_category_id;
+
+                ProgramClassification::where('classifiable_type', $type)->where('classifiable_id', $id)
+                    ->whereIn('method', ['rule', 'embedding'])->delete();
+
+                $pc = ProgramClassification::create([
+                    'classifiable_type' => $type,
+                    'classifiable_id' => $id,
+                    'program_category_id' => $res['program_category_id'],
+                    'method' => 'rule',
+                    'confidence' => $res['confidence'],
+                    'is_primary' => true,
+                ]);
+                $this->adjustUsage($prevCatId, $res['program_category_id']);
+
+                return $pc;
+            });
         } catch (\Throwable $e) {
             Log::warning('ProgramClassifier.classifyAndStore failed: '.$e->getMessage());
 
@@ -105,18 +116,36 @@ class ProgramClassifier
     /** 人手で分類を設定/訂正する(最優先)。既存分類を置換。 */
     public function setManual(string $type, int $id, int $categoryId, ?int $userId): ProgramClassification
     {
-        ProgramClassification::where('classifiable_type', $type)->where('classifiable_id', $id)->delete();
-        $pc = ProgramClassification::create([
-            'classifiable_type' => $type,
-            'classifiable_id' => $id,
-            'program_category_id' => $categoryId,
-            'method' => 'manual',
-            'confidence' => 1.0,
-            'is_primary' => true,
-            'classified_by' => $userId,
-        ]);
-        ProgramCategory::whereKey($categoryId)->increment('usage_count');
+        return DB::transaction(function () use ($type, $id, $categoryId, $userId) {
+            $rows = ProgramClassification::where('classifiable_type', $type)
+                ->where('classifiable_id', $id)->lockForUpdate()->get();
+            $prevCatId = optional($rows->firstWhere('is_primary', true) ?? $rows->first())->program_category_id;
 
-        return $pc;
+            ProgramClassification::where('classifiable_type', $type)->where('classifiable_id', $id)->delete();
+            $pc = ProgramClassification::create([
+                'classifiable_type' => $type,
+                'classifiable_id' => $id,
+                'program_category_id' => $categoryId,
+                'method' => 'manual',
+                'confidence' => 1.0,
+                'is_primary' => true,
+                'classified_by' => $userId,
+            ]);
+            $this->adjustUsage($prevCatId, $categoryId);
+
+            return $pc;
+        });
+    }
+
+    /** usage_count を差分更新する(同一カテゴリへの再分類は据え置き。過剰加算を防ぐ)。 */
+    private function adjustUsage(?int $oldCategoryId, int $newCategoryId): void
+    {
+        if ($oldCategoryId === $newCategoryId) {
+            return;
+        }
+        if ($oldCategoryId) {
+            ProgramCategory::whereKey($oldCategoryId)->where('usage_count', '>', 0)->decrement('usage_count');
+        }
+        ProgramCategory::whereKey($newCategoryId)->increment('usage_count');
     }
 }

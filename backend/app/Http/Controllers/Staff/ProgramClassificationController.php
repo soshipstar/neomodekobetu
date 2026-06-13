@@ -43,9 +43,13 @@ class ProgramClassificationController extends Controller
     public function show(Request $request, DailyRecord $record): JsonResponse
     {
         $this->authorizeRecord($request->user(), $record);
+        // method 優先(manual>embedding>rule)で決定的に1件を返す(万一primaryが複数残っても人手分類を優先表示)。
         $pc = ProgramClassification::with('category:id,code,label_ja,domain')
             ->where('classifiable_type', 'daily_record')->where('classifiable_id', $record->id)
-            ->where('is_primary', true)->first();
+            ->where('is_primary', true)
+            ->orderByRaw("case method when 'manual' then 0 when 'embedding' then 1 else 2 end")
+            ->orderByDesc('id')
+            ->first();
 
         return response()->json(['success' => true, 'data' => $pc]);
     }
