@@ -28,6 +28,18 @@ class StaffManagementController extends Controller
             ->where('is_master', false)
             ->with(['classroom', 'classrooms']);
 
+        // 論理削除済みスタッフを一覧から除外する。
+        // destroy() は参照整合性 (面談記録・業務日誌など法定記録の cascade 消失防止)
+        // のため物理削除せず、is_active=false かつ username を 'deleted__{id}__...' に
+        // リネームして識別子 (ユーザー名・メール) を解放する論理削除を行う。
+        // 旧アプリ staff_management.php は物理削除で一覧から消えるため、論理削除済み
+        // レコードを一覧に出さないことで挙動を一致させる。
+        // (単に無効化しただけ = is_active=false かつ通常 username のスタッフは従来どおり表示)
+        $query->where(function ($q) {
+            $q->where('is_active', true)
+              ->orWhere('username', 'not like', 'deleted__%');
+        });
+
         // 通常管理者には企業管理者を表示しない
         if (!$isMaster && !$isCompanyAdmin) {
             $query->where('is_company_admin', false);
