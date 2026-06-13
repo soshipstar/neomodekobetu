@@ -19,7 +19,9 @@ interface ExtendedSupportPlan extends SupportPlan {
   guardian_confirmed_at?: string | null;
   guardian_signature_date?: string | null;
   staff_signature_date?: string | null;
-  guardian_review_comment?: string | null;
+  // guardian_review_comment は基底 SupportPlan に string | null で既存。
+  // ここでオプショナル(? = undefined 許容)で再宣言すると基底と非互換になり
+  // 本番 next build の型チェックが失敗するため、再宣言せず基底の型を継承する。
   guardian_reviewed_at?: string | null;
   is_official?: boolean;
   is_draft?: boolean;
