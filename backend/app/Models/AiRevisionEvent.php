@@ -18,6 +18,9 @@ class AiRevisionEvent extends Model
         'company_id', 'classroom_id', 'student_id', 'document_type', 'document_id', 'section_key',
         'ai_generation_event_id', 'before_text', 'after_text', 'diff', 'change_ratio', 'changed',
         'edit_kind', 'editor_user_id', 'editor_role', 'sensitivity', 'created_at',
+        // S4a 分析次元スナップショット
+        'subj_cohort', 'subj_growth_stage', 'subj_grade_level', 'subj_gender',
+        'support_category', 'program_category_id', 'dim_meta',
     ];
 
     protected $casts = [
@@ -27,6 +30,7 @@ class AiRevisionEvent extends Model
         'change_ratio' => 'float',
         'changed' => 'boolean',
         'created_at' => 'datetime',
+        'dim_meta' => 'array',
     ];
 
     public function generationEvent(): BelongsTo

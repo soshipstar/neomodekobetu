@@ -20,6 +20,7 @@ class Student extends Model
         'username',
         'password_hash',
         'birth_date',
+        'gender',
         'grade_level',
         'grade_adjustment',
         'guardian_id',

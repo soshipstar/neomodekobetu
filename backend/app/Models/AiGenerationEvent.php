@@ -17,6 +17,8 @@ class AiGenerationEvent extends Model
         'ai_generation_log_id', 'document_type', 'document_id', 'student_id', 'classroom_id',
         'company_id', 'user_id', 'generation_type', 'model', 'prompt_version',
         'sources_used', 'generated_payload', 'pii_masked', 'generated_at',
+        // S4a 分析次元スナップショット
+        'subj_cohort', 'subj_growth_stage', 'subj_grade_level', 'subj_gender',
     ];
 
     protected $casts = [
