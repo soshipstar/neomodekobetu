@@ -68,6 +68,9 @@ class AssessmentController extends Controller
             ->where('student_id', $period->student_id)
             ->first();
 
+        // AI学習基盤(S3): 修正前のセクション本文を控える(学習同意がある場合のみ後で記録)。
+        $beforeSections = $this->assessmentStaffSectionTexts($existing);
+
         // 提出済みの場合は update アクションのみ許可
         if ($existing && $existing->is_submitted && $action !== 'update') {
             return response()->json([
@@ -120,11 +123,46 @@ class AssessmentController extends Controller
             }
         }
 
+        // AI学習基盤(S3): 修正後と突き合わせ、変更セクションを蓄積(学習同意=AND がある場合のみ)。
+        $editKind = in_array($action, ['submit', 'update'], true) ? 'submit' : 'save_draft';
+        $genEventId = \App\Models\AiGenerationEvent::where('document_type', 'assessment_staff')
+            ->where('document_id', $period->id)->max('id');
+        app(\App\Services\AiLearningCapture::class)->recordSectionRevisions(
+            student: $period->student,
+            documentType: 'assessment_staff',
+            documentId: $period->id,
+            sections: \App\Services\AiLearningCapture::pairSections($beforeSections, $this->assessmentStaffSectionTexts($entry->fresh())),
+            editKind: $editKind,
+            editorUserId: $request->user()->id,
+            editorRole: 'staff',
+            generationEventId: $genEventId,
+        );
+
         return response()->json([
             'success' => true,
             'data'    => $entry,
             'message' => $message,
         ]);
+    }
+
+    /**
+     * AI学習基盤(S3): 職員アセスメントの学習対象セクション(散文)を section_key => テキスト へ平坦化する。
+     *
+     * @return array<string,string>
+     */
+    private function assessmentStaffSectionTexts(?AssessmentStaff $entry): array
+    {
+        if (! $entry) {
+            return [];
+        }
+        $keys = ['student_wish', 'short_term_goal', 'long_term_goal', 'health_life', 'motor_sensory',
+            'cognitive_behavior', 'language_communication', 'social_relations', 'other_challenges'];
+        $out = [];
+        foreach ($keys as $k) {
+            $out[$k] = (string) ($entry->{$k} ?? '');
+        }
+
+        return $out;
     }
 
     /**
@@ -430,8 +468,9 @@ class AssessmentController extends Controller
             $longTermGoal = trim($longTermResponse->choices[0]->message->content);
 
             // ログ保存
+            $log = null;
             try {
-                AiGenerationLog::create([
+                $log = AiGenerationLog::create([
                     'user_id'       => $request->user()->id,
                     'model'         => $aiModel,
                     'prompt_type'   => 'assessment',
@@ -456,6 +495,21 @@ class AssessmentController extends Controller
 
             // 仮名を実名へ復元してから返す (職員が使う下書きのため)
             $result = $masker->unmaskArray($result);
+
+            // AI学習基盤(S3): 生成イベントを蓄積(施設の集計同意がある場合のみ・payloadはマスク保存)。
+            // 期間(period)を文書アンカーにし、後続の store による修正と紐づける。
+            app(\App\Services\AiLearningCapture::class)->recordGeneration(
+                student: $student,
+                documentType: 'assessment_staff',
+                documentId: $period->id,
+                generationType: 'assessment',
+                model: $aiModel,
+                payload: $result,
+                sources: ['assessment_period_id' => $period->id, 'record_count' => $records->count()],
+                aiGenerationLogId: $log?->id,
+                masker: $masker,
+                userId: $request->user()->id,
+            );
 
             return response()->json([
                 'success'      => true,
