@@ -43,10 +43,10 @@ class ConsentService
     }
 
     /** 施設の集計同意を記録(grant/revoke)。フラグと履歴を同一Txで更新。 */
-    public function recordCompanyConsent(Company $company, bool $granted, ?int $userId = null, string $role = 'company_admin', string $method = 'web_ui', ?string $evidence = null): void
+    public function recordCompanyConsent(Company $company, bool $granted, ?int $userId = null, string $role = 'company_admin', string $method = 'web_ui', ?string $evidence = null, ?string $note = null): void
     {
-        DB::transaction(function () use ($company, $granted, $userId, $role, $method, $evidence) {
-            $this->appendRecord(self::KEY_AGGREGATE, 'company', $company->id, $company->id, $granted, $userId, $role, $method, $evidence);
+        DB::transaction(function () use ($company, $granted, $userId, $role, $method, $evidence, $note) {
+            $this->appendRecord(self::KEY_AGGREGATE, 'company', $company->id, $company->id, $granted, $userId, $role, $method, $evidence, null, $note);
             $company->update([
                 'ai_consent_aggregate' => $granted,
                 'ai_consent_aggregate_at' => $granted ? Carbon::now() : null,
@@ -54,15 +54,15 @@ class ConsentService
         });
     }
 
-    /** 児童(保護者・本人)の学習同意を記録(grant/revoke)。 */
-    public function recordStudentConsent(Student $student, bool $granted, ?int $userId = null, string $role = 'guardian', string $method = 'web_ui', ?string $evidence = null): void
+    /** 児童(保護者・本人)の学習同意を記録(grant/revoke)。$note=取得時の備考(代理記録の根拠等)。 */
+    public function recordStudentConsent(Student $student, bool $granted, ?int $userId = null, string $role = 'guardian', string $method = 'web_ui', ?string $evidence = null, ?string $note = null): void
     {
         $version = $this->activeVersion(self::KEY_LEARNING);
         $student->loadMissing('classroom');
         $companyId = $student->classroom?->company_id;
 
-        DB::transaction(function () use ($student, $granted, $userId, $role, $method, $evidence, $version, $companyId) {
-            $this->appendRecord(self::KEY_LEARNING, 'student', $student->id, $companyId, $granted, $userId, $role, $method, $evidence, $version);
+        DB::transaction(function () use ($student, $granted, $userId, $role, $method, $evidence, $note, $version, $companyId) {
+            $this->appendRecord(self::KEY_LEARNING, 'student', $student->id, $companyId, $granted, $userId, $role, $method, $evidence, $version, $note);
             $student->update([
                 'ai_consent_learning' => $granted,
                 'ai_consent_learning_at' => $granted ? Carbon::now() : null,
@@ -72,7 +72,7 @@ class ConsentService
     }
 
     /** consent_records へ1行追記する(append-only)。 */
-    private function appendRecord(string $key, string $subjectType, int $subjectId, ?int $companyId, bool $granted, ?int $userId, string $role, string $method, ?string $evidence, ?int $version = null): void
+    private function appendRecord(string $key, string $subjectType, int $subjectId, ?int $companyId, bool $granted, ?int $userId, string $role, string $method, ?string $evidence, ?int $version = null, ?string $note = null): void
     {
         $version ??= $this->activeVersion($key);
         ConsentRecord::create([
@@ -89,6 +89,7 @@ class ConsentService
             'evidence_ref' => $evidence,
             'acquired_at' => Carbon::now(),
             'effective_from' => Carbon::now(),
+            'note' => $note,
         ]);
     }
 

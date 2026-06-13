@@ -225,6 +225,10 @@ Route::prefix('admin')
         Route::get('/classroom-settings', [App\Http\Controllers\Admin\ClassroomSettingController::class, 'index']);
         Route::put('/classroom-settings', [App\Http\Controllers\Admin\ClassroomSettingController::class, 'update']);
 
+        // --- AI学習基盤: 施設の集計同意 (improvement_aggregate) ---
+        Route::get('/ai-consent/company', [App\Http\Controllers\Admin\AiConsentController::class, 'companyShow']);
+        Route::put('/ai-consent/company', [App\Http\Controllers\Admin\AiConsentController::class, 'companyUpdate']);
+
         // --- 一括登録（管理者用プロキシ） (#12-13) ---
         Route::post('/bulk-register/parse', [App\Http\Controllers\Staff\BulkRegisterController::class, 'parse']);
         Route::post('/bulk-register/execute', [App\Http\Controllers\Staff\BulkRegisterController::class, 'execute']);
@@ -432,6 +436,10 @@ Route::prefix('staff')
         Route::put('/support-plans/{plan}/meetings/{meeting}', [App\Http\Controllers\Staff\SupportPlanMeetingController::class, 'update']);
         Route::delete('/support-plans/{plan}/meetings/{meeting}', [App\Http\Controllers\Staff\SupportPlanMeetingController::class, 'destroy']);
         Route::post('/students/{student}/generate-wish', [App\Http\Controllers\Staff\SupportPlanController::class, 'generateWishFromInterview']);
+
+        // --- AI学習基盤: 児童の学習同意(スタッフ代理記録) ---
+        Route::get('/students/{student}/ai-consent', [App\Http\Controllers\Staff\AiConsentController::class, 'show']);
+        Route::put('/students/{student}/ai-consent', [App\Http\Controllers\Staff\AiConsentController::class, 'update']);
 
         // --- モニタリング ---
         Route::get('/students/{student}/monitoring', [App\Http\Controllers\Staff\MonitoringController::class, 'index']);
