@@ -115,4 +115,64 @@ class L014_StaffSoftDeleteListExclusionTest extends TestCase
             ])
             ->assertCreated();
     }
+
+    // =========================================================================
+    // /admin/staff-accounts (StaffAccountController, マスター専用) も同方式で検証
+    // =========================================================================
+
+    public function test_staff_accounts_soft_deleted_hidden_from_list(): void
+    {
+        $f = $this->fixture();
+
+        $toDelete = User::create([
+            'username'     => 'acc_taro_l014',
+            'password'     => bcrypt('pass'),
+            'full_name'    => '口座太郎',
+            'email'        => 'acc_taro@example.jp',
+            'user_type'    => 'staff',
+            'classroom_id' => $f['classroom']->id,
+            'is_active'    => true,
+        ]);
+
+        $this->actingAs($f['master'], 'sanctum')
+            ->deleteJson('/api/admin/staff-accounts/' . $toDelete->id)
+            ->assertOk();
+
+        $res = $this->actingAs($f['master'], 'sanctum')
+            ->getJson('/api/admin/staff-accounts?per_page=100')
+            ->assertOk();
+
+        $ids = collect($res->json('data.data'))->pluck('id');
+        $this->assertFalse($ids->contains($toDelete->id), 'staff-accounts: 論理削除済みが一覧に残っています。');
+    }
+
+    public function test_staff_accounts_username_reusable_after_delete(): void
+    {
+        $f = $this->fixture();
+
+        $original = User::create([
+            'username'     => 'acc_reuse_l014',
+            'password'     => bcrypt('pass'),
+            'full_name'    => '口座再利用',
+            'email'        => 'acc_reuse@example.jp',
+            'user_type'    => 'staff',
+            'classroom_id' => $f['classroom']->id,
+            'is_active'    => true,
+        ]);
+
+        $this->actingAs($f['master'], 'sanctum')
+            ->deleteJson('/api/admin/staff-accounts/' . $original->id)
+            ->assertOk();
+
+        // 同じ username / email で再登録できる (識別子が解放されている)
+        $this->actingAs($f['master'], 'sanctum')
+            ->postJson('/api/admin/staff-accounts', [
+                'classroom_id' => $f['classroom']->id,
+                'username'     => 'acc_reuse_l014',
+                'password'     => 'secret123',
+                'full_name'    => '新・口座再利用',
+                'email'        => 'acc_reuse@example.jp',
+            ])
+            ->assertCreated();
+    }
 }

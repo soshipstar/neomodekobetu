@@ -67,6 +67,14 @@ class StaffAccountController extends Controller
 
         $query = User::where('user_type', 'staff')->with(['classroom.company']);
 
+        // 論理削除済みスタッフ (destroy で is_active=false + username='deleted__{id}__') は
+        // 一覧から除外する。旧アプリの物理削除と同じく一覧から消す。
+        // (単に無効化しただけ = is_active=false かつ通常 username は従来どおり表示)
+        $query->where(function ($q) {
+            $q->where('is_active', true)
+              ->orWhere('username', 'not like', 'deleted__%');
+        });
+
         if ($request->filled('classroom_id')) {
             $query->where('classroom_id', $request->classroom_id);
         }
@@ -195,6 +203,16 @@ class StaffAccountController extends Controller
 
     /**
      * スタッフアカウントを削除（マスター管理者専用）
+     *
+     * 旧アプリ staff_accounts_save.php は DELETE FROM users の物理削除だが、
+     * care-bridge は参照整合性 (面談記録・業務日誌など法定記録の cascade 消失防止。
+     * SCHEMA-01/05/07 と同方針) のため論理削除 + 識別子解放を行う
+     * (StaffManagementController::destroy と同方式):
+     *  - is_active = false
+     *  - email     = null                              (再利用可)
+     *  - username  = "deleted__{id}__{元の username}"  (一意制約から解放)
+     * 論理削除済みは index で一覧から除外するため、削除後は一覧から消え、
+     * 同じユーザー名・メールアドレスで再登録できる。
      */
     public function destroy(Request $request, User $user): JsonResponse
     {
@@ -204,11 +222,21 @@ class StaffAccountController extends Controller
             return response()->json(['success' => false, 'message' => 'スタッフアカウントではありません。'], 404);
         }
 
-        $user->update(['is_active' => false]);
+        // username に "deleted__<id>__" prefix を付けて一意制約から解放
+        // (users.username は 50 文字制限のため元の username を切り詰める)
+        $prefix = 'deleted__' . $user->id . '__';
+        $remaining = max(0, 50 - strlen($prefix));
+        $newUsername = $prefix . substr($user->username, 0, $remaining);
+
+        $user->update([
+            'is_active' => false,
+            'email'     => null,
+            'username'  => $newUsername,
+        ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'スタッフアカウントを無効にしました。',
+            'message' => 'スタッフアカウントを削除しました。',
         ]);
     }
 
