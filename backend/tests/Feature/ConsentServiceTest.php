@@ -88,6 +88,25 @@ class ConsentServiceTest extends TestCase
         $this->assertSame('improvement_aggregate', $records[0]->consent_key);
     }
 
+    public function test_warns_when_consent_definition_missing(): void
+    {
+        // 同意定義が無い環境では version/定義IDがNULLで積まれるが、検知できるよう警告が出る。
+        \App\Models\ConsentDefinition::query()->delete();
+        \Illuminate\Support\Facades\Log::spy();
+
+        $this->svc->recordCompanyConsent($this->company, true);
+
+        \Illuminate\Support\Facades\Log::shouldHaveReceived('warning')
+            ->withArgs(fn ($msg) => is_string($msg) && str_contains($msg, 'consent_definitions'))
+            ->atLeast()->once();
+
+        // 本処理(フラグ)は継続するが、版は記録されない
+        $rec = ConsentRecord::where('subject_type', 'company')->latest('id')->first();
+        $this->assertNull($rec->version);
+        $this->assertNull($rec->consent_definition_id);
+        $this->assertTrue($this->company->fresh()->ai_consent_aggregate);
+    }
+
     public function test_student_consent_records_version_and_company_id(): void
     {
         $this->svc->recordStudentConsent($this->student, true);

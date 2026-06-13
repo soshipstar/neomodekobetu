@@ -8,6 +8,7 @@ use App\Models\ConsentRecord;
 use App\Models\Student;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * AI学習基盤 同意基盤: 同意の判定と記録(企画書 §12)。
@@ -75,6 +76,11 @@ class ConsentService
     private function appendRecord(string $key, string $subjectType, int $subjectId, ?int $companyId, bool $granted, ?int $userId, string $role, string $method, ?string $evidence, ?int $version = null, ?string $note = null): void
     {
         $version ??= $this->activeVersion($key);
+        if ($version === null) {
+            // 同意定義(consent_definitions)が未投入。version/定義IDがNULLで積まれ、「どの文面版に同意したか」の
+            // 監査メタが欠落する。本番では ConsentDefinitionSeeder の投入が前提。検知できるよう警告を残す。
+            Log::warning("ConsentService: consent_definitions が未登録です(consent_key={$key})。ConsentDefinitionSeeder の投入を確認してください。");
+        }
         ConsentRecord::create([
             'consent_definition_id' => $this->definitionId($key, $version),
             'consent_key' => $key,
