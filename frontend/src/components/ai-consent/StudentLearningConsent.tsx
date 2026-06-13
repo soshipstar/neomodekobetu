@@ -133,8 +133,9 @@ export function StudentLearningConsent({ studentId }: { studentId: number }) {
         ) : (
           <div className="mt-4 space-y-3 rounded-lg border border-[var(--neutral-stroke-2)] p-4">
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-[var(--neutral-foreground-2)]">取得方法</label>
+              <label htmlFor="ai-consent-method" className="text-sm font-medium text-[var(--neutral-foreground-2)]">取得方法</label>
               <select
+                id="ai-consent-method"
                 className="rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm"
                 value={method}
                 onChange={(e) => setMethod(e.target.value as Method)}
@@ -147,8 +148,9 @@ export function StudentLearningConsent({ studentId }: { studentId: number }) {
               </select>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-[var(--neutral-foreground-2)]">備考（任意）</label>
+              <label htmlFor="ai-consent-note" className="text-sm font-medium text-[var(--neutral-foreground-2)]">備考（任意）</label>
               <input
+                id="ai-consent-note"
                 type="text"
                 className="rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] px-3 py-2 text-sm"
                 value={note}

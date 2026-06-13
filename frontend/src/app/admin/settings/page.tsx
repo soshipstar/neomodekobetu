@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ClassroomData {
   id: number;
@@ -24,6 +25,9 @@ interface ClassroomData {
 export default function AdminSettingsPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { user } = useAuth();
+  // 施設の集計同意を編集できるのは企業管理者/マスターのみ(サーバも403で強制)。
+  const canEditConsent = Boolean(user?.is_company_admin || user?.is_master);
   const [form, setForm] = useState<{
     classroom_id: number | null;
     classroom_name: string;
@@ -69,9 +73,15 @@ export default function AdminSettingsPage() {
   });
 
   const consentMutation = useMutation({
-    mutationFn: async (granted: boolean) => api.put('/api/admin/ai-consent/company', { granted }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'ai-consent-company'] });
+    mutationFn: async (granted: boolean) => {
+      const res = await api.put<{
+        data: { company_id: number; company_name: string; ai_consent_aggregate: boolean; ai_consent_aggregate_at: string | null };
+      }>('/api/admin/ai-consent/company', { granted });
+      return res.data.data;
+    },
+    // PUTが返す最新値を即キャッシュへ反映し、refetch完了までの旧値フリッカーを防ぐ。
+    onSuccess: (data) => {
+      queryClient.setQueryData(['admin', 'ai-consent-company'], data);
       toast.success('AI学習基盤の設定を保存しました');
     },
     onError: (err: unknown) => toast.error(formatApiError(err, '保存に失敗しました')),
@@ -131,9 +141,9 @@ export default function AdminSettingsPage() {
             <label className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
-                className="mt-1 h-4 w-4 accent-[var(--brand-background-1)]"
+                className="mt-1 h-4 w-4 accent-[var(--brand-background-1)] disabled:cursor-not-allowed disabled:opacity-60"
                 checked={aiConsent.ai_consent_aggregate}
-                disabled={consentMutation.isPending}
+                disabled={consentMutation.isPending || !canEditConsent}
                 onChange={(e) => consentMutation.mutate(e.target.checked)}
               />
               <span className="text-sm">
@@ -144,6 +154,11 @@ export default function AdminSettingsPage() {
                 {aiConsent.ai_consent_aggregate && aiConsent.ai_consent_aggregate_at && (
                   <span className="mt-1 block text-xs text-[var(--neutral-foreground-4)]">
                     最終更新: {new Date(aiConsent.ai_consent_aggregate_at).toLocaleString('ja-JP')}
+                  </span>
+                )}
+                {!canEditConsent && (
+                  <span className="mt-1 block text-xs text-[var(--neutral-foreground-4)]">
+                    この設定の変更は施設管理者のみ可能です。
                   </span>
                 )}
               </span>
