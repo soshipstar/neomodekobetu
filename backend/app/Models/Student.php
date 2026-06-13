@@ -27,6 +27,10 @@ class Student extends Model
         'mynameis_user_id',
         'mynameis_member_code',
         'mynameis_linked_at',
+        // AI学習基盤: Layer3学習利用の同意(現在値キャッシュ。正史はconsent_records)
+        'ai_consent_learning',
+        'ai_consent_learning_at',
+        'ai_consent_learning_version',
         'support_start_date',
         'assessment_initial_date',
         'support_plan_start_type',
@@ -67,6 +71,9 @@ class Student extends Model
         return [
             'birth_date' => 'date:Y-m-d',
             'mynameis_linked_at' => 'datetime',
+            'ai_consent_learning' => 'boolean',
+            'ai_consent_learning_at' => 'datetime',
+            'ai_consent_learning_version' => 'integer',
             'support_start_date' => 'date:Y-m-d',
             'assessment_initial_date' => 'date:Y-m-d',
             'withdrawal_date' => 'date:Y-m-d',
