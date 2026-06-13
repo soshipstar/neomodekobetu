@@ -13,6 +13,7 @@ import { PlanForm } from '@/components/support-plan/PlanForm';
 import { PlanPreview } from '@/components/support-plan/PlanPreview';
 import { AiGenerateButton } from '@/components/support-plan/AiGenerateButton';
 import { AbilitySummaryView } from '@/components/ability/AbilitySummaryView';
+import { StudentLearningConsent } from '@/components/ai-consent/StudentLearningConsent';
 import { formatDate } from '@/lib/utils';
 import { useToast } from '@/components/ui/Toast';
 import type { SupportPlan } from '@/types/support-plan';
@@ -84,6 +85,9 @@ export default function SupportPlanPage() {
           </Button>
         </div>
       </div>
+
+      {/* AI学習への利用同意（スタッフ代理記録）— 越境時は自己非表示 */}
+      <StudentLearningConsent studentId={studentId} />
 
       {/* Plan list */}
       {plans && plans.length > 0 ? (
