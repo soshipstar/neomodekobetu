@@ -47,6 +47,13 @@ Schedule::command('agent-payouts:calculate')
     ->withoutOverlapping()
     ->onOneServer();
 
+// AI学習基盤 Layer2: 修正傾向ロールアップ(ai_edit_metrics)を毎日 04:30 に当月分を再計算。
+// 冪等(delete→insert)・同意済みのみ・k匿名。直近の蓄積をレポートへ反映する。
+Schedule::command('ai:rebuild-edit-metrics')
+    ->dailyAt('04:30')
+    ->withoutOverlapping()
+    ->onOneServer();
+
 // 解決済みエラーログの自動削除 - 3日経過したものを毎日午前4時に削除
 Schedule::call(function () {
     // error_logs には updated_at 列が無い (created_at のみ)。
