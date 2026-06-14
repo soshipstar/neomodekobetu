@@ -38,6 +38,12 @@ interface Summary {
   counts: { scored: number; needs_review: number; subjective: number };
 }
 
+interface OutcomeData {
+  objective_delta: { has: boolean; scored_items?: number; avg_change?: number | null; improved?: number; declined?: number };
+  monitoring: { has: boolean; avg_level?: number; pct?: number; count?: number; monitoring_date?: string };
+  agreement: { has: boolean; overall?: number; domains?: { domain: string; objective: number; subjective: number; agreement: number }[] };
+}
+
 interface Props {
   studentId: number;
 }
@@ -60,6 +66,13 @@ export function AbilitySummaryView({ studentId }: Props) {
       const res = await api.get<{ data: Summary }>(`/api/staff/ability/students/${studentId}/summary`);
       return res.data.data;
     },
+    retry: false,
+  });
+
+  // S6 成果(outcome): A スコアΔ / B モニタリング達成度 / C 主観×客観の一致
+  const { data: outcome } = useQuery({
+    queryKey: ['ability-outcome', studentId],
+    queryFn: async () => (await api.get<{ data: OutcomeData }>(`/api/staff/ability/students/${studentId}/outcome`)).data.data,
     retry: false,
   });
 
@@ -166,6 +179,37 @@ export function AbilitySummaryView({ studentId }: Props) {
           />
           <Button variant="secondary" size="sm" isLoading={busy} onClick={saveLink}>保存</Button>
         </div>
+
+        {/* 成果(outcome): スコア変化 / モニタリング達成度 / 主観×客観の一致 */}
+        {outcome && (outcome.objective_delta.has || outcome.monitoring.has || outcome.agreement.has) && (
+          <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {outcome.objective_delta.has && (
+              <div className="rounded-lg border border-[var(--neutral-stroke-2)] p-3">
+                <div className="text-xs text-[var(--neutral-foreground-3)]">能力スコアの変化</div>
+                <div className="mt-1 text-sm text-[var(--neutral-foreground-1)]">
+                  向上 {outcome.objective_delta.improved} ／ 低下 {outcome.objective_delta.declined}
+                </div>
+                {outcome.objective_delta.avg_change != null && (
+                  <div className="text-xs text-[var(--neutral-foreground-4)]">平均Δ {outcome.objective_delta.avg_change}（{outcome.objective_delta.scored_items}項目）</div>
+                )}
+              </div>
+            )}
+            {outcome.monitoring.has && (
+              <div className="rounded-lg border border-[var(--neutral-stroke-2)] p-3">
+                <div className="text-xs text-[var(--neutral-foreground-3)]">モニタリング達成度</div>
+                <div className="mt-1 text-sm text-[var(--neutral-foreground-1)]">{outcome.monitoring.pct}%</div>
+                <div className="text-xs text-[var(--neutral-foreground-4)]">平均 {outcome.monitoring.avg_level}/5（{outcome.monitoring.count}項目）</div>
+              </div>
+            )}
+            {outcome.agreement.has && (
+              <div className="rounded-lg border border-[var(--neutral-stroke-2)] p-3">
+                <div className="text-xs text-[var(--neutral-foreground-3)]">主観×客観の一致</div>
+                <div className="mt-1 text-sm text-[var(--neutral-foreground-1)]">{outcome.agreement.overall}%</div>
+                <div className="text-xs text-[var(--neutral-foreground-4)]">本人の見立てと支援者の評価の近さ</div>
+              </div>
+            )}
+          </div>
+        )}
 
         {isLoading ? (
           <p className="py-6 text-center text-sm text-[var(--neutral-foreground-4)]">読み込み中...</p>
