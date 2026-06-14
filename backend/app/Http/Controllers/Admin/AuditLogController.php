@@ -14,7 +14,19 @@ class AuditLogController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $user = $request->user();
         $query = AuditLog::with('user:id,full_name,user_type');
+
+        // テナント分離(rank6): マスター以外は自施設の監査ログのみ閲覧できる。
+        // 施設が特定できない非マスターには何も返さない(fail-closed)。
+        if (! $user->isMasterAdmin()) {
+            $companyId = $user->company_id;
+            if ($companyId === null) {
+                $query->whereRaw('1 = 0');
+            } else {
+                $query->where('company_id', $companyId);
+            }
+        }
 
         if ($request->filled('user_id')) {
             $query->where('user_id', $request->user_id);
