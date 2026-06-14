@@ -338,6 +338,8 @@ class AssessmentController extends Controller
             // 観点5 プライバシー保護: 外部AIへ送る前に児童・保護者の氏名を仮名化する。
             // 中間生成物(domains/short/long)は仮名のまま連鎖させ、最終結果のみ復元する。
             $masker = \App\Support\PiiMasker::forStudent($student);
+            // AI学習基盤(S5): 施設の確定記述の傾向をマスク済みで注入(自己改善ループ)。null可。
+            $aiGuidance = app(\App\Services\WritingProfileService::class)->buildGuidance($student, 'assessment_staff');
             // スタッフアセスメントは個別支援計画書のベースになる重要な分析。
             // 5 か月分の連絡帳記録を入力に 5 領域 + 短期目標 + 長期目標を生成する
             // 長文タスクなので通常版で品質確保。他箇所と日付を 2026-03-17 に統一。
@@ -368,7 +370,7 @@ class AssessmentController extends Controller
             $domainsResponse = $client->chat()->create([
                 'model'    => $aiModel,
                 'messages' => [
-                    ['role' => 'user', 'content' => $masker->mask($domainsPrompt)],
+                    ['role' => 'user', 'content' => $masker->mask($domainsPrompt) . ($aiGuidance ? "\n\n".$aiGuidance : '')],
                 ],
                 'response_format'       => ['type' => 'json_object'],
                 'temperature'           => 0.6,
@@ -411,7 +413,7 @@ class AssessmentController extends Controller
             $shortTermResponse = $client->chat()->create([
                 'model'    => $aiModel,
                 'messages' => [
-                    ['role' => 'user', 'content' => $masker->mask($shortTermPrompt)],
+                    ['role' => 'user', 'content' => $masker->mask($shortTermPrompt) . ($aiGuidance ? "\n\n".$aiGuidance : '')],
                 ],
                 'temperature'           => 0.6,
                 'max_completion_tokens' => 800,
@@ -457,7 +459,7 @@ class AssessmentController extends Controller
             $longTermResponse = $client->chat()->create([
                 'model'    => $aiModel,
                 'messages' => [
-                    ['role' => 'user', 'content' => $masker->mask($longTermPrompt)],
+                    ['role' => 'user', 'content' => $masker->mask($longTermPrompt) . ($aiGuidance ? "\n\n".$aiGuidance : '')],
                 ],
                 'temperature'           => 0.6,
                 'max_completion_tokens' => 900,

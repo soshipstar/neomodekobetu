@@ -893,6 +893,10 @@ class RenrakuchoController extends Controller
         $masker = $student
             ? \App\Support\PiiMasker::forStudent($student)
             : new \App\Support\PiiMasker();
+        // AI学習基盤(S5): 施設の確定記述の傾向をマスク済みで注入(自己改善ループ)。null可。
+        $aiGuidance = $student
+            ? app(\App\Services\WritingProfileService::class)->buildGuidance($student, 'integrated_note')
+            : null;
 
         $domainText = implode("\n", $domains);
         $activityName = $record->activity_name;
@@ -1010,7 +1014,7 @@ class RenrakuchoController extends Controller
                 'messages' => [
                     ['role' => 'system', 'content' => 'あなたは個別支援教育の経験豊富な教員です。保護者に向けて温かく丁寧で、前向きでポジティブな連絡帳を書きます。本人の良い面や成長を見つけ、課題も成長の機会として前向きに伝えます。「しかし」「ですが」などのネガティブな接続詞は使わず、常にポジティブな表現を心がけます。連絡帳の対象児童を指すときは「本人」または児童名を使い、「子ども」「お子様」という言葉は使いません。他の児童は「友だち」と表記し、「友達」「保護者様」も使いません。入力された観察記録に書かれている事実のみに基づいて記述し、入力に無い活動・出来事・所見を創作しないでください。'],
                     // 観点5: 児童・保護者の実名を仮名化したプロンプトを送る。
-                    ['role' => 'user', 'content' => $masker->mask($prompt)],
+                    ['role' => 'user', 'content' => $masker->mask($prompt) . ($aiGuidance ? "\n\n".$aiGuidance : '')],
                 ],
                 'temperature' => 0.7,
                 'max_completion_tokens' => 1000,

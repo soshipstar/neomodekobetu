@@ -401,6 +401,8 @@ class MonitoringController extends Controller
         $student = $monitoring->student;
         // 観点5 プライバシー保護: 外部AIへ送る前に児童・保護者の氏名を仮名化する。
         $masker = \App\Support\PiiMasker::forStudent($student);
+        // AI学習基盤(S5): 施設の確定記述の傾向をマスク済みで注入(自己改善ループ)。null可。
+        $aiGuidance = app(\App\Services\WritingProfileService::class)->buildGuidance($student, 'monitoring');
         $planDetails = $monitoring->plan->details;
 
         if ($planDetails->isEmpty()) {
@@ -518,7 +520,7 @@ class MonitoringController extends Controller
                         ],
                         [
                             'role'    => 'user',
-                            'content' => $masker->mask($prompt),
+                            'content' => $masker->mask($prompt) . ($aiGuidance ? "\n\n".$aiGuidance : ''),
                         ],
                     ],
                     'response_format'       => ['type' => 'json_object'],
