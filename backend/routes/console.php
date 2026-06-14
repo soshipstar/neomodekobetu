@@ -54,6 +54,12 @@ Schedule::command('ai:rebuild-edit-metrics')
     ->withoutOverlapping()
     ->onOneServer();
 
+// 支援知蒸留(support_knowledge)を毎日 05:00 に法人内で再計算。同意あり法人のみ・k匿名。
+Schedule::command('ai:rebuild-knowledge')
+    ->dailyAt('05:00')
+    ->withoutOverlapping()
+    ->onOneServer();
+
 // 解決済みエラーログの自動削除 - 3日経過したものを毎日午前4時に削除
 Schedule::call(function () {
     // error_logs には updated_at 列が無い (created_at のみ)。
