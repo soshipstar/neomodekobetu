@@ -464,6 +464,8 @@ class SupportPlanController extends Controller
 
             // 観点5 プライバシー保護: 外部AIへ送る前に児童・保護者の氏名を仮名化する。
             $masker = \App\Support\PiiMasker::forStudent($student);
+            // AI学習基盤(S5): 施設の確定記述の傾向をマスク済みで注入(自己改善ループ)。null可。
+            $aiGuidance = app(\App\Services\WritingProfileService::class)->buildGuidance($student, 'support_plan');
             $client = \OpenAI::client($apiKey);
             $response = $client->chat()->create([
                 'model'    => 'gpt-5.4-2026-03-05',
@@ -516,7 +518,8 @@ class SupportPlanController extends Controller
                             . "- 【重要】五領域については、必ず施設内で実施できる支援内容を記述してください。家庭での取り組みは含めないでください\n"
                             . "- 支援内容は具体的な手順、頻度、使用する道具・環境、段階的なアプローチを含めてください\n"
                             . "- 抽象的な表現ではなく、実際に現場で実践できる具体的な内容を記述してください\n"
-                            . "- 【重要】長期目標・短期目標・支援目標には「1年後には」「半年後には」「○ヶ月後」「いつまでに」などの期間を含めた表現は絶対に使用しないでください"),
+                            . "- 【重要】長期目標・短期目標・支援目標には「1年後には」「半年後には」「○ヶ月後」「いつまでに」などの期間を含めた表現は絶対に使用しないでください")
+                            . ($aiGuidance ? "\n\n".$aiGuidance : ''),
                     ],
                 ],
                 'response_format'       => ['type' => 'json_object'],
