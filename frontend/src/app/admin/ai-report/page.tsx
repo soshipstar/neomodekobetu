@@ -8,6 +8,7 @@ import { SkeletonList } from '@/components/ui/Skeleton';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { AiReasonCandidates } from '@/components/ai-consent/AiReasonCandidates';
 import { ExemplarCuration } from '@/components/ai-consent/ExemplarCuration';
+import { ConsentStatusPanel } from '@/components/ai-consent/ConsentStatusPanel';
 
 interface ReasonRef { category_id: number | null; label: string; count: number }
 interface MetricRow {
@@ -82,6 +83,9 @@ export default function AiReportPage() {
           AIが生成した下書きに対して、職員がどれだけ・どんな理由で修正したかの傾向です。同意のある記録のみ・個人を特定しない集計(5件未満は非表示)。
         </p>
       </div>
+
+      {/* 同意の充足状況(蓄積0ボトルネックの可視化) */}
+      <ConsentStatusPanel />
 
       {/* 期間 + 集計軸 */}
       <div className="flex flex-wrap items-center gap-3">
