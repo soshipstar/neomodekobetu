@@ -23,6 +23,8 @@ class AiRevisionEvent extends Model
         'support_category', 'program_category_id', 'dim_meta',
         // D1 L2構造化(ルール)
         'structured',
+        // 見本キュレーション
+        'exemplar_status', 'curated_by', 'curated_at',
     ];
 
     protected $casts = [
@@ -34,6 +36,7 @@ class AiRevisionEvent extends Model
         'created_at' => 'datetime',
         'dim_meta' => 'array',
         'structured' => 'array',
+        'curated_at' => 'datetime',
     ];
 
     public function generationEvent(): BelongsTo
