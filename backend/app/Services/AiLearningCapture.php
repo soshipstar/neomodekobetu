@@ -144,6 +144,14 @@ class AiLearningCapture
                     'subj_gender' => $dims['gender'],
                     'support_category' => $this->supportCategoryFromKey((string) $key),
                     'program_category_id' => $programCategoryId,
+                    // D1 L2構造化(ルール・PII無し): タグ + 結果/仮説マーカー
+                    'structured' => StructuredExtractionService::extract(
+                        $after,
+                        $this->supportCategoryFromKey((string) $key),
+                        $programCategoryId,
+                        $dims['cohort'],
+                        $dims['growth_stage'],
+                    ),
                 ]);
 
                 foreach ($this->annotationsForKey($annByField, (string) $key) as $a) {
