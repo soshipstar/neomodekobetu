@@ -504,6 +504,8 @@ Route::prefix('staff')
         // 評価状況の全体像(別添・閲覧用: レーダー+詳細表データ / PDF別添)
         Route::get('/ability/students/{student}/summary', [App\Http\Controllers\Staff\AbilityObservationController::class, 'summary']);
         Route::get('/ability/students/{student}/summary/pdf', [App\Http\Controllers\Staff\AbilityObservationController::class, 'summaryPdf']);
+        // AI学習基盤 S6: 成果(outcome) A スコアΔ / B モニタリング達成度 / C 主観×客観の一致
+        Route::get('/ability/students/{student}/outcome', [App\Http\Controllers\Staff\AbilityObservationController::class, 'outcome']);
         // mynameis(本人の主観自己評価)との紐づけ設定
         Route::post('/ability/students/{student}/link-mynameis', [App\Http\Controllers\Staff\AbilityObservationController::class, 'linkMynameis']);
 

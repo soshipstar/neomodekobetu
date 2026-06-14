@@ -31,6 +31,7 @@ class AbilityObservationController extends Controller
         private AbilityQuestionService $questions,
         private AbilityScoringService $scoring,
         private AbilitySummaryService $summary,
+        private \App\Services\OutcomeService $outcome,
     ) {
     }
 
@@ -176,6 +177,21 @@ class AbilityObservationController extends Controller
         return response()->json([
             'success' => true,
             'data' => $this->summary->forStudent($student),
+        ]);
+    }
+
+    /**
+     * 成果(outcome)を返す(S6): A スコアΔ / B モニタリング達成度 / C 主観×客観の一致。
+     */
+    public function outcome(Request $request, Student $student): JsonResponse
+    {
+        if ($deny = $this->guard($request, $student)) {
+            return $deny;
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $this->outcome->forStudent($student),
         ]);
     }
 
