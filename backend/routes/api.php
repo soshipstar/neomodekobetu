@@ -237,6 +237,10 @@ Route::prefix('admin')
         Route::post('/edit-reason-candidates/{candidate}/promote', [App\Http\Controllers\Admin\EditReasonCandidateController::class, 'promote']);
         Route::post('/edit-reason-candidates/{candidate}/reject', [App\Http\Controllers\Admin\EditReasonCandidateController::class, 'reject']);
 
+        // --- 見本キュレーション: 学習に使う記録の採用/除外 ---
+        Route::get('/exemplars', [App\Http\Controllers\Admin\ExemplarCurationController::class, 'index']);
+        Route::post('/exemplars/{revision}', [App\Http\Controllers\Admin\ExemplarCurationController::class, 'setStatus']);
+
         // --- 一括登録（管理者用プロキシ） (#12-13) ---
         Route::post('/bulk-register/parse', [App\Http\Controllers\Staff\BulkRegisterController::class, 'parse']);
         Route::post('/bulk-register/execute', [App\Http\Controllers\Staff\BulkRegisterController::class, 'execute']);
