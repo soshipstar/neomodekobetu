@@ -124,6 +124,22 @@ class ConsentServiceTest extends TestCase
         $this->assertSame('revoked', $rec->state);
     }
 
+    public function test_consent_record_captures_immutable_definition_snapshot(): void
+    {
+        $this->svc->recordStudentConsent($this->student, true);
+        $rec = ConsentRecord::where('subject_type', 'student')->latest('id')->first();
+
+        // 同意時点の文面が不変スナップショットとして残る
+        $this->assertNotNull($rec->definition_snapshot);
+        $this->assertArrayHasKey('description', $rec->definition_snapshot);
+        $this->assertSame($rec->version, $rec->definition_snapshot['version']);
+        $original = $rec->definition_snapshot['description'];
+
+        // 定義の文面を版そのままで改訂しても、過去記録のスナップショットは変わらない(立証可能性)
+        \App\Models\ConsentDefinition::where('consent_key', 'model_learning')->update(['description' => '改訂後の別文面']);
+        $this->assertSame($original, $rec->fresh()->definition_snapshot['description'], 'スナップショットは定義改訂後も不変');
+    }
+
     public function test_student_consent_records_version_and_company_id(): void
     {
         $this->svc->recordStudentConsent($this->student, true);

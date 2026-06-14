@@ -87,14 +87,26 @@ class ConsentService
             // 撤回(revoke)は本人の権利として常に通す。定義欠落でもブロックしないが、検知用に警告を残す。
             Log::warning("ConsentService: consent_definitions 未登録のまま撤回を記録します(consent_key={$key})。ConsentDefinitionSeeder の投入を確認してください。");
         }
+        // 文面スナップショット(rank9): 同意時点の定義を1回取得し、ID と不変文面の両方に使う。
+        $definition = $version !== null
+            ? ConsentDefinition::where('consent_key', $key)->where('version', $version)->first()
+            : null;
+
         ConsentRecord::create([
-            'consent_definition_id' => $this->definitionId($key, $version),
+            'consent_definition_id' => $definition?->id,
             'consent_key' => $key,
             'subject_type' => $subjectType,
             'subject_id' => $subjectId,
             'company_id' => $companyId,
             'state' => $granted ? 'granted' : 'revoked',
             'version' => $version,
+            // 版改訂後も「何に同意したか」を立証できるよう提示文面を不変保存する。
+            'definition_snapshot' => $definition ? [
+                'title' => $definition->title,
+                'description' => $definition->description,
+                'version' => $definition->version,
+                'policy_url' => $definition->policy_url,
+            ] : null,
             'granted_by_user_id' => $userId,
             'granted_by_role' => $role,
             'acquisition_method' => $method,
@@ -109,14 +121,5 @@ class ConsentService
     {
         return ConsentDefinition::where('consent_key', $key)->where('is_active', true)
             ->max('version');
-    }
-
-    private function definitionId(string $key, ?int $version): ?int
-    {
-        if ($version === null) {
-            return null;
-        }
-
-        return ConsentDefinition::where('consent_key', $key)->where('version', $version)->value('id');
     }
 }

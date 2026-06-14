@@ -14,12 +14,13 @@ class ConsentRecord extends Model
 
     protected $fillable = [
         'consent_definition_id', 'consent_key', 'subject_type', 'subject_id', 'company_id',
-        'state', 'version', 'granted_by_user_id', 'granted_by_role', 'acquisition_method',
+        'state', 'version', 'definition_snapshot', 'granted_by_user_id', 'granted_by_role', 'acquisition_method',
         'evidence_ref', 'acquired_at', 'effective_from', 'note', 'created_at',
     ];
 
     protected $casts = [
         'version' => 'integer',
+        'definition_snapshot' => 'array',
         'acquired_at' => 'datetime',
         'effective_from' => 'datetime',
         'created_at' => 'datetime',
