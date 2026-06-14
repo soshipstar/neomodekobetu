@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import api, { formatApiError } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -18,6 +19,13 @@ export function AiInquiryPanel({ studentId }: { studentId: number }) {
   const [busy, setBusy] = useState(false);
   const [questions, setQuestions] = useState<string[]>([]);
   const [hypotheses, setHypotheses] = useState<string[]>([]);
+
+  // D3: 自分の記録レベル(育成・成長志向の表示)
+  const { data: level } = useQuery({
+    queryKey: ['ai-assist-level'],
+    queryFn: async () => (await api.get<{ data: { level: number; label: string; next_hint: string } }>('/api/staff/ai-assist/level')).data.data,
+    retry: false,
+  });
 
   const ask = async () => {
     if (text.trim() === '') return;
@@ -50,6 +58,15 @@ export function AiInquiryPanel({ studentId }: { studentId: number }) {
         <p className="mb-2 text-xs text-[var(--neutral-foreground-3)]">
           記録のメモを入れると、AIが文章を書く代わりに「観察を深める問い」と「考えられる原因(仮説)の候補」を返します。記録の質を高めるための補助です。
         </p>
+        {level && (
+          <div className="mb-2 flex items-start gap-2 rounded-md bg-[var(--neutral-background-2)] p-2 text-xs">
+            <MaterialIcon name="trending_up" size={14} className="mt-0.5 text-[var(--brand-foreground-1,#1a73e8)]" />
+            <span className="text-[var(--neutral-foreground-2)]">
+              あなたの記録レベル: <span className="font-medium">{level.label}</span>。{level.next_hint}
+              <span className="block text-[var(--neutral-foreground-4)]">（成長に合わせてAIの問いの量が変わります。回数で評価するものではありません）</span>
+            </span>
+          </div>
+        )}
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}

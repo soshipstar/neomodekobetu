@@ -13,6 +13,8 @@ interface ReasonRef { category_id: number | null; label: string; count: number }
 interface MetricRow {
   dim_value: string | number | null;
   label: string;
+  level: number | null;
+  level_label: string | null;
   distinct_students: number;
   gen_count: number;
   revision_count: number;
@@ -159,7 +161,14 @@ export default function AiReportPage() {
                 <tbody>
                   {rows.map((r, i) => (
                     <tr key={i} className="border-b border-[var(--neutral-stroke-3,#eee)]">
-                      <td className="py-2 pr-3 font-medium text-[var(--neutral-foreground-1)]">{r.label}</td>
+                      <td className="py-2 pr-3 font-medium text-[var(--neutral-foreground-1)]">
+                        {r.label}
+                        {r.level_label && (
+                          <span className="ml-2 rounded-full bg-[var(--neutral-background-3)] px-2 py-0.5 text-xs font-normal text-[var(--neutral-foreground-2)]">
+                            {r.level_label}
+                          </span>
+                        )}
+                      </td>
                       <td className="py-2 pr-3 text-[var(--neutral-foreground-2)]">{r.distinct_students}</td>
                       <td className="py-2 pr-3">
                         <div className="flex items-center gap-2">
