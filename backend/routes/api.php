@@ -232,6 +232,11 @@ Route::prefix('admin')
         // --- AI学習基盤: 修正傾向レポート (Layer2集計の閲覧) ---
         Route::get('/ai-edit-metrics', [App\Http\Controllers\Admin\AiEditMetricsController::class, 'index']);
 
+        // --- AI学習基盤: 修正理由カテゴリ候補の昇格(動的タクソノミー) ---
+        Route::get('/edit-reason-candidates', [App\Http\Controllers\Admin\EditReasonCandidateController::class, 'index']);
+        Route::post('/edit-reason-candidates/{candidate}/promote', [App\Http\Controllers\Admin\EditReasonCandidateController::class, 'promote']);
+        Route::post('/edit-reason-candidates/{candidate}/reject', [App\Http\Controllers\Admin\EditReasonCandidateController::class, 'reject']);
+
         // --- 一括登録（管理者用プロキシ） (#12-13) ---
         Route::post('/bulk-register/parse', [App\Http\Controllers\Staff\BulkRegisterController::class, 'parse']);
         Route::post('/bulk-register/execute', [App\Http\Controllers\Staff\BulkRegisterController::class, 'execute']);
@@ -443,6 +448,11 @@ Route::prefix('staff')
         // --- AI学習基盤: 児童の学習同意(スタッフ代理記録) ---
         Route::get('/students/{student}/ai-consent', [App\Http\Controllers\Staff\AiConsentController::class, 'show']);
         Route::put('/students/{student}/ai-consent', [App\Http\Controllers\Staff\AiConsentController::class, 'update']);
+
+        // --- AI学習基盤: 修正理由(chips+自由記述)の記録 ---
+        Route::get('/edit-reason-categories', [App\Http\Controllers\Staff\EditReasonController::class, 'categories']);
+        Route::get('/students/{student}/edit-reasons', [App\Http\Controllers\Staff\EditReasonController::class, 'revisions']);
+        Route::post('/edit-reasons/{revision}/attach', [App\Http\Controllers\Staff\EditReasonController::class, 'attach']);
 
         // --- モニタリング ---
         Route::get('/students/{student}/monitoring', [App\Http\Controllers\Staff\MonitoringController::class, 'index']);
