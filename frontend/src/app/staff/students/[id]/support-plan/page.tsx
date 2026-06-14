@@ -16,6 +16,7 @@ import { AbilitySummaryView } from '@/components/ability/AbilitySummaryView';
 import { StudentLearningConsent } from '@/components/ai-consent/StudentLearningConsent';
 import { EditReasonPanel } from '@/components/ai-consent/EditReasonPanel';
 import { AiInquiryPanel } from '@/components/ai-consent/AiInquiryPanel';
+import { KnowledgePanel } from '@/components/ai-consent/KnowledgePanel';
 import { formatDate } from '@/lib/utils';
 import { useToast } from '@/components/ui/Toast';
 import type { SupportPlan } from '@/types/support-plan';
@@ -93,6 +94,9 @@ export default function SupportPlanPage() {
 
       {/* AI記録支援（D2 問い返し・仮説提示） */}
       <AiInquiryPanel studentId={studentId} />
+
+      {/* 同条件の支援傾向（D5 横断検索・根拠提示）— 同条件の蓄積が無ければ自己非表示 */}
+      <KnowledgePanel studentId={studentId} />
 
       {/* 修正理由の記録（§11）— 修正イベントが無ければ自己非表示 */}
       <EditReasonPanel studentId={studentId} />
