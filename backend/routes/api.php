@@ -229,6 +229,9 @@ Route::prefix('admin')
         Route::get('/ai-consent/company', [App\Http\Controllers\Admin\AiConsentController::class, 'companyShow']);
         Route::put('/ai-consent/company', [App\Http\Controllers\Admin\AiConsentController::class, 'companyUpdate']);
 
+        // --- AI学習基盤: 修正傾向レポート (Layer2集計の閲覧) ---
+        Route::get('/ai-edit-metrics', [App\Http\Controllers\Admin\AiEditMetricsController::class, 'index']);
+
         // --- 一括登録（管理者用プロキシ） (#12-13) ---
         Route::post('/bulk-register/parse', [App\Http\Controllers\Staff\BulkRegisterController::class, 'parse']);
         Route::post('/bulk-register/execute', [App\Http\Controllers\Staff\BulkRegisterController::class, 'execute']);
