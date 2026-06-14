@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
 import { AiReasonCandidates } from '@/components/ai-consent/AiReasonCandidates';
+import { ExemplarCuration } from '@/components/ai-consent/ExemplarCuration';
 
 interface ReasonRef { category_id: number | null; label: string; count: number }
 interface MetricRow {
@@ -200,6 +201,9 @@ export default function AiReportPage() {
           </CardBody>
         </Card>
       )}
+
+      {/* 見本キュレーション(学習に使う記録の選別) */}
+      <ExemplarCuration />
 
       {/* 修正理由の新カテゴリ候補(動的タクソノミー) */}
       <AiReasonCandidates />
