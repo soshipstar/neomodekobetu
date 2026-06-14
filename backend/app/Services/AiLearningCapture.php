@@ -142,6 +142,8 @@ class AiLearningCapture
                     'subj_growth_stage' => $dims['growth_stage'],
                     'subj_grade_level' => $dims['grade_level'],
                     'subj_gender' => $dims['gender'],
+                    // S4e 特性(統制コードのみ・PII無し)。空なら null。
+                    'dim_meta' => $dims['traits'] !== [] ? ['traits' => $dims['traits']] : null,
                     'support_category' => $this->supportCategoryFromKey((string) $key),
                     'program_category_id' => $programCategoryId,
                     // D1 L2構造化(ルール・PII無し): タグ + 結果/仮説マーカー
@@ -195,10 +197,10 @@ class AiLearningCapture
     }
 
     /**
-     * 記録時点の分析次元(コホート/成長段階/学年/性別)を児童から算出する(S4a)。
+     * 記録時点の分析次元(コホート/成長段階/学年/性別/特性)を児童から算出する(S4a/S4e)。
      * 履歴正確性のためイベントごとに凍結保存する。
      *
-     * @return array{cohort:string,growth_stage:string,grade_level:?string,gender:?string}
+     * @return array{cohort:string,growth_stage:string,grade_level:?string,gender:?string,traits:array<int,string>}
      */
     private function subjectDimensions(Student $student): array
     {
@@ -207,6 +209,8 @@ class AiLearningCapture
             'growth_stage' => \App\Support\AbilityGrowthStage::forStudent($student),
             'grade_level' => $student->grade_level,
             'gender' => $student->gender,
+            // S4e 特性(統制コード)。要配慮のため修正イベント側(canUseForLearning)でのみ凍結する。
+            'traits' => \App\Support\StudentTrait::forStudent($student),
         ];
     }
 

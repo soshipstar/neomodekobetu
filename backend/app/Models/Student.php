@@ -21,6 +21,8 @@ class Student extends Model
         'password_hash',
         'birth_date',
         'gender',
+        // S4e 多次元分析の特性軸(要配慮)。StudentTrait統制コードの配列。
+        'traits',
         'grade_level',
         'grade_adjustment',
         'guardian_id',
@@ -71,6 +73,7 @@ class Student extends Model
     {
         return [
             'birth_date' => 'date:Y-m-d',
+            'traits' => 'array',
             'mynameis_linked_at' => 'datetime',
             'ai_consent_learning' => 'boolean',
             'ai_consent_learning_at' => 'datetime',
