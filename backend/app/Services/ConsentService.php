@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\ConsentDefinitionMissingException;
 use App\Models\Company;
 use App\Models\ConsentDefinition;
 use App\Models\ConsentRecord;
@@ -77,9 +78,14 @@ class ConsentService
     {
         $version ??= $this->activeVersion($key);
         if ($version === null) {
-            // 同意定義(consent_definitions)が未投入。version/定義IDがNULLで積まれ、「どの文面版に同意したか」の
-            // 監査メタが欠落する。本番では ConsentDefinitionSeeder の投入が前提。検知できるよう警告を残す。
-            Log::warning("ConsentService: consent_definitions が未登録です(consent_key={$key})。ConsentDefinitionSeeder の投入を確認してください。");
+            // 同意定義(consent_definitions)が未投入。version/定義IDがNULLの granted レコードは
+            // 「どの文面版に同意したか」を後から立証できず、append-only のため修正不可。
+            if ($granted) {
+                // fail-closed: 壊れた「同意」を積まない。Tx ごとロールバックし、利用者に対処を促す。
+                throw new ConsentDefinitionMissingException($key);
+            }
+            // 撤回(revoke)は本人の権利として常に通す。定義欠落でもブロックしないが、検知用に警告を残す。
+            Log::warning("ConsentService: consent_definitions 未登録のまま撤回を記録します(consent_key={$key})。ConsentDefinitionSeeder の投入を確認してください。");
         }
         ConsentRecord::create([
             'consent_definition_id' => $this->definitionId($key, $version),

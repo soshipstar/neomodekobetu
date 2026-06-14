@@ -88,23 +88,40 @@ class ConsentServiceTest extends TestCase
         $this->assertSame('improvement_aggregate', $records[0]->consent_key);
     }
 
-    public function test_warns_when_consent_definition_missing(): void
+    public function test_grant_fails_closed_when_consent_definition_missing(): void
     {
-        // 同意定義が無い環境では version/定義IDがNULLで積まれるが、検知できるよう警告が出る。
+        // 同意定義が無い環境で grant すると版/定義IDがNULLの「立証不能な同意」が積まれてしまう。
+        // append-only で後から直せないため fail-closed: 例外で中断し、壊れた記録もフラグも残さない。
+        \App\Models\ConsentDefinition::query()->delete();
+
+        try {
+            $this->svc->recordCompanyConsent($this->company, true);
+            $this->fail('同意定義が無い場合の grant は例外を投げるべき');
+        } catch (\App\Exceptions\ConsentDefinitionMissingException $e) {
+            // 期待どおり
+        }
+
+        // Tx ロールバックで壊れたレコードもフラグも残らない
+        $this->assertSame(0, ConsentRecord::where('subject_type', 'company')->count());
+        $this->assertFalse($this->company->fresh()->ai_consent_aggregate);
+    }
+
+    public function test_revoke_allowed_even_when_consent_definition_missing(): void
+    {
+        // 撤回(revoke)は本人の権利として常に通す(定義欠落でもブロックしない)。
+        $this->svc->recordCompanyConsent($this->company, true); // 定義ありで grant
         \App\Models\ConsentDefinition::query()->delete();
         \Illuminate\Support\Facades\Log::spy();
 
-        $this->svc->recordCompanyConsent($this->company, true);
+        $this->svc->recordCompanyConsent($this->company, false); // 定義を消した後でも撤回は通る
 
         \Illuminate\Support\Facades\Log::shouldHaveReceived('warning')
             ->withArgs(fn ($msg) => is_string($msg) && str_contains($msg, 'consent_definitions'))
             ->atLeast()->once();
 
-        // 本処理(フラグ)は継続するが、版は記録されない
+        $this->assertFalse($this->company->fresh()->ai_consent_aggregate);
         $rec = ConsentRecord::where('subject_type', 'company')->latest('id')->first();
-        $this->assertNull($rec->version);
-        $this->assertNull($rec->consent_definition_id);
-        $this->assertTrue($this->company->fresh()->ai_consent_aggregate);
+        $this->assertSame('revoked', $rec->state);
     }
 
     public function test_student_consent_records_version_and_company_id(): void
