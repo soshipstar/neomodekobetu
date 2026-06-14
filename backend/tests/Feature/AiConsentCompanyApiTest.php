@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Classroom;
 use App\Models\Company;
 use App\Models\ConsentRecord;
+use App\Models\Student;
 use App\Models\User;
 use Database\Seeders\ConsentDefinitionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -97,6 +98,34 @@ class AiConsentCompanyApiTest extends TestCase
 
         $this->actingAs($master, 'sanctum')->getJson('/api/admin/ai-consent/company')->assertStatus(409);
         $this->actingAs($master, 'sanctum')->putJson('/api/admin/ai-consent/company', ['granted' => true])->assertStatus(409);
+    }
+
+    public function test_status_reports_consent_counts_with_and_condition(): void
+    {
+        $admin = $this->companyAdmin();
+        // 在籍3名中2名が学習同意
+        Student::create(['student_name' => '児1', 'classroom_id' => $this->room->id, 'ai_consent_learning' => true, 'status' => 'active', 'is_active' => true]);
+        Student::create(['student_name' => '児2', 'classroom_id' => $this->room->id, 'ai_consent_learning' => true, 'status' => 'active', 'is_active' => true]);
+        Student::create(['student_name' => '児3', 'classroom_id' => $this->room->id, 'ai_consent_learning' => false, 'status' => 'active', 'is_active' => true]);
+
+        // 別法人の同意児童は自施設の集計に含めない(テナント分離)
+        $other = Company::create(['name' => '別法人']);
+        $otherRoom = Classroom::create(['classroom_name' => '別事業所', 'company_id' => $other->id, 'is_active' => true]);
+        Student::create(['student_name' => '他児', 'classroom_id' => $otherRoom->id, 'ai_consent_learning' => true, 'status' => 'active', 'is_active' => true]);
+
+        // 施設の集計同意OFF → AND不成立で学習対象0
+        $this->actingAs($admin, 'sanctum')->getJson('/api/admin/ai-consent/status')
+            ->assertStatus(200)
+            ->assertJsonPath('data.students_total', 3)
+            ->assertJsonPath('data.students_consented', 2)
+            ->assertJsonPath('data.ai_consent_aggregate', false)
+            ->assertJsonPath('data.students_learning_active', 0);
+
+        // 施設ON → 学習対象 = 学習同意児童数
+        $this->actingAs($admin, 'sanctum')->putJson('/api/admin/ai-consent/company', ['granted' => true])->assertStatus(200);
+        $this->actingAs($admin, 'sanctum')->getJson('/api/admin/ai-consent/status')
+            ->assertStatus(200)
+            ->assertJsonPath('data.students_learning_active', 2);
     }
 
     public function test_staff_cannot_access_admin_route(): void
