@@ -54,7 +54,8 @@ class KnowledgeDistillationService
             ->get(['id', 'grade_level', 'birth_date', 'grade_adjustment']);
 
         $groups = $students->groupBy(fn ($s) => StudentCohort::forStudent($s).'|'.AbilityGrowthStage::forStudent($s));
-        $masker = $this->profiles->companyMasker($companyId);
+        // 施設マスカー + マスク不能な短名(1文字氏名)を一度だけ構築し、見本抜粋のPII除去に共用する。
+        [$masker, $shortNames] = $this->profiles->companyMaskerAndShortNames($companyId);
 
         $rows = [];
         foreach ($groups as $key => $members) {
@@ -62,7 +63,7 @@ class KnowledgeDistillationService
                 continue; // k-匿名
             }
             [$cohort, $stage] = explode('|', $key);
-            $rows[] = $this->distillGroup($companyId, $cohort, $stage, $members, $masker);
+            $rows[] = $this->distillGroup($companyId, $cohort, $stage, $members, $masker, $shortNames);
         }
 
         DB::transaction(function () use ($companyId, $rows) {
@@ -75,8 +76,11 @@ class KnowledgeDistillationService
         return count($rows);
     }
 
-    /** @param  \Illuminate\Support\Collection<int,Student>  $members */
-    private function distillGroup(int $companyId, string $cohort, string $stage, $members, PiiMasker $masker): array
+    /**
+     * @param  \Illuminate\Support\Collection<int,Student>  $members
+     * @param  array<int,string>  $shortNames  マスク不能な短い氏名(残存時は抜粋を捨てる)
+     */
+    private function distillGroup(int $companyId, string $cohort, string $stage, $members, PiiMasker $masker, array $shortNames): array
     {
         $sids = $members->pluck('id');
         $revs = AiRevisionEvent::where('company_id', $companyId)->whereIn('student_id', $sids)
@@ -108,13 +112,14 @@ class KnowledgeDistillationService
             }
         }
 
-        // 見本抜粋(採用見本 or 確定済み、マスク済)
+        // 見本抜粋(採用見本 or 確定済み)。施設マスク+構造化PII除去+短名fail-safe(共通経路)。
+        // 短名が残る抜粋は scrubExcerpt が null を返し、ここで捨てる(PII残留の防止)。
         $excerpts = $revs->filter(fn ($r) => $r->exemplar_status === 'adopted' || in_array($r->edit_kind, ['official', 'submit', 'publish'], true))
             ->map(fn ($r) => [
                 'section' => $r->section_key,
-                'text' => mb_substr(PiiMasker::scrubStructuredPii(trim($masker->mask((string) $r->after_text))), 0, 140),
+                'text' => $this->profiles->scrubExcerpt((string) $r->after_text, $masker, $shortNames, 140),
             ])
-            ->filter(fn ($e) => $e['text'] !== '')->unique('text')->take(4)->values()->all();
+            ->filter(fn ($e) => $e['text'] !== null)->unique('text')->take(4)->values()->all();
 
         return [
             'company_id' => $companyId,

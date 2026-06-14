@@ -162,22 +162,37 @@ class WritingProfileService
             if (count($bySection[$label]) >= $maxPerSection) {
                 continue;
             }
-            // 1) 施設の氏名マスク → 2) 構造化PII(日付・電話・番号・敬称付き人物名)を除去
-            $masked = PiiMasker::scrubStructuredPii(trim($masker->mask($text)));
-            // 3) fail-safe: MIN_LENGTH未満(1文字)でマスクできない氏名が残る例文は捨てる
-            foreach ($shortNames as $sn) {
-                if (mb_strpos($masked, $sn) !== false) {
-                    $masked = '';
-                    break;
-                }
-            }
-            $masked = mb_substr(trim($masked), 0, 180);
-            if ($masked !== '' && ! in_array($masked, $bySection[$label], true)) {
+            $masked = $this->scrubExcerpt($text, $masker, $shortNames, 180);
+            if ($masked !== null && ! in_array($masked, $bySection[$label], true)) {
                 $bySection[$label][] = $masked;
             }
         }
 
         return array_slice($bySection, 0, $maxSections, true);
+    }
+
+    /**
+     * 抜粋1件を外部提示できる安全な形にマスクする(施設氏名マスク → 構造化PII除去 → 短名fail-safe → 長さ制限)。
+     * マスク不能な短い氏名(1文字)が残る場合や空になる場合は null を返す(=その抜粋は捨てる)。
+     *
+     * 自己改善ループの例示(maskedExamples)と支援知の見本抜粋(KnowledgeDistillation)で共用し、
+     * 外部提示テキストのPII除去を1経路に集約する。
+     *
+     * @param  array<int,string>  $shortNames  companyMaskerAndShortNames が返すマスク不能な短い氏名
+     */
+    public function scrubExcerpt(string $text, PiiMasker $masker, array $shortNames, int $maxLen = 180): ?string
+    {
+        // 1) 施設の氏名マスク → 2) 構造化PII(日付・電話・番号・敬称付き人物名)を除去
+        $masked = PiiMasker::scrubStructuredPii(trim($masker->mask(trim($text))));
+        // 3) fail-safe: 1文字でマスクできない氏名が残る抜粋は丸ごと捨てる
+        foreach ($shortNames as $sn) {
+            if ($sn !== '' && mb_strpos($masked, $sn) !== false) {
+                return null;
+            }
+        }
+        $masked = mb_substr(trim($masked), 0, $maxLen);
+
+        return $masked !== '' ? $masked : null;
     }
 
     /** 施設の全児童+保護者の氏名を登録したマスカー(見本キュレーションのプレビュー等で再利用)。 */
@@ -189,10 +204,11 @@ class WritingProfileService
     /**
      * 施設の全児童+保護者の氏名を登録したマスカーと、マスク不能な短い氏名(1文字)の集合を返す。
      * 児童クエリは1回のみ(保護者は取得済みコレクションから導出)。
+     * 支援知蒸留(KnowledgeDistillation)でも見本抜粋のマスクに再利用するため public。
      *
      * @return array{0:PiiMasker,1:array<int,string>}
      */
-    private function companyMaskerAndShortNames(int $companyId): array
+    public function companyMaskerAndShortNames(int $companyId): array
     {
         $masker = new PiiMasker();
         $shortNames = [];
