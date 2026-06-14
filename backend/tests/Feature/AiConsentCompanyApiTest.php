@@ -128,6 +128,23 @@ class AiConsentCompanyApiTest extends TestCase
             ->assertJsonPath('data.students_learning_active', 2);
     }
 
+    public function test_unconsented_students_list_scoped_to_company(): void
+    {
+        $admin = $this->companyAdmin();
+        Student::create(['student_name' => '同意児', 'classroom_id' => $this->room->id, 'ai_consent_learning' => true, 'status' => 'active', 'is_active' => true]);
+        Student::create(['student_name' => '未同意児', 'classroom_id' => $this->room->id, 'ai_consent_learning' => false, 'status' => 'active', 'is_active' => true]);
+        // 別法人の未同意児は含めない(テナント分離)
+        $other = Company::create(['name' => '別法人']);
+        $otherRoom = Classroom::create(['classroom_name' => '別事業所', 'company_id' => $other->id, 'is_active' => true]);
+        Student::create(['student_name' => '他児', 'classroom_id' => $otherRoom->id, 'ai_consent_learning' => false, 'status' => 'active', 'is_active' => true]);
+
+        $res = $this->actingAs($admin, 'sanctum')->getJson('/api/admin/ai-consent/unconsented-students')->assertStatus(200);
+        $names = collect($res->json('data.students'))->pluck('name');
+        $this->assertContains('未同意児', $names);
+        $this->assertNotContains('同意児', $names);   // 同意済みは出ない
+        $this->assertNotContains('他児', $names);      // 別法人は出ない
+    }
+
     public function test_staff_cannot_access_admin_route(): void
     {
         $staff = User::create([

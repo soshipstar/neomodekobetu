@@ -230,6 +230,8 @@ Route::prefix('admin')
         Route::put('/ai-consent/company', [App\Http\Controllers\Admin\AiConsentController::class, 'companyUpdate']);
         // 同意の充足状況(施設+児童の件数)。蓄積0ボトルネックの可視化(rank2)。
         Route::get('/ai-consent/status', [App\Http\Controllers\Admin\AiConsentController::class, 'status']);
+        // 学習未同意の在籍児童一覧(個別支援計画への記録導線)(rank2続)。
+        Route::get('/ai-consent/unconsented-students', [App\Http\Controllers\Admin\AiConsentController::class, 'unconsentedStudents']);
 
         // --- AI学習基盤: 修正傾向レポート (Layer2集計の閲覧) ---
         Route::get('/ai-edit-metrics', [App\Http\Controllers\Admin\AiEditMetricsController::class, 'index']);

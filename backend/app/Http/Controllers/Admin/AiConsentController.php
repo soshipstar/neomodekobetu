@@ -95,6 +95,36 @@ class AiConsentController extends Controller
         ]]);
     }
 
+    /**
+     * GET /api/admin/ai-consent/unconsented-students : 学習未同意の在籍児童一覧(自施設)。
+     *
+     * 「どの子が未同意か」を示し、各児童の個別支援計画(同意記録UI)へ誘導する導線用。
+     * 自施設の在籍児童のみ・氏名は管理者本人にのみ返す(外部送信・集計用途ではない)。
+     */
+    public function unconsentedStudents(Request $request): JsonResponse
+    {
+        $company = $this->resolveCompany($request);
+        if (! $company) {
+            return response()->json(['success' => false, 'message' => '所属施設が特定できません。'], 409);
+        }
+
+        $students = Student::whereHas('classroom', fn ($q) => $q->where('company_id', $company->id))
+            ->whereIn('status', ['active', 'trial', 'short_term'])
+            ->where(fn ($q) => $q->whereNull('ai_consent_learning')->orWhere('ai_consent_learning', false))
+            ->with('classroom:id,classroom_name')
+            ->orderBy('classroom_id')->orderBy('student_name')
+            ->limit(500)
+            ->get(['id', 'student_name', 'classroom_id']);
+
+        return response()->json(['success' => true, 'data' => [
+            'students' => $students->map(fn ($s) => [
+                'id' => $s->id,
+                'name' => $s->student_name,
+                'classroom_name' => $s->classroom?->classroom_name,
+            ])->all(),
+        ]]);
+    }
+
     private function resolveCompany(Request $request): ?Company
     {
         $companyId = $request->user()->company_id;
