@@ -47,6 +47,9 @@ class WritingProfileService
         'language_communication' => '言語・コミュニケーション', 'social_relations' => '人間関係・社会性',
     ];
 
+    /** 例示に使う最低文字数(短すぎる=低信号を除外)。structured.text_length で判定。 */
+    private const MIN_EXAMPLE_LENGTH = 10;
+
     public function __construct(private ConsentService $consent) {}
 
     /**
@@ -114,14 +117,29 @@ class WritingProfileService
      */
     private function maskedExamples(int $companyId, string $documentType, int $maxPerSection, int $maxSections): array
     {
+        // ★見本キュレーション(ノイズ除去): 学習に使う例示は品質ゲートを通ったもののみ。
+        //  - exemplar_status='excluded' は除外
+        //  - 採用見本(adopted) は無条件で採用
+        //  - それ以外は「確定済み(official/submit/publish) かつ 最低文字数(structured.text_length)」のみ
+        //  - 並び: 採用見本 → 因果まで書けた記録 → 新しい順
         $events = AiRevisionEvent::where('company_id', $companyId)
             ->where('document_type', $documentType)
             ->where('changed', true)
             ->whereNotNull('after_text')
+            ->where(fn ($q) => $q->whereNull('exemplar_status')->orWhere('exemplar_status', '!=', 'excluded'))
+            ->where(function ($q) {
+                $q->where('exemplar_status', 'adopted')
+                    ->orWhere(function ($w) {
+                        $w->whereIn('edit_kind', ['official', 'submit', 'publish'])
+                            ->whereRaw("(structured->>'text_length')::int >= ?", [self::MIN_EXAMPLE_LENGTH]);
+                    });
+            })
             ->whereHas('student', function ($q) {
                 $q->where('ai_consent_learning', true)
                     ->whereHas('classroom.company', fn ($c) => $c->where('ai_consent_aggregate', true));
             })
+            ->orderByRaw("case when exemplar_status = 'adopted' then 0 else 1 end")
+            ->orderByRaw("case when (structured->>'has_hypothesis_marker')::boolean then 0 else 1 end")
             ->orderByDesc('id')
             ->limit(300)
             ->get(['id', 'section_key', 'student_id', 'after_text']);
@@ -160,6 +178,12 @@ class WritingProfileService
         }
 
         return array_slice($bySection, 0, $maxSections, true);
+    }
+
+    /** 施設の全児童+保護者の氏名を登録したマスカー(見本キュレーションのプレビュー等で再利用)。 */
+    public function companyMasker(int $companyId): PiiMasker
+    {
+        return $this->companyMaskerAndShortNames($companyId)[0];
     }
 
     /**

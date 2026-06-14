@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AiEditMetric;
 use App\Models\AiEditReasonCategory;
+use App\Models\AiRevisionEvent;
 use App\Models\Classroom;
 use App\Models\Company;
 use App\Models\Student;
@@ -70,7 +71,7 @@ class WritingProfileServiceTest extends TestCase
         $this->capture->recordSectionRevisions($past, 'support_plan', $past->id, [
             'long_term_goal' => ['初期', '山田太郎は集団活動の中で自分の役割を担うことができる'],
             'detail:health_life:support_content' => ['初期', '朝の支度を手順表を用いて自分で進める'],
-        ], editorUserId: $this->staff->id);
+        ], editKind: 'submit', editorUserId: $this->staff->id);
 
         $target = $this->fullyConsentedStudent('別の児童');
         $guidance = $this->svc->buildGuidance($target, 'support_plan');
@@ -93,7 +94,7 @@ class WritingProfileServiceTest extends TestCase
         $past = $this->fullyConsentedStudent('山田太郎');
         $this->capture->recordSectionRevisions($past, 'support_plan', $past->id, [
             'long_term_goal' => ['初期', '山田太郎は鈴木花子と協力して活動に取り組むことができる'],
-        ], editorUserId: $this->staff->id);
+        ], editKind: 'submit', editorUserId: $this->staff->id);
 
         $guidance = $this->svc->buildGuidance($this->fullyConsentedStudent('対象児'), 'support_plan');
         $this->assertNotNull($guidance);
@@ -108,7 +109,7 @@ class WritingProfileServiceTest extends TestCase
         $past = $this->fullyConsentedStudent('山田太郎');
         $this->capture->recordSectionRevisions($past, 'support_plan', $past->id, [
             'long_term_goal' => ['初期', '2018年4月3日生まれ。連絡先090-1234-5678。田中先生と通院する'],
-        ], editorUserId: $this->staff->id);
+        ], editKind: 'submit', editorUserId: $this->staff->id);
 
         $g = $this->svc->buildGuidance($this->fullyConsentedStudent('対象'), 'support_plan');
         $this->assertNotNull($g);
@@ -129,12 +130,40 @@ class WritingProfileServiceTest extends TestCase
         $this->capture->recordSectionRevisions($past, 'support_plan', $past->id, [
             'long_term_goal' => ['初期', '林と一緒に活動に取り組めた'],   // 1文字氏名を含む→捨てる
             'short_term_goal' => ['初期', '集団活動に自分から参加できた'], // 安全→残す
-        ], editorUserId: $this->staff->id);
+        ], editKind: 'submit', editorUserId: $this->staff->id);
 
         $g = $this->svc->buildGuidance($this->fullyConsentedStudent('対象'), 'support_plan');
         $this->assertNotNull($g);
         $this->assertStringNotContainsString('林と一緒', $g);       // 1文字氏名を含む例は除外
         $this->assertStringContainsString('集団活動に自分から参加', $g); // 安全な例は残る
+    }
+
+    public function test_quality_gate_filters_noise(): void
+    {
+        $this->consent->recordCompanyConsent($this->company, true);
+        $past = $this->fullyConsentedStudent('山田太郎');
+
+        $make = function (string $section, string $after, string $editKind, ?string $exemplar) use ($past) {
+            AiRevisionEvent::create([
+                'company_id' => $this->company->id, 'classroom_id' => $this->room->id, 'student_id' => $past->id,
+                'document_type' => 'support_plan', 'document_id' => 1, 'section_key' => $section,
+                'after_text' => $after, 'change_ratio' => 0.5, 'changed' => true,
+                'edit_kind' => $editKind, 'editor_role' => 'staff', 'sensitivity' => 'raw',
+                'exemplar_status' => $exemplar,
+                'structured' => ['text_length' => mb_strlen($after), 'has_hypothesis_marker' => false, 'has_result_marker' => false, 'tags' => []],
+            ]);
+        };
+        $make('long_term_goal', '確定された良い長期目標の記述です(submit)', 'submit', null);          // 採用される
+        $make('short_term_goal', '下書きのままの記述です(save_draft)', 'save_draft', null);           // 除外(未確定)
+        $make('overall_policy', '除外指定された記述です(excluded)', 'submit', 'excluded');             // 除外(明示)
+        $make('life_intention', '採用見本の下書き記述です(adopted)', 'save_draft', 'adopted');        // 採用(見本指定が優先)
+
+        $g = $this->svc->buildGuidance($past, 'support_plan');
+        $this->assertNotNull($g);
+        $this->assertStringContainsString('確定された良い長期目標', $g);  // submit確定
+        $this->assertStringContainsString('採用見本の下書き', $g);        // adopted優先
+        $this->assertStringNotContainsString('下書きのままの記述', $g);   // ★save_draftはノイズとして除外
+        $this->assertStringNotContainsString('除外指定された記述', $g);   // ★excludedは除外
     }
 
     public function test_directives_from_metrics(): void
@@ -157,7 +186,7 @@ class WritingProfileServiceTest extends TestCase
     {
         // 施設が集計同意していない → プロファイルを使わない
         $past = $this->fullyConsentedStudent('山田太郎');
-        $this->capture->recordSectionRevisions($past, 'support_plan', $past->id, ['long_term_goal' => ['初期', '改訂']], editorUserId: $this->staff->id);
+        $this->capture->recordSectionRevisions($past, 'support_plan', $past->id, ['long_term_goal' => ['初期', '改訂']], editKind: 'submit', editorUserId: $this->staff->id);
 
         $target = $this->fullyConsentedStudent('別児');
         $this->assertNull($this->svc->buildGuidance($target, 'support_plan'));
