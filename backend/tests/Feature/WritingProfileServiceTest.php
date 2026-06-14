@@ -84,6 +84,24 @@ class WritingProfileServiceTest extends TestCase
         $this->assertStringContainsString('【児童】', $guidance);
     }
 
+    public function test_masks_other_children_mentioned_in_examples(): void
+    {
+        $this->consent->recordCompanyConsent($this->company, true);
+        // 同施設の別児童(例文中で言及される)
+        Student::create(['student_name' => '鈴木花子', 'classroom_id' => $this->room->id, 'status' => 'active', 'is_active' => true]);
+
+        $past = $this->fullyConsentedStudent('山田太郎');
+        $this->capture->recordSectionRevisions($past, 'support_plan', $past->id, [
+            'long_term_goal' => ['初期', '山田太郎は鈴木花子と協力して活動に取り組むことができる'],
+        ], editorUserId: $this->staff->id);
+
+        $guidance = $this->svc->buildGuidance($this->fullyConsentedStudent('対象児'), 'support_plan');
+        $this->assertNotNull($guidance);
+        $this->assertStringNotContainsString('山田太郎', $guidance);
+        // ★例文が他児に言及していても、施設全体マスカーで他児名もマスクされる
+        $this->assertStringNotContainsString('鈴木花子', $guidance);
+    }
+
     public function test_directives_from_metrics(): void
     {
         $this->consent->recordCompanyConsent($this->company, true);

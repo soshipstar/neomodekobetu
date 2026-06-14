@@ -6,6 +6,7 @@ use App\Models\AiEditMetric;
 use App\Models\AiEditReasonCategory;
 use App\Models\AiRevisionEvent;
 use App\Models\Student;
+use App\Models\User;
 use App\Support\PiiMasker;
 use Illuminate\Support\Facades\Log;
 
@@ -129,14 +130,14 @@ class WritingProfileService
             return [];
         }
 
-        $students = Student::with('guardian')->whereIn('id', $events->pluck('student_id')->unique())->get()->keyBy('id');
-        $maskers = $students->map(fn ($s) => PiiMasker::forStudent($s));
+        // ★施設全体のマスカー: 例文が他児・他保護者の氏名に言及していても確実にマスクする
+        // (1児童分のマスカーでは他児の名前が漏れうるため、施設の全児童+保護者名を登録する)。
+        $masker = $this->companyMasker($companyId);
 
         $bySection = [];
         foreach ($events as $e) {
-            $masker = $maskers[$e->student_id] ?? null;
             $text = trim((string) $e->after_text);
-            if ($masker === null || $text === '') {
+            if ($text === '') {
                 continue;
             }
             $label = $this->sectionLabel($e->section_key);
@@ -152,6 +153,24 @@ class WritingProfileService
         }
 
         return array_slice($bySection, 0, $maxSections, true);
+    }
+
+    /** 施設の全児童+保護者の氏名を登録したマスカー(例文の他児・他者名の漏れを防ぐ)。 */
+    private function companyMasker(int $companyId): PiiMasker
+    {
+        $masker = new PiiMasker();
+        $studentsQ = Student::whereHas('classroom', fn ($q) => $q->where('company_id', $companyId));
+        (clone $studentsQ)->get(['student_name', 'student_name_kana'])->each(function ($s) use ($masker) {
+            $masker->add($s->student_name, '【児童】')->add($s->student_name_kana, '【児童カナ】');
+        });
+        $guardianIds = (clone $studentsQ)->whereNotNull('guardian_id')->pluck('guardian_id')->unique();
+        if ($guardianIds->isNotEmpty()) {
+            User::whereIn('id', $guardianIds)->get(['full_name', 'full_name_kana'])->each(function ($g) use ($masker) {
+                $masker->add($g->full_name, '【保護者】')->add($g->full_name_kana, '【保護者カナ】');
+            });
+        }
+
+        return $masker;
     }
 
     private function sectionLabel(string $sectionKey): string
