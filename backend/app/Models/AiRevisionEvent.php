@@ -21,6 +21,8 @@ class AiRevisionEvent extends Model
         // S4a 分析次元スナップショット
         'subj_cohort', 'subj_growth_stage', 'subj_grade_level', 'subj_gender',
         'support_category', 'program_category_id', 'dim_meta',
+        // D1 L2構造化(ルール)
+        'structured',
     ];
 
     protected $casts = [
@@ -31,6 +33,7 @@ class AiRevisionEvent extends Model
         'changed' => 'boolean',
         'created_at' => 'datetime',
         'dim_meta' => 'array',
+        'structured' => 'array',
     ];
 
     public function generationEvent(): BelongsTo
