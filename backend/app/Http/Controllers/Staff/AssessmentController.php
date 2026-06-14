@@ -166,6 +166,39 @@ class AssessmentController extends Controller
     }
 
     /**
+     * 保護者アセスメント(家庭からの視点)を生成プロンプト用の要約テキストへ整形する。
+     * 記入済みの項目のみを並べる(空項目は出さない)。実名のマスクは呼び出し側の
+     * $masker->mask() に委ねる(連絡帳/面談記録と同じ取り扱い)。
+     */
+    public static function guardianAssessmentSummary(?AssessmentGuardian $g): string
+    {
+        if (! $g) {
+            return '';
+        }
+        $parts = [
+            '本人の願い(家庭)' => $g->student_wish,
+            '家庭での困りごと' => $g->home_challenges,
+            '短期目標(家庭の希望)' => $g->short_term_goal,
+            '長期目標(家庭の希望)' => $g->long_term_goal,
+            '健康・生活(家庭)' => $g->domain_health_life,
+            '運動・感覚(家庭)' => $g->domain_motor_sensory,
+            '認知・行動(家庭)' => $g->domain_cognitive_behavior,
+            '言語・コミュニケーション(家庭)' => $g->domain_language_communication,
+            '人間関係・社会性(家庭)' => $g->domain_social_relations,
+            'その他(家庭)' => $g->other_challenges,
+        ];
+        $out = '';
+        foreach ($parts as $label => $text) {
+            $text = trim((string) $text);
+            if ($text !== '') {
+                $out .= "\n■ {$label}\n{$text}\n";
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * アセスメントスタッフ記入を更新
      */
     public function update(Request $request, AssessmentPeriod $period): JsonResponse
@@ -313,6 +346,16 @@ class AssessmentController extends Controller
             }
         }
 
+        // 同期間に保護者が提出済みのアセスメント(家庭からの視点)を取得し、生成の文脈に加える。
+        // 家庭での困りごと・本人の願い・家庭から見た領域所見/目標は、施設だけでは得られない
+        // 構造的に異なる情報で、支援案の質を高める。未提出/非開示や未記入は使わない。
+        $guardianEntry = AssessmentGuardian::where('period_id', $period->id)
+            ->where('student_id', $student->id)
+            ->where('is_submitted', true)
+            ->where('is_hidden', false)
+            ->first();
+        $guardianSummary = $this->guardianAssessmentSummary($guardianEntry);
+
         // 前回のスタッフアセスメントの目標を取得（レガシー準拠）
         $previousEntry = AssessmentStaff::where('student_id', $student->id)
             ->where('is_submitted', true)
@@ -351,6 +394,7 @@ class AssessmentController extends Controller
             $domainsPrompt = "あなたは発達支援・特別支援教育の専門スタッフです。以下の生徒の直近5か月の連絡帳記録を詳細に分析し、今後6か月間の具体的な支援課題を各領域ごとに300文字程度でまとめてください。\n\n"
                 . "【生徒情報】\n名前: {$student->student_name}\n\n"
                 . "【直近5か月の連絡帳記録】\n{$recordsSummary}\n\n"
+                . (trim($guardianSummary) !== '' ? "【保護者アセスメント(家庭からの視点)】{$guardianSummary}\n" : '')
                 . "【分析と課題作成の指針】\n"
                 . "以下の5つの領域について、記録から読み取れる具体的な事実を基に、今後6か月間で取り組むべき課題を300文字程度で詳細に記述してください。\n\n"
                 . "■ 健康・生活\n- 食事、排泄、睡眠、衛生管理、身だしなみ、安全意識などの実態\n- 観察された具体的な行動や変化\n- 今後の支援目標と具体的なアプローチ\n\n"
@@ -400,6 +444,9 @@ class AssessmentController extends Controller
             if (!empty(trim($interviewSummary))) {
                 $shortTermPrompt .= "\n\n【面談記録からの情報】\n" . $interviewSummary;
             }
+            if (!empty(trim($guardianSummary))) {
+                $shortTermPrompt .= "\n\n【保護者アセスメント(家庭からの視点)】\n" . $guardianSummary;
+            }
 
             $shortTermPrompt .= "\n\n【短期目標作成の要点】\n"
                 . "- 各領域の課題を総合的に考慮し、優先度の高いものから記述\n"
@@ -429,6 +476,9 @@ class AssessmentController extends Controller
 
             if (!empty(trim($interviewSummary))) {
                 $longTermPrompt .= "\n\n【面談記録からの情報】\n" . $interviewSummary;
+            }
+            if (!empty(trim($guardianSummary))) {
+                $longTermPrompt .= "\n\n【保護者アセスメント(家庭からの視点)】\n" . $guardianSummary;
             }
 
             if ($previousLongTermGoal || $previousShortTermGoal) {
@@ -507,7 +557,7 @@ class AssessmentController extends Controller
                 generationType: 'assessment',
                 model: $aiModel,
                 payload: $result,
-                sources: ['assessment_period_id' => $period->id, 'record_count' => $records->count()],
+                sources: ['assessment_period_id' => $period->id, 'record_count' => $records->count(), 'guardian_assessment_used' => $guardianEntry !== null],
                 aiGenerationLogId: $log?->id,
                 masker: $masker,
                 userId: $request->user()->id,
