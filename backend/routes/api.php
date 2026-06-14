@@ -457,6 +457,9 @@ Route::prefix('staff')
         Route::post('/ai-assist/inquiry', [App\Http\Controllers\Staff\AiAssistController::class, 'inquiry']);
         Route::get('/ai-assist/level', [App\Http\Controllers\Staff\AiAssistController::class, 'level']);
 
+        // --- 支援知蒸留 D5: 横断検索・根拠提示(法人内、児童の条件に合致する支援知) ---
+        Route::get('/students/{student}/knowledge', [App\Http\Controllers\Staff\SupportKnowledgeController::class, 'forStudent']);
+
         // --- AI学習基盤: 修正理由(chips+自由記述)の記録 ---
         Route::get('/edit-reason-categories', [App\Http\Controllers\Staff\EditReasonController::class, 'categories']);
         Route::get('/students/{student}/edit-reasons', [App\Http\Controllers\Staff\EditReasonController::class, 'revisions']);
