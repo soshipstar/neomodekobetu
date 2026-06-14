@@ -449,6 +449,9 @@ Route::prefix('staff')
         Route::get('/students/{student}/ai-consent', [App\Http\Controllers\Staff\AiConsentController::class, 'show']);
         Route::put('/students/{student}/ai-consent', [App\Http\Controllers\Staff\AiConsentController::class, 'update']);
 
+        // --- 支援知蒸留 D2: AI記録支援(問い返し・仮説提示) ---
+        Route::post('/ai-assist/inquiry', [App\Http\Controllers\Staff\AiAssistController::class, 'inquiry']);
+
         // --- AI学習基盤: 修正理由(chips+自由記述)の記録 ---
         Route::get('/edit-reason-categories', [App\Http\Controllers\Staff\EditReasonController::class, 'categories']);
         Route::get('/students/{student}/edit-reasons', [App\Http\Controllers\Staff\EditReasonController::class, 'revisions']);
