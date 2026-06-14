@@ -102,6 +102,41 @@ class WritingProfileServiceTest extends TestCase
         $this->assertStringNotContainsString('鈴木花子', $guidance);
     }
 
+    public function test_scrubs_non_name_pii_from_examples(): void
+    {
+        $this->consent->recordCompanyConsent($this->company, true);
+        $past = $this->fullyConsentedStudent('山田太郎');
+        $this->capture->recordSectionRevisions($past, 'support_plan', $past->id, [
+            'long_term_goal' => ['初期', '2018年4月3日生まれ。連絡先090-1234-5678。田中先生と通院する'],
+        ], editorUserId: $this->staff->id);
+
+        $g = $this->svc->buildGuidance($this->fullyConsentedStudent('対象'), 'support_plan');
+        $this->assertNotNull($g);
+        // 生年月日・電話・敬称付き人物名(他者)が外部AI向け文面に残らない
+        $this->assertStringNotContainsString('2018年4月3日', $g);
+        $this->assertStringNotContainsString('090-1234-5678', $g);
+        $this->assertStringNotContainsString('田中先生', $g);
+        $this->assertStringContainsString('【日付】', $g);
+        $this->assertStringContainsString('【電話】', $g);
+    }
+
+    public function test_drops_examples_with_unmaskable_short_names(): void
+    {
+        $this->consent->recordCompanyConsent($this->company, true);
+        Student::create(['student_name' => '林', 'classroom_id' => $this->room->id, 'status' => 'active', 'is_active' => true]); // 1文字氏名
+
+        $past = $this->fullyConsentedStudent('山田太郎');
+        $this->capture->recordSectionRevisions($past, 'support_plan', $past->id, [
+            'long_term_goal' => ['初期', '林と一緒に活動に取り組めた'],   // 1文字氏名を含む→捨てる
+            'short_term_goal' => ['初期', '集団活動に自分から参加できた'], // 安全→残す
+        ], editorUserId: $this->staff->id);
+
+        $g = $this->svc->buildGuidance($this->fullyConsentedStudent('対象'), 'support_plan');
+        $this->assertNotNull($g);
+        $this->assertStringNotContainsString('林と一緒', $g);       // 1文字氏名を含む例は除外
+        $this->assertStringContainsString('集団活動に自分から参加', $g); // 安全な例は残る
+    }
+
     public function test_directives_from_metrics(): void
     {
         $this->consent->recordCompanyConsent($this->company, true);

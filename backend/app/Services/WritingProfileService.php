@@ -130,9 +130,8 @@ class WritingProfileService
             return [];
         }
 
-        // ★施設全体のマスカー: 例文が他児・他保護者の氏名に言及していても確実にマスクする
-        // (1児童分のマスカーでは他児の名前が漏れうるため、施設の全児童+保護者名を登録する)。
-        $masker = $this->companyMasker($companyId);
+        // ★施設全体のマスカー(他児・他保護者の氏名も確実にマスク)を1回のロードで構築。
+        [$masker, $shortNames] = $this->companyMaskerAndShortNames($companyId);
 
         $bySection = [];
         foreach ($events as $e) {
@@ -145,8 +144,16 @@ class WritingProfileService
             if (count($bySection[$label]) >= $maxPerSection) {
                 continue;
             }
-            $masked = trim($masker->mask($text));
-            $masked = mb_substr($masked, 0, 180);
+            // 1) 施設の氏名マスク → 2) 構造化PII(日付・電話・番号・敬称付き人物名)を除去
+            $masked = PiiMasker::scrubStructuredPii(trim($masker->mask($text)));
+            // 3) fail-safe: MIN_LENGTH未満(1文字)でマスクできない氏名が残る例文は捨てる
+            foreach ($shortNames as $sn) {
+                if (mb_strpos($masked, $sn) !== false) {
+                    $masked = '';
+                    break;
+                }
+            }
+            $masked = mb_substr(trim($masked), 0, 180);
             if ($masked !== '' && ! in_array($masked, $bySection[$label], true)) {
                 $bySection[$label][] = $masked;
             }
@@ -155,22 +162,43 @@ class WritingProfileService
         return array_slice($bySection, 0, $maxSections, true);
     }
 
-    /** 施設の全児童+保護者の氏名を登録したマスカー(例文の他児・他者名の漏れを防ぐ)。 */
-    private function companyMasker(int $companyId): PiiMasker
+    /**
+     * 施設の全児童+保護者の氏名を登録したマスカーと、マスク不能な短い氏名(1文字)の集合を返す。
+     * 児童クエリは1回のみ(保護者は取得済みコレクションから導出)。
+     *
+     * @return array{0:PiiMasker,1:array<int,string>}
+     */
+    private function companyMaskerAndShortNames(int $companyId): array
     {
         $masker = new PiiMasker();
-        $studentsQ = Student::whereHas('classroom', fn ($q) => $q->where('company_id', $companyId));
-        (clone $studentsQ)->get(['student_name', 'student_name_kana'])->each(function ($s) use ($masker) {
-            $masker->add($s->student_name, '【児童】')->add($s->student_name_kana, '【児童カナ】');
-        });
-        $guardianIds = (clone $studentsQ)->whereNotNull('guardian_id')->pluck('guardian_id')->unique();
+        $shortNames = [];
+        $register = function (?string $name, string $placeholder) use ($masker, &$shortNames) {
+            $name = is_string($name) ? trim($name) : '';
+            if ($name === '') {
+                return;
+            }
+            if (mb_strlen($name) < 2) {
+                $shortNames[] = $name; // PiiMaskerが登録しない=漏れ防止のため例文ごと除外する対象
+            } else {
+                $masker->add($name, $placeholder);
+            }
+        };
+
+        $students = Student::whereHas('classroom', fn ($q) => $q->where('company_id', $companyId))
+            ->get(['student_name', 'student_name_kana', 'guardian_id']);
+        foreach ($students as $s) {
+            $register($s->student_name, '【児童】');
+            $register($s->student_name_kana, '【児童カナ】');
+        }
+        $guardianIds = $students->pluck('guardian_id')->filter()->unique();
         if ($guardianIds->isNotEmpty()) {
-            User::whereIn('id', $guardianIds)->get(['full_name', 'full_name_kana'])->each(function ($g) use ($masker) {
-                $masker->add($g->full_name, '【保護者】')->add($g->full_name_kana, '【保護者カナ】');
-            });
+            foreach (User::whereIn('id', $guardianIds)->get(['full_name', 'full_name_kana']) as $g) {
+                $register($g->full_name, '【保護者】');
+                $register($g->full_name_kana, '【保護者カナ】');
+            }
         }
 
-        return $masker;
+        return [$masker, array_values(array_unique($shortNames))];
     }
 
     private function sectionLabel(string $sectionKey): string
