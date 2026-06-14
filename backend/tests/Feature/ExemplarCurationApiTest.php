@@ -47,15 +47,40 @@ class ExemplarCurationApiTest extends TestCase
         ]);
     }
 
-    public function test_index_returns_masked_preview(): void
+    public function test_index_returns_masked_preview_and_stats(): void
     {
         $res = $this->actingAs($this->admin, 'sanctum')->getJson('/api/admin/exemplars');
-        $res->assertStatus(200)->assertJsonCount(1, 'data');
-        $preview = $res->json('data.0.preview');
+        $res->assertStatus(200)->assertJsonCount(1, 'data.items');
+        $preview = $res->json('data.items.0.preview');
         // プレビューに実名が出ない(施設マスカーでマスク)
         $this->assertStringNotContainsString('山田太郎', $preview);
         $this->assertStringContainsString('集団活動に自分から参加', $preview);
-        $this->assertNull($res->json('data.0.exemplar_status'));
+        $this->assertNull($res->json('data.items.0.exemplar_status'));
+        // 運用可視化: 進捗統計
+        $this->assertSame(1, $res->json('data.stats.finalized_total'));
+        $this->assertSame(1, $res->json('data.stats.uncurated'));
+        $this->assertSame(0, $res->json('data.stats.adopted'));
+        // 因果マーカー無し→推奨ではない
+        $this->assertSame(0, $res->json('data.stats.recommended_uncurated'));
+        $this->assertFalse($res->json('data.items.0.recommended'));
+    }
+
+    public function test_recommended_uncurated_surfaced_first(): void
+    {
+        // 因果(仮説)まで書けた未判定の確定記録 → 推奨候補として先頭に出る
+        $rec = AiRevisionEvent::create([
+            'company_id' => $this->company->id, 'classroom_id' => $this->room->id, 'student_id' => $this->student->id,
+            'document_type' => 'support_plan', 'document_id' => 2, 'section_key' => 'short_term_goal',
+            'after_text' => '不安が高いため、見通しを示すと落ち着いて参加できた', 'change_ratio' => 0.3, 'changed' => true,
+            'edit_kind' => 'official', 'editor_role' => 'staff', 'sensitivity' => 'raw',
+            'structured' => ['text_length' => 25, 'has_hypothesis_marker' => true, 'has_result_marker' => true, 'tags' => []],
+        ]);
+
+        $res = $this->actingAs($this->admin, 'sanctum')->getJson('/api/admin/exemplars')->assertStatus(200);
+        $this->assertSame(1, $res->json('data.stats.recommended_uncurated'));
+        // 推奨は先頭(sortByDesc recommended)
+        $this->assertSame($rec->id, $res->json('data.items.0.id'));
+        $this->assertTrue($res->json('data.items.0.recommended'));
     }
 
     public function test_admin_adopts_and_excludes(): void

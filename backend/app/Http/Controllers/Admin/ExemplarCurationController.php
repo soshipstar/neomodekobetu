@@ -25,6 +25,9 @@ class ExemplarCurationController extends Controller
         'assessment_staff' => 'アセスメント', 'integrated_note' => '連絡帳',
     ];
 
+    /** 推奨候補の最低文字数(WritingProfileService の例示最低長と同水準)。 */
+    private const MIN_RECOMMEND_LENGTH = 10;
+
     public function __construct(private WritingProfileService $profiles) {}
 
     /** GET /api/admin/exemplars : キュレーション候補(自施設の確定済み記録、新しい順) */
@@ -39,11 +42,26 @@ class ExemplarCurationController extends Controller
             return response()->json(['success' => false, 'message' => '所属施設が特定できません。'], 409);
         }
 
-        $rows = AiRevisionEvent::query()
+        // 確定済み記録(学習対象になりうる母集団)
+        $base = fn () => AiRevisionEvent::query()
             ->when(! $user->isMasterAdmin(), fn ($q) => $q->where('company_id', $companyId))
             ->where('changed', true)->whereNotNull('after_text')
-            ->whereIn('edit_kind', ['official', 'submit', 'publish'])
-            ->orderByRaw("case when exemplar_status is null then 0 else 1 end") // 未判定を先に
+            ->whereIn('edit_kind', ['official', 'submit', 'publish']);
+
+        // 運用可視化(rank7): キュレーションの進捗と「採用すべき良質な未判定候補」数。
+        $stats = [
+            'finalized_total' => $base()->count(),
+            'adopted' => $base()->where('exemplar_status', 'adopted')->count(),
+            'excluded' => $base()->where('exemplar_status', 'excluded')->count(),
+            'uncurated' => $base()->whereNull('exemplar_status')->count(),
+            'recommended_uncurated' => $base()->whereNull('exemplar_status')
+                ->whereRaw("(structured->>'text_length')::int >= ?", [self::MIN_RECOMMEND_LENGTH])
+                ->whereRaw("((structured->>'has_hypothesis_marker')::boolean = true OR (structured->>'has_result_marker')::boolean = true)")
+                ->count(),
+        ];
+
+        $rows = $base()
+            ->orderByRaw('case when exemplar_status is null then 0 else 1 end') // 未判定を先に
             ->orderByDesc('id')->limit(60)->get();
 
         // 施設ごとのマスカーをまとめて用意(プレビューを実名なしにする)
@@ -53,6 +71,12 @@ class ExemplarCurationController extends Controller
             $maskers[$cid] ??= $this->profiles->companyMasker($cid);
             $preview = PiiMasker::scrubStructuredPii(trim($maskers[$cid]->mask((string) $r->after_text)));
 
+            $hasHyp = (bool) ($r->structured['has_hypothesis_marker'] ?? false);
+            $hasRes = (bool) ($r->structured['has_result_marker'] ?? false);
+            $len = (int) ($r->structured['text_length'] ?? 0);
+            // 推奨=未判定 かつ 因果/結果の記述あり かつ 一定の長さ(見本に値する素地)
+            $recommended = $r->exemplar_status === null && ($hasHyp || $hasRes) && $len >= self::MIN_RECOMMEND_LENGTH;
+
             return [
                 'id' => $r->id,
                 'document_type' => $r->document_type,
@@ -60,13 +84,15 @@ class ExemplarCurationController extends Controller
                 'section_key' => $r->section_key,
                 'change_ratio' => $r->change_ratio,
                 'edit_kind' => $r->edit_kind,
-                'has_hypothesis' => (bool) ($r->structured['has_hypothesis_marker'] ?? false),
+                'has_hypothesis' => $hasHyp,
+                'has_result' => $hasRes,
+                'recommended' => $recommended,
                 'exemplar_status' => $r->exemplar_status,
                 'preview' => mb_substr($preview, 0, 140),
             ];
-        });
+        })->sortByDesc('recommended')->values(); // 推奨を先頭へ(PHP8の安定ソートで既存順を保持)
 
-        return response()->json(['success' => true, 'data' => $data]);
+        return response()->json(['success' => true, 'data' => ['stats' => $stats, 'items' => $data]]);
     }
 
     /** POST /api/admin/exemplars/{revision} {status: adopted|excluded|cleared} */
