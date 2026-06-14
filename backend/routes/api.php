@@ -453,6 +453,10 @@ Route::prefix('staff')
         Route::get('/students/{student}/ai-consent', [App\Http\Controllers\Staff\AiConsentController::class, 'show']);
         Route::put('/students/{student}/ai-consent', [App\Http\Controllers\Staff\AiConsentController::class, 'update']);
 
+        // --- AI学習基盤 S4e: 児童の特性(統制タグ・要配慮・集計のみ) ---
+        Route::get('/students/{student}/traits', [App\Http\Controllers\Staff\StudentTraitController::class, 'show']);
+        Route::put('/students/{student}/traits', [App\Http\Controllers\Staff\StudentTraitController::class, 'update']);
+
         // --- 支援知蒸留 D2/D3: AI記録支援(問い返し)+ 支援者成長レベル ---
         Route::post('/ai-assist/inquiry', [App\Http\Controllers\Staff\AiAssistController::class, 'inquiry']);
         Route::get('/ai-assist/level', [App\Http\Controllers\Staff\AiAssistController::class, 'level']);
