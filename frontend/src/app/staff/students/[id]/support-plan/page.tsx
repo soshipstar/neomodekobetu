@@ -14,6 +14,7 @@ import { PlanPreview } from '@/components/support-plan/PlanPreview';
 import { AiGenerateButton } from '@/components/support-plan/AiGenerateButton';
 import { AbilitySummaryView } from '@/components/ability/AbilitySummaryView';
 import { StudentLearningConsent } from '@/components/ai-consent/StudentLearningConsent';
+import { StudentTraitsPanel } from '@/components/ai-consent/StudentTraitsPanel';
 import { EditReasonPanel } from '@/components/ai-consent/EditReasonPanel';
 import { AiInquiryPanel } from '@/components/ai-consent/AiInquiryPanel';
 import { KnowledgePanel } from '@/components/ai-consent/KnowledgePanel';
@@ -91,6 +92,9 @@ export default function SupportPlanPage() {
 
       {/* AI学習への利用同意（スタッフ代理記録）— 越境時は自己非表示 */}
       <StudentLearningConsent studentId={studentId} />
+
+      {/* 支援上の特性（S4e 多次元分析の特性軸）— 越境時は自己非表示 */}
+      <StudentTraitsPanel studentId={studentId} />
 
       {/* AI記録支援（D2 問い返し・仮説提示） */}
       <AiInquiryPanel studentId={studentId} />
