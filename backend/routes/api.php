@@ -233,6 +233,11 @@ Route::prefix('admin')
         // 学習未同意の在籍児童一覧(個別支援計画への記録導線)(rank2続)。
         Route::get('/ai-consent/unconsented-students', [App\Http\Controllers\Admin\AiConsentController::class, 'unconsentedStudents']);
 
+        // --- 施設記録基準(E1): GPT5.4対話で作成・保存。有効な基準はAI生成に注入される ---
+        Route::get('/recording-standard', [App\Http\Controllers\Admin\RecordingStandardController::class, 'show']);
+        Route::put('/recording-standard', [App\Http\Controllers\Admin\RecordingStandardController::class, 'save']);
+        Route::post('/recording-standard/chat', [App\Http\Controllers\Admin\RecordingStandardController::class, 'chat']);
+
         // --- AI学習基盤: 修正傾向レポート (Layer2集計の閲覧) ---
         Route::get('/ai-edit-metrics', [App\Http\Controllers\Admin\AiEditMetricsController::class, 'index']);
 
