@@ -95,17 +95,28 @@ class AiEditMetricsController extends Controller
         $reasonIds = $rows->flatMap(fn ($r) => collect($r->top_reason_categories ?? [])->pluck('category_id'))->filter()->unique();
         $reasonLabels = $reasonIds->isEmpty() ? collect() : AiEditReasonCategory::whereIn('id', $reasonIds)->pluck('label_ja', 'id');
 
-        return $rows->map(function (AiEditMetric $r) use ($facet, $companyNames, $classroomNames, $userNames, $programLabels, $reasonLabels) {
+        // D3: 記入者facetは成長レベル(育成指標)を付与する
+        $levels = collect();
+        if ($facet === 'author') {
+            $svc = new \App\Services\SupporterLevelService();
+            $levels = $rows->pluck('author_user_id')->filter()->unique()
+                ->mapWithKeys(fn ($uid) => [$uid => $svc->levelFor((int) $uid)]);
+        }
+
+        return $rows->map(function (AiEditMetric $r) use ($facet, $companyNames, $classroomNames, $userNames, $programLabels, $reasonLabels, $levels) {
             [$dimValue, $label] = $this->dimLabel($r, $facet, $companyNames, $classroomNames, $userNames, $programLabels);
             $topReasons = collect($r->top_reason_categories ?? [])->map(fn ($t) => [
                 'category_id' => $t['category_id'] ?? null,
                 'label' => $reasonLabels[$t['category_id'] ?? null] ?? '(その他)',
                 'count' => $t['count'] ?? 0,
             ])->all();
+            $lv = $facet === 'author' ? ($levels[$r->author_user_id] ?? null) : null;
 
             return [
                 'dim_value' => $dimValue,
                 'label' => $label,
+                'level' => $lv['level'] ?? null,
+                'level_label' => $lv['label'] ?? null,
                 'distinct_students' => $r->distinct_students,
                 'gen_count' => $r->gen_count,
                 'revision_count' => $r->revision_count,

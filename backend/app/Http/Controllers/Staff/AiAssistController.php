@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Staff;
 use App\Http\Controllers\Controller;
 use App\Models\Student;
 use App\Support\AbilityGrowthStage;
+use App\Services\SupporterLevelService;
 use App\Support\PiiMasker;
 use App\Support\StudentCohort;
 use Illuminate\Http\JsonResponse;
@@ -21,6 +22,16 @@ use Illuminate\Support\Facades\Log;
  */
 class AiAssistController extends Controller
 {
+    public function __construct(private SupporterLevelService $levels) {}
+
+    /** GET /api/staff/ai-assist/level : 自分の記録レベル(成長指標・育成用) */
+    public function level(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        return response()->json(['success' => true, 'data' => $this->levels->levelFor($user->id, $user->company_id)]);
+    }
+
     /** POST /api/staff/ai-assist/inquiry {text, student_id?} */
     public function inquiry(Request $request): JsonResponse
     {
@@ -28,6 +39,11 @@ class AiAssistController extends Controller
             'text' => 'required|string|max:2000',
             'student_id' => 'nullable|integer|exists:students,id',
         ]);
+
+        // D3: 記入者のレベルに応じてAI支援(問いの量・観点)を出し分ける(育成・卒業)
+        $policy = $this->levels->inquiryPolicy(
+            $this->levels->levelFor($request->user()->id, $request->user()->company_id)['level']
+        );
 
         // 児童指定があればマスカー作成 + 越境チェック + 文脈(対象/成長段階)
         $masker = new PiiMasker();
@@ -64,8 +80,9 @@ class AiAssistController extends Controller
                         'role' => 'user',
                         // 氏名マスク + 構造化PIIスクラブ(日付/電話/敬称付き他者名)で外部送信前に要配慮情報を落とす
                         'content' => PiiMasker::scrubStructuredPii($masker->mask(
-                            "次の記録について、(1)観察を深める問いを3〜5個、(2)考えられる因果仮説の候補を3〜5個、提示してください。\n\n"
-                            ."【記録】\n{$validated['text']}\n\n{$context}"
+                            "次の記録について、(1)観察を深める問いを{$policy['question_count']}個程度、(2)考えられる因果仮説の候補を3〜5個、提示してください。\n"
+                            .($policy['style'] !== '' ? "方針: {$policy['style']}\n" : '')
+                            ."\n【記録】\n{$validated['text']}\n\n{$context}"
                             ."以下のJSON形式で出力:\n{\"questions\": [\"...\"], \"hypotheses\": [\"...\"]}"
                         )),
                     ],
