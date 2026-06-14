@@ -10,6 +10,7 @@ class VectorEmbedding extends Model
     protected $fillable = [
         'source_type',
         'source_id',
+        'company_id',
         'content_text',
         'embedding',
         'metadata',
@@ -19,6 +20,7 @@ class VectorEmbedding extends Model
     {
         return [
             'metadata' => 'array',
+            'company_id' => 'integer',
         ];
     }
 

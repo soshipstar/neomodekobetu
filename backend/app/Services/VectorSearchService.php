@@ -17,14 +17,16 @@ class VectorSearchService
      *
      * @param  string  $query  Natural language query
      * @param  string  $sourceType  Filter by source type (e.g., 'support_plan', 'monitoring', 'daily_record')
+     * @param  int  $companyId  テナント分離: この法人の埋め込みのみを検索対象にする(必須)
      * @param  int  $limit  Maximum results
      * @return Collection  Sorted by similarity (closest first)
      */
-    public function search(string $query, string $sourceType, int $limit = 10): Collection
+    public function search(string $query, string $sourceType, int $companyId, int $limit = 10): Collection
     {
         $queryEmbedding = $this->embeddingService->embed($query);
         $vectorString = $this->vectorToString($queryEmbedding);
 
+        // テナント分離(rank5): company_id で必ず絞る(法人をまたいだ検索を不可能にする)。
         $results = DB::select("
             SELECT
                 id,
@@ -34,10 +36,10 @@ class VectorSearchService
                 metadata,
                 (embedding <=> ?::vector) AS distance
             FROM vector_embeddings
-            WHERE source_type = ?
+            WHERE source_type = ? AND company_id = ?
             ORDER BY embedding <=> ?::vector
             LIMIT ?
-        ", [$vectorString, $sourceType, $vectorString, $limit]);
+        ", [$vectorString, $sourceType, $companyId, $vectorString, $limit]);
 
         return collect($results)->map(function ($row) {
             $row->metadata = json_decode($row->metadata, true);
@@ -63,11 +65,16 @@ class VectorSearchService
         if (! $latestEmbedding) {
             return collect();
         }
+        // テナント分離(rank5): 起点の埋め込みの法人で絞る。法人不明(legacy)なら横断検索しない。
+        if ($latestEmbedding->company_id === null) {
+            return collect();
+        }
 
         return DB::table('vector_embeddings')
             ->select('id', 'source_type', 'source_id', 'content_text', 'metadata')
             ->selectRaw('(embedding <=> (SELECT embedding FROM vector_embeddings WHERE id = ?)) AS distance', [$latestEmbedding->id])
             ->where('source_type', 'support_plan')
+            ->where('company_id', $latestEmbedding->company_id)
             ->where('id', '!=', $latestEmbedding->id)
             ->orderBy('distance')
             ->limit(10)
@@ -84,17 +91,20 @@ class VectorSearchService
      * Find similar cases based on free-text input with optional filters.
      *
      * @param  string  $text  Text to find similar cases for
+     * @param  int  $companyId  テナント分離: この法人の埋め込みのみ(必須)
      * @param  array  $filters  Optional filters: source_type, classroom_id, min_similarity
      * @return Collection
      */
-    public function findSimilarCases(string $text, array $filters = []): Collection
+    public function findSimilarCases(string $text, int $companyId, array $filters = []): Collection
     {
         $queryEmbedding = $this->embeddingService->embed($text);
         $vectorString = $this->vectorToString($queryEmbedding);
 
+        // テナント分離(rank5): company_id で必ず絞る。
         $query = DB::table('vector_embeddings')
             ->select('id', 'source_type', 'source_id', 'content_text', 'metadata')
-            ->selectRaw('(embedding <=> ?::vector) AS distance', [$vectorString]);
+            ->selectRaw('(embedding <=> ?::vector) AS distance', [$vectorString])
+            ->where('company_id', $companyId);
 
         if (! empty($filters['source_type'])) {
             $query->where('source_type', $filters['source_type']);
