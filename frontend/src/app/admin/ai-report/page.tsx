@@ -6,6 +6,7 @@ import api, { formatApiError } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { MaterialIcon } from '@/components/ui/MaterialIcon';
+import { AiReasonCandidates } from '@/components/ai-consent/AiReasonCandidates';
 
 interface ReasonRef { category_id: number | null; label: string; count: number }
 interface MetricRow {
@@ -199,6 +200,9 @@ export default function AiReportPage() {
           </CardBody>
         </Card>
       )}
+
+      {/* 修正理由の新カテゴリ候補(動的タクソノミー) */}
+      <AiReasonCandidates />
 
       {formatError(error, status)}
     </div>
