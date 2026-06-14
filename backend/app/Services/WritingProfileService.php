@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AiEditMetric;
 use App\Models\AiEditReasonCategory;
 use App\Models\AiRevisionEvent;
+use App\Models\FacilityWritingStandard;
 use App\Models\Student;
 use App\Models\User;
 use App\Support\PiiMasker;
@@ -60,32 +61,49 @@ class WritingProfileService
         try {
             $student->loadMissing('classroom.company');
             $company = $student->classroom?->company;
-            if ($company === null || ! $this->consent->canAggregate($company)) {
-                return null; // 施設が改善利用に同意していなければ使わない
-            }
-
-            $directives = $this->reasonDirectives($company->id, $documentType);
-            $examples = $this->maskedExamples($company->id, $documentType, $maxPerSection, $maxSections);
-
-            if ($directives === [] && $examples === []) {
+            if ($company === null) {
                 return null;
             }
 
-            $parts = ['【この施設のこれまでの記述傾向(文体・観点の参考。事実は創作しない)】'];
-            if ($directives !== []) {
-                $parts[] = '・心がけ: '.implode(' / ', $directives);
-            }
-            foreach ($examples as $label => $texts) {
-                $parts[] = "・{$label}の確定記述例: ".implode(' ｜ ', array_map(fn ($t) => "「{$t}」", $texts));
-            }
-            $parts[] = '※上記は文体・観点の参考です。他児の情報や入力に無い事実は含めないでください。';
+            $blocks = [];
 
-            return implode("\n", $parts);
+            // 1) 施設が明示した記録基準(E1): 施設自身の方針・PIIなしのため同意ゲート不要。最優先で従わせる。
+            $standard = $this->activeStandardText($company->id);
+            if ($standard !== null && $standard !== '') {
+                $blocks[] = "【この施設が定めた記録基準(必ず従う)】\n".$standard;
+            }
+
+            // 2) 蓄積からの暗黙傾向(S5): 施設が集計同意している場合のみ。
+            if ($this->consent->canAggregate($company)) {
+                $directives = $this->reasonDirectives($company->id, $documentType);
+                $examples = $this->maskedExamples($company->id, $documentType, $maxPerSection, $maxSections);
+                if ($directives !== [] || $examples !== []) {
+                    $parts = ['【この施設のこれまでの記述傾向(文体・観点の参考。事実は創作しない)】'];
+                    if ($directives !== []) {
+                        $parts[] = '・心がけ: '.implode(' / ', $directives);
+                    }
+                    foreach ($examples as $label => $texts) {
+                        $parts[] = "・{$label}の確定記述例: ".implode(' ｜ ', array_map(fn ($t) => "「{$t}」", $texts));
+                    }
+                    $parts[] = '※上記は文体・観点の参考です。他児の情報や入力に無い事実は含めないでください。';
+                    $blocks[] = implode("\n", $parts);
+                }
+            }
+
+            return $blocks === [] ? null : implode("\n\n", $blocks);
         } catch (\Throwable $e) {
             Log::warning('WritingProfileService.buildGuidance failed: '.$e->getMessage());
 
             return null;
         }
+    }
+
+    /** 施設が明示した有効な記録基準(E1)の注入テキスト。無ければ null。 */
+    private function activeStandardText(int $companyId): ?string
+    {
+        return FacilityWritingStandard::where('company_id', $companyId)
+            ->where('status', 'active')
+            ->value('guidance_text');
     }
 
     /** 主要修正理由 → 指示文(最新の company facet メトリクスから)。 */
