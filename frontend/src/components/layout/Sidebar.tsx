@@ -136,6 +136,7 @@ const adminNav: NavItem[] = [
   { type: 'link', label: 'スタッフアカウント', href: '/admin/staff-accounts', icon: 'badge', visibility: 'master_only' },
   { type: 'link', label: '事業所評価', href: '/admin/facility-evaluation', icon: 'analytics', visibility: 'non_master' },
   { type: 'link', label: 'AI学習レポート', href: '/admin/ai-report', icon: 'model_training', visibility: 'company_admin_or_master' },
+  { type: 'link', label: 'AI記録基準', href: '/admin/recording-standard', icon: 'edit_note', visibility: 'company_admin_or_master' },
   { type: 'link', label: 'HP埋め込みコード', href: '/admin/widget-codes', icon: 'integration_instructions', visibility: 'non_master' },
   { type: 'link', label: '請求・契約', href: '/admin/billing', icon: 'receipt_long', visibility: 'company_admin_or_master' },
   { type: 'link', label: '企業課金管理', href: '/admin/master-billing', icon: 'payments', visibility: 'master_only' },
