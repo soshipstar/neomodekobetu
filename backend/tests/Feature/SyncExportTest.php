@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Classroom;
+use App\Models\Company;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
@@ -35,7 +36,8 @@ class SyncExportTest extends TestCase
 
     public function test_students_export_returns_children_and_guardian(): void
     {
-        $classroom = Classroom::create(['classroom_name' => 'なずく教室', 'company_id' => 7, 'is_active' => true]);
+        $company = Company::create(['name' => 'なずく法人']);
+        $classroom = Classroom::create(['classroom_name' => 'なずく教室', 'company_id' => $company->id, 'is_active' => true]);
         $guardian = User::create([
             'username' => 'g_'.uniqid(), 'password' => bcrypt('p'),
             'full_name' => '栗原 太郎', 'full_name_kana' => 'クリハラ タロウ', 'email' => 'g@example.com',
@@ -59,7 +61,7 @@ class SyncExportTest extends TestCase
         $this->assertSame('栗原 海', $a['child_name']);
         $this->assertSame('クリハラ カイ', $a['child_name_kana']);
         $this->assertSame('2017-05-01', $a['birth_date']);
-        $this->assertSame(7, $a['company_id']);
+        $this->assertSame($company->id, $a['company_id']);
         $this->assertSame('なずく教室', $a['classroom_name']);
         $this->assertSame('栗原 太郎', $a['guardian']['full_name']);
         $this->assertArrayNotHasKey('child_sex', $a);

@@ -37,6 +37,7 @@ class A007_NoPlaintextPiiInRevisionTest extends TestCase
 
     public function test_revision_text_is_encrypted_at_rest_but_readable_via_model(): void
     {
+        $this->seed(ConsentDefinitionSeeder::class); // 同意記録に版が必要(fail-closed)
         $company = Company::create(['name' => '企業A']);
         $room = Classroom::create(['classroom_name' => '事業所A', 'company_id' => $company->id, 'is_active' => true]);
         $guardian = User::create([
