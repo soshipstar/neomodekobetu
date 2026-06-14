@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -16,6 +17,12 @@ interface ConsentStatus {
   students_learning_active: number;
 }
 
+interface UnconsentedStudent {
+  id: number;
+  name: string;
+  classroom_name: string | null;
+}
+
 /**
  * AI学習基盤 rank2: 同意の充足状況パネル(蓄積0ボトルネックの可視化)。
  *
@@ -23,9 +30,20 @@ interface ConsentStatus {
  * 件数で見せ、同意を入れる導線(施設=教室基本設定、児童=各個別支援計画)へ誘導する。
  */
 export function ConsentStatusPanel() {
+  const [showList, setShowList] = useState(false);
+
   const { data } = useQuery({
     queryKey: ['admin', 'ai-consent-status'],
     queryFn: async () => (await api.get<{ data: ConsentStatus }>('/api/admin/ai-consent/status')).data.data,
+    retry: false,
+  });
+
+  // 未同意児童の一覧は展開時にのみ取得(氏名を含むため必要時だけ)。
+  const { data: unconsented } = useQuery({
+    queryKey: ['admin', 'ai-consent-unconsented'],
+    queryFn: async () =>
+      (await api.get<{ data: { students: UnconsentedStudent[] } }>('/api/admin/ai-consent/unconsented-students')).data.data.students,
+    enabled: showList,
     retry: false,
   });
 
@@ -98,6 +116,44 @@ export function ConsentStatusPanel() {
             </div>
           </div>
         </div>
+
+        {/* 未同意児童の一覧・個別導線(rank2続) */}
+        {total - consented > 0 && (
+          <div className="mt-3 border-t border-[var(--neutral-stroke-3,#eee)] pt-3">
+            <button
+              type="button"
+              onClick={() => setShowList((v) => !v)}
+              className="inline-flex items-center gap-1 text-sm text-[var(--brand-foreground-1,#1a73e8)]"
+              aria-expanded={showList}
+            >
+              <MaterialIcon name={showList ? 'expand_less' : 'expand_more'} size={18} />
+              未同意の児童 {total - consented} 名を{showList ? '隠す' : '表示'}
+            </button>
+            {showList && (
+              <ul className="mt-2 divide-y divide-[var(--neutral-stroke-3,#eee)] rounded-lg border border-[var(--neutral-stroke-2)]">
+                {(unconsented ?? []).map((s) => (
+                  <li key={s.id} className="flex items-center justify-between px-3 py-2 text-sm">
+                    <span className="text-[var(--neutral-foreground-1)]">
+                      {s.name}
+                      {s.classroom_name && (
+                        <span className="ml-2 text-xs text-[var(--neutral-foreground-4)]">{s.classroom_name}</span>
+                      )}
+                    </span>
+                    <Link
+                      href={`/staff/students/${s.id}/support-plan`}
+                      className="inline-flex items-center gap-1 text-xs text-[var(--brand-foreground-1,#1a73e8)] underline"
+                    >
+                      同意を記録 <MaterialIcon name="arrow_forward" size={14} />
+                    </Link>
+                  </li>
+                ))}
+                {unconsented && unconsented.length === 0 && (
+                  <li className="px-3 py-2 text-xs text-[var(--neutral-foreground-4)]">未同意の児童はいません。</li>
+                )}
+              </ul>
+            )}
+          </div>
+        )}
       </CardBody>
     </Card>
   );
