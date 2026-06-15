@@ -65,13 +65,18 @@ Route::prefix('auth')->group(function () {
 // ==========================================================================
 Route::post('/sso/ticket', [App\Http\Controllers\Auth\SsoController::class, 'ticket'])
     ->middleware('auth:sanctum');
-Route::post('/sso/verify', [App\Http\Controllers\Auth\SsoController::class, 'verify']);
+// サーバ間API（共有シークレット）。総当たり・大量取得の抑止にレート制限を必須とする。
+Route::post('/sso/verify', [App\Http\Controllers\Auth\SsoController::class, 'verify'])
+    ->middleware('throttle:30,1');
 
 // 国保連請求システム(kiduriacount)へのデータ提供（サーバ間・共有シークレット）。
 // students: 在籍児童＋保護者 / attendance: 連絡帳由来の利用日＋到着帰宅由来の利用時間
-Route::post('/sync/students', [App\Http\Controllers\External\SyncExportController::class, 'students']);
-Route::post('/sync/classrooms', [App\Http\Controllers\External\SyncExportController::class, 'classrooms']);
-Route::post('/sync/attendance', [App\Http\Controllers\External\SyncExportController::class, 'attendance']);
+Route::post('/sync/students', [App\Http\Controllers\External\SyncExportController::class, 'students'])
+    ->middleware('throttle:30,1');
+Route::post('/sync/classrooms', [App\Http\Controllers\External\SyncExportController::class, 'classrooms'])
+    ->middleware('throttle:30,1');
+Route::post('/sync/attendance', [App\Http\Controllers\External\SyncExportController::class, 'attendance'])
+    ->middleware('throttle:30,1');
 
 // mynameis(本人の主観自己評価, fesvol.xyz)からの主観プロフィール受信（サーバ間・共有シークレット）。
 Route::post('/external/mynameis/self-assessment', [App\Http\Controllers\External\MynameisSyncController::class, 'ingest']);

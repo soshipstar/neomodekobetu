@@ -34,6 +34,28 @@ class SyncExportTest extends TestCase
             ->assertStatus(401);
     }
 
+    public function test_classrooms_rejects_bad_secret(): void
+    {
+        $this->postJson('/api/sync/classrooms', ['secret' => 'wrong', 'classroom_ids' => [1]])
+            ->assertStatus(401);
+    }
+
+    public function test_classrooms_export_returns_id_name_company(): void
+    {
+        $company = Company::create(['name' => 'テスト法人']);
+        $c1 = Classroom::create(['classroom_name' => 'A教室', 'company_id' => $company->id, 'is_active' => true]);
+        $c2 = Classroom::create(['classroom_name' => 'B教室', 'company_id' => $company->id, 'is_active' => true]);
+
+        $res = $this->postJson('/api/sync/classrooms', ['secret' => self::SECRET, 'classroom_ids' => [$c1->id, $c2->id]]);
+        $res->assertOk();
+
+        $rooms = collect($res->json('data.classrooms'));
+        $this->assertCount(2, $rooms);
+        $a = $rooms->firstWhere('id', $c1->id);
+        $this->assertSame('A教室', $a['name']);
+        $this->assertSame($company->id, $a['company_id']);
+    }
+
     public function test_students_export_returns_children_and_guardian(): void
     {
         $company = Company::create(['name' => 'なずく法人']);

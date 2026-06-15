@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\External;
 
 use App\Http\Controllers\Controller;
+use App\Models\Classroom;
 use App\Models\Student;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -78,6 +79,38 @@ class SyncExportController extends Controller
         return response()->json([
             'success' => true,
             'data' => ['students' => $data],
+        ]);
+    }
+
+    /**
+     * POST /api/sync/classrooms : 指定IDの教室を返す（請求事業所マスタの母体）。
+     * kiduriacount 側はこれを元に事業所の“枠”を生成し、請求項目は手動補完する。
+     */
+    public function classrooms(Request $request): JsonResponse
+    {
+        if ($deny = $this->denyIfBadSecret($request)) {
+            return $deny;
+        }
+        $request->validate([
+            'secret' => ['required', 'string'],
+            'classroom_ids' => ['required', 'array', 'min:1'],
+            'classroom_ids.*' => ['integer'],
+        ]);
+
+        $rows = Classroom::query()
+            ->whereIn('id', $request->input('classroom_ids'))
+            ->orderBy('id')
+            ->get(['id', 'classroom_name', 'company_id']);
+
+        $data = $rows->map(fn (Classroom $c) => [
+            'id' => $c->id,
+            'name' => $c->classroom_name,
+            'company_id' => $c->company_id,
+        ])->all();
+
+        return response()->json([
+            'success' => true,
+            'data' => ['classrooms' => $data],
         ]);
     }
 
