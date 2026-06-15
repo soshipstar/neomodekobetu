@@ -59,14 +59,15 @@ class L002_GuardianSupportPlanReviewTest extends TestCase
         $response->assertStatus(200);
         $response->assertJson(['success' => true]);
 
-        $this->assertDatabaseHas('individual_support_plans', [
-            'id' => $data['plan']->id,
-            'guardian_review_comment' => 'Please adjust the goal for domain 2.',
-        ]);
+        // コメントは日時見出し付き(【日時】\n本文)で追記保存されるため、部分一致で検証する。
+        $saved = (string) $data['plan']->fresh()->guardian_review_comment;
+        $this->assertStringContainsString('Please adjust the goal for domain 2.', $saved);
     }
 
-    public function test_guardian_can_approve_with_empty_comment(): void
+    public function test_guardian_review_requires_comment(): void
     {
+        // レビュー=コメント追記。承認は別途 sign(電子署名)エンドポイントで行うため、
+        // 空コメントはバリデーションエラー(422)。
         $data = $this->createTestData();
 
         $response = $this->actingAs($data['guardian'], 'sanctum')
@@ -74,8 +75,8 @@ class L002_GuardianSupportPlanReviewTest extends TestCase
                 'comment' => '',
             ]);
 
-        $response->assertStatus(200);
-        $response->assertJson(['success' => true]);
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors('comment');
     }
 
     public function test_guardian_cannot_review_other_students_plan(): void
