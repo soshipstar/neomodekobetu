@@ -197,6 +197,17 @@ class MonitoringController extends Controller
     {
         $this->authorizeClassroom($request->user(), $monitoring->student);
 
+        // 確定版(is_official=true)の不変化ガード。
+        // 確定後にモニタリング(=成果スナップショット)を改変すると、介入↔成果の
+        // 相関・効果分析(S9)の基準点が揺れるため、確定済み記録の編集は拒否する。
+        // ドラフト→確定の遷移は現記録が is_official=false のため通る。訂正は新規作成で行う。
+        if ($monitoring->is_official) {
+            return response()->json([
+                'success' => false,
+                'message' => 'このモニタリングは確定済みのため編集できません。訂正が必要な場合は新しいモニタリングを作成してください。',
+            ], 409);
+        }
+
         $validated = $request->validate([
             'monitoring_date'                => 'sometimes|date',
             'overall_comment'                => 'nullable|string',
