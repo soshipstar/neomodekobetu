@@ -388,41 +388,12 @@ class SupportPlanController extends Controller
         }
 
         // ===================================================================
-        // 3. 連絡帳データ（直近30件）
+        // 3. 連絡帳について（直接の入力にはしない）
+        // 連絡帳は上流のアセスメント生成(直近6か月を全件蒸留)とモニタリングへ反映済みのため、
+        // 個別支援計画の生成では直近分の連絡帳を直接の入力にはしない。
+        // 計画の目標は「継続=モニタリング / 新規=保護者・職員アセスメント」を土台とする。
+        // (連絡帳期間の算出ヘルパ self::dateRange は他箇所/テストで使用するため残す)
         // ===================================================================
-        $records = \App\Models\StudentRecord::where('student_id', $student->id)
-            ->with('dailyRecord:id,record_date,activity_name')
-            ->orderByDesc('id')
-            ->limit(30)
-            ->get();
-
-        // 新スキーマ（5 領域カラム）を使用。legacy の domain1/domain2 は存在しない。
-        $domainLabels = [
-            'health_life' => '健康・生活',
-            'motor_sensory' => '運動・感覚',
-            'cognitive_behavior' => '認知・行動',
-            'language_communication' => '言語・コミュニケーション',
-            'social_relations' => '人間関係・社会性',
-        ];
-        $recordsText = $records->map(function ($r) use ($domainLabels) {
-            $date = $r->dailyRecord->record_date ?? '';
-            $parts = ["[{$date}]"];
-            foreach ($domainLabels as $col => $label) {
-                if (!empty($r->{$col})) {
-                    $parts[] = "{$label}: {$r->{$col}}";
-                }
-            }
-            if (!empty($r->notes)) {
-                $parts[] = "メモ: {$r->notes}";
-            }
-            return implode(' / ', $parts);
-        })->implode("\n");
-
-        // 観点7 説明可能性: AIが参照した連絡帳の期間(最古〜最新)を算出し、
-        // 応答 sources に含める。職員が「何を根拠に生成したか」を確認できるようにする。
-        $recordsPeriod = self::dateRange(
-            $records->map(fn ($r) => $r->dailyRecord?->record_date)->all()
-        );
 
         // ===================================================================
         // 4. 前回の支援計画
@@ -484,8 +455,6 @@ class SupportPlanController extends Controller
                             . $staffText
                             . $monitoringText
                             . $prevPlanText
-                            . "【連絡帳記録（直近{$records->count()}件）】\n"
-                            . ($recordsText ?: '（記録なし）') . "\n\n"
                             . $abilityText
                             . "【重要な指示】\n"
                             . "- 【最重要】個別支援計画の短期目標・長期目標は、保護者アセスメントとスタッフアセスメントの短期目標・長期目標の文言を最大限考慮し、それらとの整合性・連続性を保ちながら作成してください\n"
@@ -551,8 +520,6 @@ class SupportPlanController extends Controller
             $sources = [
                 'assessment'  => !empty($guardianText) || !empty($staffText),
                 'monitoring' => !empty($monitoringText),
-                'records'    => $records->count(),
-                'records_period' => $recordsPeriod, // 観点7: 参照した連絡帳の期間 {from,to}|null
                 'prev_plan'  => !empty($prevPlanText),
                 'ability_evaluation' => $hasAbility, // 能力評価スコアを計画文言へ反映したか
             ];
