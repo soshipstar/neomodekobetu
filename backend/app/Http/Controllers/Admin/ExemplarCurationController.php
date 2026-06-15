@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AiRevisionEvent;
-use App\Support\PiiMasker;
+use App\Models\AuditLog;
 use App\Services\WritingProfileService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -42,11 +42,18 @@ class ExemplarCurationController extends Controller
             return response()->json(['success' => false, 'message' => '所属施設が特定できません。'], 409);
         }
 
-        // 確定済み記録(学習対象になりうる母集団)
+        // 確定済み記録(学習対象になりうる母集団)。
+        // 学習に実際に使われるのは同意(児童 ai_consent_learning AND 施設 ai_consent_aggregate)済みのみ
+        // (WritingProfileService::maskedExamples と同条件)。同意撤回済みの記録は学習に使われないため、
+        // キュレーション候補・統計からも除外して整合させる(撤回反映の非対称を解消)。
         $base = fn () => AiRevisionEvent::query()
             ->when(! $user->isMasterAdmin(), fn ($q) => $q->where('company_id', $companyId))
             ->where('changed', true)->whereNotNull('after_text')
-            ->whereIn('edit_kind', ['official', 'submit', 'publish']);
+            ->whereIn('edit_kind', ['official', 'submit', 'publish'])
+            ->whereHas('student', function ($q) {
+                $q->where('ai_consent_learning', true)
+                    ->whereHas('classroom.company', fn ($c) => $c->where('ai_consent_aggregate', true));
+            });
 
         // 運用可視化(rank7): キュレーションの進捗と「採用すべき良質な未判定候補」数。
         $stats = [
@@ -64,12 +71,14 @@ class ExemplarCurationController extends Controller
             ->orderByRaw('case when exemplar_status is null then 0 else 1 end') // 未判定を先に
             ->orderByDesc('id')->limit(60)->get();
 
-        // 施設ごとのマスカーをまとめて用意(プレビューを実名なしにする)
+        // 施設ごとのマスカー+短名集合をまとめて用意(プレビューを実名なしにする)。
+        // 抜粋は学習例示・支援知と同じ scrubExcerpt(短名 fail-safe 込み)に統一する。
         $maskers = [];
         $data = $rows->map(function (AiRevisionEvent $r) use (&$maskers) {
             $cid = (int) $r->company_id;
-            $maskers[$cid] ??= $this->profiles->companyMasker($cid);
-            $preview = PiiMasker::scrubStructuredPii(trim($maskers[$cid]->mask((string) $r->after_text)));
+            $maskers[$cid] ??= $this->profiles->companyMaskerAndShortNames($cid);
+            [$cmasker, $shortNames] = $maskers[$cid];
+            $preview = $this->profiles->scrubExcerpt((string) $r->after_text, $cmasker, $shortNames, 140);
 
             $hasHyp = (bool) ($r->structured['has_hypothesis_marker'] ?? false);
             $hasRes = (bool) ($r->structured['has_result_marker'] ?? false);
@@ -88,7 +97,7 @@ class ExemplarCurationController extends Controller
                 'has_result' => $hasRes,
                 'recommended' => $recommended,
                 'exemplar_status' => $r->exemplar_status,
-                'preview' => mb_substr($preview, 0, 140),
+                'preview' => $preview ?? '(プレビュー不可: 個人情報保護のため非表示)',
             ];
         })->sortByDesc('recommended')->values(); // 推奨を先頭へ(PHP8の安定ソートで既存順を保持)
 
@@ -107,11 +116,29 @@ class ExemplarCurationController extends Controller
         }
         $validated = $request->validate(['status' => 'required|string|in:adopted,excluded,cleared']);
 
+        $oldStatus = $revision->exemplar_status;
+        $newStatus = $validated['status'] === 'cleared' ? null : $validated['status'];
+
         $revision->update([
-            'exemplar_status' => $validated['status'] === 'cleared' ? null : $validated['status'],
+            'exemplar_status' => $newStatus,
             'curated_by' => $user->id,
             'curated_at' => now(),
         ]);
+
+        // ガバナンス: 見本の採否操作を監査ログに残す(誰が・どの記録を・どう変えたか)。監査失敗は本処理を止めない。
+        try {
+            AuditLog::create([
+                'user_id' => $user->id,
+                'company_id' => $revision->company_id,
+                'action' => 'exemplar_curation',
+                'target_table' => 'ai_revision_events',
+                'target_id' => $revision->id,
+                'old_values' => ['exemplar_status' => $oldStatus],
+                'new_values' => ['exemplar_status' => $newStatus],
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('exemplar curation audit log failed: '.$e->getMessage());
+        }
 
         return response()->json(['success' => true, 'message' => '見本の採否を更新しました。']);
     }
