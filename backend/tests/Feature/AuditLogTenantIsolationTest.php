@@ -65,6 +65,28 @@ class AuditLogTenantIsolationTest extends TestCase
         $this->assertTrue($logs->every(fn ($l) => $l['company_id'] === $companyA->id), '自施設の監査ログのみ');
     }
 
+    public function test_index_filters_by_target_table(): void
+    {
+        $company = Company::create(['name' => 'A法人']);
+        $room = Classroom::create(['classroom_name' => 'A', 'company_id' => $company->id, 'is_active' => true]);
+        $admin = $this->admin($room);
+
+        AuditLog::create(['user_id' => $admin->id, 'company_id' => $company->id, 'action' => 'update', 'target_table' => 'students', 'target_id' => 1]);
+        AuditLog::create(['user_id' => $admin->id, 'company_id' => $company->id, 'action' => 'update', 'target_table' => 'classrooms', 'target_id' => 2]);
+
+        // request キー target_table で target_table カラムをフィルタ
+        $res = $this->actingAs($admin, 'sanctum')->getJson('/api/admin/audit-logs?target_table=students')->assertStatus(200);
+        $logs = collect($res->json('data.data'));
+        $this->assertGreaterThan(0, $logs->count(), 'students の監査ログが返る');
+        $this->assertTrue($logs->every(fn ($l) => $l['target_table'] === 'students'), 'target_table=students のみに絞られる');
+
+        // 後方互換: request キー table_name でも同じ target_table カラムでフィルタ
+        $res2 = $this->actingAs($admin, 'sanctum')->getJson('/api/admin/audit-logs?table_name=classrooms')->assertStatus(200);
+        $logs2 = collect($res2->json('data.data'));
+        $this->assertGreaterThan(0, $logs2->count(), 'classrooms の監査ログが返る');
+        $this->assertTrue($logs2->every(fn ($l) => $l['target_table'] === 'classrooms'), 'table_name キーでも target_table カラムで絞られる');
+    }
+
     public function test_index_master_sees_all_companies(): void
     {
         $companyA = Company::create(['name' => 'A法人']);

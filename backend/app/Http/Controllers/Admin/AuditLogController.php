@@ -36,8 +36,12 @@ class AuditLogController extends Controller
             $query->where('action', $request->action);
         }
 
-        if ($request->filled('table_name')) {
-            $query->where('table_name', $request->table_name);
+        // 対象テーブル名でフィルタ。実カラムは target_table。
+        // 後方互換のため request キーは target_table / table_name の両方を受け付ける。
+        if ($request->filled('target_table')) {
+            $query->where('target_table', $request->input('target_table'));
+        } elseif ($request->filled('table_name')) {
+            $query->where('target_table', $request->input('table_name'));
         }
 
         if ($request->filled('date_from')) {
