@@ -45,4 +45,23 @@ class SupportPlanGenerateAiNoRenrakuchoTest extends TestCase
         $this->assertStringContainsString('staffText', $body);
         $this->assertStringContainsString('monitoringText', $body);
     }
+
+    /**
+     * 新規計画 generateAiForStudent は連絡帳が唯一の観察源(アセスメント/モニタリング無し)。
+     * 件数で切り捨てず全件を蒸留することを保証する(旧: 最新20件)。
+     */
+    public function test_generateAiForStudentは連絡帳を全件蒸留する(): void
+    {
+        $src = file_get_contents(base_path('app/Http/Controllers/Staff/SupportPlanController.php'));
+        $start = strpos($src, 'public function generateAiForStudent(');
+        $this->assertNotFalse($start, 'generateAiForStudent が見つかりません');
+        $next = strpos($src, 'public function ', (int) $start + 30);
+        $body = $next === false ? substr($src, (int) $start) : substr($src, (int) $start, $next - (int) $start);
+
+        $this->assertStringContainsString('RecordDistillationService', $body,
+            '新規計画生成が蒸留サービスを使っていません');
+        $this->assertStringContainsString('distillByDomain', $body);
+        $this->assertStringNotContainsString('->limit(20)', $body,
+            '連絡帳が最新20件に切り捨てられています(取りこぼし)');
+    }
 }

@@ -1003,21 +1003,22 @@ class SupportPlanController extends Controller
             ->map(fn ($i) => "[{$i->interview_date}] {$i->interview_content}")
             ->implode("\n");
 
-        $recordsText = $student->dailyRecords()
-            ->with('dailyRecord')
+        // 連絡帳を全件取得(直近6か月)。新規計画はアセスメント/モニタリングが無く連絡帳が
+        // 主たる観察源のため、件数で切り捨てず二段集約(蒸留)で全件を解析する(取りこぼし防止)。
+        // $recordsText は仮名化が要るため try 内(masker 生成後)で蒸留して組み立てる。
+        $records = $student->dailyRecords()
+            ->whereHas('dailyRecord', fn ($q) => $q->where('record_date', '>=', now()->subMonths(6)->toDateString()))
+            ->with('dailyRecord:id,record_date')
+            ->where(function ($q) {
+                $q->whereNotNull('health_life')
+                  ->orWhereNotNull('motor_sensory')
+                  ->orWhereNotNull('cognitive_behavior')
+                  ->orWhereNotNull('language_communication')
+                  ->orWhereNotNull('social_relations');
+            })
             ->orderByDesc('id')
-            ->limit(20)
-            ->get()
-            ->map(function ($r) {
-                $date = $r->dailyRecord->record_date ?? '';
-                $parts = [];
-                if ($r->health_life) $parts[] = "健康・生活: {$r->health_life}";
-                if ($r->motor_sensory) $parts[] = "運動・感覚: {$r->motor_sensory}";
-                if ($r->cognitive_behavior) $parts[] = "認知・行動: {$r->cognitive_behavior}";
-                if ($r->language_communication) $parts[] = "言語・コミュニケーション: {$r->language_communication}";
-                if ($r->social_relations) $parts[] = "人間関係・社会性: {$r->social_relations}";
-                return "[{$date}] " . implode(' / ', $parts);
-            })->implode("\n");
+            ->limit(2000) // 安全弁(暴走防止)
+            ->get();
 
         try {
             $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
@@ -1027,6 +1028,10 @@ class SupportPlanController extends Controller
 
             // 観点5 プライバシー保護: 外部AIへ送る前に児童・保護者の氏名を仮名化する。
             $masker = \App\Support\PiiMasker::forStudent($student);
+            // 連絡帳を全件、領域別に蒸留(二段集約)してからプロンプトへ渡す(取りこぼし防止)。
+            $distiller = app(\App\Services\RecordDistillationService::class);
+            $distilled = $distiller->distillByDomain($student, $records, $masker);
+            $recordsText = $distiller->toPromptText($distilled['digests']);
             $client = \OpenAI::client($apiKey);
             $response = $client->chat()->create([
                 'model'    => 'gpt-5.4-2026-03-05',
@@ -1041,7 +1046,7 @@ class SupportPlanController extends Controller
                         'content' => $masker->mask("以下の情報をもとに新規の個別支援計画書をJSON形式で作成してください。\n\n"
                             . "【児童名】{$student->student_name}\n"
                             . "【面談記録（直近5件）】\n" . ($interviewText ?: '（記録なし）') . "\n\n"
-                            . "【連絡帳記録（直近20件・5領域）】\n" . ($recordsText ?: '（記録なし）') . "\n\n"
+                            . "【連絡帳記録（直近6か月・全件を領域別に要約）】\n" . ($recordsText ?: '（記録なし）') . "\n\n"
                             . "【出力形式】以下の JSON オブジェクト形式で出力してください:\n"
                             . "{\n"
                             . "  \"life_intention\": \"利用児及び家族の生活に対する意向（100-200文字程度）\",\n"
@@ -1095,8 +1100,8 @@ class SupportPlanController extends Controller
                     'user_id'           => $request->user()->id,
                     'generation_type'   => 'support_plan_new',
                     'model'             => 'gpt-5.4-2026-03-05',
-                    'prompt_tokens'     => $response->usage->promptTokens ?? null,
-                    'completion_tokens' => $response->usage->completionTokens ?? null,
+                    'prompt_tokens'     => ($response->usage->promptTokens ?? 0) + ($distilled['input_tokens'] ?? 0),
+                    'completion_tokens' => ($response->usage->completionTokens ?? 0) + ($distilled['output_tokens'] ?? 0),
                 ]);
             } catch (\Throwable $e) {
                 Log::warning('AI log failed: ' . $e->getMessage());
