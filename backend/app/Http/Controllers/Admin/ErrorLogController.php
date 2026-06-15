@@ -9,14 +9,9 @@ use Illuminate\Http\Request;
 
 class ErrorLogController extends Controller
 {
-    private function requireMaster(Request $request): ?JsonResponse
-    {
-        $user = $request->user();
-        if (!$user || !$user->is_master) {
-            return response()->json(['success' => false, 'message' => 'マスター管理者権限が必要です。'], 403);
-        }
-        return null;
-    }
+    // ARCH-AUTH-02: requireMaster は基底 Controller に集約済み (isMasterAdmin 判定で統一)。
+    // private のまま残すと基底の protected と可視性が衝突し PHP 致命的エラーになるため、
+    // 必ず基底を継承する (ARCH-AUTH-05 ガードにより is_master⟹admin で挙動は等価)。
 
     /**
      * エラーログ一覧を取得（フィルタ・ページネーション付き）

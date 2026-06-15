@@ -225,7 +225,8 @@ class AgentController extends Controller
         );
     }
 
-    private function requireMaster(Request $request): ?JsonResponse
+    // ARCH-AUTH-02: 基底 requireMaster() が protected のため private 不可 (可視性衝突=PHP致命的)。
+    protected function requireMaster(Request $request): ?JsonResponse
     {
         $user = $request->user();
         if (!$user || !$this->policy->manage($user)) {

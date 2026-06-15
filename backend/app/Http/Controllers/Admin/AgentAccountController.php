@@ -142,7 +142,8 @@ class AgentAccountController extends Controller
         return response()->json(['success' => true, 'message' => '代理店ユーザーを削除しました。']);
     }
 
-    private function requireMaster(Request $request): ?JsonResponse
+    // ARCH-AUTH-02: 基底 requireMaster() が protected のため private 不可 (可視性衝突=PHP致命的)。
+    protected function requireMaster(Request $request): ?JsonResponse
     {
         $user = $request->user();
         if (!$user || !$this->policy->isMaster($user)) {
