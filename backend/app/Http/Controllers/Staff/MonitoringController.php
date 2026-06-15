@@ -415,7 +415,7 @@ class MonitoringController extends Controller
         // 特定の目標のみ生成する場合
         $detailId = $request->input('detail_id');
 
-        // 過去6ヶ月の連絡帳データを取得
+        // 過去6ヶ月の連絡帳データを「全件」取得する。
         $sixMonthsAgo = now()->subMonths(6)->toDateString();
         $studentRecords = StudentRecord::where('student_id', $student->id)
             ->whereHas('dailyRecord', function ($q) use ($sixMonthsAgo) {
@@ -423,10 +423,15 @@ class MonitoringController extends Controller
             })
             ->with('dailyRecord:id,record_date,activity_name,common_activity')
             ->orderByDesc('id')
+            ->limit(2000) // 安全弁(暴走防止)
             ->get();
 
-        // 5領域ごとに記録をグループ化
-        $recordsByDomain = $this->groupRecordsByDomain($studentRecords);
+        // 連絡帳を全件、領域別に蒸留(二段集約)する。旧実装は目標あたり最新20件に切り捨てており、
+        // 21件目より古い関連記録が解析されなかった。蒸留で全件を必ず要約対象に通す。
+        $distiller = app(\App\Services\RecordDistillationService::class);
+        $distilled = $distiller->distillByDomain($student, $studentRecords, $masker);
+        $domainDigests = $distilled['digests'];
+        $domainCounts = $distilled['counts'];
 
         $generatedEvaluations = [];
 
@@ -448,9 +453,11 @@ class MonitoringController extends Controller
 
             $category = $detail->category ?? $detail->domain ?? '';
             $subCategory = $detail->sub_category ?? '';
-            $relatedRecords = $this->getRelatedRecords($recordsByDomain, $category, $subCategory);
+            $matchedCols = $this->matchedDomainColumns($category, $subCategory);
+            $recordsText = $distiller->toPromptText($domainDigests, $matchedCols);
+            $recordCount = array_sum(array_map(fn ($c) => $domainCounts[$c] ?? 0, $matchedCols));
 
-            if (empty($relatedRecords)) {
+            if (trim($recordsText) === '' || $recordCount === 0) {
                 $generatedEvaluations[$detail->id] = [
                     'achievement_status' => '',
                     'monitoring_comment' => '※ 過去6ヶ月間にこの分野に関連する記録がありませんでした。手動で評価を入力してください。',
@@ -458,27 +465,7 @@ class MonitoringController extends Controller
                 continue;
             }
 
-            // AI で評価生成
-            $recordsText = '';
-            foreach ($relatedRecords as $index => $r) {
-                $date = date('Y/m/d', strtotime($r['date']));
-                $recordsText .= ($index + 1) . ". [{$date}] 活動: {$r['activity']}\n";
-                if (! empty($r['content'])) {
-                    $recordsText .= "   この領域での記録: {$r['content']}\n";
-                }
-                if (! empty($r['common_activity'])) {
-                    $commonShort = mb_substr($r['common_activity'], 0, 150);
-                    $recordsText .= "   活動の様子: {$commonShort}\n";
-                }
-                if (! empty($r['note'])) {
-                    $noteShort = mb_substr($r['note'], 0, 100);
-                    $recordsText .= "   個別メモ: {$noteShort}\n";
-                }
-                $recordsText .= "\n";
-            }
-
             $supportContent = $detail->support_content ?? '';
-            $recordCount = count($relatedRecords);
 
             try {
                 $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
@@ -623,104 +610,35 @@ class MonitoringController extends Controller
         return response()->json($responseData);
     }
 
-    private function groupRecordsByDomain($records): array
-    {
-        $domainFields = [
-            'health_life'            => '健康・生活',
-            'motor_sensory'          => '運動・感覚',
-            'cognitive_behavior'     => '認知・行動',
-            'language_communication' => '言語・コミュニケーション',
-            'social_relations'       => '人間関係・社会性',
-        ];
-
-        $grouped = [];
-
-        foreach ($records as $record) {
-            // domain1/domain2ベースのグループ化（legacy互換）
-            if (! empty($record->domain1)) {
-                $domainKey = trim($record->domain1);
-                $domain = $domainFields[$domainKey] ?? $domainKey;
-                $grouped[$domain][] = [
-                    'date'            => $record->dailyRecord->record_date ?? '',
-                    'activity'        => $record->dailyRecord->activity_name ?? '',
-                    'content'         => $record->domain1_content ?? '',
-                    'note'            => $record->notes ?? '',
-                    'common_activity' => $record->dailyRecord->common_activity ?? '',
-                ];
-            }
-
-            if (! empty($record->domain2)) {
-                $domainKey = trim($record->domain2);
-                $domain = $domainFields[$domainKey] ?? $domainKey;
-                $grouped[$domain][] = [
-                    'date'            => $record->dailyRecord->record_date ?? '',
-                    'activity'        => $record->dailyRecord->activity_name ?? '',
-                    'content'         => $record->domain2_content ?? '',
-                    'note'            => $record->notes ?? '',
-                    'common_activity' => $record->dailyRecord->common_activity ?? '',
-                ];
-            }
-
-            // 5領域カラムベースのグループ化（新システム互換）
-            foreach ($domainFields as $field => $label) {
-                $content = $record->{$field} ?? null;
-                if (empty($content)) {
-                    continue;
-                }
-
-                $grouped[$label][] = [
-                    'date'            => $record->dailyRecord->record_date ?? '',
-                    'activity'        => $record->dailyRecord->activity_name ?? '',
-                    'content'         => $content,
-                    'note'            => $record->notes ?? '',
-                    'common_activity' => $record->dailyRecord->common_activity ?? '',
-                ];
-            }
-        }
-
-        return $grouped;
-    }
-
-    private function getRelatedRecords(array $recordsByDomain, ?string $category, ?string $subCategory): array
+    /**
+     * 目標の category / sub_category から、関連する連絡帳の領域カラムを判定する。
+     * (旧 getRelatedRecords のキーワードマッピングを踏襲。返すのは StudentRecord の領域カラム名。)
+     *
+     * @return list<string>
+     */
+    private function matchedDomainColumns(?string $category, ?string $subCategory): array
     {
         $mapping = [
-            '健康・生活' => '健康・生活', '生活習慣' => '健康・生活',
-            '運動・感覚' => '運動・感覚', '運動' => '運動・感覚', '感覚' => '運動・感覚',
-            '認知・行動' => '認知・行動', '学習' => '認知・行動', '認知' => '認知・行動',
-            '言語・コミュニケーション' => '言語・コミュニケーション', 'コミュニケーション' => '言語・コミュニケーション', '言語' => '言語・コミュニケーション',
-            '人間関係・社会性' => '人間関係・社会性', '社会性' => '人間関係・社会性', '人間関係' => '人間関係・社会性',
+            '健康・生活' => 'health_life', '生活習慣' => 'health_life', '生活' => 'health_life', '健康' => 'health_life',
+            '運動・感覚' => 'motor_sensory', '運動' => 'motor_sensory', '感覚' => 'motor_sensory',
+            '認知・行動' => 'cognitive_behavior', '学習' => 'cognitive_behavior', '認知' => 'cognitive_behavior', '行動' => 'cognitive_behavior',
+            '言語・コミュニケーション' => 'language_communication', 'コミュニケーション' => 'language_communication', '言語' => 'language_communication',
+            '人間関係・社会性' => 'social_relations', '社会性' => 'social_relations', '人間関係' => 'social_relations', '対人' => 'social_relations',
         ];
 
-        $matchedDomains = [];
-        foreach ($mapping as $keyword => $domain) {
-            if (mb_strpos($subCategory ?? '', $keyword) !== false) {
-                $matchedDomains[] = $domain;
-            }
+        $haystack = trim(($category ?? '') . ' ' . ($subCategory ?? ''));
+        if ($haystack === '') {
+            return [];
         }
-        $matchedDomains = array_unique($matchedDomains);
 
-        $related = [];
-        foreach ($matchedDomains as $domain) {
-            if (isset($recordsByDomain[$domain])) {
-                $related = array_merge($related, $recordsByDomain[$domain]);
+        $cols = [];
+        foreach ($mapping as $keyword => $col) {
+            if (mb_strpos($haystack, $keyword) !== false) {
+                $cols[$col] = true;
             }
         }
 
-        // 重複を除去
-        $unique = [];
-        $seen = [];
-        foreach ($related as $record) {
-            $key = $record['date'] . '|' . ($record['content'] ?? '');
-            if (! isset($seen[$key])) {
-                $seen[$key] = true;
-                $unique[] = $record;
-            }
-        }
-
-        // 日付でソートして最新20件
-        usort($unique, fn ($a, $b) => strcmp($b['date'], $a['date']));
-
-        return array_slice($unique, 0, 20);
+        return array_keys($cols);
     }
 
     private function authorizeClassroom($user, Student $student): void

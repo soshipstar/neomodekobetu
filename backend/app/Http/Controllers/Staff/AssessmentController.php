@@ -245,13 +245,15 @@ class AssessmentController extends Controller
 
         $period = AssessmentPeriod::findOrFail($validated['period_id']);
 
-        // 対象期間の開始日から5か月前の連絡帳データを取得（レガシー準拠）
+        // 対象期間の開始日から6か月前までの連絡帳データを「全件」取得する。
+        // 旧実装は5か月・最大100件かつ領域別最新10件に切り捨てており、多数の連絡帳が
+        // 解析されず "死んで" いた。期間内は二段集約(蒸留, RecordDistillationService)で全件を解析する。
         $periodStart = $period->start_date;
-        $fiveMonthsBefore = (clone $periodStart)->subMonths(5);
+        $windowStart = (clone $periodStart)->subMonths(6);
 
         $records = StudentRecord::where('student_id', $student->id)
-            ->whereHas('dailyRecord', function ($q) use ($fiveMonthsBefore, $periodStart) {
-                $q->where('record_date', '>=', $fiveMonthsBefore->toDateString())
+            ->whereHas('dailyRecord', function ($q) use ($windowStart, $periodStart) {
+                $q->where('record_date', '>=', $windowStart->toDateString())
                   ->where('record_date', '<', $periodStart->toDateString());
             })
             ->with('dailyRecord:id,record_date')
@@ -263,47 +265,19 @@ class AssessmentController extends Controller
                   ->orWhereNotNull('social_relations');
             })
             ->orderByDesc('id')
-            ->limit(100)
+            ->limit(2000) // 安全弁(暴走防止)。通常運用では対象期間の全件がこの範囲に収まる。
             ->get();
 
-        // 領域ごとにデータを集約
-        $domainNames = [
-            'health_life' => '健康・生活',
-            'motor_sensory' => '運動・感覚',
-            'cognitive_behavior' => '認知・行動',
-            'language_communication' => '言語・コミュニケーション',
-            'social_relations' => '人間関係・社会性',
-        ];
-
-        $domainData = array_fill_keys(array_keys($domainNames), []);
-
-        foreach ($records as $record) {
-            $date = $record->dailyRecord ? date('Y年m月d日', strtotime($record->dailyRecord->record_date)) : '';
-            foreach (array_keys($domainNames) as $domain) {
-                if (!empty($record->{$domain})) {
-                    $domainData[$domain][] = "【{$date}】" . $record->{$domain};
-                }
-            }
-        }
-
-        $recordsSummary = '';
-        foreach ($domainData as $domain => $contents) {
-            if (!empty($contents)) {
-                $recordsSummary .= "\n■ " . ($domainNames[$domain] ?? $domain) . "\n";
-                $recordsSummary .= implode("\n", array_slice($contents, 0, 10)) . "\n";
-            }
-        }
-
-        if (empty(trim($recordsSummary))) {
+        if ($records->isEmpty()) {
             return response()->json([
                 'success' => false,
-                'message' => '直近5か月の連絡帳データが見つかりません。この生徒の連絡帳データを入力してください。',
+                'message' => '直近6か月の連絡帳データが見つかりません。この生徒の連絡帳データを入力してください。',
             ], 422);
         }
 
-        // 面談記録を取得（直近5か月、レガシー準拠）
+        // 面談記録を取得（直近6か月）
         $interviewRecords = \App\Models\StudentInterview::where('student_id', $student->id)
-            ->where('interview_date', '>=', $fiveMonthsBefore->toDateString())
+            ->where('interview_date', '>=', $windowStart->toDateString())
             ->where('interview_date', '<', $periodStart->toDateString())
             ->orderByDesc('interview_date')
             ->limit(10)
@@ -390,10 +364,17 @@ class AssessmentController extends Controller
             $totalInputTokens = 0;
             $totalOutputTokens = 0;
 
+            // 連絡帳を全件、領域別に蒸留(二段集約)してから課題生成へ渡す(取りこぼし防止)。
+            $distiller = app(\App\Services\RecordDistillationService::class);
+            $distilled = $distiller->distillByDomain($student, $records, $masker);
+            $totalInputTokens += $distilled['input_tokens'];
+            $totalOutputTokens += $distilled['output_tokens'];
+            $recordsSummary = $distiller->toPromptText($distilled['digests']);
+
             // === 1. 五領域の課題を生成（レガシー準拠） ===
-            $domainsPrompt = "あなたは発達支援・特別支援教育の専門スタッフです。以下の生徒の直近5か月の連絡帳記録を詳細に分析し、今後6か月間の具体的な支援課題を各領域ごとに300文字程度でまとめてください。\n\n"
+            $domainsPrompt = "あなたは発達支援・特別支援教育の専門スタッフです。以下の生徒の直近6か月の連絡帳記録(全件を領域別に要約済み)を詳細に分析し、今後6か月間の具体的な支援課題を各領域ごとに300文字程度でまとめてください。\n\n"
                 . "【生徒情報】\n名前: {$student->student_name}\n\n"
-                . "【直近5か月の連絡帳記録】\n{$recordsSummary}\n\n"
+                . "【直近6か月の連絡帳記録(全件の要約)】\n{$recordsSummary}\n\n"
                 . (trim($guardianSummary) !== '' ? "【保護者アセスメント(家庭からの視点)】{$guardianSummary}\n" : '')
                 . "【分析と課題作成の指針】\n"
                 . "以下の5つの領域について、記録から読み取れる具体的な事実を基に、今後6か月間で取り組むべき課題を300文字程度で詳細に記述してください。\n\n"
