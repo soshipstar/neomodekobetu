@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -683,18 +683,22 @@ function StudentFaceSheet({ studentId, studentName }: { studentId: number; stude
     daily_life: {}, physical: {}, profile: {}, considerations: {}, memo: '',
   });
 
-  // Sync form with loaded data
-  const dataLoaded = useRef(false);
-  if (sheet && !dataLoaded.current) {
-    dataLoaded.current = true;
-    setForm({
-      daily_life: sheet.daily_life || {},
-      physical: sheet.physical || {},
-      profile: sheet.profile || {},
-      considerations: sheet.considerations || {},
-      memo: (sheet as any).memo || '',
-    });
-  }
+  // Sync form with loaded data once.
+  // 旧実装は render 中に useRef.current を書き換えていたが React 19 strict
+  // (react-hooks/refs) で禁止される。useEffect + state ガードに置き換え。
+  const [dataLoaded, setDataLoaded] = useState(false);
+  useEffect(() => {
+    if (sheet && !dataLoaded) {
+      setForm({
+        daily_life: sheet.daily_life || {},
+        physical: sheet.physical || {},
+        profile: sheet.profile || {},
+        considerations: sheet.considerations || {},
+        memo: (sheet as { memo?: string }).memo || '',
+      });
+      setDataLoaded(true);
+    }
+  }, [sheet, dataLoaded]);
 
   const saveMutation = useMutation({
     mutationFn: async () => api.post(`/api/staff/students/${studentId}/face-sheet`, form),
