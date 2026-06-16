@@ -17,6 +17,10 @@ const ATTACHMENT_MAX_BYTES = 3 * 1024 * 1024;
 const isImageFile = (f: File) =>
   (f.type && f.type.startsWith('image/')) || isHeicFile(f);
 
+// 添付ファイル名から画像かどうかを判定 (スタッフ側 student-chats と同じ拡張子判定)
+const isImageAttachment = (name: string | null): boolean =>
+  !!name && /\.(png|jpe?g|gif|webp|heic|heif|bmp|svg)$/i.test(name);
+
 interface StudentChatMessage {
   id: number;
   room_id: number;
@@ -24,6 +28,7 @@ interface StudentChatMessage {
   sender_type: 'student' | 'staff';
   message: string;
   attachment_path: string | null;
+  attachment_url: string | null;
   attachment_original_name: string | null;
   attachment_size: number | null;
   is_read: boolean;
@@ -176,14 +181,37 @@ export default function StudentChatPage() {
                     }`}>
                       {/* URL は「リンクを開く」ボタンに置換 (現場要望) */}
                       <MessageBody text={nl(msg.message)} tone={isSent ? 'mine' : 'other'} />
-                      {msg.attachment_path && (
-                        <div className={`mt-2 flex items-center gap-1 text-xs ${isSent ? 'text-white/80' : 'text-[var(--brand-80)]'}`}>
-                          <MaterialIcon name="attach_file" size={12} />
-                          <span>{msg.attachment_original_name}</span>
-                          {msg.attachment_size && (
-                            <span>({formatFileSize(msg.attachment_size)})</span>
-                          )}
-                        </div>
+                      {msg.attachment_url && (
+                        isImageAttachment(msg.attachment_original_name) ? (
+                          // 画像はインライン表示。タップで原寸を別タブで開く
+                          <a
+                            href={msg.attachment_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 block"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={msg.attachment_url}
+                              alt={msg.attachment_original_name || '画像'}
+                              className="max-h-[260px] rounded-lg border border-black/10 object-contain"
+                              loading="lazy"
+                            />
+                          </a>
+                        ) : (
+                          <a
+                            href={msg.attachment_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`mt-2 flex items-center gap-1 text-xs underline ${isSent ? 'text-white/90' : 'text-[var(--brand-80)]'}`}
+                          >
+                            <MaterialIcon name="attach_file" size={12} />
+                            <span>{msg.attachment_original_name || '添付ファイル'}</span>
+                            {msg.attachment_size && (
+                              <span>({formatFileSize(msg.attachment_size)})</span>
+                            )}
+                          </a>
+                        )
                       )}
                     </div>
                     {/* Time and read status */}

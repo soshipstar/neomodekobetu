@@ -74,13 +74,16 @@ class ChatController extends Controller
             $messages = $messages->reverse()->values();
         }
 
-        // 送信者名を付加
+        // 送信者名 + 添付の公開URLを付加(生徒側で画像/リンク表示するため。スタッフ側と同形)。
         $messages->each(function ($msg) {
             if ($msg->sender_type === 'staff') {
                 $msg->sender_name = \App\Models\User::where('id', $msg->sender_id)->value('full_name');
             } elseif ($msg->sender_type === 'student') {
                 $msg->sender_name = \App\Models\Student::where('id', $msg->sender_id)->value('student_name');
             }
+            $msg->attachment_url = $msg->attachment_path
+                ? \Illuminate\Support\Facades\Storage::disk('public')->url($msg->attachment_path)
+                : null;
         });
 
         // スタッフからのメッセージを既読にする
@@ -180,6 +183,10 @@ class ChatController extends Controller
         } catch (\Exception $e) {
             Log::error('Student chat push notification error: ' . $e->getMessage());
         }
+
+        $message->attachment_url = $message->attachment_path
+            ? \Illuminate\Support\Facades\Storage::disk('public')->url($message->attachment_path)
+            : null;
 
         return response()->json([
             'success'    => true,
