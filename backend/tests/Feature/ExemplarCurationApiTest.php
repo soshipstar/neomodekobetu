@@ -31,9 +31,10 @@ class ExemplarCurationApiTest extends TestCase
         if (class_exists(\Laravel\Telescope\Telescope::class)) {
             \Laravel\Telescope\Telescope::stopRecording();
         }
-        $this->company = Company::create(['name' => '企業A']);
+        // 見本キュレーション候補は学習に使える母集団のみ(児童 ai_consent_learning AND 施設 ai_consent_aggregate)。
+        $this->company = Company::create(['name' => '企業A', 'ai_consent_aggregate' => true]);
         $this->room = Classroom::create(['classroom_name' => '事業所A', 'company_id' => $this->company->id, 'is_active' => true]);
-        $this->student = Student::create(['student_name' => '山田太郎', 'classroom_id' => $this->room->id, 'status' => 'active', 'is_active' => true]);
+        $this->student = Student::create(['student_name' => '山田太郎', 'classroom_id' => $this->room->id, 'status' => 'active', 'is_active' => true, 'ai_consent_learning' => true]);
         $this->admin = User::create([
             'username' => 'ca_'.uniqid(), 'password' => bcrypt('p'), 'full_name' => '施設管理者',
             'user_type' => 'admin', 'is_company_admin' => true, 'classroom_id' => $this->room->id, 'is_active' => true,
