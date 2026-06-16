@@ -15,6 +15,12 @@ use Illuminate\Support\Facades\Log;
 class ActivitySupportPlanAiService
 {
     /**
+     * 空応答・JSON不正・トークン上限切れに備えた最大試行回数(同期エンドポイントの
+     * 待ち時間が伸びすぎないよう 2 回=1リトライに留める。非同期ジョブ側も $tries=2 で再試行)。
+     */
+    private const MAX_ATTEMPTS = 2;
+
+    /**
      * 五領域への配慮を生成。
      *
      * @param  array{activity_name:string,activity_purpose?:string,activity_content?:string,target_grade?:string}  $input
@@ -59,7 +65,7 @@ class ActivitySupportPlanAiService
         return $this->run(
             systemPrompt: '放課後等デイサービスの支援案を作成する専門家AIアシスタントです。JSON形式で回答してください。',
             userPrompt: $prompt,
-            maxTokens: 2000,
+            maxTokens: 4000,
             logType: 'activity_support_plan_five_domains',
             userId: $userId,
         );
@@ -150,7 +156,7 @@ class ActivitySupportPlanAiService
         return $this->run(
             systemPrompt: '放課後等デイサービスの活動計画を作成する専門家AIアシスタントです。JSON形式で回答してください。',
             userPrompt: $prompt,
-            maxTokens: 3000,
+            maxTokens: 6000,
             logType: 'activity_support_plan_schedule',
             userId: $userId,
         );
@@ -163,23 +169,56 @@ class ActivitySupportPlanAiService
     {
         $startTime = microtime(true);
         $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
+        if (empty($apiKey)) {
+            throw new \RuntimeException('OpenAI APIキーが設定されていません。');
+        }
         $client = \OpenAI::client($apiKey);
-        $response = $client->chat()->create([
-            'model' => 'gpt-5.4-2026-03-05',
-            'messages' => [
-                ['role' => 'system', 'content' => $systemPrompt],
-                ['role' => 'user', 'content' => $userPrompt],
-            ],
-            'response_format' => ['type' => 'json_object'],
-            'max_completion_tokens' => $maxTokens,
-        ]);
 
-        $durationMs = (int) ((microtime(true) - $startTime) * 1000);
-        $content = json_decode($response->choices[0]->message->content, true) ?? [];
+        // 空応答・不正JSON・トークン上限での打ち切りで「完了したのに空白」になる事象への対策。
+        // 失敗を握りつぶさず、数回リトライし、それでも駄目なら例外を投げて呼び出し側で失敗扱いにする。
+        $lastError = '不明なエラー';
+        for ($attempt = 1; $attempt <= self::MAX_ATTEMPTS; $attempt++) {
+            $response = $client->chat()->create([
+                'model' => 'gpt-5.4-2026-03-05',
+                'messages' => [
+                    ['role' => 'system', 'content' => $systemPrompt],
+                    ['role' => 'user', 'content' => $userPrompt],
+                ],
+                'response_format' => ['type' => 'json_object'],
+                'max_completion_tokens' => $maxTokens,
+            ]);
 
-        $this->logGeneration($logType, $response, $userPrompt, $content, $durationMs, $userId);
+            $raw = (string) ($response->choices[0]->message->content ?? '');
+            $finish = $response->choices[0]->finishReason ?? null;
+            $decoded = json_decode($raw, true);
 
-        return $content;
+            // 期待キーに実体があるか確認(空オブジェクト {} や空文字だけの応答も「空白」とみなす)。
+            $nonEmpty = is_array($decoded)
+                ? array_filter($decoded, fn ($v) => is_string($v) ? trim($v) !== '' : ! empty($v))
+                : [];
+
+            if ($nonEmpty !== []) {
+                $durationMs = (int) ((microtime(true) - $startTime) * 1000);
+                $this->logGeneration($logType, $response, $userPrompt, $decoded, $durationMs, $userId);
+
+                return $decoded;
+            }
+
+            // 失敗の理由を分類してリトライ。トークン上限切れは最頻の原因(推論モデルが出力前に予算を使い切る)。
+            $lastError = match (true) {
+                $finish === 'length'  => '応答がトークン上限で打ち切られました',
+                $raw === ''           => '応答が空でした',
+                ! is_array($decoded)  => 'JSON解析に失敗しました',
+                default               => '生成内容が空でした',
+            };
+            Log::warning('ActivitySupportPlan AI: empty/invalid response, retrying', [
+                'type' => $logType, 'attempt' => $attempt, 'finish_reason' => $finish,
+                'content_excerpt' => mb_substr($raw, 0, 200),
+            ]);
+        }
+
+        // 全リトライ失敗。呼び出し側(コントローラ)が catch して 500 を返し、フロントは「完了」を出さない。
+        throw new \RuntimeException("AI応答を取得できませんでした({$lastError})。お手数ですが、もう一度お試しください。");
     }
 
     private function logGeneration(string $type, object $response, string $prompt, array $output, int $durationMs, ?int $userId): void
