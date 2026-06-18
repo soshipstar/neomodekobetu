@@ -328,6 +328,28 @@ class TabletController extends Controller
             return response()->json(['success' => false, 'message' => '他の教室の生徒が含まれています。'], 422);
         }
 
+        // 重複防止: (record_date, staff_id, activity_name) に unique 制約があるため、
+        // 素の create() だと二重送信や同名の再登録で SQLSTATE 23505 → 500 になっていた
+        // (本番エラーログで継続発生。既存レコードへの逐次リトライが主因)。
+        // updateActivity と同じく事前チェックして 422 で「既に登録済み」と知らせ、500 を防ぐ。
+        $activityName = $validated['activity_name'];
+        $existing = DailyRecord::query()
+            ->where('record_date', $validated['record_date'])
+            ->where('staff_id', $user->id)
+            ->where('activity_name', $activityName)
+            ->first();
+        if ($existing) {
+            return response()->json([
+                'success' => false,
+                'message' => "同じ日付・スタッフで「{$activityName}」という活動が既に登録されています。"
+                    . "別の活動名にするか、既存の活動を編集してください。",
+                'errors'  => [
+                    'activity_name' => ["同じ日付・スタッフで「{$activityName}」という活動が既に登録されています。"],
+                ],
+                'conflict_activity_id' => $existing->id,
+            ], 422);
+        }
+
         $record = DB::transaction(function () use ($validated, $user) {
             $record = DailyRecord::create([
                 'classroom_id'    => $user->classroom_id,
