@@ -101,11 +101,21 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        // auth:sanctum 未認証時、Authenticate ミドルウェアが route('login') を引いて
+        // RouteNotFoundException を投げる (このAPI専用アプリに login 名前付きルートは無い)。
+        // クライアントには下の render フックで 401 JSON を返すが、report() の早期 return は
+        // Laravel 既定のログ出力 (laravel.log) を止めないため、大量に記録され続けていた。
+        // dontReport に登録して報告自体を抑止する。app 側に route('名前') 生成は無いため
+        // 正当なルート生成バグを握り潰す懸念はない。
+        $exceptions->dontReport([
+            \Symfony\Component\Routing\Exception\RouteNotFoundException::class,
+        ]);
+
         // エラーをDBに記録
         $exceptions->report(function (\Throwable $e) {
             try {
                 if ($e instanceof \Illuminate\Auth\AuthenticationException) return;
-                if ($e instanceof \Symfony\Component\Routing\Exception\RouteNotFoundException) return;
+                // RouteNotFoundException は上の dontReport で報告自体を抑止済み
                 if ($e instanceof \Illuminate\Validation\ValidationException) return;
                 if ($e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) return;
 
