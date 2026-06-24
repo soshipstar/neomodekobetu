@@ -9,12 +9,15 @@ use App\Models\Student;
 use App\Support\AbilityToolScope;
 
 /**
- * 能力評価: 日々の設問を「成長段階に合わせて・完全ランダムでなく」選定する。
+ * 能力評価: 日々の設問を「発達段階に合わせて・完全ランダムでなく」選定する。
  *
- * 方針(ユーザー合意): DEV(発達段階別・全児童)の25項目のうち、その児童の観察記録が
- * 最も少ない項目を優先して出題し、直近に出題した項目は避ける(記録の薄い項目を満遍なく
- * 埋めるローテーション)。設問文はその児童の成長段階軸(S1〜S6)の到達目安を用いる。
- * P3 でスコアが付いたら未達・最近接領域(スコア4-6)優先へ発展させる余地を残す。
+ * 方針(現場フィードバック 2026-06-24 で見直し):
+ *  - DEV(発達段階別・5領域)を主軸とし、ADV(高卒標準・学力)等より優先して出題する
+ *    ([[AbilityToolScope]] でツール対象を決定。中学生以下は DEV のみ)。
+ *  - その児童の観察記録が最も少ない項目を優先し、直近に出題した項目は避ける(満遍なく
+ *    埋めるローテーション。同点ならツール優先度 DEV→ADV→WRK→UNV)。
+ *  - 設問文(到達目安)は小学校低学年(S1)から始める([[AbilityToolScope]]::axisFor)。
+ *    達成(スコア≥8)で S2→S3… と段階を上げる自動進行は次フェーズで対応。
  */
 class AbilityQuestionService
 {
@@ -58,13 +61,19 @@ class AbilityQuestionService
             $candidates = $withoutLatest;
         }
 
-        // 観察回数昇順 → 最終観察が古い順(未観察=最優先) → 項目ID順 で安定ソート
-        return $candidates->sortBy(function ($it) use ($stats) {
+        // DEV(発達5領域)を主軸にするためツール優先度を入れる。同じ観察回数なら
+        // DEV → ADV → WRK → UNV の順。これで「科目指導的(ADV)の設問ばかりが先に出る」
+        // のを防ぎ、まず発達の中核項目を満遍なく埋める(現場フィードバック 2026-06-24)。
+        $toolPriority = ['DEV' => 0, 'ADV' => 1, 'WRK' => 2, 'UNV' => 3];
+
+        // 観察回数昇順 → ツール優先度(DEV優先) → 最終観察が古い順(未観察=最優先) → 項目ID順
+        return $candidates->sortBy(function ($it) use ($stats, $toolPriority) {
             $s = $stats->get($it->item_id);
             $cnt = $s ? (int) $s->cnt : 0;
             $last = $s && $s->last_date ? $s->last_date : '0000-00-00';
+            $tp = $toolPriority[$it->tool_id] ?? 9;
 
-            return sprintf('%05d|%s|%s', $cnt, $last, $it->item_id);
+            return sprintf('%05d|%d|%s|%s', $cnt, $tp, $last, $it->item_id);
         })->first();
     }
 

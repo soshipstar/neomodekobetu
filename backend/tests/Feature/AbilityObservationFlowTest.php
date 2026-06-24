@@ -53,22 +53,24 @@ class AbilityObservationFlowTest extends TestCase
         $this->assertSame(7, $grade); // 中1
     }
 
-    public function test_tool_scope_expands_with_age(): void
+    public function test_tool_scope_dev_primary_high_school_only_for_adv(): void
     {
-        // 小学生(S3): DEV+ADV のみ
+        // 小学生(S3): DEV のみ。発達段階は小学校低学年(S1)から開始する。
         $elem = new Student(['grade_level' => 'elementary_5']);
-        $this->assertSame(['DEV', 'ADV'], AbilityToolScope::toolsFor($elem));
-        $this->assertSame('S3', AbilityToolScope::axisFor($elem, 'DEV'));
-        $this->assertSame('L2', AbilityToolScope::axisFor($elem, 'ADV'));
+        $this->assertSame(['DEV'], AbilityToolScope::toolsFor($elem));
+        $this->assertSame('S1', AbilityToolScope::axisFor($elem, 'DEV'));
 
-        // 中学生(S4): 就業WRK・大学UNV も追加。時期は中学期P1
+        // 中学生(S4): まだ DEV のみ。高卒標準(ADV)・就業・大学は出さない。
         $jh = new Student(['grade_level' => 'junior_high_2']);
-        $this->assertSame(['DEV', 'ADV', 'WRK', 'UNV'], AbilityToolScope::toolsFor($jh));
-        $this->assertSame('P1', AbilityToolScope::axisFor($jh, 'WRK'));
+        $this->assertSame(['DEV'], AbilityToolScope::toolsFor($jh));
+        $this->assertSame('S1', AbilityToolScope::axisFor($jh, 'DEV'));
 
-        // 高校生(S6): 時期は高校期P2
+        // 高校生(S6): 高校段階で初めて ADV/WRK/UNV も加わる。ADV=高卒標準L2 / 就業・大学=高校期P2
         $hs = new Student(['grade_level' => 'high_school_2']);
         $this->assertSame(['DEV', 'ADV', 'WRK', 'UNV'], AbilityToolScope::toolsFor($hs));
+        $this->assertSame('S1', AbilityToolScope::axisFor($hs, 'DEV'));
+        $this->assertSame('L2', AbilityToolScope::axisFor($hs, 'ADV'));
+        $this->assertSame('P2', AbilityToolScope::axisFor($hs, 'WRK'));
         $this->assertSame('P2', AbilityToolScope::axisFor($hs, 'UNV'));
     }
 
@@ -85,14 +87,14 @@ class AbilityObservationFlowTest extends TestCase
             'status' => 'active', 'is_active' => true,
         ]);
 
-        // 設問取得: 小学生(S3)は DEV+ADV が対象。項目のツールに応じた軸の到達目安が返る
+        // 設問取得: 小学生は DEV のみが対象。先頭は必ず DEV(発達の主軸)、
+        // 到達目安は小学校低学年(S1)から始める(高卒標準・科目指導的な設問は出さない)。
         $q = $this->actingAs($staff, 'sanctum')
             ->getJson("/api/staff/ability/students/{$student->id}/next-question");
         $q->assertStatus(200);
         $firstItem = $q->json('data.question.item_id');
-        $this->assertMatchesRegularExpression('/^(DEV|ADV)-/', $firstItem);
-        $expectedAxis = str_starts_with($firstItem, 'ADV-') ? 'L2' : 'S3';
-        $this->assertSame($expectedAxis, $q->json('data.question.axis_id'));
+        $this->assertStringStartsWith('DEV-', $firstItem);
+        $this->assertSame('S1', $q->json('data.question.axis_id'));
         $this->assertNotEmpty($q->json('data.question.benchmark'));
         $this->assertSame(['completed', 'partial', 'refused'], $q->json('data.results'));
         $this->assertNotEmpty(collect($q->json('data.support_codes'))->firstWhere('code', 'SUP0'));
@@ -108,7 +110,7 @@ class AbilityObservationFlowTest extends TestCase
         ]);
         $store->assertStatus(201);
         $obs = AbilityObservation::first();
-        $this->assertSame($expectedAxis, $obs->axis_id);
+        $this->assertSame('S1', $obs->axis_id);
         $this->assertSame($room->id, $obs->classroom_id);
         $this->assertSame($staff->id, $obs->recorded_by);
 
@@ -117,6 +119,45 @@ class AbilityObservationFlowTest extends TestCase
             ->getJson("/api/staff/ability/students/{$student->id}/next-question");
         $q2->assertStatus(200);
         $this->assertNotSame($firstItem, $q2->json('data.question.item_id'));
+    }
+
+    public function test_dev_is_asked_first_even_for_high_schooler_and_never_adv_for_junior_high(): void
+    {
+        $company = Company::create(['name' => '企業A']);
+        $room = Classroom::create([
+            'classroom_name' => '事業所A', 'company_id' => $company->id,
+            'is_active' => true, 'ability_assessment_enabled' => true,
+        ]);
+        $staff = $this->staff($room);
+
+        // 高校生: ADV/WRK/UNV も対象だが、主軸の DEV から先に出す(科目指導的が先に出ない)
+        $hs = Student::create([
+            'student_name' => '高校生', 'classroom_id' => $room->id, 'grade_level' => 'high_school_2',
+            'status' => 'active', 'is_active' => true,
+        ]);
+        $q = $this->actingAs($staff, 'sanctum')
+            ->getJson("/api/staff/ability/students/{$hs->id}/next-question");
+        $q->assertStatus(200);
+        $this->assertStringStartsWith('DEV-', $q->json('data.question.item_id'));
+        $this->assertSame('S1', $q->json('data.question.axis_id'));
+
+        // 中学生: 最初の数問はすべて DEV(高卒標準ADVは出題されない)
+        $jh = Student::create([
+            'student_name' => '中学生', 'classroom_id' => $room->id, 'grade_level' => 'junior_high_2',
+            'status' => 'active', 'is_active' => true,
+        ]);
+        for ($i = 0; $i < 5; $i++) {
+            $r = $this->actingAs($staff, 'sanctum')
+                ->getJson("/api/staff/ability/students/{$jh->id}/next-question");
+            $r->assertStatus(200);
+            $itemId = $r->json('data.question.item_id');
+            $this->assertStringStartsWith('DEV-', $itemId, '中学生に DEV 以外(高卒標準等)が出題された');
+            // 出した項目を観察として保存し、ローテーションで次の項目へ進める
+            $this->actingAs($staff, 'sanctum')->postJson('/api/staff/ability/observations', [
+                'student_id' => $jh->id, 'item_id' => $itemId,
+                'support_code' => 'SUP0', 'result' => 'completed',
+            ])->assertStatus(201);
+        }
     }
 
     public function test_disabled_classroom_returns_409_and_cross_classroom_403(): void
