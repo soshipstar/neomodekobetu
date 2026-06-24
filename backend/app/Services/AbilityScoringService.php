@@ -78,7 +78,13 @@ class AbilityScoringService
      */
     private function evaluateItem(Student $student, string $itemId, string $axisId, Collection $obs, Carbon $asOf): array
     {
-        // 採点に使うのは支援コードが記録された観察のみ
+        // P-D: 該当度(degree)が入っていれば、直近の該当度を直接スコアにする(支援量ルールはスキップ)。
+        $latestDegree = $obs->filter(fn ($o) => $o->degree !== null)->sortByDesc('id')->first();
+        if ($latestDegree !== null) {
+            return $this->applyDegreeScore($student, $itemId, $axisId, (int) $latestDegree->degree, $obs, $asOf);
+        }
+
+        // 採点に使うのは支援コードが記録された観察のみ(レガシー: 支援量→成功率)
         $scoring = $obs->filter(fn ($o) => $o->support_code !== null)->values();
 
         if ($scoring->count() < 3) {
@@ -134,6 +140,44 @@ class AbilityScoringService
             'needs_review' => $needsReview,
             'count' => $scoring->count(),
         ];
+    }
+
+    /**
+     * 該当度(degree)を直近値として直接スコアにする(P-D)。
+     * 「示すにとどめる」方針に合わせ、支援量ルール・±2制限は適用しない。前回と同点なら追記しない。
+     *
+     * @param  Collection<int, AbilityObservation>  $obs
+     * @return array<string, mixed>
+     */
+    private function applyDegreeScore(Student $student, string $itemId, string $axisId, int $applied, Collection $obs, Carbon $asOf): array
+    {
+        $prev = AbilityScore::where('student_id', $student->id)
+            ->where('item_id', $itemId)
+            ->where('axis_id', $axisId)
+            ->orderByDesc('evaluated_on')->orderByDesc('id')
+            ->first();
+        $prevScore = $prev?->score;
+
+        if ($prevScore !== null && $applied === $prevScore) {
+            return ['item_id' => $itemId, 'status' => 'unchanged', 'score' => $applied];
+        }
+
+        $evidence = $obs->filter(fn ($o) => $o->degree !== null)->sortByDesc('id')->take(5);
+        AbilityScore::create([
+            'student_id' => $student->id,
+            'item_id' => $itemId,
+            'axis_id' => $axisId,
+            'score' => $applied,
+            'prev_score' => $prevScore,
+            'change' => $prevScore === null ? null : $applied - $prevScore,
+            'needs_review' => false,
+            'method' => 'self_degree',
+            'evidence_record_ids' => $evidence->pluck('id')->values()->all(),
+            'notes' => $this->transcribeEvidence($evidence),
+            'evaluated_on' => $asOf->toDateString(),
+        ]);
+
+        return ['item_id' => $itemId, 'status' => 'scored', 'score' => $applied, 'prev_score' => $prevScore, 'method' => 'degree'];
     }
 
     /**

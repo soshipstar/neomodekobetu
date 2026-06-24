@@ -168,6 +168,29 @@ class AbilityScoringEngineTest extends TestCase
         $this->assertSame(1, AbilityScore::where('item_id', 'DEV-3-2')->count());
     }
 
+    public function test_degree_is_used_directly_as_score(): void
+    {
+        // P-D: 該当度(degree)が入っていれば、直近(idが新しい)の該当度を直接スコアにする。
+        AbilityObservation::create([
+            'classroom_id' => $this->room->id, 'student_id' => $this->student->id,
+            'item_id' => 'DEV-4-1', 'axis_id' => 'S1', 'degree' => 6,
+            'observed_date' => Carbon::now()->subDays(5)->toDateString(), 'recorded_by' => null,
+        ]);
+        AbilityObservation::create([
+            'classroom_id' => $this->room->id, 'student_id' => $this->student->id,
+            'item_id' => 'DEV-4-1', 'axis_id' => 'S1', 'degree' => 8,
+            'observed_date' => Carbon::now()->subDays(1)->toDateString(), 'recorded_by' => null,
+        ]);
+
+        (new AbilityScoringService())->scoreStudent($this->student);
+
+        $latest = AbilityScore::where('item_id', 'DEV-4-1')->where('axis_id', 'S1')
+            ->orderByDesc('id')->first();
+        $this->assertNotNull($latest);
+        $this->assertSame(8, $latest->score);       // 直近の該当度(支援量ルールは使わない)
+        $this->assertSame('self_degree', $latest->method);
+    }
+
     public function test_recompute_and_scores_api_with_gating(): void
     {
         $staff = User::create([
