@@ -164,9 +164,26 @@ class SyncExportController extends Controller
             $byStudent[$row->student_id][$date] = $times;
         }
 
+        // 欠席時対応日 = absence_response_records（classroom × 月）。kiduriacount で
+        // status='absent_response' の実績として取り込み、欠席時対応加算を月締めで算定する。
+        $absenceByStudent = [];
+        if (Schema::hasTable('absence_response_records')) {
+            foreach (DB::table('absence_response_records')
+                ->where('classroom_id', $classroomId)
+                ->whereBetween('absence_date', [$from, $to])
+                ->get(['student_id', 'absence_date']) as $r) {
+                $absenceByStudent[$r->student_id][] = Carbon::parse($r->absence_date)->format('Y-m-d');
+            }
+        }
+
+        // 利用日（連絡帳）∪ 欠席時対応日 の児童を出力。
+        $studentIds = array_unique(array_merge(array_keys($byStudent), array_keys($absenceByStudent)));
         $attendance = [];
-        foreach ($byStudent as $studentId => $days) {
+        foreach ($studentIds as $studentId) {
+            $days = $byStudent[$studentId] ?? [];
             ksort($days);
+            $absence = array_values(array_unique($absenceByStudent[$studentId] ?? []));
+            sort($absence);
             $attendance[] = [
                 'k26_student_id' => (int) $studentId,
                 'days' => array_map(
@@ -174,6 +191,7 @@ class SyncExportController extends Controller
                     array_keys($days),
                     array_values($days)
                 ),
+                'absence_days' => $absence,
             ];
         }
 
