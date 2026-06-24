@@ -55,10 +55,11 @@ class GenerateAbilityStageQuestions extends Command
                     continue;
                 }
 
-                $benchmark = AbilityEvalBenchmark::where('item_id', $item->item_id)
-                    ->where('axis_id', $axis)->value('benchmark');
-                if (! $benchmark) {
-                    // 到達目安が無いマス(WRK/UNV 等)は生成対象外
+                $benchmark = (string) (AbilityEvalBenchmark::where('item_id', $item->item_id)
+                    ->where('axis_id', $axis)->value('benchmark') ?? '');
+                // 到達目安が無いツール(WRK/UNV)は判断の観点を基準に生成する。
+                // 到達目安も観点も無ければ基準が無いのでスキップ。
+                if ($benchmark === '' && trim((string) $item->perspective) === '') {
                     continue;
                 }
 
@@ -68,7 +69,7 @@ class GenerateAbilityStageQuestions extends Command
                     'definition' => (string) $item->definition,
                     'perspective' => (string) $item->perspective,
                     'stage_name' => (string) ($axisNames[$axis] ?? $axis),
-                    'benchmark' => (string) $benchmark,
+                    'benchmark' => $benchmark,
                 ]);
 
                 $question = trim((string) ($res['question'] ?? ''));

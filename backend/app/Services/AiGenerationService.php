@@ -164,20 +164,26 @@ class AiGenerationService
      */
     private function buildStageQuestionPrompt(array $ctx): string
     {
+        $benchmark = trim((string) ($ctx['benchmark'] ?? ''));
+        // 到達目安がある(DEV/ADV)ならそれを基準に、無い(WRK/UNV)なら判断の観点を基準にする。
+        $criterion = $benchmark !== ''
+            ? 'この段階の到達目安: ' . $benchmark
+            : 'この段階の基準: 上記「判断の観点」に沿って、この時期に求められる具体的な行動を問う';
+
         return implode("\n", [
-            '次の評価項目について、指定の発達段階に相応の「具体的で観察できる問い」を1つ作ってください。',
+            '次の評価項目について、指定の段階に相応の「具体的で観察できる問い」を1つ作ってください。',
             '',
             '領域: ' . ($ctx['domain'] ?? ''),
             '項目: ' . ($ctx['item_name'] ?? ''),
             '定義: ' . ($ctx['definition'] ?? ''),
             '判断の観点: ' . ($ctx['perspective'] ?? ''),
-            '発達段階: ' . ($ctx['stage_name'] ?? ''),
-            'この段階の到達目安: ' . ($ctx['benchmark'] ?? ''),
+            '段階: ' . ($ctx['stage_name'] ?? ''),
+            $criterion,
             '',
             '制約:',
-            '- question は「〜できていますか?」の形で、この発達段階に相応の具体的な行動を問う1文。専門用語は避ける。',
+            '- question は「〜できていますか?」の形で、この段階に相応の具体的な行動を問う1文。専門用語は避ける。',
             '- hint は観察の手がかり(具体例)を短く。',
-            '- 到達目安の内容に忠実に。過度に高度/低度にしない。',
+            '- 基準の内容に忠実に。過度に高度/低度にしない。',
             '',
             'JSON で {"question": "...", "hint": "..."} のみ返してください。',
         ]);

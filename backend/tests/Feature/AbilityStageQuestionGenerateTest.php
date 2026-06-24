@@ -30,13 +30,20 @@ class AbilityStageQuestionGenerateTest extends TestCase
         }
         $this->seed(AbilityEvalMasterSeeder::class);
         $this->reviewJson = storage_path('app/ability_stage_questions_DEV.json');
-        @unlink($this->reviewJson);
+        $this->cleanupJson();
     }
 
     protected function tearDown(): void
     {
-        @unlink($this->reviewJson); // 確認用JSONの後片付け(作業ツリーを汚さない)
+        $this->cleanupJson(); // 確認用JSONの後片付け(作業ツリーを汚さない)
         parent::tearDown();
+    }
+
+    private function cleanupJson(): void
+    {
+        foreach (['DEV', 'ADV', 'WRK', 'UNV'] as $t) {
+            @unlink(storage_path("app/ability_stage_questions_{$t}.json"));
+        }
     }
 
     public function test_generates_dev_150_questions_and_is_idempotent(): void
@@ -65,5 +72,23 @@ class AbilityStageQuestionGenerateTest extends TestCase
         $this->artisan('ability:generate-stage-questions', ['--tool' => 'DEV'])
             ->assertExitCode(0);
         $this->assertSame(150, AbilityStageQuestion::count());
+    }
+
+    public function test_generates_wrk_from_perspective_when_no_benchmark(): void
+    {
+        // WRK は到達目安マスタが無いが、判断の観点を基準に各項目1問(単一軸P2)生成される
+        $this->mock(AiGenerationService::class, function ($m) {
+            $m->shouldReceive('generateStageQuestion')
+                ->andReturn(['question' => '就業に必要なこれができていますか?', 'hint' => '観察ヒント']);
+        });
+
+        $this->artisan('ability:generate-stage-questions', ['--tool' => 'WRK'])
+            ->assertExitCode(0);
+
+        // WRK 17項目 × 単一軸P2 = 17
+        $this->assertSame(17, AbilityStageQuestion::where('item_id', 'like', 'WRK-%')->count());
+        $row = AbilityStageQuestion::where('item_id', 'like', 'WRK-%')->first();
+        $this->assertSame('P2', $row->axis_id);
+        $this->assertSame('就業に必要なこれができていますか?', $row->question);
     }
 }
