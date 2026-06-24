@@ -13,6 +13,7 @@ import { PlanForm } from '@/components/support-plan/PlanForm';
 import { PlanPreview } from '@/components/support-plan/PlanPreview';
 import { AiGenerateButton } from '@/components/support-plan/AiGenerateButton';
 import { AbilitySummaryView } from '@/components/ability/AbilitySummaryView';
+import { AbilityProgressMap } from '@/components/ability/AbilityProgressMap';
 import { StudentLearningConsent } from '@/components/ai-consent/StudentLearningConsent';
 import { StudentTraitsPanel } from '@/components/ai-consent/StudentTraitsPanel';
 import { EditReasonPanel } from '@/components/ai-consent/EditReasonPanel';
@@ -171,6 +172,9 @@ export default function SupportPlanPage() {
 
       {/* 評価状況の全体像(別添)— 能力評価トグルON教室のみ自己表示 */}
       <AbilitySummaryView studentId={studentId} />
+
+      {/* 到達マップ(項目×学年帯の到達と半年の成長)— 能力評価トグルON教室のみ自己表示 */}
+      <AbilityProgressMap studentId={studentId} />
 
       {/* Create/Edit Modal */}
       <Modal
