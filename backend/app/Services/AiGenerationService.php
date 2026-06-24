@@ -121,6 +121,69 @@ class AiGenerationService
     }
 
     /**
+     * 能力評価: 項目×学年帯の「具体的で観察できる問い」を生成する(マスター生成・児童PIIなし)。
+     *
+     * @param  array<string, string>  $ctx domain/item_name/definition/perspective/stage_name/benchmark
+     * @return array{question?: string, hint?: string}
+     */
+    public function generateStageQuestion(array $ctx): array
+    {
+        // 児童データを含まないが、A005ガード順守のため PiiMasker 経由(実質no-op)で送る。
+        $masker = new PiiMasker();
+        $prompt = $masker->mask($this->buildStageQuestionPrompt($ctx));
+
+        $systemPrompt = '放課後等デイサービスの発達支援の専門家AIです。'
+            . '指導員が日々の活動で観察し「どれくらいできているか」を答えられる、'
+            . '具体的で平易な問いを1つ作ります。JSON形式で回答してください。'
+            . self::NO_FABRICATION_CLAUSE;
+        $temperature = 0.5;
+        $maxTokens = 500;
+
+        $apiKey = config('services.openai.api_key', env('OPENAI_API_KEY'));
+        $client = \OpenAI::client($apiKey);
+        $response = $client->chat()->create([
+            'model' => config('services.openai.model', 'gpt-5.4-2026-03-05'),
+            'messages' => [
+                ['role' => 'system', 'content' => $systemPrompt],
+                ['role' => 'user', 'content' => $prompt],
+            ],
+            'response_format' => ['type' => 'json_object'],
+            'temperature' => $temperature,
+            'max_completion_tokens' => $maxTokens,
+        ]);
+
+        $content = json_decode($response->choices[0]->message->content, true) ?? [];
+
+        return $masker->unmaskArray($content);
+    }
+
+    /**
+     * 段階別具体設問の生成プロンプトを組み立てる。
+     *
+     * @param  array<string, string>  $ctx
+     */
+    private function buildStageQuestionPrompt(array $ctx): string
+    {
+        return implode("\n", [
+            '次の評価項目について、指定の発達段階に相応の「具体的で観察できる問い」を1つ作ってください。',
+            '',
+            '領域: ' . ($ctx['domain'] ?? ''),
+            '項目: ' . ($ctx['item_name'] ?? ''),
+            '定義: ' . ($ctx['definition'] ?? ''),
+            '判断の観点: ' . ($ctx['perspective'] ?? ''),
+            '発達段階: ' . ($ctx['stage_name'] ?? ''),
+            'この段階の到達目安: ' . ($ctx['benchmark'] ?? ''),
+            '',
+            '制約:',
+            '- question は「〜できていますか?」の形で、この発達段階に相応の具体的な行動を問う1文。専門用語は避ける。',
+            '- hint は観察の手がかり(具体例)を短く。',
+            '- 到達目安の内容に忠実に。過度に高度/低度にしない。',
+            '',
+            'JSON で {"question": "...", "hint": "..."} のみ返してください。',
+        ]);
+    }
+
+    /**
      * Generate newsletter content for a classroom's monthly newsletter.
      *
      * @param  Classroom  $classroom
