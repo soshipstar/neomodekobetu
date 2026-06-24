@@ -25,7 +25,7 @@ interface SummaryItem {
 interface SummaryDomain {
   domain: string;
   tool_id: string;
-  average: number;
+  average: number | null;
   subjective_average: number | null;
   items: SummaryItem[];
 }
@@ -34,7 +34,7 @@ interface Summary {
   has_subjective: boolean;
   mynameis_member_code: string | null;
   domains: SummaryDomain[];
-  radar: { domain: string; average: number; subjective: number | null }[];
+  radar: { domain: string; average: number | null; subjective: number | null }[];
   counts: { scored: number; needs_review: number; subjective: number };
 }
 
@@ -245,7 +245,9 @@ export function AbilitySummaryView({ studentId }: Props) {
               <div key={d.domain}>
                 <div className="mb-1 flex items-center justify-between border-l-4 border-[var(--brand-80)] bg-[var(--neutral-background-2)] px-2 py-1">
                   <span className="text-sm font-semibold text-[var(--neutral-foreground-1)]">{d.domain}</span>
-                  <span className="text-xs text-[var(--neutral-foreground-3)]">平均 {d.average}</span>
+                  <span className="text-xs text-[var(--neutral-foreground-3)]">
+                    {d.average !== null ? `平均 ${d.average}` : '客観評価はまだありません'}
+                  </span>
                 </div>
                 <table className="w-full text-sm">
                   <thead>
