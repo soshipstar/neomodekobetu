@@ -67,11 +67,13 @@ export default function AbsenceResponsesPage() {
     queryKey: ['staff', 'absence-responses', dateFrom, dateTo],
     queryFn: async () => {
       const res = await api.get('/api/staff/absence-response/list', { params: { date_from: dateFrom, date_to: dateTo } });
-      return res.data?.data?.data || [];
+      return res.data || {};
     },
   });
 
-  const records: AbsenceResponseItem[] = data || [];
+  const records: AbsenceResponseItem[] = data?.data?.data || [];
+  // 事業所が欠席時対応加算を算定するか（OFFのとき入力導線を案内に切替）
+  const additionEnabled: boolean = data?.absence_addition_enabled ?? true;
 
   // バグ報告 (淡田由貴さん): スタッフがアドバイスを入力できる UI が無かった。
   // BE 側のエンドポイント (PUT /api/staff/absence/{id}/advice) を呼び出し、
@@ -108,16 +110,25 @@ export default function AbsenceResponsesPage() {
         <div>
           <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">欠席時対応加算一覧</h1>
           <p className="text-sm text-[var(--neutral-foreground-3)]">欠席時対応加算の記録一覧とCSVダウンロード</p>
+          {!additionEnabled && (
+            <p className="mt-1 flex items-center gap-1.5 text-xs text-[var(--neutral-foreground-3)]">
+              <MaterialIcon name="info" size={14} />
+              この事業所は欠席時対応加算を「算定しない」設定です（管理者が「教室基本設定」で変更できます）。新規入力はできません。
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
           {/* バグ報告 (淡田由貴さん): 「様式はどこから入力しますか？」
               対応内容の新規入力は /staff/unsent-records にあるため、ここから直接遷移できる
-              プライマリボタンを目立つ場所に配置する。 */}
-          <Link href="/staff/unsent-records">
-            <Button variant="primary" size="sm" leftIcon={<MaterialIcon name="add" size={16} />}>
-              対応内容を新規入力する
-            </Button>
-          </Link>
+              プライマリボタンを目立つ場所に配置する。
+              事業所が加算を算定しない設定(OFF)のときは入力導線を表示しない。 */}
+          {additionEnabled && (
+            <Link href="/staff/unsent-records">
+              <Button variant="primary" size="sm" leftIcon={<MaterialIcon name="add" size={16} />}>
+                対応内容を新規入力する
+              </Button>
+            </Link>
+          )}
           <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="download" size={16} />} onClick={handleCsvDownload}>
             CSVダウンロード
           </Button>

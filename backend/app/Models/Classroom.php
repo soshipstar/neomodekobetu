@@ -24,6 +24,7 @@ class Classroom extends Model
         'vacancy_widget_token',
         'billing_system_enabled',
         'ability_assessment_enabled',
+        'absence_addition_enabled',
     ];
 
     protected function casts(): array
@@ -33,6 +34,7 @@ class Classroom extends Model
             'is_active' => 'boolean',
             'billing_system_enabled' => 'boolean',
             'ability_assessment_enabled' => 'boolean',
+            'absence_addition_enabled' => 'boolean',
         ];
     }
 

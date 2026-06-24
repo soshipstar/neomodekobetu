@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Staff;
 use App\Http\Controllers\Controller;
 use App\Models\AbsenceNotification;
 use App\Models\AbsenceResponseRecord;
+use App\Models\Classroom;
 use App\Models\DailyRecord;
 use App\Models\Student;
 use App\Models\StudentRecord;
@@ -136,6 +137,7 @@ class UnsentRecordsController extends Controller
         return response()->json([
             'success' => true,
             'data' => $results,
+            'absence_addition_enabled' => (bool) Classroom::whereKey($classroomId)->value('absence_addition_enabled'),
             'summary' => [
                 'total' => count($results),
                 'no_record' => $noRecordCount,
@@ -151,6 +153,15 @@ class UnsentRecordsController extends Controller
     public function storeAbsenceResponse(Request $request): JsonResponse
     {
         $user = $request->user();
+
+        // 事業所が欠席時対応加算を算定しない設定なら作成不可（書類への反映）
+        $additionEnabled = (bool) Classroom::whereKey($user->classroom_id)->value('absence_addition_enabled');
+        if (! $additionEnabled) {
+            return response()->json([
+                'success' => false,
+                'message' => 'この事業所では欠席時対応加算を算定しない設定です。',
+            ], 422);
+        }
 
         $validated = $request->validate([
             'student_id' => 'required|exists:students,id',
@@ -410,7 +421,11 @@ class UnsentRecordsController extends Controller
 
         $records = $query->orderByDesc('absence_date')->paginate(50);
 
-        return response()->json(['success' => true, 'data' => $records]);
+        return response()->json([
+            'success' => true,
+            'data' => $records,
+            'absence_addition_enabled' => (bool) Classroom::whereKey($user->classroom_id)->value('absence_addition_enabled'),
+        ]);
     }
 
     /**

@@ -47,6 +47,8 @@ export default function UnsentRecordsPage() {
   const [records, setRecords] = useState<UnsentRecord[]>([]);
   const [summary, setSummary] = useState<Summary>({ total: 0, no_record: 0, absent: 0, absence_response_pending: 0 });
   const [isLoading, setIsLoading] = useState(true);
+  // 事業所が欠席時対応加算を算定するか（OFFのとき加算の入力欄を表示しない）
+  const [additionEnabled, setAdditionEnabled] = useState(true);
   const [tabFilter, setTabFilter] = useState<TabFilter>('all');
   const [dateFrom, setDateFrom] = useState(() => format(subDays(new Date(), 7), 'yyyy-MM-dd'));
   const [dateTo, setDateTo] = useState(() => format(new Date(), 'yyyy-MM-dd'));
@@ -62,6 +64,7 @@ export default function UnsentRecordsPage() {
       const res = await api.get('/api/staff/unsent-records', { params: { date_from: dateFrom, date_to: dateTo } });
       setRecords(res.data?.data || []);
       setSummary(res.data?.summary || { total: 0, no_record: 0, absent: 0, absence_response_pending: 0 });
+      setAdditionEnabled(res.data?.absence_addition_enabled ?? true);
     } catch { setRecords([]); }
     finally { setIsLoading(false); }
   }, [dateFrom, dateTo]);
@@ -111,8 +114,14 @@ export default function UnsentRecordsPage() {
           <h1 className="text-2xl font-bold text-[var(--neutral-foreground-1)]">未送信日誌一覧</h1>
           <p className="text-sm text-[var(--neutral-foreground-3)]">
             参加予定で日誌未作成の生徒と欠席者の一覧。
-            欠席者の「欠席時対応を入力」が <strong>欠席時対応加算の様式</strong> 入力場所です。
+            {additionEnabled && <>欠席者の「欠席時対応加算」が <strong>欠席時対応加算の様式</strong> 入力場所です。</>}
           </p>
+          {!additionEnabled && (
+            <p className="mt-1 flex items-center gap-1.5 text-xs text-[var(--neutral-foreground-3)]">
+              <MaterialIcon name="info" size={14} />
+              この事業所は欠席時対応加算を「算定しない」設定のため、欠席時対応の入力欄は表示されません。
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
           {/* バグ報告 (淡田由貴さん): 入力場所と一覧画面の往復が分かりづらかった */}
@@ -200,7 +209,7 @@ export default function UnsentRecordsPage() {
                               </Button>
                             </>
                           )}
-                          {record.status === 'absent' && !record.absence_response?.is_sent && (
+                          {record.status === 'absent' && !record.absence_response?.is_sent && additionEnabled && (
                             <Button variant="primary" size="sm" onClick={() => openAbsenceResponse(record)} leftIcon={<MaterialIcon name="edit_note" size={16} />}>
                               欠席時対応加算
                             </Button>
