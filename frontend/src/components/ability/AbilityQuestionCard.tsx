@@ -16,6 +16,8 @@ interface Question {
   axis_id: string;
   axis_name: string | null;
   benchmark: string | null;
+  question: string | null;
+  hint: string | null;
 }
 
 interface SupportCode {
@@ -138,11 +140,21 @@ export function AbilityQuestionCard({ studentId, dailyRecordId }: Props) {
                 </span>
               )}
             </div>
-            <p className="mt-1 text-sm font-medium text-[var(--neutral-foreground-1)]">{data.question.item_name}</p>
-            {data.question.benchmark && (
-              <p className="mt-1 rounded-md bg-[var(--neutral-background-1)] p-2 text-sm text-[var(--neutral-foreground-2)]">
-                目安: {data.question.benchmark}
+            <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">{data.question.item_name}</p>
+            {/* 段階別の具体設問(無ければ到達目安) */}
+            {data.question.question && (
+              <p className="mt-1 rounded-md bg-[var(--brand-160)] p-2 text-sm font-medium text-[var(--neutral-foreground-1)]">
+                {data.question.question}
               </p>
+            )}
+            {data.question.hint && (
+              <p className="mt-1 flex items-start gap-1 text-xs text-[var(--neutral-foreground-3)]">
+                <MaterialIcon name="lightbulb" size={13} className="mt-0.5 shrink-0" />
+                <span>観察のヒント: {data.question.hint}</span>
+              </p>
+            )}
+            {data.question.benchmark && data.question.benchmark !== data.question.question && (
+              <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">到達目安: {data.question.benchmark}</p>
             )}
           </div>
 
