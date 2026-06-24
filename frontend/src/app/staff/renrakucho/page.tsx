@@ -198,6 +198,8 @@ export default function RenrakuchoPage() {
   // --- Send/Integrate modal ---
   const [showSendModal, setShowSendModal] = useState(false);
   const [sendActivityId, setSendActivityId] = useState<number | null>(null);
+  // 統合モーダルで能力評価を開いた児童(開いたときだけ設問カードを描画＝余計な取得を避ける)
+  const [abilityOpen, setAbilityOpen] = useState<Set<number>>(new Set());
   const [sendNotes, setSendNotes] = useState<Record<number, string>>({});
   const [sentStudentIds, setSentStudentIds] = useState<Set<number>>(new Set());
   const [isSending, setIsSending] = useState(false);
@@ -1570,6 +1572,31 @@ export default function RenrakuchoPage() {
                           ))}
                         </div>
                       </div>
+                    )}
+
+                    {/* 統合時にも能力評価を記録(折りたたみ・開いたときだけ設問を取得。
+                        能力評価トグルOFFの教室はカード側で自己非表示。送信済みは出さない) */}
+                    {!isSent && (
+                      <details
+                        className="mt-2 rounded-md border border-[var(--neutral-stroke-2)] px-2 py-1"
+                        onToggle={(e) => {
+                          const open = (e.currentTarget as HTMLDetailsElement).open;
+                          setAbilityOpen((prev) => {
+                            const next = new Set(prev);
+                            if (open) next.add(studentId); else next.delete(studentId);
+                            return next;
+                          });
+                        }}
+                      >
+                        <summary className="cursor-pointer text-xs font-medium text-[var(--neutral-foreground-2)]">
+                          能力評価を記録(任意)
+                        </summary>
+                        {abilityOpen.has(studentId) && (
+                          <div className="mt-2">
+                            <AbilityQuestionCard studentId={studentId} dailyRecordId={sendActivityId} />
+                          </div>
+                        )}
+                      </details>
                     )}
                   </CardBody>
                 </Card>
