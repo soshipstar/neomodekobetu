@@ -545,6 +545,8 @@ Route::prefix('staff')
         // 能力評価スコア(ルールエンジンによる再計算・最新スコア一覧)
         Route::post('/ability/students/{student}/recompute-scores', [App\Http\Controllers\Staff\AbilityObservationController::class, 'recomputeScores']);
         Route::get('/ability/students/{student}/scores', [App\Http\Controllers\Staff\AbilityObservationController::class, 'scores']);
+        // 到達マップ(項目×学年帯の到達状況＋期間の成長。半年の伸びの可視化)
+        Route::get('/ability/students/{student}/progress-map', [App\Http\Controllers\Staff\AbilityObservationController::class, 'progressMap']);
         // 評価状況の全体像(別添・閲覧用: レーダー+詳細表データ / PDF別添)
         Route::get('/ability/students/{student}/summary', [App\Http\Controllers\Staff\AbilityObservationController::class, 'summary']);
         Route::get('/ability/students/{student}/summary/pdf', [App\Http\Controllers\Staff\AbilityObservationController::class, 'summaryPdf']);

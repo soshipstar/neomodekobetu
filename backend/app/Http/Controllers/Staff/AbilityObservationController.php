@@ -32,6 +32,7 @@ class AbilityObservationController extends Controller
         private AbilityScoringService $scoring,
         private AbilitySummaryService $summary,
         private \App\Services\OutcomeService $outcome,
+        private \App\Services\AbilityProgressMapService $progressMap,
     ) {
     }
 
@@ -177,6 +178,24 @@ class AbilityObservationController extends Controller
         return response()->json([
             'success' => true,
             'data' => $this->summary->forStudent($student),
+        ]);
+    }
+
+    /**
+     * 到達マップ(項目×学年帯の到達状況＋期間の成長)を返す。
+     */
+    public function progressMap(Request $request, Student $student): JsonResponse
+    {
+        if ($deny = $this->guard($request, $student)) {
+            return $deny;
+        }
+
+        $asOf = $request->filled('as_of') ? Carbon::parse($request->query('as_of')) : null;
+        $since = $request->filled('since') ? Carbon::parse($request->query('since')) : null;
+
+        return response()->json([
+            'success' => true,
+            'data' => $this->progressMap->forStudent($student, $since, $asOf),
         ]);
     }
 
