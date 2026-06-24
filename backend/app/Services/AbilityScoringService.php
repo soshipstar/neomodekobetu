@@ -47,21 +47,24 @@ class AbilityScoringService
         $asOf = $asOf ?? Carbon::now();
         $since = $asOf->copy()->subMonths(3)->startOfDay();
 
-        // 出題対象と同じ適用ツール(DEV/ADV、中学生以上はWRK/UNVも)を採点する
-        $items = AbilityEvalItem::whereIn('tool_id', AbilityToolScope::toolsFor($student, $asOf))
-            ->orderBy('item_id')->get(['item_id', 'tool_id']);
+        // 出題対象ツール(DEV/ADV、高校段階はWRK/UNVも)の項目のみ採点対象とする
+        $validItemIds = AbilityEvalItem::whereIn('tool_id', AbilityToolScope::toolsFor($student, $asOf))
+            ->pluck('item_id')->flip();
 
-        // 直近3か月の観察を項目ごとに集める
-        $byItem = AbilityObservation::where('student_id', $student->id)
+        // 直近3か月の観察を「項目×学年帯(軸)」ごとに集める。
+        // 学年帯別に採点することで、到達マップ(どの段階まで到達したか)を構成できる。
+        $byItemAxis = AbilityObservation::where('student_id', $student->id)
             ->whereBetween('observed_date', [$since->toDateString(), $asOf->toDateString()])
             ->get()
-            ->groupBy('item_id');
+            ->groupBy(fn ($o) => $o->item_id . '|' . $o->axis_id);
 
         $results = [];
-        foreach ($items as $item) {
-            $obs = $byItem->get($item->item_id, collect());
-            $axisId = AbilityToolScope::axisFor($student, $item->tool_id, $asOf);
-            $results[] = $this->evaluateItem($student, $item->item_id, $axisId, $obs, $asOf);
+        foreach ($byItemAxis as $key => $obs) {
+            [$itemId, $axisId] = explode('|', $key, 2);
+            if ($axisId === '' || ! isset($validItemIds[$itemId])) {
+                continue; // 軸不明・出題対象外ツールは採点しない
+            }
+            $results[] = $this->evaluateItem($student, $itemId, $axisId, $obs, $asOf);
         }
 
         return $results;
@@ -86,6 +89,7 @@ class AbilityScoringService
 
         $prev = AbilityScore::where('student_id', $student->id)
             ->where('item_id', $itemId)
+            ->where('axis_id', $axisId)
             ->orderByDesc('evaluated_on')->orderByDesc('id')
             ->first();
         $prevScore = $prev?->score;

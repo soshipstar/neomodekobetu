@@ -20,8 +20,34 @@ use Illuminate\Support\Carbon;
  */
 class AbilityToolScope
 {
-    /** DEV 出題の開始成長段階(発達段階別評価は小学校低学年から始める)。 */
-    public const DEV_START_STAGE = 'S1';
+    /**
+     * 到達しきい値: この点以上で当該学年帯(軸)を「到達」とみなし、次の段階へ前進する。
+     * 8 = 「一人で安定してできる(慣れた場面で9割以上・支援なし)」。
+     */
+    public const ACHIEVED_THRESHOLD = 8;
+
+    /**
+     * ツール別の評価軸を「低い→高い」順に並べたもの(到達マップの列＝段階進行の順序)。
+     *  - DEV: 成長段階 S1(小低)〜S6(高後)
+     *  - ADV: 到達水準 L1(基礎)〜L4(卓越)
+     *  - WRK/UNV: 到達目安マスタが無いため段階進行せず、高校期 P2 の単一軸で扱う。
+     */
+    public const TOOL_AXES = [
+        'DEV' => ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'],
+        'ADV' => ['L1', 'L2', 'L3', 'L4'],
+        'WRK' => ['P2'],
+        'UNV' => ['P2'],
+    ];
+
+    /**
+     * ツールの評価軸を低い順に返す。
+     *
+     * @return array<int, string>
+     */
+    public static function axesForTool(string $toolId): array
+    {
+        return self::TOOL_AXES[$toolId] ?? ['S1'];
+    }
 
     /**
      * 児童に出題するツールID群を返す。
@@ -40,15 +66,12 @@ class AbilityToolScope
     }
 
     /**
-     * ツール別に、出題/採点で用いる評価軸ID(到達目安の参照軸)を返す。
+     * ツールの開始軸(最も低い段階/水準)を返す。
+     * スコアを参照した実際の出題軸(到達で前進)は [[AbilityQuestionService]]::currentAxisFor。
      */
     public static function axisFor(Student $student, string $toolId, ?Carbon $asOf = null): string
     {
-        return match ($toolId) {
-            'ADV' => 'L2',            // 高卒標準(高校段階の児童のみ出題)
-            'WRK', 'UNV' => 'P2',     // 高校期(高校段階の児童のみ出題)
-            default => self::DEV_START_STAGE, // DEV: 小学校低学年(S1)から開始する
-        };
+        return self::axesForTool($toolId)[0];
     }
 
     private static function isHighSchool(Student $student, ?Carbon $asOf): bool

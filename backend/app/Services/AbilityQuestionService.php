@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AbilityEvalBenchmark;
 use App\Models\AbilityEvalItem;
 use App\Models\AbilityObservation;
+use App\Models\AbilityScore;
 use App\Models\Student;
 use App\Support\AbilityToolScope;
 
@@ -78,13 +79,39 @@ class AbilityQuestionService
     }
 
     /**
+     * その児童・その項目で「今取り組む学年帯(評価軸)」を返す。
+     *
+     * 低い軸から順に見て、まだ到達(最新スコア ≥ しきい値)していない最も低い軸を出題する。
+     * 未スコアは開始軸(DEV=S1 / ADV=L1)から。全軸到達済みなら最上位を維持。
+     * これにより「小学校低学年(S1)から始め、到達したら一段上げる」段階進行になる。
+     */
+    public function currentAxisFor(Student $student, AbilityEvalItem $item): string
+    {
+        $axes = AbilityToolScope::axesForTool($item->tool_id);
+
+        foreach ($axes as $axis) {
+            $latest = AbilityScore::where('student_id', $student->id)
+                ->where('item_id', $item->item_id)
+                ->where('axis_id', $axis)
+                ->orderByDesc('evaluated_on')->orderByDesc('id')
+                ->value('score');
+
+            if ($latest === null || (int) $latest < AbilityToolScope::ACHIEVED_THRESHOLD) {
+                return $axis;
+            }
+        }
+
+        return (string) end($axes);
+    }
+
+    /**
      * 設問の表示用ペイロードを組み立てる。
      *
      * @return array<string, mixed>
      */
     public function buildQuestion(Student $student, AbilityEvalItem $item): array
     {
-        $axisId = AbilityToolScope::axisFor($student, $item->tool_id);
+        $axisId = $this->currentAxisFor($student, $item);
 
         // ADV は到達水準、WRK/UNV は時期の到達目安。WRK/UNV は到達目安が無い項目もあり null 可。
         $benchmark = AbilityEvalBenchmark::where('item_id', $item->item_id)

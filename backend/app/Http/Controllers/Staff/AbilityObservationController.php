@@ -82,14 +82,14 @@ class AbilityObservationController extends Controller
         }
 
         // 評価軸・教室・日付はサーバ側で確定する(クライアントを信用しない)。
-        // 軸は項目のツール(DEV=成長段階/ADV=水準/WRK・UNV=時期)に応じて決める。
-        $toolId = \App\Models\AbilityEvalItem::where('item_id', $validated['item_id'])->value('tool_id');
+        // 軸は「今取り組む学年帯」(到達で前進。出題時 buildQuestion と同じ算出)を用いる。
+        $item = \App\Models\AbilityEvalItem::where('item_id', $validated['item_id'])->first();
         $observation = AbilityObservation::create([
             'classroom_id' => $student->classroom_id,
             'student_id' => $student->id,
             'daily_record_id' => $validated['daily_record_id'] ?? null,
             'item_id' => $validated['item_id'],
-            'axis_id' => AbilityToolScope::axisFor($student, $toolId ?? 'DEV'),
+            'axis_id' => $item ? $this->questions->currentAxisFor($student, $item) : 'S1',
             'support_code' => $validated['support_code'] ?? null,
             'result' => $validated['result'] ?? null,
             'is_new_scene' => $validated['is_new_scene'] ?? false,

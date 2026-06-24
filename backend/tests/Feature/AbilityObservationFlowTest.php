@@ -65,13 +65,46 @@ class AbilityObservationFlowTest extends TestCase
         $this->assertSame(['DEV'], AbilityToolScope::toolsFor($jh));
         $this->assertSame('S1', AbilityToolScope::axisFor($jh, 'DEV'));
 
-        // 高校生(S6): 高校段階で初めて ADV/WRK/UNV も加わる。ADV=高卒標準L2 / 就業・大学=高校期P2
+        // 高校生(S6): 高校段階で初めて ADV/WRK/UNV も加わる。
+        // 各ツールは開始軸(最も低い段階/水準)から: DEV=S1 / ADV=L1(基礎) / 就業・大学=P2
         $hs = new Student(['grade_level' => 'high_school_2']);
         $this->assertSame(['DEV', 'ADV', 'WRK', 'UNV'], AbilityToolScope::toolsFor($hs));
         $this->assertSame('S1', AbilityToolScope::axisFor($hs, 'DEV'));
-        $this->assertSame('L2', AbilityToolScope::axisFor($hs, 'ADV'));
+        $this->assertSame('L1', AbilityToolScope::axisFor($hs, 'ADV'));
         $this->assertSame('P2', AbilityToolScope::axisFor($hs, 'WRK'));
         $this->assertSame('P2', AbilityToolScope::axisFor($hs, 'UNV'));
+    }
+
+    public function test_stage_progression_advances_only_when_achieved(): void
+    {
+        $company = Company::create(['name' => '企業A']);
+        $room = Classroom::create([
+            'classroom_name' => '事業所A', 'company_id' => $company->id,
+            'is_active' => true, 'ability_assessment_enabled' => true,
+        ]);
+        $student = Student::create([
+            'student_name' => '児A', 'classroom_id' => $room->id, 'grade_level' => 'elementary_5',
+            'status' => 'active', 'is_active' => true,
+        ]);
+        $item = \App\Models\AbilityEvalItem::where('item_id', 'DEV-1-1')->first();
+        $svc = new \App\Services\AbilityQuestionService();
+
+        // スコア無し → 開始段階 S1 から
+        $this->assertSame('S1', $svc->currentAxisFor($student, $item));
+
+        // S1 を到達(しきい値8) → 次の段階 S2 へ前進
+        \App\Models\AbilityScore::create([
+            'student_id' => $student->id, 'item_id' => 'DEV-1-1', 'axis_id' => 'S1', 'score' => 8,
+            'method' => 'rule_engine', 'evaluated_on' => Carbon::now()->toDateString(),
+        ]);
+        $this->assertSame('S2', $svc->currentAxisFor($student, $item));
+
+        // その後 S1 が未到達(7)に下がれば S1 に戻る(最新スコアで判定)
+        \App\Models\AbilityScore::create([
+            'student_id' => $student->id, 'item_id' => 'DEV-1-1', 'axis_id' => 'S1', 'score' => 7,
+            'method' => 'rule_engine', 'evaluated_on' => Carbon::now()->addDay()->toDateString(),
+        ]);
+        $this->assertSame('S1', $svc->currentAxisFor($student, $item));
     }
 
     public function test_next_question_and_store_and_rotation(): void
