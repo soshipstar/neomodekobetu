@@ -446,6 +446,10 @@ Route::prefix('staff')
         Route::get('/students/{student}/face-sheet', [App\Http\Controllers\Staff\FaceSheetController::class, 'show']);
         Route::post('/students/{student}/face-sheet', [App\Http\Controllers\Staff\FaceSheetController::class, 'store']);
 
+        // --- 児童に紐づく連絡帳(振り返り一覧) ---
+        // その児童の過去の活動記録+連絡帳本文を時系列で取得 (現場の「前回何をしたか」振り返り用)
+        Route::get('/students/{student}/renrakucho', [App\Http\Controllers\Staff\RenrakuchoController::class, 'byStudent']);
+
         // --- 支援計画 ---
         Route::get('/students/{student}/support-plans', [App\Http\Controllers\Staff\SupportPlanController::class, 'index']);
         Route::post('/students/{student}/support-plans', [App\Http\Controllers\Staff\SupportPlanController::class, 'store']);

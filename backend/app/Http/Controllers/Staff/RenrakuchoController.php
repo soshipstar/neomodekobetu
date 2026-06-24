@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DailyRecord;
 use App\Models\IntegratedNote;
 use App\Models\SendHistory;
+use App\Models\Student;
 use App\Models\StudentRecord;
 use App\Models\User;
 use App\Services\NotificationService;
@@ -93,6 +94,66 @@ class RenrakuchoController extends Controller
         $records->getCollection()->transform(function ($record) {
             $record->unsent_count = IntegratedNote::where('daily_record_id', $record->id)->where('is_sent', false)->count();
             $record->sent_count = IntegratedNote::where('daily_record_id', $record->id)->where('is_sent', true)->count();
+            return $record;
+        });
+
+        return response()->json([
+            'success' => true,
+            'data'    => $records,
+        ]);
+    }
+
+    /**
+     * 特定児童に紐づく連絡帳(個別記録)を時系列で取得する。
+     *
+     * 経緯: 個別教室では「前回・前々回にこの子に何をしたか」を振り返って
+     * 今回の活動を組み立てる場面が多いが、既存の一覧は日付起点(index)しか
+     * なく、1人の児童で串刺しに遡る手段が無かった (現場要望)。
+     * その児童の StudentRecord(領域別観察) を軸に、所属する DailyRecord
+     * (活動名・共通活動) と、保護者へ送った連絡帳本文(IntegratedNote) を
+     * 併せて返す。下書き・未送信も含め全件返す(振り返りが目的のため)。
+     */
+    public function byStudent(Request $request, Student $student): JsonResponse
+    {
+        $user = $request->user();
+        $this->authorizeClassroom($user, $student);
+
+        // その児童の個別記録を、活動日の降順で取得。
+        // 並び替えに record_date を使うため daily_records を join する
+        // (select は student_records.* に限定し列衝突を避ける)。
+        $query = StudentRecord::query()
+            ->select('student_records.*')
+            ->join('daily_records', 'daily_records.id', '=', 'student_records.daily_record_id')
+            ->where('student_records.student_id', $student->id);
+
+        // 教室スコープ: スタッフがアクセスできない教室の活動は混入させない。
+        $accessible = $user->accessibleClassroomIds();
+        if (!empty($accessible)) {
+            $query->whereIn('daily_records.classroom_id', $accessible);
+        }
+
+        $records = $query
+            ->with([
+                'dailyRecord:id,record_date,activity_name,common_activity,staff_id',
+                'dailyRecord.staff:id,full_name',
+            ])
+            ->orderByDesc('daily_records.record_date')
+            ->orderByDesc('daily_records.created_at')
+            ->paginate($request->integer('per_page', 20));
+
+        // 各活動に対応する連絡帳本文(送信状況含む)を 1クエリでまとめて付与する。
+        $dailyIds = $records->getCollection()->pluck('daily_record_id')->all();
+        $notes = IntegratedNote::where('student_id', $student->id)
+            ->whereIn('daily_record_id', $dailyIds)
+            ->get([
+                'id', 'daily_record_id', 'integrated_content',
+                'is_sent', 'sent_at', 'guardian_confirmed', 'guardian_confirmed_at',
+            ])
+            ->keyBy('daily_record_id');
+
+        $records->getCollection()->transform(function ($record) use ($notes) {
+            // 連絡帳がまだ生成されていない活動では null を返す(未送信扱い)。
+            $record->integrated_note = $notes->get($record->daily_record_id);
             return $record;
         });
 
@@ -1224,6 +1285,17 @@ class RenrakuchoController extends Controller
         } catch (\Throwable $e) {
             \Log::warning('Hiyari hatto detection failed: ' . $e->getMessage());
             return null;
+        }
+    }
+
+    /**
+     * 児童が所属する教室がスタッフのアクセス可能教室か検証する。
+     * 他コントローラ(Student/Monitoring/SupportPlan等)と同一の認可ロジック。
+     */
+    private function authorizeClassroom($user, Student $student): void
+    {
+        if ($user->classroom_id && !in_array($student->classroom_id, $user->switchableClassroomIds(), true)) {
+            abort(403, 'この生徒へのアクセス権限がありません。');
         }
     }
 }

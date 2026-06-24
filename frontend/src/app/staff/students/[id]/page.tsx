@@ -80,6 +80,12 @@ export default function StudentDetailPage() {
       content: <StudentFaceSheet studentId={studentId} studentName={student.student_name} />,
     },
     {
+      key: 'renrakucho',
+      label: '連絡帳',
+      icon: <MaterialIcon name="menu_book" size={18} />,
+      content: <StudentRenrakucho studentId={studentId} />,
+    },
+    {
       key: 'account',
       label: 'アカウント',
       icon: <MaterialIcon name="key" size={18} />,
@@ -920,6 +926,198 @@ function FaceSheetPrintView({ studentName, form, onClose }: { studentName: strin
   );
 }
 
+
+// ---------------------------------------------------------------------------
+// 連絡帳（その児童に紐づく過去の活動記録を時系列で振り返る）
+// ---------------------------------------------------------------------------
+
+interface RenrakuchoItem {
+  id: number;
+  daily_record_id: number;
+  health_life: string | null;
+  motor_sensory: string | null;
+  cognitive_behavior: string | null;
+  language_communication: string | null;
+  social_relations: string | null;
+  notes: string | null;
+  daily_record: {
+    id: number;
+    record_date: string;
+    activity_name: string;
+    common_activity: string | null;
+    staff?: { id: number; full_name: string } | null;
+  } | null;
+  integrated_note: {
+    id: number;
+    integrated_content: string | null;
+    is_sent: boolean;
+    sent_at: string | null;
+    guardian_confirmed: boolean;
+  } | null;
+}
+
+// 5領域 + メモのラベル定義（StudentRecord のカラムと対応）
+const domainFields: { key: keyof RenrakuchoItem; label: string }[] = [
+  { key: 'health_life', label: '健康・生活' },
+  { key: 'motor_sensory', label: '運動・感覚' },
+  { key: 'cognitive_behavior', label: '認知・行動' },
+  { key: 'language_communication', label: '言語・コミュニケーション' },
+  { key: 'social_relations', label: '人間関係・社会性' },
+  { key: 'notes', label: '本日の様子' },
+];
+
+function StudentRenrakucho({ studentId }: { studentId: number }) {
+  const [page, setPage] = useState(1);
+
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ['staff', 'student', studentId, 'renrakucho', page],
+    queryFn: async () => {
+      const res = await api.get(`/api/staff/students/${studentId}/renrakucho`, {
+        params: { page, per_page: 20 },
+      });
+      // ページネーション形式: { data: { data: [...], current_page, last_page, total } }
+      return res.data.data as {
+        data: RenrakuchoItem[];
+        current_page: number;
+        last_page: number;
+        total: number;
+      };
+    },
+    enabled: !!studentId,
+  });
+
+  if (isLoading) {
+    return <SkeletonCard />;
+  }
+
+  const items = data?.data ?? [];
+
+  if (items.length === 0) {
+    return (
+      <Card>
+        <CardBody>
+          <div className="py-8 text-center text-sm text-[var(--neutral-foreground-3)]">
+            この児童の連絡帳・活動記録はまだありません。
+          </div>
+        </CardBody>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-[var(--neutral-foreground-3)]">
+        過去の活動記録を新しい順に表示しています（全 {data?.total ?? items.length} 件）。
+        前回・前々回の支援内容を振り返る際にご利用ください。
+      </p>
+
+      {items.map((item) => (
+        <Card key={item.id}>
+          <CardHeader>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <MaterialIcon name="event" size={18} className="text-[var(--brand-80)]" />
+                <CardTitle>
+                  {item.daily_record?.record_date ? formatDate(item.daily_record.record_date) : '日付未設定'}
+                </CardTitle>
+                {item.daily_record?.activity_name && (
+                  <span className="text-sm font-medium text-[var(--neutral-foreground-2)]">
+                    {item.daily_record.activity_name}
+                  </span>
+                )}
+              </div>
+              {item.integrated_note?.is_sent ? (
+                <Badge variant="success">送信済み</Badge>
+              ) : (
+                <Badge variant="default">未送信</Badge>
+              )}
+            </div>
+          </CardHeader>
+          <CardBody>
+            <div className="space-y-3">
+              {item.daily_record?.staff?.full_name && (
+                <div className="text-xs text-[var(--neutral-foreground-4)]">
+                  記録者: {item.daily_record.staff.full_name}
+                </div>
+              )}
+
+              {item.daily_record?.common_activity && (
+                <div>
+                  <div className="text-xs font-medium text-[var(--neutral-foreground-3)]">共通活動の内容</div>
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-[var(--neutral-foreground-1)]">
+                    {item.daily_record.common_activity}
+                  </p>
+                </div>
+              )}
+
+              {/* その子の領域別観察記録（入力のある領域のみ表示） */}
+              {domainFields.some((f) => item[f.key]) && (
+                <div className="rounded-lg border border-[var(--neutral-stroke-2)] p-3">
+                  <div className="mb-2 text-xs font-semibold text-[var(--neutral-foreground-2)]">
+                    この児童の記録
+                  </div>
+                  <dl className="space-y-2">
+                    {domainFields.map((f) =>
+                      item[f.key] ? (
+                        <div key={f.key as string}>
+                          <dt className="text-xs font-medium text-[var(--neutral-foreground-3)]">{f.label}</dt>
+                          <dd className="mt-0.5 whitespace-pre-wrap text-sm text-[var(--neutral-foreground-1)]">
+                            {item[f.key] as string}
+                          </dd>
+                        </div>
+                      ) : null,
+                    )}
+                  </dl>
+                </div>
+              )}
+
+              {/* 保護者へ送った連絡帳本文 */}
+              {item.integrated_note?.integrated_content && (
+                <div className="rounded-lg bg-[var(--neutral-background-3)] p-3">
+                  <div className="mb-1 flex items-center gap-2">
+                    <MaterialIcon name="menu_book" size={16} className="text-[var(--brand-80)]" />
+                    <span className="text-xs font-semibold text-[var(--neutral-foreground-2)]">連絡帳本文</span>
+                    {item.integrated_note.guardian_confirmed && (
+                      <Badge variant="success">保護者確認済み</Badge>
+                    )}
+                  </div>
+                  <p className="whitespace-pre-wrap text-sm text-[var(--neutral-foreground-1)]">
+                    {item.integrated_note.integrated_content}
+                  </p>
+                </div>
+              )}
+            </div>
+          </CardBody>
+        </Card>
+      ))}
+
+      {/* ページ送り */}
+      {data && data.last_page > 1 && (
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page <= 1 || isFetching}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          >
+            前へ
+          </Button>
+          <span className="text-sm text-[var(--neutral-foreground-3)]">
+            {data.current_page} / {data.last_page}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page >= data.last_page || isFetching}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            次へ
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // アカウント
