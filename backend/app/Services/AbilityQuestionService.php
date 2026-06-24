@@ -120,6 +120,13 @@ class AbilityQuestionService
 
         $axisName = \App\Models\AbilityEvalAxis::where('axis_id', $axisId)->value('name');
 
+        // 段階別の具体設問(AI生成・編集可)があれば、それを問いとして優先する。
+        // 無ければ到達目安テキストをそのまま問いに使う(フォールバック)。
+        $stageQuestion = \App\Models\AbilityStageQuestion::where('item_id', $item->item_id)
+            ->where('axis_id', $axisId)
+            ->where('is_active', true)
+            ->first();
+
         return [
             'item_id' => $item->item_id,
             'domain' => $item->domain,
@@ -129,6 +136,9 @@ class AbilityQuestionService
             'axis_id' => $axisId,
             'axis_name' => $axisName,
             'benchmark' => $benchmark,
+            // 具体設問(あれば生成設問、無ければ到達目安)＋観察ヒント
+            'question' => $stageQuestion?->question ?: $benchmark,
+            'hint' => $stageQuestion?->hint,
         ];
     }
 }

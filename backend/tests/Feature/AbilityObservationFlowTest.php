@@ -154,6 +154,43 @@ class AbilityObservationFlowTest extends TestCase
         $this->assertNotSame($firstItem, $q2->json('data.question.item_id'));
     }
 
+    public function test_build_question_prefers_generated_stage_question(): void
+    {
+        $company = Company::create(['name' => '企業A']);
+        $room = Classroom::create([
+            'classroom_name' => '事業所A', 'company_id' => $company->id,
+            'is_active' => true, 'ability_assessment_enabled' => true,
+        ]);
+        $student = Student::create([
+            'student_name' => '児A', 'classroom_id' => $room->id, 'grade_level' => 'elementary_5',
+            'status' => 'active', 'is_active' => true,
+        ]);
+        $item = \App\Models\AbilityEvalItem::where('item_id', 'DEV-1-1')->first();
+        $svc = new \App\Services\AbilityQuestionService();
+
+        // 段階設問が無ければ到達目安(S1)が問いになる(フォールバック)
+        $q = $svc->buildQuestion($student, $item);
+        $this->assertSame('S1', $q['axis_id']);
+        $this->assertNotEmpty($q['question']);
+        $this->assertSame($q['benchmark'], $q['question']);
+        $this->assertNull($q['hint']);
+
+        // 段階設問(S1)を用意すると、それが問い＋ヒントになる
+        \App\Models\AbilityStageQuestion::create([
+            'item_id' => 'DEV-1-1', 'axis_id' => 'S1',
+            'question' => '声かけがあれば手洗い・歯磨きを自分でできていますか?',
+            'hint' => '食事前後・トイレ後の手洗い など', 'is_active' => true,
+        ]);
+        $q2 = $svc->buildQuestion($student->fresh(), $item);
+        $this->assertSame('声かけがあれば手洗い・歯磨きを自分でできていますか?', $q2['question']);
+        $this->assertSame('食事前後・トイレ後の手洗い など', $q2['hint']);
+
+        // is_active=false は使わない(フォールバックに戻る)
+        \App\Models\AbilityStageQuestion::where('item_id', 'DEV-1-1')->where('axis_id', 'S1')->update(['is_active' => false]);
+        $q3 = $svc->buildQuestion($student->fresh(), $item);
+        $this->assertSame($q3['benchmark'], $q3['question']);
+    }
+
     public function test_dev_is_asked_first_even_for_high_schooler_and_never_adv_for_junior_high(): void
     {
         $company = Company::create(['name' => '企業A']);
