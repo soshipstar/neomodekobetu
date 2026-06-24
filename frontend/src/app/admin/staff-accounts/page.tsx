@@ -66,6 +66,9 @@ export default function StaffAccountsPage() {
   const toast = useToast();
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
+  // 絞り込み: 所属企業・所属教室。教室は企業を選ぶとその企業所属のものに限定される。
+  const [companyFilter, setCompanyFilter] = useState('');
+  const [classroomFilter, setClassroomFilter] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [convertModalOpen, setConvertModalOpen] = useState(false);
@@ -85,6 +88,8 @@ export default function StaffAccountsPage() {
     queryKey: ['admin', 'staff-accounts', showInactive ? 'all' : 'active'],
     params: {
       search: debouncedSearch || undefined,
+      company_id: companyFilter || undefined,
+      classroom_id: classroomFilter || undefined,
       is_active: showInactive ? undefined : 'true',
     },
   });
@@ -116,6 +121,12 @@ export default function StaffAccountsPage() {
   const filteredClassrooms = selectedCompanyId
     ? classrooms.filter((c) => c.company_id === selectedCompanyId)
     : [];
+
+  // 検索バーの教室セレクト用: 企業で絞った教室一覧（企業未選択なら全教室）
+  const filterCompanyId = companyFilter ? Number(companyFilter) : null;
+  const filterClassrooms = filterCompanyId
+    ? classrooms.filter((c) => c.company_id === filterCompanyId)
+    : classrooms;
 
   const saveMutation = useMutation({
     mutationFn: async (data: StaffAccountFormData & { id?: number }) => {
@@ -353,6 +364,35 @@ export default function StaffAccountsPage() {
             className="pl-10"
           />
         </div>
+        {/* 所属企業で絞り込み。企業を変えると教室の選択はクリアする */}
+        <select
+          value={companyFilter}
+          onChange={(e) => {
+            setCompanyFilter(e.target.value);
+            setClassroomFilter('');
+            goToPage(1);
+          }}
+          className="min-w-[180px] rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+        >
+          <option value="">すべての企業</option>
+          {companies.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
+        {/* 所属教室で絞り込み。企業未選択なら全教室から選べる */}
+        <select
+          value={classroomFilter}
+          onChange={(e) => {
+            setClassroomFilter(e.target.value);
+            goToPage(1);
+          }}
+          className="min-w-[180px] rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+        >
+          <option value="">すべての教室</option>
+          {filterClassrooms.map((c) => (
+            <option key={c.id} value={c.id}>{c.classroom_name}</option>
+          ))}
+        </select>
         <label className="flex shrink-0 cursor-pointer items-center gap-2 text-sm text-[var(--neutral-foreground-2)]">
           <input
             type="checkbox"

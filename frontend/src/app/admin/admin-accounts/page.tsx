@@ -72,6 +72,9 @@ export default function AdminAccountsPage() {
   const toast = useToast();
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
+  // 絞り込み: 所属企業・所属教室。教室は企業を選ぶとその企業所属のものに限定される。
+  const [companyFilter, setCompanyFilter] = useState('');
+  const [classroomFilter, setClassroomFilter] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [convertModalOpen, setConvertModalOpen] = useState(false);
@@ -85,7 +88,11 @@ export default function AdminAccountsPage() {
   const { data: admins, meta, isLoading, goToPage } = usePagination<AdminAccount>({
     endpoint: '/api/admin/admin-accounts',
     queryKey: ['admin', 'admin-accounts'],
-    params: { search: debouncedSearch || undefined },
+    params: {
+      search: debouncedSearch || undefined,
+      company_id: companyFilter || undefined,
+      classroom_id: classroomFilter || undefined,
+    },
   });
 
   const { data: classroomsData } = useQuery({
@@ -113,6 +120,12 @@ export default function AdminAccountsPage() {
   const selectedCompanyId = formData.company_id ? Number(formData.company_id) : null;
   const filteredClassrooms = selectedCompanyId
     ? classrooms.filter((c) => c.company_id === selectedCompanyId)
+    : classrooms;
+
+  // 検索バーの教室セレクト用: 企業で絞った教室一覧（企業未選択なら全教室）
+  const filterCompanyId = companyFilter ? Number(companyFilter) : null;
+  const filterClassrooms = filterCompanyId
+    ? classrooms.filter((c) => c.company_id === filterCompanyId)
     : classrooms;
 
   const saveMutation = useMutation({
@@ -332,14 +345,55 @@ export default function AdminAccountsPage() {
         </Button>
       </div>
 
-      <div className="relative">
-        <MaterialIcon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
-        <Input
-          placeholder="氏名・ユーザー名で検索..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-10"
-        />
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative min-w-[240px] flex-1">
+          <MaterialIcon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neutral-foreground-4)]" />
+          <Input
+            placeholder="氏名・ユーザー名で検索..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        {/* 所属企業で絞り込み。企業を変えると教室の選択はクリアする */}
+        <select
+          value={companyFilter}
+          onChange={(e) => {
+            setCompanyFilter(e.target.value);
+            setClassroomFilter('');
+            goToPage(1);
+          }}
+          className="min-w-[180px] rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+        >
+          <option value="">すべての企業</option>
+          {companies.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
+        {/* 所属教室で絞り込み。企業未選択なら全教室から選べる */}
+        <select
+          value={classroomFilter}
+          onChange={(e) => {
+            setClassroomFilter(e.target.value);
+            goToPage(1);
+          }}
+          className="min-w-[180px] rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-80)]"
+        >
+          <option value="">すべての教室</option>
+          {filterClassrooms.map((c) => (
+            <option key={c.id} value={c.id}>{c.classroom_name}</option>
+          ))}
+        </select>
+        {(companyFilter || classroomFilter || search) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => { setSearch(''); setCompanyFilter(''); setClassroomFilter(''); goToPage(1); }}
+            leftIcon={<MaterialIcon name="clear" size={14} />}
+          >
+            クリア
+          </Button>
+        )}
       </div>
 
       {isLoading ? (

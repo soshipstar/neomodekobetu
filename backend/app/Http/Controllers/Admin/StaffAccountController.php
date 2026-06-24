@@ -84,6 +84,15 @@ class StaffAccountController extends Controller
             $query->where('classroom_id', $request->classroom_id);
         }
 
+        // 所属企業での絞り込み（企業は主たる教室経由で一意に決まる。
+        // 一覧の「所属企業」列＝classroom.company_id と一致させる）
+        if ($request->filled('company_id')) {
+            $companyId = $request->company_id;
+            $query->whereHas('classroom', function ($q) use ($companyId) {
+                $q->where('company_id', $companyId);
+            });
+        }
+
         if ($request->filled('is_active')) {
             $query->where('is_active', $request->boolean('is_active'));
         }
