@@ -105,6 +105,43 @@ class AbilitySummaryTest extends TestCase
         $this->assertSame(8.0, $radar['average']);
     }
 
+    public function test_summary_shows_subjective_even_with_no_objective(): void
+    {
+        // 客観スコアは0件・mynameis主観のみ(取り込み比較の初期状態)
+        \App\Models\AbilitySubjectiveScore::create([
+            'student_id' => $this->student->id, 'item_id' => 'DEV-1-1',
+            'response_value' => 4, 'source' => 'mynameis',
+        ]);
+        \App\Models\AbilitySubjectiveScore::create([
+            'student_id' => $this->student->id, 'item_id' => 'DEV-3-1',
+            'response_value' => 2, 'source' => 'mynameis',
+        ]);
+
+        $summary = (new AbilitySummaryService())->forStudent($this->student);
+
+        // 客観0でも主観があれば全体像が出る(以前は早期returnで隠れていた=バグ)
+        $this->assertTrue($summary['has_data']);
+        $this->assertTrue($summary['has_subjective']);
+        $this->assertSame(2, $summary['counts']['subjective']);
+        $this->assertSame(0, $summary['counts']['scored']); // 客観はまだ無い
+
+        $health = collect($summary['domains'])->firstWhere('domain', '健康・生活');
+        $this->assertNotNull($health);
+        $this->assertNull($health['average']);                 // 客観平均はnull
+        $this->assertSame(7.5, $health['subjective_average']); // (4-1)/4*10
+        $item = collect($health['items'])->firstWhere('item_id', 'DEV-1-1');
+        $this->assertSame(4, $item['subjective']);
+        $this->assertNull($item['score']);
+
+        // レーダーに主観のみの領域が乗る(客観null)
+        $radar = collect($summary['radar'])->firstWhere('domain', '健康・生活');
+        $this->assertNull($radar['average']);
+        $this->assertSame(7.5, $radar['subjective']);
+
+        // プロンプトは客観のみ対象なので空(主観のみ領域は出さない)
+        $this->assertSame('', (new AbilitySummaryService())->toPromptText($summary));
+    }
+
     public function test_prompt_text_includes_scores(): void
     {
         $this->score('DEV-1-1', 'S3', 8);
