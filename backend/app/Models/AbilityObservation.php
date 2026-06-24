@@ -14,11 +14,12 @@ class AbilityObservation extends Model
 
     protected $fillable = [
         'classroom_id', 'student_id', 'daily_record_id', 'item_id', 'axis_id',
-        'support_code', 'result', 'is_new_scene', 'behavior', 'observed_date', 'recorded_by',
+        'support_code', 'result', 'degree', 'is_new_scene', 'behavior', 'observed_date', 'recorded_by',
     ];
 
     protected $casts = [
         'is_new_scene' => 'boolean',
+        'degree' => 'integer',
         'observed_date' => 'date',
     ];
 
