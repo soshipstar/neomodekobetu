@@ -38,6 +38,17 @@ const RESULT_LABELS: Record<string, string> = {
   refused: '拒否',
 };
 
+// 該当度(7段階)。「設問にどれくらい該当しているか」を1つ選ぶ。値は0〜10スコアに対応。
+const DEGREE_OPTIONS: { score: number; label: string }[] = [
+  { score: 0, label: 'まだ難しい' },
+  { score: 2, label: '手伝えばできる' },
+  { score: 4, label: '促せば・ヒントで' },
+  { score: 5, label: 'きっかけ(一声)で' },
+  { score: 6, label: 'だいたい自分で' },
+  { score: 8, label: '安定して自分で（到達）' },
+  { score: 9, label: 'いろんな場面で（般化）' },
+];
+
 interface Props {
   studentId: number;
   dailyRecordId?: number | null;
@@ -56,6 +67,7 @@ export function AbilityQuestionCard({ studentId, dailyRecordId }: Props) {
   const [excludeItemId, setExcludeItemId] = useState<string | undefined>(undefined);
   const [submitting, setSubmitting] = useState(false);
 
+  const [degree, setDegree] = useState<number | null>(null);
   const [supportCode, setSupportCode] = useState<string>('');
   const [result, setResult] = useState<string>('');
   const [isNewScene, setIsNewScene] = useState(false);
@@ -76,6 +88,7 @@ export function AbilityQuestionCard({ studentId, dailyRecordId }: Props) {
   });
 
   const resetForm = () => {
+    setDegree(null);
     setSupportCode('');
     setResult('');
     setIsNewScene(false);
@@ -100,6 +113,7 @@ export function AbilityQuestionCard({ studentId, dailyRecordId }: Props) {
       await api.post('/api/staff/ability/observations', {
         student_id: studentId,
         item_id: data.question.item_id,
+        degree,
         support_code: supportCode || null,
         result: result || null,
         is_new_scene: isNewScene,
@@ -158,64 +172,84 @@ export function AbilityQuestionCard({ studentId, dailyRecordId }: Props) {
             )}
           </div>
 
-          {/* 提供した支援(支援コード) */}
-          <div>
-            <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-2)]">提供した支援</label>
-            <select
-              value={supportCode}
-              onChange={(e) => setSupportCode(e.target.value)}
-              className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-2 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none"
-            >
-              <option value="">選択してください</option>
-              {data.support_codes.map((sc) => (
-                <option key={sc.code} value={sc.code}>
-                  {sc.content}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* 結果 + 新規場面 */}
-          <div className="flex flex-wrap items-center gap-4">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-2)]">結果</label>
-              <select
-                value={result}
-                onChange={(e) => setResult(e.target.value)}
-                className="rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-2 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none"
-              >
-                <option value="">選択</option>
-                {data.results.map((r) => (
-                  <option key={r} value={r}>
-                    {RESULT_LABELS[r] ?? r}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <label className="flex cursor-pointer items-center gap-2 pt-4 text-sm text-[var(--neutral-foreground-2)]">
-              <input
-                type="checkbox"
-                className="h-4 w-4 accent-[var(--brand-background-1,var(--brand-80))]"
-                checked={isNewScene}
-                onChange={(e) => setIsNewScene(e.target.checked)}
-              />
-              初めての場面
-            </label>
-          </div>
-
-          {/* 見られた行動(事実) */}
+          {/* 該当度(主入力): 設問にどれくらい該当するか を1つ選ぶ */}
           <div>
             <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-2)]">
-              見られた行動(事実)
+              この設問にどれくらい該当しますか?
             </label>
+            <div className="flex flex-wrap gap-1.5">
+              {DEGREE_OPTIONS.map((d) => (
+                <button
+                  key={d.score}
+                  type="button"
+                  onClick={() => setDegree(d.score)}
+                  className={`rounded-md border px-2 py-1 text-xs ${
+                    degree === d.score
+                      ? 'border-[var(--brand-80)] bg-[var(--brand-background-1)] text-white'
+                      : 'border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] text-[var(--neutral-foreground-2)]'
+                  }`}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 補足コメント(任意) */}
+          <div>
+            <label className="mb-1 block text-xs font-medium text-[var(--neutral-foreground-2)]">補足コメント(任意)</label>
             <textarea
               rows={2}
               value={behavior}
               onChange={(e) => setBehavior(e.target.value)}
-              placeholder="解釈ではなく見たままを書く(例: 声かけなしで自分から取り組んだ)"
+              placeholder="気づいたことを自由に(任意)。例: 初めての場所でも自分から取り組んだ"
               className="block w-full resize-none rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-3 py-1.5 text-sm text-[var(--neutral-foreground-1)] placeholder-[var(--neutral-foreground-4)] focus:border-[var(--brand-80)] focus:outline-none"
             />
           </div>
+
+          {/* 詳細入力(任意・従来方式): 支援コード・結果 */}
+          <details className="text-xs text-[var(--neutral-foreground-3)]">
+            <summary className="cursor-pointer">詳細入力(支援コード・結果)— 任意</summary>
+            <div className="mt-2 space-y-2">
+              <div>
+                <label className="mb-1 block font-medium text-[var(--neutral-foreground-2)]">提供した支援</label>
+                <select
+                  value={supportCode}
+                  onChange={(e) => setSupportCode(e.target.value)}
+                  className="block w-full rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-2 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none"
+                >
+                  <option value="">選択してください</option>
+                  {data.support_codes.map((sc) => (
+                    <option key={sc.code} value={sc.code}>{sc.content}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-wrap items-center gap-4">
+                <div>
+                  <label className="mb-1 block font-medium text-[var(--neutral-foreground-2)]">結果</label>
+                  <select
+                    value={result}
+                    onChange={(e) => setResult(e.target.value)}
+                    className="rounded-md border border-[var(--neutral-stroke-1)] bg-[var(--neutral-background-1)] px-2 py-1.5 text-sm text-[var(--neutral-foreground-1)] focus:border-[var(--brand-80)] focus:outline-none"
+                  >
+                    <option value="">選択</option>
+                    {data.results.map((r) => (
+                      <option key={r} value={r}>{RESULT_LABELS[r] ?? r}</option>
+                    ))}
+                  </select>
+                </div>
+                <label className="flex cursor-pointer items-center gap-2 pt-4 text-[var(--neutral-foreground-2)]">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-[var(--brand-background-1,var(--brand-80))]"
+                    checked={isNewScene}
+                    onChange={(e) => setIsNewScene(e.target.checked)}
+                  />
+                  初めての場面
+                </label>
+              </div>
+            </div>
+          </details>
 
           <div className="flex justify-between gap-2">
             <Button
@@ -229,6 +263,7 @@ export function AbilityQuestionCard({ studentId, dailyRecordId }: Props) {
             <Button
               size="sm"
               isLoading={submitting}
+              disabled={degree === null && !supportCode}
               leftIcon={<MaterialIcon name="check" size={16} />}
               onClick={submit}
             >
