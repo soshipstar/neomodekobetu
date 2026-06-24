@@ -238,6 +238,9 @@ Route::prefix('admin')
         Route::get('/classroom-settings', [App\Http\Controllers\Admin\ClassroomSettingController::class, 'index']);
         Route::put('/classroom-settings', [App\Http\Controllers\Admin\ClassroomSettingController::class, 'update']);
 
+        // --- 月次利用日数（連絡帳ベース）＋ 欠席時対応加算 集計 ---
+        Route::get('/monthly-usage', [App\Http\Controllers\Admin\MonthlyUsageController::class, 'index']);
+
         // --- AI学習基盤: 施設の集計同意 (improvement_aggregate) ---
         Route::get('/ai-consent/company', [App\Http\Controllers\Admin\AiConsentController::class, 'companyShow']);
         Route::put('/ai-consent/company', [App\Http\Controllers\Admin\AiConsentController::class, 'companyUpdate']);
