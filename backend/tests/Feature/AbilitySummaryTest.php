@@ -176,20 +176,25 @@ class AbilitySummaryTest extends TestCase
             ->assertStatus(409);
     }
 
-    public function test_pdf_blade_renders_table(): void
+    public function test_pdf_blade_renders_table_and_progress_map(): void
     {
-        $this->score('DEV-1-1', 'S3', 8);
+        $this->score('DEV-1-1', 'S1', 8); // S1 到達
         $summary = (new AbilitySummaryService())->forStudent($this->student);
+        $map = (new \App\Services\AbilityProgressMapService())->forStudent($this->student);
 
         $html = View::make('pdf.ability-summary', [
             'student' => $this->student,
             'classroom' => $this->room,
             'summary' => $summary,
+            'map' => $map,
             'generatedOn' => Carbon::now()->toDateString(),
         ])->render();
 
         $this->assertStringContainsString('評価状況の全体像', $html);
         $this->assertStringContainsString('健康・生活', $html);
         $this->assertStringContainsString('児A', $html);
+        // 到達マップ section(客観があるので表示・S1到達は ✓)
+        $this->assertStringContainsString('到達マップ', $html);
+        $this->assertStringContainsString('✓', $html);
     }
 }

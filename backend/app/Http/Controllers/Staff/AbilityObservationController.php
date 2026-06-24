@@ -232,12 +232,14 @@ class AbilityObservationController extends Controller
 
         $student->loadMissing('classroom');
         $summary = $this->summary->forStudent($student);
+        $map = $this->progressMap->forStudent($student);
         $filename = 'ability_summary_' . ($student->student_name ?? $student->id) . '.pdf';
 
         return \App\Services\PuppeteerPdfService::download('pdf.ability-summary', [
             'student' => $student,
             'classroom' => $student->classroom,
             'summary' => $summary,
+            'map' => $map,
             'generatedOn' => Carbon::now()->toDateString(),
         ], $filename, 'A4', false);
     }

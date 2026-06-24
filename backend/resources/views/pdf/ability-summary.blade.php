@@ -48,8 +48,12 @@
                 <div class="domain-head">
                     <span>{{ $d['domain'] }}</span>
                     <span style="display:flex; align-items:center; gap:8px;">
-                        <span class="bar-wrap"><span class="bar" style="width: {{ $d['average'] * 10 }}%"></span></span>
-                        平均 {{ $d['average'] }}
+                        @if ($d['average'] !== null)
+                            <span class="bar-wrap"><span class="bar" style="width: {{ $d['average'] * 10 }}%"></span></span>
+                            平均 {{ $d['average'] }}
+                        @else
+                            <span style="color:#777;">客観評価はまだありません</span>
+                        @endif
                     </span>
                 </div>
                 <table>
@@ -76,6 +80,46 @@
                 </table>
             </div>
         @endforeach
+
+        {{-- 到達マップ(項目×学年帯) — 客観スコアがある場合のみ --}}
+        @if (($summary['counts']['scored'] ?? 0) > 0 && !empty(($map ?? [])['tools'] ?? []))
+            <h2 style="font-size:14px; margin:18px 0 4px; page-break-before: always;">到達マップ（項目×学年帯）</h2>
+            <div class="note">各セルの到達状況: ✓=到達 ／ ★=般化 ／ △=途上 ／ ・=未着手。期間ごとの伸びは画面の到達マップで確認できます。</div>
+            @foreach ($map['tools'] as $tool)
+                <div class="domain">
+                    <div class="domain-head"><span>{{ $tool['tool_id'] }}</span></div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>能力項目</th>
+                                @foreach ($tool['axes'] as $a)
+                                    <th class="score" title="{{ $a['name'] }}">{{ $a['axis_id'] }}</th>
+                                @endforeach
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($tool['domains'] as $dom)
+                                <tr><td colspan="{{ count($tool['axes']) + 1 }}" style="background:#f1f5f9; font-weight:bold;">{{ $dom['domain'] }}</td></tr>
+                                @foreach ($dom['items'] as $item)
+                                    @php $byAxis = collect($item['cells'])->keyBy('axis_id'); @endphp
+                                    <tr>
+                                        <td>{{ $item['item_name'] }}</td>
+                                        @foreach ($tool['axes'] as $a)
+                                            @php
+                                                $cell = $byAxis->get($a['axis_id']);
+                                                $st = $cell['status'] ?? 'not_started';
+                                                $sym = ['not_started' => '・', 'in_progress' => '△', 'achieved' => '✓', 'generalized' => '★'][$st] ?? '・';
+                                            @endphp
+                                            <td class="score">{{ $sym }}</td>
+                                        @endforeach
+                                    </tr>
+                                @endforeach
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endforeach
+        @endif
     @endif
 </body>
 </html>
