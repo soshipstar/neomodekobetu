@@ -131,6 +131,11 @@ class AbilityObservationFlowTest extends TestCase
         $this->assertNotEmpty($q->json('data.question.benchmark'));
         $this->assertSame(['completed', 'partial', 'refused'], $q->json('data.results'));
         $this->assertNotEmpty(collect($q->json('data.support_codes'))->firstWhere('code', 'SUP0'));
+        // 1日3問: 重複しない3項目が並ぶ(いずれも DEV)
+        $qids = collect($q->json('data.questions'))->pluck('item_id');
+        $this->assertCount(3, $qids);
+        $this->assertCount(3, $qids->unique());
+        $this->assertTrue($qids->every(fn ($id) => str_starts_with($id, 'DEV-')));
 
         // 観察記録を保存: axis_id/classroom はサーバ側で確定
         $store = $this->actingAs($staff, 'sanctum')->postJson('/api/staff/ability/observations', [

@@ -45,15 +45,20 @@ class AbilityObservationController extends Controller
             return $deny;
         }
 
-        $item = $this->questions->nextItemFor($student, $request->query('exclude_item_id'));
-        if (! $item) {
+        // 1日3問: 重複しない最大3項目を出題する
+        $exclude = array_values(array_filter([(string) $request->query('exclude_item_id')]));
+        $items = $this->questions->nextItemsFor($student, 3, $exclude);
+        if ($items->isEmpty()) {
             return response()->json(['success' => true, 'data' => null, 'message' => '出題できる項目がありません。']);
         }
+
+        $questions = $items->map(fn ($it) => $this->questions->buildQuestion($student, $it))->values()->all();
 
         return response()->json([
             'success' => true,
             'data' => [
-                'question' => $this->questions->buildQuestion($student, $item),
+                'questions' => $questions,
+                'question' => $questions[0], // 後方互換(単一参照)
                 'support_codes' => AbilitySupportCode::orderBy('sort_order')
                     ->get(['code', 'content', 'score_band']),
                 'results' => self::RESULTS,

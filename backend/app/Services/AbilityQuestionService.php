@@ -31,12 +31,28 @@ class AbilityQuestionService
      */
     public function nextItemFor(Student $student, ?string $excludeItemId = null): ?AbilityEvalItem
     {
+        $exclude = $excludeItemId !== null && $excludeItemId !== '' ? [$excludeItemId] : [];
+
+        return $this->nextItemsFor($student, 1, $exclude)->first();
+    }
+
+    /**
+     * 次に出題する評価項目を最大 $count 件、ローテーション順で選ぶ(1日複数問用)。
+     *
+     * 出題対象は児童ごとの適用ツール(DEV主軸、高校段階はADV/WRK/UNVも)の全項目。
+     * 観察回数の少ない順 → DEV優先 → 最終観察が古い順 → 項目ID順。直近に出した項目は後ろへ。
+     *
+     * @param  array<int, string>  $excludeItemIds 差し替え等で除外する項目
+     * @return \Illuminate\Support\Collection<int, AbilityEvalItem>
+     */
+    public function nextItemsFor(Student $student, int $count = 3, array $excludeItemIds = []): \Illuminate\Support\Collection
+    {
         $items = AbilityEvalItem::whereIn('tool_id', AbilityToolScope::toolsFor($student))
             ->orderBy('item_id')
             ->get();
 
         if ($items->isEmpty()) {
-            return null;
+            return collect();
         }
 
         // 児童の項目別の観察回数・最終観察を集計
@@ -46,36 +62,29 @@ class AbilityQuestionService
             ->get()
             ->keyBy('item_id');
 
-        // 直近に出題した項目(最後に作成された観察の項目)は避ける
+        // 直近に出題した項目は後ろへ回す(同時出題で連続しないように)
         $latestItemId = AbilityObservation::where('student_id', $student->id)
             ->orderByDesc('id')
             ->value('item_id');
 
-        $candidates = $items->filter(fn ($it) => $it->item_id !== $excludeItemId)->values();
-        if ($candidates->isEmpty()) {
-            $candidates = $items;
-        }
-
-        // 直近項目を除いた候補があるならそれを使う(無ければ直近項目も許可)
-        $withoutLatest = $candidates->filter(fn ($it) => $it->item_id !== $latestItemId)->values();
-        if ($withoutLatest->isNotEmpty()) {
-            $candidates = $withoutLatest;
-        }
-
-        // DEV(発達5領域)を主軸にするためツール優先度を入れる。同じ観察回数なら
-        // DEV → ADV → WRK → UNV の順。これで「科目指導的(ADV)の設問ばかりが先に出る」
-        // のを防ぎ、まず発達の中核項目を満遍なく埋める(現場フィードバック 2026-06-24)。
+        $exclude = array_flip($excludeItemIds);
+        // DEV(発達5領域)主軸: 同じ観察回数なら DEV → ADV → WRK → UNV の順。
         $toolPriority = ['DEV' => 0, 'ADV' => 1, 'WRK' => 2, 'UNV' => 3];
 
-        // 観察回数昇順 → ツール優先度(DEV優先) → 最終観察が古い順(未観察=最優先) → 項目ID順
-        return $candidates->sortBy(function ($it) use ($stats, $toolPriority) {
-            $s = $stats->get($it->item_id);
-            $cnt = $s ? (int) $s->cnt : 0;
-            $last = $s && $s->last_date ? $s->last_date : '0000-00-00';
-            $tp = $toolPriority[$it->tool_id] ?? 9;
+        return $items
+            ->filter(fn ($it) => ! isset($exclude[$it->item_id]))
+            ->sortBy(function ($it) use ($stats, $toolPriority, $latestItemId) {
+                $s = $stats->get($it->item_id);
+                $cnt = $s ? (int) $s->cnt : 0;
+                $last = $s && $s->last_date ? $s->last_date : '0000-00-00';
+                $tp = $toolPriority[$it->tool_id] ?? 9;
+                $recent = $it->item_id === $latestItemId ? 1 : 0;
 
-            return sprintf('%05d|%d|%s|%s', $cnt, $tp, $last, $it->item_id);
-        })->first();
+                // 直近項目→観察回数昇順→ツール優先→最終観察が古い順→項目ID順
+                return sprintf('%d|%05d|%d|%s|%s', $recent, $cnt, $tp, $last, $it->item_id);
+            })
+            ->take(max(1, $count))
+            ->values();
     }
 
     /**
