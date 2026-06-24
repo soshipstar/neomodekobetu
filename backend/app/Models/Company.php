@@ -20,6 +20,7 @@ class Company extends Model
         'description',
         'is_active',
         'billing_system_enabled',
+        'soship_enabled',
         // AI学習基盤: Layer2統計利用の施設同意(現在値キャッシュ。正史はconsent_records)
         'ai_consent_aggregate',
         'ai_consent_aggregate_at',
@@ -53,6 +54,7 @@ class Company extends Model
         return [
             'is_active' => 'boolean',
             'billing_system_enabled' => 'boolean',
+            'soship_enabled' => 'boolean',
             'ai_consent_aggregate' => 'boolean',
             'ai_consent_aggregate_at' => 'datetime',
             'is_custom_pricing' => 'boolean',

@@ -68,6 +68,13 @@ return [
         'sso_secret' => env('KIDURIACOUNT_SSO_SECRET'),
     ],
 
+    // 外部システム SOSHIP Growth OS（manage.kiduri.xyz）のログイン連携用サーバ間共有シークレット。
+    // SOSHIP 側の SOSHIP_SSO_SECRET と一致させること。SOSHIP がスタッフの「きづりログインID＋
+    // パスワード」を中継し、/api/integration/soship/verify-login で照合する（トークン非発行）。
+    'soship' => [
+        'sso_secret' => env('SOSHIP_SSO_SECRET'),
+    ],
+
     // 外部システム mynameis（本人の主観自己評価, fesvol.xyz）からの主観プロフィール受信用
     // サーバ間共有シークレット。mynameis 側の push 設定と一致させること。
     'mynameis' => [

@@ -23,6 +23,7 @@ class Classroom extends Model
         'is_active',
         'vacancy_widget_token',
         'billing_system_enabled',
+        'soship_enabled',
         'ability_assessment_enabled',
         'absence_addition_enabled',
     ];
@@ -33,6 +34,7 @@ class Classroom extends Model
             'settings' => 'array',
             'is_active' => 'boolean',
             'billing_system_enabled' => 'boolean',
+            'soship_enabled' => 'boolean',
             'ability_assessment_enabled' => 'boolean',
             'absence_addition_enabled' => 'boolean',
         ];

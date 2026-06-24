@@ -220,4 +220,38 @@ class CompanyController extends Controller
                 : "請求システム連携を無効にし、紐づく {$count} 事業所へ適用しました。",
         ]);
     }
+
+    /**
+     * SOSHIP Growth OS 連携(SSOログイン)を企業単位で有効/無効にする。
+     *
+     * 企業のフラグを更新し、その企業に紐づくすべての事業所(classrooms)へ一括適用する。
+     * 実際の判定(SOSHIP からのログイン照合 verify-login)は classrooms.soship_enabled を
+     * 参照するため、配下の全教室に反映する。
+     */
+    public function setSoshipEnabled(Request $request, Company $company): JsonResponse
+    {
+        if ($deny = $this->requireMaster($request)) return $deny;
+
+        $validated = $request->validate([
+            'soship_enabled' => 'required|boolean',
+        ]);
+        $enabled = (bool) $validated['soship_enabled'];
+
+        DB::transaction(function () use ($company, $enabled) {
+            $company->update(['soship_enabled' => $enabled]);
+            // 配下の全事業所へ一括適用
+            Classroom::where('company_id', $company->id)
+                ->update(['soship_enabled' => $enabled]);
+        });
+
+        $count = Classroom::where('company_id', $company->id)->count();
+
+        return response()->json([
+            'success' => true,
+            'data'    => ['soship_enabled' => $enabled, 'applied_classrooms' => $count],
+            'message' => $enabled
+                ? "SOSHIP 連携を有効にし、紐づく {$count} 事業所へ適用しました。"
+                : "SOSHIP 連携を無効にし、紐づく {$count} 事業所へ適用しました。",
+        ]);
+    }
 }

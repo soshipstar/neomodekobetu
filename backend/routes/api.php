@@ -81,6 +81,12 @@ Route::post('/sync/attendance', [App\Http\Controllers\External\SyncExportControl
 // mynameis(本人の主観自己評価, fesvol.xyz)からの主観プロフィール受信（サーバ間・共有シークレット）。
 Route::post('/external/mynameis/self-assessment', [App\Http\Controllers\External\MynameisSyncController::class, 'ingest']);
 
+// SOSHIP Growth OS のログイン連携（サーバ間・共有シークレット）。
+// SOSHIP が「きづりのログインID＋パスワード」を中継検証する。トークンは発行しない。
+// 総当たり抑止にレート制限を必須とする。
+Route::post('/integration/soship/verify-login', [App\Http\Controllers\External\SoshipAuthController::class, 'verifyLogin'])
+    ->middleware('throttle:20,1');
+
 // --- 教室切り替え（全認証ユーザー共通） ---
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my-classrooms', [App\Http\Controllers\ClassroomSwitchController::class, 'myClassrooms']);
@@ -120,6 +126,8 @@ Route::prefix('admin')
         Route::post('/companies/{company}/assign-classrooms', [App\Http\Controllers\Admin\CompanyController::class, 'assignClassrooms']);
         // 国保連請求システム連携を企業単位で切替 (配下の全事業所へ一括適用)
         Route::post('/companies/{company}/billing-system', [App\Http\Controllers\Admin\CompanyController::class, 'setBillingSystem']);
+        // SOSHIP Growth OS 連携(SSOログイン)を企業単位で切替 (配下の全事業所へ一括適用)
+        Route::post('/companies/{company}/soship', [App\Http\Controllers\Admin\CompanyController::class, 'setSoshipEnabled']);
 
         // ユーザー管理
         Route::apiResource('users', App\Http\Controllers\Admin\UserController::class);
