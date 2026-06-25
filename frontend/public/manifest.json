@@ -29,18 +29,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
-    },
-    {
-      "src": "/assets/icons/icon-192x192.svg",
-      "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/assets/icons/icon-512x512.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any"
     }
   ],
   "shortcuts": [
@@ -49,35 +37,35 @@
       "short_name": "チャット",
       "description": "チャットを開く",
       "url": "/guardian/chat",
-      "icons": [{ "src": "/assets/icons/icon-96x96.svg", "sizes": "96x96" }]
+      "icons": [{ "src": "/assets/icons/icon-96x96.png", "sizes": "96x96" }]
     },
     {
       "name": "連絡帳",
       "short_name": "連絡帳",
       "description": "連絡帳を確認する",
       "url": "/guardian/dashboard",
-      "icons": [{ "src": "/assets/icons/icon-96x96.svg", "sizes": "96x96" }]
+      "icons": [{ "src": "/assets/icons/icon-96x96.png", "sizes": "96x96" }]
     },
     {
       "name": "アセスメント",
       "short_name": "アセスメント",
       "description": "アセスメントを開く",
       "url": "/guardian/kakehashi",
-      "icons": [{ "src": "/assets/icons/icon-96x96.svg", "sizes": "96x96" }]
+      "icons": [{ "src": "/assets/icons/icon-96x96.png", "sizes": "96x96" }]
     }
   ],
   "screenshots": [
     {
-      "src": "/assets/icons/icon-512x512.svg",
+      "src": "/assets/icons/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "form_factor": "narrow",
       "label": "KIDURI ホーム画面"
     },
     {
-      "src": "/assets/icons/icon-512x512.svg",
+      "src": "/assets/icons/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "form_factor": "wide",
       "label": "KIDURI ダッシュボード"
     }

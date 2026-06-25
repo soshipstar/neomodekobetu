@@ -17,11 +17,11 @@ export const metadata: Metadata = {
   description: '放課後等デイサービス向け 個別支援連絡帳システム',
   manifest: '/manifest.json',
   icons: {
-    icon: '/assets/icons/icon.svg',
+    icon: '/assets/icons/icon-32x32.png',
     apple: [
-      { url: '/assets/icons/icon-192x192.svg', sizes: '192x192' },
-      { url: '/assets/icons/icon-152x152.svg', sizes: '152x152' },
-      { url: '/assets/icons/icon-144x144.svg', sizes: '144x144' },
+      { url: '/assets/icons/icon-192x192.png', sizes: '192x192' },
+      { url: '/assets/icons/icon-152x152.png', sizes: '152x152' },
+      { url: '/assets/icons/icon-144x144.png', sizes: '144x144' },
     ],
   },
   appleWebApp: {
