@@ -276,9 +276,7 @@ function SidebarContent({
                 className="h-8 w-8 rounded-lg object-contain"
               />
             ) : (
-              <div className="h-8 w-8 rounded-lg bg-[var(--brand-80)] flex items-center justify-center">
-                <span className="text-sm font-bold text-white">K</span>
-              </div>
+              <img src="/assets/icons/icon-192x192.png" alt="KIDURI" className="h-8 w-8 rounded-lg object-contain" />
             )}
             <span className="font-bold text-[var(--neutral-foreground-1)]">
               {user.classroom?.classroom_name || 'KIDURI'}
@@ -293,9 +291,7 @@ function SidebarContent({
               className="mx-auto h-8 w-8 rounded-lg object-contain"
             />
           ) : (
-            <div className="mx-auto h-8 w-8 rounded-lg bg-[var(--brand-80)] flex items-center justify-center">
-              <span className="text-sm font-bold text-white">K</span>
-            </div>
+            <img src="/assets/icons/icon-192x192.png" alt="KIDURI" className="mx-auto h-8 w-8 rounded-lg object-contain" />
           )
         )}
         {onClose && (

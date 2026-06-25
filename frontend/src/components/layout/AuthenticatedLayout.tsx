@@ -43,9 +43,8 @@ export function AuthenticatedLayout({ children, requiredUserType }: Authenticate
     return (
       <div className="flex min-h-screen items-center justify-center bg-[var(--neutral-background-2)]">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-[var(--brand-80)] flex items-center justify-center">
-            <span className="text-lg font-bold text-white">K</span>
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/assets/icons/icon-192x192.png" alt="KIDURI" width={40} height={40} className="h-10 w-10 rounded-lg" />
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--brand-80)] border-t-transparent" />
           <p className="text-sm text-[var(--neutral-foreground-3)]">読み込み中...</p>
         </div>
