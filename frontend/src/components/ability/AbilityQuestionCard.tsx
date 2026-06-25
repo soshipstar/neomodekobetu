@@ -18,6 +18,8 @@ interface Question {
   benchmark: string | null;
   question: string | null;
   hint: string | null;
+  answered: boolean;
+  answered_degree: number | null;
 }
 
 interface SupportCode {
@@ -83,23 +85,11 @@ export function AbilityQuestionCard({ studentId, dailyRecordId }: Props) {
 
   return (
     <div className="rounded-lg border border-[var(--brand-stroke-2,var(--neutral-stroke-2))] bg-[var(--neutral-background-2)] p-4">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="flex items-center gap-2">
-          <MaterialIcon name="psychology" size={18} className="text-[var(--brand-foreground-1,var(--brand-80))]" />
-          <span className="text-sm font-semibold text-[var(--neutral-foreground-1)]">
-            能力評価の設問({questions.length}問)
-          </span>
+      <div className="mb-2 flex items-center gap-2">
+        <MaterialIcon name="psychology" size={18} className="text-[var(--brand-foreground-1,var(--brand-80))]" />
+        <span className="text-sm font-semibold text-[var(--neutral-foreground-1)]">
+          能力評価の設問(本日 {questions.filter((q) => q.answered).length}/{questions.length} 回答)
         </span>
-        {questions.length > 0 && (
-          <Button
-            variant="subtle"
-            size="sm"
-            leftIcon={<MaterialIcon name="refresh" size={16} />}
-            onClick={() => queryClient.invalidateQueries({ queryKey })}
-          >
-            別の設問を取得
-          </Button>
-        )}
       </div>
 
       {isLoading ? (
@@ -116,7 +106,11 @@ export function AbilityQuestionCard({ studentId, dailyRecordId }: Props) {
               results={data?.results ?? []}
               studentId={studentId}
               dailyRecordId={dailyRecordId}
-              onSaved={() => queryClient.invalidateQueries({ queryKey: ['ability-summary', studentId] })}
+              onSaved={() => {
+                // 回答→スコア自動計算済み。到達マップ・全体像を更新(設問は他項目の入力を保つため再取得しない)
+                queryClient.invalidateQueries({ queryKey: ['ability-summary', studentId] });
+                queryClient.invalidateQueries({ queryKey: ['ability-progress-map', studentId] });
+              }}
             />
           ))}
         </div>
@@ -168,11 +162,22 @@ function AbilityQuestionItem({ question, supportCodes, results, studentId, daily
     }
   };
 
-  if (saved) {
+  // 回答済み(本日回答済み=question.answered / たった今記録=saved)は結果を表示し、再入力させない
+  if (question.answered || saved) {
+    const shownDegree = question.answered_degree ?? (saved ? degree : null);
+    const label = shownDegree !== null
+      ? (DEGREE_OPTIONS.find((d) => d.score === shownDegree)?.label ?? `該当度 ${shownDegree}`)
+      : null;
     return (
-      <div className="flex items-center gap-2 rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] p-2 text-sm text-[var(--neutral-foreground-2)]">
-        <MaterialIcon name="check_circle" size={16} className="text-emerald-600" />
-        <span>{question.item_name}: 記録しました</span>
+      <div className="rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] p-2 text-sm">
+        <div className="flex items-center gap-2 text-[var(--neutral-foreground-2)]">
+          <MaterialIcon name="check_circle" size={16} className="text-emerald-600" />
+          <span className="font-medium">{question.item_name}（本日記録済み）</span>
+        </div>
+        {question.question && (
+          <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">{question.question}</p>
+        )}
+        {label && <p className="mt-1 text-[var(--neutral-foreground-1)]">回答: {label}</p>}
       </div>
     );
   }
