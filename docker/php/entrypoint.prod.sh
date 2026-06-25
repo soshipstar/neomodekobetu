@@ -40,6 +40,20 @@ php artisan view:clear 2>/dev/null || true
 if [ "${APP_RUN_MIGRATIONS:-true}" = "true" ]; then
     echo "[entrypoint] Running migrations..."
     php artisan migrate --force || echo "[entrypoint] migration failed (continuing)"
+
+    # 参照マスタ(reference data)を冪等投入する。
+    # ConsentDefinition / AiEditReasonCategory / ProgramCategory は全環境に必要な
+    # 固定マスタで updateOrCreate(冪等)。未投入だと同意記録・修正理由選択・
+    # プログラム分類が機能しない(新規DBデプロイでの取りこぼし防止)。
+    # デモ用 seeder (Classroom/User/DemoData) は本番を汚すため実行しない。
+    echo "[entrypoint] Seeding reference data (idempotent)..."
+    for s in ConsentDefinitionSeeder AiEditReasonCategorySeeder ProgramCategorySeeder; do
+        if php artisan db:seed --class="$s" --force >/dev/null 2>&1; then
+            echo "[entrypoint]   seeded $s"
+        else
+            echo "[entrypoint]   seed $s failed (continuing)"
+        fi
+    done
 fi
 
 # 本番キャッシュを再生成
