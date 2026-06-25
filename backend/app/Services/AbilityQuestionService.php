@@ -118,9 +118,10 @@ class AbilityQuestionService
      *
      * @return array<string, mixed>
      */
-    public function buildQuestion(Student $student, AbilityEvalItem $item): array
+    public function buildQuestion(Student $student, AbilityEvalItem $item, ?string $forceAxis = null): array
     {
-        $axisId = $this->currentAxisFor($student, $item);
+        // 回答済みの設問は回答時の学年帯で表示するため軸を指定できる。既定は進行中の段階。
+        $axisId = $forceAxis ?? $this->currentAxisFor($student, $item);
 
         // ADV は到達水準、WRK/UNV は時期の到達目安。WRK/UNV は到達目安が無い項目もあり null 可。
         $benchmark = AbilityEvalBenchmark::where('item_id', $item->item_id)

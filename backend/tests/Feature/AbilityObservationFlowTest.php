@@ -235,6 +235,62 @@ class AbilityObservationFlowTest extends TestCase
         }
     }
 
+    public function test_store_with_degree_auto_computes_score(): void
+    {
+        $company = Company::create(['name' => '企業A']);
+        $room = Classroom::create([
+            'classroom_name' => '事業所A', 'company_id' => $company->id,
+            'is_active' => true, 'ability_assessment_enabled' => true,
+        ]);
+        $staff = $this->staff($room);
+        $student = Student::create([
+            'student_name' => '児A', 'classroom_id' => $room->id, 'grade_level' => 'elementary_5',
+            'status' => 'active', 'is_active' => true,
+        ]);
+
+        $this->actingAs($staff, 'sanctum')->postJson('/api/staff/ability/observations', [
+            'student_id' => $student->id, 'item_id' => 'DEV-1-1', 'degree' => 8,
+        ])->assertStatus(201);
+
+        // 回答した瞬間にスコアが計算される(手動「スコア更新」不要)
+        $score = \App\Models\AbilityScore::where('student_id', $student->id)
+            ->where('item_id', 'DEV-1-1')->first();
+        $this->assertNotNull($score);
+        $this->assertSame(8, $score->score);
+        $this->assertSame('self_degree', $score->method);
+    }
+
+    public function test_daily_three_questions_show_answered_and_no_new_after_three(): void
+    {
+        $company = Company::create(['name' => '企業A']);
+        $room = Classroom::create([
+            'classroom_name' => '事業所A', 'company_id' => $company->id,
+            'is_active' => true, 'ability_assessment_enabled' => true,
+        ]);
+        $staff = $this->staff($room);
+        $student = Student::create([
+            'student_name' => '児A', 'classroom_id' => $room->id, 'grade_level' => 'elementary_5',
+            'status' => 'active', 'is_active' => true,
+        ]);
+
+        // 今日3項目に回答(該当度)
+        foreach (['DEV-1-1', 'DEV-1-2', 'DEV-1-3'] as $itemId) {
+            $this->actingAs($staff, 'sanctum')->postJson('/api/staff/ability/observations', [
+                'student_id' => $student->id, 'item_id' => $itemId, 'degree' => 6,
+            ])->assertStatus(201);
+        }
+
+        $q = $this->actingAs($staff, 'sanctum')
+            ->getJson("/api/staff/ability/students/{$student->id}/next-question");
+        $q->assertStatus(200);
+        $qs = collect($q->json('data.questions'));
+        $this->assertCount(3, $qs);
+        $this->assertSame(3, $qs->where('answered', true)->count());  // 全て回答済み(結果表示)
+        $this->assertSame(0, $qs->where('answered', false)->count()); // 新しい問いは出ない
+        $ans = $qs->firstWhere('answered', true);
+        $this->assertSame(6, $ans['answered_degree']);
+    }
+
     public function test_disabled_classroom_returns_409_and_cross_classroom_403(): void
     {
         $company = Company::create(['name' => '企業A']);

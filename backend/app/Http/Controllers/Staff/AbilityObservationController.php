@@ -45,14 +45,46 @@ class AbilityObservationController extends Controller
             return $deny;
         }
 
-        // 1日3問: 重複しない最大3項目を出題する
-        $exclude = array_values(array_filter([(string) $request->query('exclude_item_id')]));
-        $items = $this->questions->nextItemsFor($student, 3, $exclude);
-        if ($items->isEmpty()) {
-            return response()->json(['success' => true, 'data' => null, 'message' => '出題できる項目がありません。']);
+        // 1日3問: 今日回答済みの問いは結果表示にし、未回答を3問になるまで補充する。
+        // 3問とも回答済みなら新しい問いは出さない(リロードしても同じ並び)。
+        $today = Carbon::today()->toDateString();
+        $todayObs = AbilityObservation::where('student_id', $student->id)
+            ->whereDate('observed_date', $today)
+            ->orderByDesc('id')
+            ->get()
+            ->unique('item_id')
+            ->take(3)
+            ->values();
+        $answeredItemIds = $todayObs->pluck('item_id')->all();
+
+        $needed = max(0, 3 - count($answeredItemIds));
+        $fillItems = $needed > 0
+            ? $this->questions->nextItemsFor($student, $needed, $answeredItemIds)
+            : collect();
+
+        $questions = [];
+        // 未回答(これから答える問い)を先に
+        foreach ($fillItems as $it) {
+            $q = $this->questions->buildQuestion($student, $it);
+            $q['answered'] = false;
+            $q['answered_degree'] = null;
+            $questions[] = $q;
+        }
+        // 今日回答済み(結果表示)。回答時の学年帯で表示する。
+        foreach ($todayObs as $obs) {
+            $item = \App\Models\AbilityEvalItem::where('item_id', $obs->item_id)->first();
+            if (! $item) {
+                continue;
+            }
+            $q = $this->questions->buildQuestion($student, $item, $obs->axis_id);
+            $q['answered'] = true;
+            $q['answered_degree'] = $obs->degree;
+            $questions[] = $q;
         }
 
-        $questions = $items->map(fn ($it) => $this->questions->buildQuestion($student, $it))->values()->all();
+        if (empty($questions)) {
+            return response()->json(['success' => true, 'data' => null, 'message' => '出題できる項目がありません。']);
+        }
 
         return response()->json([
             'success' => true,
@@ -105,6 +137,9 @@ class AbilityObservationController extends Controller
             'observed_date' => $validated['observed_date'] ?? Carbon::now()->toDateString(),
             'recorded_by' => $request->user()->id,
         ]);
+
+        // 回答した瞬間にスコアを再計算し、到達マップ・全体像へ即反映する(手動更新不要)。
+        $this->scoring->scoreStudent($student);
 
         return response()->json([
             'success' => true,
