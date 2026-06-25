@@ -80,7 +80,7 @@ export default function StaffChatPage() {
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [broadcastSending, setBroadcastSending] = useState(false);
   const [broadcastFile, setBroadcastFile] = useState<File | null>(null);
-  const [broadcastRoomIds, setBroadcastRoomIds] = useState<Set<number>>(new Set());
+  const [broadcastStudentIds, setBroadcastStudentIds] = useState<Set<number>>(new Set());
   const [quickModal, setQuickModal] = useState<'departure' | 'arrival' | null>(null);
   const [quickRoomIds, setQuickRoomIds] = useState<Set<number>>(new Set());
   const [quickSending, setQuickSending] = useState(false);
@@ -196,7 +196,7 @@ export default function StaffChatPage() {
   // Broadcast
   const handleBroadcast = useCallback(async () => {
     if (!broadcastMessage.trim() && !broadcastFile) return;
-    if (broadcastRoomIds.size === 0) {
+    if (broadcastStudentIds.size === 0) {
       toast.error('送信先を選択してください');
       return;
     }
@@ -204,7 +204,7 @@ export default function StaffChatPage() {
     try {
       const formData = new FormData();
       formData.append('message', broadcastMessage);
-      Array.from(broadcastRoomIds).forEach((id) => formData.append('room_ids[]', String(id)));
+      Array.from(broadcastStudentIds).forEach((id) => formData.append('student_ids[]', String(id)));
       if (broadcastFile) {
         formData.append('attachment', broadcastFile);
       }
@@ -213,14 +213,14 @@ export default function StaffChatPage() {
       setBroadcastModal(false);
       setBroadcastMessage('');
       setBroadcastFile(null);
-      setBroadcastRoomIds(new Set());
+      setBroadcastStudentIds(new Set());
       fetchRooms();
     } catch {
       toast.error('一斉送信に失敗しました');
     } finally {
       setBroadcastSending(false);
     }
-  }, [broadcastMessage, broadcastFile, broadcastRoomIds, fetchRooms, toast]);
+  }, [broadcastMessage, broadcastFile, broadcastStudentIds, fetchRooms, toast]);
 
   // クイック通知モーダルを開く（ルーム選択）
   const openQuickModal = useCallback((action: 'departure' | 'arrival') => {
@@ -568,8 +568,7 @@ export default function StaffChatPage() {
         isOpen={broadcastModal} onClose={() => { setBroadcastModal(false); setBroadcastFile(null); }}
         message={broadcastMessage} setMessage={setBroadcastMessage}
         file={broadcastFile} setFile={setBroadcastFile}
-        selectedRoomIds={broadcastRoomIds} setSelectedRoomIds={setBroadcastRoomIds}
-        rooms={rooms}
+        selectedStudentIds={broadcastStudentIds} setSelectedStudentIds={setBroadcastStudentIds}
         onSubmit={handleBroadcast} isSending={broadcastSending}
       />
       <QuickNotifyModal
@@ -694,40 +693,61 @@ function SubmissionModal({
 // Broadcast Modal
 // ---------------------------------------------------------------------------
 
+interface BroadcastRecipient {
+  student_id: number;
+  room_id: number | null;
+  student: { id: number; student_name: string; status: string | null; is_active: boolean };
+  guardian: { id: number; full_name: string } | null;
+}
+
 function BroadcastModal({
   isOpen, onClose, message, setMessage, file, setFile,
-  selectedRoomIds, setSelectedRoomIds, rooms, onSubmit, isSending,
+  selectedStudentIds, setSelectedStudentIds, onSubmit, isSending,
 }: {
   isOpen: boolean; onClose: () => void;
   message: string; setMessage: (v: string) => void;
   file: File | null; setFile: (f: File | null) => void;
-  selectedRoomIds: Set<number>; setSelectedRoomIds: (ids: Set<number>) => void;
-  rooms: ChatRoom[];
+  selectedStudentIds: Set<number>; setSelectedStudentIds: (ids: Set<number>) => void;
   onSubmit: () => void; isSending: boolean;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize: select all rooms when modal opens
+  // 宛先 = 在籍児童基準(スレッドの有無に依存しない)。退所・待機も status 付きで含む。
+  const [recipients, setRecipients] = useState<BroadcastRecipient[]>([]);
   useEffect(() => {
-    if (isOpen && rooms.length > 0) {
-      setSelectedRoomIds(new Set(rooms.map((r) => r.id)));
+    if (!isOpen) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await api.get<{ data: BroadcastRecipient[] }>('/api/staff/chat/broadcast-recipients');
+        if (!cancelled) setRecipients(res.data.data);
+      } catch {
+        if (!cancelled) setRecipients([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isOpen]);
+
+  // 既定で「在籍中(is_active)のみ」を選択する。退所・待機には一斉送信しない運用のため。
+  useEffect(() => {
+    if (isOpen && recipients.length > 0) {
+      setSelectedStudentIds(new Set(recipients.filter((r) => r.student.is_active).map((r) => r.student_id)));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, rooms]);
+  }, [isOpen, recipients]);
 
-  const toggleRoom = (id: number) => {
-    const next = new Set(selectedRoomIds);
+  const toggle = (id: number) => {
+    const next = new Set(selectedStudentIds);
     if (next.has(id)) next.delete(id);
     else next.add(id);
-    setSelectedRoomIds(next);
+    setSelectedStudentIds(next);
   };
 
-  const selectAll = () => setSelectedRoomIds(new Set(rooms.map((r) => r.id)));
-  const selectNone = () => setSelectedRoomIds(new Set());
-  // 在籍中(is_active=true。退所・待機を除く)の保護者のみを選択する。
+  const selectAll = () => setSelectedStudentIds(new Set(recipients.map((r) => r.student_id)));
+  const selectNone = () => setSelectedStudentIds(new Set());
   const selectActive = () =>
-    setSelectedRoomIds(new Set(rooms.filter((r) => r.student?.is_active).map((r) => r.id)));
-  const activeCount = rooms.filter((r) => r.student?.is_active).length;
+    setSelectedStudentIds(new Set(recipients.filter((r) => r.student.is_active).map((r) => r.student_id)));
+  const activeCount = recipients.filter((r) => r.student.is_active).length;
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -744,38 +764,36 @@ function BroadcastModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="保護者に一斉送信" size="md">
       <div className="space-y-4">
-        {/* Recipient selection */}
+        {/* Recipient selection（在籍児童基準。既定は在籍中のみ選択） */}
         <div>
           <div className="mb-1 flex items-center justify-between">
             <label className="text-sm font-medium text-[var(--neutral-foreground-2)]">送信先を選択</label>
             <div className="flex gap-2">
-              <button onClick={selectAll} className="text-xs text-[var(--brand-80)] hover:underline">全保護者({rooms.length})</button>
+              <button onClick={selectAll} className="text-xs text-[var(--brand-80)] hover:underline">全員({recipients.length})</button>
               <button onClick={selectActive} className="text-xs text-[var(--brand-80)] hover:underline">在籍中のみ({activeCount})</button>
               <button onClick={selectNone} className="text-xs text-[var(--neutral-foreground-4)] hover:underline">全解除</button>
             </div>
           </div>
           <div className="max-h-[200px] overflow-y-auto rounded-lg border border-[var(--neutral-stroke-2)] p-2">
-            {rooms.map((room) => (
-              <label key={room.id} className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-[var(--neutral-background-3)] cursor-pointer">
+            {recipients.map((r) => (
+              <label key={r.student_id} className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-[var(--neutral-background-3)] cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={selectedRoomIds.has(room.id)}
-                  onChange={() => toggleRoom(room.id)}
+                  checked={selectedStudentIds.has(r.student_id)}
+                  onChange={() => toggle(r.student_id)}
                   className="rounded border-[var(--neutral-stroke-2)]"
                 />
-                <span className="text-[var(--neutral-foreground-1)]">
-                  {room.student?.student_name || `ID: ${room.student_id}`}
-                </span>
-                {room.guardian?.full_name && (
-                  <span className="text-xs text-[var(--neutral-foreground-4)]">({room.guardian.full_name})</span>
+                <span className="text-[var(--neutral-foreground-1)]">{r.student.student_name}</span>
+                {r.guardian?.full_name && (
+                  <span className="text-xs text-[var(--neutral-foreground-4)]">({r.guardian.full_name})</span>
                 )}
-                {room.student && !room.student.is_active && (
+                {!r.student.is_active && (
                   <span className="ml-auto shrink-0 rounded bg-[var(--neutral-background-4)] px-1.5 py-0.5 text-[10px] text-[var(--neutral-foreground-3)]">
-                    {room.student.status === 'withdrawn'
+                    {r.student.status === 'withdrawn'
                       ? '退所'
-                      : room.student.status === 'waiting'
+                      : r.student.status === 'waiting'
                         ? '待機'
-                        : room.student.status === 'pre_withdrawal'
+                        : r.student.status === 'pre_withdrawal'
                           ? '退所予定'
                           : '在籍外'}
                   </span>
@@ -784,7 +802,7 @@ function BroadcastModal({
             ))}
           </div>
           <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">
-            {selectedRoomIds.size}/{rooms.length}件 選択中
+            {selectedStudentIds.size}/{recipients.length}件 選択中
           </p>
         </div>
 
@@ -825,9 +843,9 @@ function BroadcastModal({
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose}>キャンセル</Button>
           <Button onClick={onSubmit} isLoading={isSending}
-            disabled={(!message.trim() && !file) || selectedRoomIds.size === 0}
+            disabled={(!message.trim() && !file) || selectedStudentIds.size === 0}
             leftIcon={<MaterialIcon name="send" size={16} />}>
-            {selectedRoomIds.size}件に送信
+            {selectedStudentIds.size}件に送信
           </Button>
         </div>
       </div>
