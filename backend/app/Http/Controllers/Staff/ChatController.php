@@ -8,6 +8,7 @@ use App\Models\ChatMessageStaffRead;
 use App\Models\ChatRoom;
 use App\Models\ChatRoomPin;
 use App\Models\Classroom;
+use App\Models\Student;
 use App\Models\User;
 use App\Services\ChatAttachmentStorage;
 use App\Services\NotificationService;
@@ -560,6 +561,39 @@ class ChatController extends Controller
     /**
      * 全保護者チャットルームに一斉送信
      */
+    /**
+     * 一斉送信の宛先一覧。スレッドの有無に関わらず「在籍児童(保護者紐づけ済み)」を返す。
+     * 在籍外(退所・待機)も status 付きで含め、既定選択(在籍中のみ)はフロントで行う。
+     * これによりスレッドの無い在籍児童(例: まだやり取りが無い保護者)も送信対象に含められる。
+     */
+    public function broadcastRecipients(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $accessibleIds = $user->accessibleClassroomIds();
+
+        $students = Student::whereIn('classroom_id', $accessibleIds)
+            ->whereNotNull('guardian_id')
+            ->with('guardian:id,full_name')
+            ->orderBy('classroom_id')->orderBy('student_name')
+            ->get(['id', 'student_name', 'classroom_id', 'grade_level', 'status', 'is_active', 'guardian_id']);
+
+        $roomByStudent = ChatRoom::whereIn('student_id', $students->pluck('id'))
+            ->get(['id', 'student_id'])
+            ->keyBy('student_id');
+
+        $recipients = $students->map(fn ($s) => [
+            'student_id' => $s->id,
+            'room_id' => optional($roomByStudent->get($s->id))->id,
+            'student' => [
+                'id' => $s->id, 'student_name' => $s->student_name, 'classroom_id' => $s->classroom_id,
+                'grade_level' => $s->grade_level, 'status' => $s->status, 'is_active' => $s->is_active,
+            ],
+            'guardian' => $s->guardian ? ['id' => $s->guardian->id, 'full_name' => $s->guardian->full_name] : null,
+        ])->values();
+
+        return response()->json(['success' => true, 'data' => $recipients]);
+    }
+
     public function broadcast(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -585,15 +619,27 @@ class ChatController extends Controller
             $attachmentMime = $file->getMimeType();
         }
 
-        // 送信先の絞り込み（room_ids指定時は選択したルームのみ）
-        $query = ChatRoom::forUser($user);
-        if ($request->has('room_ids')) {
-            $roomIds = $request->input('room_ids', []);
-            if (is_array($roomIds) && count($roomIds) > 0) {
-                $query->whereIn('id', $roomIds);
+        // 送信先: student_ids 指定時は「在籍児童基準」(スレッドが無ければ作成して送信漏れを防ぐ)。
+        // 後方互換: room_ids 指定時は従来どおり選択ルームのみ。
+        if ($request->has('student_ids')) {
+            $studentIds = array_values(array_filter((array) $request->input('student_ids', [])));
+            $students = Student::whereIn('id', $studentIds)
+                ->whereIn('classroom_id', $user->accessibleClassroomIds())
+                ->whereNotNull('guardian_id')
+                ->get(['id', 'guardian_id']);
+            $rooms = $students->map(fn ($s) => ChatRoom::firstOrCreate([
+                'student_id' => $s->id, 'guardian_id' => $s->guardian_id,
+            ]));
+        } else {
+            $query = ChatRoom::forUser($user);
+            if ($request->has('room_ids')) {
+                $roomIds = $request->input('room_ids', []);
+                if (is_array($roomIds) && count($roomIds) > 0) {
+                    $query->whereIn('id', $roomIds);
+                }
             }
+            $rooms = $query->get();
         }
-        $rooms = $query->get();
         $sentCount = 0;
 
         DB::transaction(function () use ($rooms, $user, $request, &$sentCount, $attachmentPath, $attachmentName, $attachmentSize, $attachmentMime) {

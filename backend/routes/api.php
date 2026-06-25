@@ -412,6 +412,7 @@ Route::prefix('staff')
             Route::delete('/rooms/{room}/messages/{message}', [App\Http\Controllers\Staff\ChatController::class, 'deleteMessage']);
             Route::post('/rooms/{room}/messages/{message}/archive', [App\Http\Controllers\Staff\ChatController::class, 'toggleArchive']);
             Route::get('/rooms/{room}/archived', [App\Http\Controllers\Staff\ChatController::class, 'archivedMessages']);
+            Route::get('/broadcast-recipients', [App\Http\Controllers\Staff\ChatController::class, 'broadcastRecipients']);
             Route::post('/broadcast', [App\Http\Controllers\Staff\ChatController::class, 'broadcast']);
             Route::post('/quick-broadcast', [App\Http\Controllers\Staff\ChatController::class, 'quickBroadcast']);
             Route::get('/quick-broadcast-templates', [App\Http\Controllers\Staff\ChatController::class, 'quickBroadcastTemplates']);
