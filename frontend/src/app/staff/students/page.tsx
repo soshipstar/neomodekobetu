@@ -267,8 +267,16 @@ export default function StudentsPage() {
         if (!data[k]) payload[k] = null;
       }
       // 任意文字列 (空文字 → null)
-      for (const k of ['username', 'waiting_notes'] as const) {
-        if (!data[k]) payload[k] = null;
+      if (!data.waiting_notes) payload.waiting_notes = null;
+      // username は「実際に変更したときだけ」送る。
+      // 編集モーダルのログイン欄はブラウザに操作者の認証情報を自動入力されやすく、
+      // 利用日チェック等を変えただけの保存で操作者IDが混入し unique 違反(422)になる事故があった。
+      // 未変更なら送らない(巻き添え422を根絶)。明示的に空へ変えた時のみ null でクリア。
+      const origUsername = editingStudent?.username ?? '';
+      if ((data.username ?? '') === origUsername) {
+        delete payload.username;
+      } else if (!data.username) {
+        payload.username = null;
       }
       // password は未入力なら送らない (現状維持)
       if (!data.password) delete payload.password;
@@ -815,16 +823,27 @@ function StudentFormComponent({ form, updateField, guardians, onSubmit, onCancel
         <div className="border-t border-[var(--neutral-stroke-2)] pt-4">
           <h4 className="text-sm font-semibold text-[var(--neutral-foreground-1)] mb-3">生徒用ログイン設定</h4>
           <div className="rounded-lg bg-[var(--neutral-background-3)] p-3 space-y-3">
+            {/*
+              ブラウザ/パスワードマネージャが「username + password」をログインフォームと誤認し、
+              操作者(ログイン中の管理者)自身の認証情報を自動入力してしまう事故があった
+              (利用日チェックだけ変えた保存で操作者IDが生徒に混入し unique 違反422)。
+              対策: 読み込み時 readonly(自動入力をブロック)→フォーカスで解除、autocomplete無効化、
+              name を非標準にしてヒューリスティックを外す。
+            */}
             <div>
               <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">ユーザー名（半角英数字）</label>
               <input value={form.username} onChange={(e) => updateField('username', e.target.value)}
-                className={inputCls} placeholder="例: tanaka_taro" pattern="[a-zA-Z0-9_]+" />
+                className={inputCls} placeholder="例: tanaka_taro" pattern="[a-zA-Z0-9_]+"
+                name="cb-student-login-id" autoComplete="off" readOnly
+                onFocus={(e) => e.currentTarget.removeAttribute('readonly')} />
               <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">※空欄の場合、ログイン不可</p>
             </div>
             <div>
               <label className="mb-1 block text-xs text-[var(--neutral-foreground-3)]">パスワード</label>
               <input type="password" value={form.password} onChange={(e) => updateField('password', e.target.value)}
-                className={inputCls} placeholder="変更する場合のみ入力" />
+                className={inputCls} placeholder="変更する場合のみ入力"
+                name="cb-student-login-pw" autoComplete="new-password" readOnly
+                onFocus={(e) => e.currentTarget.removeAttribute('readonly')} />
               <p className="mt-1 text-xs text-[var(--neutral-foreground-4)]">※変更しない場合は空欄</p>
             </div>
           </div>
