@@ -594,6 +594,7 @@ class MonitoringController extends Controller
         $this->authorizeClassroom($request->user(), $student);
 
         $plan = IndividualSupportPlan::with('details')->findOrFail($validated['plan_id']);
+        abort_if((int) $plan->student_id !== (int) $student->id, 404);
 
         // MonitoringRecord があれば取得、なければダミーで生成
         $monitoring = MonitoringRecord::where('student_id', $student->id)

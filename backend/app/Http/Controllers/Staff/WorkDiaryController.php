@@ -93,6 +93,11 @@ class WorkDiaryController extends Controller
      */
     public function show(Request $request, WorkDiary $diary): JsonResponse
     {
+        $user = $request->user();
+        if ($user->classroom_id && !in_array($diary->classroom_id, $user->switchableClassroomIds(), true)) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
         $diary->load(['creator:id,full_name', 'updater:id,full_name']);
 
         return response()->json([
@@ -106,6 +111,11 @@ class WorkDiaryController extends Controller
      */
     public function update(Request $request, WorkDiary $diary): JsonResponse
     {
+        $user = $request->user();
+        if ($user->classroom_id && !in_array($diary->classroom_id, $user->switchableClassroomIds(), true)) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
         $validated = $request->validate([
             'previous_day_review'      => 'nullable|string',
             'daily_communication'      => 'nullable|string',

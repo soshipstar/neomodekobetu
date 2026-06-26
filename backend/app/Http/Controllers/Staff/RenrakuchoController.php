@@ -337,8 +337,26 @@ class RenrakuchoController extends Controller
     /**
      * 特定の活動の生徒記録一覧を取得
      */
+    /** 連絡帳(DailyRecord)が操作者の教室スコープ外なら403。マスター(classroom_id無し)は対象外。viewIntegrated 等と同作法。 */
+    private function denyIfRecordOutOfScope(Request $request, DailyRecord $record): ?JsonResponse
+    {
+        $user = $request->user();
+        if ($user->classroom_id) {
+            $staffClassroom = $record->staff->classroom_id ?? null;
+            if (! in_array($staffClassroom, $user->switchableClassroomIds(), true)) {
+                return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+            }
+        }
+
+        return null;
+    }
+
     public function studentRecords(Request $request, DailyRecord $record): JsonResponse
     {
+        if ($deny = $this->denyIfRecordOutOfScope($request, $record)) {
+            return $deny;
+        }
+
         $records = $record->studentRecords()
             ->with('student:id,student_name')
             ->get();
@@ -354,6 +372,10 @@ class RenrakuchoController extends Controller
      */
     public function storeStudentRecords(Request $request, DailyRecord $record): JsonResponse
     {
+        if ($deny = $this->denyIfRecordOutOfScope($request, $record)) {
+            return $deny;
+        }
+
         $validated = $request->validate([
             'student_id'               => 'required|exists:students,id',
             'health_life'              => 'nullable|string',
@@ -913,6 +935,10 @@ class RenrakuchoController extends Controller
      */
     public function generateIntegrated(Request $request, DailyRecord $record): JsonResponse
     {
+        if ($deny = $this->denyIfRecordOutOfScope($request, $record)) {
+            return $deny;
+        }
+
         $validated = $request->validate([
             'student_id' => 'required|exists:students,id',
         ]);
@@ -1176,6 +1202,10 @@ class RenrakuchoController extends Controller
      */
     public function suggestPhotos(Request $request, DailyRecord $record): JsonResponse
     {
+        if ($deny = $this->denyIfRecordOutOfScope($request, $record)) {
+            return $deny;
+        }
+
         $validated = $request->validate([
             'student_id' => 'required|integer|exists:students,id',
         ]);

@@ -184,6 +184,11 @@ class StaffEventController extends Controller
      */
     public function register(Request $request, Event $event): JsonResponse
     {
+        $user = $request->user();
+        if ($user->classroom_id && !in_array($event->classroom_id, $user->switchableClassroomIds(), true)) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
         $validated = $request->validate([
             'student_id'  => 'required|exists:students,id',
             'guardian_id' => 'nullable|exists:users,id',
