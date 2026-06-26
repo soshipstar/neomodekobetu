@@ -64,6 +64,11 @@ class AnnouncementController extends Controller
     {
         $user = $request->user();
 
+        // 自分の児童が属する教室のお知らせのみ既読化を許可 (index と同じ accessibleClassroomIds スコープ)
+        if (!in_array($announcement->classroom_id, $user->accessibleClassroomIds(), true)) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
         AnnouncementRead::updateOrCreate(
             [
                 'announcement_id' => $announcement->id,

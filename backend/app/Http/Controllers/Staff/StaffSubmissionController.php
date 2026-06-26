@@ -100,8 +100,26 @@ class StaffSubmissionController extends Controller
     /**
      * 提出物詳細を取得
      */
+    /** 提出物が操作者の教室スコープ外なら403。マスター(classroom_id無し)は対象外。index と同じ accessibleClassroomIds 判定。 */
+    private function denyIfSubmissionOutOfScope(Request $request, SubmissionRequest $submissionRequest): ?JsonResponse
+    {
+        $user = $request->user();
+        if ($user->classroom_id) {
+            $classroomId = $submissionRequest->student?->classroom_id;
+            if (! in_array($classroomId, $user->accessibleClassroomIds(), true)) {
+                return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+            }
+        }
+
+        return null;
+    }
+
     public function show(Request $request, SubmissionRequest $submissionRequest): JsonResponse
     {
+        if ($deny = $this->denyIfSubmissionOutOfScope($request, $submissionRequest)) {
+            return $deny;
+        }
+
         $submissionRequest->load(['student:id,student_name', 'guardian:id,full_name', 'creator:id,full_name']);
 
         return response()->json([
@@ -123,6 +141,12 @@ class StaffSubmissionController extends Controller
             'description' => 'nullable|string|max:2000',
             'due_date'    => 'nullable|date',
         ]);
+
+        // 対象児童が操作者の教室スコープ外なら 403 (任意児童への提出物作成を防ぐ)
+        $student = \App\Models\Student::findOrFail($validated['student_id']);
+        if ($user->classroom_id && !in_array($student->classroom_id, $user->accessibleClassroomIds(), true)) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
 
         $submission = DB::transaction(function () use ($validated, $user) {
             $submission = SubmissionRequest::create([
@@ -196,6 +220,10 @@ class StaffSubmissionController extends Controller
      */
     public function update(Request $request, SubmissionRequest $submissionRequest): JsonResponse
     {
+        if ($deny = $this->denyIfSubmissionOutOfScope($request, $submissionRequest)) {
+            return $deny;
+        }
+
         $validated = $request->validate([
             'title'          => 'sometimes|string|max:255',
             'description'    => 'nullable|string|max:2000',
@@ -229,6 +257,10 @@ class StaffSubmissionController extends Controller
      */
     public function destroy(Request $request, SubmissionRequest $submissionRequest): JsonResponse
     {
+        if ($deny = $this->denyIfSubmissionOutOfScope($request, $submissionRequest)) {
+            return $deny;
+        }
+
         $submissionRequest->delete();
 
         return response()->json([
@@ -242,11 +274,18 @@ class StaffSubmissionController extends Controller
      */
     public function students(Request $request, SubmissionRequest $submissionRequest): JsonResponse
     {
-        // 同じ提出物リクエストのタイトルで関連する生徒を取得
+        if ($deny = $this->denyIfSubmissionOutOfScope($request, $submissionRequest)) {
+            return $deny;
+        }
+
+        $user = $request->user();
+        // 同じ提出物リクエストのタイトルで関連する生徒を取得 (操作者の教室スコープに限定)
         $students = \App\Models\Student::whereHas('submissionRequests', function ($q) use ($submissionRequest) {
             $q->where('title', $submissionRequest->title)
               ->where('due_date', $submissionRequest->due_date);
-        })->get(['id', 'student_name', 'classroom_id', 'grade_level']);
+        })
+            ->when($user->classroom_id, fn ($q) => $q->whereIn('classroom_id', $user->accessibleClassroomIds()))
+            ->get(['id', 'student_name', 'classroom_id', 'grade_level']);
 
         return response()->json([
             'success' => true,

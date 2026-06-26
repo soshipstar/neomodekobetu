@@ -315,6 +315,11 @@ class ChatController extends Controller
     {
         $user = $request->user();
 
+        // アクセス権限チェック
+        if (! $this->canAccessRoom($user, $room)) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
         $existing = ChatRoomPin::where('room_id', $room->id)
             ->where('staff_id', $user->id)
             ->first();

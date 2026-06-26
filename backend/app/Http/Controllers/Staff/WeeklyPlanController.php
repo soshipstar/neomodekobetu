@@ -109,6 +109,11 @@ class WeeklyPlanController extends Controller
      */
     public function update(Request $request, WeeklyPlan $plan): JsonResponse
     {
+        $user = $request->user();
+        if ($user->classroom_id && !in_array($plan->classroom_id, $user->switchableClassroomIds(), true)) {
+            return response()->json(['success' => false, 'message' => 'アクセス権限がありません。'], 403);
+        }
+
         $validated = $request->validate([
             'plan_content'              => 'nullable|array',
             'weekly_goal'               => 'nullable|string',
