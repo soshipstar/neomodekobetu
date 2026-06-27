@@ -43,38 +43,33 @@ export default function DailyRoutinesPage() {
     },
   });
 
+  // サーバの routines から slots(編集用ローカル状態)を組み立てる。
+  // 初期化とキャンセル(編集破棄)の両方で使う。
+  const buildSlots = useCallback((rs: DailyRoutine[]): RoutineSlot[] => {
+    const activeRoutines = rs.filter((r) => r.is_active);
+    const count = Math.max(INITIAL_SLOTS, activeRoutines.length);
+    const newSlots: RoutineSlot[] = [];
+    for (let i = 0; i < count; i++) {
+      const routine = activeRoutines[i];
+      newSlots.push(routine
+        ? {
+            id: routine.id,
+            name: routine.name || '',
+            content: routine.description || '',
+            time: routine.scheduled_time || '',
+            filled: !!(routine.name && routine.name.trim()),
+          }
+        : { id: null, name: '', content: '', time: '', filled: false });
+    }
+    return newSlots;
+  }, []);
+
   // Initialize slots from fetched routines
   useEffect(() => {
     if (isLoading) return;
-
-    const activeRoutines = routines.filter((r) => r.is_active);
-    const count = Math.max(INITIAL_SLOTS, activeRoutines.length);
-    const newSlots: RoutineSlot[] = [];
-
-    for (let i = 0; i < count; i++) {
-      const routine = activeRoutines[i];
-      if (routine) {
-        newSlots.push({
-          id: routine.id,
-          name: routine.name || '',
-          content: routine.description || '',
-          time: routine.scheduled_time || '',
-          filled: !!(routine.name && routine.name.trim()),
-        });
-      } else {
-        newSlots.push({
-          id: null,
-          name: '',
-          content: '',
-          time: '',
-          filled: false,
-        });
-      }
-    }
-
-    setSlots(newSlots);
+    setSlots(buildSlots(routines));
     setInitialized(true);
-  }, [routines, isLoading]);
+  }, [routines, isLoading, buildSlots]);
 
   const saveMutation = useMutation({
     mutationFn: async (slotsToSave: RoutineSlot[]) => {
@@ -265,7 +260,12 @@ export default function DailyRoutinesPage() {
                 variant="secondary"
                 className="flex-1"
                 onClick={() => {
-                  queryClient.invalidateQueries({ queryKey: ['staff', 'daily-routines'] });
+                  // 編集中のローカル状態をサーバ値へ戻す(編集を破棄)。
+                  // 旧実装は invalidateQueries のみで、未保存時はサーバ応答が同一内容のため
+                  // React Query の構造共有で routines 参照が変わらず初期化useEffectが再実行されず、
+                  // 画面の編集が残って「キャンセルが効かない」状態だった。
+                  setSlots(buildSlots(routines));
+                  toast.success('変更を取り消しました');
                 }}
               >
                 キャンセル
