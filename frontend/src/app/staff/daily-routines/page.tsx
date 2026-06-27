@@ -106,11 +106,19 @@ export default function DailyRoutinesPage() {
     []
   );
 
-  const clearSlot = useCallback((index: number) => {
-    if (!confirm(`毎日の支援 ${index + 1} をクリアしますか？`)) return;
+  // 行を削除する(保存時に batchSave が全削除→残りを再作成するため、配列から外せばDBから消える)。
+  const removeSlot = useCallback((index: number) => {
+    if (!confirm(`毎日の支援 ${index + 1} を削除しますか？\n(「保存する」で確定します)`)) return;
+    setSlots((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  // 行を並び替える(上下入れ替え)。保存時の並び順がそのまま sort_order になる。
+  const moveSlot = useCallback((index: number, dir: -1 | 1) => {
     setSlots((prev) => {
+      const target = index + dir;
+      if (target < 0 || target >= prev.length) return prev;
       const updated = [...prev];
-      updated[index] = { id: null, name: '', content: '', time: '', filled: false };
+      [updated[index], updated[target]] = [updated[target], updated[index]];
       return updated;
     });
   }, []);
@@ -182,10 +190,28 @@ export default function DailyRoutinesPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => clearSlot(index)}
+                    onClick={() => moveSlot(index, -1)}
+                    disabled={index === 0}
+                    title="上へ移動"
+                    className="rounded p-1.5 text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-4)] disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    <MaterialIcon name="arrow_upward" size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveSlot(index, 1)}
+                    disabled={index === slots.length - 1}
+                    title="下へ移動"
+                    className="rounded p-1.5 text-[var(--neutral-foreground-3)] hover:bg-[var(--neutral-background-4)] disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    <MaterialIcon name="arrow_downward" size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeSlot(index)}
                     className="rounded bg-[var(--status-danger-fg)] px-3 py-1 text-xs font-medium text-white hover:opacity-80"
                   >
-                    クリア
+                    削除
                   </button>
                 </div>
 
