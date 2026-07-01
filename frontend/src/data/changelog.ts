@@ -24,7 +24,7 @@ export interface ChangeItem {
 }
 
 export interface Release {
-  /** 例: '2026.7.0' */
+  /** セマンティックバージョニング。例: '1.1.1' (major.minor.patch) */
   version: string;
   /** 公開日 (YYYY-MM-DD) */
   date: string;
@@ -33,8 +33,12 @@ export interface Release {
   items: ChangeItem[];
 }
 
-/** 画面に表示する現在のアプリバージョン。CHANGELOG 先頭の version と一致させる。 */
-export const APP_VERSION = '2026.7.0';
+/**
+ * 画面に表示する現在のアプリバージョン。CHANGELOG 先頭の version と一致させる。
+ * セマンティックバージョニング(major.minor.patch)。Ver.1.1.1 を起点に、
+ * 以降のリリースで数字を上げていく（大きな機能追加=minor、修正=patch を目安に）。
+ */
+export const APP_VERSION = '1.1.1';
 
 /** カテゴリの表示メタ情報（ラベル・アイコン・色）。色は globals.css の CSS 変数を使用。 */
 export const CATEGORY_META: Record<
@@ -71,7 +75,7 @@ export function filterReleasesForAudience(
 // 新しいリリースは配列の先頭に追加する（新しい順で表示される）。
 export const CHANGELOG: Release[] = [
   {
-    version: '2026.7.0',
+    version: '1.1.1',
     date: '2026-07-01',
     title: 'マニュアルの全面刷新',
     items: [
@@ -92,7 +96,7 @@ export const CHANGELOG: Release[] = [
     ],
   },
   {
-    version: '2026.6.2',
+    version: '1.1.0',
     date: '2026-06-27',
     title: '日課設定（毎日の支援）の改善',
     items: [
@@ -112,7 +116,7 @@ export const CHANGELOG: Release[] = [
     ],
   },
   {
-    version: '2026.6.1',
+    version: '1.0.1',
     date: '2026-06-26',
     title: 'セキュリティと安定性の向上',
     items: [
@@ -133,7 +137,7 @@ export const CHANGELOG: Release[] = [
     ],
   },
   {
-    version: '2026.6.0',
+    version: '1.0.0',
     date: '2026-06-25',
     title: 'ロゴの一新ほか',
     items: [

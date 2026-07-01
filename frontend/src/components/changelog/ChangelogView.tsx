@@ -47,7 +47,7 @@ export function ChangelogView({ audience, title = '更新履歴', description }:
             </span>
             <div>
               <p className="text-xs text-[var(--neutral-foreground-3)]">現在のバージョン</p>
-              <p className="text-lg font-bold text-[var(--neutral-foreground-1)]">v{APP_VERSION}</p>
+              <p className="text-lg font-bold text-[var(--neutral-foreground-1)]">Ver.{APP_VERSION}</p>
             </div>
             {latestDate && (
               <div className="ml-auto text-right">
@@ -75,7 +75,7 @@ export function ChangelogView({ audience, title = '更新履歴', description }:
               <CardBody>
                 {/* リリース見出し */}
                 <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-[var(--neutral-stroke-2)] pb-2">
-                  <span className="text-base font-bold text-[var(--brand-80)]">v{release.version}</span>
+                  <span className="text-base font-bold text-[var(--brand-80)]">Ver.{release.version}</span>
                   {release.title && (
                     <span className="text-sm font-medium text-[var(--neutral-foreground-1)]">
                       {release.title}
