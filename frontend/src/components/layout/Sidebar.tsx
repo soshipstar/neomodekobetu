@@ -78,6 +78,7 @@ const staffNav: NavItem[] = [
   { type: 'link', label: '事業所評価', href: '/staff/facility-evaluation', icon: 'analytics' },
   { type: 'link', label: '利用者一括登録', href: '/staff/bulk-register', icon: 'upload_file' },
   { type: 'link', label: 'マニュアル', href: '/staff/manual', icon: 'help_center' },
+  { type: 'link', label: '更新履歴', href: '/staff/changelog', icon: 'new_releases' },
   { type: 'link', label: 'プロフィール', href: '/staff/profile', icon: 'account_circle' },
   { type: 'divider', label: 'サポート' },
   { type: 'link', label: 'バグ報告', href: '/staff/bug-reports', icon: 'bug_report' },
@@ -98,6 +99,7 @@ const guardianNav: NavItem[] = [
   { type: 'link', label: 'モニタリング表', href: '/guardian/monitoring', icon: 'monitoring' },
   { type: 'link', label: '事業所評価', href: '/guardian/evaluation', icon: 'star' },
   { type: 'link', label: 'ご利用ガイド', href: '/guardian/manual', icon: 'help_center' },
+  { type: 'link', label: '更新のお知らせ', href: '/guardian/changelog', icon: 'new_releases' },
   { type: 'link', label: 'プロフィール', href: '/guardian/profile', icon: 'account_circle' },
   { type: 'link', label: 'パスワード変更', href: '/guardian/change-password', icon: 'lock' },
 ];
@@ -108,6 +110,7 @@ const studentNav: NavItem[] = [
   { type: 'link', label: '週間計画', href: '/student/weekly-plans', icon: 'checklist' },
   { type: 'link', label: '提出物', href: '/student/submissions', icon: 'assignment_turned_in' },
   { type: 'link', label: 'スケジュール', href: '/student/schedule', icon: 'calendar_month' },
+  { type: 'link', label: '更新のおしらせ', href: '/student/changelog', icon: 'new_releases' },
   { type: 'link', label: 'パスワード変更', href: '/student/profile', icon: 'lock' },
 ];
 
@@ -151,6 +154,7 @@ const adminNav: NavItem[] = [
   { type: 'link', label: 'セキュリティアラート', href: '/admin/security-alerts', icon: 'security', visibility: 'master_only' },
   { type: 'link', label: 'アクセスログ', href: '/admin/audit-logs', icon: 'manage_search', visibility: 'master_only' },
   { type: 'link', label: '2要素認証', href: '/admin/two-factor', icon: 'shield', visibility: 'master_only' },
+  { type: 'link', label: '更新履歴', href: '/admin/changelog', icon: 'new_releases' },
   { type: 'link', label: 'バグ報告', href: '/staff/bug-reports', icon: 'bug_report' },
 ];
 
