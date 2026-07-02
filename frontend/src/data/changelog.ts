@@ -38,7 +38,7 @@ export interface Release {
  * セマンティックバージョニング(major.minor.patch)。Ver.1.1.1 を起点に、
  * 以降のリリースで数字を上げていく（大きな機能追加=minor、修正=patch を目安に）。
  */
-export const APP_VERSION = '1.2.0';
+export const APP_VERSION = '1.3.0';
 
 /** カテゴリの表示メタ情報（ラベル・アイコン・色）。色は globals.css の CSS 変数を使用。 */
 export const CATEGORY_META: Record<
@@ -74,6 +74,20 @@ export function filterReleasesForAudience(
 
 // 新しいリリースは配列の先頭に追加する（新しい順で表示される）。
 export const CHANGELOG: Release[] = [
+  {
+    version: '1.3.0',
+    date: '2026-07-03',
+    title: 'アセスメントAI生成の時系列分析対応',
+    items: [
+      {
+        category: 'improvement',
+        audiences: ['staff'],
+        title: 'スタッフアセスメントのAI生成が、お子様の成長の変化を明記するようになりました',
+        detail:
+          '直近6か月の連絡帳を月ごとの時系列で分析するようになりました。直近の記録を「現在の様子」の基準とし、期間はじめの様子と比較して成長・改善が読み取れる場合は、その変化を時期の根拠とともにアセスメントに記載します。過去の課題が直近の記録に見られない場合も「解決した」と断定せず、事実の範囲で記述します。',
+      },
+    ],
+  },
   {
     version: '1.2.0',
     date: '2026-07-02',
