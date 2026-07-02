@@ -62,12 +62,24 @@ class AbilityObservationController extends Controller
             ? $this->questions->nextItemsFor($student, $needed, $answeredItemIds)
             : collect();
 
+        // 回答済み表示用の内訳: 誰が・何時に・どの活動で記録したか。
+        // 設問は「生徒×日」単位(1日3問)のため、同じ日の別の活動記録や別スタッフの
+        // 回答でも「本日回答済」になる。内訳を明示しないと「回答していないのに
+        // 回答済みになる」ように見えるため(現場報告)、出所を返して画面に表示する。
+        $recorderNames = \App\Models\User::whereIn('id', $todayObs->pluck('recorded_by')->filter()->unique())
+            ->pluck('full_name', 'id');
+        $activityNames = \App\Models\DailyRecord::whereIn('id', $todayObs->pluck('daily_record_id')->filter()->unique())
+            ->pluck('activity_name', 'id');
+
         $questions = [];
         // 未回答(これから答える問い)を先に
         foreach ($fillItems as $it) {
             $q = $this->questions->buildQuestion($student, $it);
             $q['answered'] = false;
             $q['answered_degree'] = null;
+            $q['answered_at'] = null;
+            $q['answered_by'] = null;
+            $q['answered_in'] = null;
             $questions[] = $q;
         }
         // 今日回答済み(結果表示)。回答時の学年帯で表示する。
@@ -79,6 +91,9 @@ class AbilityObservationController extends Controller
             $q = $this->questions->buildQuestion($student, $item, $obs->axis_id);
             $q['answered'] = true;
             $q['answered_degree'] = $obs->degree;
+            $q['answered_at'] = $obs->created_at?->format('H:i');
+            $q['answered_by'] = $obs->recorded_by ? ($recorderNames[$obs->recorded_by] ?? null) : null;
+            $q['answered_in'] = $obs->daily_record_id ? ($activityNames[$obs->daily_record_id] ?? null) : null;
             $questions[] = $q;
         }
 

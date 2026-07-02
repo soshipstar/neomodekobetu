@@ -20,6 +20,11 @@ interface Question {
   hint: string | null;
   answered: boolean;
   answered_degree: number | null;
+  /** 回答済みの内訳(誰が・何時に・どの活動で)。同日の別活動/別スタッフの回答でも
+      「本日回答済」になる仕様のため、出所を明示して誤解を防ぐ。 */
+  answered_at?: string | null;
+  answered_by?: string | null;
+  answered_in?: string | null;
 }
 
 interface SupportCode {
@@ -168,6 +173,13 @@ function AbilityQuestionItem({ question, supportCodes, results, studentId, daily
     const label = shownDegree !== null
       ? (DEGREE_OPTIONS.find((d) => d.score === shownDegree)?.label ?? `該当度 ${shownDegree}`)
       : null;
+    // 記録の出所(誰が・何時に・どの活動で)。設問は生徒×日単位のため、
+    // 同じ日の別の活動記録や別スタッフの回答でも「本日記録済み」になる。
+    const sourceParts: string[] = [];
+    if (question.answered_at) sourceParts.push(`本日 ${question.answered_at}`);
+    if (question.answered_by) sourceParts.push(`${question.answered_by} さんが記録`);
+    if (question.answered_in) sourceParts.push(`活動「${question.answered_in}」にて`);
+    const sourceText = question.answered ? sourceParts.join(' / ') : '';
     return (
       <div className="rounded-md border border-[var(--neutral-stroke-2)] bg-[var(--neutral-background-1)] p-2 text-sm">
         <div className="flex items-center gap-2 text-[var(--neutral-foreground-2)]">
@@ -178,6 +190,9 @@ function AbilityQuestionItem({ question, supportCodes, results, studentId, daily
           <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">{question.question}</p>
         )}
         {label && <p className="mt-1 text-[var(--neutral-foreground-1)]">回答: {label}</p>}
+        {sourceText && (
+          <p className="mt-1 text-xs text-[var(--neutral-foreground-3)]">記録: {sourceText}</p>
+        )}
       </div>
     );
   }

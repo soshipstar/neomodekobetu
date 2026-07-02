@@ -291,6 +291,57 @@ class AbilityObservationFlowTest extends TestCase
         $this->assertSame(6, $ans['answered_degree']);
     }
 
+    /**
+     * 現場報告: 設問は「生徒×日」単位(1日3問)のため、同じ日の別の活動記録や
+     * 別スタッフの回答でも「本日回答済」表示になる。誰が・何時に・どの活動で
+     * 記録したか(出所)を返し、画面で明示して「回答していないのに回答済み」と
+     * 見える誤解を防ぐ。
+     */
+    public function test_answered_question_includes_source_breakdown(): void
+    {
+        $company = Company::create(['name' => '企業A']);
+        $room = Classroom::create([
+            'classroom_name' => '事業所A', 'company_id' => $company->id,
+            'is_active' => true, 'ability_assessment_enabled' => true,
+        ]);
+        $staffA = $this->staff($room);
+        $staffB = User::create([
+            'username' => 'staff_ab_' . uniqid(), 'password' => bcrypt('p'), 'full_name' => '別スタッフB',
+            'user_type' => 'staff', 'classroom_id' => $room->id, 'is_active' => true,
+        ]);
+        $student = Student::create([
+            'student_name' => '児A', 'classroom_id' => $room->id, 'grade_level' => 'elementary_5',
+            'status' => 'active', 'is_active' => true,
+        ]);
+        $record = \App\Models\DailyRecord::create([
+            'record_date' => Carbon::today()->toDateString(), 'staff_id' => $staffB->id,
+            'classroom_id' => $room->id, 'activity_name' => '朝の活動', 'common_activity' => '共通',
+        ]);
+
+        // 別スタッフBが「朝の活動」の画面から回答
+        $this->actingAs($staffB, 'sanctum')->postJson('/api/staff/ability/observations', [
+            'student_id' => $student->id, 'item_id' => 'DEV-1-1', 'degree' => 6,
+            'daily_record_id' => $record->id,
+        ])->assertStatus(201);
+
+        // スタッフAが(同日の別画面で)設問を取得 → 回答済みに出所が付く
+        $q = $this->actingAs($staffA, 'sanctum')
+            ->getJson("/api/staff/ability/students/{$student->id}/next-question");
+        $q->assertStatus(200);
+        $ans = collect($q->json('data.questions'))->firstWhere('answered', true);
+        $this->assertNotNull($ans);
+        $this->assertSame('別スタッフB', $ans['answered_by']);
+        $this->assertSame('朝の活動', $ans['answered_in']);
+        $this->assertMatchesRegularExpression('/^\d{2}:\d{2}$/', (string) $ans['answered_at']);
+
+        // 未回答の設問には出所フィールドが null で揃う(UI契約)
+        $unanswered = collect($q->json('data.questions'))->firstWhere('answered', false);
+        $this->assertNotNull($unanswered);
+        $this->assertNull($unanswered['answered_by']);
+        $this->assertNull($unanswered['answered_in']);
+        $this->assertNull($unanswered['answered_at']);
+    }
+
     public function test_disabled_classroom_returns_409_and_cross_classroom_403(): void
     {
         $company = Company::create(['name' => '企業A']);
