@@ -489,7 +489,9 @@ export default function GuardianDashboardPage() {
                 borderColor="border-l-blue-500"
                 bgColor="bg-[var(--brand-160)]"
                 textColor="text-[var(--brand-70)]"
-                link="/guardian/assessment"
+                // 現場報告: 「確認する」で入力ページに飛ぶと何をすべきか分かりにくい。
+                // 事業所アセスメントの閲覧・確認操作は履歴ページにあるため、そちらへ誘導する。
+                link="/guardian/assessment-history"
                 linkText="確認する"
               >
                 <p>
