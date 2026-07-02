@@ -38,7 +38,7 @@ export interface Release {
  * セマンティックバージョニング(major.minor.patch)。Ver.1.1.1 を起点に、
  * 以降のリリースで数字を上げていく（大きな機能追加=minor、修正=patch を目安に）。
  */
-export const APP_VERSION = '1.3.1';
+export const APP_VERSION = '1.3.2';
 
 /** カテゴリの表示メタ情報（ラベル・アイコン・色）。色は globals.css の CSS 変数を使用。 */
 export const CATEGORY_META: Record<
@@ -74,6 +74,27 @@ export function filterReleasesForAudience(
 
 // 新しいリリースは配列の先頭に追加する（新しい順で表示される）。
 export const CHANGELOG: Release[] = [
+  {
+    version: '1.3.2',
+    date: '2026-07-03',
+    title: '計画書の印刷とアセスメント確認導線の改善',
+    items: [
+      {
+        category: 'fix',
+        audiences: ['staff'],
+        title: '個別支援計画プレビューの「印刷する」が途中で切れる問題を修正しました',
+        detail:
+          '「印刷する」ボタンで印刷すると内容が途中で区切られてしまう問題を修正しました。PDFダウンロードと同じ内容がそのまま印刷されるようになります。',
+      },
+      {
+        category: 'improvement',
+        audiences: ['guardian'],
+        title: 'ホーム画面の「スタッフからのアセスメント」の確認ボタンの行き先を分かりやすくしました',
+        detail:
+          '「確認する」を押すと、これまではアセスメント入力ページが開いていましたが、事業所が作成したアセスメントを確認できる「アセスメント履歴」ページが開くようになりました。',
+      },
+    ],
+  },
   {
     version: '1.3.1',
     date: '2026-07-03',
