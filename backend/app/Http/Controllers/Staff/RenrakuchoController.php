@@ -224,23 +224,50 @@ class RenrakuchoController extends Controller
                 return $record;
             });
         } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
-            // 二重送信耐性: (record_date, staff_id, activity_name) のユニーク制約違反は
-            // 「保存」ボタンの連打や再送信によるもの。既存レコードを冪等的に返す。
+            // (record_date, staff_id, activity_name) のユニーク制約違反。
+            // 「保存」連打による二重送信のほか、"同じ活動名のまま別の生徒を後から
+            // 追加する" ケースもここに到達する。後者で今回入力した生徒記録を
+            // 取りこぼすと「保存成功と表示されるのに記録が出てこない」データ欠落に
+            // なるため、既存レコードへ生徒記録をマージする。
+            // daily_record_id + student_id の updateOrCreate なので、真の二重送信
+            // (同一生徒) では既存 student_record を上書きするだけで重複は増えない。
             $existing = DailyRecord::where('record_date', $validated['record_date'])
                 ->where('staff_id', $request->user()->id)
                 ->where('activity_name', $validated['activity_name'])
                 ->first();
 
-            if ($existing) {
-                return response()->json([
-                    'success'    => true,
-                    'data'       => $existing->load('studentRecords'),
-                    'message'    => '既に同じ活動が保存されています。',
-                    'duplicated' => true,
-                ], 200);
+            if (! $existing) {
+                throw $e;
             }
 
-            throw $e;
+            DB::transaction(function () use ($existing, $validated) {
+                foreach ($validated['students'] as $studentData) {
+                    $studentData = $this->mapLegacyDomainFields($studentData);
+
+                    StudentRecord::updateOrCreate(
+                        [
+                            'daily_record_id' => $existing->id,
+                            'student_id'      => $studentData['id'],
+                        ],
+                        [
+                            'health_life'            => $studentData['health_life'] ?? null,
+                            'motor_sensory'          => $studentData['motor_sensory'] ?? null,
+                            'cognitive_behavior'     => $studentData['cognitive_behavior'] ?? null,
+                            'language_communication' => $studentData['language_communication'] ?? null,
+                            'social_relations'       => $studentData['social_relations'] ?? null,
+                            'notes'                  => $studentData['notes'] ?? null,
+                            'domain_goal_quotes'     => $studentData['domain_goal_quotes'] ?? null,
+                        ]
+                    );
+                }
+            });
+
+            return response()->json([
+                'success'    => true,
+                'data'       => $existing->load('studentRecords'),
+                'message'    => '活動を保存しました。',
+                'duplicated' => true,
+            ], 200);
         }
 
         // AI学習基盤(S4b): 活動(実施プログラム)を自動分類して蓄積(活動メタ。同意ゲート対象外)。
