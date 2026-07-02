@@ -135,6 +135,98 @@ class RecordDistillationServiceTest extends TestCase
         }
     }
 
+    public function test_月別グループ化はチャンクが月をまたがず月ラベル付きで時系列順になる(): void
+    {
+        // 1月30件 + 2月30件 (chunkSize 40)。月別でなければ 40+20 の2チャンクで月が混ざる。
+        // 月別なら「1月30件」「2月30件」の2チャンクに分かれ、各チャンクは単一月のみを含む。
+        $records = [];
+        for ($i = 0; $i < 30; $i++) {
+            $day = str_pad((string) (($i % 28) + 1), 2, '0', STR_PAD_LEFT);
+            $records[] = $this->fakeRecord("2026-02-{$day}", ['health_life' => "FEB{$i}-健康"]);
+        }
+        for ($i = 0; $i < 30; $i++) {
+            $day = str_pad((string) (($i % 28) + 1), 2, '0', STR_PAD_LEFT);
+            $records[] = $this->fakeRecord("2026-01-{$day}", ['health_life' => "JAN{$i}-健康"]);
+        }
+        // わざと新しい月(2月)を先に渡す → サービス側で古い月→新しい月に整列されるはず
+
+        $prompts = [];
+        $seen = [];
+        $summarizer = function (string $maskedPrompt) use (&$prompts, &$seen): array {
+            $prompts[] = $maskedPrompt;
+            if (preg_match_all('/(JAN|FEB)(\d+)-/', $maskedPrompt, $m, PREG_SET_ORDER)) {
+                foreach ($m as $hit) {
+                    $seen[$hit[1] . $hit[2]] = true;
+                }
+            }
+
+            return ['{"health_life":"月チャンク要約"}', 10, 5];
+        };
+
+        $svc = new RecordDistillationService();
+        $res = $svc->distillByDomain(
+            $this->createMock(Student::class),
+            $records,
+            $this->passthroughMasker(),
+            $summarizer,
+            chunkSize: 40,
+            rawThreshold: 24,
+            groupByMonth: true,
+        );
+
+        // 取りこぼしゼロは月別でも維持
+        $this->assertCount(60, $seen, '月別グループ化で連絡帳の取りこぼしが発生');
+
+        // 月をまたぐチャンクが無い(各プロンプトは単一月の日付のみを含む)
+        $this->assertSame(2, $res['chunks'], '1月30件/2月30件は月別に2チャンクになるはず');
+        foreach ($prompts as $p) {
+            $hasJan = str_contains($p, '2026-01');
+            $hasFeb = str_contains($p, '2026-02');
+            $this->assertFalse($hasJan && $hasFeb, 'チャンクが月をまたいでいる(時間構造が壊れる)');
+        }
+
+        // 要約に月ラベルが付き、古い月→新しい月の順に並ぶ
+        $digest = $res['digests']['health_life'];
+        $this->assertStringContainsString('【2026年1月】', $digest);
+        $this->assertStringContainsString('【2026年2月】', $digest);
+        $this->assertLessThan(
+            strpos($digest, '【2026年2月】'),
+            strpos($digest, '【2026年1月】'),
+            '月ラベルが時系列順(古い→新しい)になっていない'
+        );
+    }
+
+    public function test_月別グループ化の小規模は生データが時系列順に並ぶ(): void
+    {
+        // rawThreshold 以下: AI要約なしで全文。新しい日付を先に渡しても古い順に整列される。
+        $records = [
+            $this->fakeRecord('2026-06-10', ['health_life' => '6月の記録']),
+            $this->fakeRecord('2026-01-05', ['health_life' => '1月の記録']),
+        ];
+
+        $called = false;
+        $svc = new RecordDistillationService();
+        $res = $svc->distillByDomain(
+            $this->createMock(Student::class),
+            $records,
+            $this->passthroughMasker(),
+            function () use (&$called): array {
+                $called = true;
+
+                return ['{}', 0, 0];
+            },
+            groupByMonth: true,
+        );
+
+        $this->assertFalse($called);
+        $digest = $res['digests']['health_life'];
+        $this->assertLessThan(
+            strpos($digest, '6月の記録'),
+            strpos($digest, '1月の記録'),
+            '小規模(生データ)でも古い→新しいの時系列順になるべき'
+        );
+    }
+
     public function test_toPromptTextは指定領域のみ出力する(): void
     {
         $svc = new RecordDistillationService();

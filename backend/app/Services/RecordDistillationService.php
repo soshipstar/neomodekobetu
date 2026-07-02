@@ -43,6 +43,10 @@ class RecordDistillationService
      * @param  iterable  $records     dailyRecord をロード済みの StudentRecord 群(全件)
      * @param  callable|null  $summarizer  fn(string $maskedPrompt): array{0:string,1:int,2:int}
      *                                      (本文, 入力トークン, 出力トークン)。null で実AI。
+     * @param  bool  $groupByMonth  true で時系列(月別)構造の蒸留にする。
+     *   記録を古い月→新しい月に整列し、チャンクが月をまたがないよう分割して
+     *   各要約に【YYYY年M月】ラベルを付ける。アセスメントの「直近重視＋変化(成長)の
+     *   明記」を確実にするための時間構造。false は従来どおり(呼び出し元互換)。
      * @return array{
      *   digests: array<string,string>, counts: array<string,int>,
      *   source_count: int, input_tokens: int, output_tokens: int, chunks: int
@@ -54,9 +58,14 @@ class RecordDistillationService
         PiiMasker $masker,
         ?callable $summarizer = null,
         int $chunkSize = 50,
-        int $rawThreshold = 24
+        int $rawThreshold = 24,
+        bool $groupByMonth = false
     ): array {
         $records = collect($records)->values();
+        if ($groupByMonth) {
+            // 時系列構造: 古い→新しい順に整列(日付文字列は Y-m-d 前提で辞書順=時系列順)
+            $records = $records->sortBy(fn ($r) => $this->recordDate($r))->values();
+        }
         $counts = array_fill_keys(array_keys(self::DOMAINS), 0);
         $emptyDigests = array_fill_keys(array_keys(self::DOMAINS), '');
 
@@ -98,14 +107,36 @@ class RecordDistillationService
         $summarizer ??= fn (string $p) => $this->summarizeChunk($p);
 
         // レコード単位でチャンク化。各レコードは必ず1チャンクに入る = 取りこぼしゼロ。
+        // groupByMonth 時はチャンクが月をまたがないよう「月ごと」に区切ってから分割し、
+        // 各チャンク要約に月ラベルを付けて時間構造を保存する。
+        $chunkGroups = [];
+        if ($groupByMonth) {
+            $byMonth = collect($usable)
+                ->groupBy(function ($r) {
+                    $d = $this->recordDate($r);
+
+                    return $d !== '' ? substr($d, 0, 7) : '';
+                })
+                ->sortKeys();
+            foreach ($byMonth as $month => $group) {
+                foreach ($group->chunk($chunkSize) as $chunk) {
+                    $chunkGroups[] = ['label' => $this->monthLabel((string) $month), 'records' => $chunk];
+                }
+            }
+        } else {
+            foreach (collect($usable)->chunk($chunkSize) as $chunk) {
+                $chunkGroups[] = ['label' => null, 'records' => $chunk];
+            }
+        }
+
         $partials = array_fill_keys(array_keys(self::DOMAINS), []);
         $inTok = 0;
         $outTok = 0;
         $nChunks = 0;
 
-        foreach (collect($usable)->chunk($chunkSize) as $chunk) {
+        foreach ($chunkGroups as $chunkGroup) {
             $byDomain = [];
-            foreach ($chunk as $r) {
+            foreach ($chunkGroup['records'] as $r) {
                 $date = $this->recordDate($r);
                 foreach (self::DOMAINS as $col => $label) {
                     $val = $r->{$col} ?? null;
@@ -118,6 +149,7 @@ class RecordDistillationService
                 continue;
             }
             $nChunks++;
+            $prefix = $chunkGroup['label'] !== null ? "【{$chunkGroup['label']}】\n" : '';
 
             [$content, $i, $o] = $summarizer($masker->mask($this->chunkPrompt($byDomain)));
             $inTok += (int) $i;
@@ -127,14 +159,14 @@ class RecordDistillationService
             if (is_array($data)) {
                 foreach (self::DOMAINS as $col => $label) {
                     if (! empty($data[$col])) {
-                        $partials[$col][] = trim((string) $data[$col]);
+                        $partials[$col][] = $prefix . trim((string) $data[$col]);
                     }
                 }
             } else {
                 // 要約失敗時は当該チャンクの生記録を残す(取りこぼし防止のフォールバック)
                 Log::warning('RecordDistillation: chunk summary parse failed; keeping raw records');
                 foreach ($byDomain as $col => $lines) {
-                    $partials[$col][] = implode("\n", $lines);
+                    $partials[$col][] = $prefix . implode("\n", $lines);
                 }
             }
         }
@@ -173,6 +205,16 @@ class RecordDistillationService
         $d = $record->dailyRecord?->record_date ?? null;
 
         return $d ? (string) $d : '';
+    }
+
+    /** 'YYYY-MM' → 'YYYY年M月'。日付が取れない場合は '日付不明'。 */
+    private function monthLabel(string $yearMonth): string
+    {
+        if (preg_match('/^(\d{4})-(\d{2})$/', $yearMonth, $m)) {
+            return $m[1] . '年' . (int) $m[2] . '月';
+        }
+
+        return '日付不明';
     }
 
     /**
