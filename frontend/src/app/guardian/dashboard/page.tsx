@@ -573,6 +573,9 @@ export default function GuardianDashboardPage() {
             )}
 
             {/* Submissions */}
+            {/* 現場報告: 旧リンク先(/guardian/assessment)では何を提出すべきか分からない。
+                保護者向けの提出物一覧ページは無いため、アラート内に明細(誰の・何を・期限)を
+                直接表示し、誤誘導リンクは撤去する。 */}
             {(overdueSubmissions.length > 0 || urgentSubmissions.length > 0) && (
               <AlertCard
                 icon={<MaterialIcon name="upload" size={20} />}
@@ -580,13 +583,19 @@ export default function GuardianDashboardPage() {
                 borderColor="border-l-red-500"
                 bgColor="bg-red-50"
                 textColor="text-red-700"
-                link="/guardian/assessment"
-                linkText="提出物を確認する"
               >
                 {overdueSubmissions.length > 0 && (
                   <div className="mb-1 text-red-600">
                     <span className="font-semibold">{overdueSubmissions.length}件</span>
                     が期限を過ぎています
+                    <ul className="mt-1 list-disc pl-5 text-xs">
+                      {overdueSubmissions.map((s) => (
+                        <li key={s.id}>
+                          {s.student_name}さん「{s.title}」（期限:{' '}
+                          {formatDate(s.due_date, 'yyyy/MM/dd')}）
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
                 {urgentSubmissions.length > 0 && (
@@ -595,6 +604,14 @@ export default function GuardianDashboardPage() {
                       {urgentSubmissions.length}件
                     </span>
                     の提出期限が近づいています（3日以内）
+                    <ul className="mt-1 list-disc pl-5 text-xs text-[var(--neutral-foreground-3)]">
+                      {urgentSubmissions.map((s) => (
+                        <li key={s.id}>
+                          {s.student_name}さん「{s.title}」（期限:{' '}
+                          {formatDate(s.due_date, 'yyyy/MM/dd')}）
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
               </AlertCard>
@@ -1356,8 +1373,9 @@ function AlertCard({
   borderColor: string;
   bgColor: string;
   textColor: string;
-  link: string;
-  linkText: string;
+  /** 遷移先が無いアラート(例: 提出物はカード内に明細を表示)はリンクを省略できる */
+  link?: string;
+  linkText?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -1367,12 +1385,14 @@ function AlertCard({
         {title}
       </div>
       <div className="text-sm text-[var(--neutral-foreground-2)]">{children}</div>
-      <Link
-        href={link}
-        className={`mt-2 inline-flex items-center gap-1 text-xs font-medium ${textColor} hover:underline`}
-      >
-        {linkText} <MaterialIcon name="arrow_forward" size={12} />
-      </Link>
+      {link && linkText && (
+        <Link
+          href={link}
+          className={`mt-2 inline-flex items-center gap-1 text-xs font-medium ${textColor} hover:underline`}
+        >
+          {linkText} <MaterialIcon name="arrow_forward" size={12} />
+        </Link>
+      )}
     </div>
   );
 }
