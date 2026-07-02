@@ -38,7 +38,7 @@ export interface Release {
  * セマンティックバージョニング(major.minor.patch)。Ver.1.1.1 を起点に、
  * 以降のリリースで数字を上げていく（大きな機能追加=minor、修正=patch を目安に）。
  */
-export const APP_VERSION = '1.3.2';
+export const APP_VERSION = '1.3.3';
 
 /** カテゴリの表示メタ情報（ラベル・アイコン・色）。色は globals.css の CSS 変数を使用。 */
 export const CATEGORY_META: Record<
@@ -74,6 +74,20 @@ export function filterReleasesForAudience(
 
 // 新しいリリースは配列の先頭に追加する（新しい順で表示される）。
 export const CHANGELOG: Release[] = [
+  {
+    version: '1.3.3',
+    date: '2026-07-03',
+    title: '提出物のお知らせの改善',
+    items: [
+      {
+        category: 'improvement',
+        audiences: ['guardian'],
+        title: 'ホーム画面の「提出物」のお知らせに、提出物の内容を表示するようにしました',
+        detail:
+          '期限が近い・期限を過ぎた提出物について、お子様のお名前・提出物の名前・提出期限をお知らせの中に直接表示するようになりました。何を提出すればよいかがホーム画面だけで分かります。',
+      },
+    ],
+  },
   {
     version: '1.3.2',
     date: '2026-07-03',
