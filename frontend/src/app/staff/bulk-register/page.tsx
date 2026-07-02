@@ -13,8 +13,11 @@ import { MaterialIcon } from '@/components/ui/MaterialIcon';
 
 interface ParsedRow {
   row_number: number;
+  classroom_name?: string;
   guardian_name: string;
+  guardian_name_kana: string;
   student_name: string;
+  student_name_kana: string;
   birth_date: string;
   guardian_email: string;
   support_start_date: string;
@@ -31,10 +34,10 @@ interface BulkResult {
   errors: { row: number; message: string }[];
 }
 
-const csvTemplate = `教室名,保護者氏名,生徒氏名,生年月日,保護者メールアドレス,支援開始日,学年調整,月,火,水,木,金,土
-かけはし,山田花子,山田太郎,2015-04-01,hanako@example.com,2025-04-01,0,1,1,1,1,1,0
-かけはしシンプル,山田花子,山田次郎,2017-06-15,,,0,1,0,1,0,1,0
-かけはし,鈴木美子,鈴木一郎,2016-08-15,yoshiko@example.com,2025-04-01,0,1,1,1,1,1,0`;
+const csvTemplate = `教室名,保護者氏名,保護者氏名(ふりがな),生徒氏名,生徒氏名(ふりがな),生年月日,保護者メールアドレス,支援開始日,学年調整,月,火,水,木,金,土
+かけはし,山田花子,やまだはなこ,山田太郎,やまだたろう,2015-04-01,hanako@example.com,2025-04-01,0,1,1,1,1,1,0
+かけはしシンプル,山田花子,やまだはなこ,山田次郎,やまだじろう,2017-06-15,,,0,1,0,1,0,1,0
+かけはし,鈴木美子,すずきよしこ,鈴木一郎,すずきいちろう,2016-08-15,yoshiko@example.com,2025-04-01,0,1,1,1,1,1,0`;
 
 export default function BulkRegisterPage() {
   const toast = useToast();
@@ -104,7 +107,9 @@ export default function BulkRegisterPage() {
     { key: 'row_number', label: '行' },
     { key: 'classroom_name', label: '教室' },
     { key: 'guardian_name', label: '保護者氏名' },
+    { key: 'guardian_name_kana', label: '保護者氏名（ふりがな）' },
     { key: 'student_name', label: '生徒氏名' },
+    { key: 'student_name_kana', label: '生徒氏名（ふりがな）' },
     { key: 'birth_date', label: '生年月日' },
     { key: 'grade_level', label: '学年' },
     { key: 'guardian_email', label: 'メール' },
@@ -159,7 +164,9 @@ export default function BulkRegisterPage() {
                         <ul className="list-disc pl-5 text-xs text-[var(--neutral-foreground-3)] space-y-0.5">
                           <li><strong>教室名</strong>（省略時はログイン中の教室に登録）</li>
                           <li><strong>保護者氏名</strong>（必須）</li>
+                          <li><strong>保護者氏名（ふりがな）</strong>（任意）</li>
                           <li><strong>生徒氏名</strong>（必須）</li>
+                          <li><strong>生徒氏名（ふりがな）</strong>（任意）</li>
                           <li><strong>生年月日</strong>（必須、YYYY-MM-DD形式）</li>
                           <li><strong>保護者メールアドレス</strong>（任意）</li>
                           <li><strong>支援開始日</strong>（任意、YYYY-MM-DD形式）</li>
@@ -231,7 +238,9 @@ export default function BulkRegisterPage() {
                 <tbody className="divide-y divide-[var(--neutral-stroke-3)]">
                   <tr><td className="px-3 py-2">教室名</td><td className="px-3 py-2"><Badge variant="warning">任意</Badge></td><td className="px-3 py-2">テキスト（省略時はログイン教室）</td><td className="px-3 py-2">かけはし</td></tr>
                   <tr><td className="px-3 py-2">保護者氏名</td><td className="px-3 py-2"><Badge variant="danger">必須</Badge></td><td className="px-3 py-2">テキスト</td><td className="px-3 py-2">山田花子</td></tr>
+                  <tr><td className="px-3 py-2">保護者氏名（ふりがな）</td><td className="px-3 py-2"><Badge variant="warning">任意</Badge></td><td className="px-3 py-2">テキスト（ひらがな）</td><td className="px-3 py-2">やまだはなこ</td></tr>
                   <tr><td className="px-3 py-2">生徒氏名</td><td className="px-3 py-2"><Badge variant="danger">必須</Badge></td><td className="px-3 py-2">テキスト</td><td className="px-3 py-2">山田太郎</td></tr>
+                  <tr><td className="px-3 py-2">生徒氏名（ふりがな）</td><td className="px-3 py-2"><Badge variant="warning">任意</Badge></td><td className="px-3 py-2">テキスト（ひらがな）</td><td className="px-3 py-2">やまだたろう</td></tr>
                   <tr><td className="px-3 py-2">生年月日</td><td className="px-3 py-2"><Badge variant="danger">必須</Badge></td><td className="px-3 py-2">YYYY-MM-DD</td><td className="px-3 py-2">2015-04-01</td></tr>
                   <tr><td className="px-3 py-2">保護者メールアドレス</td><td className="px-3 py-2"><Badge variant="warning">任意</Badge></td><td className="px-3 py-2">メールアドレス</td><td className="px-3 py-2">hanako@example.com</td></tr>
                   <tr><td className="px-3 py-2">支援開始日</td><td className="px-3 py-2"><Badge variant="warning">任意</Badge></td><td className="px-3 py-2">YYYY-MM-DD</td><td className="px-3 py-2">2025-04-01</td></tr>

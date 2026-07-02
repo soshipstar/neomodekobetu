@@ -53,6 +53,63 @@ class BulkRegisterController extends Controller
      * CSV形式: 教室名,保護者氏名,生徒氏名,生年月日,保護者メール,支援開始日,学年調整,月,火,水,木,金,土
      * 教室名列が省略された旧形式（12列）も後方互換で受け付ける
      */
+    /**
+     * CSVヘッダー行から「フィールドキー → 列インデックス」の対応表を作る。
+     * 認識できた列のみ格納する（ふりがな等の任意列に対応、列順は不問）。
+     */
+    private function buildHeaderMap(array $headerCells): array
+    {
+        $map = [];
+        foreach ($headerCells as $index => $cell) {
+            $key = $this->classifyHeader((string) $cell);
+            if ($key !== null && ! isset($map[$key])) {
+                $map[$key] = $index;
+            }
+        }
+        return $map;
+    }
+
+    /**
+     * ヘッダーセル名を正規化し、対応するフィールドキーを返す（不明なら null）。
+     * 「保護者氏名（ふりがな）」「生徒氏名(ふりがな)」等の任意列に対応する。
+     */
+    private function classifyHeader(string $header): ?string
+    {
+        // 空白・全半角括弧・引用符を除去して判定
+        $n = str_replace([' ', '　', '（', '）', '(', ')', '"'], '', trim($header));
+        if ($n === '') {
+            return null;
+        }
+
+        $isKana = str_contains($n, 'ふりがな') || str_contains($n, 'フリガナ')
+            || str_contains($n, 'かな') || str_contains($n, 'カナ');
+
+        if (str_contains($n, 'メール') || stripos($n, 'mail') !== false) {
+            return 'guardian_email';
+        }
+        if (str_contains($n, '生年月日') || str_contains($n, '誕生')) {
+            return 'birth_date';
+        }
+        if (str_contains($n, '支援開始')) {
+            return 'support_start_date';
+        }
+        if (str_contains($n, '学年')) {
+            return 'grade_adjustment';
+        }
+        if (str_contains($n, '教室')) {
+            return 'classroom';
+        }
+        if (str_contains($n, '保護者')) {
+            return $isKana ? 'guardian_name_kana' : 'guardian_name';
+        }
+        if (str_contains($n, '生徒') || str_contains($n, '児童')) {
+            return $isKana ? 'student_name_kana' : 'student_name';
+        }
+
+        $dayMap = ['月' => 'day_mon', '火' => 'day_tue', '水' => 'day_wed', '木' => 'day_thu', '金' => 'day_fri', '土' => 'day_sat'];
+        return $dayMap[$n] ?? null;
+    }
+
     public function parse(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -80,8 +137,16 @@ class BulkRegisterController extends Controller
             return response()->json(['success' => false, 'message' => 'ヘッダー行とデータ行が必要です。'], 422);
         }
 
-        // ヘッダー行をスキップ
-        $header = str_getcsv(array_shift($lines), ',');
+        // ヘッダー行を取得し、列名で項目を対応付ける（ふりがな等の任意列・列順に対応）。
+        $headerCells = str_getcsv(array_shift($lines), ',');
+        if (count($headerCells) === 1) {
+            $headerCells = str_getcsv((string) ($headerCells[0] ?? ''), "\t");
+        }
+        $colMap = $this->buildHeaderMap($headerCells);
+        // 「保護者氏名」または「生徒氏名」をヘッダーで認識できればヘッダー方式、
+        // できなければ従来の列位置方式にフォールバックする（旧CSV互換）。
+        $useHeader = isset($colMap['guardian_name']) || isset($colMap['student_name']);
+
         $parsed = [];
         $dayLabels = ['月', '火', '水', '木', '金', '土'];
 
@@ -102,23 +167,47 @@ class BulkRegisterController extends Controller
                 $cols = str_getcsv($line, "\t");
             }
 
-            // 13列以上 = 新形式（教室名あり）、12列以下 = 旧形式
-            $hasClassroomCol = count($cols) >= 13;
-            $offset = $hasClassroomCol ? 1 : 0;
-            $classroomName   = $hasClassroomCol ? trim($cols[0] ?? '') : '';
-
-            $guardianName    = trim($cols[$offset + 0] ?? '');
-            $studentName     = trim($cols[$offset + 1] ?? '');
-            $birthDate       = trim($cols[$offset + 2] ?? '');
-            $guardianEmail   = trim($cols[$offset + 3] ?? '');
-            $supportStartDate = trim($cols[$offset + 4] ?? '');
-            $gradeAdjustment = isset($cols[$offset + 5]) && $cols[$offset + 5] !== '' ? (int) $cols[$offset + 5] : 0;
-            $scheduledMon    = (int) ($cols[$offset + 6] ?? 0);
-            $scheduledTue    = (int) ($cols[$offset + 7] ?? 0);
-            $scheduledWed    = (int) ($cols[$offset + 8] ?? 0);
-            $scheduledThu    = (int) ($cols[$offset + 9] ?? 0);
-            $scheduledFri    = (int) ($cols[$offset + 10] ?? 0);
-            $scheduledSat    = (int) ($cols[$offset + 11] ?? 0);
+            if ($useHeader) {
+                // ヘッダー名で対応付け（列順・任意列に強い。ふりがな対応）
+                $get = function (string $key) use ($colMap, $cols): string {
+                    return isset($colMap[$key]) ? trim((string) ($cols[$colMap[$key]] ?? '')) : '';
+                };
+                $classroomName    = $get('classroom');
+                $guardianName     = $get('guardian_name');
+                $guardianNameKana = $get('guardian_name_kana');
+                $studentName      = $get('student_name');
+                $studentNameKana  = $get('student_name_kana');
+                $birthDate        = $get('birth_date');
+                $guardianEmail    = $get('guardian_email');
+                $supportStartDate = $get('support_start_date');
+                $gradeAdjustment  = $get('grade_adjustment') !== '' ? (int) $get('grade_adjustment') : 0;
+                $scheduledMon     = (int) ($get('day_mon') ?: 0);
+                $scheduledTue     = (int) ($get('day_tue') ?: 0);
+                $scheduledWed     = (int) ($get('day_wed') ?: 0);
+                $scheduledThu     = (int) ($get('day_thu') ?: 0);
+                $scheduledFri     = (int) ($get('day_fri') ?: 0);
+                $scheduledSat     = (int) ($get('day_sat') ?: 0);
+            } else {
+                // 従来の列位置方式（旧CSV互換、ふりがな列なし）
+                // 13列以上 = 新形式（教室名あり）、12列以下 = 旧形式
+                $hasClassroomCol = count($cols) >= 13;
+                $offset = $hasClassroomCol ? 1 : 0;
+                $classroomName    = $hasClassroomCol ? trim($cols[0] ?? '') : '';
+                $guardianName     = trim($cols[$offset + 0] ?? '');
+                $guardianNameKana = '';
+                $studentName      = trim($cols[$offset + 1] ?? '');
+                $studentNameKana  = '';
+                $birthDate        = trim($cols[$offset + 2] ?? '');
+                $guardianEmail    = trim($cols[$offset + 3] ?? '');
+                $supportStartDate = trim($cols[$offset + 4] ?? '');
+                $gradeAdjustment  = isset($cols[$offset + 5]) && $cols[$offset + 5] !== '' ? (int) $cols[$offset + 5] : 0;
+                $scheduledMon     = (int) ($cols[$offset + 6] ?? 0);
+                $scheduledTue     = (int) ($cols[$offset + 7] ?? 0);
+                $scheduledWed     = (int) ($cols[$offset + 8] ?? 0);
+                $scheduledThu     = (int) ($cols[$offset + 9] ?? 0);
+                $scheduledFri     = (int) ($cols[$offset + 10] ?? 0);
+                $scheduledSat     = (int) ($cols[$offset + 11] ?? 0);
+            }
 
             // 通所曜日の表示用テキスト
             $scheduledArr = [$scheduledMon, $scheduledTue, $scheduledWed, $scheduledThu, $scheduledFri, $scheduledSat];
@@ -157,7 +246,9 @@ class BulkRegisterController extends Controller
                 'classroom_name'      => $resolvedClassroomName,
                 'classroom_id'        => $resolvedClassroomId,
                 'guardian_name'       => $guardianName,
+                'guardian_name_kana'  => $guardianNameKana,
                 'student_name'        => $studentName,
+                'student_name_kana'   => $studentNameKana,
                 'birth_date'          => $birthDate,
                 'guardian_email'      => $guardianEmail,
                 'support_start_date'  => $supportStartDate,
@@ -222,7 +313,9 @@ class BulkRegisterController extends Controller
         $request->validate([
             'rows'                      => 'required|array|min:1',
             'rows.*.guardian_name'      => 'required|string|max:255',
+            'rows.*.guardian_name_kana' => 'nullable|string|max:255',
             'rows.*.student_name'       => 'required|string|max:255',
+            'rows.*.student_name_kana'  => 'nullable|string|max:255',
             'rows.*.birth_date'         => 'required|date',
             'rows.*.guardian_email'     => 'nullable|email|max:255',
             'rows.*.support_start_date' => 'nullable|date',
@@ -279,17 +372,25 @@ class BulkRegisterController extends Controller
                             'password'      => Hash::make($password),
                             'password_plain' => $password,
                             'full_name'     => $guardianName,
+                            'full_name_kana' => ($row['guardian_name_kana'] ?? '') ?: null,
                             'email'         => $row['guardian_email'] ?: null,
                             'user_type'     => 'guardian',
                             'is_active'     => true,
                         ]);
                         $guardianMap[$guardianName] = $guardian->id;
                     } else {
-                        // 既存保護者にメールが後から指定された場合は更新
-                        if (! empty($row['guardian_email'])) {
-                            $existingGuardian = User::find($guardianMap[$guardianName]);
-                            if ($existingGuardian && empty($existingGuardian->email)) {
-                                $existingGuardian->update(['email' => $row['guardian_email']]);
+                        // 既存保護者にメール/ふりがなが後から指定された場合は補完更新
+                        $existingGuardian = User::find($guardianMap[$guardianName]);
+                        if ($existingGuardian) {
+                            $updates = [];
+                            if (! empty($row['guardian_email']) && empty($existingGuardian->email)) {
+                                $updates['email'] = $row['guardian_email'];
+                            }
+                            if (! empty($row['guardian_name_kana']) && empty($existingGuardian->full_name_kana)) {
+                                $updates['full_name_kana'] = $row['guardian_name_kana'];
+                            }
+                            if (! empty($updates)) {
+                                $existingGuardian->update($updates);
                             }
                         }
                     }
@@ -311,6 +412,7 @@ class BulkRegisterController extends Controller
                         'classroom_id'        => $rowClassroomId,
                         'guardian_id'         => $guardianId,
                         'student_name'        => $row['student_name'],
+                        'student_name_kana'   => ($row['student_name_kana'] ?? '') ?: null,
                         'birth_date'          => $row['birth_date'] ?: null,
                         'support_start_date'  => ! empty($row['support_start_date']) ? $row['support_start_date'] : null,
                         'grade_level'         => $gradeLevel,
