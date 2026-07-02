@@ -38,7 +38,7 @@ export interface Release {
  * セマンティックバージョニング(major.minor.patch)。Ver.1.1.1 を起点に、
  * 以降のリリースで数字を上げていく（大きな機能追加=minor、修正=patch を目安に）。
  */
-export const APP_VERSION = '1.3.0';
+export const APP_VERSION = '1.3.1';
 
 /** カテゴリの表示メタ情報（ラベル・アイコン・色）。色は globals.css の CSS 変数を使用。 */
 export const CATEGORY_META: Record<
@@ -74,6 +74,20 @@ export function filterReleasesForAudience(
 
 // 新しいリリースは配列の先頭に追加する（新しい順で表示される）。
 export const CHANGELOG: Release[] = [
+  {
+    version: '1.3.1',
+    date: '2026-07-03',
+    title: '能力評価の回答済み表示の改善',
+    items: [
+      {
+        category: 'fix',
+        audiences: ['staff'],
+        title: '能力評価の「本日回答済」に、誰が・いつ・どの活動で記録したかを表示するようにしました',
+        detail:
+          '能力評価の設問はお子様ごとに1日3問で、同じ日に別の活動記録や別のスタッフが回答した場合もすべての画面で「本日回答済」と表示されます。回答していないのに回答済みに見えるとのご報告を受け、回答済みの設問に記録の出所（時刻・記録したスタッフ・活動名）を表示するようにしました。',
+      },
+    ],
+  },
   {
     version: '1.3.0',
     date: '2026-07-03',
