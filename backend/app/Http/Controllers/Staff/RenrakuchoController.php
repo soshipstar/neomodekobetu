@@ -193,82 +193,38 @@ class RenrakuchoController extends Controller
             'students.*.domain_goal_quotes'        => 'nullable|array',
         ]);
 
-        try {
-            $record = DB::transaction(function () use ($request, $validated) {
-                $record = DailyRecord::create([
-                    'record_date'     => $validated['record_date'],
-                    'staff_id'        => $request->user()->id,
-                    'classroom_id'    => $request->user()->classroom_id,
-                    'activity_name'   => $validated['activity_name'],
-                    'common_activity' => $validated['common_activity'],
-                    'support_plan_id' => $validated['support_plan_id'] ?? null,
+        // 方針(2026-07): 同じ支援案(=同一活動名)で同日に2件以上の記録を作れるように、
+        // daily_records の (record_date, staff_id, activity_name) ユニーク制約は撤廃した
+        // (別マイグレーションでdrop)。保存は常に新規レコードとして作成する。
+        $record = DB::transaction(function () use ($request, $validated) {
+            $record = DailyRecord::create([
+                'record_date'     => $validated['record_date'],
+                'staff_id'        => $request->user()->id,
+                'classroom_id'    => $request->user()->classroom_id,
+                'activity_name'   => $validated['activity_name'],
+                'common_activity' => $validated['common_activity'],
+                'support_plan_id' => $validated['support_plan_id'] ?? null,
+            ]);
+
+            foreach ($validated['students'] as $studentData) {
+                // Map legacy fields if present
+                $studentData = $this->mapLegacyDomainFields($studentData);
+
+                StudentRecord::create([
+                    'daily_record_id'          => $record->id,
+                    'student_id'               => $studentData['id'],
+                    'health_life'              => $studentData['health_life'] ?? null,
+                    'motor_sensory'            => $studentData['motor_sensory'] ?? null,
+                    'cognitive_behavior'       => $studentData['cognitive_behavior'] ?? null,
+                    'language_communication'   => $studentData['language_communication'] ?? null,
+                    'social_relations'         => $studentData['social_relations'] ?? null,
+                    'notes'                    => $studentData['notes'] ?? null,
+                    'domain_goal_quotes'       => $studentData['domain_goal_quotes'] ?? null,
                 ]);
-
-                foreach ($validated['students'] as $studentData) {
-                    // Map legacy fields if present
-                    $studentData = $this->mapLegacyDomainFields($studentData);
-
-                    StudentRecord::create([
-                        'daily_record_id'          => $record->id,
-                        'student_id'               => $studentData['id'],
-                        'health_life'              => $studentData['health_life'] ?? null,
-                        'motor_sensory'            => $studentData['motor_sensory'] ?? null,
-                        'cognitive_behavior'       => $studentData['cognitive_behavior'] ?? null,
-                        'language_communication'   => $studentData['language_communication'] ?? null,
-                        'social_relations'         => $studentData['social_relations'] ?? null,
-                        'notes'                    => $studentData['notes'] ?? null,
-                        'domain_goal_quotes'       => $studentData['domain_goal_quotes'] ?? null,
-                    ]);
-                }
-
-                return $record;
-            });
-        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
-            // (record_date, staff_id, activity_name) のユニーク制約違反。
-            // 「保存」連打による二重送信のほか、"同じ活動名のまま別の生徒を後から
-            // 追加する" ケースもここに到達する。後者で今回入力した生徒記録を
-            // 取りこぼすと「保存成功と表示されるのに記録が出てこない」データ欠落に
-            // なるため、既存レコードへ生徒記録をマージする。
-            // daily_record_id + student_id の updateOrCreate なので、真の二重送信
-            // (同一生徒) では既存 student_record を上書きするだけで重複は増えない。
-            $existing = DailyRecord::where('record_date', $validated['record_date'])
-                ->where('staff_id', $request->user()->id)
-                ->where('activity_name', $validated['activity_name'])
-                ->first();
-
-            if (! $existing) {
-                throw $e;
             }
 
-            DB::transaction(function () use ($existing, $validated) {
-                foreach ($validated['students'] as $studentData) {
-                    $studentData = $this->mapLegacyDomainFields($studentData);
-
-                    StudentRecord::updateOrCreate(
-                        [
-                            'daily_record_id' => $existing->id,
-                            'student_id'      => $studentData['id'],
-                        ],
-                        [
-                            'health_life'            => $studentData['health_life'] ?? null,
-                            'motor_sensory'          => $studentData['motor_sensory'] ?? null,
-                            'cognitive_behavior'     => $studentData['cognitive_behavior'] ?? null,
-                            'language_communication' => $studentData['language_communication'] ?? null,
-                            'social_relations'       => $studentData['social_relations'] ?? null,
-                            'notes'                  => $studentData['notes'] ?? null,
-                            'domain_goal_quotes'     => $studentData['domain_goal_quotes'] ?? null,
-                        ]
-                    );
-                }
-            });
-
-            return response()->json([
-                'success'    => true,
-                'data'       => $existing->load('studentRecords'),
-                'message'    => '活動を保存しました。',
-                'duplicated' => true,
-            ], 200);
-        }
+            return $record;
+        });
 
         // AI学習基盤(S4b): 活動(実施プログラム)を自動分類して蓄積(活動メタ。同意ゲート対象外)。
         app(\App\Services\ProgramClassifier::class)->classifyAndStore(
