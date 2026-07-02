@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -25,6 +26,7 @@ export default function PlanPreviewPage() {
   const searchParams = useSearchParams();
   const planId = params.planId as string;
   const isOfficial = searchParams.get('type') === 'official';
+  const [printing, setPrinting] = useState(false);
 
   const { data: plan, isLoading } = useQuery({
     queryKey: ['staff', 'plan-preview', planId],
@@ -52,6 +54,32 @@ export default function PlanPreviewPage() {
     } catch { /* ignore */ }
   };
 
+  // 「印刷する」: 画面HTMLの window.print() はアプリ外枠(スクロールコンテナ)の
+  // 影響で1画面分しか印刷されず途中で切れる(現場報告)。サーバ生成PDF
+  // (=PDFダウンロードと同一物)を非表示iframeで開いて印刷し、PDFと同じ出力を保証する。
+  const handlePrint = async () => {
+    setPrinting(true);
+    try {
+      const res = await api.get(`/api/staff/support-plans/${planId}/pdf`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = url;
+      iframe.onload = () => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      };
+      document.body.appendChild(iframe);
+      // 印刷ダイアログ表示後に解放(即時revokeするとビューアが読めなくなる)
+      setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
+    } catch {
+      // PDF取得に失敗した場合のみ従来のHTML印刷にフォールバック
+      window.print();
+    } finally {
+      setPrinting(false);
+    }
+  };
+
   const details = Array.isArray(plan.details) ? plan.details : [];
   const student = plan.student;
 
@@ -64,7 +92,7 @@ export default function PlanPreviewPage() {
         </Link>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" leftIcon={<MaterialIcon name="download" size={16} />} onClick={handlePdf}>PDFダウンロード</Button>
-          <Button leftIcon={<MaterialIcon name="print" size={16} />} onClick={() => window.print()}>印刷する</Button>
+          <Button leftIcon={<MaterialIcon name="print" size={16} />} isLoading={printing} onClick={handlePrint}>印刷する</Button>
         </div>
       </div>
 
