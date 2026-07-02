@@ -38,7 +38,7 @@ export interface Release {
  * セマンティックバージョニング(major.minor.patch)。Ver.1.1.1 を起点に、
  * 以降のリリースで数字を上げていく（大きな機能追加=minor、修正=patch を目安に）。
  */
-export const APP_VERSION = '1.1.1';
+export const APP_VERSION = '1.2.0';
 
 /** カテゴリの表示メタ情報（ラベル・アイコン・色）。色は globals.css の CSS 変数を使用。 */
 export const CATEGORY_META: Record<
@@ -74,6 +74,27 @@ export function filterReleasesForAudience(
 
 // 新しいリリースは配列の先頭に追加する（新しい順で表示される）。
 export const CHANGELOG: Release[] = [
+  {
+    version: '1.2.0',
+    date: '2026-07-02',
+    title: '活動記録の複数作成・一括登録のふりがな対応',
+    items: [
+      {
+        category: 'feature',
+        audiences: ['staff'],
+        title: '利用者一括登録に「ふりがな」列を追加しました',
+        detail:
+          'CSVでの一括登録で、生徒氏名・保護者氏名それぞれの「ふりがな」を登録できるようになりました。「CSVテンプレートをダウンロード」から取得できるテンプレートにふりがなの列が追加されています（ふりがな列のない従来のCSVもそのまま利用できます）。',
+      },
+      {
+        category: 'fix',
+        audiences: ['staff'],
+        title: '同じ活動名で同じ日に複数の活動記録を作成できるようになりました',
+        detail:
+          '同じ支援案（同じ活動名）から、同じ日に2件以上の活動記録を作成できるようになりました。あわせて、記録を保存したはずなのに一覧に表示されないことがあった不具合を解消しました。',
+      },
+    ],
+  },
   {
     version: '1.1.1',
     date: '2026-07-01',
